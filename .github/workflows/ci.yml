@@ -47,8 +47,8 @@ jobs:
           --locked
           --git https://github.com/bordumb/proof-bound
           --rev 0a5c6b6dcf7e3b59cdf71ec5f8d50082c5f3a3e0
-          --package proofbound-cli
           --bin proofbound
+          proofbound-cli
 
       - name: Install pinned Kani verifier
         run: |
