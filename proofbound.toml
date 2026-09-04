@@ -1,0 +1,50 @@
+schema = "proofbound-project/1"
+project = "proofbound-runtime"
+tier = 2
+claim_manifests = ["claims/*.toml"]
+assumption_manifests = ["assumptions/*.toml"]
+evidence_units = ["proofbound/evidence/*.toml"]
+model_check_units = ["proofbound/model-checks/*.toml"]
+
+[source]
+semantic = [
+  "crates/**",
+  "formal/**",
+  "schemas/**",
+  "claims/**",
+  "assumptions/**",
+  "proofbound/**",
+  "proofbound.toml",
+]
+runner = [
+  ".github/**",
+  ".pre-commit-config.yaml",
+  "Cargo.lock",
+  "Cargo.toml",
+  "clippy.toml",
+  "deny.toml",
+  "justfile",
+  "rust-toolchain.toml",
+  "rustfmt.toml",
+  "tools/**",
+]
+presentation = [
+  ".editorconfig",
+  ".gitignore",
+  "AGENTS.md",
+  "CHANGELOG.md",
+  "LICENSE",
+  "README.md",
+  "VERSION",
+  "docs/**",
+]
+
+[toolchains]
+rust = "rust-toolchain.toml"
+lean = "lean-toolchain"
+translation = "proofbound/toolchains/translation.lock"
+
+[limits]
+max_manifest_bytes = 2097152
+max_files = 100000
+max_total_bytes = 4294967296

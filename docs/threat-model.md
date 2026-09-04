@@ -1,0 +1,212 @@
+# Threat model
+
+- **Status:** initial normative boundary
+- **Version:** 0.1.0
+- **Date:** 2026-09-04
+- **Applies to:** the intended Proofbound Runtime version 1 execution profile
+
+## Purpose
+
+Proofbound Runtime runs a command that the caller does not fully trust. It gives
+the command declared authority and records the installed boundary and observed
+outcome in an execution receipt.
+
+This threat model defines what the initial product intends to protect, which
+attacks it must reject, what it trusts, and what remains outside its claims. The
+runtime is pre-implementation. No statement in this document describes a
+currently shipping containment mechanism.
+
+## Protected assets
+
+The initial boundary protects:
+
+- files outside registered read roots;
+- files outside the fresh registered write root;
+- executables outside the registered executable closure;
+- environment values whose names are not registered;
+- inherited file descriptors that are not part of the child contract;
+- network authority, which is denied by the initial profile;
+- host process and resource capacity above registered limits;
+- reviewed source trees from modification by the child;
+- execution outputs from substitution before receipt construction; and
+- receipt meaning from omission, substitution, downgrade, and forged reuse.
+
+The assurance metadata itself is also an asset. A consumer must be able to
+distinguish boundary installation, child outcome, output validation, receipt
+validity, and reuse eligibility.
+
+## Adversaries
+
+### Untrusted child
+
+The child command and its descendants can be malicious. They can attempt to:
+
+- traverse paths or follow links outside registered roots;
+- read host credentials, adjacent repositories, or user configuration;
+- modify source, tools, inputs, or other undeclared paths;
+- execute an undeclared binary or dynamic loader;
+- open sockets or use an inherited communication channel;
+- inspect undeclared environment values;
+- fork or allocate beyond registered limits;
+- forge launcher control messages;
+- terminate abnormally after producing partial output; or
+- exploit races between identity checks and use.
+
+The child can know the complete policy. Security does not depend on hiding it.
+
+### Fallible producer
+
+The runtime receipt producer can contain defects. It can accidentally omit a
+field, accept an unknown version, misclassify an outcome, retain stale input,
+or mark a failed execution reusable. The independent verifier is a separate
+trust boundary and must re-derive portable decisions without importing producer
+semantics.
+
+### Malicious receipt carrier
+
+A party transporting or storing a receipt can alter, truncate, reorder,
+substitute, replay, or remove fields. Canonical encoding, typed identities, and
+independent validation must detect the registered forms of these attacks.
+
+## Trusted computing base
+
+Initial execution claims depend on:
+
+- host hardware and firmware;
+- the Linux kernel and selected system-call behavior;
+- Landlock filesystem mediation;
+- seccomp syscall mediation;
+- cgroup v2 resource and process accounting;
+- `PR_SET_NO_NEW_PRIVS` behavior;
+- filesystem identity and descriptor behavior;
+- the exact launcher and supervisor artifacts;
+- the Rust compiler, linker, standard library, and relevant dependencies;
+- the cryptographic digest implementation used for identities; and
+- each exact executable, loader, runtime, and runtime library root granted to
+  the child.
+
+Proofbound must retain these roles and any narrower claim-specific premises. A
+receipt signature or digest does not discharge them.
+
+## Initial enforced boundary
+
+The initial supported profile requires:
+
+1. A strict plan that declares command, inputs, environment names, read roots,
+   write roots, executable closure, network mode, and resource limits.
+2. Validation and deterministic normalization without authority amplification.
+3. Exact resolution and identity of security-relevant files before execution.
+4. A fresh cgroup v2 boundary with the registered limits.
+5. Closure of undeclared file descriptors.
+6. Removal of ambient privilege and installation of `no_new_privs`.
+7. Installation of the complete Landlock filesystem ruleset.
+8. Installation of the complete seccomp filter.
+9. A typed acknowledgement bound to the compiled policy identity.
+10. `execve` only after every required step succeeds.
+
+Failure or unsupported capability stops the execution. The runtime does not
+fall back to an unconfined or weaker mode.
+
+## Authority surfaces
+
+### Filesystem
+
+Landlock mediates the supported filesystem access classes. The runtime must
+resolve paths under explicit roots, retain requested and resolved identities,
+control symlink traversal, and prefer descriptor-relative operations where the
+platform supports them.
+
+### Executables and runtime closure
+
+The plan must identify allowed executables. Dynamically linked programs also
+need the exact ELF interpreter and registered runtime libraries. Dynamic
+language runtimes can require larger read-only library roots. These roots are
+authority and must remain visible. Directory-wide execute authority must not
+replace exact executable roles.
+
+### Network
+
+Version 1 denies socket-related authority through a closed seccomp profile and
+closes inherited file descriptors. It does not provide hostname, address, or
+service allow-lists.
+
+### Environment
+
+The supervisor builds a new child environment from registered names. The child
+does not inherit the complete parent environment. Version 1 does not support
+secret providers.
+
+### Processes and resources
+
+A fresh cgroup v2 boundary enforces registered process limits. The supervisor
+enforces wall-time and stream-size limits. Every limit and observed termination
+state appears in the receipt.
+
+## Required attack corpus
+
+Before a platform profile can be described as supported, native Linux evidence
+must cover at least:
+
+- path escape, link substitution, and identity drift;
+- undeclared file read and write;
+- undeclared executable and loader substitution;
+- directory-wide execute amplification;
+- socket creation and connection;
+- inherited socket and file-descriptor use;
+- undeclared environment access;
+- process, time, and stream limit exhaustion;
+- boundary-installation reordering and acknowledgement forgery;
+- partial output and abnormal child termination;
+- receipt omission, duplicate fields, truncation, and unknown versions;
+- policy, runtime, input, output, and platform identity substitution;
+- forged reuse eligibility; and
+- assumption or trusted-computing-base removal.
+
+Passing this corpus is bounded enforcement evidence. It is not a universal
+theorem about every Linux behavior or attack.
+
+## Out of scope
+
+The initial product does not protect against:
+
+- a malicious host administrator or host root;
+- a compromised kernel, hypervisor, firmware, or hardware;
+- kernel vulnerabilities or an incorrect enforcement implementation;
+- microarchitectural, timing, power, electromagnetic, or other side channels;
+- denial of service within a permitted resource bound;
+- authorized reads being copied into authorized outputs;
+- covert channels through resources that the policy deliberately permits;
+- physical attacks;
+- remote workload identity or confidential-computing attestation;
+- macOS or Windows behavior; or
+- semantic defects in the untrusted command's intended work.
+
+## Receipt interpretation
+
+A valid execution receipt can establish that the producer recorded an exact
+plan, boundary identity, execution outcome, and output inventory in the
+registered format and that the verifier accepted the derived relationships.
+
+It cannot by itself establish that:
+
+- the host kernel was correct;
+- the declared policy matched the caller's real intent;
+- the child had no side channel;
+- output content was semantically correct;
+- every unregistered attack was impossible; or
+- the Runtime release possessed a stronger Proofbound status than its release
+  receipt admits.
+
+## Review triggers
+
+Review and version this threat model when a change:
+
+- adds an authority class or network mode;
+- changes path or executable resolution;
+- changes boundary-installation order;
+- changes the trusted computing base;
+- changes receipt meaning or reuse eligibility;
+- adds a platform or enforcement mechanism;
+- permits a fallback;
+- introduces remote execution, a daemon, or multi-tenancy; or
+- changes an explicit exclusion into a product claim.

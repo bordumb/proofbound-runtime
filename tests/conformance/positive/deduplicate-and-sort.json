@@ -1,0 +1,33 @@
+{
+  "schema": "proofbound-runtime-authority-vector/1",
+  "id": "deduplicate-and-sort",
+  "input": {
+    "paths": [
+      { "path": "src", "access": "read", "role": "project-input" },
+      { "path": "out", "access": "write", "role": "output-root" },
+      { "path": "src", "access": "read", "role": "project-input" }
+    ],
+    "environment": ["PATH", "LANG", "PATH"],
+    "limits": {
+      "processes": 16,
+      "wall_time_ms": 30000,
+      "stdout_bytes": 1048576,
+      "stderr_bytes": 1048576
+    },
+    "network": "deny"
+  },
+  "expected": {
+    "paths": [
+      { "path": "out", "access": "write", "role": "output-root" },
+      { "path": "src", "access": "read", "role": "project-input" }
+    ],
+    "environment": ["LANG", "PATH"],
+    "limits": {
+      "processes": 16,
+      "wall_time_ms": 30000,
+      "stdout_bytes": 1048576,
+      "stderr_bytes": 1048576
+    },
+    "network": "deny"
+  }
+}

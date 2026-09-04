@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bordumb/proofbound-runtime/schemas/authority-vector-v1.schema.json",
+  "title": "Proofbound Runtime authority conformance vector",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "input"],
+  "properties": {
+    "schema": { "const": "proofbound-runtime-authority-vector/1" },
+    "id": { "type": "string", "minLength": 1 },
+    "input": { "$ref": "#/$defs/authority" },
+    "expected": { "$ref": "#/$defs/authority" },
+    "expected_error": { "type": "string", "minLength": 1 }
+  },
+  "oneOf": [
+    { "required": ["expected"], "not": { "required": ["expected_error"] } },
+    { "required": ["expected_error"], "not": { "required": ["expected"] } }
+  ],
+  "$defs": {
+    "path": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "access", "role"],
+      "properties": {
+        "path": { "type": "string" },
+        "access": { "enum": ["read", "write", "execute"] },
+        "role": {
+          "enum": [
+            "project-input",
+            "output-root",
+            "runtime-executable",
+            "runtime-loader-executable",
+            "runtime-library"
+          ]
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["processes", "wall_time_ms", "stdout_bytes", "stderr_bytes"],
+      "properties": {
+        "processes": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+        "wall_time_ms": { "type": "integer", "minimum": 0, "maximum": 18446744073709551615 },
+        "stdout_bytes": { "type": "integer", "minimum": 0, "maximum": 18446744073709551615 },
+        "stderr_bytes": { "type": "integer", "minimum": 0, "maximum": 18446744073709551615 }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["paths", "environment", "limits", "network"],
+      "properties": {
+        "paths": { "type": "array", "items": { "$ref": "#/$defs/path" } },
+        "environment": { "type": "array", "items": { "type": "string" } },
+        "limits": { "$ref": "#/$defs/limits" },
+        "network": { "const": "deny" }
+      }
+    }
+  }
+}

@@ -1,0 +1,38 @@
+schema = "proofbound-claim/1"
+id = "PBR-AUTH-001"
+title = "Authority normalization does not amplify authority"
+statement = "For every valid authority plan, normalization returns a duplicate-free plan and every returned authority entry was present in the input plan."
+public_language = "The formal model proves that normalization removes duplicate authority and does not add an authority entry. Registered Rust tests and a 16-case Kani domain check selected production behavior. The claim remains model-only until source refinement links the theorem to the Rust function."
+subject = "rust:proofbound_runtime_core::normalize_authority"
+profile = "kernel-with-assumptions"
+tier = 2
+primary_linkage = "model-only"
+formal_declaration = "ProofboundRuntime.Claims.Authority.normalization_is_canonical_and_non_amplifying"
+statement_encoding = "lean-expr-cbor/1"
+statement_sha256 = "sha256:640cbfbce1da910d98d4762488ac31600c9d2264af0ff7f9eec0a3505458b73f"
+foundational_axioms = ["propext"]
+evidence = [
+  "example-test:authority-conformance",
+  "bounded-check:authority-normalization-bounds",
+  "theorem:authority-normalization-model",
+]
+assumptions = ["PBR-TOOLCHAIN-AX-003"]
+open_obligations = [
+  "Register source refinement from the selected Rust normalization behavior to the Lean authority relation.",
+  "Bind the refined claim to release artifacts before making a shipping-binary claim.",
+]
+out_of_scope = [
+  "Correctness of any Linux enforcement mechanism that later consumes the normalized plan.",
+  "Whether the authority requested by a caller is appropriate for the caller's real-world intent.",
+]
+source_roots = [
+  "crates/proofbound-runtime-core/src/authority.rs",
+  "crates/proofbound-runtime-core/src/normalize.rs",
+  "formal/ProofboundRuntime/Authority.lean",
+  "formal/ProofboundRuntime/Claims/Authority.lean",
+  "proofbound/evidence/authority-conformance.toml",
+  "proofbound/evidence/authority-normalization-bounds.toml",
+  "proofbound/evidence/authority-normalization-model.toml",
+  "proofbound/model-checks/authority-normalization.toml",
+  "tests/conformance/",
+]

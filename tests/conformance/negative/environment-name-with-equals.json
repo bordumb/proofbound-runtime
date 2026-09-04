@@ -1,0 +1,16 @@
+{
+  "schema": "proofbound-runtime-authority-vector/1",
+  "id": "environment-name-with-equals",
+  "input": {
+    "paths": [],
+    "environment": ["TOKEN=value"],
+    "limits": {
+      "processes": 1,
+      "wall_time_ms": 1,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    "network": "deny"
+  },
+  "expected_error": "authority.environment.equals"
+}

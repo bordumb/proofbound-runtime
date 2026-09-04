@@ -1,0 +1,34 @@
+schema = "proofbound-evidence-unit/1"
+id = "authority-normalization-bounds"
+adapter = "kani"
+kind = "bounded-check"
+claims = ["PBR-AUTH-001"]
+tier = 1
+expected_inventory = [
+  "normalize::kani_harnesses::normalization_does_not_amplify_bounded_catalog",
+]
+inputs = [
+  "crates/proofbound-runtime-core/src/authority.rs",
+  "crates/proofbound-runtime-core/src/normalize.rs",
+  "proofbound/model-checks/authority-normalization.toml",
+]
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "kani"
+package = "proofbound-runtime-core"
+manifest = "proofbound/model-checks/authority-normalization.toml"
+targets = [
+  "normalize::kani_harnesses::normalization_does_not_amplify_bounded_catalog",
+]
+
+[bounded_domain]
+id = "authority-two-path-two-environment-catalog"
+description = "All two-slot path and environment plans over two typed entries per slot; 2^4 finite plans, including duplicate and reversed path cases."
+cardinality = 16
+ordering_key = [0, 1, 2, 3]
+
+[resource_budget]
+time_seconds = 300
+disk_bytes = 2147483648
+memory_bytes = 8589934592

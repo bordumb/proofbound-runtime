@@ -1,0 +1,39 @@
+schema = "proofbound-evidence-unit/1"
+id = "authority-conformance"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-AUTH-001"]
+tier = 0
+expected_inventory = [
+  "authority_vectors::accepts_all_positive_authority_vectors",
+  "authority_vectors::independent_reference_accepts_registered_vectors",
+  "authority_vectors::rejects_all_negative_authority_vectors",
+]
+inputs = [
+  "crates/proofbound-runtime-core/src/authority.rs",
+  "crates/proofbound-runtime-core/src/normalize.rs",
+  "crates/proofbound-runtime-core/tests/authority_vectors.rs",
+  "schemas/authority-vector-v1.schema.json",
+  "tests/conformance/negative/empty-path.json",
+  "tests/conformance/negative/environment-name-with-equals.json",
+  "tests/conformance/negative/network-not-denied.json",
+  "tests/conformance/negative/zero-process-limit.json",
+  "tests/conformance/positive/closed-network-and-zero-output.json",
+  "tests/conformance/positive/deduplicate-and-sort.json",
+  "tools/conformance/authority_reference.py",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-core"
+manifest = "Cargo.toml"
+targets = ["--test=authority_vectors"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

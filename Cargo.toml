@@ -1,0 +1,20 @@
+[workspace]
+resolver = "2"
+members = ["crates/proofbound-runtime-core"]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/bordumb/proofbound-runtime"
+rust-version = "1.93"
+publish = false
+
+[workspace.dependencies]
+serde_json = "=1.0.151"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+panic = "abort"

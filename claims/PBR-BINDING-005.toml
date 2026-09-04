@@ -1,0 +1,26 @@
+schema = "proofbound-claim/1"
+id = "PBR-BINDING-005"
+title = "Reusable receipts bind security-relevant execution inputs"
+statement = "Every reusable execution receipt binds the registered plan, compiled policy, platform, launcher, runtime, executable closure, inputs, outputs, limits, and observed outcome."
+subject = "planned:proofbound_runtime_core::build_execution_receipt"
+profile = "ledger"
+tier = 0
+evidence = []
+assumptions = [
+  "PBR-LINUX-AX-001",
+  "PBR-HOST-AX-002",
+  "PBR-TOOLCHAIN-AX-003",
+]
+open_obligations = [
+  "Freeze the version 1 execution receipt schema and canonical encoding.",
+  "Register omission, substitution, replay, truncation, and assumption-loss attacks for every security-relevant role.",
+  "Link admitted receipt properties to exact release artifacts.",
+]
+out_of_scope = [
+  "Behavioral correctness inferred only from an artifact digest.",
+  "Secret values, which must not appear in a receipt.",
+]
+source_roots = [
+  "docs/specs/0001_initial_spec.md",
+  "docs/threat-model.md",
+]

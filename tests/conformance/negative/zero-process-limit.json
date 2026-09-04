@@ -1,0 +1,16 @@
+{
+  "schema": "proofbound-runtime-authority-vector/1",
+  "id": "zero-process-limit",
+  "input": {
+    "paths": [],
+    "environment": [],
+    "limits": {
+      "processes": 0,
+      "wall_time_ms": 1,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    "network": "deny"
+  },
+  "expected_error": "authority.limit.processes.zero"
+}

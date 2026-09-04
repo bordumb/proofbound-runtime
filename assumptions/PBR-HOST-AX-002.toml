@@ -1,0 +1,15 @@
+schema = "proofbound-assumption/1"
+id = "PBR-HOST-AX-002"
+statement = "The host administrator, host root, hardware, firmware, and filesystem do not maliciously alter the launcher, policy, registered inputs, execution, outputs, or receipt observations."
+category = "runtime-environment"
+owner = "Proofbound Runtime deployment operator"
+rationale = "The initial local gateway has no hardware root of trust and cannot protect an execution from the system that controls its kernel, storage, memory, and process state."
+scope = "Only the host-integrity interpretation of launcher sequencing and execution receipt binding for PBR-SEQUENCE-003 and PBR-BINDING-005."
+affected_claims = [
+  "PBR-SEQUENCE-003",
+  "PBR-BINDING-005",
+]
+review_evidence = ["docs/threat-model.md#out-of-scope"]
+discharge_plan = "Introduce a separately specified confidential-computing or measured-deployment profile with typed attestation evidence. Do not present remote attestation as behavioral correctness."
+source_citation = "docs/specs/0001_initial_spec.md#64-threat-model"
+status = "active"

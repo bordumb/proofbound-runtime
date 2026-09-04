@@ -1,0 +1,16 @@
+{
+  "schema": "proofbound-runtime-authority-vector/1",
+  "id": "network-not-denied",
+  "input": {
+    "paths": [],
+    "environment": [],
+    "limits": {
+      "processes": 1,
+      "wall_time_ms": 1,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    "network": "allow"
+  },
+  "expected_error": "authority.network.unsupported"
+}

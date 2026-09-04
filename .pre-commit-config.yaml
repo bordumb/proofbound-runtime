@@ -1,0 +1,12 @@
+minimum_pre_commit_version: "3.6.0"
+
+repos:
+  - repo: local
+    hooks:
+      - id: proofbound-runtime-fast-checks
+        name: Proofbound Runtime fast checks
+        entry: bash tools/ci/pre-commit.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]

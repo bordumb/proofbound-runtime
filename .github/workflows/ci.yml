@@ -1,0 +1,59 @@
+name: Verify
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  bootstrap:
+    name: Tier 2 assurance gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check out the exact event head
+        uses: actions/checkout@v4
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@1.94.0
+        with:
+          components: clippy,rustfmt
+
+      - name: Install pinned Lean toolchain
+        uses: leanprover/lean-action@38fbc41a8c28c4cbaec22d7f7de508ec2e7c0dd9 # v1.5.0
+        with:
+          auto-config: false
+          build: false
+          test: false
+          lint: false
+          mk_all-check: false
+          check-reservoir-eligibility: false
+          leanchecker: false
+          nanoda: false
+
+      - name: Install pinned repository tools
+        run: |
+          cargo install --locked just --version 1.46.0
+          cargo install --locked cargo-deny --version 0.20.2
+
+      - name: Install pinned Proofbound CLI
+        run: >-
+          cargo install
+          --locked
+          --git https://github.com/bordumb/proof-bound
+          --rev 0a5c6b6dcf7e3b59cdf71ec5f8d50082c5f3a3e0
+          --package proofbound-cli
+          --bin proofbound
+
+      - name: Install pinned Kani verifier
+        run: |
+          cargo install --locked kani-verifier --version 0.67.0
+          cargo kani setup
+
+      - name: Run the Tier 2 repository gate on Linux
+        run: just ci

@@ -1,0 +1,26 @@
+schema = "proofbound-assumption/1"
+id = "PBR-TOOLCHAIN-AX-003"
+statement = "The identified compiler, linker, standard library, dependencies, and build process preserve the behavior of the registered Rust source in the produced Runtime artifacts."
+category = "compiler-tcb"
+owner = "Proofbound Runtime release maintainer"
+rationale = "Source tests, bounded checks, model theorems, and source refinement do not by themselves prove the correctness of the complete compilation and linking toolchain."
+scope = "The source-to-artifact interpretation of all six initial Runtime claims."
+affected_claims = [
+  "PBR-AUTH-001",
+  "PBR-POLICY-002",
+  "PBR-SEQUENCE-003",
+  "PBR-RECEIPT-004",
+  "PBR-BINDING-005",
+  "PBR-VERIFY-006",
+]
+review_evidence = [
+  "rust-toolchain.toml",
+  "lean-toolchain",
+  "lake-manifest.json",
+  "Cargo.lock",
+  "deny.toml",
+  "proofbound/toolchains/translation.lock",
+]
+discharge_plan = "Use exact toolchain identity, reproducible builds, source refinement, artifact binding, and an independently verified release receipt. Retain any compiler premise that those routes do not close."
+source_citation = "docs/specs/0001_initial_spec.md#93-rust-policy"
+status = "active"

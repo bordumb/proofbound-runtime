@@ -1,0 +1,17 @@
+name = "proofbound-runtime"
+version = "0.0.0"
+defaultTargets = ["ProofboundRuntime", "proofbound_lean_audit"]
+
+[[require]]
+name = "proofbound"
+git = "https://github.com/bordumb/proof-bound"
+rev = "0a5c6b6dcf7e3b59cdf71ec5f8d50082c5f3a3e0"
+
+[[lean_lib]]
+name = "ProofboundRuntime"
+srcDir = "formal"
+
+[[lean_exe]]
+name = "proofbound_lean_audit"
+root = "ProofboundRuntime.Audit"
+srcDir = "formal"

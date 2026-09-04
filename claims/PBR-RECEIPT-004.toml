@@ -1,0 +1,21 @@
+schema = "proofbound-claim/1"
+id = "PBR-RECEIPT-004"
+title = "Incomplete executions are not reusable"
+statement = "Receipt derivation classifies every denied, incomplete, malformed, timed-out, truncated, or launcher-failed execution as non-reusable with explicit reasons."
+subject = "planned:proofbound_runtime_core::derive_receipt_eligibility"
+profile = "ledger"
+tier = 0
+evidence = []
+assumptions = ["PBR-TOOLCHAIN-AX-003"]
+open_obligations = [
+  "Define the closed execution outcome and receipt eligibility types.",
+  "Register exhaustive finite-state checks, independent derivation vectors, Lean theorems, source refinement, and artifact linkage.",
+]
+out_of_scope = [
+  "Semantic correctness of outputs produced by an otherwise reusable execution.",
+  "Execution failures or attack classes that the versioned outcome schema cannot represent.",
+]
+source_roots = [
+  "docs/specs/0001_initial_spec.md",
+  "docs/threat-model.md",
+]

@@ -1,0 +1,26 @@
+schema = "proofbound-claim/1"
+id = "PBR-SEQUENCE-003"
+title = "Child code starts only after boundary installation"
+statement = "Every supported execution that starts child code first installs the registered cgroup, privilege, filesystem, and syscall boundaries for the same compiled policy identity."
+subject = "planned:proofbound_runtime_linux::launch"
+profile = "ledger"
+tier = 0
+evidence = []
+assumptions = [
+  "PBR-LINUX-AX-001",
+  "PBR-HOST-AX-002",
+  "PBR-TOOLCHAIN-AX-003",
+]
+open_obligations = [
+  "Implement the paused launcher, private protocol, boundary acknowledgement, and exec handoff.",
+  "Register native Linux sequencing tests, acknowledgement attacks, and the strongest sound linkage available for effectful code.",
+]
+out_of_scope = [
+  "A malicious host administrator, compromised kernel, hostile firmware, or hostile hardware.",
+  "Correctness of the untrusted child after the boundary starts it.",
+]
+source_roots = [
+  "docs/specs/0001_initial_spec.md",
+  "docs/threat-model.md",
+  "docs/adr/0001-linux-enforcement-boundary.md",
+]

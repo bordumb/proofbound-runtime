@@ -1,0 +1,19 @@
+schema = "proofbound-assumption/1"
+id = "PBR-LINUX-AX-001"
+statement = "The identified Linux kernel enforces the registered Landlock, seccomp, cgroup, no_new_privs, file-descriptor, and exec behavior represented by the supported platform model."
+category = "runtime-environment"
+owner = "Proofbound Runtime platform maintainer"
+rationale = "A policy compiler theorem can prove a relation to a formal platform model, but it cannot prove that the host kernel implements that model correctly."
+scope = "Only the real Linux enforcement interpretation of PBR-POLICY-002, PBR-SEQUENCE-003, and PBR-BINDING-005 on an identified supported host."
+affected_claims = [
+  "PBR-POLICY-002",
+  "PBR-SEQUENCE-003",
+  "PBR-BINDING-005",
+]
+review_evidence = [
+  "docs/threat-model.md#trusted-computing-base",
+  "docs/adr/0001-linux-enforcement-boundary.md#assurance-meaning",
+]
+discharge_plan = "Retain this premise for native Linux claims. Narrow it through a reviewed platform semantics, native conformance evidence, exact capability identity, and stronger machine-level verification where available."
+source_citation = "docs/specs/0001_initial_spec.md#64-threat-model"
+status = "active"

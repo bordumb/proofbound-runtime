@@ -1,0 +1,25 @@
+schema = "proofbound-claim/1"
+id = "PBR-POLICY-002"
+title = "Linux policy compilation does not amplify modeled authority"
+statement = "For every supported normalized plan, policy compilation produces Landlock, seccomp, and cgroup inputs that grant no authority absent from the registered platform model."
+subject = "planned:proofbound_runtime_linux::compile_policy"
+profile = "ledger"
+tier = 0
+evidence = []
+assumptions = [
+  "PBR-LINUX-AX-001",
+  "PBR-TOOLCHAIN-AX-003",
+]
+open_obligations = [
+  "Define the closed supported Linux policy model and compile it from normalized authority.",
+  "Register bounded checks, a Lean policy theorem, source refinement, and release artifact linkage.",
+]
+out_of_scope = [
+  "Linux behavior outside the registered Landlock, seccomp, and cgroup model.",
+  "Kernel vulnerabilities, side channels, and authority deliberately present in the input plan.",
+]
+source_roots = [
+  "docs/specs/0001_initial_spec.md",
+  "docs/threat-model.md",
+  "docs/adr/0001-linux-enforcement-boundary.md",
+]

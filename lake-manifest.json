@@ -1,0 +1,16 @@
+{"version": "1.2.0",
+ "packagesDir": ".lake/packages",
+ "packages":
+ [{"url": "https://github.com/bordumb/proof-bound",
+   "type": "git",
+   "subDir": null,
+   "scope": "",
+   "rev": "0a5c6b6dcf7e3b59cdf71ec5f8d50082c5f3a3e0",
+   "name": "proofbound",
+   "manifestFile": "lake-manifest.json",
+   "inputRev": "0a5c6b6dcf7e3b59cdf71ec5f8d50082c5f3a3e0",
+   "inherited": false,
+   "configFile": "lakefile.toml"}],
+ "name": "«proofbound-runtime»",
+ "lakeDir": ".lake",
+ "fixedToolchain": false}

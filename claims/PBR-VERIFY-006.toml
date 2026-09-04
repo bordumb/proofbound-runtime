@@ -1,0 +1,22 @@
+schema = "proofbound-claim/1"
+id = "PBR-VERIFY-006"
+title = "The independent verifier rejects registered receipt attacks"
+statement = "The standalone verifier independently derives receipt validity and reuse eligibility and rejects every registered receipt mutation with its exact typed reason."
+subject = "planned:proofbound_runtime_verify::verify_receipt"
+profile = "ledger"
+tier = 0
+evidence = []
+assumptions = ["PBR-TOOLCHAIN-AX-003"]
+open_obligations = [
+  "Implement a verifier that depends on no other workspace crate and imports no producer semantics.",
+  "Freeze shared positive and adversarial input vectors and register exact producer-verifier agreement.",
+  "Bind the independent verifier to exact release artifacts.",
+]
+out_of_scope = [
+  "Correctness of the receipt producer merely because the verifier accepts one bounded corpus.",
+  "Receipt properties not represented by the versioned schema and derivation rules.",
+]
+source_roots = [
+  "docs/specs/0001_initial_spec.md",
+  "docs/threat-model.md",
+]

@@ -1,0 +1,5 @@
+schema = "proofbound-translation-toolchain/1"
+charon_revision = "0.1.225"
+aeneas_revision = "3a8586fa"
+rust_toolchain = "1.94.0"
+lean_toolchain = "leanprover/lean4:v4.33.0"

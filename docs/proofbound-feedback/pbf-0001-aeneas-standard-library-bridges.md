@@ -1,0 +1,136 @@
+# PBF-0001: Reusable Aeneas standard-library bridges
+
+- **Status:** `proposed`
+- **Priority:** `near-term`
+- **Kind:** `plugin-boundary`
+- **Created:** 2026-09-04
+- **Last updated:** 2026-09-04
+- **Runtime claim:** `PBR-AUTH-001`
+- **Runtime milestone:** Milestone 1
+- **Proofbound target:** external integration or template
+- **Upstream record:** not upstreamed
+- **Supersedes:** none
+- **Superseded by:** none
+
+## Summary
+
+Rust source refinement repeatedly needs semantics for common standard-library
+operations that Aeneas emits as external templates. A versioned, independently
+reviewed bridge pack could let Proofbound consumers reuse those semantics
+without copying axioms or project-specific bridge code.
+
+## Runtime observation
+
+On 2026-09-04, a disposable Tier 3 pilot selected
+`proofbound_runtime_core::normalize::normalize_authority` from
+`crates/proofbound-runtime-core/src/normalize.rs`. Charon `0.1.225` extracted
+the defining symbol, and Aeneas `3a8586fa` generated 25 local transparent
+functions.
+
+The generated `FunsExternal_Template.lean` required these four external
+declarations:
+
+- `alloc::string::String` equality;
+- `alloc::string::String` ordering;
+- `alloc::string::String` cloning; and
+- `alloc::vec::Vec::dedup`.
+
+The first pilot used the public re-export path
+`proofbound_runtime_core::normalize_authority`. Charon returned success with an
+empty translation inventory. Using the defining path produced the non-empty
+closure. Proofbound's required translated-closure inventory can reject that
+empty result, so the empty match is not itself a Proofbound defect.
+
+The exact translator identities are recorded in
+`proofbound/toolchains/translation.lock`. The disposable generated files are
+not committed and are not evidence for `PBR-AUTH-001`.
+
+## Ownership test
+
+String comparison, cloning, and vector deduplication are not agent, Linux, or
+Runtime policy. Any Rust project that uses Charon and Aeneas can need these
+semantics. The bridge implementations should remain outside Proofbound core,
+but Proofbound can define how a reusable integration identifies, versions,
+audits, and binds them.
+
+## Assurance risk
+
+A project can fill the generated template with unproved axioms and then present
+the downstream refinement theorem as if it covered those operations. A copied
+bridge can also drift from the exact Charon, Aeneas, Aeneas Lean library, or
+Rust standard-library representation used by the translation.
+
+The risk is an understated premise inside a nominally refined linkage edge.
+The bridge must remain an explicit dependency with its axioms, version range,
+and representation conditions visible.
+
+## Proposed upstream behavior
+
+Provide an external, versioned Aeneas bridge pack and a Proofbound adoption
+template for common Rust standard-library operations. The integration should:
+
+- contain executable Lean definitions and theorems instead of project axioms;
+- state the exact Rust, Charon, Aeneas, Lean, and Aeneas library identities it
+  supports;
+- expose each operation as a separately inventoried bridge;
+- let a translation unit byte-pin the selected bridge files;
+- preserve any representation premise as a registered Proofbound premise; and
+- fail closed when a generated external declaration has no exact bridge.
+
+Proofbound core should continue to own only the generic registration,
+inventory, and receipt rules. The integration should own the Rust and Aeneas
+semantics.
+
+## Evidence meaning
+
+### Establishes
+
+- A selected generated external declaration has a reviewed implementation for
+  one exact supported translator and representation boundary.
+- The consuming translation used the exact registered bridge bytes.
+- The bridge theorem has the registered axiom and premise inventory.
+
+### Does not establish
+
+- The consuming project's refinement theorem.
+- Correctness of Charon, Aeneas, Lean, Rust, or the standard library.
+- Applicability to a different tool version or generated declaration shape.
+- Semantics for an operation not present in the bridge inventory.
+
+## Acceptance criteria
+
+1. A fixture that uses one supported operation translates, imports the selected
+   bridge, and passes the compiled Lean axiom audit without a project axiom.
+2. A missing bridge or unsupported translator identity fails before the
+   consuming refinement edge is admitted.
+3. A changed bridge byte, substituted operation identity, or omitted
+   representation premise causes producer and independent verifier rejection.
+4. The producer and independent verifier derive the same bridge identity,
+   operation inventory, and inherited premise set.
+5. Every foundational axiom, toolchain role, representation premise, and
+   supported-version bound remains visible in the compiled claim closure.
+
+## Compatibility and migration
+
+This proposal adds an optional external integration. Existing source-refinement
+units remain valid only under their existing bridge and premise identities.
+Adoption must not reinterpret an older receipt or silently replace a local
+bridge.
+
+## Local treatment
+
+`PBR-AUTH-001` remains Tier 2 and model-only. Runtime will either implement and
+audit local external bridges or refactor the selected Rust proof subject before
+it registers a source-refinement unit. The handwritten Lean model is not used
+as evidence about the shipping Rust function.
+
+## Upstream handoff
+
+- **Destination:** not upstreamed
+- **Issue:** none
+- **Specification or ADR:** none
+- **Commit or pull request:** none
+
+## Resolution
+
+Unresolved.
