@@ -55,5 +55,11 @@ jobs:
           cargo install --locked kani-verifier --version 0.67.0
           cargo kani setup
 
+      - name: Fetch locked project dependencies
+        run: just bootstrap
+
+      - name: Reject bootstrap lockfile drift
+        run: git diff --exit-code -- Cargo.lock lake-manifest.json
+
       - name: Run the Tier 2 repository gate on Linux
         run: just ci
