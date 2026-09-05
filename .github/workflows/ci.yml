@@ -41,14 +41,23 @@ jobs:
           cargo install --locked just --version 1.46.0
           cargo install --locked cargo-deny --version 0.20.2
 
-      - name: Install pinned Proofbound CLI
+      - name: Install pinned Proofbound Tier 2 tools
         run: >-
           cargo install
           --locked
           --git https://github.com/bordumb/proof-bound
           --rev 0a5c6b6dcf7e3b59cdf71ec5f8d50082c5f3a3e0
-          --bin proofbound
           proofbound-cli
+          proofbound-adapter-test
+          proofbound-adapter-kani
+          proofbound-adapter-lean
+
+      - name: Verify Proofbound Tier 2 executables
+        run: |
+          command -v proofbound
+          command -v proofbound-adapter-test
+          command -v proofbound-adapter-kani
+          command -v proofbound-adapter-lean
 
       - name: Install pinned Kani verifier
         run: |

@@ -206,6 +206,7 @@ and superseded items in the table.
 | --- | --- | --- | --- | --- | --- | --- |
 | [PBF-0001](pbf-0001-aeneas-standard-library-bridges.md) | Reusable Aeneas standard-library bridges | `plugin-boundary` | `near-term` | `proposed` | Milestone 1 | Not upstreamed |
 | [PBF-0002](pbf-0002-lean-theorem-identity-update.md) | Lean theorem identity update | `workflow` | `near-term` | `proposed` | Milestone 1 | Not upstreamed |
+| [PBF-0003](pbf-0003-missing-adapter-diagnostics.md) | Missing adapter diagnostics | `workflow` | `near-term` | `proposed` | Milestone 1 | Not upstreamed |
 
 ## Rules for agents
 
