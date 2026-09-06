@@ -2,17 +2,24 @@ schema = "proofbound-claim/1"
 id = "PBR-RECEIPT-004"
 title = "Incomplete executions are not reusable"
 statement = "Receipt eligibility is reusable only for a structurally valid, boundary-installed execution that exits with code zero and has complete output streams; every other represented state is non-reusable with all applicable typed reasons."
+public_language = "A kernel-checked theorem proves that the version 1 receipt model has exactly one reusable state and that every other represented state returns its complete nonempty canonical reason list. This theorem is model-only until source refinement and artifact binding are registered."
 subject = "rust:proofbound_runtime_core::derive_receipt_eligibility"
-profile = "bounded"
-tier = 1
+profile = "kernel"
+tier = 2
+primary_linkage = "model-only"
+formal_declaration = "ProofboundRuntime.Claims.Receipt.eligibility_is_exact"
+statement_encoding = "lean-expr-cbor/1"
+statement_sha256 = "sha256:5115b20f250c1a81bc32bcf5f6677ec3ae216a0b3316883b0173669f21c0fb46"
+foundational_axioms = ["propext"]
 evidence = [
   "example-test:receipt-eligibility-conformance",
   "example-test:receipt-eligibility-verifier-conformance",
   "bounded-check:receipt-eligibility-bounds",
+  "theorem:receipt-eligibility-theorem",
 ]
 assumptions = []
 open_obligations = [
-  "Register a Lean theorem, source refinement, and artifact linkage.",
+  "Register source refinement and artifact linkage.",
 ]
 out_of_scope = [
   "Semantic correctness of outputs produced by an otherwise reusable execution.",
@@ -24,9 +31,12 @@ source_roots = [
   "crates/proofbound-runtime-receipt-kani/src/lib.rs",
   "crates/proofbound-runtime-verify/src/derive.rs",
   "crates/proofbound-runtime-verify/tests/receipt_vectors.rs",
+  "formal/ProofboundRuntime/Claims/Receipt.lean",
+  "formal/ProofboundRuntime/Receipt.lean",
   "proofbound/evidence/receipt-eligibility-conformance.toml",
   "proofbound/evidence/receipt-eligibility-bounds.toml",
   "proofbound/evidence/receipt-eligibility-verifier-conformance.toml",
+  "proofbound/evidence/receipt-eligibility-theorem.toml",
   "proofbound/model-checks/receipt-eligibility.toml",
   "schemas/receipt-eligibility-vector-v1.schema.json",
   "tests/conformance/receipt/positive/eligibility-v1.json",
