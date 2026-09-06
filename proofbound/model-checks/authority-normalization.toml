@@ -23,6 +23,6 @@ cardinality = 16
 ordering_key = [0, 1, 2, 3]
 
 [resource_budget]
-time_seconds = 300
+time_seconds = 900
 disk_bytes = 2147483648
 memory_bytes = 8589934592
