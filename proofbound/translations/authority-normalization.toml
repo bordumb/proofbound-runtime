@@ -11,13 +11,13 @@ warning_inventory = []
 
 [[template_axioms]]
 file = "formal/generated/ProofboundRuntimeCore/FunsExternal_Template.lean"
-count = 3
+count = 1
 compiled = false
 
 [[external_bridges]]
 file = "formal/bridges/ProofboundRuntimeCore/FunsExternal.lean"
 module = "ProofboundRuntimeCore.FunsExternal"
-reviewed_sha256 = "sha256:46e9fde7b03d19f2391b2b857f7292479495959b5a13bba163f649a559015c8f"
+reviewed_sha256 = "sha256:2b7f9b8fed58ccbee8dc7d9ad36ab597b9be95394e72ee10b12be45a029a3c0c"
 
 [[invocations]]
 id = "authority-normalization"
@@ -31,19 +31,7 @@ include = []
 
 [[invocations.translated_closure]]
 kind = "function"
-rust_name = "proofbound_runtime_core::authority::bytes_come_before"
-
-[[invocations.translated_closure]]
-kind = "function"
-rust_name = "proofbound_runtime_core::authority::bytes_same"
-
-[[invocations.translated_closure]]
-kind = "function"
 rust_name = "proofbound_runtime_core::authority::file_access_rank"
-
-[[invocations.translated_closure]]
-kind = "function"
-rust_name = "proofbound_runtime_core::authority::fits_translation_string_carrier"
 
 [[invocations.translated_closure]]
 kind = "function"
@@ -63,7 +51,11 @@ rust_name = "proofbound_runtime_core::authority::{proofbound_runtime_core::autho
 
 [[invocations.translated_closure]]
 kind = "function"
-rust_name = "proofbound_runtime_core::authority::{proofbound_runtime_core::authority::AuthorityPlan}::validate_translation_carrier"
+rust_name = "proofbound_runtime_core::authority::{proofbound_runtime_core::authority::AuthorityText}::comes_before"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::authority::{proofbound_runtime_core::authority::AuthorityText}::same_value"
 
 [[invocations.translated_closure]]
 kind = "function"
@@ -120,6 +112,10 @@ rust_name = "proofbound_runtime_core::authority::AuthorityPath"
 [[invocations.translated_closure]]
 kind = "type"
 rust_name = "proofbound_runtime_core::authority::AuthorityPlan"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::AuthorityText"
 
 [[invocations.translated_closure]]
 kind = "type"
