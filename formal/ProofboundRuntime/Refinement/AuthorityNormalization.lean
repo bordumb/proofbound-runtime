@@ -1,10 +1,10 @@
-import Proofbound.Attribute
 import ProofboundRuntime.Refinement.Authority
 
 open Aeneas Aeneas.Std Result ControlFlow Error
 
-namespace ProofboundRuntime.Refinement.Authority
+namespace ProofboundRuntime.Refinement.AuthorityNormalization
 
+open ProofboundRuntime.Refinement.Authority
 open proofbound_runtime_core
 
 def EnvironmentSame
@@ -896,7 +896,6 @@ def AuthorityStringsBounded (plan : authority.AuthorityPlan) : Prop :=
   PathStringsBounded plan.paths.val ∧
     EnvironmentStringsBounded plan.environment.val
 
-@[proofbound_claim "PBR-AUTH-001"]
 theorem normalize_authority_refines
     (plan : authority.AuthorityPlan)
     (hBounded : AuthorityStringsBounded plan) :
@@ -924,4 +923,4 @@ theorem normalize_authority_refines
   · exact hEnvironmentNodup
   exact hEnvironmentSubset
 
-end ProofboundRuntime.Refinement.Authority
+end ProofboundRuntime.Refinement.AuthorityNormalization

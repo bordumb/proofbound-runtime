@@ -7,10 +7,10 @@ subject = "rust:proofbound_runtime_core::normalize_authority"
 profile = "kernel-with-assumptions"
 tier = 3
 primary_linkage = "refined"
-formal_declaration = "ProofboundRuntime.Refinement.Authority.normalize_authority_refines"
+formal_declaration = "ProofboundRuntime.Refinement.AuthorityNormalizationClaim.normalize_authority_refines"
 statement_encoding = "lean-expr-cbor/1"
-statement_sha256 = "sha256:640cbfbce1da910d98d4762488ac31600c9d2264af0ff7f9eec0a3505458b73f"
-foundational_axioms = ["propext"]
+statement_sha256 = "sha256:d1e05a84850d4ae352f3b38a3ff13d1a5d134eb9dc5113b6703ad5e7d8830867"
+foundational_axioms = ["Classical.choice", "Quot.sound", "propext"]
 evidence = [
   "example-test:authority-conformance",
   "bounded-check:authority-normalization-bounds",
@@ -31,6 +31,7 @@ source_roots = [
   "crates/proofbound-runtime-core/src/normalize.rs",
   "formal/ProofboundRuntime/Refinement/Authority.lean",
   "formal/ProofboundRuntime/Refinement/AuthorityNormalization.lean",
+  "formal/ProofboundRuntime/Refinement/AuthorityNormalizationClaim.lean",
   "formal/bridges/ProofboundRuntimeCore/FunsExternal.lean",
   "formal/generated/ProofboundRuntimeCore/",
   "assumptions/PBR-STRING-REP-004.toml",
@@ -42,3 +43,9 @@ source_roots = [
   "proofbound/model-checks/authority-normalization.toml",
   "tests/conformance/",
 ]
+
+[bounded_domain]
+id = "authority-two-path-two-environment-catalog"
+description = "All two-slot path and environment plans over two typed entries per slot; 2^4 finite plans, including duplicate and reversed path cases."
+cardinality = 16
+ordering_key = [0, 1, 2, 3]

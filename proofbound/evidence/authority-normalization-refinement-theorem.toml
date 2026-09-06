@@ -5,14 +5,15 @@ kind = "theorem"
 claims = ["PBR-AUTH-001"]
 tier = 3
 evaluation_mode = "kernel"
-theorem = "ProofboundRuntime.Refinement.Authority.normalize_authority_refines"
+theorem = "ProofboundRuntime.Refinement.AuthorityNormalizationClaim.normalize_authority_refines"
 premises = ["PBR-STRING-REP-004"]
 expected_inventory = [
-  "ProofboundRuntime.Refinement.Authority.normalize_authority_refines",
+  "ProofboundRuntime.Refinement.AuthorityNormalizationClaim.normalize_authority_refines",
 ]
 inputs = [
   "formal/ProofboundRuntime/Refinement/Authority.lean",
   "formal/ProofboundRuntime/Refinement/AuthorityNormalization.lean",
+  "formal/ProofboundRuntime/Refinement/AuthorityNormalizationClaim.lean",
   "formal/bridges/ProofboundRuntimeCore/FunsExternal.lean",
   "formal/generated/ProofboundRuntimeCore/Funs.lean",
   "formal/generated/ProofboundRuntimeCore/Types.lean",
@@ -25,10 +26,10 @@ environment_allowlist = ["LEAN_PATH", "PATH"]
 [operation]
 type = "lean-audit"
 targets = [
-  "ProofboundRuntime.Refinement.Authority.normalize_authority_refines",
+  "ProofboundRuntime.Refinement.AuthorityNormalizationClaim.normalize_authority_refines",
 ]
 paths = [
-  "formal/ProofboundRuntime/Refinement/AuthorityNormalization.lean",
+  "formal/ProofboundRuntime/Refinement/AuthorityNormalizationClaim.lean",
 ]
 
 [resource_budget]

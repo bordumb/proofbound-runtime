@@ -4,7 +4,7 @@ adapter = "charon-aeneas"
 kind = "source-refinement"
 claims = ["PBR-AUTH-001"]
 tier = 3
-refinement_theorem = "ProofboundRuntime.Refinement.Authority.normalize_authority_refines"
+refinement_theorem = "ProofboundRuntime.Refinement.AuthorityNormalizationClaim.normalize_authority_refines"
 premises = ["PBR-STRING-REP-004"]
 assumptions = []
 inputs = [
@@ -13,6 +13,7 @@ inputs = [
   "crates/proofbound-runtime-core/src/normalize.rs",
   "formal/ProofboundRuntime/Refinement/Authority.lean",
   "formal/ProofboundRuntime/Refinement/AuthorityNormalization.lean",
+  "formal/ProofboundRuntime/Refinement/AuthorityNormalizationClaim.lean",
   "formal/bridges/ProofboundRuntimeCore/FunsExternal.lean",
   "formal/generated/ProofboundRuntimeCore/Funs.lean",
   "formal/generated/ProofboundRuntimeCore/FunsExternal_Template.lean",
