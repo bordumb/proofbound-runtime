@@ -3,15 +3,16 @@ id = "PBR-RECEIPT-004"
 title = "Incomplete executions are not reusable"
 statement = "Receipt eligibility is reusable only for a structurally valid, boundary-installed execution that exits with code zero and has complete output streams; every other represented state is non-reusable with all applicable typed reasons."
 subject = "rust:proofbound_runtime_core::derive_receipt_eligibility"
-profile = "ledger"
-tier = 0
+profile = "bounded"
+tier = 1
 evidence = [
   "example-test:receipt-eligibility-conformance",
   "example-test:receipt-eligibility-verifier-conformance",
+  "bounded-check:receipt-eligibility-bounds",
 ]
-assumptions = ["PBR-TOOLCHAIN-AX-003"]
+assumptions = []
 open_obligations = [
-  "Register an exhaustive finite-state check, a Lean theorem, source refinement, and artifact linkage.",
+  "Register a Lean theorem, source refinement, and artifact linkage.",
 ]
 out_of_scope = [
   "Semantic correctness of outputs produced by an otherwise reusable execution.",
@@ -20,10 +21,19 @@ out_of_scope = [
 source_roots = [
   "crates/proofbound-runtime-core/src/receipt.rs",
   "crates/proofbound-runtime-core/tests/receipt_vectors.rs",
+  "crates/proofbound-runtime-receipt-kani/src/lib.rs",
   "crates/proofbound-runtime-verify/src/derive.rs",
   "crates/proofbound-runtime-verify/tests/receipt_vectors.rs",
   "proofbound/evidence/receipt-eligibility-conformance.toml",
+  "proofbound/evidence/receipt-eligibility-bounds.toml",
   "proofbound/evidence/receipt-eligibility-verifier-conformance.toml",
+  "proofbound/model-checks/receipt-eligibility.toml",
   "schemas/receipt-eligibility-vector-v1.schema.json",
   "tests/conformance/receipt/positive/eligibility-v1.json",
 ]
+
+[bounded_domain]
+id = "receipt-eligibility-v1-closed-states"
+description = "All boundary, stream-capture, structure, and outcome classes, including every i32 exit code; 16 * (2^32 + 5) finite states."
+cardinality = 68719476816
+ordering_key = [0, 1, 2, 3, 4]

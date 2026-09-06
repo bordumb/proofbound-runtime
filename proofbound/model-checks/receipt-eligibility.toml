@@ -1,0 +1,25 @@
+schema = "proofbound-model-check-unit/1"
+id = "receipt-eligibility-bounds"
+adapter = "kani"
+package = "proofbound-runtime-receipt-kani"
+harnesses = [
+  "receipt_eligibility_is_exact_for_bounded_state_model",
+]
+claims = ["PBR-RECEIPT-004"]
+solver = "cadical"
+unwind = 12
+assumptions = [
+  "Signal identity does not affect version 1 eligibility, so the signaled outcome uses one nonzero representative.",
+  "The model covers all 2^32 signed exit-code bit patterns and every other closed version 1 outcome class.",
+]
+
+[domain]
+id = "receipt-eligibility-v1-closed-states"
+description = "All boundary, stream-capture, structure, and outcome classes, including every i32 exit code; 16 * (2^32 + 5) finite states."
+cardinality = 68719476816
+ordering_key = [0, 1, 2, 3, 4]
+
+[resource_budget]
+time_seconds = 900
+disk_bytes = 2147483648
+memory_bytes = 8589934592

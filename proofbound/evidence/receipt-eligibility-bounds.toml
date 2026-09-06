@@ -1,0 +1,35 @@
+schema = "proofbound-evidence-unit/1"
+id = "receipt-eligibility-bounds"
+adapter = "kani"
+kind = "bounded-check"
+claims = ["PBR-RECEIPT-004"]
+tier = 1
+expected_inventory = [
+  "receipt_eligibility_is_exact_for_bounded_state_model",
+]
+inputs = [
+  "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-receipt-kani/Cargo.toml",
+  "crates/proofbound-runtime-receipt-kani/src/lib.rs",
+  "proofbound/model-checks/receipt-eligibility.toml",
+]
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "kani"
+package = "proofbound-runtime-receipt-kani"
+manifest = "proofbound/model-checks/receipt-eligibility.toml"
+targets = [
+  "receipt_eligibility_is_exact_for_bounded_state_model",
+]
+
+[bounded_domain]
+id = "receipt-eligibility-v1-closed-states"
+description = "All boundary, stream-capture, structure, and outcome classes, including every i32 exit code; 16 * (2^32 + 5) finite states."
+cardinality = 68719476816
+ordering_key = [0, 1, 2, 3, 4]
+
+[resource_budget]
+time_seconds = 900
+disk_bytes = 2147483648
+memory_bytes = 8589934592

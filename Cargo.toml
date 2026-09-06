@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
   "crates/proofbound-runtime-core",
+  "crates/proofbound-runtime-receipt-kani",
   "crates/proofbound-runtime-verify",
 ]
 

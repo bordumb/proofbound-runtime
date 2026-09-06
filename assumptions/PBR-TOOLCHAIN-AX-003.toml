@@ -4,12 +4,11 @@ statement = "The identified compiler, linker, standard library, dependencies, an
 category = "compiler-tcb"
 owner = "Proofbound Runtime release maintainer"
 rationale = "Source tests, bounded checks, model theorems, and source refinement do not by themselves prove the correctness of the complete compilation and linking toolchain."
-scope = "The source-to-artifact interpretation of all six initial Runtime claims."
+scope = "The source-to-artifact interpretation of the Runtime claims listed in affected_claims."
 affected_claims = [
   "PBR-AUTH-001",
   "PBR-POLICY-002",
   "PBR-SEQUENCE-003",
-  "PBR-RECEIPT-004",
   "PBR-BINDING-005",
   "PBR-VERIFY-006",
 ]

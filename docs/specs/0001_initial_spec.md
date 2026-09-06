@@ -500,6 +500,7 @@ between crates.
 | `crates/proofbound-runtime-core/src/outcome.rs` | Closed execution and failure outcomes. |
 | `crates/proofbound-runtime-core/src/receipt.rs` | Receipt-domain construction and eligibility derivation. |
 | `crates/proofbound-runtime-core/src/error.rs` | Typed core errors and stable machine codes. |
+| `crates/proofbound-runtime-receipt-kani/` | Verification-only crate with the exact receipt-state Kani harness inventory. |
 | `crates/proofbound-runtime-linux/Cargo.toml` | Manifest for Linux-specific policy compilation and execution. |
 | `crates/proofbound-runtime-linux/src/lib.rs` | Linux component API. No CLI behavior belongs here. |
 | `crates/proofbound-runtime-linux/src/probe.rs` | Landlock, seccomp, cgroup, architecture, and kernel capability probes. |
