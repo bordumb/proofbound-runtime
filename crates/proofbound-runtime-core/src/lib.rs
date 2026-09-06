@@ -4,9 +4,14 @@
 
 mod authority;
 mod normalize;
+mod receipt;
 
 pub use authority::{
     AuthorityError, AuthorityPath, AuthorityPlan, EnvironmentName, FileAccess, NetworkMode,
     OutputByteLimit, PathAuthority, PathRole, ProcessLimit, ResourceLimits, WallTimeLimit,
 };
 pub use normalize::{NormalizedAuthority, normalize_authority};
+pub use receipt::{
+    BoundaryInstallation, ExecutionOutcome, NonReusableReason, NonReusableReasons,
+    ReceiptEligibility, ReceiptFacts, ReceiptStructure, StreamCapture, derive_receipt_eligibility,
+};
