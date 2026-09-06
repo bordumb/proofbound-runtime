@@ -10,7 +10,15 @@ translation_units = ["proofbound/translations/*.toml"]
 [source]
 semantic = [
   "crates/**",
-  "formal/**",
+  "formal/*.lean",
+  "formal/ProofboundRuntime/**",
+  "formal/bridges/**",
+  "formal/generated/**",
+  "formal/vendor/aeneas/*.lean",
+  "formal/vendor/aeneas/*.json",
+  "formal/vendor/aeneas/*.md",
+  "formal/vendor/aeneas/Aeneas/**",
+  "formal/vendor/aeneas/AeneasMeta/**",
   "schemas/**",
   "claims/**",
   "assumptions/**",
