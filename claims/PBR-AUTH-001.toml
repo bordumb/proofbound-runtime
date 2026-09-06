@@ -2,14 +2,14 @@ schema = "proofbound-claim/1"
 id = "PBR-AUTH-001"
 title = "Authority normalization does not amplify authority"
 statement = "For every valid authority plan, normalization returns a duplicate-free plan and every returned authority entry was present in the input plan."
-public_language = "A kernel-checked theorem directly over the deterministic Aeneas translation proves that authority normalization removes duplicate entries, never adds an entry, and preserves resource limits and network mode exactly. The source-refinement edge retains its explicit UTF-8 carrier premise."
+public_language = "A kernel-checked theorem directly over the deterministic Aeneas translation proves that authority normalization removes duplicate entries, never adds an entry, and preserves resource limits and network mode exactly. A separate kernel-checked theorem discharges the translated byte-carrier premise for every registered input."
 subject = "rust:proofbound_runtime_core::normalize_authority"
 profile = "kernel-with-assumptions"
 tier = 3
 primary_linkage = "refined"
 formal_declaration = "ProofboundRuntime.Refinement.AuthorityNormalizationClaim.normalize_authority_refines"
 statement_encoding = "lean-expr-cbor/1"
-statement_sha256 = "sha256:d1e05a84850d4ae352f3b38a3ff13d1a5d134eb9dc5113b6703ad5e7d8830867"
+statement_sha256 = "sha256:5f6b14cbe8d5d0b88cf4d79dbbf305b0607e78c4ecff059daac87ef9d292f818"
 foundational_axioms = ["Classical.choice", "Quot.sound", "propext"]
 evidence = [
   "example-test:authority-conformance",
@@ -31,6 +31,7 @@ source_roots = [
   "crates/proofbound-runtime-core/src/normalize.rs",
   "formal/ProofboundRuntime/Refinement/Authority.lean",
   "formal/ProofboundRuntime/Refinement/AuthorityNormalization.lean",
+  "formal/ProofboundRuntime/Refinement/AuthorityCarrierClaim.lean",
   "formal/ProofboundRuntime/Refinement/AuthorityNormalizationClaim.lean",
   "formal/bridges/ProofboundRuntimeCore/FunsExternal.lean",
   "formal/generated/ProofboundRuntimeCore/",

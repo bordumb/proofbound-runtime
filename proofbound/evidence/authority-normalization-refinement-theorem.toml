@@ -6,7 +6,7 @@ claims = ["PBR-AUTH-001"]
 tier = 3
 evaluation_mode = "kernel"
 theorem = "ProofboundRuntime.Refinement.AuthorityNormalizationClaim.normalize_authority_refines"
-premises = ["PBR-STRING-REP-004"]
+premises = []
 expected_inventory = [
   "ProofboundRuntime.Refinement.AuthorityNormalizationClaim.normalize_authority_refines",
 ]
