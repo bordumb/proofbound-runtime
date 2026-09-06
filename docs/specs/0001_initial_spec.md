@@ -245,6 +245,43 @@ trusted decision core.
 | `ReceiptEligibility` | A derived result: reusable or non-reusable with typed reasons. |
 | `ExecutionReceipt` | The complete canonical account of one attempt. |
 
+### 5.1.1 Receipt eligibility state model
+
+Receipt eligibility is a total derivation over these closed input states:
+
+| Input | Closed states |
+| --- | --- |
+| Boundary installation | `installed`, `incomplete` |
+| Execution outcome | `exited(code)`, `signaled(signal)`, `timed-out`, `denied`, `launcher-failed`, `incomplete` |
+| Standard-output capture | `complete`, `truncated` |
+| Standard-error capture | `complete`, `truncated` |
+| Receipt structure | `valid`, `malformed` |
+
+A receipt is reusable if and only if all of these conditions hold:
+
+1. boundary installation is `installed`;
+2. the execution outcome is `exited(0)`;
+3. both stream captures are `complete`; and
+4. the receipt structure is `valid`.
+
+Every other represented state is non-reusable. Derivation MUST retain every
+applicable reason. It MUST order reasons as follows:
+
+1. `boundary-incomplete`;
+2. `exit-code-nonzero`;
+3. `process-signaled`;
+4. `timed-out`;
+5. `denied`;
+6. `launcher-failed`;
+7. `execution-incomplete`;
+8. `stdout-truncated`;
+9. `stderr-truncated`; and
+10. `receipt-malformed`.
+
+The reusable state contains no non-reuse reasons. The non-reusable state
+contains at least one reason. Unknown wire values do not enter this state
+model. A decoder rejects them before derivation.
+
 ### 5.2 Authority model
 
 Version 1 contains these authority classes:
