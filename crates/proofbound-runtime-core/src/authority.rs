@@ -1,5 +1,11 @@
 use core::fmt;
 
+const TRANSLATION_STRING_MAX_BYTES: usize = u32::MAX as usize;
+
+fn fits_translation_string_carrier(length: usize) -> bool {
+    length <= TRANSLATION_STRING_MAX_BYTES
+}
+
 /// Identifies one file operation that the child can perform.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub enum FileAccess {
@@ -33,7 +39,8 @@ pub struct AuthorityPath(String);
 impl AuthorityPath {
     /// Validates one path.
     ///
-    /// This function rejects an empty path and a path that contains a null byte.
+    /// This function rejects an empty path, a path that contains a null byte,
+    /// and a path that exceeds the registered translation carrier.
     pub fn new(value: impl Into<String>) -> Result<Self, AuthorityError> {
         let value = value.into();
         if value.is_empty() {
@@ -41,6 +48,9 @@ impl AuthorityPath {
         }
         if value.as_bytes().contains(&0) {
             return Err(AuthorityError::PathContainsNull);
+        }
+        if !fits_translation_string_carrier(value.len()) {
+            return Err(AuthorityError::PathExceedsTranslationCarrier);
         }
         Ok(Self(value))
     }
@@ -69,7 +79,8 @@ pub struct EnvironmentName(String);
 impl EnvironmentName {
     /// Validates one environment variable name.
     ///
-    /// This function rejects an empty name, a null byte, and an equals sign.
+    /// This function rejects an empty name, a null byte, an equals sign, and a
+    /// name that exceeds the registered translation carrier.
     pub fn new(value: impl Into<String>) -> Result<Self, AuthorityError> {
         let value = value.into();
         if value.is_empty() {
@@ -80,6 +91,9 @@ impl EnvironmentName {
         }
         if value.as_bytes().contains(&b'=') {
             return Err(AuthorityError::EnvironmentNameContainsEquals);
+        }
+        if !fits_translation_string_carrier(value.len()) {
+            return Err(AuthorityError::EnvironmentNameExceedsTranslationCarrier);
         }
         Ok(Self(value))
     }
@@ -399,12 +413,17 @@ pub enum AuthorityError {
     EmptyPath,
     /// The path contains a null byte.
     PathContainsNull,
+    /// The path does not fit the registered translation string carrier.
+    PathExceedsTranslationCarrier,
     /// The environment variable name is empty.
     EmptyEnvironmentName,
     /// The environment variable name contains a null byte.
     EnvironmentNameContainsNull,
     /// The environment variable name contains an equals sign.
     EnvironmentNameContainsEquals,
+    /// The environment variable name does not fit the registered translation
+    /// string carrier.
+    EnvironmentNameExceedsTranslationCarrier,
     /// The process limit is zero.
     ZeroProcessLimit,
     /// The wall-time limit is zero.
@@ -418,9 +437,13 @@ impl AuthorityError {
         match self {
             Self::EmptyPath => "authority.path.empty",
             Self::PathContainsNull => "authority.path.null",
+            Self::PathExceedsTranslationCarrier => "authority.path.translation_carrier",
             Self::EmptyEnvironmentName => "authority.environment.empty",
             Self::EnvironmentNameContainsNull => "authority.environment.null",
             Self::EnvironmentNameContainsEquals => "authority.environment.equals",
+            Self::EnvironmentNameExceedsTranslationCarrier => {
+                "authority.environment.translation_carrier"
+            }
             Self::ZeroProcessLimit => "authority.limit.processes.zero",
             Self::ZeroWallTimeLimit => "authority.limit.wall_time.zero",
         }
@@ -450,6 +473,14 @@ mod tests {
             EnvironmentName::new("A=B"),
             Err(AuthorityError::EnvironmentNameContainsEquals)
         );
+    }
+
+    #[test]
+    fn checks_translation_carrier_boundaries() {
+        assert!(fits_translation_string_carrier(u32::MAX as usize));
+        if usize::BITS > u32::BITS {
+            assert!(!fits_translation_string_carrier(u32::MAX as usize + 1));
+        }
     }
 
     #[test]
