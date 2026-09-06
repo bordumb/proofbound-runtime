@@ -1,0 +1,141 @@
+{
+  "schema": "proofbound-runtime-receipt-eligibility-vectors/1",
+  "cases": [
+    {
+      "id": "complete-zero-exit-is-reusable",
+      "input": {
+        "boundary": "installed",
+        "outcome": { "kind": "exited", "code": 0 },
+        "stdout": "complete",
+        "stderr": "complete",
+        "structure": "valid"
+      },
+      "expected": { "status": "reusable", "reasons": [] }
+    },
+    {
+      "id": "incomplete-boundary-is-not-reusable",
+      "input": {
+        "boundary": "incomplete",
+        "outcome": { "kind": "exited", "code": 0 },
+        "stdout": "complete",
+        "stderr": "complete",
+        "structure": "valid"
+      },
+      "expected": { "status": "non-reusable", "reasons": ["boundary-incomplete"] }
+    },
+    {
+      "id": "nonzero-exit-is-not-reusable",
+      "input": {
+        "boundary": "installed",
+        "outcome": { "kind": "exited", "code": 17 },
+        "stdout": "complete",
+        "stderr": "complete",
+        "structure": "valid"
+      },
+      "expected": { "status": "non-reusable", "reasons": ["exit-code-nonzero"] }
+    },
+    {
+      "id": "signal-is-not-reusable",
+      "input": {
+        "boundary": "installed",
+        "outcome": { "kind": "signaled", "signal": 9 },
+        "stdout": "complete",
+        "stderr": "complete",
+        "structure": "valid"
+      },
+      "expected": { "status": "non-reusable", "reasons": ["process-signaled"] }
+    },
+    {
+      "id": "timeout-is-not-reusable",
+      "input": {
+        "boundary": "installed",
+        "outcome": { "kind": "timed-out" },
+        "stdout": "complete",
+        "stderr": "complete",
+        "structure": "valid"
+      },
+      "expected": { "status": "non-reusable", "reasons": ["timed-out"] }
+    },
+    {
+      "id": "denial-is-not-reusable",
+      "input": {
+        "boundary": "installed",
+        "outcome": { "kind": "denied" },
+        "stdout": "complete",
+        "stderr": "complete",
+        "structure": "valid"
+      },
+      "expected": { "status": "non-reusable", "reasons": ["denied"] }
+    },
+    {
+      "id": "launcher-failure-is-not-reusable",
+      "input": {
+        "boundary": "incomplete",
+        "outcome": { "kind": "launcher-failed" },
+        "stdout": "complete",
+        "stderr": "complete",
+        "structure": "valid"
+      },
+      "expected": {
+        "status": "non-reusable",
+        "reasons": ["boundary-incomplete", "launcher-failed"]
+      }
+    },
+    {
+      "id": "incomplete-execution-is-not-reusable",
+      "input": {
+        "boundary": "installed",
+        "outcome": { "kind": "incomplete" },
+        "stdout": "complete",
+        "stderr": "complete",
+        "structure": "valid"
+      },
+      "expected": { "status": "non-reusable", "reasons": ["execution-incomplete"] }
+    },
+    {
+      "id": "truncated-streams-are-not-reusable",
+      "input": {
+        "boundary": "installed",
+        "outcome": { "kind": "exited", "code": 0 },
+        "stdout": "truncated",
+        "stderr": "truncated",
+        "structure": "valid"
+      },
+      "expected": {
+        "status": "non-reusable",
+        "reasons": ["stdout-truncated", "stderr-truncated"]
+      }
+    },
+    {
+      "id": "malformed-receipt-is-not-reusable",
+      "input": {
+        "boundary": "installed",
+        "outcome": { "kind": "exited", "code": 0 },
+        "stdout": "complete",
+        "stderr": "complete",
+        "structure": "malformed"
+      },
+      "expected": { "status": "non-reusable", "reasons": ["receipt-malformed"] }
+    },
+    {
+      "id": "all-applicable-reasons-use-canonical-order",
+      "input": {
+        "boundary": "incomplete",
+        "outcome": { "kind": "launcher-failed" },
+        "stdout": "truncated",
+        "stderr": "truncated",
+        "structure": "malformed"
+      },
+      "expected": {
+        "status": "non-reusable",
+        "reasons": [
+          "boundary-incomplete",
+          "launcher-failed",
+          "stdout-truncated",
+          "stderr-truncated",
+          "receipt-malformed"
+        ]
+      }
+    }
+  ]
+}

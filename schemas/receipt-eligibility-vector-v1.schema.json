@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bordumb/proofbound-runtime/schemas/receipt-eligibility-vector-v1.schema.json",
+  "title": "Proofbound Runtime receipt eligibility conformance catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "cases"],
+  "properties": {
+    "schema": { "const": "proofbound-runtime-receipt-eligibility-vectors/1" },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/case" }
+    }
+  },
+  "$defs": {
+    "outcome": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "code"],
+          "properties": {
+            "kind": { "const": "exited" },
+            "code": { "type": "integer", "minimum": -2147483648, "maximum": 2147483647 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "signal"],
+          "properties": {
+            "kind": { "const": "signaled" },
+            "signal": { "type": "integer", "minimum": 1, "maximum": 4294967295 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": {
+              "enum": ["timed-out", "denied", "launcher-failed", "incomplete"]
+            }
+          }
+        }
+      ]
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["boundary", "outcome", "stdout", "stderr", "structure"],
+      "properties": {
+        "boundary": { "enum": ["installed", "incomplete"] },
+        "outcome": { "$ref": "#/$defs/outcome" },
+        "stdout": { "enum": ["complete", "truncated"] },
+        "stderr": { "enum": ["complete", "truncated"] },
+        "structure": { "enum": ["valid", "malformed"] }
+      }
+    },
+    "reason": {
+      "enum": [
+        "boundary-incomplete",
+        "exit-code-nonzero",
+        "process-signaled",
+        "timed-out",
+        "denied",
+        "launcher-failed",
+        "execution-incomplete",
+        "stdout-truncated",
+        "stderr-truncated",
+        "receipt-malformed"
+      ]
+    },
+    "expected": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "reasons"],
+          "properties": {
+            "status": { "const": "reusable" },
+            "reasons": { "type": "array", "maxItems": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "reasons"],
+          "properties": {
+            "status": { "const": "non-reusable" },
+            "reasons": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/reason" }
+            }
+          }
+        }
+      ]
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "input", "expected"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "input": { "$ref": "#/$defs/input" },
+        "expected": { "$ref": "#/$defs/expected" }
+      }
+    }
+  }
+}
