@@ -14,6 +14,7 @@ rust:
 
 formal:
     lake build
+    bash tools/ci/authority-refinement.sh
 
 bounded:
     cargo kani -q -p proofbound-runtime-core --harness normalization_does_not_amplify_bounded_catalog

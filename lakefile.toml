@@ -7,9 +7,23 @@ name = "proofbound"
 git = "https://github.com/bordumb/proof-bound"
 rev = "0a5c6b6dcf7e3b59cdf71ec5f8d50082c5f3a3e0"
 
+[[require]]
+name = "aeneas"
+path = "formal/vendor/aeneas"
+
 [[lean_lib]]
 name = "ProofboundRuntime"
 srcDir = "formal"
+
+[[lean_lib]]
+name = "ProofboundRuntimeGenerated"
+srcDir = "formal/generated"
+roots = ["ProofboundRuntimeCore.Types", "ProofboundRuntimeCore.Funs"]
+
+[[lean_lib]]
+name = "ProofboundRuntimeBridges"
+srcDir = "formal/bridges"
+roots = ["ProofboundRuntimeCore.FunsExternal"]
 
 [[lean_exe]]
 name = "proofbound_lean_audit"

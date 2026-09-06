@@ -4,7 +4,7 @@
 - **Priority:** `near-term`
 - **Kind:** `plugin-boundary`
 - **Created:** 2026-09-04
-- **Last updated:** 2026-09-04
+- **Last updated:** 2026-09-05
 - **Runtime claim:** `PBR-AUTH-001`
 - **Runtime milestone:** Milestone 1
 - **Proofbound target:** external integration or template
@@ -28,7 +28,7 @@ the defining symbol, and Aeneas `3a8586fa` generated 25 local transparent
 functions.
 
 The generated `FunsExternal_Template.lean` required these four external
-declarations:
+declarations before Runtime refactored the production proof subject:
 
 - `alloc::string::String` equality;
 - `alloc::string::String` ordering;
@@ -45,13 +45,23 @@ The exact translator identities are recorded in
 `proofbound/toolchains/translation.lock`. The disposable generated files are
 not committed and are not evidence for `PBR-AUTH-001`.
 
+On 2026-09-05, Runtime replaced generic comparison, cloning, and vector
+deduplication in the proof subject with concrete, ownership-preserving
+operations. The defining symbol now translates to 16 local functions and 12
+local types. The translation inventory has no globals, trait declarations, or
+trait implementations. Its remaining external template declarations are
+`alloc::string::String::as_bytes` and `alloc::vec::Vec::truncate`. Executable
+local Lean definitions for both declarations are committed under
+`formal/bridges/` and compile with the documented Lean 4.33 Aeneas support
+profile. They are not yet registered source-refinement evidence.
+
 ## Ownership test
 
-String comparison, cloning, and vector deduplication are not agent, Linux, or
-Runtime policy. Any Rust project that uses Charon and Aeneas can need these
-semantics. The bridge implementations should remain outside Proofbound core,
-but Proofbound can define how a reusable integration identifies, versions,
-audits, and binds them.
+String access and vector truncation are not agent, Linux, or Runtime policy.
+Any Rust project that uses Charon and Aeneas can need these semantics. The
+bridge implementations should remain outside Proofbound core, but Proofbound
+can define how a reusable integration identifies, versions, audits, and binds
+them.
 
 ## Assurance risk
 
@@ -119,10 +129,12 @@ bridge.
 
 ## Local treatment
 
-`PBR-AUTH-001` remains Tier 2 and model-only. Runtime will either implement and
-audit local external bridges or refactor the selected Rust proof subject before
-it registers a source-refinement unit. The handwritten Lean model is not used
-as evidence about the shipping Rust function.
+`PBR-AUTH-001` remains Tier 2 and model-only. Runtime has reduced the local
+bridge surface to `String::as_bytes` and `Vec::truncate`, committed executable
+definitions for both, and made their compilation part of the repository's
+formal check. It will not register a source-refinement unit until the bridge
+and refinement theorem pass the pinned audit. The handwritten Lean model is
+not used as evidence about the shipping Rust function.
 
 ## Upstream handoff
 

@@ -2,7 +2,7 @@ schema = "proofbound-claim/1"
 id = "PBR-AUTH-001"
 title = "Authority normalization does not amplify authority"
 statement = "For every valid authority plan, normalization returns a duplicate-free plan and every returned authority entry was present in the input plan."
-public_language = "The formal model proves that normalization removes duplicate authority and does not add an authority entry. Registered Rust tests and a 16-case Kani domain check selected production behavior. The claim remains model-only until source refinement links the theorem to the Rust function."
+public_language = "The formal model proves that normalization removes duplicate authority and does not add an authority entry. Registered Rust tests and a 16-case Kani domain check selected production behavior. A direct theorem over the Aeneas translation now compiles, but Proofbound cannot register its required representation premise because of PBF-0005. The claim therefore remains model-only."
 subject = "rust:proofbound_runtime_core::normalize_authority"
 profile = "kernel-with-assumptions"
 tier = 2
@@ -18,7 +18,7 @@ evidence = [
 ]
 assumptions = ["PBR-TOOLCHAIN-AX-003"]
 open_obligations = [
-  "Register source refinement from the selected Rust normalization behavior to the Lean authority relation.",
+  "Register the compiled direct source-refinement theorem after Proofbound accepts a source-refinement representation-premise edge (PBF-0005).",
   "Bind the refined claim to release artifacts before making a shipping-binary claim.",
 ]
 out_of_scope = [

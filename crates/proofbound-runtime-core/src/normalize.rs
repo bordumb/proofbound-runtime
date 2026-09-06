@@ -65,12 +65,9 @@ impl NormalizedAuthority {
 /// paths or add platform closure entries.
 #[must_use]
 pub fn normalize_authority(plan: AuthorityPlan) -> NormalizedAuthority {
-    let limits = plan.limits();
-    let network = plan.network();
-    let mut paths = plan.paths().to_vec();
-    let mut environment = plan.environment().to_vec();
-    sort_and_deduplicate(&mut paths);
-    sort_and_deduplicate(&mut environment);
+    let (mut paths, mut environment, limits, network) = plan.into_parts();
+    sort_and_deduplicate_paths(&mut paths);
+    sort_and_deduplicate_environment(&mut environment);
     NormalizedAuthority {
         paths,
         environment,
@@ -79,15 +76,74 @@ pub fn normalize_authority(plan: AuthorityPlan) -> NormalizedAuthority {
     }
 }
 
-fn sort_and_deduplicate<T: Ord>(items: &mut Vec<T>) {
+fn sort_and_deduplicate_paths(items: &mut Vec<PathAuthority>) {
+    deduplicate_paths(items);
     for index in 1..items.len() {
         let mut cursor = index;
-        while cursor > 0 && items[cursor] < items[cursor - 1] {
+        while cursor > 0 && items[cursor].comes_before(&items[cursor - 1]) {
             items.swap(cursor, cursor - 1);
             cursor -= 1;
         }
     }
-    items.dedup();
+}
+
+fn deduplicate_paths(items: &mut Vec<PathAuthority>) {
+    let mut write = 0;
+    for read in 0..items.len() {
+        if !path_prefix_contains(items, write, read) {
+            if write != read {
+                items.swap(write, read);
+            }
+            write += 1;
+        }
+    }
+    items.truncate(write);
+}
+
+fn path_prefix_contains(items: &[PathAuthority], end: usize, candidate: usize) -> bool {
+    let mut index = 0;
+    while index < end {
+        if items[index].same_value(&items[candidate]) {
+            return true;
+        }
+        index += 1;
+    }
+    false
+}
+
+fn sort_and_deduplicate_environment(items: &mut Vec<EnvironmentName>) {
+    deduplicate_environment(items);
+    for index in 1..items.len() {
+        let mut cursor = index;
+        while cursor > 0 && items[cursor].comes_before(&items[cursor - 1]) {
+            items.swap(cursor, cursor - 1);
+            cursor -= 1;
+        }
+    }
+}
+
+fn deduplicate_environment(items: &mut Vec<EnvironmentName>) {
+    let mut write = 0;
+    for read in 0..items.len() {
+        if !environment_prefix_contains(items, write, read) {
+            if write != read {
+                items.swap(write, read);
+            }
+            write += 1;
+        }
+    }
+    items.truncate(write);
+}
+
+fn environment_prefix_contains(items: &[EnvironmentName], end: usize, candidate: usize) -> bool {
+    let mut index = 0;
+    while index < end {
+        if items[index].same_value(&items[candidate]) {
+            return true;
+        }
+        index += 1;
+    }
+    false
 }
 
 fn is_strictly_sorted<T: Ord>(items: &[T]) -> bool {

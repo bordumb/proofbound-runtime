@@ -1,10 +1,11 @@
 schema = "proofbound-project/1"
 project = "proofbound-runtime"
-tier = 2
+tier = 3
 claim_manifests = ["claims/*.toml"]
 assumption_manifests = ["assumptions/*.toml"]
 evidence_units = ["proofbound/evidence/*.toml"]
 model_check_units = ["proofbound/model-checks/*.toml"]
+translation_units = ["proofbound/translations/*.toml"]
 
 [source]
 semantic = [

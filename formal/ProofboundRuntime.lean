@@ -1,2 +1,3 @@
 import ProofboundRuntime.Authority
 import ProofboundRuntime.Claims.Authority
+import ProofboundRuntime.Refinement.AuthorityNormalization

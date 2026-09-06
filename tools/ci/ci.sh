@@ -23,8 +23,9 @@ cargo test --workspace --locked --offline
 printf '%s\n' '[5/8] independent authority conformance'
 python3 tools/conformance/authority_reference.py
 
-printf '%s\n' '[6/8] Lean model and claim audit executable'
+printf '%s\n' '[6/8] Lean model, generated source translation, and claim audit executable'
 lake build
+bash tools/ci/authority-refinement.sh
 
 printf '%s\n' '[7/8] dependency licenses, versions, and sources'
 cargo deny --locked check bans licenses sources

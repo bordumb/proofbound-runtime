@@ -1,0 +1,179 @@
+schema = "proofbound-translation-unit/3"
+id = "authority-normalization"
+pipeline = "charon-aeneas"
+generated_dir = "formal/generated"
+handwritten_refinement = "formal/ProofboundRuntime/Refinement/AuthorityNormalization.lean"
+determinism_runs = 2
+determinism_normalization = "pretty-printed-llbc/1"
+forbid_generated_axioms = true
+claims = ["PBR-AUTH-001"]
+warning_inventory = []
+
+[[template_axioms]]
+file = "formal/generated/ProofboundRuntimeCore/FunsExternal_Template.lean"
+count = 2
+compiled = false
+
+[[external_bridges]]
+file = "formal/bridges/ProofboundRuntimeCore/FunsExternal.lean"
+module = "ProofboundRuntimeCore.FunsExternal"
+reviewed_sha256 = "sha256:e2651e86967faca0c22001a4e729a06dbe373ec6c2ecf1e6fb881a69bd139cc0"
+
+[[invocations]]
+id = "authority-normalization"
+cargo_package = "proofbound-runtime-core"
+cargo_manifest = "crates/proofbound-runtime-core/Cargo.toml"
+crate_name = "proofbound_runtime_core"
+llbc_file = "proofbound_runtime_core.llbc"
+start_from = ["proofbound_runtime_core::normalize::normalize_authority"]
+opaque = []
+include = []
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::authority::bytes_come_before"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::authority::bytes_same"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::authority::file_access_rank"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::authority::path_role_rank"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::authority::{proofbound_runtime_core::authority::AuthorityPath}::comes_before"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::authority::{proofbound_runtime_core::authority::AuthorityPath}::same_value"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::authority::{proofbound_runtime_core::authority::AuthorityPlan}::into_parts"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::authority::{proofbound_runtime_core::authority::EnvironmentName}::comes_before"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::authority::{proofbound_runtime_core::authority::EnvironmentName}::same_value"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::authority::{proofbound_runtime_core::authority::PathAuthority}::comes_before"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::authority::{proofbound_runtime_core::authority::PathAuthority}::same_value"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::normalize::deduplicate_environment"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::normalize::deduplicate_paths"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::normalize::environment_prefix_contains"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::normalize::normalize_authority"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::normalize::path_prefix_contains"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::normalize::sort_and_deduplicate_environment"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::normalize::sort_and_deduplicate_paths"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::AuthorityPath"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::AuthorityPlan"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::EnvironmentName"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::FileAccess"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::NetworkMode"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::OutputByteLimit"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::PathAuthority"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::PathRole"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::ProcessLimit"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::ResourceLimits"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::WallTimeLimit"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::normalize::NormalizedAuthority"
+
+[[invocations.outputs]]
+kind = "lean-source"
+produced = "Funs.lean"
+destination = "formal/generated/ProofboundRuntimeCore/Funs.lean"
+
+[[invocations.outputs]]
+kind = "lean-source"
+produced = "FunsExternal_Template.lean"
+destination = "formal/generated/ProofboundRuntimeCore/FunsExternal_Template.lean"
+
+[[invocations.outputs]]
+kind = "lean-source"
+produced = "Types.lean"
+destination = "formal/generated/ProofboundRuntimeCore/Types.lean"
+
+[[invocations.outputs]]
+kind = "translation-report"
+produced = "translation.json"
+destination = "formal/generated/ProofboundRuntimeCore/translation.json"
+
+[import_mapping]
+mode = "external-source-root"
+source_roots = ["formal", "formal/bridges"]
+
+[resource_budget]
+time_seconds = 1800
+disk_bytes = 26843545600
+memory_bytes = 8589934592

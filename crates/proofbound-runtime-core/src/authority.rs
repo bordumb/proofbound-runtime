@@ -50,6 +50,16 @@ impl AuthorityPath {
     pub fn as_str(&self) -> &str {
         &self.0
     }
+
+    /// Reports whether two validated paths contain the same bytes.
+    pub(crate) fn same_value(&self, other: &Self) -> bool {
+        bytes_same(self.0.as_bytes(), other.0.as_bytes())
+    }
+
+    /// Reports whether this path precedes another path in canonical order.
+    pub(crate) fn comes_before(&self, other: &Self) -> bool {
+        bytes_come_before(self.0.as_bytes(), other.0.as_bytes())
+    }
 }
 
 /// Contains one validated environment variable name.
@@ -79,6 +89,48 @@ impl EnvironmentName {
     pub fn as_str(&self) -> &str {
         &self.0
     }
+
+    /// Reports whether two validated names contain the same bytes.
+    pub(crate) fn same_value(&self, other: &Self) -> bool {
+        bytes_same(self.0.as_bytes(), other.0.as_bytes())
+    }
+
+    /// Reports whether this name precedes another name in canonical order.
+    pub(crate) fn comes_before(&self, other: &Self) -> bool {
+        bytes_come_before(self.0.as_bytes(), other.0.as_bytes())
+    }
+}
+
+// Concrete byte operations keep the translated decision closure free of local
+// comparison-trait implementations.
+fn bytes_same(left: &[u8], right: &[u8]) -> bool {
+    if left.len() != right.len() {
+        return false;
+    }
+    let mut index = 0;
+    while index < left.len() {
+        if left[index] != right[index] {
+            return false;
+        }
+        index += 1;
+    }
+    true
+}
+
+fn bytes_come_before(left: &[u8], right: &[u8]) -> bool {
+    let common_length = if left.len() < right.len() {
+        left.len()
+    } else {
+        right.len()
+    };
+    let mut index = 0;
+    while index < common_length {
+        if left[index] != right[index] {
+            return left[index] < right[index];
+        }
+        index += 1;
+    }
+    left.len() < right.len()
 }
 
 /// Contains one filesystem authority entry.
@@ -112,6 +164,44 @@ impl PathAuthority {
     #[must_use]
     pub fn role(&self) -> PathRole {
         self.role
+    }
+
+    /// Reports whether two path entries contain the same authority.
+    pub(crate) fn same_value(&self, other: &Self) -> bool {
+        self.path.same_value(&other.path)
+            && file_access_rank(self.access) == file_access_rank(other.access)
+            && path_role_rank(self.role) == path_role_rank(other.role)
+    }
+
+    /// Reports whether this entry precedes another entry in canonical order.
+    pub(crate) fn comes_before(&self, other: &Self) -> bool {
+        if !self.path.same_value(&other.path) {
+            return self.path.comes_before(&other.path);
+        }
+        let access = file_access_rank(self.access);
+        let other_access = file_access_rank(other.access);
+        if access != other_access {
+            return access < other_access;
+        }
+        path_role_rank(self.role) < path_role_rank(other.role)
+    }
+}
+
+fn file_access_rank(access: FileAccess) -> u8 {
+    match access {
+        FileAccess::Read => 0,
+        FileAccess::Write => 1,
+        FileAccess::Execute => 2,
+    }
+}
+
+fn path_role_rank(role: PathRole) -> u8 {
+    match role {
+        PathRole::ProjectInput => 0,
+        PathRole::OutputRoot => 1,
+        PathRole::RuntimeExecutable => 2,
+        PathRole::RuntimeLoaderExecutable => 3,
+        PathRole::RuntimeLibrary => 4,
     }
 }
 
@@ -288,6 +378,18 @@ impl AuthorityPlan {
     pub fn network(&self) -> NetworkMode {
         self.network
     }
+
+    /// Separates this plan into its normalized fields.
+    pub(crate) fn into_parts(
+        self,
+    ) -> (
+        Vec<PathAuthority>,
+        Vec<EnvironmentName>,
+        ResourceLimits,
+        NetworkMode,
+    ) {
+        (self.paths, self.environment, self.limits, self.network)
+    }
 }
 
 /// Identifies invalid authority input.
@@ -366,5 +468,45 @@ mod tests {
         );
         assert!(smaller.is_no_more_permissive_than(larger));
         assert!(!larger.is_no_more_permissive_than(smaller));
+    }
+
+    #[test]
+    fn concrete_comparison_matches_domain_order() {
+        let text_values = ["A", "PATH", "é", "𐀀"];
+        for left in text_values {
+            for right in text_values {
+                let left = EnvironmentName::new(left).expect("valid fixture");
+                let right = EnvironmentName::new(right).expect("valid fixture");
+                assert_eq!(left.same_value(&right), left == right);
+                assert_eq!(left.comes_before(&right), left < right);
+            }
+        }
+
+        let accesses = [FileAccess::Read, FileAccess::Write, FileAccess::Execute];
+        let roles = [
+            PathRole::ProjectInput,
+            PathRole::OutputRoot,
+            PathRole::RuntimeExecutable,
+            PathRole::RuntimeLoaderExecutable,
+            PathRole::RuntimeLibrary,
+        ];
+        let mut authorities = Vec::new();
+        for path in ["A", "src", "é"] {
+            for access in accesses {
+                for role in roles {
+                    authorities.push(PathAuthority::new(
+                        AuthorityPath::new(path).expect("valid fixture"),
+                        access,
+                        role,
+                    ));
+                }
+            }
+        }
+        for left in &authorities {
+            for right in &authorities {
+                assert_eq!(left.same_value(right), left == right);
+                assert_eq!(left.comes_before(right), left < right);
+            }
+        }
     }
 }
