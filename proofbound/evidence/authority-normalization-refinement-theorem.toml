@@ -1,0 +1,37 @@
+schema = "proofbound-evidence-unit/1"
+id = "authority-normalization-refinement-theorem"
+adapter = "lean"
+kind = "theorem"
+claims = ["PBR-AUTH-001"]
+tier = 3
+evaluation_mode = "kernel"
+theorem = "ProofboundRuntime.Refinement.Authority.normalize_authority_refines"
+premises = ["PBR-STRING-REP-004"]
+expected_inventory = [
+  "ProofboundRuntime.Refinement.Authority.normalize_authority_refines",
+]
+inputs = [
+  "formal/ProofboundRuntime/Refinement/Authority.lean",
+  "formal/ProofboundRuntime/Refinement/AuthorityNormalization.lean",
+  "formal/bridges/ProofboundRuntimeCore/FunsExternal.lean",
+  "formal/generated/ProofboundRuntimeCore/Funs.lean",
+  "formal/generated/ProofboundRuntimeCore/Types.lean",
+  "lake-manifest.json",
+  "lakefile.toml",
+  "lean-toolchain",
+]
+environment_allowlist = ["LEAN_PATH", "PATH"]
+
+[operation]
+type = "lean-audit"
+targets = [
+  "ProofboundRuntime.Refinement.Authority.normalize_authority_refines",
+]
+paths = [
+  "formal/ProofboundRuntime/Refinement/AuthorityNormalization.lean",
+]
+
+[resource_budget]
+time_seconds = 300
+disk_bytes = 2147483648
+memory_bytes = 4294967296

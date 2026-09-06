@@ -1,0 +1,35 @@
+schema = "proofbound-evidence-unit/1"
+id = "authority-normalization-refinement"
+adapter = "charon-aeneas"
+kind = "source-refinement"
+claims = ["PBR-AUTH-001"]
+tier = 3
+refinement_theorem = "ProofboundRuntime.Refinement.Authority.normalize_authority_refines"
+premises = ["PBR-STRING-REP-004"]
+assumptions = []
+inputs = [
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/authority.rs",
+  "crates/proofbound-runtime-core/src/normalize.rs",
+  "formal/ProofboundRuntime/Refinement/Authority.lean",
+  "formal/ProofboundRuntime/Refinement/AuthorityNormalization.lean",
+  "formal/bridges/ProofboundRuntimeCore/FunsExternal.lean",
+  "formal/generated/ProofboundRuntimeCore/Funs.lean",
+  "formal/generated/ProofboundRuntimeCore/FunsExternal_Template.lean",
+  "formal/generated/ProofboundRuntimeCore/Types.lean",
+  "formal/generated/ProofboundRuntimeCore/translation.json",
+  "proofbound/toolchains/translation.lock",
+  "proofbound/translations/authority-normalization.toml",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "LEAN_PATH", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "translation"
+manifest = "proofbound/translations/authority-normalization.toml"
+targets = ["proofbound_runtime_core::normalize::normalize_authority"]
+
+[resource_budget]
+time_seconds = 1800
+disk_bytes = 26843545600
+memory_bytes = 8589934592

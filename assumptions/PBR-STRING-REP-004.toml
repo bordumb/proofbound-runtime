@@ -1,0 +1,15 @@
+schema = "proofbound-assumption/1"
+id = "PBR-STRING-REP-004"
+statement = "Every authority path and environment name presented to the translated normalization function has a UTF-8 byte representation whose length fits the Rust u32 string-view carrier used by the registered Lean bridge."
+category = "representation-premise"
+owner = "Proofbound Runtime formalization maintainer"
+rationale = "The reviewed String::as_bytes bridge constructs the translated slice only when the UTF-8 byte length is at most u32::MAX. The refinement theorem retains that exact precondition instead of treating the bridge as total for arbitrary Lean strings."
+scope = "Only the source-refinement edge from the registered Rust authority normalizer to PBR-AUTH-001."
+affected_claims = ["PBR-AUTH-001"]
+review_evidence = [
+  "formal/bridges/ProofboundRuntimeCore/FunsExternal.lean",
+  "formal/ProofboundRuntime/Refinement/AuthorityNormalization.lean",
+]
+discharge_plan = "Register a decoder theorem proving that every AuthorityPlan constructed through the production validation boundary satisfies AuthorityStringsBounded, then connect this premise to that theorem with a discharged-by edge."
+source_citation = "formal/ProofboundRuntime/Refinement/AuthorityNormalization.lean#AuthorityStringsBounded"
+status = "active"

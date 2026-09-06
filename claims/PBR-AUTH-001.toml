@@ -2,23 +2,24 @@ schema = "proofbound-claim/1"
 id = "PBR-AUTH-001"
 title = "Authority normalization does not amplify authority"
 statement = "For every valid authority plan, normalization returns a duplicate-free plan and every returned authority entry was present in the input plan."
-public_language = "The formal model proves that normalization removes duplicate authority and does not add an authority entry. Registered Rust tests and a 16-case Kani domain check selected production behavior. A direct theorem over the Aeneas translation now compiles, but Proofbound cannot register its required representation premise because of PBF-0005. The claim therefore remains model-only."
+public_language = "A kernel-checked theorem directly over the deterministic Aeneas translation proves that authority normalization removes duplicate entries, never adds an entry, and preserves resource limits and network mode exactly. The source-refinement edge retains its explicit UTF-8 carrier premise."
 subject = "rust:proofbound_runtime_core::normalize_authority"
 profile = "kernel-with-assumptions"
-tier = 2
-primary_linkage = "model-only"
-formal_declaration = "ProofboundRuntime.Claims.Authority.normalization_is_canonical_and_non_amplifying"
+tier = 3
+primary_linkage = "refined"
+formal_declaration = "ProofboundRuntime.Refinement.Authority.normalize_authority_refines"
 statement_encoding = "lean-expr-cbor/1"
 statement_sha256 = "sha256:640cbfbce1da910d98d4762488ac31600c9d2264af0ff7f9eec0a3505458b73f"
 foundational_axioms = ["propext"]
 evidence = [
   "example-test:authority-conformance",
   "bounded-check:authority-normalization-bounds",
-  "theorem:authority-normalization-model",
+  "theorem:authority-normalization-refinement-theorem",
+  "source-refinement:authority-normalization-refinement",
 ]
 assumptions = ["PBR-TOOLCHAIN-AX-003"]
+premises = ["PBR-STRING-REP-004"]
 open_obligations = [
-  "Register the compiled direct source-refinement theorem after Proofbound accepts a source-refinement representation-premise edge (PBF-0005).",
   "Bind the refined claim to release artifacts before making a shipping-binary claim.",
 ]
 out_of_scope = [
@@ -28,11 +29,16 @@ out_of_scope = [
 source_roots = [
   "crates/proofbound-runtime-core/src/authority.rs",
   "crates/proofbound-runtime-core/src/normalize.rs",
-  "formal/ProofboundRuntime/Authority.lean",
-  "formal/ProofboundRuntime/Claims/Authority.lean",
+  "formal/ProofboundRuntime/Refinement/Authority.lean",
+  "formal/ProofboundRuntime/Refinement/AuthorityNormalization.lean",
+  "formal/bridges/ProofboundRuntimeCore/FunsExternal.lean",
+  "formal/generated/ProofboundRuntimeCore/",
+  "assumptions/PBR-STRING-REP-004.toml",
   "proofbound/evidence/authority-conformance.toml",
   "proofbound/evidence/authority-normalization-bounds.toml",
-  "proofbound/evidence/authority-normalization-model.toml",
+  "proofbound/evidence/authority-normalization-refinement-theorem.toml",
+  "proofbound/evidence/authority-normalization-refinement.toml",
+  "proofbound/translations/authority-normalization.toml",
   "proofbound/model-checks/authority-normalization.toml",
   "tests/conformance/",
 ]

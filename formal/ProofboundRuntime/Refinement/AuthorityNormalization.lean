@@ -1,3 +1,4 @@
+import Proofbound.Attribute
 import ProofboundRuntime.Refinement.Authority
 
 open Aeneas Aeneas.Std Result ControlFlow Error
@@ -895,6 +896,7 @@ def AuthorityStringsBounded (plan : authority.AuthorityPlan) : Prop :=
   PathStringsBounded plan.paths.val ∧
     EnvironmentStringsBounded plan.environment.val
 
+@[proofbound_claim "PBR-AUTH-001"]
 theorem normalize_authority_refines
     (plan : authority.AuthorityPlan)
     (hBounded : AuthorityStringsBounded plan) :
