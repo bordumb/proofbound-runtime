@@ -6,6 +6,9 @@ namespace ProofboundRuntime.Refinement.Authority
 
 open proofbound_runtime_core
 
+instance : Inhabited authority.AuthorityText :=
+  ⟨⟨default, default⟩⟩
+
 theorem slice_swap_eq_list_swap
     {T : Type} [Inhabited T]
     (s : Slice T) (a b : Usize)
@@ -47,34 +50,34 @@ theorem slice_swap_perm
   exact List.swap_perm _ _ _
 
 def BytesEqualFrom
-    (left right : Slice Std.U8) (start : Nat) : Prop :=
-  ∀ i, start ≤ i → i < left.length → left.val[i]! = right.val[i]!
+    (left right : alloc.vec.Vec Std.U8) (start : Nat) : Prop :=
+  ∀ i, start ≤ i → i < left.val.length → left.val[i]! = right.val[i]!
 
 @[step]
-theorem bytes_same_loop_spec
-    (left right : Slice Std.U8)
+theorem authority_text_same_value_loop_spec
+    (left right : alloc.vec.Vec Std.U8)
     (start : Std.Usize)
-    (hStart : start.val ≤ left.length)
-    (hLength : left.length = right.length) :
-    authority.bytes_same_loop left right start
+    (hStart : start.val ≤ left.val.length)
+    (hLength : left.val.length = right.val.length) :
+    authority.AuthorityText.same_value_loop left right start
       ⦃ same => same = true ↔ BytesEqualFrom left right start.val ⦄ := by
-  unfold authority.bytes_same_loop
+  unfold authority.AuthorityText.same_value_loop
   apply loop.spec_decr_nat
-    (fun cursor => left.length - cursor.val)
+    (fun cursor => left.val.length - cursor.val)
     (fun cursor =>
       start.val ≤ cursor.val ∧
-      cursor.val ≤ left.length ∧
+      cursor.val ≤ left.val.length ∧
       ∀ i, start.val ≤ i → i < cursor.val → left.val[i]! = right.val[i]!)
     (fun same => same = true ↔ BytesEqualFrom left right start.val)
   · intro cursor hCursor
     rcases hCursor with ⟨hStartCursor, hCursorLength, hPrefix⟩
-    unfold authority.bytes_same_loop.body
+    unfold authority.AuthorityText.same_value_loop.body
     simp only
     split
     · rename_i hlt
-      have hLeft : cursor.val < left.length := by
+      have hLeft : cursor.val < left.val.length := by
         simpa using hlt
-      have hRight : cursor.val < right.length := by
+      have hRight : cursor.val < right.val.length := by
         simpa [← hLength] using hLeft
       step
       step
@@ -112,8 +115,8 @@ theorem bytes_same_loop_spec
           omega
     · rename_i hnlt
       simp only [WP.spec_ok]
-      have hCursorEq : cursor.val = left.length := by
-        have : ¬ cursor.val < left.length := by simpa using hnlt
+      have hCursorEq : cursor.val = left.val.length := by
+        have : ¬ cursor.val < left.val.length := by simpa using hnlt
         omega
       constructor
       · intro _ i hiStart hiLength
@@ -124,8 +127,8 @@ theorem bytes_same_loop_spec
   · exact ⟨Nat.le_refl _, hStart, by omega⟩
 
 theorem bytesEqualFrom_zero_iff
-    (left right : Slice Std.U8)
-    (hLength : left.length = right.length) :
+    (left right : alloc.vec.Vec Std.U8)
+    (hLength : left.val.length = right.val.length) :
     BytesEqualFrom left right 0 ↔ left.val = right.val := by
   constructor
   · intro h
@@ -137,10 +140,11 @@ theorem bytesEqualFrom_zero_iff
     rw [h]
 
 @[step]
-theorem bytes_same_spec (left right : Slice Std.U8) :
-    authority.bytes_same left right
-      ⦃ same => same = true ↔ left.val = right.val ⦄ := by
-  unfold authority.bytes_same
+theorem authority_text_same_value_spec
+    (self other : authority.AuthorityText) :
+    authority.AuthorityText.same_value self other
+      ⦃ same => same = true ↔ self.bytes.val = other.bytes.val ⦄ := by
+  unfold authority.AuthorityText.same_value
   simp only
   split
   · rename_i hne
@@ -149,39 +153,40 @@ theorem bytes_same_spec (left right : Slice Std.U8) :
     · intro hFalse
       simp at hFalse
     · intro hEqual
-      have hLength : left.length = right.length :=
+      have hLength : self.bytes.val.length = other.bytes.val.length :=
         congrArg List.length hEqual
       simp_all
   · rename_i heq
-    have hLength : left.length = right.length := by
+    have hLength : self.bytes.val.length = other.bytes.val.length := by
       simpa using heq
-    step
-    exact same_post.trans (bytesEqualFrom_zero_iff left right hLength)
+    step with authority_text_same_value_loop_spec
+    exact same_post.trans
+      (bytesEqualFrom_zero_iff self.bytes other.bytes hLength)
 
 def ByteValuesEqualBetween
-    (left right : Slice Std.U8) (start stop : Nat) : Prop :=
+    (left right : alloc.vec.Vec Std.U8) (start stop : Nat) : Prop :=
   ∀ i, start ≤ i → i < stop → left.val[i]!.val = right.val[i]!.val
 
 def BytesComeBeforeFrom
-    (left right : Slice Std.U8) (commonLength start : Nat) : Prop :=
+    (left right : alloc.vec.Vec Std.U8) (commonLength start : Nat) : Prop :=
   (∃ i,
       start ≤ i ∧ i < commonLength ∧
       ByteValuesEqualBetween left right start i ∧
       left.val[i]!.val < right.val[i]!.val) ∨
   (ByteValuesEqualBetween left right start commonLength ∧
-    left.length < right.length)
+    left.val.length < right.val.length)
 
 @[step]
-theorem bytes_come_before_loop_spec
-    (left right : Slice Std.U8)
+theorem authority_text_comes_before_loop_spec
+    (left right : alloc.vec.Vec Std.U8)
     (commonLength start : Std.Usize)
     (hStart : start.val ≤ commonLength.val)
-    (hLeftLength : commonLength.val ≤ left.length)
-    (hRightLength : commonLength.val ≤ right.length) :
-    authority.bytes_come_before_loop left right commonLength start
+    (hLeftLength : commonLength.val ≤ left.val.length)
+    (hRightLength : commonLength.val ≤ right.val.length) :
+    authority.AuthorityText.comes_before_loop left right commonLength start
       ⦃ before => before = true ↔
         BytesComeBeforeFrom left right commonLength.val start.val ⦄ := by
-  unfold authority.bytes_come_before_loop
+  unfold authority.AuthorityText.comes_before_loop
   apply loop.spec_decr_nat
     (fun cursor => commonLength.val - cursor.val)
     (fun cursor =>
@@ -192,14 +197,14 @@ theorem bytes_come_before_loop_spec
       BytesComeBeforeFrom left right commonLength.val start.val)
   · intro cursor hCursor
     rcases hCursor with ⟨hStartCursor, hCursorCommon, hPrefix⟩
-    unfold authority.bytes_come_before_loop.body
+    unfold authority.AuthorityText.comes_before_loop.body
     simp only
     split
     · rename_i hlt
       have hCommon : cursor.val < commonLength.val := by
         simpa using hlt
-      have hLeft : cursor.val < left.length := hCommon.trans_le hLeftLength
-      have hRight : cursor.val < right.length := hCommon.trans_le hRightLength
+      have hLeft : cursor.val < left.val.length := hCommon.trans_le hLeftLength
+      have hRight : cursor.val < right.val.length := hCommon.trans_le hRightLength
       step
       step
       split
@@ -275,165 +280,113 @@ theorem bytes_come_before_loop_spec
       intro i hiStart hiStop
       omega⟩
 
-def BytesComeBefore (left right : Slice Std.U8) : Prop :=
-  BytesComeBeforeFrom left right (min left.length right.length) 0
+def BytesComeBefore
+    (left right : alloc.vec.Vec Std.U8) : Prop :=
+  BytesComeBeforeFrom left right
+    (min left.val.length right.val.length) 0
 
 @[step]
-theorem bytes_come_before_spec (left right : Slice Std.U8) :
-    authority.bytes_come_before left right
-      ⦃ before => before = true ↔ BytesComeBefore left right ⦄ := by
-  unfold authority.bytes_come_before
+theorem authority_text_comes_before_spec
+    (self other : authority.AuthorityText) :
+    authority.AuthorityText.comes_before self other
+      ⦃ before => before = true ↔
+        BytesComeBefore self.bytes other.bytes ⦄ := by
+  unfold authority.AuthorityText.comes_before
   simp only
   split
   · rename_i hlt
-    have hLength : left.length < right.length := by
+    have hLength : self.bytes.val.length < other.bytes.val.length := by
       simpa using hlt
-    step
+    step with authority_text_comes_before_loop_spec
     unfold BytesComeBefore
     rw [Nat.min_eq_left (Nat.le_of_lt hLength)]
     exact common_length_post
   · rename_i hnlt
-    have hLength : right.length ≤ left.length := by
-      have : ¬ left.length < right.length := by simpa using hnlt
+    have hLength : other.bytes.val.length ≤ self.bytes.val.length := by
+      have : ¬ self.bytes.val.length < other.bytes.val.length := by
+        simpa using hnlt
       omega
-    step
+    step with authority_text_comes_before_loop_spec
     unfold BytesComeBefore
     rw [Nat.min_eq_right hLength]
     exact common_length_post
 
-def StringBytes (value : String) : List Std.U8 :=
-  value.toByteArray.toList.map (fun byte =>
-    ⟨byte.toNat, by
-      cases byte
-      simp only [UInt8.toNat_ofBitVec, UScalarTy.U8_numBits_eq,
-        Nat.reducePow]
-      omega⟩)
-
-@[step]
-theorem string_as_bytes_spec (value : String)
-    (hBound : value.toByteArray.size ≤ U32.max) :
-    alloc.string.String.as_bytes value
-      ⦃ bytes => bytes.val = StringBytes value ⦄ := by
-  unfold alloc.string.String.as_bytes
-  split
-  · simp [Aeneas.Std.toStr, StringBytes]
-  · rw [String.size_toByteArray] at hBound
-    omega
-
-@[step]
-theorem string_len_spec (value : String)
-    (hBound : value.toByteArray.size ≤ U32.max) :
-    alloc.string.String.len value
-      ⦃ length => length.val = value.toByteArray.size ⦄ := by
-  unfold alloc.string.String.len
-  step with string_as_bytes_spec
-  change bytes.val.length = value.toByteArray.size
-  rw [bytes_post]
-  simp [StringBytes, ByteArray.length_toList]
-
-@[step]
-theorem fits_translation_string_carrier_spec (length : Usize) :
-    authority.fits_translation_string_carrier length
-      ⦃ fits => fits = true ↔ length.val ≤ U32.max ⦄ := by
-  unfold authority.fits_translation_string_carrier
-  step
-  simp only [decide_eq_true_eq]
-  change length.val ≤ i.val ↔ length.val ≤ U32.max
-  simp [i_post, UScalar.cast_val_eq, core.num.U32.MAX, U32.rMax,
-    U32.max, U32.numBits, UScalarTy.numBits]
-  cases System.Platform.numBits_eq <;> simp_all
+def AuthorityBytes (value : authority.AuthorityText) : List Std.U8 :=
+  value.bytes.val
 
 @[step]
 theorem authority_path_same_value_spec
     (self other : authority.AuthorityPath)
-    (hSelf : self.toByteArray.size ≤ U32.max)
-    (hOther : other.toByteArray.size ≤ U32.max) :
+    (_hSelf : self.bytes.val.length ≤ Usize.max)
+    (_hOther : other.bytes.val.length ≤ Usize.max) :
     authority.AuthorityPath.same_value self other
-      ⦃ same => same = true ↔ StringBytes self = StringBytes other ⦄ := by
+      ⦃ same => same = true ↔ AuthorityBytes self = AuthorityBytes other ⦄ := by
   unfold authority.AuthorityPath.same_value
-  step
-  step
-  step
-  rw [s_post, s1_post] at same_post
-  exact same_post
+  step with authority_text_same_value_spec
+  simpa [AuthorityBytes] using same_post
 
 @[step]
 theorem environment_name_same_value_spec
     (self other : authority.EnvironmentName)
-    (hSelf : self.toByteArray.size ≤ U32.max)
-    (hOther : other.toByteArray.size ≤ U32.max) :
+    (_hSelf : self.bytes.val.length ≤ Usize.max)
+    (_hOther : other.bytes.val.length ≤ Usize.max) :
     authority.EnvironmentName.same_value self other
-      ⦃ same => same = true ↔ StringBytes self = StringBytes other ⦄ := by
+      ⦃ same => same = true ↔ AuthorityBytes self = AuthorityBytes other ⦄ := by
   unfold authority.EnvironmentName.same_value
-  step
-  step
-  step
-  rw [s_post, s1_post] at same_post
-  exact same_post
+  step with authority_text_same_value_spec
+  simpa [AuthorityBytes] using same_post
 
 def ListByteValuesEqualBetween
     (left right : List Std.U8) (start stop : Nat) : Prop :=
   ∀ i, start ≤ i → i < stop → left[i]!.val = right[i]!.val
 
-def StringComesBefore (self other : String) : Prop :=
+def AuthorityTextComesBefore
+    (self other : authority.AuthorityText) : Prop :=
   (∃ i,
-      i < min (StringBytes self).length (StringBytes other).length ∧
-      ListByteValuesEqualBetween (StringBytes self) (StringBytes other) 0 i ∧
-      (StringBytes self)[i]!.val < (StringBytes other)[i]!.val) ∨
-  (ListByteValuesEqualBetween (StringBytes self) (StringBytes other) 0
-      (min (StringBytes self).length (StringBytes other).length) ∧
-    (StringBytes self).length < (StringBytes other).length)
+      i < min (AuthorityBytes self).length (AuthorityBytes other).length ∧
+      ListByteValuesEqualBetween
+        (AuthorityBytes self) (AuthorityBytes other) 0 i ∧
+      (AuthorityBytes self)[i]!.val < (AuthorityBytes other)[i]!.val) ∨
+  (ListByteValuesEqualBetween (AuthorityBytes self) (AuthorityBytes other) 0
+      (min (AuthorityBytes self).length (AuthorityBytes other).length) ∧
+    (AuthorityBytes self).length < (AuthorityBytes other).length)
 
 @[step]
 theorem authority_path_comes_before_spec
     (self other : authority.AuthorityPath)
-    (hSelf : self.toByteArray.size ≤ U32.max)
-    (hOther : other.toByteArray.size ≤ U32.max) :
+    (_hSelf : self.bytes.val.length ≤ Usize.max)
+    (_hOther : other.bytes.val.length ≤ Usize.max) :
     authority.AuthorityPath.comes_before self other
-      ⦃ before => before = true ↔ StringComesBefore self other ⦄ := by
+      ⦃ before => before = true ↔ AuthorityTextComesBefore self other ⦄ := by
   unfold authority.AuthorityPath.comes_before
-  step
-  step
-  step
-  have s_length : s.length = (StringBytes self).length :=
-    congrArg List.length s_post
-  have s1_length : s1.length = (StringBytes other).length :=
-    congrArg List.length s1_post
+  step with authority_text_comes_before_spec
   unfold BytesComeBefore BytesComeBeforeFrom ByteValuesEqualBetween at before_post
-  unfold StringComesBefore
-  rw [s_post, s1_post, s_length, s1_length] at before_post
+  unfold AuthorityTextComesBefore AuthorityBytes
   simpa [ListByteValuesEqualBetween] using before_post
 
 @[step]
 theorem environment_name_comes_before_spec
     (self other : authority.EnvironmentName)
-    (hSelf : self.toByteArray.size ≤ U32.max)
-    (hOther : other.toByteArray.size ≤ U32.max) :
+    (_hSelf : self.bytes.val.length ≤ Usize.max)
+    (_hOther : other.bytes.val.length ≤ Usize.max) :
     authority.EnvironmentName.comes_before self other
-      ⦃ before => before = true ↔ StringComesBefore self other ⦄ := by
+      ⦃ before => before = true ↔ AuthorityTextComesBefore self other ⦄ := by
   unfold authority.EnvironmentName.comes_before
-  step
-  step
-  step
-  have s_length : s.length = (StringBytes self).length :=
-    congrArg List.length s_post
-  have s1_length : s1.length = (StringBytes other).length :=
-    congrArg List.length s1_post
+  step with authority_text_comes_before_spec
   unfold BytesComeBefore BytesComeBeforeFrom ByteValuesEqualBetween at before_post
-  unfold StringComesBefore
-  rw [s_post, s1_post, s_length, s1_length] at before_post
+  unfold AuthorityTextComesBefore AuthorityBytes
   simpa [ListByteValuesEqualBetween] using before_post
 
 def PathAuthoritySameValue
     (self other : authority.PathAuthority) : Prop :=
-  StringBytes self.path = StringBytes other.path ∧
+  AuthorityBytes self.path = AuthorityBytes other.path ∧
     self.access = other.access ∧ self.role = other.role
 
 @[step]
 theorem path_authority_same_value_spec
     (self other : authority.PathAuthority)
-    (hSelf : self.path.toByteArray.size ≤ U32.max)
-    (hOther : other.path.toByteArray.size ≤ U32.max) :
+    (hSelf : self.path.bytes.val.length ≤ Usize.max)
+    (hOther : other.path.bytes.val.length ≤ Usize.max) :
     authority.PathAuthority.same_value self other
       ⦃ same => same = true ↔ PathAuthoritySameValue self other ⦄ := by
   rcases self with ⟨selfPath, selfAccess, selfRole⟩
@@ -448,7 +401,7 @@ theorem path_authority_same_value_spec
       simp [authority.file_access_rank, authority.path_role_rank,
         PathAuthoritySameValue, hPathEq]
   · rename_i hFalse
-    have hPathNe : StringBytes selfPath ≠ StringBytes otherPath := by
+    have hPathNe : AuthorityBytes selfPath ≠ AuthorityBytes otherPath := by
       intro hEqual
       exact hFalse (b_post.mpr hEqual)
     simp [PathAuthoritySameValue, hPathNe]
@@ -467,18 +420,18 @@ def pathRoleRank : authority.PathRole → Nat
 
 def PathAuthorityComesBefore
     (self other : authority.PathAuthority) : Prop :=
-  if StringBytes self.path = StringBytes other.path then
+  if AuthorityBytes self.path = AuthorityBytes other.path then
     fileAccessRank self.access < fileAccessRank other.access ∨
       (self.access = other.access ∧
         pathRoleRank self.role < pathRoleRank other.role)
   else
-    StringComesBefore self.path other.path
+    AuthorityTextComesBefore self.path other.path
 
 @[step]
 theorem path_authority_comes_before_spec
     (self other : authority.PathAuthority)
-    (hSelf : self.path.toByteArray.size ≤ U32.max)
-    (hOther : other.path.toByteArray.size ≤ U32.max) :
+    (hSelf : self.path.bytes.val.length ≤ Usize.max)
+    (hOther : other.path.bytes.val.length ≤ Usize.max) :
     authority.PathAuthority.comes_before self other
       ⦃ before => before = true ↔ PathAuthorityComesBefore self other ⦄ := by
   rcases self with ⟨selfPath, selfAccess, selfRole⟩
@@ -493,31 +446,32 @@ theorem path_authority_comes_before_spec
       simp [authority.file_access_rank, authority.path_role_rank,
         PathAuthorityComesBefore, fileAccessRank, pathRoleRank, hPathEq]
   · rename_i hFalse
-    have hPathNe : StringBytes selfPath ≠ StringBytes otherPath := by
+    have hPathNe : AuthorityBytes selfPath ≠ AuthorityBytes otherPath := by
       intro hEqual
       exact hFalse (b_post.mpr hEqual)
     step
     simpa [PathAuthorityComesBefore, hPathNe] using before_post
 
-theorem bytes_same_loop_terminates
-    (left right : Slice Std.U8)
+theorem authority_text_same_value_loop_terminates
+    (left right : alloc.vec.Vec Std.U8)
     (index : Std.Usize)
-    (hIndex : index.val ≤ left.length)
-    (hLength : left.length = right.length) :
-    authority.bytes_same_loop left right index ⦃ _ => True ⦄ := by
-  unfold authority.bytes_same_loop
+    (hIndex : index.val ≤ left.val.length)
+    (hLength : left.val.length = right.val.length) :
+    authority.AuthorityText.same_value_loop left right index
+      ⦃ _ => True ⦄ := by
+  unfold authority.AuthorityText.same_value_loop
   apply loop.spec_decr_nat
-    (fun index => left.length - index.val)
-    (fun index => index.val ≤ left.length)
+    (fun index => left.val.length - index.val)
+    (fun index => index.val ≤ left.val.length)
     (fun _ => True)
   · intro cursor hCursor
-    unfold authority.bytes_same_loop.body
+    unfold authority.AuthorityText.same_value_loop.body
     simp only
     split
     · rename_i hlt
-      have hLeft : cursor.val < left.length := by
+      have hLeft : cursor.val < left.val.length := by
         simpa using hlt
-      have hRight : cursor.val < right.length := by
+      have hRight : cursor.val < right.val.length := by
         simpa [← hLength] using hLeft
       step
       step
@@ -531,38 +485,39 @@ theorem bytes_same_loop_terminates
     · simp
   · exact hIndex
 
-theorem bytes_same_terminates (left right : Slice Std.U8) :
-    authority.bytes_same left right ⦃ _ => True ⦄ := by
-  unfold authority.bytes_same
+theorem authority_text_same_value_terminates
+    (self other : authority.AuthorityText) :
+    authority.AuthorityText.same_value self other ⦃ _ => True ⦄ := by
+  unfold authority.AuthorityText.same_value
   simp only
   split
   · simp
-  · apply bytes_same_loop_terminates
+  · apply authority_text_same_value_loop_terminates
     · simp
     · simp_all
 
-theorem bytes_come_before_loop_terminates
-    (left right : Slice Std.U8)
+theorem authority_text_comes_before_loop_terminates
+    (left right : alloc.vec.Vec Std.U8)
     (commonLength index : Std.Usize)
     (hIndex : index.val ≤ commonLength.val)
-    (hLeftLength : commonLength.val ≤ left.length)
-    (hRightLength : commonLength.val ≤ right.length) :
-    authority.bytes_come_before_loop left right commonLength index
+    (hLeftLength : commonLength.val ≤ left.val.length)
+    (hRightLength : commonLength.val ≤ right.val.length) :
+    authority.AuthorityText.comes_before_loop left right commonLength index
       ⦃ _ => True ⦄ := by
-  unfold authority.bytes_come_before_loop
+  unfold authority.AuthorityText.comes_before_loop
   apply loop.spec_decr_nat
     (fun index => commonLength.val - index.val)
     (fun index => index.val ≤ commonLength.val)
     (fun _ => True)
   · intro cursor hCursor
-    unfold authority.bytes_come_before_loop.body
+    unfold authority.AuthorityText.comes_before_loop.body
     simp only
     split
     · rename_i hlt
       have hCommon : cursor.val < commonLength.val := by
         simpa using hlt
-      have hLeft : cursor.val < left.length := hCommon.trans_le hLeftLength
-      have hRight : cursor.val < right.length := hCommon.trans_le hRightLength
+      have hLeft : cursor.val < left.val.length := hCommon.trans_le hLeftLength
+      have hRight : cursor.val < right.val.length := hCommon.trans_le hRightLength
       step
       step
       split
@@ -575,30 +530,31 @@ theorem bytes_come_before_loop_terminates
     · simp
   · exact hIndex
 
-theorem bytes_come_before_terminates (left right : Slice Std.U8) :
-    authority.bytes_come_before left right ⦃ _ => True ⦄ := by
-  unfold authority.bytes_come_before
+theorem authority_text_comes_before_terminates
+    (self other : authority.AuthorityText) :
+    authority.AuthorityText.comes_before self other ⦃ _ => True ⦄ := by
+  unfold authority.AuthorityText.comes_before
   simp only
   split
   · rename_i hlt
-    apply bytes_come_before_loop_terminates
+    apply authority_text_comes_before_loop_terminates
     · simp
     · simp
     · exact Nat.le_of_lt (by simpa using hlt)
   · rename_i hnlt
-    apply bytes_come_before_loop_terminates
+    apply authority_text_comes_before_loop_terminates
     · simp
     · exact Nat.le_of_not_gt (by simpa using hnlt)
     · simp
 
 def EnvironmentStringsBounded
     (items : List authority.EnvironmentName) : Prop :=
-  ∀ item, item ∈ items → item.toByteArray.size ≤ U32.max
+  ∀ item, item ∈ items → item.bytes.val.length ≤ Usize.max
 
 theorem environment_comes_before_terminates
     (self other : authority.EnvironmentName)
-    (hSelf : self.toByteArray.size ≤ U32.max)
-    (hOther : other.toByteArray.size ≤ U32.max) :
+    (hSelf : self.bytes.val.length ≤ Usize.max)
+    (hOther : other.bytes.val.length ≤ Usize.max) :
     authority.EnvironmentName.comes_before self other ⦃ _ => True ⦄ := by
   apply Aeneas.Std.WP.spec_mono
     (environment_name_comes_before_spec self other hSelf hOther)

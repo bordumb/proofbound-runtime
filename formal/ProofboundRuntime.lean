@@ -1,3 +1,5 @@
 import ProofboundRuntime.Authority
 import ProofboundRuntime.Claims.Authority
 import ProofboundRuntime.Refinement.AuthorityNormalization
+import ProofboundRuntime.Refinement.AuthorityNormalizationClaim
+import ProofboundRuntime.Refinement.AuthorityCarrierClaim

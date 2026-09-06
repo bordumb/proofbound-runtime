@@ -9,7 +9,7 @@ open proofbound_runtime_core
 
 def EnvironmentSame
     (left right : authority.EnvironmentName) : Prop :=
-  StringBytes left = StringBytes right
+  AuthorityBytes left = AuthorityBytes right
 
 def EnvironmentNoneBetween
     (items : Slice authority.EnvironmentName)
@@ -129,11 +129,11 @@ theorem environment_prefix_contains_spec
 
 def PathStringsBounded
     (items : List authority.PathAuthority) : Prop :=
-  ∀ item, item ∈ items → item.path.toByteArray.size ≤ U32.max
+  ∀ item, item ∈ items → item.path.bytes.val.length ≤ Usize.max
 
 instance : Inhabited authority.PathAuthority where
   default := {
-    path := ""
+    path := default
     access := .Read
     role := .ProjectInput
   }
@@ -690,8 +690,8 @@ theorem deduplicate_paths_spec
 
 theorem path_authority_comes_before_terminates
     (self other : authority.PathAuthority)
-    (hSelf : self.path.toByteArray.size ≤ U32.max)
-    (hOther : other.path.toByteArray.size ≤ U32.max) :
+    (hSelf : self.path.bytes.val.length ≤ Usize.max)
+    (hOther : other.path.bytes.val.length ≤ Usize.max) :
     authority.PathAuthority.comes_before self other ⦃ _ => True ⦄ := by
   apply Aeneas.Std.WP.spec_mono
     (path_authority_comes_before_spec self other hSelf hOther)
@@ -892,117 +892,29 @@ theorem sort_and_deduplicate_environment_spec
     apply items1_post2 item
     exact out_post.mem_iff.mp hItem
 
-def AuthorityStringsBounded (plan : authority.AuthorityPlan) : Prop :=
+def AuthorityByteCarriersBounded (plan : authority.AuthorityPlan) : Prop :=
   PathStringsBounded plan.paths.val ∧
     EnvironmentStringsBounded plan.environment.val
 
-@[step]
-theorem validate_translation_carrier_paths_spec
-    (plan : authority.AuthorityPlan)
-    (start : Usize)
-    (hStart : start.val ≤ plan.paths.val.length)
-    (hBounded : PathStringsBounded plan.paths.val) :
-    authority.AuthorityPlan.validate_translation_carrier_loop0
-        plan start true
-      ⦃ out => out = (plan.environment, true) ⦄ := by
-  unfold authority.AuthorityPlan.validate_translation_carrier_loop0
-  apply loop.spec_decr_nat
-    (fun state : Usize × Bool => plan.paths.val.length - state.1.val)
-    (fun state : Usize × Bool =>
-      state.1.val ≤ plan.paths.val.length ∧ state.2 = true)
-    (fun out : alloc.vec.Vec authority.EnvironmentName × Bool =>
-      out = (plan.environment, true))
-  · rintro ⟨pathIndex, pathsFit⟩ ⟨hIndex, hFits⟩
-    simp only at hIndex hFits ⊢
-    unfold authority.AuthorityPlan.validate_translation_carrier_loop0.body
-    simp only [hFits, if_true]
-    split
-    · rename_i hLess
-      have hPathIndex : pathIndex.val < plan.paths.val.length := by
-        simpa [alloc.vec.Vec.val] using hLess
-      step
-      have hPathBound := hBounded pa (by
-        rw [pa_post]
-        exact List.getElem_mem hPathIndex)
-      step with string_len_spec (value := pa.path) hPathBound
-      step
-      have hFit : paths_fit1 = true := paths_fit1_post.mpr (by
-        simpa [i1_post] using hPathBound)
-      rw [hFit]
-      step
-      constructor
-      · rw [path_index1_post]
-        omega
-      · rw [path_index1_post]
-        omega
-    · simp only [WP.spec_ok]
-  · exact ⟨hStart, rfl⟩
+theorem pathStringsBounded
+    (items : List authority.PathAuthority) :
+    PathStringsBounded items := by
+  intro item _
+  exact item.path.bytes.property
 
-@[step]
-theorem validate_translation_carrier_environment_spec
-    (environment : alloc.vec.Vec authority.EnvironmentName)
-    (start : Usize)
-    (hStart : start.val ≤ environment.val.length)
-    (hBounded : EnvironmentStringsBounded environment.val) :
-    authority.AuthorityPlan.validate_translation_carrier_loop1
-        environment start true
-      ⦃ fits => fits = true ⦄ := by
-  unfold authority.AuthorityPlan.validate_translation_carrier_loop1
-  apply loop.spec_decr_nat
-    (fun state : Usize × Bool => environment.val.length - state.1.val)
-    (fun state : Usize × Bool =>
-      state.1.val ≤ environment.val.length ∧ state.2 = true)
-    (fun fits : Bool => fits = true)
-  · rintro ⟨environmentIndex, environmentFits⟩ ⟨hIndex, hFits⟩
-    simp only at hIndex hFits ⊢
-    unfold authority.AuthorityPlan.validate_translation_carrier_loop1.body
-    simp only [hFits, if_true]
-    split
-    · rename_i hLess
-      have hEnvironmentIndex :
-          environmentIndex.val < environment.val.length := by
-        simpa [alloc.vec.Vec.val] using hLess
-      step
-      have hEnvironmentBound := hBounded en (by
-        rw [en_post]
-        exact List.getElem_mem hEnvironmentIndex)
-      step with string_len_spec (value := en) hEnvironmentBound
-      step
-      have hFit : environment_fits1 = true :=
-        environment_fits1_post.mpr (by
-          simpa [i1_post] using hEnvironmentBound)
-      rw [hFit]
-      step
-      constructor
-      · rw [environment_index1_post]
-        omega
-      · rw [environment_index1_post]
-        omega
-    · simp only [WP.spec_ok]
-  · exact ⟨hStart, rfl⟩
+theorem environmentStringsBounded
+    (items : List authority.EnvironmentName) :
+    EnvironmentStringsBounded items := by
+  intro item _
+  exact item.bytes.property
 
-@[step]
-theorem validate_translation_carrier_spec
-    (plan : authority.AuthorityPlan)
-    (hBounded : AuthorityStringsBounded plan) :
-    authority.AuthorityPlan.validate_translation_carrier plan
-      ⦃ result => result = core.result.Result.Ok () ⦄ := by
-  unfold authority.AuthorityPlan.validate_translation_carrier
-  rcases hBounded with ⟨hPaths, hEnvironment⟩
-  step
-  have hEnvironmentValue : v = plan.environment :=
-    congrArg Prod.fst v_post
-  have hPathsFit : paths_fit = true := congrArg Prod.snd v_post
-  rw [hPathsFit]
-  simp only [if_true]
-  rw [hEnvironmentValue]
-  step
-  rw [environment_fits_post]
-  simp only [if_true, WP.spec_ok]
+theorem authorityByteCarriersBounded
+    (plan : authority.AuthorityPlan) :
+    AuthorityByteCarriersBounded plan := by
+  exact ⟨pathStringsBounded _, environmentStringsBounded _⟩
 
 theorem normalize_authority_refines
-    (plan : authority.AuthorityPlan)
-    (hBounded : AuthorityStringsBounded plan) :
+    (plan : authority.AuthorityPlan) :
     normalize.normalize_authority plan
       ⦃ result => ∃ out,
         result = core.result.Result.Ok out ∧
@@ -1013,13 +925,13 @@ theorem normalize_authority_refines
           out.limits = plan.limits ∧
           out.network = plan.network ⦄ := by
   unfold normalize.normalize_authority
-  step with validate_translation_carrier_spec
-  rw [r_post]
   unfold authority.AuthorityPlan.into_parts
   simp only
-  step with sort_and_deduplicate_paths_spec as
+  step with sort_and_deduplicate_paths_spec
+      (hBounded := pathStringsBounded plan.paths.val) as
     ⟨paths1, hPathsNodup, hPathsSubset, hPathsBounded⟩
-  step with sort_and_deduplicate_environment_spec as
+  step with sort_and_deduplicate_environment_spec
+      (hBounded := environmentStringsBounded plan.environment.val) as
     ⟨environment1, hEnvironmentNodup, hEnvironmentSubset,
       hEnvironmentBounded⟩
   refine ⟨_, rfl, hPathsNodup, hPathsSubset, hEnvironmentNodup,

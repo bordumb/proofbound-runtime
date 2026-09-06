@@ -10,8 +10,7 @@ open ProofboundRuntime.Refinement.AuthorityNormalization
 
 @[proofbound_claim "PBR-AUTH-001"]
 theorem normalize_authority_refines
-    (plan : authority.AuthorityPlan)
-    (hBounded : AuthorityStringsBounded plan) :
+    (plan : authority.AuthorityPlan) :
     normalize.normalize_authority plan
       ⦃ result => ∃ out,
         result = core.result.Result.Ok out ∧
@@ -22,6 +21,6 @@ theorem normalize_authority_refines
           out.limits = plan.limits ∧
           out.network = plan.network ⦄ :=
   ProofboundRuntime.Refinement.AuthorityNormalization.normalize_authority_refines
-    plan hBounded
+    plan
 
 end ProofboundRuntime.Refinement.AuthorityNormalizationClaim
