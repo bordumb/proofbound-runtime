@@ -1,5 +1,5 @@
 [package]
-name = "proofbound-runtime-core"
+name = "proofbound-runtime-receipt"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,10 +8,6 @@ rust-version.workspace = true
 publish.workspace = true
 
 [dependencies]
-proofbound-runtime-receipt = { path = "../proofbound-runtime-receipt" }
-
-[dev-dependencies]
-serde_json.workspace = true
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ["cfg(kani)"] }

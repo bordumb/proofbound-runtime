@@ -9,6 +9,7 @@ expected_inventory = [
 ]
 inputs = [
   "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-receipt/src/lib.rs",
   "crates/proofbound-runtime-core/tests/receipt_vectors.rs",
   "schemas/receipt-eligibility-vector-v1.schema.json",
   "tests/conformance/receipt/positive/eligibility-v1.json",

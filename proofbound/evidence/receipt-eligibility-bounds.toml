@@ -8,7 +8,7 @@ expected_inventory = [
   "receipt_eligibility_is_exact_for_bounded_state_model",
 ]
 inputs = [
-  "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-receipt/src/lib.rs",
   "crates/proofbound-runtime-receipt-kani/Cargo.toml",
   "crates/proofbound-runtime-receipt-kani/src/lib.rs",
   "proofbound/model-checks/receipt-eligibility.toml",

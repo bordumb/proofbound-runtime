@@ -498,7 +498,8 @@ between crates.
 | `crates/proofbound-runtime-core/src/identity.rs` | Typed artifact roles and identity rules. |
 | `crates/proofbound-runtime-core/src/policy.rs` | Platform-neutral compiled-policy model. |
 | `crates/proofbound-runtime-core/src/outcome.rs` | Closed execution and failure outcomes. |
-| `crates/proofbound-runtime-core/src/receipt.rs` | Receipt-domain construction and eligibility derivation. |
+| `crates/proofbound-runtime-core/src/receipt.rs` | Stable re-export of the independently translatable receipt decision boundary. |
+| `crates/proofbound-runtime-receipt/src/lib.rs` | Receipt-domain construction and eligibility derivation. |
 | `crates/proofbound-runtime-core/src/error.rs` | Typed core errors and stable machine codes. |
 | `crates/proofbound-runtime-receipt-kani/` | Verification-only crate with the exact receipt-state Kani harness inventory. |
 | `crates/proofbound-runtime-linux/Cargo.toml` | Manifest for Linux-specific policy compilation and execution. |

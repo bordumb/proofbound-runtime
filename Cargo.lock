@@ -27,8 +27,13 @@ dependencies = [
 name = "proofbound-runtime-core"
 version = "0.0.0"
 dependencies = [
+ "proofbound-runtime-receipt",
  "serde_json",
 ]
+
+[[package]]
+name = "proofbound-runtime-receipt"
+version = "0.0.0"
 
 [[package]]
 name = "proofbound-runtime-receipt-kani"

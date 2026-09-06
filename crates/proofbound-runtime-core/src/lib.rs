@@ -13,5 +13,6 @@ pub use authority::{
 pub use normalize::{NormalizedAuthority, normalize_authority};
 pub use receipt::{
     BoundaryInstallation, ExecutionOutcome, NonReusableReason, NonReusableReasons,
-    ReceiptEligibility, ReceiptFacts, ReceiptStructure, StreamCapture, derive_receipt_eligibility,
+    ReceiptEligibility, ReceiptFacts, ReceiptStructure, SignalNumber, StreamCapture,
+    derive_receipt_eligibility,
 };

@@ -3,11 +3,9 @@
 //! Contains the bounded receipt eligibility proof harness.
 
 #[cfg(kani)]
-use core::num::NonZeroU32;
-#[cfg(kani)]
 use proofbound_runtime_core::{
     BoundaryInstallation, ExecutionOutcome, NonReusableReason, ReceiptEligibility, ReceiptFacts,
-    ReceiptStructure, StreamCapture, derive_receipt_eligibility,
+    ReceiptStructure, SignalNumber, StreamCapture, derive_receipt_eligibility,
 };
 
 #[cfg(kani)]
@@ -23,7 +21,7 @@ fn receipt_eligibility_is_exact_for_bounded_state_model() {
     let outcome = match outcome_selector {
         0 => ExecutionOutcome::Exited { code: kani::any() },
         1 => ExecutionOutcome::Signaled {
-            signal: NonZeroU32::MIN,
+            signal: SignalNumber::MIN,
         },
         2 => ExecutionOutcome::TimedOut,
         3 => ExecutionOutcome::Denied,

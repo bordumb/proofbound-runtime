@@ -3,7 +3,7 @@ id = "PBR-RECEIPT-004"
 title = "Incomplete executions are not reusable"
 statement = "Receipt eligibility is reusable only for a structurally valid, boundary-installed execution that exits with code zero and has complete output streams; every other represented state is non-reusable with all applicable typed reasons."
 public_language = "A kernel-checked theorem proves that the version 1 receipt model has exactly one reusable state and that every other represented state returns its complete nonempty canonical reason list. This theorem is model-only until source refinement and artifact binding are registered."
-subject = "rust:proofbound_runtime_core::derive_receipt_eligibility"
+subject = "rust:proofbound_runtime_receipt::derive_receipt_eligibility"
 profile = "kernel"
 tier = 2
 primary_linkage = "model-only"
@@ -27,6 +27,7 @@ out_of_scope = [
 ]
 source_roots = [
   "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-receipt/src/lib.rs",
   "crates/proofbound-runtime-core/tests/receipt_vectors.rs",
   "crates/proofbound-runtime-receipt-kani/src/lib.rs",
   "crates/proofbound-runtime-verify/src/derive.rs",

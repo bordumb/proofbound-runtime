@@ -1,8 +1,8 @@
-use std::{fs, num::NonZeroU32, path::Path};
+use std::{fs, path::Path};
 
 use proofbound_runtime_core::{
     BoundaryInstallation, ExecutionOutcome, NonReusableReason, ReceiptEligibility, ReceiptFacts,
-    ReceiptStructure, StreamCapture, derive_receipt_eligibility,
+    ReceiptStructure, SignalNumber, StreamCapture, derive_receipt_eligibility,
 };
 use serde_json::{Value, json};
 
@@ -39,7 +39,7 @@ fn parse_facts(input: &Value) -> ReceiptFacts {
             code: i32::try_from(integer(outcome, "code")).expect("fixture exit code fits i32"),
         },
         "signaled" => ExecutionOutcome::Signaled {
-            signal: NonZeroU32::new(
+            signal: SignalNumber::new(
                 u32::try_from(unsigned_integer(outcome, "signal"))
                     .expect("fixture signal fits u32"),
             )
