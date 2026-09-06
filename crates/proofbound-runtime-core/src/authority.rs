@@ -1,7 +1,52 @@
 use core::fmt;
 
-fn fits_translation_string_carrier(length: usize) -> bool {
-    length <= u32::MAX as usize
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+struct AuthorityText {
+    text: String,
+    bytes: Vec<u8>,
+}
+
+impl AuthorityText {
+    // This constructor is the only writer for both private fields. The byte
+    // mirror therefore stays equal to the UTF-8 representation of `text`.
+    fn new(text: String) -> Self {
+        let bytes = text.as_bytes().to_vec();
+        Self { text, bytes }
+    }
+
+    fn as_str(&self) -> &str {
+        self.text.as_str()
+    }
+
+    fn same_value(&self, other: &Self) -> bool {
+        if self.bytes.len() != other.bytes.len() {
+            return false;
+        }
+        let mut index = 0;
+        while index < self.bytes.len() {
+            if self.bytes[index] != other.bytes[index] {
+                return false;
+            }
+            index += 1;
+        }
+        true
+    }
+
+    fn comes_before(&self, other: &Self) -> bool {
+        let common_length = if self.bytes.len() < other.bytes.len() {
+            self.bytes.len()
+        } else {
+            other.bytes.len()
+        };
+        let mut index = 0;
+        while index < common_length {
+            if self.bytes[index] != other.bytes[index] {
+                return self.bytes[index] < other.bytes[index];
+            }
+            index += 1;
+        }
+        self.bytes.len() < other.bytes.len()
+    }
 }
 
 /// Identifies one file operation that the child can perform.
@@ -32,13 +77,12 @@ pub enum PathRole {
 
 /// Contains one validated path from an authority plan.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct AuthorityPath(String);
+pub struct AuthorityPath(AuthorityText);
 
 impl AuthorityPath {
     /// Validates one path.
     ///
-    /// This function rejects an empty path, a path that contains a null byte,
-    /// and a path that exceeds the registered translation carrier.
+    /// This function rejects an empty path and a path that contains a null byte.
     pub fn new(value: impl Into<String>) -> Result<Self, AuthorityError> {
         let value = value.into();
         if value.is_empty() {
@@ -47,38 +91,34 @@ impl AuthorityPath {
         if value.as_bytes().contains(&0) {
             return Err(AuthorityError::PathContainsNull);
         }
-        if !fits_translation_string_carrier(value.len()) {
-            return Err(AuthorityError::PathExceedsTranslationCarrier);
-        }
-        Ok(Self(value))
+        Ok(Self(AuthorityText::new(value)))
     }
 
     /// Returns the validated path text.
     #[must_use]
     pub fn as_str(&self) -> &str {
-        &self.0
+        self.0.as_str()
     }
 
     /// Reports whether two validated paths contain the same bytes.
     pub(crate) fn same_value(&self, other: &Self) -> bool {
-        bytes_same(self.0.as_bytes(), other.0.as_bytes())
+        self.0.same_value(&other.0)
     }
 
     /// Reports whether this path precedes another path in canonical order.
     pub(crate) fn comes_before(&self, other: &Self) -> bool {
-        bytes_come_before(self.0.as_bytes(), other.0.as_bytes())
+        self.0.comes_before(&other.0)
     }
 }
 
 /// Contains one validated environment variable name.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct EnvironmentName(String);
+pub struct EnvironmentName(AuthorityText);
 
 impl EnvironmentName {
     /// Validates one environment variable name.
     ///
-    /// This function rejects an empty name, a null byte, an equals sign, and a
-    /// name that exceeds the registered translation carrier.
+    /// This function rejects an empty name, a null byte, and an equals sign.
     pub fn new(value: impl Into<String>) -> Result<Self, AuthorityError> {
         let value = value.into();
         if value.is_empty() {
@@ -90,59 +130,24 @@ impl EnvironmentName {
         if value.as_bytes().contains(&b'=') {
             return Err(AuthorityError::EnvironmentNameContainsEquals);
         }
-        if !fits_translation_string_carrier(value.len()) {
-            return Err(AuthorityError::EnvironmentNameExceedsTranslationCarrier);
-        }
-        Ok(Self(value))
+        Ok(Self(AuthorityText::new(value)))
     }
 
     /// Returns the validated environment variable name.
     #[must_use]
     pub fn as_str(&self) -> &str {
-        &self.0
+        self.0.as_str()
     }
 
     /// Reports whether two validated names contain the same bytes.
     pub(crate) fn same_value(&self, other: &Self) -> bool {
-        bytes_same(self.0.as_bytes(), other.0.as_bytes())
+        self.0.same_value(&other.0)
     }
 
     /// Reports whether this name precedes another name in canonical order.
     pub(crate) fn comes_before(&self, other: &Self) -> bool {
-        bytes_come_before(self.0.as_bytes(), other.0.as_bytes())
+        self.0.comes_before(&other.0)
     }
-}
-
-// Concrete byte operations keep the translated decision closure free of local
-// comparison-trait implementations.
-fn bytes_same(left: &[u8], right: &[u8]) -> bool {
-    if left.len() != right.len() {
-        return false;
-    }
-    let mut index = 0;
-    while index < left.len() {
-        if left[index] != right[index] {
-            return false;
-        }
-        index += 1;
-    }
-    true
-}
-
-fn bytes_come_before(left: &[u8], right: &[u8]) -> bool {
-    let common_length = if left.len() < right.len() {
-        left.len()
-    } else {
-        right.len()
-    };
-    let mut index = 0;
-    while index < common_length {
-        if left[index] != right[index] {
-            return left[index] < right[index];
-        }
-        index += 1;
-    }
-    left.len() < right.len()
 }
 
 /// Contains one filesystem authority entry.
@@ -391,35 +396,6 @@ impl AuthorityPlan {
         self.network
     }
 
-    /// Validates the string representation used by the refinement bridge.
-    ///
-    /// Public constructors already enforce this condition. Normalization calls
-    /// this function so the translated source semantics retain the condition
-    /// as a checked boundary instead of an external premise.
-    pub(crate) fn validate_translation_carrier(&self) -> Result<(), AuthorityError> {
-        let mut path_index = 0;
-        let mut paths_fit = true;
-        while path_index < self.paths.len() && paths_fit {
-            paths_fit = fits_translation_string_carrier(self.paths[path_index].path.0.len());
-            path_index += 1;
-        }
-        if !paths_fit {
-            return Err(AuthorityError::PathExceedsTranslationCarrier);
-        }
-
-        let mut environment_index = 0;
-        let mut environment_fits = true;
-        while environment_index < self.environment.len() && environment_fits {
-            environment_fits =
-                fits_translation_string_carrier(self.environment[environment_index].0.len());
-            environment_index += 1;
-        }
-        if !environment_fits {
-            return Err(AuthorityError::EnvironmentNameExceedsTranslationCarrier);
-        }
-        Ok(())
-    }
-
     /// Separates this plan into its normalized fields.
     pub(crate) fn into_parts(
         self,
@@ -440,17 +416,12 @@ pub enum AuthorityError {
     EmptyPath,
     /// The path contains a null byte.
     PathContainsNull,
-    /// The path does not fit the registered translation string carrier.
-    PathExceedsTranslationCarrier,
     /// The environment variable name is empty.
     EmptyEnvironmentName,
     /// The environment variable name contains a null byte.
     EnvironmentNameContainsNull,
     /// The environment variable name contains an equals sign.
     EnvironmentNameContainsEquals,
-    /// The environment variable name does not fit the registered translation
-    /// string carrier.
-    EnvironmentNameExceedsTranslationCarrier,
     /// The process limit is zero.
     ZeroProcessLimit,
     /// The wall-time limit is zero.
@@ -464,13 +435,9 @@ impl AuthorityError {
         match self {
             Self::EmptyPath => "authority.path.empty",
             Self::PathContainsNull => "authority.path.null",
-            Self::PathExceedsTranslationCarrier => "authority.path.translation_carrier",
             Self::EmptyEnvironmentName => "authority.environment.empty",
             Self::EnvironmentNameContainsNull => "authority.environment.null",
             Self::EnvironmentNameContainsEquals => "authority.environment.equals",
-            Self::EnvironmentNameExceedsTranslationCarrier => {
-                "authority.environment.translation_carrier"
-            }
             Self::ZeroProcessLimit => "authority.limit.processes.zero",
             Self::ZeroWallTimeLimit => "authority.limit.wall_time.zero",
         }
@@ -500,14 +467,6 @@ mod tests {
             EnvironmentName::new("A=B"),
             Err(AuthorityError::EnvironmentNameContainsEquals)
         );
-    }
-
-    #[test]
-    fn checks_translation_carrier_boundaries() {
-        assert!(fits_translation_string_carrier(u32::MAX as usize));
-        if usize::BITS > u32::BITS {
-            assert!(!fits_translation_string_carrier(u32::MAX as usize + 1));
-        }
     }
 
     #[test]

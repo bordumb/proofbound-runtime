@@ -66,10 +66,6 @@ impl NormalizedAuthority {
 /// This function sorts and deduplicates exact entries. It does not resolve
 /// paths or add platform closure entries.
 pub fn normalize_authority(plan: AuthorityPlan) -> Result<NormalizedAuthority, AuthorityError> {
-    match plan.validate_translation_carrier() {
-        Ok(()) => {}
-        Err(error) => return Err(error),
-    }
     let (mut paths, mut environment, limits, network) = plan.into_parts();
     sort_and_deduplicate_paths(&mut paths);
     sort_and_deduplicate_environment(&mut environment);
