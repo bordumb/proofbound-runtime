@@ -11,13 +11,13 @@ warning_inventory = []
 
 [[template_axioms]]
 file = "formal/generated/ProofboundRuntimeCore/FunsExternal_Template.lean"
-count = 2
+count = 3
 compiled = false
 
 [[external_bridges]]
 file = "formal/bridges/ProofboundRuntimeCore/FunsExternal.lean"
 module = "ProofboundRuntimeCore.FunsExternal"
-reviewed_sha256 = "sha256:e2651e86967faca0c22001a4e729a06dbe373ec6c2ecf1e6fb881a69bd139cc0"
+reviewed_sha256 = "sha256:46e9fde7b03d19f2391b2b857f7292479495959b5a13bba163f649a559015c8f"
 
 [[invocations]]
 id = "authority-normalization"
@@ -43,6 +43,10 @@ rust_name = "proofbound_runtime_core::authority::file_access_rank"
 
 [[invocations.translated_closure]]
 kind = "function"
+rust_name = "proofbound_runtime_core::authority::fits_translation_string_carrier"
+
+[[invocations.translated_closure]]
+kind = "function"
 rust_name = "proofbound_runtime_core::authority::path_role_rank"
 
 [[invocations.translated_closure]]
@@ -56,6 +60,10 @@ rust_name = "proofbound_runtime_core::authority::{proofbound_runtime_core::autho
 [[invocations.translated_closure]]
 kind = "function"
 rust_name = "proofbound_runtime_core::authority::{proofbound_runtime_core::authority::AuthorityPlan}::into_parts"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::authority::{proofbound_runtime_core::authority::AuthorityPlan}::validate_translation_carrier"
 
 [[invocations.translated_closure]]
 kind = "function"
@@ -100,6 +108,10 @@ rust_name = "proofbound_runtime_core::normalize::sort_and_deduplicate_environmen
 [[invocations.translated_closure]]
 kind = "function"
 rust_name = "proofbound_runtime_core::normalize::sort_and_deduplicate_paths"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::AuthorityError"
 
 [[invocations.translated_closure]]
 kind = "type"

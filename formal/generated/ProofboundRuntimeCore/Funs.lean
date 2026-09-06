@@ -19,8 +19,15 @@ noncomputable section
 
 namespace proofbound_runtime_core
 
+/-- [proofbound_runtime_core::authority::fits_translation_string_carrier]:
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 3:0-5:1 -/
+def authority.fits_translation_string_carrier
+  (length : Std.Usize) : Result Bool := do
+  let i ← lift (UScalar.cast .Usize core.num.U32.MAX)
+  ok (length <= i)
+
 /-- [proofbound_runtime_core::authority::bytes_same]: loop body 0:
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 111:4-118:1 -/
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 123:4-130:1 -/
 @[rust_loop_body]
 def authority.bytes_same_loop.body
   (left : Slice Std.U8) (right : Slice Std.U8) (index : Std.Usize) :
@@ -38,7 +45,7 @@ def authority.bytes_same_loop.body
   else ok (done true)
 
 /-- [proofbound_runtime_core::authority::bytes_same]: loop 0:
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 111:4-118:1 -/
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 123:4-130:1 -/
 @[rust_loop]
 def authority.bytes_same_loop
   (left : Slice Std.U8) (right : Slice Std.U8) (index : Std.Usize) :
@@ -49,7 +56,7 @@ def authority.bytes_same_loop
     index
 
 /-- [proofbound_runtime_core::authority::bytes_same]:
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 106:0-118:1 -/
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 118:0-130:1 -/
 def authority.bytes_same
   (left : Slice Std.U8) (right : Slice Std.U8) : Result Bool := do
   let i := Slice.len left
@@ -59,7 +66,7 @@ def authority.bytes_same
   else authority.bytes_same_loop left right 0#usize
 
 /-- [proofbound_runtime_core::authority::{proofbound_runtime_core::authority::AuthorityPath}::same_value]:
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 55:4-57:5 -/
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 63:4-65:5 -/
 def authority.AuthorityPath.same_value
   (self : authority.AuthorityPath) (other : authority.AuthorityPath) :
   Result Bool
@@ -69,7 +76,7 @@ def authority.AuthorityPath.same_value
   authority.bytes_same s s1
 
 /-- [proofbound_runtime_core::authority::bytes_come_before]: loop body 0:
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 127:4-134:1 -/
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 139:4-146:1 -/
 @[rust_loop_body]
 def authority.bytes_come_before_loop.body
   (left : Slice Std.U8) (right : Slice Std.U8) (common_length : Std.Usize)
@@ -89,7 +96,7 @@ def authority.bytes_come_before_loop.body
        ok (done (i < i1))
 
 /-- [proofbound_runtime_core::authority::bytes_come_before]: loop 0:
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 127:4-134:1 -/
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 139:4-146:1 -/
 @[rust_loop]
 def authority.bytes_come_before_loop
   (left : Slice Std.U8) (right : Slice Std.U8) (common_length : Std.Usize)
@@ -102,7 +109,7 @@ def authority.bytes_come_before_loop
     index
 
 /-- [proofbound_runtime_core::authority::bytes_come_before]:
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 120:0-134:1 -/
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 132:0-146:1 -/
 def authority.bytes_come_before
   (left : Slice Std.U8) (right : Slice Std.U8) : Result Bool := do
   let i := Slice.len left
@@ -114,7 +121,7 @@ def authority.bytes_come_before
   authority.bytes_come_before_loop left right common_length 0#usize
 
 /-- [proofbound_runtime_core::authority::{proofbound_runtime_core::authority::AuthorityPath}::comes_before]:
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 60:4-62:5 -/
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 68:4-70:5 -/
 def authority.AuthorityPath.comes_before
   (self : authority.AuthorityPath) (other : authority.AuthorityPath) :
   Result Bool
@@ -124,7 +131,7 @@ def authority.AuthorityPath.comes_before
   authority.bytes_come_before s s1
 
 /-- [proofbound_runtime_core::authority::{proofbound_runtime_core::authority::EnvironmentName}::same_value]:
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 94:4-96:5 -/
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 106:4-108:5 -/
 def authority.EnvironmentName.same_value
   (self : authority.EnvironmentName) (other : authority.EnvironmentName) :
   Result Bool
@@ -134,7 +141,7 @@ def authority.EnvironmentName.same_value
   authority.bytes_same s s1
 
 /-- [proofbound_runtime_core::authority::{proofbound_runtime_core::authority::EnvironmentName}::comes_before]:
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 99:4-101:5 -/
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 111:4-113:5 -/
 def authority.EnvironmentName.comes_before
   (self : authority.EnvironmentName) (other : authority.EnvironmentName) :
   Result Bool
@@ -144,7 +151,7 @@ def authority.EnvironmentName.comes_before
   authority.bytes_come_before s s1
 
 /-- [proofbound_runtime_core::authority::path_role_rank]:
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 198:0-206:1 -/
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 210:0-218:1 -/
 def authority.path_role_rank (role : authority.PathRole) : Result Std.U8 := do
   match role with
   | authority.PathRole.ProjectInput => ok 0#u8
@@ -154,7 +161,7 @@ def authority.path_role_rank (role : authority.PathRole) : Result Std.U8 := do
   | authority.PathRole.RuntimeLibrary => ok 4#u8
 
 /-- [proofbound_runtime_core::authority::file_access_rank]:
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 190:0-196:1 -/
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 202:0-208:1 -/
 def authority.file_access_rank
   (access : authority.FileAccess) : Result Std.U8 := do
   match access with
@@ -163,7 +170,7 @@ def authority.file_access_rank
   | authority.FileAccess.Execute => ok 2#u8
 
 /-- [proofbound_runtime_core::authority::{proofbound_runtime_core::authority::PathAuthority}::same_value]:
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 170:4-174:5 -/
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 182:4-186:5 -/
 def authority.PathAuthority.same_value
   (self : authority.PathAuthority) (other : authority.PathAuthority) :
   Result Bool
@@ -182,7 +189,7 @@ def authority.PathAuthority.same_value
   else ok false
 
 /-- [proofbound_runtime_core::authority::{proofbound_runtime_core::authority::PathAuthority}::comes_before]:
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 177:4-187:5 -/
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 189:4-199:5 -/
 def authority.PathAuthority.comes_before
   (self : authority.PathAuthority) (other : authority.PathAuthority) :
   Result Bool
@@ -200,8 +207,106 @@ def authority.PathAuthority.comes_before
       ok (i < i1)
   else authority.AuthorityPath.comes_before self.path other.path
 
+/-- [proofbound_runtime_core::authority::{proofbound_runtime_core::authority::AuthorityPlan}::validate_translation_carrier]: loop body 0:
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 402:8-405:9 -/
+@[rust_loop_body]
+def authority.AuthorityPlan.validate_translation_carrier_loop0.body
+  (self : authority.AuthorityPlan) (path_index : Std.Usize) (paths_fit : Bool)
+  :
+  Result (ControlFlow (Std.Usize × Bool) ((alloc.vec.Vec
+    authority.EnvironmentName) × Bool))
+  := do
+  let i := alloc.vec.Vec.len self.paths
+  if path_index < i
+  then
+    if paths_fit
+    then
+      let pa ←
+        alloc.vec.Vec.index (core.slice.index.SliceIndexUsizeSlice
+          authority.PathAuthority) self.paths path_index
+      let s := pa.path
+      let i1 ← alloc.string.String.len s
+      let paths_fit1 ← authority.fits_translation_string_carrier i1
+      let path_index1 ← path_index + 1#usize
+      ok (cont (path_index1, paths_fit1))
+    else ok (done (self.environment, false))
+  else ok (done (self.environment, paths_fit))
+
+/-- [proofbound_runtime_core::authority::{proofbound_runtime_core::authority::AuthorityPlan}::validate_translation_carrier]: loop 0:
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 402:8-405:9 -/
+@[rust_loop]
+def authority.AuthorityPlan.validate_translation_carrier_loop0
+  (self : authority.AuthorityPlan) (path_index : Std.Usize) (paths_fit : Bool)
+  :
+  Result ((alloc.vec.Vec authority.EnvironmentName) × Bool)
+  := do
+  loop
+    (fun (path_index1, paths_fit1) =>
+      authority.AuthorityPlan.validate_translation_carrier_loop0.body self
+      path_index1 paths_fit1)
+    (path_index, paths_fit)
+
+/-- [proofbound_runtime_core::authority::{proofbound_runtime_core::authority::AuthorityPlan}::validate_translation_carrier]: loop body 1:
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 412:8-416:9 -/
+@[rust_loop_body]
+def authority.AuthorityPlan.validate_translation_carrier_loop1.body
+  (v : alloc.vec.Vec authority.EnvironmentName) (environment_index : Std.Usize)
+  (environment_fits : Bool) :
+  Result (ControlFlow (Std.Usize × Bool) Bool)
+  := do
+  let i := alloc.vec.Vec.len v
+  if environment_index < i
+  then
+    if environment_fits
+    then
+      let en ←
+        alloc.vec.Vec.index (core.slice.index.SliceIndexUsizeSlice
+          authority.EnvironmentName) v environment_index
+      let i1 ← alloc.string.String.len en
+      let environment_fits1 ← authority.fits_translation_string_carrier i1
+      let environment_index1 ← environment_index + 1#usize
+      ok (cont (environment_index1, environment_fits1))
+    else ok (done false)
+  else ok (done environment_fits)
+
+/-- [proofbound_runtime_core::authority::{proofbound_runtime_core::authority::AuthorityPlan}::validate_translation_carrier]: loop 1:
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 412:8-416:9 -/
+@[rust_loop]
+def authority.AuthorityPlan.validate_translation_carrier_loop1
+  (v : alloc.vec.Vec authority.EnvironmentName) (environment_index : Std.Usize)
+  (environment_fits : Bool) :
+  Result Bool
+  := do
+  loop
+    (fun (environment_index1, environment_fits1) =>
+      authority.AuthorityPlan.validate_translation_carrier_loop1.body v
+      environment_index1 environment_fits1)
+    (environment_index, environment_fits)
+
+/-- [proofbound_runtime_core::authority::{proofbound_runtime_core::authority::AuthorityPlan}::validate_translation_carrier]:
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 399:4-421:5 -/
+def authority.AuthorityPlan.validate_translation_carrier
+  (self : authority.AuthorityPlan) :
+  Result (core.result.Result Unit authority.AuthorityError)
+  := do
+  let (v, paths_fit) ←
+    authority.AuthorityPlan.validate_translation_carrier_loop0 self 0#usize
+      true
+  if paths_fit
+  then
+    let environment_fits ←
+      authority.AuthorityPlan.validate_translation_carrier_loop1 v 0#usize true
+    if environment_fits
+    then ok (core.result.Result.Ok ())
+    else
+      ok (core.result.Result.Err
+        authority.AuthorityError.EnvironmentNameExceedsTranslationCarrier)
+  else
+    ok (core.result.Result.Err
+      authority.AuthorityError.PathExceedsTranslationCarrier)
+
 /-- [proofbound_runtime_core::authority::{proofbound_runtime_core::authority::AuthorityPlan}::into_parts]:
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 383:4-392:5 -/
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 424:4-433:5 -/
 def authority.AuthorityPlan.into_parts
   (self : authority.AuthorityPlan) :
   Result ((alloc.vec.Vec authority.PathAuthority) × (alloc.vec.Vec
@@ -211,7 +316,7 @@ def authority.AuthorityPlan.into_parts
   ok (self.paths, self.environment, self.limits, self.network)
 
 /-- [proofbound_runtime_core::normalize::environment_prefix_contains]: loop body 0:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 140:4-147:1 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 145:4-152:1 -/
 @[rust_loop_body]
 def normalize.environment_prefix_contains_loop.body
   (items : Slice authority.EnvironmentName) (end1 : Std.Usize)
@@ -230,7 +335,7 @@ def normalize.environment_prefix_contains_loop.body
   else ok (done false)
 
 /-- [proofbound_runtime_core::normalize::environment_prefix_contains]: loop 0:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 140:4-147:1 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 145:4-152:1 -/
 @[rust_loop]
 def normalize.environment_prefix_contains_loop
   (items : Slice authority.EnvironmentName) (end1 : Std.Usize)
@@ -243,7 +348,7 @@ def normalize.environment_prefix_contains_loop
     index
 
 /-- [proofbound_runtime_core::normalize::environment_prefix_contains]:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 138:0-147:1 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 143:0-152:1 -/
 @[reducible]
 def normalize.environment_prefix_contains
   (items : Slice authority.EnvironmentName) (end1 : Std.Usize)
@@ -253,7 +358,7 @@ def normalize.environment_prefix_contains
   normalize.environment_prefix_contains_loop items end1 candidate 0#usize
 
 /-- [proofbound_runtime_core::normalize::deduplicate_environment]: loop body 0:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 127:4-134:5 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 132:4-139:5 -/
 @[rust_loop_body]
 def normalize.deduplicate_environment_loop.body
   (iter : core.ops.range.Range Std.Usize)
@@ -284,7 +389,7 @@ def normalize.deduplicate_environment_loop.body
       ok (cont (iter1, items1, write1))
 
 /-- [proofbound_runtime_core::normalize::deduplicate_environment]: loop 0:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 127:4-134:5 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 132:4-139:5 -/
 @[rust_loop]
 def normalize.deduplicate_environment_loop
   (iter : core.ops.range.Range Std.Usize)
@@ -297,7 +402,7 @@ def normalize.deduplicate_environment_loop
     (iter, items, write)
 
 /-- [proofbound_runtime_core::normalize::deduplicate_environment]:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 125:0-136:1 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 130:0-141:1 -/
 def normalize.deduplicate_environment
   (items : alloc.vec.Vec authority.EnvironmentName) :
   Result (alloc.vec.Vec authority.EnvironmentName)
@@ -309,7 +414,7 @@ def normalize.deduplicate_environment
   alloc.vec.Vec.truncate Global items1 write
 
 /-- [proofbound_runtime_core::normalize::sort_and_deduplicate_environment]: loop body 1:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 118:8-121:9 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 123:8-126:9 -/
 @[rust_loop_body]
 def normalize.sort_and_deduplicate_environment_loop0_loop0.body
   (items : alloc.vec.Vec authority.EnvironmentName) (cursor : Std.Usize) :
@@ -336,7 +441,7 @@ def normalize.sort_and_deduplicate_environment_loop0_loop0.body
   else ok (done items)
 
 /-- [proofbound_runtime_core::normalize::sort_and_deduplicate_environment]: loop 1:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 118:8-121:9 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 123:8-126:9 -/
 @[rust_loop]
 def normalize.sort_and_deduplicate_environment_loop0_loop0
   (items : alloc.vec.Vec authority.EnvironmentName) (cursor : Std.Usize) :
@@ -349,7 +454,7 @@ def normalize.sort_and_deduplicate_environment_loop0_loop0
     (items, cursor)
 
 /-- [proofbound_runtime_core::normalize::sort_and_deduplicate_environment]: loop body 0:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 116:4-122:5 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 121:4-127:5 -/
 @[rust_loop_body]
 def normalize.sort_and_deduplicate_environment_loop0.body
   (iter : core.ops.range.Range Std.Usize)
@@ -367,7 +472,7 @@ def normalize.sort_and_deduplicate_environment_loop0.body
     ok (cont (iter1, items1))
 
 /-- [proofbound_runtime_core::normalize::sort_and_deduplicate_environment]: loop 0:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 116:4-122:5 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 121:4-127:5 -/
 @[rust_loop]
 def normalize.sort_and_deduplicate_environment_loop0
   (iter : core.ops.range.Range Std.Usize)
@@ -380,7 +485,7 @@ def normalize.sort_and_deduplicate_environment_loop0
     (iter, items)
 
 /-- [proofbound_runtime_core::normalize::sort_and_deduplicate_environment]:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 114:0-123:1 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 119:0-128:1 -/
 def normalize.sort_and_deduplicate_environment
   (items : alloc.vec.Vec authority.EnvironmentName) :
   Result (alloc.vec.Vec authority.EnvironmentName)
@@ -391,7 +496,7 @@ def normalize.sort_and_deduplicate_environment
     { start := 1#usize, «end» := i } items1
 
 /-- [proofbound_runtime_core::normalize::path_prefix_contains]: loop body 0:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 105:4-112:1 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 110:4-117:1 -/
 @[rust_loop_body]
 def normalize.path_prefix_contains_loop.body
   (items : Slice authority.PathAuthority) (end1 : Std.Usize)
@@ -410,7 +515,7 @@ def normalize.path_prefix_contains_loop.body
   else ok (done false)
 
 /-- [proofbound_runtime_core::normalize::path_prefix_contains]: loop 0:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 105:4-112:1 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 110:4-117:1 -/
 @[rust_loop]
 def normalize.path_prefix_contains_loop
   (items : Slice authority.PathAuthority) (end1 : Std.Usize)
@@ -423,7 +528,7 @@ def normalize.path_prefix_contains_loop
     index
 
 /-- [proofbound_runtime_core::normalize::path_prefix_contains]:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 103:0-112:1 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 108:0-117:1 -/
 @[reducible]
 def normalize.path_prefix_contains
   (items : Slice authority.PathAuthority) (end1 : Std.Usize)
@@ -433,7 +538,7 @@ def normalize.path_prefix_contains
   normalize.path_prefix_contains_loop items end1 candidate 0#usize
 
 /-- [proofbound_runtime_core::normalize::deduplicate_paths]: loop body 0:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 92:4-99:5 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 97:4-104:5 -/
 @[rust_loop_body]
 def normalize.deduplicate_paths_loop.body
   (iter : core.ops.range.Range Std.Usize)
@@ -464,7 +569,7 @@ def normalize.deduplicate_paths_loop.body
       ok (cont (iter1, items1, write1))
 
 /-- [proofbound_runtime_core::normalize::deduplicate_paths]: loop 0:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 92:4-99:5 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 97:4-104:5 -/
 @[rust_loop]
 def normalize.deduplicate_paths_loop
   (iter : core.ops.range.Range Std.Usize)
@@ -477,7 +582,7 @@ def normalize.deduplicate_paths_loop
     (iter, items, write)
 
 /-- [proofbound_runtime_core::normalize::deduplicate_paths]:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 90:0-101:1 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 95:0-106:1 -/
 def normalize.deduplicate_paths
   (items : alloc.vec.Vec authority.PathAuthority) :
   Result (alloc.vec.Vec authority.PathAuthority)
@@ -489,7 +594,7 @@ def normalize.deduplicate_paths
   alloc.vec.Vec.truncate Global items1 write
 
 /-- [proofbound_runtime_core::normalize::sort_and_deduplicate_paths]: loop body 1:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 83:8-86:9 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 88:8-91:9 -/
 @[rust_loop_body]
 def normalize.sort_and_deduplicate_paths_loop0_loop0.body
   (items : alloc.vec.Vec authority.PathAuthority) (cursor : Std.Usize) :
@@ -516,7 +621,7 @@ def normalize.sort_and_deduplicate_paths_loop0_loop0.body
   else ok (done items)
 
 /-- [proofbound_runtime_core::normalize::sort_and_deduplicate_paths]: loop 1:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 83:8-86:9 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 88:8-91:9 -/
 @[rust_loop]
 def normalize.sort_and_deduplicate_paths_loop0_loop0
   (items : alloc.vec.Vec authority.PathAuthority) (cursor : Std.Usize) :
@@ -528,7 +633,7 @@ def normalize.sort_and_deduplicate_paths_loop0_loop0
     (items, cursor)
 
 /-- [proofbound_runtime_core::normalize::sort_and_deduplicate_paths]: loop body 0:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 81:4-87:5 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 86:4-92:5 -/
 @[rust_loop_body]
 def normalize.sort_and_deduplicate_paths_loop0.body
   (iter : core.ops.range.Range Std.Usize)
@@ -545,7 +650,7 @@ def normalize.sort_and_deduplicate_paths_loop0.body
     ok (cont (iter1, items1))
 
 /-- [proofbound_runtime_core::normalize::sort_and_deduplicate_paths]: loop 0:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 81:4-87:5 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 86:4-92:5 -/
 @[rust_loop]
 def normalize.sort_and_deduplicate_paths_loop0
   (iter : core.ops.range.Range Std.Usize)
@@ -558,7 +663,7 @@ def normalize.sort_and_deduplicate_paths_loop0
     (iter, items)
 
 /-- [proofbound_runtime_core::normalize::sort_and_deduplicate_paths]:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 79:0-88:1 -/
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 84:0-93:1 -/
 def normalize.sort_and_deduplicate_paths
   (items : alloc.vec.Vec authority.PathAuthority) :
   Result (alloc.vec.Vec authority.PathAuthority)
@@ -569,14 +674,22 @@ def normalize.sort_and_deduplicate_paths
     items1
 
 /-- [proofbound_runtime_core::normalize::normalize_authority]:
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 67:0-77:1
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 68:0-82:1
     Visibility: public -/
 def normalize.normalize_authority
-  (plan : authority.AuthorityPlan) : Result normalize.NormalizedAuthority := do
-  let (paths, environment, limits, network) ←
-    authority.AuthorityPlan.into_parts plan
-  let paths1 ← normalize.sort_and_deduplicate_paths paths
-  let environment1 ← normalize.sort_and_deduplicate_environment environment
-  ok { paths := paths1, environment := environment1, limits, network }
+  (plan : authority.AuthorityPlan) :
+  Result (core.result.Result normalize.NormalizedAuthority
+    authority.AuthorityError)
+  := do
+  let r ← authority.AuthorityPlan.validate_translation_carrier plan
+  match r with
+  | core.result.Result.Ok _ =>
+    let (paths, environment, limits, network) ←
+      authority.AuthorityPlan.into_parts plan
+    let paths1 ← normalize.sort_and_deduplicate_paths paths
+    let environment1 ← normalize.sort_and_deduplicate_environment environment
+    ok (core.result.Result.Ok
+      { paths := paths1, environment := environment1, limits, network })
+  | core.result.Result.Err error => ok (core.result.Result.Err error)
 
 end proofbound_runtime_core

@@ -321,6 +321,29 @@ theorem string_as_bytes_spec (value : String)
     omega
 
 @[step]
+theorem string_len_spec (value : String)
+    (hBound : value.toByteArray.size ≤ U32.max) :
+    alloc.string.String.len value
+      ⦃ length => length.val = value.toByteArray.size ⦄ := by
+  unfold alloc.string.String.len
+  step with string_as_bytes_spec
+  change bytes.val.length = value.toByteArray.size
+  rw [bytes_post]
+  simp [StringBytes, ByteArray.length_toList]
+
+@[step]
+theorem fits_translation_string_carrier_spec (length : Usize) :
+    authority.fits_translation_string_carrier length
+      ⦃ fits => fits = true ↔ length.val ≤ U32.max ⦄ := by
+  unfold authority.fits_translation_string_carrier
+  step
+  simp only [decide_eq_true_eq]
+  change length.val ≤ i.val ↔ length.val ≤ U32.max
+  simp [i_post, UScalar.cast_val_eq, core.num.U32.MAX, U32.rMax,
+    U32.max, U32.numBits, UScalarTy.numBits]
+  cases System.Platform.numBits_eq <;> simp_all
+
+@[step]
 theorem authority_path_same_value_spec
     (self other : authority.AuthorityPath)
     (hSelf : self.toByteArray.size ≤ U32.max)
@@ -692,50 +715,5 @@ theorem sort_environment_loop_perm
           exact r_post.length_eq.symm
         · omega
   · exact ⟨List.Perm.refl _, hBounded, hStartEnd, hEnd⟩
-
-/--
-Any successful execution of the translated normalization entry point is
-assembled from the two translated collection normalizers and preserves the
-input resource limits and network mode exactly.
-
-This is an intermediate source theorem. It deliberately does not discharge
-the remaining duplicate-freedom and collection-subset obligations.
--/
-theorem normalize_authority_success_shape
-    (plan : authority.AuthorityPlan)
-    (out : normalize.NormalizedAuthority)
-    (h : normalize.normalize_authority plan = .ok out) :
-    ∃ paths environment,
-      normalize.sort_and_deduplicate_paths plan.paths = .ok paths ∧
-      normalize.sort_and_deduplicate_environment plan.environment = .ok environment ∧
-      out = {
-        paths := paths
-        environment := environment
-        limits := plan.limits
-        network := plan.network
-      } := by
-  cases hp : normalize.sort_and_deduplicate_paths plan.paths with
-  | fail error =>
-      simp [normalize.normalize_authority, authority.AuthorityPlan.into_parts, hp] at h
-  | div =>
-      simp [normalize.normalize_authority, authority.AuthorityPlan.into_parts, hp] at h
-  | ok paths =>
-      cases he : normalize.sort_and_deduplicate_environment plan.environment with
-      | fail error =>
-          simp [normalize.normalize_authority, authority.AuthorityPlan.into_parts, hp, he] at h
-      | div =>
-          simp [normalize.normalize_authority, authority.AuthorityPlan.into_parts, hp, he] at h
-      | ok environment =>
-          simp [normalize.normalize_authority, authority.AuthorityPlan.into_parts, hp, he] at h
-          exact ⟨paths, environment, rfl, rfl, h.symm⟩
-
-theorem normalize_authority_preserves_limits_and_network
-    (plan : authority.AuthorityPlan)
-    (out : normalize.NormalizedAuthority)
-    (h : normalize.normalize_authority plan = .ok out) :
-    out.limits = plan.limits ∧ out.network = plan.network := by
-  obtain ⟨paths, environment, _, _, rfl⟩ :=
-    normalize_authority_success_shape plan out h
-  exact ⟨rfl, rfl⟩
 
 end ProofboundRuntime.Refinement.Authority

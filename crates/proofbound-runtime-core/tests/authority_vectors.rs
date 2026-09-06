@@ -14,7 +14,8 @@ fn accepts_all_positive_authority_vectors() {
     for (path, vector) in vectors("positive") {
         let plan =
             parse_plan(&vector).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
-        let normalized = normalize_authority(plan.clone());
+        let normalized = normalize_authority(plan.clone())
+            .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
         assert!(normalized.is_subset_of(&plan), "{}", path.display());
         assert!(normalized.is_canonical(), "{}", path.display());
         assert_eq!(

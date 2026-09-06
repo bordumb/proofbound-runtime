@@ -15,7 +15,7 @@ set_option maxRecDepth 2048
 namespace proofbound_runtime_core
 
 /-- [proofbound_runtime_core::authority::FileAccess]
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 5:0-12:1
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 9:0-16:1
     Visibility: public -/
 @[discriminant isize]
 inductive authority.FileAccess where
@@ -24,7 +24,7 @@ inductive authority.FileAccess where
 | Execute : authority.FileAccess
 
 /-- [proofbound_runtime_core::authority::PathRole]
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 16:0-27:1
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 20:0-31:1
     Visibility: public -/
 @[discriminant isize]
 inductive authority.PathRole where
@@ -35,19 +35,19 @@ inductive authority.PathRole where
 | RuntimeLibrary : authority.PathRole
 
 /-- [proofbound_runtime_core::authority::AuthorityPath]
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 31:0-31:33
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 35:0-35:33
     Visibility: public -/
 @[reducible]
 def authority.AuthorityPath := String
 
 /-- [proofbound_runtime_core::authority::EnvironmentName]
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 67:0-67:35
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 75:0-75:35
     Visibility: public -/
 @[reducible]
 def authority.EnvironmentName := String
 
 /-- [proofbound_runtime_core::authority::PathAuthority]
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 138:0-142:1
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 150:0-154:1
     Visibility: public -/
 structure authority.PathAuthority where
   path : authority.AuthorityPath
@@ -55,25 +55,25 @@ structure authority.PathAuthority where
   role : authority.PathRole
 
 /-- [proofbound_runtime_core::authority::ProcessLimit]
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 210:0-210:29
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 222:0-222:29
     Visibility: public -/
 @[reducible]
 def authority.ProcessLimit := Std.U32
 
 /-- [proofbound_runtime_core::authority::WallTimeLimit]
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 230:0-230:30
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 242:0-242:30
     Visibility: public -/
 @[reducible]
 def authority.WallTimeLimit := Std.U64
 
 /-- [proofbound_runtime_core::authority::OutputByteLimit]
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 250:0-250:32
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 262:0-262:32
     Visibility: public -/
 @[reducible]
 def authority.OutputByteLimit := Std.U64
 
 /-- [proofbound_runtime_core::authority::ResourceLimits]
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 268:0-273:1
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 280:0-285:1
     Visibility: public -/
 structure authority.ResourceLimits where
   processes : authority.ProcessLimit
@@ -82,14 +82,14 @@ structure authority.ResourceLimits where
   stderr : authority.OutputByteLimit
 
 /-- [proofbound_runtime_core::authority::NetworkMode]
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 328:0-331:1
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 340:0-343:1
     Visibility: public -/
 @[discriminant isize]
 inductive authority.NetworkMode where
 | Deny : authority.NetworkMode
 
 /-- [proofbound_runtime_core::authority::AuthorityPlan]
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 335:0-340:1
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 347:0-352:1
     Visibility: public -/
 structure authority.AuthorityPlan where
   paths : alloc.vec.Vec authority.PathAuthority
@@ -97,8 +97,23 @@ structure authority.AuthorityPlan where
   limits : authority.ResourceLimits
   network : authority.NetworkMode
 
+/-- [proofbound_runtime_core::authority::AuthorityError]
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 438:0-458:1
+    Visibility: public -/
+@[discriminant isize]
+inductive authority.AuthorityError where
+| EmptyPath : authority.AuthorityError
+| PathContainsNull : authority.AuthorityError
+| PathExceedsTranslationCarrier : authority.AuthorityError
+| EmptyEnvironmentName : authority.AuthorityError
+| EnvironmentNameContainsNull : authority.AuthorityError
+| EnvironmentNameContainsEquals : authority.AuthorityError
+| EnvironmentNameExceedsTranslationCarrier : authority.AuthorityError
+| ZeroProcessLimit : authority.AuthorityError
+| ZeroWallTimeLimit : authority.AuthorityError
+
 /-- [proofbound_runtime_core::normalize::NormalizedAuthority]
-    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 5:0-10:1
+    Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 7:0-12:1
     Visibility: public -/
 structure normalize.NormalizedAuthority where
   paths : alloc.vec.Vec authority.PathAuthority

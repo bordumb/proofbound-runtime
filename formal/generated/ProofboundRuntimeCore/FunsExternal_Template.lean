@@ -22,6 +22,13 @@ open proofbound_runtime_core
 @[rust_fun "alloc::string::{alloc::string::String}::as_bytes"]
 axiom alloc.string.String.as_bytes : String → Result (Slice Std.U8)
 
+/-- [alloc::string::{alloc::string::String}::len]:
+    Source: '/rustc/library/alloc/src/string.rs', lines 1869:4-1869:36
+    Name pattern: [alloc::string::{alloc::string::String}::len]
+    Visibility: public -/
+@[rust_fun "alloc::string::{alloc::string::String}::len"]
+axiom alloc.string.String.len : String → Result Std.Usize
+
 /-- [alloc::vec::{alloc::vec::Vec<T>}::truncate]:
     Source: '/rustc/library/alloc/src/vec/mod.rs', lines 1814:4-1814:42
     Name pattern: [alloc::vec::{alloc::vec::Vec<@T>}::truncate]

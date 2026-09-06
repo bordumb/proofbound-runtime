@@ -1,4 +1,6 @@
-use crate::{AuthorityPlan, EnvironmentName, NetworkMode, PathAuthority, ResourceLimits};
+use crate::{
+    AuthorityError, AuthorityPlan, EnvironmentName, NetworkMode, PathAuthority, ResourceLimits,
+};
 
 /// Contains authority entries in canonical order without duplicates.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -63,17 +65,20 @@ impl NormalizedAuthority {
 ///
 /// This function sorts and deduplicates exact entries. It does not resolve
 /// paths or add platform closure entries.
-#[must_use]
-pub fn normalize_authority(plan: AuthorityPlan) -> NormalizedAuthority {
+pub fn normalize_authority(plan: AuthorityPlan) -> Result<NormalizedAuthority, AuthorityError> {
+    match plan.validate_translation_carrier() {
+        Ok(()) => {}
+        Err(error) => return Err(error),
+    }
     let (mut paths, mut environment, limits, network) = plan.into_parts();
     sort_and_deduplicate_paths(&mut paths);
     sort_and_deduplicate_environment(&mut environment);
-    NormalizedAuthority {
+    Ok(NormalizedAuthority {
         paths,
         environment,
         limits,
         network,
-    }
+    })
 }
 
 fn sort_and_deduplicate_paths(items: &mut Vec<PathAuthority>) {
@@ -191,7 +196,7 @@ mod kani_harnesses {
                 OutputByteLimit::new(1),
             ),
         );
-        let normalized = normalize_authority(plan.clone());
+        let normalized = normalize_authority(plan.clone()).expect("validated plan normalizes");
         assert!(normalized.is_subset_of(&plan));
         assert!(normalized.is_canonical());
     }
@@ -235,7 +240,7 @@ mod tests {
             ],
             limits(),
         );
-        let normalized = normalize_authority(plan.clone());
+        let normalized = normalize_authority(plan.clone()).expect("validated plan normalizes");
         assert_eq!(normalized.paths(), &[out, src]);
         assert_eq!(
             normalized.environment(),
@@ -258,7 +263,10 @@ mod tests {
             vec![],
             limits(),
         );
-        let once = normalize_authority(plan);
-        assert_eq!(normalize_authority(once.to_plan()), once);
+        let once = normalize_authority(plan).expect("validated plan normalizes");
+        assert_eq!(
+            normalize_authority(once.to_plan()).expect("normalized plan normalizes"),
+            once
+        );
     }
 }

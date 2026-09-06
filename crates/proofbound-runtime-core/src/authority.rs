@@ -1,9 +1,7 @@
 use core::fmt;
 
-const TRANSLATION_STRING_MAX_BYTES: usize = u32::MAX as usize;
-
 fn fits_translation_string_carrier(length: usize) -> bool {
-    length <= TRANSLATION_STRING_MAX_BYTES
+    length <= u32::MAX as usize
 }
 
 /// Identifies one file operation that the child can perform.
@@ -391,6 +389,35 @@ impl AuthorityPlan {
     #[must_use]
     pub fn network(&self) -> NetworkMode {
         self.network
+    }
+
+    /// Validates the string representation used by the refinement bridge.
+    ///
+    /// Public constructors already enforce this condition. Normalization calls
+    /// this function so the translated source semantics retain the condition
+    /// as a checked boundary instead of an external premise.
+    pub(crate) fn validate_translation_carrier(&self) -> Result<(), AuthorityError> {
+        let mut path_index = 0;
+        let mut paths_fit = true;
+        while path_index < self.paths.len() && paths_fit {
+            paths_fit = fits_translation_string_carrier(self.paths[path_index].path.0.len());
+            path_index += 1;
+        }
+        if !paths_fit {
+            return Err(AuthorityError::PathExceedsTranslationCarrier);
+        }
+
+        let mut environment_index = 0;
+        let mut environment_fits = true;
+        while environment_index < self.environment.len() && environment_fits {
+            environment_fits =
+                fits_translation_string_carrier(self.environment[environment_index].0.len());
+            environment_index += 1;
+        }
+        if !environment_fits {
+            return Err(AuthorityError::EnvironmentNameExceedsTranslationCarrier);
+        }
+        Ok(())
     }
 
     /// Separates this plan into its normalized fields.

@@ -16,6 +16,11 @@ def alloc.string.String.as_bytes (value : String) : Result (Slice Std.U8) :=
   else
     fail .panic
 
+@[rust_fun "alloc::string::{alloc::string::String}::len"]
+def alloc.string.String.len (value : String) : Result Std.Usize := do
+  let bytes ← alloc.string.String.as_bytes value
+  ok ⟨bytes.length, by scalar_tac⟩
+
 @[rust_fun "alloc::vec::{alloc::vec::Vec<@T>}::truncate"]
 def alloc.vec.Vec.truncate
     {T : Type} (_allocator : Type) (values : alloc.vec.Vec T)

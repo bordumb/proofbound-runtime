@@ -13,13 +13,14 @@ theorem normalize_authority_refines
     (plan : authority.AuthorityPlan)
     (hBounded : AuthorityStringsBounded plan) :
     normalize.normalize_authority plan
-      ⦃ out =>
-        out.paths.val.Nodup ∧
-        ListSubset out.paths.val plan.paths.val ∧
-        out.environment.val.Nodup ∧
-        ListSubset out.environment.val plan.environment.val ∧
-        out.limits = plan.limits ∧
-        out.network = plan.network ⦄ :=
+      ⦃ result => ∃ out,
+        result = core.result.Result.Ok out ∧
+          out.paths.val.Nodup ∧
+          ListSubset out.paths.val plan.paths.val ∧
+          out.environment.val.Nodup ∧
+          ListSubset out.environment.val plan.environment.val ∧
+          out.limits = plan.limits ∧
+          out.network = plan.network ⦄ :=
   ProofboundRuntime.Refinement.AuthorityNormalization.normalize_authority_refines
     plan hBounded
 
