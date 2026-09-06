@@ -1,14 +1,14 @@
 # PBF-0005: Source-refinement premise edges
 
-- **Status:** `upstream-ready`
+- **Status:** `resolved`
 - **Priority:** `blocking`
 - **Kind:** `evidence-semantics`
 - **Created:** 2026-09-05
-- **Last updated:** 2026-09-05
+- **Last updated:** 2026-09-06
 - **Runtime claim:** `PBR-AUTH-001`
 - **Runtime milestone:** Milestone 1
 - **Proofbound target:** typed assurance graph construction
-- **Upstream record:** not upstreamed
+- **Upstream record:** `proof-bound@d6ed79d`
 - **Supersedes:** none
 - **Superseded by:** none
 
@@ -118,19 +118,22 @@ implementations must continue to fail closed rather than discard the edge.
 
 ## Local treatment
 
-Runtime retains the compiled direct theorem and the registered translation
-unit, but does not register the source-refinement evidence unit and does not
-cite the theorem as admitted evidence. `PBR-AUTH-001` remains Tier 2,
-`PROVED / MODEL_ONLY / ADMITTED`. Compilation of the direct theorem is a
-development gate only and does not upgrade linkage.
+Runtime consumes the typed `TranslationUnit -> Premise` edge through
+`proofbound/evidence/authority-normalization-refinement.toml`.
+`PBR-AUTH-001` now admits its deterministic Charon/Aeneas translation as
+source-refinement evidence.
 
 ## Upstream handoff
 
-- **Destination:** not upstreamed
+- **Destination:** `proof-bound` core graph, compiler, verifier, and specification
 - **Issue:** none
-- **Specification or ADR:** none
-- **Commit or pull request:** none
+- **Specification or ADR:** `docs/specs/0001_initial_spec.md`
+- **Commit or pull request:** `d6ed79d fix: admit source refinement premise edges`
 
 ## Resolution
 
-Unresolved.
+Proofbound added `TranslationUnit -> Premise` to its typed endpoint table,
+compiled the owner edge, and taught the independent verifier to require the
+same relationship. Runtime consumed the change when it registered
+`authority-normalization-refinement`; the premise remained visible until the
+separate discharge work recorded by PBF-0006.

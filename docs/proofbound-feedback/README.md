@@ -208,7 +208,8 @@ and superseded items in the table.
 | [PBF-0002](pbf-0002-lean-theorem-identity-update.md) | Lean theorem identity update | `workflow` | `near-term` | `proposed` | Milestone 1 | Not upstreamed |
 | [PBF-0003](pbf-0003-missing-adapter-diagnostics.md) | Missing adapter diagnostics | `workflow` | `near-term` | `proposed` | Milestone 1 | Not upstreamed |
 | [PBF-0004](pbf-0004-lean-toolchain-isolation.md) | Lean toolchain isolation for theorem evidence | `workflow` | `later` | `resolved` | Milestone 1 | Deliberately deferred |
-| [PBF-0005](pbf-0005-source-refinement-premise-edges.md) | Source-refinement premise edges | `evidence-semantics` | `blocking` | `upstream-ready` | Milestone 1 | Not upstreamed |
+| [PBF-0005](pbf-0005-source-refinement-premise-edges.md) | Source-refinement premise edges | `evidence-semantics` | `blocking` | `resolved` | Milestone 1 | `proof-bound@d6ed79d` |
+| [PBF-0006](pbf-0006-typed-premise-discharge-joins.md) | Typed premise discharge joins | `evidence-semantics` | `blocking` | `resolved` | Milestone 1 | `proof-bound@504d17d` |
 
 ## Rules for agents
 
