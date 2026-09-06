@@ -1,6 +1,9 @@
 [workspace]
 resolver = "2"
-members = ["crates/proofbound-runtime-core"]
+members = [
+  "crates/proofbound-runtime-core",
+  "crates/proofbound-runtime-verify",
+]
 
 [workspace.package]
 version = "0.0.0"

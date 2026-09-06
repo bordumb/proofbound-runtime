@@ -31,6 +31,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "proofbound-runtime-verify"
+version = "0.0.0"
+dependencies = [
+ "serde_json",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"

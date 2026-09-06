@@ -1,0 +1,32 @@
+schema = "proofbound-evidence-unit/1"
+id = "receipt-eligibility-verifier-conformance"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-RECEIPT-004", "PBR-VERIFY-006"]
+tier = 0
+expected_inventory = [
+  "receipt_vectors::independent_verifier_accepts_registered_receipt_eligibility_vectors",
+]
+inputs = [
+  "crates/proofbound-runtime-verify/Cargo.toml",
+  "crates/proofbound-runtime-verify/src/derive.rs",
+  "crates/proofbound-runtime-verify/src/lib.rs",
+  "crates/proofbound-runtime-verify/tests/receipt_vectors.rs",
+  "schemas/receipt-eligibility-vector-v1.schema.json",
+  "tests/conformance/receipt/positive/eligibility-v1.json",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-verify"
+manifest = "Cargo.toml"
+targets = ["--test=receipt_vectors"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

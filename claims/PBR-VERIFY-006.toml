@@ -5,11 +5,11 @@ statement = "The standalone verifier independently derives receipt validity and 
 subject = "planned:proofbound_runtime_verify::verify_receipt"
 profile = "ledger"
 tier = 0
-evidence = []
+evidence = ["example-test:receipt-eligibility-verifier-conformance"]
 assumptions = ["PBR-TOOLCHAIN-AX-003"]
 open_obligations = [
-  "Implement a verifier that depends on no other workspace crate and imports no producer semantics.",
-  "Freeze shared positive and adversarial input vectors and register exact producer-verifier agreement.",
+  "Implement the independent receipt decoder, canonical-byte checks, identity validation, and verifier CLI.",
+  "Freeze shared adversarial receipt vectors and register exact rejection reasons.",
   "Bind the independent verifier to exact release artifacts.",
 ]
 out_of_scope = [
@@ -17,6 +17,9 @@ out_of_scope = [
   "Receipt properties not represented by the versioned schema and derivation rules.",
 ]
 source_roots = [
-  "docs/specs/0001_initial_spec.md",
-  "docs/threat-model.md",
+  "crates/proofbound-runtime-verify/src/derive.rs",
+  "crates/proofbound-runtime-verify/tests/receipt_vectors.rs",
+  "proofbound/evidence/receipt-eligibility-verifier-conformance.toml",
+  "schemas/receipt-eligibility-vector-v1.schema.json",
+  "tests/conformance/receipt/positive/eligibility-v1.json",
 ]

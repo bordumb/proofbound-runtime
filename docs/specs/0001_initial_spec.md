@@ -523,6 +523,7 @@ between crates.
 | File | Purpose |
 | --- | --- |
 | `crates/proofbound-runtime-verify/Cargo.toml` | Standalone verifier manifest. It MUST NOT depend on another workspace crate. |
+| `crates/proofbound-runtime-verify/src/lib.rs` | Independent semantic boundary used by the verifier executable. |
 | `crates/proofbound-runtime-verify/src/main.rs` | Verifier CLI and stable exit behavior. |
 | `crates/proofbound-runtime-verify/src/schema.rs` | Independent closed receipt decoder. |
 | `crates/proofbound-runtime-verify/src/canonical.rs` | Independent canonical-byte checks. |

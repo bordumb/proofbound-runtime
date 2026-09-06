@@ -5,11 +5,13 @@ statement = "Receipt eligibility is reusable only for a structurally valid, boun
 subject = "rust:proofbound_runtime_core::derive_receipt_eligibility"
 profile = "ledger"
 tier = 0
-evidence = ["example-test:receipt-eligibility-conformance"]
+evidence = [
+  "example-test:receipt-eligibility-conformance",
+  "example-test:receipt-eligibility-verifier-conformance",
+]
 assumptions = ["PBR-TOOLCHAIN-AX-003"]
 open_obligations = [
-  "Implement the closed state model in the independent verifier.",
-  "Register exhaustive finite-state checks, independent agreement, Lean theorems, source refinement, and artifact linkage.",
+  "Register an exhaustive finite-state check, a Lean theorem, source refinement, and artifact linkage.",
 ]
 out_of_scope = [
   "Semantic correctness of outputs produced by an otherwise reusable execution.",
@@ -18,7 +20,10 @@ out_of_scope = [
 source_roots = [
   "crates/proofbound-runtime-core/src/receipt.rs",
   "crates/proofbound-runtime-core/tests/receipt_vectors.rs",
+  "crates/proofbound-runtime-verify/src/derive.rs",
+  "crates/proofbound-runtime-verify/tests/receipt_vectors.rs",
   "proofbound/evidence/receipt-eligibility-conformance.toml",
+  "proofbound/evidence/receipt-eligibility-verifier-conformance.toml",
   "schemas/receipt-eligibility-vector-v1.schema.json",
   "tests/conformance/receipt/positive/eligibility-v1.json",
 ]
