@@ -18,12 +18,20 @@ srcDir = "formal"
 [[lean_lib]]
 name = "ProofboundRuntimeGenerated"
 srcDir = "formal/generated"
-roots = ["ProofboundRuntimeCore.Types", "ProofboundRuntimeCore.Funs"]
+roots = [
+  "ProofboundRuntimeCore.Types",
+  "ProofboundRuntimeCore.Funs",
+  "ProofboundRuntimeReceipt.Types",
+  "ProofboundRuntimeReceipt.Funs",
+]
 
 [[lean_lib]]
 name = "ProofboundRuntimeBridges"
 srcDir = "formal/bridges"
-roots = ["ProofboundRuntimeCore.FunsExternal"]
+roots = [
+  "ProofboundRuntimeCore.FunsExternal",
+  "ProofboundRuntimeReceipt.FunsExternal",
+]
 
 [[lean_exe]]
 name = "proofbound_lean_audit"

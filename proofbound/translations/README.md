@@ -13,3 +13,8 @@ Tier 2 and model-only.
 
 Generated Lean must stay below `formal/generated/`. Handwritten refinement
 modules must remain outside generated directories and must be byte-pinned.
+
+`PBR-RECEIPT-004` uses its own production crate and generated
+`ProofboundRuntimeReceipt` module. Keeping that translation unit separate from
+`ProofboundRuntimeCore` gives each refinement theorem one exact source closure
+and prevents receipt generation from changing the authority proof surface.
