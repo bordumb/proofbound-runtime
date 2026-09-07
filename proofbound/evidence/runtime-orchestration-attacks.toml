@@ -6,6 +6,7 @@ claims = ["PBR-RUN-007"]
 tier = 0
 expected_inventory = [
   "pbr::run::tests::orchestration_attack_catalog_is_closed",
+  "pbr::run::tests::run_result_transports_execution_identity_outside_receipt",
   "pbr::run::tests::receipt_publication_exposes_complete_exact_bytes",
   "pbr::run::tests::receipt_publication_never_replaces_an_existing_file",
 ]

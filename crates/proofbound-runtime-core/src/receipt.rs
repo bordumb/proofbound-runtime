@@ -47,7 +47,9 @@ impl ExecutionId {
         &self.0
     }
 
-    fn to_wire(self) -> String {
+    /// Returns the canonical lowercase RFC 4122 text carried on version 1 wires.
+    #[must_use]
+    pub fn to_text(self) -> String {
         let mut output = String::with_capacity(36);
         for (index, byte) in self.0.into_iter().enumerate() {
             if matches!(index, 4 | 6 | 8 | 10) {
@@ -806,7 +808,7 @@ impl From<&ExecutionReceipt> for WireExecutionReceipt {
                     inode: parts.boundary.cgroup.inode.to_string(),
                     mount_id: parts.boundary.cgroup.mount_id.to_string(),
                 },
-                execution_id: parts.boundary.execution_id.to_wire(),
+                execution_id: parts.boundary.execution_id.to_text(),
                 policy_sha256: parts.boundary.policy_sha256.to_hex(),
                 state: boundary_wire_name(parts.boundary.state),
             },
@@ -818,7 +820,7 @@ impl From<&ExecutionReceipt> for WireExecutionReceipt {
             },
             eligibility: WireEligibility::from(&receipt.eligibility),
             environment: receipt.environment.clone(),
-            execution_id: parts.execution_id.to_wire(),
+            execution_id: parts.execution_id.to_text(),
             inputs: parts.inputs.iter().map(WireArtifact::from).collect(),
             observations: WireObservations {
                 clock: "linux-monotonic",

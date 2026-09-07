@@ -40,5 +40,6 @@ source_roots = [
   "docs/threat-model.md",
   "docs/receipt-semantics.md",
   "proofbound/evidence/runtime-orchestration-attacks.toml",
+  "schemas/run-result-v1.schema.json",
   "tests/attacks/run/",
 ]

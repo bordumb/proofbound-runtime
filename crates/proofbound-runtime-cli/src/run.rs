@@ -298,13 +298,12 @@ pub(crate) fn execute(
     let commitment = format!("sha256:{}", hex_digest(&receipt_bytes));
     persist_receipt(&receipt_path, execution_id.as_bytes(), &receipt_bytes)?;
 
-    Ok(json!({
-        "schema": RUN_RESULT_SCHEMA,
-        "receipt": receipt_path.to_str()
-            .ok_or_else(|| RunError::invalid("receipt.path.utf8-invalid"))?,
-        "commitment": commitment,
-        "outcome": outcome_json(execution.outcome()),
-    }))
+    run_result_json(
+        &receipt_path,
+        execution_id,
+        &commitment,
+        execution.outcome(),
+    )
 }
 
 #[cfg(target_os = "linux")]
@@ -720,6 +719,22 @@ fn outcome_json(outcome: ExecutionOutcome) -> Value {
     }
 }
 
+fn run_result_json(
+    receipt_path: &Path,
+    execution_id: proofbound_runtime_core::ExecutionId,
+    commitment: &str,
+    outcome: ExecutionOutcome,
+) -> Result<Value, RunError> {
+    Ok(json!({
+        "schema": RUN_RESULT_SCHEMA,
+        "execution_id": execution_id.to_text(),
+        "receipt": receipt_path.to_str()
+            .ok_or_else(|| RunError::invalid("receipt.path.utf8-invalid"))?,
+        "commitment": commitment,
+        "outcome": outcome_json(outcome),
+    }))
+}
+
 fn hex_digest(bytes: &[u8]) -> String {
     encode_hex(&Sha256::digest(bytes))
 }
@@ -807,6 +822,7 @@ mod tests {
             "output-root-substitution",
             "outcome-substitution",
             "receipt-preexists",
+            "execution-id-replay",
         ];
         assert!(ATTACK_CATALOG.starts_with("schema = \"proofbound-runtime-run-attacks/1\""));
         assert_eq!(ATTACK_CATALOG.matches("[[case]]").count(), expected.len());
@@ -822,6 +838,32 @@ mod tests {
         let reversed = arguments_identity(&["c".to_owned(), "ab".to_owned()]);
         assert_ne!(first, second);
         assert_ne!(first, reversed);
+    }
+
+    #[test]
+    fn run_result_transports_execution_identity_outside_receipt() {
+        let execution_id = proofbound_runtime_core::ExecutionId::from_bytes([
+            0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x46, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd,
+            0xee, 0xff,
+        ])
+        .expect("fixture execution ID is version 4");
+        let result = run_result_json(
+            Path::new("receipt.json"),
+            execution_id,
+            "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            ExecutionOutcome::Exited { code: 0 },
+        )
+        .expect("run result is representable");
+        assert_eq!(
+            result,
+            json!({
+                "commitment": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "execution_id": "00112233-4455-4677-8899-aabbccddeeff",
+                "outcome": {"kind": "exited", "code": 0},
+                "receipt": "receipt.json",
+                "schema": "proofbound-runtime-run-result/1",
+            })
+        );
     }
 
     #[test]

@@ -44,3 +44,8 @@ expected = "construction-rejected"
 id = "receipt-preexists"
 mutation = "select-an-existing-receipt-path"
 expected = "existing-file-preserved"
+
+[[case]]
+id = "execution-id-replay"
+mutation = "derive-the-expected-execution-id-from-the-receipt-carrier"
+expected = "independent-run-result-mismatch"

@@ -148,11 +148,7 @@ jobs:
           PROOFBOUND_EVIDENCE_DIRECTORY="$PWD/dist/native-evidence" \
             bash tools/ci/native-linux.sh
           commitment="$(tr -d '\n' <dist/native-evidence/receipt-commitment.txt)"
-          execution_id="$(python3 -c '
-          import json
-          import sys
-          print(json.load(open(sys.argv[1], encoding="utf-8"))["execution_id"])
-          ' dist/native-evidence/execution-receipt.json)"
+          execution_id="$(tr -d '\n' <dist/native-evidence/execution-id.txt)"
           proofbound_release="$RUNNER_TEMP/proofbound-assurance/proofbound-release"
           "$runtime_directory/pbr-compose" \
             --release "$proofbound_release" \

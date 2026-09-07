@@ -103,6 +103,7 @@ with open(sys.argv[1], encoding="utf-8") as source:
     result = json.load(source)
 assert result["schema"] == "proofbound-runtime-run-result/1"
 assert result["outcome"] == {"kind": "exited", "code": 0}
+assert result["execution_id"]
 print(result["commitment"])
 ' "$result")"
   "$runtime_bin_directory/pbr-verify" \
@@ -127,6 +128,13 @@ assert verification == {
     install -m 0644 "$receipt" "$evidence_directory/execution-receipt.json"
     install -m 0644 "$verification" "$evidence_directory/verification.json"
     printf '%s\n' "$commitment" >"$evidence_directory/receipt-commitment.txt"
+    python3 -c '
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as source:
+    print(json.load(source)["execution_id"])
+' "$result" >"$evidence_directory/execution-id.txt"
   fi
   exit 0
 fi
