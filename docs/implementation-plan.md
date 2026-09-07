@@ -53,7 +53,7 @@ committed with the source that generated it.
 - [x] Implement deterministic Linux policy compilation semantics.
 - [x] Advance `PBR-POLICY-002` through its declared evidence path.
 - [x] Implement closed execution outcomes and stable machine errors.
-- [ ] Implement canonical execution-receipt construction.
+- [x] Implement canonical execution-receipt construction.
 - [ ] Advance `PBR-BINDING-005` through omission, substitution, replay,
   truncation, and assumption-loss evidence.
 
