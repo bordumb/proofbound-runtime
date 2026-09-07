@@ -18,6 +18,9 @@ The document type determines its authority.
   architecture, repository layout, development standards, and milestones.
 - [Specification 0002](specs/0002_cli_surface.md) fixes the version 1 command
   grammar, user-visible behavior, and CLI component boundaries.
+- [Specification 0003](specs/0003_release_receipt_composition.md) fixes the
+  typed release/execution receipt join, preserved evidence, and cross-receipt
+  attack inventory.
 
 Normative product or wire behavior belongs in `docs/specs/`. A specification
 revision requires explicit review because it can change claim meaning.
