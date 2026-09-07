@@ -1,0 +1,32 @@
+schema = "proofbound-evidence-unit/1"
+id = "runtime-orchestration-attacks"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-RUN-007"]
+tier = 0
+expected_inventory = [
+  "pbr::run::tests::orchestration_attack_catalog_is_closed",
+  "pbr::run::tests::receipt_publication_exposes_complete_exact_bytes",
+  "pbr::run::tests::receipt_publication_never_replaces_an_existing_file",
+]
+inputs = [
+  "crates/proofbound-runtime-cli/Cargo.toml",
+  "crates/proofbound-runtime-cli/src/main.rs",
+  "crates/proofbound-runtime-cli/src/run.rs",
+  "tests/attacks/run/orchestration-v1.toml",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-cli"
+manifest = "Cargo.toml"
+targets = ["--bin=pbr"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824
