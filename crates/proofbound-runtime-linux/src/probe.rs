@@ -67,16 +67,17 @@ impl SeccompCapability {
     }
 }
 
-/// Contains one usable delegated cgroup v2 location.
+/// Contains one usable delegated cgroup v2 root.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CgroupV2Capability {
     directory: PathBuf,
     mount_id: u64,
+    directory_inode: u64,
     controllers: Vec<String>,
 }
 
 impl CgroupV2Capability {
-    /// Returns the current delegated cgroup v2 directory.
+    /// Returns the empty delegated cgroup v2 root.
     #[must_use]
     pub fn directory(&self) -> &Path {
         &self.directory
@@ -86,6 +87,12 @@ impl CgroupV2Capability {
     #[must_use]
     pub const fn mount_id(&self) -> u64 {
         self.mount_id
+    }
+
+    /// Returns the inode identity of the delegated root at probe time.
+    #[must_use]
+    pub const fn directory_inode(&self) -> u64 {
+        self.directory_inode
     }
 
     /// Returns available controllers in canonical order.
@@ -198,9 +205,9 @@ pub enum ProbeError {
     SeccompUnavailable,
     /// A seccomp action required by the version 1 profile is absent.
     SeccompActionMissing,
-    /// A unified cgroup v2 mount or current cgroup could not be resolved.
+    /// A unified cgroup v2 mount or configured delegation root could not be resolved.
     CgroupV2Unavailable,
-    /// The current cgroup directory is not delegated for child creation.
+    /// The configured root is not an empty delegated parent of the supervisor.
     CgroupV2DelegationUnavailable,
     /// The pids controller required by version 1 is unavailable.
     CgroupV2ControllerMissing,
@@ -235,13 +242,18 @@ impl fmt::Display for ProbeError {
 impl std::error::Error for ProbeError {}
 
 /// Probes every version 1 platform capability without installing a boundary.
+///
+/// `cgroup_root` must name an already-prepared delegated cgroup v2 inner node.
+/// The supervisor must run in a strict descendant leaf, the root must contain no
+/// direct processes, and the `pids` controller must already be enabled for its
+/// children. The probe never mutates the host cgroup hierarchy.
 #[must_use]
-pub fn probe_capabilities() -> CapabilityReport {
-    probe_platform()
+pub fn probe_capabilities(cgroup_root: &Path) -> CapabilityReport {
+    probe_platform(cgroup_root)
 }
 
 #[cfg(not(target_os = "linux"))]
-fn probe_platform() -> CapabilityReport {
+fn probe_platform(_cgroup_root: &Path) -> CapabilityReport {
     const UNSUPPORTED: Capability<()> =
         Capability::Unavailable(ProbeError::UnsupportedOperatingSystem);
     CapabilityReport {
@@ -256,7 +268,7 @@ fn probe_platform() -> CapabilityReport {
 }
 
 #[cfg(target_os = "linux")]
-fn probe_platform() -> CapabilityReport {
+fn probe_platform(cgroup_root: &Path) -> CapabilityReport {
     CapabilityReport {
         operating_system: Capability::Available(()),
         architecture: probe_architecture(),
@@ -267,7 +279,7 @@ fn probe_platform() -> CapabilityReport {
         landlock_abi: probe_landlock(),
         no_new_privileges: probe_no_new_privileges(),
         seccomp: probe_seccomp(),
-        cgroup_v2: probe_cgroup_v2(),
+        cgroup_v2: probe_cgroup_v2(cgroup_root),
     }
 }
 
@@ -321,14 +333,42 @@ fn probe_seccomp() -> Capability<SeccompCapability> {
 }
 
 #[cfg(target_os = "linux")]
-fn probe_cgroup_v2() -> Capability<CgroupV2Capability> {
+fn probe_cgroup_v2(configured_root: &Path) -> Capability<CgroupV2Capability> {
+    use std::os::unix::fs::MetadataExt as _;
+
     let Some((mount_id, mount)) = cgroup_v2_mount() else {
         return Capability::Unavailable(ProbeError::CgroupV2Unavailable);
     };
+    let Ok(mount) = std::fs::canonicalize(mount) else {
+        return Capability::Unavailable(ProbeError::CgroupV2Unavailable);
+    };
+    let Ok(directory) = std::fs::canonicalize(configured_root) else {
+        return Capability::Unavailable(ProbeError::CgroupV2Unavailable);
+    };
+    if directory == mount || !directory.starts_with(&mount) {
+        return Capability::Unavailable(ProbeError::CgroupV2DelegationUnavailable);
+    }
     let Some(relative) = current_cgroup() else {
         return Capability::Unavailable(ProbeError::CgroupV2Unavailable);
     };
-    let directory = mount.join(relative.trim_start_matches('/'));
+    let Ok(current) = std::fs::canonicalize(mount.join(relative.trim_start_matches('/'))) else {
+        return Capability::Unavailable(ProbeError::CgroupV2Unavailable);
+    };
+    let Ok(supervisor_relative) = current.strip_prefix(&directory) else {
+        return Capability::Unavailable(ProbeError::CgroupV2DelegationUnavailable);
+    };
+    if supervisor_relative.as_os_str().is_empty()
+        || !matches!(
+            std::fs::read_to_string(directory.join("cgroup.procs")),
+            Ok(value) if value.trim().is_empty()
+        )
+        || !matches!(
+            std::fs::read_to_string(directory.join("cgroup.type")),
+            Ok(value) if value.trim() == "domain"
+        )
+    {
+        return Capability::Unavailable(ProbeError::CgroupV2DelegationUnavailable);
+    }
     let Capability::Available(controllers) = read_set(directory.join("cgroup.controllers")) else {
         return Capability::Unavailable(ProbeError::CgroupV2Unavailable);
     };
@@ -352,12 +392,20 @@ fn probe_cgroup_v2() -> Capability<CgroupV2Capability> {
             .write(true)
             .open(directory.join("cgroup.subtree_control"))
             .is_err()
+        || std::fs::OpenOptions::new()
+            .write(true)
+            .open(directory.join("cgroup.procs"))
+            .is_err()
     {
         return Capability::Unavailable(ProbeError::CgroupV2DelegationUnavailable);
     }
+    let Ok(metadata) = std::fs::metadata(&directory) else {
+        return Capability::Unavailable(ProbeError::CgroupV2Unavailable);
+    };
     Capability::Available(CgroupV2Capability {
         directory,
         mount_id,
+        directory_inode: metadata.ino(),
         controllers,
     })
 }
@@ -429,7 +477,7 @@ mod tests {
     #[cfg(not(target_os = "linux"))]
     #[test]
     fn unsupported_hosts_never_produce_supported_linux() {
-        let report = probe_capabilities();
+        let report = probe_capabilities(Path::new("/unsupported"));
         assert_eq!(
             report.clone().require_supported(),
             Err(ProbeError::UnsupportedOperatingSystem)
@@ -443,7 +491,10 @@ mod tests {
     #[cfg(target_os = "linux")]
     #[test]
     fn supported_result_contains_every_required_capability() {
-        let report = probe_capabilities();
+        let Some(root) = std::env::var_os("PROOFBOUND_CGROUP_ROOT") else {
+            return;
+        };
+        let report = probe_capabilities(Path::new(&root));
         if let Ok(supported) = report.require_supported() {
             assert!(!supported.kernel_release().is_empty());
             assert!(supported.landlock_abi().get() > 0);

@@ -35,10 +35,18 @@ The supported boundary uses:
 - exact executable, ELF interpreter, runtime, and loader identities; and
 - a supervisor-to-launcher acknowledgement bound to the compiled policy.
 
-The supervisor creates the fresh output root and cgroup. It starts the launcher
-in a paused state, places it in the cgroup, and supplies the validated compiled
-policy through a private channel. The launcher installs every remaining
-restriction before it calls `execve`.
+The runtime consumes an explicitly identified cgroup v2 delegation root. That
+root is an empty inner node with the required controllers already enabled, and
+the supervisor runs in a strict descendant leaf. This follows cgroup v2's
+no-internal-process and delegation-containment rules: the runtime never creates
+workload cgroups under its populated current cgroup and never writes into a
+hierarchy owned by an unrelated manager.
+
+The supervisor creates the fresh output root and an execution cgroup below the
+delegation root. It starts the launcher in a paused state, places it in the
+execution cgroup, and supplies the validated compiled policy through a private
+channel. The launcher installs every remaining restriction before it calls
+`execve`.
 
 An unsupported Landlock ABI, seccomp feature, cgroup controller, architecture,
 or sequencing step stops the operation. The runtime emits no reusable execution
@@ -73,6 +81,8 @@ describe shipping Runtime bytes.
 
 - Version 1 is not cross-platform.
 - Native Linux CI needs identified host capabilities and cgroup delegation.
+- The host launcher must place the supervisor in a leaf below an empty
+  delegation root before invoking Runtime.
 - Dynamic runtimes need explicit read-only runtime closures.
 - The kernel and enforcement mechanisms remain in the trusted computing base.
 - A later macOS or Windows profile needs a separate semantic contract and ADR.

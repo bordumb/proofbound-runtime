@@ -46,7 +46,9 @@ impl FreshCgroup {
             }
             let parent = crate::sys::open_directory(capability.directory())
                 .map_err(|_| CgroupError::ParentUnavailable)?;
-            write_control(&parent, "cgroup.subtree_control", b"+pids")?;
+            if directory_inode(&parent)? != capability.directory_inode() {
+                return Err(CgroupError::CapabilityMismatch);
+            }
             let enabled = read_word_set(&parent, "cgroup.subtree_control")?;
             if enabled.binary_search(&"pids".to_owned()).is_err() {
                 return Err(CgroupError::ControllerUnavailable);
@@ -531,7 +533,10 @@ mod tests {
     #[cfg(target_os = "linux")]
     #[test]
     fn supported_probe_can_create_limit_and_remove_empty_group() {
-        let Ok(supported) = crate::probe_capabilities().require_supported() else {
+        let Some(root) = std::env::var_os("PROOFBOUND_CGROUP_ROOT") else {
+            return;
+        };
+        let Ok(supported) = crate::probe_capabilities(Path::new(&root)).require_supported() else {
             return;
         };
         let limit = ProcessLimit::new(1).expect("nonzero process limit");
