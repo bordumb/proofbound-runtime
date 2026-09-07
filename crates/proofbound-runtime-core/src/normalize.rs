@@ -12,6 +12,26 @@ pub struct NormalizedAuthority {
 }
 
 impl NormalizedAuthority {
+    /// Constructs one already-normalized value for bounded model checking.
+    ///
+    /// The proof harness supplies canonical, duplicate-free catalog entries.
+    /// This constructor is unavailable in production builds so callers cannot
+    /// bypass [`normalize_authority`].
+    #[cfg(kani)]
+    #[must_use]
+    pub fn from_canonical_catalog_for_model_check(
+        paths: Vec<PathAuthority>,
+        environment: Vec<EnvironmentName>,
+        limits: ResourceLimits,
+    ) -> Self {
+        Self {
+            paths,
+            environment,
+            limits,
+            network: NetworkMode::Deny,
+        }
+    }
+
     /// Returns the filesystem authority entries.
     #[must_use]
     pub fn paths(&self) -> &[PathAuthority] {

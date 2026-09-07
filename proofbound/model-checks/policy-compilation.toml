@@ -9,18 +9,18 @@ claims = ["PBR-POLICY-002"]
 solver = "cadical"
 unwind = 5
 assumptions = [
-  "The normalized plan starts from exactly two path slots and exactly two environment-name slots.",
-  "Each path slot is either the project-input read entry for path b or the output-root write entry for path a.",
-  "Each environment-name slot is either LANG or PATH.",
+  "The normalized authority has exactly one path entry and exactly one environment-name entry.",
+  "The path entry is either the project-input read entry for path b or the output-root write entry for path a.",
+  "The environment-name entry is either LANG or PATH.",
   "The process, wall-time, standard-output, and standard-error limits are fixed to one in their declared units.",
   "The network mode is deny.",
 ]
 
 [domain]
-id = "policy-two-path-two-environment-catalog"
-description = "All normalized results from two path slots and two environment slots over two typed values per slot; 2^4 finite source plans."
-cardinality = 16
-ordering_key = [0, 1, 2, 3]
+id = "policy-one-path-one-environment-catalog"
+description = "All normalized authorities with one path and one environment name over two typed values each; 2^2 finite states."
+cardinality = 4
+ordering_key = [0, 1]
 
 [resource_budget]
 time_seconds = 900
