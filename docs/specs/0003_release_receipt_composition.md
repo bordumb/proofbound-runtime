@@ -51,7 +51,7 @@ The plugin executes the supplied `proofbound-verifier` with
 `--release <directory> --json`. It executes the exact `pbr-verify` found in the
 Runtime bundle with the supplied execution commitment and receipt. A nonzero
 status, stderr output, non-UTF-8 output, oversized output, duplicate or unknown
-JSON field, unexpected schema, or noncanonical result fails closed.
+JSON field, unexpected schema, or noncanonical execution receipt fails closed.
 
 ## Inputs
 

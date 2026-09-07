@@ -5,7 +5,8 @@ verifiable account of the execution boundary.
 
 > **Status:** 0.1.0 release candidate. The executable product surface and
 > native Linux boundary are implemented and exercised on `x86_64` and
-> `aarch64`. The Proofbound release envelope is independently verified; exact
+> `aarch64`. The Proofbound release envelope is independently verified, and a
+> typed Runtime plugin composes it with one verified execution receipt. Exact
 > release-artifact binding remains open, so no 0.1.0 release has been published
 > yet.
 
@@ -53,11 +54,14 @@ flowchart LR
 
 [Proofbound](https://github.com/bordumb/proof-bound) is the assurance compiler
 used to develop and release this product. It owns claim status, evidence
-meaning, assumptions, artifact linkage, and generic receipt composition.
+meaning, assumptions, artifact linkage, and the generic rules that make typed
+evidence composition possible.
 
 Proofbound Runtime owns agent execution plans, authority semantics, Linux
 policy compilation, boundary installation, run observations, and execution
-receipts. Proofbound does not run in the child security path.
+receipts. It also owns `pbr-compose`, the Runtime-specific typed join between a
+verified Proofbound release and a verified execution. Proofbound does not run
+in the child security path.
 
 Runtime discoveries that require generic Proofbound support are recorded in
 [`docs/proofbound-feedback`](docs/proofbound-feedback/README.md) before they are
@@ -82,12 +86,13 @@ their statements can apply to shipping binaries.
 
 ## Quick start
 
-Build the three colocated binaries on a supported native Linux host:
+Build the four colocated binaries on a supported native Linux host:
 
 ```console
 cargo build --locked --release --bins
 target/release/pbr --version
 target/release/pbr-verify --version
+target/release/pbr-compose --version
 ```
 
 The host must provide a delegated cgroup v2 directory with the `pids`
@@ -134,6 +139,8 @@ target/release/pbr run --plan plan.toml --receipt receipt.json \
   --cgroup-root /path/to/delegated/cgroup >run-result.json
 COMMITMENT=$(python3 -c \
   'import json; print(json.load(open("run-result.json"))["commitment"])')
+EXECUTION_ID=$(python3 -c \
+  'import json; print(json.load(open("run-result.json"))["execution_id"])')
 target/release/pbr-verify --expected-commitment "$COMMITMENT" receipt.json
 target/release/pbr inspect receipt.json
 ```
@@ -142,6 +149,25 @@ target/release/pbr inspect receipt.json
 dynamically linked workload. Those roots are measured authority, not an
 implicit convenience. `tools/ci/native-linux.sh` is the maintained reference
 for creating a delegated test boundary with systemd.
+
+The release workflow goes one step further. For each supported architecture it
+builds the bundle twice, independently verifies the Proofbound release, runs
+the exact extracted Runtime binaries, and invokes the extracted `pbr-compose`:
+
+```console
+pbr-compose \
+  --release /path/to/proofbound-release \
+  --proofbound-verifier /path/to/proofbound-release/bin/proofbound-verify \
+  --runtime-bundle /path/to/extracted-runtime-bundle \
+  --execution-receipt execution-receipt.json \
+  --execution-commitment "$COMMITMENT" \
+  --expected-execution-id "$EXECUTION_ID" \
+  --output composed-receipt.json
+```
+
+The composition preserves claim facets, assumptions, exclusions, open
+obligations, verifier identities, and trusted-computing-base identities. It
+does not promote `MODEL_ONLY` or `TESTED` evidence to `ARTIFACT_BOUND`.
 
 ## Repository checks
 
@@ -156,7 +182,9 @@ The current CI checks documentation, project metadata, the Rust workspace,
 independent conformance, dependency policy, Lean 4.33 models,
 source-refinement bridges, bounded Kani domains, Proofbound status derivation,
 and native Linux enforcement. The release workflow builds each architecture
-twice and rejects byte drift before it executes the exact release binaries.
+twice and rejects byte drift before it executes, verifies, and composes the
+exact release binaries.
+
 `just release-receipt /absent/output/path` rebuilds the current assurance graph,
 creates a fresh Proofbound release envelope, and retains the independent
 verifier report beside it.
@@ -166,6 +194,7 @@ verifier report beside it.
 - [Documentation map](docs/README.md)
 - [Initial specification](docs/specs/0001_initial_spec.md)
 - [Version 1 CLI specification](docs/specs/0002_cli_surface.md)
+- [Release receipt composition specification](docs/specs/0003_release_receipt_composition.md)
 - [Threat model](docs/threat-model.md)
 - [Architecture decisions](docs/adr/README.md)
 - [Proofbound feedback loop](docs/proofbound-feedback/README.md)

@@ -25,6 +25,12 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   orchestration, and release-reproduction evidence.
 - A fail-closed Proofbound release-envelope gate that retains the independent
   verifier's canonical report.
+- The `pbr-compose` typed plugin, closed cross-receipt attack corpus, and native
+  release workflow that joins exact Proofbound release assurance to one exact
+  independently verified Runtime execution without upgrading claim facets.
+- Independent transport of the expected execution ID in the `pbr run` result,
+  preventing composition from deriving its replay expectation from the receipt
+  carrier.
 
 ## [0.0.0] - 2026-09-04
 

@@ -68,9 +68,17 @@ semantics.
 A party transporting or storing a receipt can alter, truncate, reorder,
 substitute, replay, or remove fields. Canonical encoding, typed identities, and
 independent validation detect locally decidable defects. An exact SHA-256
-commitment delivered through a channel independent of the carrier detects
-canonical substitutions that retain all internal relationships. A receipt and
-commitment controlled by the same carrier do not establish integrity.
+commitment and expected execution ID delivered through a channel independent
+of the carrier detect canonical substitutions and replays that retain all
+internal relationships. Expectations controlled by the same carrier as the
+receipt do not establish integrity.
+
+The same adversary can target a composed chain by omitting a release claim,
+downgrading a claim facet, substituting a Runtime binary or verifier, replaying
+an execution ID, or removing an inherited assumption or trusted component.
+`pbr-compose` rejects the registered cross-receipt mutations and never emits a
+partial or `non-composed` success artifact. It does not authenticate inputs and
+expectations that were all delivered through the same compromised channel.
 
 ## Trusted computing base
 
@@ -97,6 +105,12 @@ artifact, its recorded digest, the reproducible-build environment, and the
 Proofbound release-receipt verifier. Reproducibility establishes agreement of
 bytes under the registered build recipe; it does not establish compiler or
 kernel correctness.
+
+Composition interpretation additionally trusts the exact `pbr-compose` and
+domain verifier binaries whose identities it records. The running composer
+must byte-match the bundle's composer role. This closes silent tool
+substitution within the represented bundle; it does not prove the composer's
+behavior or discharge the compiler premise.
 
 ## Initial enforced boundary
 
@@ -243,6 +257,12 @@ It cannot by itself establish that:
 - every unregistered attack was impossible; or
 - the Runtime release possessed a stronger Proofbound status than its release
   receipt admits.
+
+A valid composed receipt additionally establishes that both independent
+verifications succeeded and that the represented release, Runtime bundle,
+execution, assumptions, and trusted-computing-base inventories passed the
+specified exact-byte joins. It preserves the assurance report's status facets;
+it cannot strengthen them.
 
 ## Review triggers
 
