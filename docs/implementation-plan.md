@@ -100,7 +100,7 @@ committed with the source that generated it.
 - [x] Implement `pbr plan check`.
 - [x] Implement `pbr run` and canonical receipt emission.
 - [x] Implement `pbr inspect` without validity decisions.
-- [ ] Verify one end-to-end supported Linux execution with `pbr-verify`.
+- [x] Verify one end-to-end supported Linux execution with `pbr-verify`.
 
 ### Wave 5: release linkage
 
