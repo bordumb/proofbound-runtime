@@ -45,7 +45,7 @@ committed with the source that generated it.
 
 ### Wave 1: pure product core
 
-- [ ] Implement strict plan decoding and validated domain conversion.
+- [x] Implement strict plan decoding and validated domain conversion.
 - [ ] Implement typed artifact identities and stable role validation.
 - [ ] Implement the platform-neutral compiled-policy model.
 - [ ] Implement deterministic Linux policy compilation semantics.

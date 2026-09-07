@@ -9,6 +9,8 @@ publish.workspace = true
 
 [dependencies]
 proofbound-runtime-receipt = { path = "../proofbound-runtime-receipt" }
+serde.workspace = true
+toml.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true
