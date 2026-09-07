@@ -1,6 +1,9 @@
 //! Defines typed execution-receipt construction and eligibility derivation.
 
 use core::fmt;
+use core::fmt::Write as _;
+
+use serde::Serialize;
 
 pub use proofbound_runtime_receipt::{
     BoundaryInstallation, NonReusableReason, NonReusableReasons, ReceiptEligibility, ReceiptFacts,
@@ -35,6 +38,17 @@ impl ExecutionId {
     #[must_use]
     pub const fn as_bytes(&self) -> &[u8; 16] {
         &self.0
+    }
+
+    fn to_wire(self) -> String {
+        let mut output = String::with_capacity(36);
+        for (index, byte) in self.0.into_iter().enumerate() {
+            if matches!(index, 4 | 6 | 8 | 10) {
+                output.push('-');
+            }
+            write!(&mut output, "{byte:02x}").expect("writing to a String cannot fail");
+        }
+        output
     }
 }
 
@@ -468,6 +482,301 @@ impl ExecutionReceipt {
     pub const fn eligibility(&self) -> &ReceiptEligibility {
         &self.eligibility
     }
+
+    /// Returns the canonical RFC 8785-compatible version 1 JSON bytes.
+    ///
+    /// The wire domain contains no floating-point values. All object names are
+    /// ASCII, every 64-bit counter is a decimal string, and conversion through
+    /// `serde_json::Value` sorts every object key before compact encoding.
+    pub fn canonical_bytes(&self) -> Result<Vec<u8>, ReceiptError> {
+        let value = serde_json::to_value(WireExecutionReceipt::from(self))
+            .map_err(|_| ReceiptError::CanonicalEncoding)?;
+        serde_json::to_vec(&value).map_err(|_| ReceiptError::CanonicalEncoding)
+    }
+}
+
+#[derive(Serialize)]
+struct WireArtifact {
+    mode: u16,
+    role: &'static str,
+    sha256: String,
+    size: String,
+}
+
+impl From<&ArtifactIdentity> for WireArtifact {
+    fn from(identity: &ArtifactIdentity) -> Self {
+        Self {
+            mode: identity.mode().get(),
+            role: identity.role().as_str(),
+            sha256: identity.digest().to_hex(),
+            size: identity.size().to_string(),
+        }
+    }
+}
+
+#[derive(Serialize)]
+struct WirePlan {
+    id: String,
+    normalized: WireArtifact,
+    source: WireArtifact,
+}
+
+#[derive(Serialize)]
+struct WirePolicy {
+    identity: WireArtifact,
+    model_version: &'static str,
+}
+
+#[derive(Serialize)]
+struct WirePlatform {
+    architecture: &'static str,
+    cgroup_controllers: Vec<String>,
+    kernel_release: String,
+    landlock_abi: u32,
+    operating_system: &'static str,
+    seccomp_features: Vec<String>,
+}
+
+#[derive(Serialize)]
+struct WireRuntime {
+    launcher: WireArtifact,
+    runtime: WireArtifact,
+}
+
+#[derive(Serialize)]
+struct WireCommand {
+    arguments_sha256: String,
+    executable: WireArtifact,
+    loader: Option<WireArtifact>,
+    working_directory: WireArtifact,
+}
+
+#[derive(Serialize)]
+struct WireCgroupIdentity {
+    inode: String,
+    mount_id: String,
+}
+
+#[derive(Serialize)]
+struct WireBoundary {
+    cgroup: WireCgroupIdentity,
+    execution_id: String,
+    policy_sha256: String,
+    state: &'static str,
+}
+
+#[derive(Serialize)]
+struct WireObservations {
+    clock: &'static str,
+    finished_ns: String,
+    started_ns: String,
+}
+
+#[derive(Serialize)]
+struct WireStream {
+    artifact: WireArtifact,
+    capture: &'static str,
+}
+
+#[derive(Serialize)]
+struct WireStreams {
+    stderr: WireStream,
+    stdout: WireStream,
+}
+
+#[derive(Serialize)]
+#[serde(tag = "kind")]
+enum WireOutcome {
+    #[serde(rename = "exited")]
+    Exited { code: i32 },
+    #[serde(rename = "signaled")]
+    Signaled { signal: u32 },
+    #[serde(rename = "timed-out")]
+    TimedOut,
+    #[serde(rename = "denied")]
+    Denied,
+    #[serde(rename = "launcher-failed")]
+    LauncherFailed,
+    #[serde(rename = "incomplete")]
+    Incomplete,
+}
+
+impl From<ExecutionOutcome> for WireOutcome {
+    fn from(outcome: ExecutionOutcome) -> Self {
+        match outcome {
+            ExecutionOutcome::Exited { code } => Self::Exited { code },
+            ExecutionOutcome::Signaled { signal } => Self::Signaled {
+                signal: signal.get(),
+            },
+            ExecutionOutcome::TimedOut => Self::TimedOut,
+            ExecutionOutcome::Denied => Self::Denied,
+            ExecutionOutcome::LauncherFailed => Self::LauncherFailed,
+            ExecutionOutcome::Incomplete => Self::Incomplete,
+        }
+    }
+}
+
+#[derive(Serialize)]
+struct WireEligibility {
+    reasons: Vec<&'static str>,
+    status: &'static str,
+}
+
+impl From<&ReceiptEligibility> for WireEligibility {
+    fn from(eligibility: &ReceiptEligibility) -> Self {
+        match eligibility {
+            ReceiptEligibility::Reusable => Self {
+                reasons: Vec::new(),
+                status: "reusable",
+            },
+            ReceiptEligibility::NonReusable(reasons) => Self {
+                reasons: reasons
+                    .as_slice()
+                    .iter()
+                    .copied()
+                    .map(non_reusable_reason_wire_name)
+                    .collect(),
+                status: "non-reusable",
+            },
+        }
+    }
+}
+
+fn non_reusable_reason_wire_name(reason: NonReusableReason) -> &'static str {
+    match reason {
+        NonReusableReason::BoundaryIncomplete => "boundary-incomplete",
+        NonReusableReason::ExitCodeNonzero => "exit-code-nonzero",
+        NonReusableReason::ProcessSignaled => "process-signaled",
+        NonReusableReason::TimedOut => "timed-out",
+        NonReusableReason::Denied => "denied",
+        NonReusableReason::LauncherFailed => "launcher-failed",
+        NonReusableReason::ExecutionIncomplete => "execution-incomplete",
+        NonReusableReason::StandardOutputTruncated => "stdout-truncated",
+        NonReusableReason::StandardErrorTruncated => "stderr-truncated",
+        NonReusableReason::ReceiptMalformed => "receipt-malformed",
+    }
+}
+
+#[derive(Serialize)]
+struct WireTrustedComputingBaseEntry {
+    identity: String,
+    role: String,
+}
+
+#[derive(Serialize)]
+struct WireExecutionReceipt {
+    assumptions: Vec<String>,
+    boundary: WireBoundary,
+    command: WireCommand,
+    eligibility: WireEligibility,
+    environment: Vec<String>,
+    execution_id: String,
+    inputs: Vec<WireArtifact>,
+    observations: WireObservations,
+    outcome: WireOutcome,
+    output_root: WireArtifact,
+    outputs: Vec<WireArtifact>,
+    plan: WirePlan,
+    platform: WirePlatform,
+    policy: WirePolicy,
+    producer: WireArtifact,
+    product_version: &'static str,
+    runtime: WireRuntime,
+    schema: &'static str,
+    streams: WireStreams,
+    trusted_computing_base: Vec<WireTrustedComputingBaseEntry>,
+}
+
+impl From<&ExecutionReceipt> for WireExecutionReceipt {
+    fn from(receipt: &ExecutionReceipt) -> Self {
+        let parts = &receipt.parts;
+        Self {
+            assumptions: receipt.assumptions.clone(),
+            boundary: WireBoundary {
+                cgroup: WireCgroupIdentity {
+                    inode: parts.boundary.cgroup.inode.to_string(),
+                    mount_id: parts.boundary.cgroup.mount_id.to_string(),
+                },
+                execution_id: parts.boundary.execution_id.to_wire(),
+                policy_sha256: parts.boundary.policy_sha256.to_hex(),
+                state: boundary_wire_name(parts.boundary.state),
+            },
+            command: WireCommand {
+                arguments_sha256: parts.command.arguments_sha256.to_hex(),
+                executable: WireArtifact::from(&parts.command.executable),
+                loader: parts.command.loader.as_ref().map(WireArtifact::from),
+                working_directory: WireArtifact::from(&parts.command.working_directory),
+            },
+            eligibility: WireEligibility::from(&receipt.eligibility),
+            environment: receipt.environment.clone(),
+            execution_id: parts.execution_id.to_wire(),
+            inputs: parts.inputs.iter().map(WireArtifact::from).collect(),
+            observations: WireObservations {
+                clock: "linux-monotonic",
+                finished_ns: parts.observations.finished_ns.to_string(),
+                started_ns: parts.observations.started_ns.to_string(),
+            },
+            outcome: WireOutcome::from(parts.outcome),
+            output_root: WireArtifact::from(&parts.output_root),
+            outputs: parts.outputs.iter().map(WireArtifact::from).collect(),
+            plan: WirePlan {
+                id: parts.plan.id.as_str().to_owned(),
+                normalized: WireArtifact::from(&parts.plan.normalized),
+                source: WireArtifact::from(&parts.plan.source),
+            },
+            platform: WirePlatform {
+                architecture: parts.platform.architecture.as_str(),
+                cgroup_controllers: parts.platform.cgroup_controllers.clone(),
+                kernel_release: parts.platform.kernel_release.clone(),
+                landlock_abi: parts.platform.landlock_abi,
+                operating_system: "linux",
+                seccomp_features: parts.platform.seccomp_features.clone(),
+            },
+            policy: WirePolicy {
+                identity: WireArtifact::from(&parts.policy.identity),
+                model_version: POLICY_MODEL_VERSION,
+            },
+            producer: WireArtifact::from(&parts.producer),
+            product_version: env!("CARGO_PKG_VERSION"),
+            runtime: WireRuntime {
+                launcher: WireArtifact::from(&parts.runtime.launcher),
+                runtime: WireArtifact::from(&parts.runtime.runtime),
+            },
+            schema: EXECUTION_RECEIPT_SCHEMA,
+            streams: WireStreams {
+                stderr: WireStream {
+                    artifact: WireArtifact::from(&parts.streams.stderr.artifact),
+                    capture: stream_capture_wire_name(parts.streams.stderr.capture),
+                },
+                stdout: WireStream {
+                    artifact: WireArtifact::from(&parts.streams.stdout.artifact),
+                    capture: stream_capture_wire_name(parts.streams.stdout.capture),
+                },
+            },
+            trusted_computing_base: parts
+                .trusted_computing_base
+                .iter()
+                .map(|entry| WireTrustedComputingBaseEntry {
+                    identity: entry.identity.clone(),
+                    role: entry.role.clone(),
+                })
+                .collect(),
+        }
+    }
+}
+
+fn boundary_wire_name(state: BoundaryInstallation) -> &'static str {
+    match state {
+        BoundaryInstallation::Installed => "installed",
+        BoundaryInstallation::Incomplete => "incomplete",
+    }
+}
+
+fn stream_capture_wire_name(capture: StreamCapture) -> &'static str {
+    match capture {
+        StreamCapture::Complete => "complete",
+        StreamCapture::Truncated => "truncated",
+    }
 }
 
 /// Identifies the receipt field whose artifact role is invalid.
@@ -535,6 +844,8 @@ pub enum ReceiptError {
     ObservationOrder,
     /// The trusted computing base contains no entry.
     TrustedComputingBaseEmpty,
+    /// Canonical JSON encoding failed.
+    CanonicalEncoding,
 }
 
 impl ReceiptError {
@@ -559,6 +870,7 @@ impl ReceiptError {
             }
             Self::ObservationOrder => "receipt.observation.order",
             Self::TrustedComputingBaseEmpty => "receipt.tcb.empty",
+            Self::CanonicalEncoding => "receipt.canonical.encoding-failed",
         }
     }
 }
@@ -765,6 +1077,34 @@ mod tests {
             ExecutionReceipt::new(input),
             Err(ReceiptError::DuplicateSetValue)
         );
+    }
+
+    #[test]
+    fn canonical_bytes_are_stable_sorted_and_schema_complete() {
+        let receipt = ExecutionReceipt::new(parts()).expect("fixture receipt is valid");
+        let first = receipt.canonical_bytes().expect("fixture encodes");
+        let second = receipt.canonical_bytes().expect("fixture re-encodes");
+        assert_eq!(first, second);
+        assert!(!first.ends_with(b"\n"));
+
+        let text = String::from_utf8(first.clone()).expect("JSON is UTF-8");
+        assert!(text.starts_with("{\"assumptions\":"));
+        assert!(text.ends_with("}]}") || text.ends_with("}]}"));
+        assert!(text.contains("\"execution_id\":\"00112233-4455-4677-8899-aabbccddeeff\""));
+        assert!(text.contains("\"outcome\":{\"code\":0,\"kind\":\"exited\"}"));
+        assert!(text.contains("\"eligibility\":{\"reasons\":[],\"status\":\"reusable\"}"));
+        assert!(text.contains("\"size\":\"19\""));
+
+        let value: serde_json::Value =
+            serde_json::from_slice(&first).expect("canonical bytes decode");
+        assert_eq!(
+            serde_json::to_vec(&value).expect("decoded value re-encodes"),
+            first
+        );
+        let object = value.as_object().expect("receipt is an object");
+        assert_eq!(object.len(), 20);
+        assert_eq!(object["schema"], EXECUTION_RECEIPT_SCHEMA);
+        assert_eq!(object["policy"]["model_version"], POLICY_MODEL_VERSION);
     }
 
     #[test]
