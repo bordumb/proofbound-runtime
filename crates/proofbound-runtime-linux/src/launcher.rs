@@ -417,6 +417,12 @@ pub enum LauncherError {
     SeccompInstallationFailed,
     /// The launcher could not enter the registered working directory.
     WorkingDirectoryFailed,
+    /// Descriptor-relative exec was denied by the installed boundary or host.
+    ExecPermissionDenied,
+    /// Descriptor-relative exec could not resolve a required image component.
+    ExecNotFound,
+    /// Descriptor-relative exec rejected the executable image format.
+    ExecFormatInvalid,
     /// Descriptor-relative exec failed.
     ExecFailed,
     /// Code attempted to acknowledge before boundary installation.
@@ -456,6 +462,9 @@ impl LauncherError {
             Self::LandlockInstallationFailed => "launcher.landlock.installation-failed",
             Self::SeccompInstallationFailed => "launcher.seccomp.installation-failed",
             Self::WorkingDirectoryFailed => "launcher.working-directory.failed",
+            Self::ExecPermissionDenied => "launcher.exec.permission-denied",
+            Self::ExecNotFound => "launcher.exec.not-found",
+            Self::ExecFormatInvalid => "launcher.exec.format-invalid",
             Self::ExecFailed => "launcher.exec.failed",
             Self::BoundaryNotInstalled => "launcher.sequence.boundary-not-installed",
             Self::AcknowledgementMissing => "launcher.sequence.acknowledgement-missing",
@@ -763,13 +772,14 @@ pub fn run_launcher(
             &arguments,
             &environment,
         )
-        .map_err(|_| {
-            report_failure(
-                channel,
-                expected,
-                LauncherStage::Exec,
-                LauncherError::ExecFailed,
-            )
+        .map_err(|error| {
+            let error = match error.raw_os_error() {
+                Some(libc::EACCES | libc::EPERM) => LauncherError::ExecPermissionDenied,
+                Some(libc::ENOENT) => LauncherError::ExecNotFound,
+                Some(libc::ENOEXEC) => LauncherError::ExecFormatInvalid,
+                _ => LauncherError::ExecFailed,
+            };
+            report_failure(channel, expected, LauncherStage::Exec, error)
         })
     }
     #[cfg(not(target_os = "linux"))]
@@ -1933,6 +1943,9 @@ mod tests {
             LauncherError::LandlockInstallationFailed,
             LauncherError::SeccompInstallationFailed,
             LauncherError::WorkingDirectoryFailed,
+            LauncherError::ExecPermissionDenied,
+            LauncherError::ExecNotFound,
+            LauncherError::ExecFormatInvalid,
             LauncherError::ExecFailed,
             LauncherError::BoundaryNotInstalled,
             LauncherError::AcknowledgementMissing,
