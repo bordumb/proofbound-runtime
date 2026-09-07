@@ -79,7 +79,7 @@ committed with the source that generated it.
 
 ### Wave 3: native Linux boundary
 
-- [ ] Add capability probes for architecture, Landlock, seccomp, and cgroup v2.
+- [x] Add capability probes for architecture, Landlock, seccomp, and cgroup v2.
 - [ ] Implement rooted path, executable, ELF interpreter, and loader resolution.
 - [ ] Implement fresh output roots and post-run output inventories.
 - [ ] Implement the fresh cgroup lifecycle and registered limits.

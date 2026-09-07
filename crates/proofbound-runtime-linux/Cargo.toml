@@ -1,0 +1,11 @@
+[package]
+name = "proofbound-runtime-linux"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc.workspace = true
