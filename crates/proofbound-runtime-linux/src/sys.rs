@@ -48,6 +48,12 @@ struct LandlockPathBeneathAttr {
     parent_fd: i32,
 }
 
+#[repr(C)]
+struct BpfProgram {
+    length: u16,
+    instructions: *const crate::seccomp::BpfInstruction,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) struct CapabilitySets {
     pub(crate) effective: u64,
@@ -256,6 +262,37 @@ pub(crate) fn restrict_with_landlock(ruleset: RawFd) -> io::Result<()> {
         Ok(())
     } else {
         Err(io::Error::last_os_error())
+    }
+}
+
+pub(crate) fn install_seccomp_filter(
+    instructions: &[crate::seccomp::BpfInstruction],
+) -> io::Result<()> {
+    const SECCOMP_SET_MODE_FILTER: libc::c_uint = 1;
+    const SECCOMP_FILTER_FLAG_TSYNC: libc::c_uint = 1;
+
+    let length = u16::try_from(instructions.len())
+        .map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    let program = BpfProgram {
+        length,
+        instructions: instructions.as_ptr(),
+    };
+    // SAFETY: `program` and its instruction slice remain live for the syscall,
+    // use the classic-BPF kernel ABI layout, and are read-only to the kernel.
+    let result = unsafe {
+        libc::syscall(
+            libc::SYS_seccomp,
+            SECCOMP_SET_MODE_FILTER,
+            SECCOMP_FILTER_FLAG_TSYNC,
+            &raw const program,
+        )
+    };
+    if result == 0 {
+        Ok(())
+    } else if result < 0 {
+        Err(io::Error::last_os_error())
+    } else {
+        Err(io::Error::other("seccomp synchronization failed"))
     }
 }
 

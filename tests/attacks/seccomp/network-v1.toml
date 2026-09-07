@@ -1,0 +1,33 @@
+schema = "proofbound-runtime-seccomp-attacks/1"
+
+[[attack]]
+id = "wrong-audit-architecture"
+expected_action = "kill-process"
+
+[[attack]]
+id = "x32-syscall-confusion"
+expected_action = "kill-process"
+
+[[attack]]
+id = "socket-create"
+expected_errno = "EPERM"
+
+[[attack]]
+id = "socket-connect"
+expected_errno = "EPERM"
+
+[[attack]]
+id = "socket-pair"
+expected_errno = "EPERM"
+
+[[attack]]
+id = "descriptor-message-receive"
+expected_errno = "EPERM"
+
+[[attack]]
+id = "io-uring-network-bypass"
+expected_errno = "EPERM"
+
+[[attack]]
+id = "filter-installation-omitted"
+expected_error = "launcher.sequence.invalid"

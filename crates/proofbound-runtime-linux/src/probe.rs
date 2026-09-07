@@ -308,7 +308,7 @@ fn probe_seccomp() -> Capability<SeccompCapability> {
     let Capability::Available(actions) = read_set("/proc/sys/kernel/seccomp/actions_avail") else {
         return Capability::Unavailable(ProbeError::SeccompUnavailable);
     };
-    if !["allow", "errno"].iter().all(|required| {
+    if !["allow", "errno", "kill_process"].iter().all(|required| {
         actions
             .binary_search_by(|item| item.as_str().cmp(required))
             .is_ok()

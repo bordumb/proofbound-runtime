@@ -8,6 +8,7 @@ pub mod output;
 pub mod privilege;
 pub mod probe;
 pub mod resolve;
+pub mod seccomp;
 
 #[cfg(target_os = "linux")]
 #[allow(unsafe_code)]
@@ -26,3 +27,4 @@ pub use probe::{
 pub use resolve::{
     ExecutableClosure, ResolutionError, ResolvedFile, RootedPathResolver, parse_elf_interpreter,
 };
+pub use seccomp::{SeccompBoundary, SeccompError, install_deny_network};

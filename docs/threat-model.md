@@ -141,6 +141,12 @@ Version 1 denies socket-related authority through a closed seccomp profile and
 closes inherited file descriptors. It does not provide hostname, address, or
 service allow-lists.
 
+The filter validates the kernel audit architecture, kills x32-numbered calls on
+`x86_64`, returns `EPERM` for the complete registered socket syscall family,
+and denies all `io_uring` entry points because asynchronous socket operations
+would bypass a direct-syscall-only network policy. Unknown non-network syscalls
+remain allowed and are constrained by the other installed boundaries.
+
 ### Environment
 
 The supervisor builds a new child environment from registered names. The child

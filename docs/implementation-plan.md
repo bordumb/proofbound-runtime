@@ -85,7 +85,7 @@ committed with the source that generated it.
 - [x] Implement the fresh cgroup lifecycle and registered limits.
 - [x] Implement privilege removal and `no_new_privs`.
 - [x] Implement Landlock filesystem enforcement.
-- [ ] Implement deny-network seccomp enforcement.
+- [x] Implement deny-network seccomp enforcement.
 - [ ] Implement the paused launcher and private typed protocol.
 - [ ] Implement the supervisor, bounded streams, timeouts, outcomes, and cleanup.
 - [ ] Run the native Linux positive and denial corpus on identified hosts.
