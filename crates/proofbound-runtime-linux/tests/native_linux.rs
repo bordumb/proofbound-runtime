@@ -82,7 +82,7 @@ mod linux {
             2000,
         );
         assert_eq!(positive.boundary(), BoundaryInstallation::Installed);
-        assert_eq!(positive.outcome(), ExecutionOutcome::Exited { code: 0 });
+        assert_outcome(&positive, ExecutionOutcome::Exited { code: 0 });
         assert_eq!(positive.stdout().bytes(), b"boundary-installed\n");
 
         let allowed = run_case(
@@ -96,7 +96,7 @@ mod linux {
             1024,
             2000,
         );
-        assert_eq!(allowed.outcome(), ExecutionOutcome::Exited { code: 0 });
+        assert_outcome(&allowed, ExecutionOutcome::Exited { code: 0 });
 
         let denied = run_case(
             &supported,
@@ -109,7 +109,7 @@ mod linux {
             1024,
             2000,
         );
-        assert_eq!(denied.outcome(), ExecutionOutcome::Exited { code: 0 });
+        assert_outcome(&denied, ExecutionOutcome::Exited { code: 0 });
         assert_eq!(denied.stdout().bytes(), b"filesystem-denied\n");
 
         let network = run_case(
@@ -123,7 +123,7 @@ mod linux {
             1024,
             2000,
         );
-        assert_eq!(network.outcome(), ExecutionOutcome::Exited { code: 0 });
+        assert_outcome(&network, ExecutionOutcome::Exited { code: 0 });
         assert_eq!(network.stdout().bytes(), b"network-denied\n");
 
         let processes = run_case(
@@ -137,7 +137,7 @@ mod linux {
             1024,
             2000,
         );
-        assert_eq!(processes.outcome(), ExecutionOutcome::Exited { code: 0 });
+        assert_outcome(&processes, ExecutionOutcome::Exited { code: 0 });
         assert_eq!(processes.stdout().bytes(), b"process-denied\n");
 
         let leak = File::open(workspace.0.join("denied.txt")).expect("open leak fixture");
@@ -156,7 +156,7 @@ mod linux {
             1024,
             2000,
         );
-        assert_eq!(fd_closed.outcome(), ExecutionOutcome::Exited { code: 0 });
+        assert_outcome(&fd_closed, ExecutionOutcome::Exited { code: 0 });
         drop(leak);
 
         let output = run_case(
@@ -170,7 +170,7 @@ mod linux {
             64,
             2000,
         );
-        assert_eq!(output.outcome(), ExecutionOutcome::Exited { code: 0 });
+        assert_outcome(&output, ExecutionOutcome::Exited { code: 0 });
         assert_eq!(output.stdout().capture(), StreamCapture::Truncated);
         assert_eq!(output.stdout().bytes().len(), 64);
 
@@ -185,7 +185,7 @@ mod linux {
             1024,
             50,
         );
-        assert_eq!(timeout.outcome(), ExecutionOutcome::TimedOut);
+        assert_outcome(&timeout, ExecutionOutcome::TimedOut);
 
         let lingering = run_case(
             &supported,
@@ -198,7 +198,14 @@ mod linux {
             1024,
             2000,
         );
-        assert_eq!(lingering.outcome(), ExecutionOutcome::Exited { code: 0 });
+        assert_outcome(&lingering, ExecutionOutcome::Exited { code: 0 });
+    }
+
+    fn assert_outcome(
+        execution: &proofbound_runtime_linux::SupervisedExecution,
+        expected: ExecutionOutcome,
+    ) {
+        assert_eq!(execution.outcome(), expected, "{execution:#?}");
     }
 
     #[allow(clippy::too_many_arguments)]
