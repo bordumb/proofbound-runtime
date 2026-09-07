@@ -16,6 +16,8 @@ The document type determines its authority.
 
 - [Specification 0001](specs/0001_initial_spec.md) defines the initial product,
   architecture, repository layout, development standards, and milestones.
+- [Specification 0002](specs/0002_cli_surface.md) fixes the version 1 command
+  grammar, user-visible behavior, and CLI component boundaries.
 
 Normative product or wire behavior belongs in `docs/specs/`. A specification
 revision requires explicit review because it can change claim meaning.

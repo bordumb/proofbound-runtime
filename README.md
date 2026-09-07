@@ -97,6 +97,7 @@ binding and native Linux enforcement remain open.
 
 - [Documentation map](docs/README.md)
 - [Initial specification](docs/specs/0001_initial_spec.md)
+- [Version 1 CLI specification](docs/specs/0002_cli_surface.md)
 - [Threat model](docs/threat-model.md)
 - [Architecture decisions](docs/adr/README.md)
 - [Proofbound feedback loop](docs/proofbound-feedback/README.md)
