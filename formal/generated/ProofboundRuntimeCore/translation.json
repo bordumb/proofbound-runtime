@@ -291,8 +291,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 141,
-        "end_line": 148
+        "begin_line": 154,
+        "end_line": 161
       },
       "is_opaque": false,
       "can_fail": true,
@@ -310,8 +310,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 141,
-        "end_line": 148
+        "begin_line": 154,
+        "end_line": 161
       },
       "is_opaque": false,
       "can_fail": true,
@@ -329,8 +329,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 139,
-        "end_line": 148
+        "begin_line": 152,
+        "end_line": 161
       },
       "is_opaque": false,
       "can_fail": true,
@@ -346,8 +346,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 128,
-        "end_line": 135
+        "begin_line": 141,
+        "end_line": 148
       },
       "is_opaque": false,
       "can_fail": true,
@@ -365,8 +365,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 128,
-        "end_line": 135
+        "begin_line": 141,
+        "end_line": 148
       },
       "is_opaque": false,
       "can_fail": true,
@@ -384,8 +384,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 126,
-        "end_line": 137
+        "begin_line": 139,
+        "end_line": 150
       },
       "is_opaque": false,
       "can_fail": true,
@@ -401,8 +401,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 119,
-        "end_line": 122
+        "begin_line": 132,
+        "end_line": 135
       },
       "is_opaque": false,
       "can_fail": true,
@@ -420,8 +420,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 119,
-        "end_line": 122
+        "begin_line": 132,
+        "end_line": 135
       },
       "is_opaque": false,
       "can_fail": true,
@@ -439,8 +439,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 117,
-        "end_line": 123
+        "begin_line": 130,
+        "end_line": 136
       },
       "is_opaque": false,
       "can_fail": true,
@@ -458,8 +458,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 117,
-        "end_line": 123
+        "begin_line": 130,
+        "end_line": 136
       },
       "is_opaque": false,
       "can_fail": true,
@@ -477,8 +477,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 115,
-        "end_line": 124
+        "begin_line": 128,
+        "end_line": 137
       },
       "is_opaque": false,
       "can_fail": true,
@@ -494,8 +494,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 106,
-        "end_line": 113
+        "begin_line": 119,
+        "end_line": 126
       },
       "is_opaque": false,
       "can_fail": true,
@@ -513,8 +513,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 106,
-        "end_line": 113
+        "begin_line": 119,
+        "end_line": 126
       },
       "is_opaque": false,
       "can_fail": true,
@@ -532,8 +532,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 104,
-        "end_line": 113
+        "begin_line": 117,
+        "end_line": 126
       },
       "is_opaque": false,
       "can_fail": true,
@@ -549,8 +549,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 93,
-        "end_line": 100
+        "begin_line": 106,
+        "end_line": 113
       },
       "is_opaque": false,
       "can_fail": true,
@@ -568,8 +568,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 93,
-        "end_line": 100
+        "begin_line": 106,
+        "end_line": 113
       },
       "is_opaque": false,
       "can_fail": true,
@@ -587,8 +587,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 91,
-        "end_line": 102
+        "begin_line": 104,
+        "end_line": 115
       },
       "is_opaque": false,
       "can_fail": true,
@@ -604,8 +604,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 84,
-        "end_line": 87
+        "begin_line": 97,
+        "end_line": 100
       },
       "is_opaque": false,
       "can_fail": true,
@@ -623,8 +623,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 84,
-        "end_line": 87
+        "begin_line": 97,
+        "end_line": 100
       },
       "is_opaque": false,
       "can_fail": true,
@@ -642,8 +642,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 82,
-        "end_line": 88
+        "begin_line": 95,
+        "end_line": 101
       },
       "is_opaque": false,
       "can_fail": true,
@@ -661,8 +661,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 82,
-        "end_line": 88
+        "begin_line": 95,
+        "end_line": 101
       },
       "is_opaque": false,
       "can_fail": true,
@@ -680,8 +680,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 80,
-        "end_line": 89
+        "begin_line": 93,
+        "end_line": 102
       },
       "is_opaque": false,
       "can_fail": true,
@@ -697,8 +697,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/normalize.rs",
-        "begin_line": 68,
-        "end_line": 78
+        "begin_line": 81,
+        "end_line": 91
       },
       "is_opaque": false,
       "can_fail": true,
