@@ -64,7 +64,11 @@ The evidence path is:
 6. exact release-artifact binding.
 
 This claim must not be presented as a pure refinement theorem. It keeps the
-Linux and host assumptions visible.
+Linux and host assumptions visible. The typed protocol transition test is
+registered as Proofbound example evidence. The production-path native corpus
+is additionally required on both `x86_64` and `aarch64` Linux CI hosts; it is
+bounded platform evidence and does not discharge the kernel, host, toolchain,
+or release-artifact premises.
 
 ## PBR-BINDING-005
 

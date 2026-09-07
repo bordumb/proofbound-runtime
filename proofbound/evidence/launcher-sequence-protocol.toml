@@ -1,0 +1,31 @@
+schema = "proofbound-evidence-unit/1"
+id = "launcher-sequence-protocol"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-SEQUENCE-003"]
+tier = 0
+expected_inventory = [
+  "launcher::tests::sequence_rejects_acknowledgement_forgery_and_omission",
+]
+inputs = [
+  "crates/proofbound-runtime-linux/Cargo.toml",
+  "crates/proofbound-runtime-linux/src/launcher.rs",
+  "crates/proofbound-runtime-linux/src/lib.rs",
+  "schemas/launcher-message-v1.cddl",
+  "tests/attacks/launcher/protocol-v1.toml",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-linux"
+manifest = "Cargo.toml"
+targets = ["--lib"]
+paths = []
+arguments = ["launcher::tests::sequence_rejects_acknowledgement_forgery_and_omission"]
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

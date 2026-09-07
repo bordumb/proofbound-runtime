@@ -27,7 +27,8 @@ dependency order, commit boundaries, and completion evidence.
   open.
 - `PBR-BINDING-005` has tested model-only constructor evidence; its formal
   completeness and source linkage remain open.
-- `PBR-SEQUENCE-003` remains open at Tier 0.
+- `PBR-SEQUENCE-003` has tested protocol-state evidence and bounded native
+  `x86_64`/`aarch64` Linux evidence at Tier 0. Release-artifact binding is open.
 - `PBR-VERIFY-006` has tested model-only evidence over all 22 registered
   carrier attacks; release-artifact binding remains open.
 - The repository has a standalone `pbr-verify` executable but no `pbr` runtime
@@ -88,8 +89,8 @@ committed with the source that generated it.
 - [x] Implement deny-network seccomp enforcement.
 - [x] Implement the paused launcher and private typed protocol.
 - [x] Implement the supervisor, bounded streams, timeouts, outcomes, and cleanup.
-- [ ] Run the native Linux positive and denial corpus on identified hosts.
-- [ ] Advance `PBR-SEQUENCE-003` with the strongest honest evidence available
+- [x] Run the native Linux positive and denial corpus on identified hosts.
+- [x] Advance `PBR-SEQUENCE-003` with the strongest honest evidence available
   for effectful code.
 
 ### Wave 4: product surface

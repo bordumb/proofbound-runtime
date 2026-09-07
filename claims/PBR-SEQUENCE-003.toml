@@ -2,19 +2,18 @@ schema = "proofbound-claim/1"
 id = "PBR-SEQUENCE-003"
 title = "Child code starts only after boundary installation"
 statement = "Every supported execution that starts child code first installs the registered cgroup, privilege, filesystem, and syscall boundaries for the same compiled policy identity."
-subject = "planned:proofbound_runtime_linux::launch"
+public_language = "The production launcher uses a typed acknowledgement gate that rejects execution before boundary installation, and the required native corpus observes the installed boundary and registered denials on x86_64 and aarch64 Linux. This is bounded platform evidence, not a proof of Linux or exact release artifacts."
+subject = "rust:proofbound_runtime_linux::supervise_launcher"
 profile = "ledger"
 tier = 0
-evidence = []
+evidence = ["example-test:launcher-sequence-protocol"]
 assumptions = [
   "PBR-LINUX-AX-001",
   "PBR-HOST-AX-002",
   "PBR-TOOLCHAIN-AX-003",
 ]
 open_obligations = [
-  "Implement the paused launcher, private protocol, boundary acknowledgement, and exec handoff.",
-  "Execute the registered protocol attacks and native Linux sequencing corpus against the production launcher.",
-  "Register the strongest sound linkage available for effectful code and bind it to release artifacts.",
+  "Bind the tested launcher, supervisor, and native Linux corpus to exact release artifacts.",
 ]
 out_of_scope = [
   "A malicious host administrator, compromised kernel, hostile firmware, or hostile hardware.",
@@ -25,5 +24,27 @@ source_roots = [
   "docs/threat-model.md",
   "docs/adr/0001-linux-enforcement-boundary.md",
   "schemas/launcher-message-v1.cddl",
+  "crates/proofbound-runtime-linux/Cargo.toml",
+  "crates/proofbound-runtime-linux/src/bin/pbr-native-launcher.rs",
+  "crates/proofbound-runtime-linux/src/cgroup.rs",
+  "crates/proofbound-runtime-linux/src/landlock.rs",
+  "crates/proofbound-runtime-linux/src/launcher.rs",
+  "crates/proofbound-runtime-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/output.rs",
+  "crates/proofbound-runtime-linux/src/privilege.rs",
+  "crates/proofbound-runtime-linux/src/probe.rs",
+  "crates/proofbound-runtime-linux/src/resolve.rs",
+  "crates/proofbound-runtime-linux/src/seccomp.rs",
+  "crates/proofbound-runtime-linux/src/supervisor.rs",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/tests/fixtures/native-boundary-probe.c",
+  "crates/proofbound-runtime-linux/tests/native_linux.rs",
+  "proofbound/evidence/launcher-sequence-protocol.toml",
+  "tests/attacks/cgroup/",
+  "tests/attacks/landlock/",
   "tests/attacks/launcher/",
+  "tests/attacks/native-linux/",
+  "tests/attacks/privilege/",
+  "tests/attacks/seccomp/",
+  "tests/attacks/supervisor/",
 ]
