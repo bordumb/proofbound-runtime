@@ -71,4 +71,5 @@ exec sudo systemd-run \
   --working-directory="$repository_root" \
   --setenv=PROOFBOUND_NATIVE_INNER=1 \
   --setenv="PROOFBOUND_NATIVE_FIXTURE=$fixture" \
+  --setenv="PATH=$PATH" \
   /usr/bin/env bash tools/ci/native-linux.sh
