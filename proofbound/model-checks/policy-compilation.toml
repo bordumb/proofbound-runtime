@@ -1,9 +1,9 @@
 schema = "proofbound-model-check-unit/1"
 id = "policy-compilation-bounds"
 adapter = "kani"
-package = "proofbound-runtime-core"
+package = "proofbound-runtime-policy-kani"
 harnesses = [
-  "policy::kani_harnesses::policy_compilation_does_not_amplify_bounded_catalog",
+  "policy_compilation_does_not_amplify_bounded_catalog",
 ]
 claims = ["PBR-POLICY-002"]
 solver = "cadical"

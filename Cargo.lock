@@ -56,6 +56,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "proofbound-runtime-policy-kani"
+version = "0.0.0"
+dependencies = [
+ "proofbound-runtime-core",
+]
+
+[[package]]
 name = "proofbound-runtime-receipt"
 version = "0.0.0"
 

@@ -5,22 +5,23 @@ kind = "bounded-check"
 claims = ["PBR-POLICY-002"]
 tier = 1
 expected_inventory = [
-  "policy::kani_harnesses::policy_compilation_does_not_amplify_bounded_catalog",
+  "policy_compilation_does_not_amplify_bounded_catalog",
 ]
 inputs = [
   "crates/proofbound-runtime-core/src/authority.rs",
   "crates/proofbound-runtime-core/src/normalize.rs",
   "crates/proofbound-runtime-core/src/policy.rs",
+  "crates/proofbound-runtime-policy-kani/src/lib.rs",
   "proofbound/model-checks/policy-compilation.toml",
 ]
 environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
 
 [operation]
 type = "kani"
-package = "proofbound-runtime-core"
+package = "proofbound-runtime-policy-kani"
 manifest = "proofbound/model-checks/policy-compilation.toml"
 targets = [
-  "policy::kani_harnesses::policy_compilation_does_not_amplify_bounded_catalog",
+  "policy_compilation_does_not_amplify_bounded_catalog",
 ]
 
 [bounded_domain]
