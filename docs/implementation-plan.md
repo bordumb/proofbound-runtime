@@ -60,7 +60,7 @@ committed with the source that generated it.
 ### Wave 2: independent verifier
 
 - [x] Implement the independent closed receipt decoder.
-- [ ] Implement independent canonical-byte validation.
+- [x] Implement independent canonical-byte validation.
 - [ ] Implement independent identity and artifact-role validation.
 - [ ] Implement the `pbr-verify` CLI and stable exit behavior.
 - [ ] Run producer/verifier conformance over positive, negative, and attack
