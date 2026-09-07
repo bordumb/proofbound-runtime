@@ -44,7 +44,7 @@ fn policy_compilation_does_not_amplify_bounded_catalog() {
             OutputByteLimit::new(1),
         ),
     );
-    let policy = compile_policy(&authority);
+    let policy = compile_policy(authority.clone());
     assert!(policy.is_no_more_permissive_than(&authority));
     assert_eq!(policy.filesystem().rules(), authority.paths());
     assert_eq!(policy.environment(), authority.environment());

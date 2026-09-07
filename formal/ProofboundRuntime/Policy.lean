@@ -15,7 +15,7 @@ inductive PathRole where
   deriving DecidableEq, Repr
 
 structure PathAuthority where
-  identity : Nat
+  identity : String
   access : FileAccess
   role : PathRole
   deriving DecidableEq, Repr
@@ -29,7 +29,7 @@ structure ResourceLimits where
 
 structure NormalizedAuthority where
   paths : List PathAuthority
-  environment : List Nat
+  environment : List String
   limits : ResourceLimits
   deriving DecidableEq, Repr
 
@@ -51,7 +51,7 @@ inductive NoNewPrivileges where
 
 structure CompiledPolicy where
   filesystem : FilesystemPolicy
-  environment : List Nat
+  environment : List String
   network : SeccompPolicy
   cgroup : CgroupPolicy
   noNewPrivileges : NoNewPrivileges

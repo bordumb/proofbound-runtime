@@ -1,0 +1,35 @@
+schema = "proofbound-evidence-unit/1"
+id = "policy-compilation-refinement"
+adapter = "charon-aeneas"
+kind = "source-refinement"
+claims = ["PBR-POLICY-002"]
+tier = 3
+refinement_theorem = "ProofboundRuntime.Refinement.PolicyCompilationClaim.compile_policy_refines"
+premises = ["PBR-POLICY-REP-006"]
+assumptions = []
+inputs = [
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/authority.rs",
+  "crates/proofbound-runtime-core/src/normalize.rs",
+  "crates/proofbound-runtime-core/src/policy.rs",
+  "formal/ProofboundRuntime/Policy.lean",
+  "formal/ProofboundRuntime/Refinement/PolicyCompilation.lean",
+  "formal/ProofboundRuntime/Refinement/PolicyCompilationClaim.lean",
+  "formal/generated/ProofboundRuntimePolicy/Funs.lean",
+  "formal/generated/ProofboundRuntimePolicy/Types.lean",
+  "formal/generated/ProofboundRuntimePolicy/translation.json",
+  "proofbound/toolchains/translation.lock",
+  "proofbound/translations/policy-compilation.toml",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "LEAN_PATH", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "translation"
+manifest = "proofbound/translations/policy-compilation.toml"
+targets = ["proofbound_runtime_core::policy::compile_policy"]
+
+[resource_budget]
+time_seconds = 1800
+disk_bytes = 26843545600
+memory_bytes = 8589934592

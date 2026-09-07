@@ -109,16 +109,13 @@ impl CompiledPolicy {
 /// and limit inputs. Version 1 maps denied network authority to its only
 /// supported seccomp profile and requires `no_new_privs`.
 #[must_use]
-pub fn compile_policy(authority: &NormalizedAuthority) -> CompiledPolicy {
+pub fn compile_policy(authority: NormalizedAuthority) -> CompiledPolicy {
+    let (paths, environment, limits, _) = authority.into_parts();
     CompiledPolicy {
-        filesystem: FilesystemPolicy {
-            rules: authority.paths().to_vec(),
-        },
-        environment: authority.environment().to_vec(),
+        filesystem: FilesystemPolicy { rules: paths },
+        environment,
         network: SeccompPolicy::DenyNetworkV1,
-        cgroup: CgroupPolicy {
-            limits: authority.limits(),
-        },
+        cgroup: CgroupPolicy { limits },
         no_new_privileges: NoNewPrivileges::Required,
     }
 }
@@ -154,7 +151,7 @@ mod tests {
         ))
         .expect("fixture authority normalizes");
 
-        let policy = compile_policy(&authority);
+        let policy = compile_policy(authority.clone());
         assert_eq!(policy.filesystem().rules(), authority.paths());
         assert_eq!(policy.environment(), authority.environment());
         assert_eq!(policy.cgroup().limits(), authority.limits());

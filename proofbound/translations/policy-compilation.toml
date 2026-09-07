@@ -1,0 +1,120 @@
+schema = "proofbound-translation-unit/3"
+id = "policy-compilation"
+pipeline = "charon-aeneas"
+generated_dir = "formal/generated/ProofboundRuntimePolicy"
+handwritten_refinement = "formal/ProofboundRuntime/Refinement/PolicyCompilationClaim.lean"
+determinism_runs = 2
+determinism_normalization = "pretty-printed-llbc/1"
+forbid_generated_axioms = true
+claims = ["PBR-POLICY-002"]
+warning_inventory = []
+
+[[invocations]]
+id = "policy-compilation"
+cargo_package = "proofbound-runtime-core"
+cargo_manifest = "crates/proofbound-runtime-core/Cargo.toml"
+crate_name = "proofbound_runtime_core"
+llbc_file = "proofbound_runtime_policy.llbc"
+start_from = ["proofbound_runtime_core::policy::compile_policy"]
+opaque = []
+include = []
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::normalize::{proofbound_runtime_core::normalize::NormalizedAuthority}::into_parts"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_core::policy::compile_policy"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::AuthorityPath"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::AuthorityText"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::EnvironmentName"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::FileAccess"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::NetworkMode"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::OutputByteLimit"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::PathAuthority"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::PathRole"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::ProcessLimit"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::ResourceLimits"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::WallTimeLimit"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::normalize::NormalizedAuthority"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::policy::CgroupPolicy"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::policy::CompiledPolicy"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::policy::FilesystemPolicy"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::policy::NoNewPrivileges"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::policy::SeccompPolicy"
+
+[[invocations.outputs]]
+kind = "lean-source"
+produced = "Funs.lean"
+destination = "formal/generated/ProofboundRuntimePolicy/Funs.lean"
+
+[[invocations.outputs]]
+kind = "lean-source"
+produced = "Types.lean"
+destination = "formal/generated/ProofboundRuntimePolicy/Types.lean"
+
+[[invocations.outputs]]
+kind = "translation-report"
+produced = "translation.json"
+destination = "formal/generated/ProofboundRuntimePolicy/translation.json"
+
+[import_mapping]
+mode = "external-source-root"
+source_roots = ["formal", "formal/bridges"]
+
+[resource_budget]
+time_seconds = 1800
+disk_bytes = 26843545600
+memory_bytes = 8589934592

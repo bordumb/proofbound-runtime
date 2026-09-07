@@ -54,6 +54,19 @@ impl NormalizedAuthority {
         AuthorityPlan::new(self.paths.clone(), self.environment.clone(), self.limits)
     }
 
+    /// Consumes this normalized value without cloning its owned authority.
+    #[must_use]
+    pub fn into_parts(
+        self,
+    ) -> (
+        Vec<PathAuthority>,
+        Vec<EnvironmentName>,
+        ResourceLimits,
+        NetworkMode,
+    ) {
+        (self.paths, self.environment, self.limits, self.network)
+    }
+
     /// Reports whether all entries have canonical order and no duplicates.
     #[must_use]
     pub fn is_canonical(&self) -> bool {

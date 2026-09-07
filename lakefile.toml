@@ -21,6 +21,8 @@ srcDir = "formal/generated"
 roots = [
   "ProofboundRuntimeCore.Types",
   "ProofboundRuntimeCore.Funs",
+  "ProofboundRuntimePolicy.Types",
+  "ProofboundRuntimePolicy.Funs",
   "ProofboundRuntimeReceipt.Types",
   "ProofboundRuntimeReceipt.Funs",
 ]

@@ -1,0 +1,16 @@
+schema = "proofbound-assumption/1"
+id = "PBR-POLICY-REP-006"
+statement = "The Aeneas owned-vector carrier preserves the exact ordered path and environment identities moved through the translated Rust policy compiler."
+category = "representation-premise"
+owner = "Proofbound Runtime formalization maintainer"
+rationale = "The translated compiler consumes the normalized authority and moves its path and environment vectors into the compiled policy. The refinement proof must connect those Aeneas-owned vectors to the model's ordered lists without omission, substitution, or reordering."
+scope = "Only the source-refinement edge from the registered Rust policy compiler to PBR-POLICY-002."
+affected_claims = ["PBR-POLICY-002"]
+review_evidence = [
+  "formal/ProofboundRuntime/Refinement/PolicyCompilation.lean",
+  "formal/ProofboundRuntime/Refinement/PolicyCompilationClaim.lean",
+]
+discharge_plan = "Discharge with an unconditional registered policy refinement theorem over every translated normalized authority."
+source_citation = "formal/ProofboundRuntime/Refinement/PolicyCompilationClaim.lean#compile_policy_refines"
+status = "active"
+premise_scope = { kind = "all-registered-inputs" }

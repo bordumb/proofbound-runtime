@@ -19,3 +19,10 @@ modules must remain outside generated directories and must be byte-pinned.
 and prevents receipt generation from changing the authority proof surface. Its
 registered theorem proves equality between the translated Rust decision and
 the exact receipt model for every represented input.
+
+`PBR-POLICY-002` translates `compile_policy` into the separate generated
+`ProofboundRuntimePolicy` module. Although it shares the Rust core crate with
+authority normalization, the separate Lean module keeps each extraction's
+closed function inventory and generated-tree ownership independent. The two
+generated modules must not be imported into the same Lean environment because
+they intentionally contain overlapping translated Rust declarations.
