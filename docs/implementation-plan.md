@@ -52,7 +52,7 @@ committed with the source that generated it.
 - [x] Implement the platform-neutral compiled-policy model.
 - [x] Implement deterministic Linux policy compilation semantics.
 - [x] Advance `PBR-POLICY-002` through its declared evidence path.
-- [ ] Implement closed execution outcomes and stable machine errors.
+- [x] Implement closed execution outcomes and stable machine errors.
 - [ ] Implement canonical execution-receipt construction.
 - [ ] Advance `PBR-BINDING-005` through omission, substitution, replay,
   truncation, and assumption-loss evidence.
