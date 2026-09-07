@@ -6,9 +6,12 @@
 #include <string.h>
 #include <sys/prctl.h>
 #include <sys/socket.h>
+#include <sys/syscall.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+extern char **environ;
 
 static int emit(int descriptor, const char *text) {
     size_t remaining = strlen(text);
@@ -26,6 +29,18 @@ static int emit(int descriptor, const char *text) {
 int main(int argc, char **argv) {
     if (argc < 2) {
         return 64;
+    }
+    if (strcmp(argv[1], "preflight") == 0) {
+        return 0;
+    }
+    if (strcmp(argv[1], "fd-exec-preflight") == 0 && argc == 3) {
+        int descriptor = open(argv[2], O_RDONLY | O_CLOEXEC | O_NONBLOCK);
+        if (descriptor < 0) {
+            return 66;
+        }
+        char *const child_argv[] = { argv[0], "preflight", NULL };
+        syscall(SYS_execveat, descriptor, "", child_argv, environ, AT_EMPTY_PATH);
+        return errno == EACCES ? 67 : 68;
     }
     if (strcmp(argv[1], "positive") == 0) {
         if (prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0) != 1 || getuid() == 0 || getuid() != geteuid()) {
