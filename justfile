@@ -45,3 +45,6 @@ check: fast-checks
 
 ci:
     bash tools/ci/ci.sh
+
+release-receipt output:
+    bash tools/release/proofbound-release.sh "{{output}}"

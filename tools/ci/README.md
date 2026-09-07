@@ -12,12 +12,24 @@ and hosted CI.
 | `pre-commit.sh` | Run the fast metadata, documentation, formatting, and manifest checks. |
 | `ci.sh` | Run the complete current repository gate in a fixed order. |
 | `../release/build-linux.sh` | Build a native Linux release bundle twice and require byte equality. |
+| `../release/proofbound-release.sh` | Build a fresh Proofbound release envelope and retain the independent verification report beside it. |
 
 Run the full gate with:
 
 ```console
 just ci
 ```
+
+Create and independently verify a Proofbound release envelope at a path that
+does not yet exist:
+
+```console
+just release-receipt /absolute/path/to/proofbound-runtime-release
+```
+
+The command writes the independent verifier's canonical JSON report beside the
+release directory with the suffix `.verification.json`. It refuses to replace
+either output.
 
 Install the optional local pre-commit hook with:
 
