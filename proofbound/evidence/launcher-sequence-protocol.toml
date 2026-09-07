@@ -5,7 +5,7 @@ kind = "example-test"
 claims = ["PBR-SEQUENCE-003"]
 tier = 0
 expected_inventory = [
-  "launcher::tests::sequence_rejects_acknowledgement_forgery_and_omission",
+  "proofbound_runtime_linux::launcher::tests::sequence_rejects_acknowledgement_forgery_and_omission",
 ]
 inputs = [
   "crates/proofbound-runtime-linux/Cargo.toml",
