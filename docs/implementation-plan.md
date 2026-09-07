@@ -66,7 +66,7 @@ committed with the source that generated it.
 - [x] Record the external receipt-commitment requirement exposed by attack
   conformance analysis.
 - [x] Implement mandatory expected-commitment verification and update the CLI.
-- [ ] Revise the frozen carrier-attack expectations to distinguish locally
+- [x] Revise the frozen carrier-attack expectations to distinguish locally
   decidable defects from authenticated byte substitutions.
 - [ ] Run producer/verifier conformance over positive, negative, and attack
   vectors.
