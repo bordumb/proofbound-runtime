@@ -39,6 +39,17 @@ jobs:
         working-directory: dist
         run: sha256sum --check *.sha256
 
+      - name: Execute and independently verify the exact release binaries
+        env:
+          PROOFBOUND_EXPECTED_ARCH: ${{ matrix.architecture }}
+        run: |
+          runtime_directory="$(mktemp -d "$RUNNER_TEMP/proofbound-runtime.XXXXXX")"
+          trap 'rm -rf -- "$runtime_directory"' EXIT
+          tar -xzf dist/*.tar.gz -C "$runtime_directory"
+          PROOFBOUND_RUNTIME_BIN_DIR="$runtime_directory" \
+          PROOFBOUND_EVIDENCE_DIRECTORY="$PWD/dist/native-evidence" \
+            bash tools/ci/native-linux.sh
+
       - name: Upload the reproduced release bundle
         uses: actions/upload-artifact@v4
         with:
