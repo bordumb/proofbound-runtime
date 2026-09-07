@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://proofbound.dev/runtime/composed-receipt-v1.schema.json",
+  "title": "Proofbound Runtime composed receipt version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "assumptions",
+    "claims",
+    "composition_id",
+    "eligibility",
+    "execution",
+    "not_proved_out_of_scope",
+    "release",
+    "runtime_bundle",
+    "schema",
+    "trusted_computing_base"
+  ],
+  "properties": {
+    "assumptions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/inheritedEntry" },
+      "uniqueItems": true
+    },
+    "claims": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/claim" }
+    },
+    "composition_id": { "$ref": "#/$defs/digest" },
+    "eligibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": { "status": { "const": "composed" } }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "commitment",
+        "eligibility",
+        "execution_id",
+        "receipt",
+        "verification_report",
+        "verifier"
+      ],
+      "properties": {
+        "commitment": { "$ref": "#/$defs/digest" },
+        "eligibility": { "const": "reusable" },
+        "execution_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "receipt": { "$ref": "#/$defs/artifact" },
+        "verification_report": { "$ref": "#/$defs/artifact" },
+        "verifier": { "$ref": "#/$defs/artifact" }
+      }
+    },
+    "not_proved_out_of_scope": { "type": "object" },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "envelope",
+        "payload_sha256",
+        "project",
+        "project_revision",
+        "verification_report",
+        "verifier"
+      ],
+      "properties": {
+        "envelope": { "$ref": "#/$defs/artifact" },
+        "payload_sha256": { "$ref": "#/$defs/digest" },
+        "project": { "type": "string", "minLength": 1 },
+        "project_revision": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "verification_report": { "$ref": "#/$defs/artifact" },
+        "verifier": { "$ref": "#/$defs/artifact" }
+      }
+    },
+    "runtime_bundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["architecture", "artifacts", "manifest", "target", "toolchain", "version"],
+      "properties": {
+        "architecture": { "enum": ["aarch64", "x86_64"] },
+        "artifacts": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": { "$ref": "#/$defs/artifact" }
+        },
+        "manifest": { "$ref": "#/$defs/artifact" },
+        "target": { "enum": ["aarch64-unknown-linux-gnu", "x86_64-unknown-linux-gnu"] },
+        "toolchain": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
+      }
+    },
+    "schema": { "const": "proofbound-runtime-composed-receipt/1" },
+    "trusted_computing_base": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/tcbEntry" },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "sha256", "size"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/digest" },
+        "size": { "type": "string", "pattern": "^(0|[1-9][0-9]*)$" }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assumption", "assumptions", "claim_id", "formal", "linkage", "policy_admitted", "public_statement", "undischarged_premises"],
+      "properties": {
+        "assumption": { "enum": ["NONE", "ASSUMED", "INVALID"] },
+        "assumptions": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "claim_id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$" },
+        "formal": { "enum": ["PROVED", "BOUNDED_CHECKED", "TESTED", "OPEN", "INVALID"] },
+        "linkage": { "enum": ["REFINED", "ARTIFACT_BOUND", "TRANSCRIBED", "MODEL_ONLY", "INVALID"] },
+        "policy_admitted": { "type": "boolean" },
+        "public_statement": { "type": "string", "minLength": 1 },
+        "undischarged_premises": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+      }
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "inheritedEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "origins"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "origins": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "items": { "enum": ["execution", "release"] },
+          "uniqueItems": true
+        }
+      }
+    },
+    "tcbEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity", "origins", "role"],
+      "properties": {
+        "identity": { "type": "string", "minLength": 1 },
+        "origins": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "items": { "enum": ["execution", "release"] },
+          "uniqueItems": true
+        },
+        "role": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

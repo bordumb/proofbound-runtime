@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://proofbound.dev/runtime/runtime-release-manifest-v1.schema.json",
+  "title": "Proofbound Runtime release manifest version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["architecture", "artifacts", "schema", "target", "toolchain", "version"],
+  "properties": {
+    "architecture": {
+      "enum": ["aarch64", "x86_64"]
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "prefixItems": [
+        { "$ref": "#/$defs/pbr" },
+        { "$ref": "#/$defs/launcher" },
+        { "$ref": "#/$defs/verifier" }
+      ],
+      "items": false
+    },
+    "schema": {
+      "const": "proofbound-runtime-release-manifest/1"
+    },
+    "target": {
+      "enum": ["aarch64-unknown-linux-gnu", "x86_64-unknown-linux-gnu"]
+    },
+    "toolchain": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "sha256", "size"],
+      "properties": {
+        "name": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "size": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "pbr": {
+      "allOf": [
+        { "$ref": "#/$defs/artifact" },
+        { "properties": { "name": { "const": "pbr" } } }
+      ]
+    },
+    "launcher": {
+      "allOf": [
+        { "$ref": "#/$defs/artifact" },
+        { "properties": { "name": { "const": "pbr-native-launcher" } } }
+      ]
+    },
+    "verifier": {
+      "allOf": [
+        { "$ref": "#/$defs/artifact" },
+        { "properties": { "name": { "const": "pbr-verify" } } }
+      ]
+    }
+  }
+}
