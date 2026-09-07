@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 mod doctor;
+mod inspect;
 mod plan;
 mod run;
 
@@ -114,6 +115,18 @@ where
                 Err(_) => fail(stderr, INVALID_INPUT, "cli.output.write-failed"),
             },
             Err(error) => fail(stderr, error.exit_code(), error.code()),
+        };
+    }
+    if command == "inspect" {
+        let Some(receipt_path) = args.next() else {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        };
+        if args.next().is_some() {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        }
+        return match inspect::execute(Path::new(&receipt_path), stdout) {
+            Ok(()) => SUCCESS,
+            Err(error) => fail(stderr, INVALID_INPUT, error.code()),
         };
     }
     if command != "doctor" {

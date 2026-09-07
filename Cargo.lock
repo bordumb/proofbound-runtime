@@ -109,6 +109,7 @@ version = "0.0.0"
 dependencies = [
  "proofbound-runtime-core",
  "proofbound-runtime-linux",
+ "serde",
  "serde_json",
  "sha2",
 ]
