@@ -110,6 +110,12 @@ committed with the source that generated it.
 
 - [x] Add the identified native-Linux enforcement workflow.
 - [x] Add reproducible `x86_64` and `aarch64` release builds.
+- [ ] Require and preserve a reviewed exact-observation context in the receipt
+  composer.
+- [ ] Register the exact release-binary observation procedures for both native
+  architectures.
+- [ ] Produce and independently verify one context-bound release receipt on
+  each native architecture.
 - [ ] Bind all admitted claims to exact release artifacts.
 - [x] Verify the release receipt independently.
 - [x] Run the complete release gate and publish the honest assurance language.

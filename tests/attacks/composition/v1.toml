@@ -59,3 +59,18 @@ expected_error = "composition.output.exists"
 id = "PBR-COMP-012"
 mutation = "promote-model-only-to-artifact-bound"
 expected_error = "composition.release.downgraded"
+
+[[cases]]
+id = "PBR-COMP-013"
+mutation = "downgrade-contextual-release"
+expected_error = "composition.release.downgraded"
+
+[[cases]]
+id = "PBR-COMP-014"
+mutation = "substitute-release-context"
+expected_error = "composition.release.context-mismatch"
+
+[[cases]]
+id = "PBR-COMP-015"
+mutation = "omit-release-artifact-observation"
+expected_error = "composition.release.downgraded"

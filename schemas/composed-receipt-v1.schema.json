@@ -63,18 +63,22 @@
       "additionalProperties": false,
       "required": [
         "envelope",
+        "evidence_context",
         "payload_sha256",
         "project",
         "project_revision",
         "verification_report",
+        "verification_verdict",
         "verifier"
       ],
       "properties": {
         "envelope": { "$ref": "#/$defs/artifact" },
+        "evidence_context": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$", "maxLength": 128 },
         "payload_sha256": { "$ref": "#/$defs/digest" },
         "project": { "type": "string", "minLength": 1 },
         "project_revision": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
         "verification_report": { "$ref": "#/$defs/artifact" },
+        "verification_verdict": { "const": "bytes-observed" },
         "verifier": { "$ref": "#/$defs/artifact" }
       }
     },
@@ -117,8 +121,9 @@
     "claim": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["assumption", "assumptions", "claim_id", "formal", "linkage", "policy_admitted", "public_statement", "undischarged_premises"],
+      "required": ["artifact_observations", "assumption", "assumptions", "claim_id", "formal", "linkage", "policy_admitted", "public_statement", "undischarged_premises"],
       "properties": {
+        "artifact_observations": { "type": "array", "items": { "type": "object" }, "uniqueItems": true },
         "assumption": { "enum": ["NONE", "ASSUMED", "INVALID"] },
         "assumptions": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
         "claim_id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$" },

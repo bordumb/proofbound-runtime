@@ -954,7 +954,7 @@ mod tests {
             toml::from_str(include_str!("../../../tests/attacks/composition/v1.toml"))
                 .expect("composition attack catalog parses");
         assert_eq!(catalog.schema, "proofbound-runtime-composition-attacks/1");
-        assert_eq!(catalog.cases.len(), 12);
+        assert_eq!(catalog.cases.len(), 15);
         for (index, case) in catalog.cases.into_iter().enumerate() {
             assert_eq!(case.id, format!("PBR-COMP-{:03}", index + 1));
             assert!(!case.mutation.is_empty());
