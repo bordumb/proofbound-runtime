@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bordumb/proofbound-runtime/schemas/execution-plan-v1.schema.json",
+  "title": "Proofbound Runtime execution plan version 1",
+  "$comment": "This schema defines the data model decoded from the normative TOML wire format.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "command", "authority", "limits"],
+  "properties": {
+    "schema": { "const": "proofbound-runtime-plan/1" },
+    "id": { "$ref": "#/$defs/planId" },
+    "command": { "$ref": "#/$defs/command" },
+    "authority": { "$ref": "#/$defs/authority" },
+    "limits": { "$ref": "#/$defs/limits" }
+  },
+  "$defs": {
+    "planId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^\\u0000]+$"
+    },
+    "argument": {
+      "type": "string",
+      "pattern": "^[^\\u0000]*$"
+    },
+    "environmentName": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^=\\u0000]+$"
+    },
+    "command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["executable", "arguments", "working_directory"],
+      "properties": {
+        "executable": { "$ref": "#/$defs/path" },
+        "arguments": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/argument" }
+        },
+        "working_directory": { "$ref": "#/$defs/path" }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["network", "environment", "read", "write", "execute"],
+      "properties": {
+        "network": { "const": "deny" },
+        "environment": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/environmentName" }
+        },
+        "read": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/path" }
+        },
+        "write": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/path" }
+        },
+        "execute": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/path" }
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "wall_time_ms",
+        "stdout_bytes",
+        "stderr_bytes",
+        "processes"
+      ],
+      "properties": {
+        "wall_time_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 18446744073709551615
+        },
+        "stdout_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "stderr_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "processes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+schema = "proofbound-runtime-plan/1"
+id = "conformance.unknown-field"
+unexpected = true
+
+[command]
+executable = "/bin/tool"
+arguments = []
+working_directory = "."
+
+[authority]
+network = "deny"
+environment = []
+read = []
+write = [".proofbound-runtime/output"]
+execute = ["/bin/tool"]
+
+[limits]
+wall_time_ms = 1
+stdout_bytes = 0
+stderr_bytes = 0
+processes = 1
