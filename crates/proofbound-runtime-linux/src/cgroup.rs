@@ -19,6 +19,8 @@ pub struct FreshCgroup {
     identity: CgroupIdentity,
     process_limit: ProcessLimit,
     #[cfg(target_os = "linux")]
+    removed: bool,
+    #[cfg(target_os = "linux")]
     name: PathBuf,
     #[cfg(target_os = "linux")]
     parent: std::os::fd::OwnedFd,
@@ -89,6 +91,7 @@ impl FreshCgroup {
                 path: capability.directory().join(&name),
                 identity,
                 process_limit,
+                removed: false,
                 name,
                 parent,
                 descriptor,
@@ -178,24 +181,43 @@ impl FreshCgroup {
     pub fn cleanup(self) -> Result<(), CgroupError> {
         #[cfg(target_os = "linux")]
         {
-            use std::os::fd::AsRawFd as _;
-
-            if populated(&self.descriptor)? {
-                write_control(&self.descriptor, "cgroup.kill", b"1")?;
-            }
-            for _ in 0..CLEANUP_POLLS {
-                if !populated(&self.descriptor)? && processes(&self.descriptor)?.is_empty() {
-                    drop(self.descriptor);
-                    return crate::sys::remove_directory_at(self.parent.as_raw_fd(), &self.name)
-                        .map_err(|_| CgroupError::RemovalFailed);
-                }
-                std::thread::sleep(std::time::Duration::from_millis(1));
-            }
-            Err(CgroupError::DrainFailed)
+            let mut group = self;
+            group.cleanup_in_place()
         }
         #[cfg(not(target_os = "linux"))]
         {
             Err(CgroupError::UnsupportedOperatingSystem)
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    fn cleanup_in_place(&mut self) -> Result<(), CgroupError> {
+        use std::os::fd::AsRawFd as _;
+
+        if self.removed {
+            return Ok(());
+        }
+        if populated(&self.descriptor)? {
+            write_control(&self.descriptor, "cgroup.kill", b"1")?;
+        }
+        for _ in 0..CLEANUP_POLLS {
+            if !populated(&self.descriptor)? && processes(&self.descriptor)?.is_empty() {
+                crate::sys::remove_directory_at(self.parent.as_raw_fd(), &self.name)
+                    .map_err(|_| CgroupError::RemovalFailed)?;
+                self.removed = true;
+                return Ok(());
+            }
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        }
+        Err(CgroupError::DrainFailed)
+    }
+}
+
+impl Drop for FreshCgroup {
+    fn drop(&mut self) {
+        #[cfg(target_os = "linux")]
+        if !self.removed {
+            let _ = self.cleanup_in_place();
         }
     }
 }

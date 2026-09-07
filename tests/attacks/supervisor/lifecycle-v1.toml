@@ -1,0 +1,45 @@
+schema = "proofbound-runtime-supervisor-attacks/1"
+
+[[attack]]
+id = "launcher-not-paused"
+expected_error = "supervisor.pause.not-observed"
+
+[[attack]]
+id = "launcher-not-in-cgroup"
+expected_error = "supervisor.cgroup.placement-failed"
+
+[[attack]]
+id = "missing-boundary-acknowledgement"
+expected_error = "supervisor.protocol.failed"
+
+[[attack]]
+id = "extra-inherited-descriptor"
+expected_error = "supervisor.descriptor-set.invalid"
+
+[[attack]]
+id = "declared-descriptor-leak"
+expected_child_state = "closed-on-exec"
+
+[[attack]]
+id = "stdout-over-limit"
+expected_capture = "truncated"
+
+[[attack]]
+id = "stderr-over-limit"
+expected_capture = "truncated"
+
+[[attack]]
+id = "wall-time-over-limit"
+expected_outcome = "timed-out"
+
+[[attack]]
+id = "seccomp-sigsys"
+expected_outcome = "denied"
+
+[[attack]]
+id = "ordinary-signal"
+expected_outcome = "signaled"
+
+[[attack]]
+id = "lingering-descendant"
+expected_cleanup = "cgroup-drained-and-removed"

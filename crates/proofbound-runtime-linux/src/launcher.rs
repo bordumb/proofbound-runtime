@@ -136,6 +136,8 @@ impl InstallRequest {
         close_file_descriptors_from: u32,
     ) -> Result<Self, LauncherError> {
         if executable_id.role() != ArtifactRole::RuntimeExecutable
+            || executable_fd < 3
+            || working_directory_fd < 3
             || executable_fd > i32::MAX as u32
             || working_directory_fd > i32::MAX as u32
             || close_file_descriptors_from > i32::MAX as u32
@@ -157,7 +159,7 @@ impl InstallRequest {
             .any(|pair| pair[0].descriptor == pair[1].descriptor)
             || filesystem
                 .iter()
-                .any(|rule| rule.descriptor >= close_file_descriptors_from)
+                .any(|rule| rule.descriptor < 3 || rule.descriptor >= close_file_descriptors_from)
         {
             return Err(LauncherError::Malformed);
         }
@@ -373,6 +375,8 @@ pub enum LauncherError {
     ChannelCreationFailed,
     /// One private packet could not be received.
     ChannelReadFailed,
+    /// No private packet arrived before the monotonic deadline.
+    ChannelTimeout,
     /// One private packet could not be sent.
     ChannelWriteFailed,
     /// The launcher could not stop before supervisor placement.
@@ -431,6 +435,7 @@ impl LauncherError {
             Self::UnsupportedOperatingSystem => "launcher.os.unsupported",
             Self::ChannelCreationFailed => "launcher.channel.creation-failed",
             Self::ChannelReadFailed => "launcher.channel.read-failed",
+            Self::ChannelTimeout => "launcher.channel.timeout",
             Self::ChannelWriteFailed => "launcher.channel.write-failed",
             Self::PauseFailed => "launcher.pause.failed",
             Self::Eof => "launcher.protocol.eof",
@@ -530,6 +535,49 @@ impl LauncherChannel {
         }
     }
 
+    /// Receives one complete message before a monotonic timeout expires.
+    pub fn receive_timeout(
+        &self,
+        timeout: std::time::Duration,
+    ) -> Result<LauncherMessage, LauncherError> {
+        #[cfg(target_os = "linux")]
+        {
+            use std::os::fd::AsRawFd as _;
+
+            if !crate::sys::wait_readable(self.descriptor.as_raw_fd(), timeout)
+                .map_err(|_| LauncherError::ChannelReadFailed)?
+            {
+                return Err(LauncherError::ChannelTimeout);
+            }
+            self.receive()
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            let _ = timeout;
+            Err(LauncherError::UnsupportedOperatingSystem)
+        }
+    }
+
+    /// Takes one inherited descriptor and restores close-on-exec ownership.
+    ///
+    /// This function closes the supplied descriptor after it creates an owned
+    /// close-on-exec duplicate. The hidden launcher entry point calls it once.
+    pub fn from_inherited_descriptor(descriptor: u32) -> Result<Self, LauncherError> {
+        #[cfg(target_os = "linux")]
+        {
+            let descriptor =
+                i32::try_from(descriptor).map_err(|_| LauncherError::FileDescriptorInvalid)?;
+            let descriptor = crate::sys::take_inherited_descriptor(descriptor)
+                .map_err(|_| LauncherError::FileDescriptorInvalid)?;
+            Ok(Self { descriptor })
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            let _ = descriptor;
+            Err(LauncherError::UnsupportedOperatingSystem)
+        }
+    }
+
     /// Borrows the channel descriptor for a controlled process handoff.
     #[cfg(target_os = "linux")]
     #[must_use]
@@ -577,10 +625,7 @@ pub fn run_launcher(
             report_failure(channel, expected, stage_for_protocol_error(error), error)
         })?;
         let request = prepared.request();
-        if channel.raw_descriptor() < 0
-            || u32::try_from(channel.raw_descriptor()).ok()
-                >= Some(request.close_file_descriptors_from())
-        {
+        if channel.raw_descriptor() < 0 {
             return Err(report_failure(
                 channel,
                 expected,
@@ -608,6 +653,9 @@ pub fn run_launcher(
                 LauncherError::SeccompProgramMismatch,
             ));
         }
+        mark_declared_descriptors_close_on_exec(request).map_err(|error| {
+            report_failure(channel, expected, LauncherStage::FileDescriptors, error)
+        })?;
         crate::revalidate_inherited_executable(request.executable_fd(), request.executable_id())
             .map_err(|_| {
                 report_failure(
@@ -621,16 +669,18 @@ pub fn run_launcher(
             .map_err(|error| report_failure(channel, expected, LauncherStage::Exec, error))?;
         let environment = build_environment(request)
             .map_err(|error| report_failure(channel, expected, LauncherStage::Exec, error))?;
-        crate::sys::close_descriptors_from(request.close_file_descriptors_from()).map_err(
-            |_| {
-                report_failure(
-                    channel,
-                    expected,
-                    LauncherStage::FileDescriptors,
-                    LauncherError::FileDescriptorInvalid,
-                )
-            },
-        )?;
+        crate::sys::close_descriptors_except(
+            request.close_file_descriptors_from(),
+            channel.raw_descriptor(),
+        )
+        .map_err(|_| {
+            report_failure(
+                channel,
+                expected,
+                LauncherStage::FileDescriptors,
+                LauncherError::FileDescriptorInvalid,
+            )
+        })?;
         let locked = crate::lock_privileges().map_err(|privilege_error| {
             report_failure(
                 channel,
@@ -740,6 +790,18 @@ fn duplicate_rule_descriptors(
             Ok((descriptor, rule.access().to_vec()))
         })
         .collect()
+}
+
+#[cfg(target_os = "linux")]
+fn mark_declared_descriptors_close_on_exec(request: &InstallRequest) -> Result<(), LauncherError> {
+    let descriptors = core::iter::once(request.executable_fd())
+        .chain(core::iter::once(request.working_directory_fd()))
+        .chain(request.filesystem().iter().map(|rule| rule.descriptor()));
+    for descriptor in descriptors {
+        crate::sys::set_descriptor_close_on_exec(descriptor as i32)
+            .map_err(|_| LauncherError::FileDescriptorInvalid)?;
+    }
+    Ok(())
 }
 
 #[cfg(target_os = "linux")]
@@ -1832,6 +1894,7 @@ mod tests {
             LauncherError::UnsupportedOperatingSystem,
             LauncherError::ChannelCreationFailed,
             LauncherError::ChannelReadFailed,
+            LauncherError::ChannelTimeout,
             LauncherError::ChannelWriteFailed,
             LauncherError::PauseFailed,
             LauncherError::Eof,

@@ -165,6 +165,17 @@ A fresh cgroup v2 boundary enforces registered process limits. The supervisor
 enforces wall-time and stream-size limits. Every limit and observed termination
 state appears in the receipt.
 
+The supervisor starts a new launcher image and observes its `SIGSTOP` before it
+places and verifies the process in the fresh cgroup. A child-only pre-exec hook
+passes only registered close-on-exec descriptors. Separate drain threads retain
+bounded stream prefixes while continuing to drain discarded bytes. A monotonic
+deadline kills the process tree, and every terminal path drains and removes the
+fresh cgroup before it returns positive execution evidence.
+
+The supervisor classifies `SIGSYS` as a denied outcome. It does not infer a
+denial from a child exit code. A child that observes and handles `EACCES` or
+`EPERM` retains its actual exit or signal outcome in the receipt.
+
 ## Required attack corpus
 
 Before a platform profile can be described as supported, native Linux evidence

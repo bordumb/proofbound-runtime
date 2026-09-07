@@ -10,6 +10,7 @@ pub mod privilege;
 pub mod probe;
 pub mod resolve;
 pub mod seccomp;
+pub mod supervisor;
 
 #[cfg(target_os = "linux")]
 #[allow(unsafe_code)]
@@ -38,4 +39,8 @@ pub use resolve::{
 };
 pub use seccomp::{
     SeccompBoundary, SeccompError, compile_deny_network_program, install_deny_network,
+};
+pub use supervisor::{
+    CapturedStream, LauncherBootstrap, SupervisedExecution, SupervisorError,
+    parse_launcher_bootstrap, supervise_launcher,
 };

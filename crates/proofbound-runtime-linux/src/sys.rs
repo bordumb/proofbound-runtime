@@ -5,6 +5,7 @@ use std::io;
 use std::os::fd::{FromRawFd as _, OwnedFd, RawFd};
 use std::os::unix::ffi::OsStrExt as _;
 use std::path::Path;
+use std::process::Command;
 
 const LANDLOCK_CREATE_RULESET_VERSION: libc::c_uint = 1;
 const LANDLOCK_RULE_PATH_BENEATH: libc::c_int = 1;
@@ -354,6 +355,51 @@ pub(crate) fn receive_packet(descriptor: RawFd, buffer: &mut [u8]) -> io::Result
     }
 }
 
+pub(crate) fn wait_readable(descriptor: RawFd, timeout: std::time::Duration) -> io::Result<bool> {
+    let milliseconds = timeout.as_millis().min(i32::MAX as u128) as i32;
+    let mut poll_descriptor = libc::pollfd {
+        fd: descriptor,
+        events: libc::POLLIN,
+        revents: 0,
+    };
+    // SAFETY: `poll_descriptor` is valid writable storage for one poll entry.
+    let result = unsafe { libc::poll(&raw mut poll_descriptor, 1, milliseconds) };
+    if result < 0 {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok(result > 0)
+    }
+}
+
+pub(crate) fn take_inherited_descriptor(descriptor: RawFd) -> io::Result<OwnedFd> {
+    let duplicate = duplicate_descriptor(descriptor)?;
+    // SAFETY: close takes only an integer descriptor. The new duplicate above
+    // remains independently owned.
+    let result = unsafe { libc::close(descriptor) };
+    if result == 0 {
+        Ok(duplicate)
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+pub(crate) fn inherit_descriptors_for_exec(command: &mut Command, descriptors: Vec<RawFd>) {
+    use std::os::unix::process::CommandExt as _;
+
+    // SAFETY: the closure runs after fork and before exec. It calls only fcntl,
+    // performs no allocation, and returns an io::Error created from errno.
+    unsafe {
+        command.pre_exec(move || {
+            for descriptor in &descriptors {
+                if libc::fcntl(*descriptor, libc::F_SETFD, 0) < 0 {
+                    return Err(io::Error::last_os_error());
+                }
+            }
+            Ok(())
+        });
+    }
+}
+
 pub(crate) fn pause_current_process() -> io::Result<()> {
     // SAFETY: raise sends SIGSTOP to the current process. The call has no
     // pointer arguments and returns after a supervisor sends SIGCONT.
@@ -378,6 +424,17 @@ pub(crate) fn duplicate_descriptor(descriptor: RawFd) -> io::Result<OwnedFd> {
     }
 }
 
+pub(crate) fn set_descriptor_close_on_exec(descriptor: RawFd) -> io::Result<()> {
+    // SAFETY: fcntl receives only an integer descriptor and the FD_CLOEXEC
+    // flag. The descriptor remains open for the launcher setup phase.
+    let result = unsafe { libc::fcntl(descriptor, libc::F_SETFD, libc::FD_CLOEXEC) };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
 pub(crate) fn close_descriptors_from(first: u32) -> io::Result<()> {
     // SAFETY: close_range receives only integer bounds and flags. The caller
     // retains every declared descriptor below `first`.
@@ -386,6 +443,61 @@ pub(crate) fn close_descriptors_from(first: u32) -> io::Result<()> {
         Ok(())
     } else {
         Err(io::Error::last_os_error())
+    }
+}
+
+pub(crate) fn close_descriptors_except(first: u32, keep: RawFd) -> io::Result<()> {
+    let keep = u32::try_from(keep).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    if keep < first {
+        return close_descriptors_from(first);
+    }
+    if keep > first {
+        close_descriptor_range(first, keep - 1)?;
+    }
+    if keep < u32::MAX {
+        close_descriptor_range(keep + 1, u32::MAX)?;
+    }
+    Ok(())
+}
+
+fn close_descriptor_range(first: u32, last: u32) -> io::Result<()> {
+    // SAFETY: close_range receives only integer bounds and zero flags.
+    let result = unsafe { libc::syscall(libc::SYS_close_range, first, last, 0) };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+pub(crate) fn continue_process(process_id: u32) -> io::Result<()> {
+    let process_id =
+        i32::try_from(process_id).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    // SAFETY: kill receives only a process ID and SIGCONT.
+    let result = unsafe { libc::kill(process_id, libc::SIGCONT) };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+pub(crate) fn process_is_stopped(process_id: u32) -> io::Result<bool> {
+    let process_id =
+        i32::try_from(process_id).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    let mut status = 0;
+    // SAFETY: `status` is valid writable storage and waitpid is scoped to the
+    // exact child process.
+    let result =
+        unsafe { libc::waitpid(process_id, &raw mut status, libc::WUNTRACED | libc::WNOHANG) };
+    if result < 0 {
+        Err(io::Error::last_os_error())
+    } else if result == 0 {
+        Ok(false)
+    } else if libc::WIFSTOPPED(status) && libc::WSTOPSIG(status) == libc::SIGSTOP {
+        Ok(true)
+    } else {
+        Err(io::Error::other("launcher did not stop with SIGSTOP"))
     }
 }
 
