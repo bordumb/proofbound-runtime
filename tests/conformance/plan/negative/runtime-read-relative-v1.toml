@@ -1,5 +1,5 @@
 schema = "proofbound-runtime-plan/1"
-id = "conformance.minimal"
+id = "conformance.runtime-read-relative"
 
 [command]
 executable = "/bin/tool"
@@ -10,7 +10,7 @@ working_directory = "."
 network = "deny"
 environment = []
 read = []
-runtime_read = []
+runtime_read = ["lib"]
 write = [".proofbound-runtime/output"]
 execute = ["/bin/tool"]
 

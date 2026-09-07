@@ -11,6 +11,7 @@ working_directory = "."
 network = "deny"
 environment = []
 read = []
+runtime_read = []
 write = [".proofbound-runtime/output"]
 execute = ["/bin/tool"]
 

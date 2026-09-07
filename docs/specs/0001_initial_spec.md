@@ -173,6 +173,7 @@ working_directory = "."
 network = "deny"
 environment = ["LANG", "PATH"]
 read = ["tools", "src", "pyproject.toml"]
+runtime_read = ["/usr/lib", "/lib"]
 write = [".proofbound-runtime/output"]
 execute = ["/usr/bin/python3"]
 
@@ -183,7 +184,9 @@ stderr_bytes = 1_048_576
 processes = 16
 ```
 
-Relative paths are resolved from the plan root. The runtime MUST reject paths
+Relative paths are resolved from the plan root. `runtime_read` contains only
+canonical absolute roots for explicitly registered runtime libraries. Version 1
+requires exactly one executable and exactly one fresh output root. The runtime MUST reject paths
 that escape the plan root unless the path has an explicit external role, such
 as `runtime-executable` or `runtime-loader-executable`.
 

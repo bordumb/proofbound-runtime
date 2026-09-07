@@ -20,6 +20,7 @@ working_directory = "."
 network = "deny"
 environment = ["PATH", "LANG", "PATH"]
 read = ["src", "src"]
+runtime_read = []
 write = ["out"]
 execute = ["/bin/tool"]
 [limits]

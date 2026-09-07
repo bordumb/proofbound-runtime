@@ -1,4 +1,5 @@
 use core::fmt;
+use std::path::{Component, Path};
 
 use serde::Deserialize;
 use toml::{Table, Value};
@@ -145,6 +146,12 @@ pub enum PlanError {
     UnsupportedNetwork,
     /// The command executable has no exact execute-authority entry.
     ExecutableAuthorityMissing,
+    /// The plan does not contain exactly one executable authority entry.
+    ExecutableAuthorityCount,
+    /// The plan does not contain exactly one output-root authority entry.
+    OutputRootAuthorityCount,
+    /// A runtime-library path is not a canonical absolute path.
+    RuntimeLibraryPathInvalid,
     /// One authority value is invalid.
     Authority(AuthorityError),
 }
@@ -162,6 +169,9 @@ impl PlanError {
             Self::ArgumentContainsNull => "plan.command.argument.null",
             Self::UnsupportedNetwork => "plan.authority.network.unsupported",
             Self::ExecutableAuthorityMissing => "plan.authority.executable.missing",
+            Self::ExecutableAuthorityCount => "plan.authority.executable.count",
+            Self::OutputRootAuthorityCount => "plan.authority.output-root.count",
+            Self::RuntimeLibraryPathInvalid => "plan.authority.runtime-library.external-invalid",
             Self::Authority(error) => match error {
                 AuthorityError::ZeroProcessLimit => "plan.limits.processes.zero",
                 AuthorityError::ZeroWallTimeLimit => "plan.limits.wall_time.zero",
@@ -196,6 +206,12 @@ pub fn parse_execution_plan(input: &str) -> Result<ExecutionPlan, PlanError> {
     if wire.authority.network != "deny" {
         return Err(PlanError::UnsupportedNetwork);
     }
+    if wire.authority.execute.len() != 1 {
+        return Err(PlanError::ExecutableAuthorityCount);
+    }
+    if wire.authority.write.len() != 1 {
+        return Err(PlanError::OutputRootAuthorityCount);
+    }
 
     let id = PlanId::new(wire.id)?;
     let executable = AuthorityPath::new(wire.command.executable)?;
@@ -214,6 +230,7 @@ pub fn parse_execution_plan(input: &str) -> Result<ExecutionPlan, PlanError> {
         FileAccess::Read,
         PathRole::ProjectInput,
     )?;
+    append_runtime_library_paths(&mut paths, wire.authority.runtime_read)?;
     append_paths(
         &mut paths,
         wire.authority.write,
@@ -269,6 +286,29 @@ fn append_paths(
     Ok(())
 }
 
+fn append_runtime_library_paths(
+    output: &mut Vec<PathAuthority>,
+    paths: Vec<String>,
+) -> Result<(), PlanError> {
+    for path in paths {
+        let path = AuthorityPath::new(path)?;
+        let filesystem_path = Path::new(path.as_str());
+        if !filesystem_path.is_absolute()
+            || filesystem_path
+                .components()
+                .any(|component| matches!(component, Component::CurDir | Component::ParentDir))
+        {
+            return Err(PlanError::RuntimeLibraryPathInvalid);
+        }
+        output.push(PathAuthority::new(
+            path,
+            FileAccess::Read,
+            PathRole::RuntimeLibrary,
+        ));
+    }
+    Ok(())
+}
+
 fn validate_closed_tables(value: &Value) -> Result<(), PlanError> {
     let root = value.as_table().ok_or(PlanError::InvalidSchema)?;
     reject_unknown(root, &["schema", "id", "command", "authority", "limits"])?;
@@ -278,7 +318,14 @@ fn validate_closed_tables(value: &Value) -> Result<(), PlanError> {
     )?;
     reject_unknown(
         table(root, "authority")?,
-        &["network", "environment", "read", "write", "execute"],
+        &[
+            "network",
+            "environment",
+            "read",
+            "runtime_read",
+            "write",
+            "execute",
+        ],
     )?;
     reject_unknown(
         table(root, "limits")?,
@@ -322,6 +369,7 @@ struct WireAuthority {
     network: String,
     environment: Vec<String>,
     read: Vec<String>,
+    runtime_read: Vec<String>,
     write: Vec<String>,
     execute: Vec<String>,
 }
@@ -351,8 +399,9 @@ working_directory = "."
 network = "deny"
 environment = []
 read = []
-write = []
-execute = []
+runtime_read = []
+write = ["out"]
+execute = ["/bin/other"]
 [limits]
 wall_time_ms = 1
 stdout_bytes = 0

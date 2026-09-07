@@ -1,5 +1,5 @@
 schema = "proofbound-runtime-plan/1"
-id = "conformance.minimal"
+id = "conformance.multiple-output-roots"
 
 [command]
 executable = "/bin/tool"
@@ -11,7 +11,7 @@ network = "deny"
 environment = []
 read = []
 runtime_read = []
-write = [".proofbound-runtime/output"]
+write = ["out-a", "out-b"]
 execute = ["/bin/tool"]
 
 [limits]

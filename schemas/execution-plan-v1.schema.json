@@ -50,7 +50,7 @@
     "authority": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["network", "environment", "read", "write", "execute"],
+      "required": ["network", "environment", "read", "runtime_read", "write", "execute"],
       "properties": {
         "network": { "const": "deny" },
         "environment": {
@@ -61,13 +61,26 @@
           "type": "array",
           "items": { "$ref": "#/$defs/path" }
         },
+        "runtime_read": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              { "$ref": "#/$defs/path" },
+              { "pattern": "^/(?:[^/]+(?:/[^/]+)*)?$" }
+            ]
+          }
+        },
         "write": {
           "type": "array",
-          "items": { "$ref": "#/$defs/path" }
+          "items": { "$ref": "#/$defs/path" },
+          "minItems": 1,
+          "maxItems": 1
         },
         "execute": {
           "type": "array",
-          "items": { "$ref": "#/$defs/path" }
+          "items": { "$ref": "#/$defs/path" },
+          "minItems": 1,
+          "maxItems": 1
         }
       }
     },
