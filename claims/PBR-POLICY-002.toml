@@ -11,7 +11,7 @@ assumptions = [
   "PBR-TOOLCHAIN-AX-003",
 ]
 open_obligations = [
-  "Define the closed supported Linux policy model and compile it from normalized authority.",
+  "Compile the closed supported Linux policy model from normalized authority.",
   "Register bounded checks, a Lean policy theorem, source refinement, and release artifact linkage.",
 ]
 out_of_scope = [
@@ -19,6 +19,7 @@ out_of_scope = [
   "Kernel vulnerabilities, side channels, and authority deliberately present in the input plan.",
 ]
 source_roots = [
+  "crates/proofbound-runtime-core/src/policy.rs",
   "docs/specs/0001_initial_spec.md",
   "docs/threat-model.md",
   "docs/adr/0001-linux-enforcement-boundary.md",
