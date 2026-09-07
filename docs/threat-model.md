@@ -147,6 +147,12 @@ and denies all `io_uring` entry points because asynchronous socket operations
 would bypass a direct-syscall-only network policy. Unknown non-network syscalls
 remain allowed and are constrained by the other installed boundaries.
 
+The supervisor and launcher exchange deterministic CBOR messages through a
+private Unix sequence-packet channel. Every message binds the execution,
+compiled-policy, and cgroup identities. The launcher stops itself before it
+receives policy data. Its state machine permits the exec handoff only after all
+boundary witnesses exist and the bound acknowledgement is sent.
+
 ### Environment
 
 The supervisor builds a new child environment from registered names. The child

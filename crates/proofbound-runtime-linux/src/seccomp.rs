@@ -56,30 +56,55 @@ impl BpfInstruction {
 }
 
 /// Witnesses installation and read-back of the deny-network filter.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SeccompBoundary {
     architecture: Architecture,
     denied_syscall_count: usize,
     instruction_count: usize,
+    program: Vec<u8>,
 }
 
 impl SeccompBoundary {
     /// Returns the audit architecture enforced by the filter preamble.
     #[must_use]
-    pub const fn architecture(self) -> Architecture {
+    pub const fn architecture(&self) -> Architecture {
         self.architecture
     }
 
     /// Returns the complete registered denied-syscall count.
     #[must_use]
-    pub const fn denied_syscall_count(self) -> usize {
+    pub const fn denied_syscall_count(&self) -> usize {
         self.denied_syscall_count
     }
 
     /// Returns the exact classic-BPF instruction count.
     #[must_use]
-    pub const fn instruction_count(self) -> usize {
+    pub const fn instruction_count(&self) -> usize {
         self.instruction_count
+    }
+
+    /// Returns the exact canonical classic-BPF program bytes.
+    #[must_use]
+    pub fn program(&self) -> &[u8] {
+        &self.program
+    }
+}
+
+/// Compiles the exact canonical deny-network classic-BPF program bytes.
+pub fn compile_deny_network_program(
+    policy: SeccompPolicy,
+    architecture: Architecture,
+) -> Result<Vec<u8>, SeccompError> {
+    #[cfg(target_os = "linux")]
+    {
+        let SeccompPolicy::DenyNetworkV1 = policy;
+        let filter = build_filter(architecture, &denied_syscalls())?;
+        Ok(encode_filter(&filter))
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _ = (policy, architecture);
+        Err(SeccompError::UnsupportedOperatingSystem)
     }
 }
 
@@ -95,6 +120,7 @@ pub fn install_deny_network(
         let SeccompPolicy::DenyNetworkV1 = policy;
         let denied_syscalls = denied_syscalls();
         let filter = build_filter(architecture, &denied_syscalls)?;
+        let program = encode_filter(&filter);
         crate::sys::install_seccomp_filter(&filter)
             .map_err(|_| SeccompError::InstallationFailed)?;
         if crate::sys::seccomp_mode().map_err(|_| SeccompError::VerificationFailed)? != 2 {
@@ -104,6 +130,7 @@ pub fn install_deny_network(
             architecture,
             denied_syscall_count: denied_syscalls.len(),
             instruction_count: filter.len(),
+            program,
         })
     }
     #[cfg(not(target_os = "linux"))]
@@ -233,6 +260,18 @@ fn build_filter(
     Ok(filter)
 }
 
+#[cfg(any(test, target_os = "linux"))]
+fn encode_filter(filter: &[BpfInstruction]) -> Vec<u8> {
+    let mut bytes = Vec::with_capacity(filter.len() * 8);
+    for instruction in filter {
+        bytes.extend_from_slice(&instruction.code.to_le_bytes());
+        bytes.push(instruction.jump_true);
+        bytes.push(instruction.jump_false);
+        bytes.extend_from_slice(&instruction.value.to_le_bytes());
+    }
+    bytes
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -300,6 +339,19 @@ mod tests {
             evaluate(&filter, AUDIT_ARCH_X86_64, X32_SYSCALL_BIT | 41),
             SECCOMP_RETURN_KILL_PROCESS
         );
+    }
+
+    #[test]
+    fn canonical_program_bytes_preserve_each_instruction_field() {
+        let filter = build_filter(Architecture::Aarch64, &[41]).expect("valid filter");
+        let bytes = encode_filter(&filter);
+        assert_eq!(bytes.len(), filter.len() * 8);
+        for (instruction, encoded) in filter.iter().zip(bytes.chunks_exact(8)) {
+            assert_eq!(&encoded[0..2], &instruction.code.to_le_bytes());
+            assert_eq!(encoded[2], instruction.jump_true);
+            assert_eq!(encoded[3], instruction.jump_false);
+            assert_eq!(&encoded[4..8], &instruction.value.to_le_bytes());
+        }
     }
 
     #[test]

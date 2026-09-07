@@ -77,6 +77,32 @@ pub struct ExecutableClosure {
     loader: Option<ResolvedFile>,
 }
 
+/// Revalidates one inherited executable descriptor against an expected identity.
+pub fn revalidate_inherited_executable(
+    descriptor: u32,
+    expected: &ArtifactIdentity,
+) -> Result<(), ResolutionError> {
+    #[cfg(target_os = "linux")]
+    {
+        if descriptor > i32::MAX as u32 || expected.role() != ArtifactRole::RuntimeExecutable {
+            return Err(ResolutionError::IdentityDrift);
+        }
+        let descriptor = crate::sys::duplicate_descriptor(descriptor as i32)
+            .map_err(|_| ResolutionError::IdentityDrift)?;
+        let observed = identify_descriptor(&descriptor, ArtifactRole::RuntimeExecutable)?;
+        if &observed == expected {
+            Ok(())
+        } else {
+            Err(ResolutionError::IdentityDrift)
+        }
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _ = (descriptor, expected);
+        Err(ResolutionError::UnsupportedOperatingSystem)
+    }
+}
+
 impl ExecutableClosure {
     /// Returns the identified executable.
     #[must_use]

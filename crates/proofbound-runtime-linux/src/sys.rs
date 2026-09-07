@@ -296,6 +296,145 @@ pub(crate) fn install_seccomp_filter(
     }
 }
 
+pub(crate) fn private_socket_pair() -> io::Result<(OwnedFd, OwnedFd)> {
+    let mut descriptors = [-1; 2];
+    // SAFETY: `descriptors` contains space for the two descriptors written by
+    // socketpair. Each successful descriptor becomes uniquely owned below.
+    let result = unsafe {
+        libc::socketpair(
+            libc::AF_UNIX,
+            libc::SOCK_SEQPACKET | libc::SOCK_CLOEXEC,
+            0,
+            descriptors.as_mut_ptr(),
+        )
+    };
+    if result != 0 {
+        return Err(io::Error::last_os_error());
+    }
+    // SAFETY: socketpair returned two new descriptors and ownership transfers
+    // to these values exactly once.
+    let first = unsafe { OwnedFd::from_raw_fd(descriptors[0]) };
+    // SAFETY: see the ownership argument for `first` above.
+    let second = unsafe { OwnedFd::from_raw_fd(descriptors[1]) };
+    Ok((first, second))
+}
+
+pub(crate) fn send_packet(descriptor: RawFd, bytes: &[u8]) -> io::Result<()> {
+    // SAFETY: `bytes` remains readable for the call and `descriptor` is
+    // borrowed by the caller. SOCK_SEQPACKET preserves this write as one
+    // packet. The seccomp profile permits write for this acknowledgement.
+    let written = unsafe { libc::write(descriptor, bytes.as_ptr().cast(), bytes.len()) };
+    if written < 0 {
+        Err(io::Error::last_os_error())
+    } else if usize::try_from(written).ok() == Some(bytes.len()) {
+        Ok(())
+    } else {
+        Err(io::Error::new(
+            io::ErrorKind::WriteZero,
+            "private protocol packet was not sent atomically",
+        ))
+    }
+}
+
+pub(crate) fn receive_packet(descriptor: RawFd, buffer: &mut [u8]) -> io::Result<usize> {
+    // SAFETY: `buffer` remains writable for the call and `descriptor` is
+    // borrowed by the caller. MSG_TRUNC makes an oversized packet observable.
+    let received = unsafe {
+        libc::recv(
+            descriptor,
+            buffer.as_mut_ptr().cast(),
+            buffer.len(),
+            libc::MSG_TRUNC,
+        )
+    };
+    if received < 0 {
+        Err(io::Error::last_os_error())
+    } else {
+        usize::try_from(received).map_err(|_| io::Error::other("negative receive size"))
+    }
+}
+
+pub(crate) fn pause_current_process() -> io::Result<()> {
+    // SAFETY: raise sends SIGSTOP to the current process. The call has no
+    // pointer arguments and returns after a supervisor sends SIGCONT.
+    let result = unsafe { libc::raise(libc::SIGSTOP) };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+pub(crate) fn duplicate_descriptor(descriptor: RawFd) -> io::Result<OwnedFd> {
+    // SAFETY: fcntl does not borrow memory. A successful result is one new
+    // close-on-exec descriptor with unique ownership.
+    let duplicate = unsafe { libc::fcntl(descriptor, libc::F_DUPFD_CLOEXEC, 3) };
+    if duplicate < 0 {
+        Err(io::Error::last_os_error())
+    } else {
+        // SAFETY: fcntl returned one new descriptor and ownership transfers
+        // to this value exactly once.
+        Ok(unsafe { OwnedFd::from_raw_fd(duplicate) })
+    }
+}
+
+pub(crate) fn close_descriptors_from(first: u32) -> io::Result<()> {
+    // SAFETY: close_range receives only integer bounds and flags. The caller
+    // retains every declared descriptor below `first`.
+    let result = unsafe { libc::syscall(libc::SYS_close_range, first, u32::MAX, 0) };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+pub(crate) fn change_directory(descriptor: RawFd) -> io::Result<()> {
+    // SAFETY: fchdir borrows a valid directory descriptor for the call.
+    let result = unsafe { libc::fchdir(descriptor) };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+pub(crate) fn execveat(
+    descriptor: RawFd,
+    arguments: &[CString],
+    environment: &[CString],
+) -> io::Result<()> {
+    let empty_path = c"";
+    let mut argument_pointers = arguments
+        .iter()
+        .map(|item| item.as_ptr())
+        .collect::<Vec<_>>();
+    argument_pointers.push(core::ptr::null());
+    let mut environment_pointers = environment
+        .iter()
+        .map(|item| item.as_ptr())
+        .collect::<Vec<_>>();
+    environment_pointers.push(core::ptr::null());
+    // SAFETY: all strings are NUL-terminated and all pointer arrays end with a
+    // null pointer. Their storage remains live for the call. AT_EMPTY_PATH
+    // selects the already-open executable descriptor.
+    let result = unsafe {
+        libc::syscall(
+            libc::SYS_execveat,
+            descriptor,
+            empty_path.as_ptr(),
+            argument_pointers.as_ptr(),
+            environment_pointers.as_ptr(),
+            libc::AT_EMPTY_PATH,
+        )
+    };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
 pub(crate) fn seccomp_mode() -> io::Result<u32> {
     // SAFETY: PR_GET_SECCOMP takes no pointer arguments. All unused arguments
     // are zero as required by prctl(2).

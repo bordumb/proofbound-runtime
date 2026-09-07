@@ -1,9 +1,11 @@
 ; Proofbound Runtime launcher protocol version 1.
 ;
-; Each frame contains one deterministic CBOR item as defined by RFC 8949
+; The private transport is an AF_UNIX SOCK_SEQPACKET channel. Each packet
+; contains one deterministic CBOR item as defined by RFC 8949
 ; section 4.2. A receiver rejects indefinite-length items, duplicate map keys,
 ; non-shortest integers, invalid UTF-8, trailing bytes, and frames above the
-; registered implementation limit.
+; registered 1 MiB implementation limit. Both endpoints use close-on-exec
+; descriptors. The launcher closes its endpoint before the child exec handoff.
 
 launcher-message = install-request / boundary-installed / launcher-failure
 
@@ -15,7 +17,8 @@ install-request = {
   "executable_id": artifact-identity,
   "executable_fd": uint,
   "working_directory_fd": uint,
-  "arguments": [* tstr],
+  ; The first entry is argv[0]. The remaining entries are the plan arguments.
+  "arguments": [+ tstr],
   "environment": {* environment-name => tstr},
   "filesystem": [* filesystem-rule],
   "seccomp_program": bstr,

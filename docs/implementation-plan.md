@@ -86,7 +86,7 @@ committed with the source that generated it.
 - [x] Implement privilege removal and `no_new_privs`.
 - [x] Implement Landlock filesystem enforcement.
 - [x] Implement deny-network seccomp enforcement.
-- [ ] Implement the paused launcher and private typed protocol.
+- [x] Implement the paused launcher and private typed protocol.
 - [ ] Implement the supervisor, bounded streams, timeouts, outcomes, and cleanup.
 - [ ] Run the native Linux positive and denial corpus on identified hosts.
 - [ ] Advance `PBR-SEQUENCE-003` with the strongest honest evidence available
