@@ -83,6 +83,20 @@ runtime and launcher, executable closure, working directory, inputs, output
 root, streams, output artifacts, producer, assumptions, and trusted computing
 base. Removing or substituting any required role makes verification fail.
 
+The normalized-plan identity hashes the canonical
+`proofbound-runtime-plan-check/1` object. The compiled-policy identity hashes
+the domain `proofbound-runtime-installed-policy/1\n`, that normalized identity,
+the resolved filesystem-rule identities, exact limits, and seccomp program
+bytes. Generated artifacts and captured streams use mode zero because they are
+byte values rather than reopened filesystem objects. The argument identity uses
+`proofbound-runtime-arguments/1\n` and a big-endian length before each exact
+argument, including `argv[0]`.
+
+The runtime publishes canonical receipt bytes through a same-directory
+temporary file and a no-replace hard link. An existing receipt path is never
+opened for writing. The separately printed commitment hashes the exact bytes
+that became visible at the requested path.
+
 ## Secrets
 
 Version 1 records allowed environment names but no environment values. Secret

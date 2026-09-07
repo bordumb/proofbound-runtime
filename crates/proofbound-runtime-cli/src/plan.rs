@@ -54,7 +54,7 @@ pub(crate) fn write_check(input: &str, output: &mut impl io::Write) -> Result<()
     writeln!(output).map_err(|_| CheckError::Output)
 }
 
-fn checked_plan_json(plan: &ExecutionPlan) -> Result<Value, CheckError> {
+pub(crate) fn checked_plan_json(plan: &ExecutionPlan) -> Result<Value, CheckError> {
     let normalized =
         normalize_authority(plan.authority().clone()).map_err(CheckError::Normalize)?;
     let limits = normalized.limits();

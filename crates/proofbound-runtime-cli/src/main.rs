@@ -2,6 +2,7 @@
 
 mod doctor;
 mod plan;
+mod run;
 
 use std::env;
 use std::ffi::{OsStr, OsString};
@@ -75,6 +76,46 @@ where
             Err(error) => fail(stderr, INVALID_INPUT, error.code()),
         };
     }
+    if command == "run" {
+        let Some(plan_option) = args.next() else {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        };
+        let Some(plan_path) = args.next() else {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        };
+        let Some(receipt_option) = args.next() else {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        };
+        let Some(receipt_path) = args.next() else {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        };
+        let Some(cgroup_option) = args.next() else {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        };
+        let Some(cgroup_root) = args.next() else {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        };
+        if plan_option != OsStr::new("--plan")
+            || receipt_option != OsStr::new("--receipt")
+            || cgroup_option != OsStr::new("--cgroup-root")
+            || args.next().is_some()
+        {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        }
+        return match run::execute(
+            Path::new(&plan_path),
+            Path::new(&receipt_path),
+            Path::new(&cgroup_root),
+        ) {
+            Ok(report) => match serde_json::to_writer(&mut *stdout, &report)
+                .and_then(|()| writeln!(stdout).map_err(serde_json::Error::io))
+            {
+                Ok(()) => SUCCESS,
+                Err(_) => fail(stderr, INVALID_INPUT, "cli.output.write-failed"),
+            },
+            Err(error) => fail(stderr, error.exit_code(), error.code()),
+        };
+    }
     if command != "doctor" {
         return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
     }
@@ -145,6 +186,17 @@ mod tests {
             &["pbr", "doctor", "--unknown", "/tmp"][..],
             &["pbr", "doctor", "--cgroup-root", "/tmp", "extra"][..],
             &["pbr", "unknown"][..],
+            &[
+                "pbr",
+                "run",
+                "--plan",
+                "plan.toml",
+                "--receipt",
+                "receipt.json",
+                "--cgroup-root",
+                "/cgroup",
+                "extra",
+            ][..],
         ] {
             let mut stdout = Vec::new();
             let mut stderr = Vec::new();

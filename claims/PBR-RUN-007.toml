@@ -2,7 +2,7 @@ schema = "proofbound-claim/1"
 id = "PBR-RUN-007"
 title = "Runtime orchestration preserves the reviewed execution"
 statement = "Every receipt emitted by pbr run is constructed from the exact validated plan, compiled policy, resolved artifacts, installed boundary acknowledgement, supervised outcome, bounded streams, and post-run output inventory of that execution attempt."
-subject = "planned:proofbound_runtime_cli::run::execute"
+subject = "rust:proofbound_runtime_cli::run::execute"
 profile = "ledger"
 tier = 0
 evidence = []
@@ -12,7 +12,7 @@ assumptions = [
   "PBR-TOOLCHAIN-AX-003",
 ]
 open_obligations = [
-  "Implement the production pbr run orchestrator and bind this claim to its exact source closure.",
+  "Register every frozen orchestration attack against the production pbr run path.",
   "Register the end-to-end supported-Linux execution and independent receipt verification evidence.",
   "Bind the tested runtime, launcher, and verifier to exact release artifacts.",
 ]
@@ -22,6 +22,19 @@ out_of_scope = [
   "Receipt properties not represented by the version 1 schema.",
 ]
 source_roots = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-cli/Cargo.toml",
+  "crates/proofbound-runtime-cli/src/main.rs",
+  "crates/proofbound-runtime-cli/src/plan.rs",
+  "crates/proofbound-runtime-cli/src/run.rs",
+  "crates/proofbound-runtime-core/src/authority.rs",
+  "crates/proofbound-runtime-core/src/identity.rs",
+  "crates/proofbound-runtime-core/src/normalize.rs",
+  "crates/proofbound-runtime-core/src/plan.rs",
+  "crates/proofbound-runtime-core/src/policy.rs",
+  "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-linux/src/",
   "docs/specs/0001_initial_spec.md",
   "docs/specs/0002_cli_surface.md",
   "docs/threat-model.md",

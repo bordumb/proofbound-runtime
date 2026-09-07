@@ -98,7 +98,7 @@ committed with the source that generated it.
 - [x] Register the runtime-orchestration claim and adversarial cases.
 - [x] Implement `pbr doctor`.
 - [x] Implement `pbr plan check`.
-- [ ] Implement `pbr run` and canonical receipt emission.
+- [x] Implement `pbr run` and canonical receipt emission.
 - [ ] Implement `pbr inspect` without validity decisions.
 - [ ] Verify one end-to-end supported Linux execution with `pbr-verify`.
 

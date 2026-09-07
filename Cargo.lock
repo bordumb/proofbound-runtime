@@ -110,6 +110,7 @@ dependencies = [
  "proofbound-runtime-core",
  "proofbound-runtime-linux",
  "serde_json",
+ "sha2",
 ]
 
 [[package]]
