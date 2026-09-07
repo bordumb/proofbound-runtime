@@ -74,3 +74,8 @@ expected_error = "composition.release.context-mismatch"
 id = "PBR-COMP-015"
 mutation = "omit-release-artifact-observation"
 expected_error = "composition.release.downgraded"
+
+[[cases]]
+id = "PBR-COMP-016"
+mutation = "substitute-release-observation-inputs"
+expected_error = "composition.release.verification-failed"

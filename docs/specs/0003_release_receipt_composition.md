@@ -34,6 +34,7 @@ The public executable is `pbr-compose`:
 pbr-compose \
   --release <proofbound-release-directory> \
   --proofbound-verifier <path> \
+  --proofbound-observation-inputs <path> \
   --runtime-bundle <extracted-runtime-bundle-directory> \
   --execution-receipt <path> \
   --execution-commitment sha256:<digest> \
@@ -47,11 +48,12 @@ Arguments not shown above are rejected. Every path is explicit. The output
 path must not exist and is published with the same temporary-file plus
 no-replace-link pattern used by `pbr run`.
 
-The plugin executes the supplied `proofbound-verifier` with
-`--release <directory> --json`. It executes the exact `pbr-verify` found in the
-Runtime bundle with the supplied execution commitment and receipt. A nonzero
-status, stderr output, non-UTF-8 output, oversized output, duplicate or unknown
-JSON field, unexpected schema, or noncanonical execution receipt fails closed.
+The plugin executes the supplied `proofbound-verifier` with the release
+directory, the explicit external observation-input manifest, and JSON output.
+It executes the exact `pbr-verify` found in the Runtime bundle with the supplied
+execution commitment and receipt. A nonzero status, stderr output, non-UTF-8
+output, oversized output, duplicate or unknown JSON field, unexpected schema,
+or noncanonical execution receipt fails closed.
 
 ## Inputs
 
@@ -63,8 +65,10 @@ observation release: `proofbound-release-envelope/5` with a
 be a closed `proofbound-verification-report/3` with verdict `bytes-observed`.
 The report and payload must name the same nonempty evidence context. The plugin
 binds that context, the exact envelope bytes, its payload identity, the exact
-verification-report bytes, the verifier executable identity, project name,
-and project revision.
+verification-report bytes, the observation-input manifest bytes, the verifier
+executable identity, project name, and project revision. The observation-input
+manifest is an explicit carrier supplied outside the release directory. It is
+not inferred from a generated directory or adjacent file.
 
 Every claim row is retained with its formal, linkage, assumption, and policy
 facets and its complete exact-artifact observation inventory. Every assumption
@@ -179,6 +183,7 @@ The version 1 implementation must freeze and reject at least these cases:
 | `PBR-COMP-013` | Downgrade the contextual release to a pre-context schema or verdict | `composition.release.downgraded` |
 | `PBR-COMP-014` | Omit or substitute the evidence context across the release and report | `composition.release.context-mismatch` |
 | `PBR-COMP-015` | Omit or change an exact-artifact observation retained by a claim | `composition.release.downgraded` |
+| `PBR-COMP-016` | Omit or substitute the external observation-input manifest | `composition.release.verification-failed` |
 
 The test corpus must include one valid chain plus every registered mutation.
 Producer and a separately implemented verification path must agree on the

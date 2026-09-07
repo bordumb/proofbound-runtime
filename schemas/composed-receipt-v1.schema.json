@@ -64,6 +64,7 @@
       "required": [
         "envelope",
         "evidence_context",
+        "observation_inputs",
         "payload_sha256",
         "project",
         "project_revision",
@@ -74,6 +75,7 @@
       "properties": {
         "envelope": { "$ref": "#/$defs/artifact" },
         "evidence_context": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$", "maxLength": 128 },
+        "observation_inputs": { "$ref": "#/$defs/artifact" },
         "payload_sha256": { "$ref": "#/$defs/digest" },
         "project": { "type": "string", "minLength": 1 },
         "project_revision": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
