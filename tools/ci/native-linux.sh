@@ -33,6 +33,7 @@ if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
   test -x "$PROOFBOUND_NATIVE_FIXTURE"
   "$PROOFBOUND_NATIVE_FIXTURE" preflight
   "$PROOFBOUND_NATIVE_FIXTURE" fd-exec-preflight "$PROOFBOUND_NATIVE_FIXTURE"
+  "$PROOFBOUND_NATIVE_FIXTURE" landlock-fd-exec-preflight "$PROOFBOUND_NATIVE_FIXTURE"
   uname -a
   systemd --version | head -n 1
   cargo test --locked -p proofbound-runtime-linux --test native_linux -- --test-threads=1 --nocapture
