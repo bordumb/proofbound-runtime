@@ -1,0 +1,41 @@
+schema = "proofbound-runtime-receipt-construction-attacks/1"
+
+[[cases]]
+id = "wrong-required-role"
+mutation = "replace-required-artifact-role"
+expected_error = "receipt.role.mismatch"
+
+[[cases]]
+id = "execution-replay"
+mutation = "substitute-boundary-execution-id"
+expected_error = "receipt.identity.execution-mismatch"
+
+[[cases]]
+id = "policy-substitution"
+mutation = "substitute-boundary-policy-id"
+expected_error = "receipt.identity.policy-mismatch"
+
+[[cases]]
+id = "producer-substitution"
+mutation = "substitute-producer-identity"
+expected_error = "receipt.identity.producer-mismatch"
+
+[[cases]]
+id = "duplicate-input"
+mutation = "duplicate-input-artifact"
+expected_error = "receipt.artifact.duplicate"
+
+[[cases]]
+id = "remove-assumption"
+mutation = "remove-inherited-assumption"
+expected_error = "receipt.assumption.missing"
+
+[[cases]]
+id = "remove-tcb-role"
+mutation = "remove-trusted-computing-base-role"
+expected_error = "receipt.tcb.role.missing"
+
+[[cases]]
+id = "truncate-stdout"
+mutation = "mark-standard-output-truncated"
+expected_reason = "stdout-truncated"

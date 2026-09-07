@@ -422,6 +422,18 @@ impl TrustedComputingBaseEntry {
         }
         Ok(Self { role, identity })
     }
+
+    /// Returns the closed trusted-computing-base role.
+    #[must_use]
+    pub const fn role(&self) -> TrustedComputingBaseRole {
+        self.role
+    }
+
+    /// Returns the identified implementation or artifact.
+    #[must_use]
+    pub fn identity(&self) -> &str {
+        &self.identity
+    }
 }
 
 /// Contains every caller-supplied field required to construct a receipt.

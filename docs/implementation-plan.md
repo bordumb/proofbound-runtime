@@ -54,7 +54,7 @@ committed with the source that generated it.
 - [x] Advance `PBR-POLICY-002` through its declared evidence path.
 - [x] Implement closed execution outcomes and stable machine errors.
 - [x] Implement canonical execution-receipt construction.
-- [ ] Advance `PBR-BINDING-005` through omission, substitution, replay,
+- [x] Advance `PBR-BINDING-005` through omission, substitution, replay,
   truncation, and assumption-loss evidence.
 
 ### Wave 2: independent verifier

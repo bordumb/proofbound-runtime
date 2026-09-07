@@ -1,0 +1,40 @@
+schema = "proofbound-evidence-unit/1"
+id = "receipt-binding-constructor-attacks"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-BINDING-005"]
+tier = 0
+expected_inventory = [
+  "receipt_binding_attacks::canonical_receipt_retains_every_required_top_level_field",
+  "receipt_binding_attacks::constructor_rejects_duplicate_artifacts_and_premise_loss",
+  "receipt_binding_attacks::constructor_rejects_replay_and_identity_substitution",
+  "receipt_binding_attacks::constructor_rejects_wrong_required_roles",
+  "receipt_binding_attacks::frozen_constructor_attack_catalog_is_closed",
+  "receipt_binding_attacks::truncation_is_retained_as_nonreuse_evidence",
+]
+inputs = [
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/error.rs",
+  "crates/proofbound-runtime-core/src/identity.rs",
+  "crates/proofbound-runtime-core/src/lib.rs",
+  "crates/proofbound-runtime-core/src/outcome.rs",
+  "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-core/tests/receipt_binding_attacks.rs",
+  "schemas/execution-receipt-v1.schema.json",
+  "tests/attacks/receipt/construction-v1.toml",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-core"
+manifest = "Cargo.toml"
+targets = ["--test=receipt_binding_attacks"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

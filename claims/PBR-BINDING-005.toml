@@ -2,18 +2,19 @@ schema = "proofbound-claim/1"
 id = "PBR-BINDING-005"
 title = "Reusable receipts bind security-relevant execution inputs"
 statement = "Every reusable execution receipt binds the registered plan, compiled policy, platform, launcher, runtime, executable closure, inputs, outputs, limits, and observed outcome."
-subject = "planned:proofbound_runtime_core::build_execution_receipt"
+public_language = "The typed production constructor retains every required version 1 field, derives reuse eligibility internally, and rejects the registered role, substitution, replay, duplicate, truncation, and premise-loss constructor attacks. Formal completeness and source linkage remain open."
+subject = "rust:proofbound_runtime_core::ExecutionReceipt::new"
 profile = "ledger"
 tier = 0
-evidence = []
+evidence = ["example-test:receipt-binding-constructor-attacks"]
 assumptions = [
   "PBR-LINUX-AX-001",
   "PBR-HOST-AX-002",
   "PBR-TOOLCHAIN-AX-003",
 ]
 open_obligations = [
-  "Implement the pure version 1 receipt constructor and role-completeness validation.",
-  "Execute the registered omission, substitution, replay, truncation, and assumption-loss attacks against the production constructor.",
+  "Prove that reusable construction retains every required role and source-refine that theorem to the production constructor.",
+  "Execute the remaining wire-format downgrade, duplicate-key, and canonical-byte mutations with the independent verifier.",
   "Link admitted receipt properties to exact release artifacts.",
 ]
 out_of_scope = [
@@ -21,10 +22,18 @@ out_of_scope = [
   "Secret values, which must not appear in a receipt.",
 ]
 source_roots = [
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/error.rs",
   "crates/proofbound-runtime-core/src/identity.rs",
+  "crates/proofbound-runtime-core/src/lib.rs",
+  "crates/proofbound-runtime-core/src/outcome.rs",
+  "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-core/tests/receipt_binding_attacks.rs",
   "docs/specs/0001_initial_spec.md",
   "docs/threat-model.md",
   "docs/receipt-semantics.md",
+  "proofbound/evidence/receipt-binding-constructor-attacks.toml",
   "schemas/execution-receipt-v1.schema.json",
+  "tests/attacks/receipt/construction-v1.toml",
   "tests/attacks/receipt/",
 ]
