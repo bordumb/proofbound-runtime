@@ -12,26 +12,6 @@ pub struct NormalizedAuthority {
 }
 
 impl NormalizedAuthority {
-    /// Constructs one already-normalized value for bounded model checking.
-    ///
-    /// The proof harness supplies canonical, duplicate-free catalog entries.
-    /// This constructor is unavailable in production builds so callers cannot
-    /// bypass [`normalize_authority`].
-    #[cfg(kani)]
-    #[must_use]
-    pub fn from_canonical_catalog_for_model_check(
-        paths: Vec<PathAuthority>,
-        environment: Vec<EnvironmentName>,
-        limits: ResourceLimits,
-    ) -> Self {
-        Self {
-            paths,
-            environment,
-            limits,
-            network: NetworkMode::Deny,
-        }
-    }
-
     /// Returns the filesystem authority entries.
     #[must_use]
     pub fn paths(&self) -> &[PathAuthority] {
@@ -169,6 +149,28 @@ fn environment_prefix_contains(items: &[EnvironmentName], end: usize, candidate:
 
 fn is_strictly_sorted<T: Ord>(items: &[T]) -> bool {
     items.windows(2).all(|pair| pair[0] < pair[1])
+}
+
+#[cfg(kani)]
+impl NormalizedAuthority {
+    /// Constructs one already-normalized value for bounded model checking.
+    ///
+    /// The proof harness supplies canonical, duplicate-free catalog entries.
+    /// This constructor is unavailable in production builds so callers cannot
+    /// bypass [`normalize_authority`].
+    #[must_use]
+    pub fn from_canonical_catalog_for_model_check(
+        paths: Vec<PathAuthority>,
+        environment: Vec<EnvironmentName>,
+        limits: ResourceLimits,
+    ) -> Self {
+        Self {
+            paths,
+            environment,
+            limits,
+            network: NetworkMode::Deny,
+        }
+    }
 }
 
 #[cfg(kani)]
