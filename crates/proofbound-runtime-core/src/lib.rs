@@ -28,8 +28,9 @@ pub use policy::{
 pub use receipt::{
     Architecture, BoundaryInstallation, BoundaryRecord, CgroupIdentity, EXECUTION_RECEIPT_SCHEMA,
     ExecutionId, ExecutionObservations, ExecutionReceipt, ExecutionReceiptParts, NonReusableReason,
-    NonReusableReasons, POLICY_MODEL_VERSION, PlatformIdentity, ReceiptArtifactField,
-    ReceiptCommand, ReceiptEligibility, ReceiptError, ReceiptFacts, ReceiptIdentityField,
-    ReceiptPlan, ReceiptPolicy, ReceiptStreams, ReceiptStructure, RuntimeIdentity, StreamCapture,
-    TrustedComputingBaseEntry, derive_receipt_eligibility,
+    NonReusableReasons, POLICY_MODEL_VERSION, PlatformIdentity, REQUIRED_RUNTIME_ASSUMPTIONS,
+    ReceiptArtifactField, ReceiptCommand, ReceiptEligibility, ReceiptError, ReceiptFacts,
+    ReceiptIdentityField, ReceiptPlan, ReceiptPolicy, ReceiptStreams, ReceiptStructure,
+    RuntimeIdentity, StreamCapture, TrustedComputingBaseEntry, TrustedComputingBaseRole,
+    derive_receipt_eligibility,
 };

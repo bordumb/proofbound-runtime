@@ -21,6 +21,13 @@ pub const EXECUTION_RECEIPT_SCHEMA: &str = "proofbound-runtime-receipt/1";
 /// The only compiled-policy model accepted by version 1 receipts.
 pub const POLICY_MODEL_VERSION: &str = "proofbound-runtime-linux-policy/1";
 
+/// The assumptions that every version 1 runtime receipt must inherit.
+pub const REQUIRED_RUNTIME_ASSUMPTIONS: [&str; 3] = [
+    "PBR-HOST-AX-002",
+    "PBR-LINUX-AX-001",
+    "PBR-TOOLCHAIN-AX-003",
+];
+
 /// Contains an RFC 4122 version 4 execution identifier.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct ExecutionId([u8; 16]);
@@ -340,19 +347,77 @@ impl ReceiptStreams {
     }
 }
 
+/// Identifies one closed trusted-computing-base role.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub enum TrustedComputingBaseRole {
+    /// Host hardware and firmware.
+    HostHardwareFirmware,
+    /// The identified Linux kernel.
+    LinuxKernel,
+    /// Landlock filesystem mediation.
+    Landlock,
+    /// Seccomp syscall mediation.
+    Seccomp,
+    /// Cgroup v2 resource and process accounting.
+    CgroupV2,
+    /// `PR_SET_NO_NEW_PRIVS` behavior.
+    NoNewPrivileges,
+    /// Filesystem identity and descriptor behavior.
+    Filesystem,
+    /// The exact runtime binary.
+    RuntimeBinary,
+    /// The exact launcher binary.
+    LauncherBinary,
+    /// Rust compiler, linker, standard library, and dependencies.
+    RustToolchain,
+    /// The SHA-256 implementation used for artifact identities.
+    CryptographicDigest,
+    /// The exact child executable.
+    RuntimeExecutable,
+    /// The exact loader used by the child.
+    RuntimeLoaderExecutable,
+    /// One or more exact runtime libraries used by the child.
+    RuntimeLibrary,
+}
+
+impl TrustedComputingBaseRole {
+    /// Returns the stable version 1 wire name.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::HostHardwareFirmware => "host-hardware-firmware",
+            Self::LinuxKernel => "linux-kernel",
+            Self::Landlock => "landlock",
+            Self::Seccomp => "seccomp",
+            Self::CgroupV2 => "cgroup-v2",
+            Self::NoNewPrivileges => "no-new-privileges",
+            Self::Filesystem => "filesystem",
+            Self::RuntimeBinary => "runtime-binary",
+            Self::LauncherBinary => "launcher-binary",
+            Self::RustToolchain => "rust-toolchain",
+            Self::CryptographicDigest => "cryptographic-digest",
+            Self::RuntimeExecutable => "runtime-executable",
+            Self::RuntimeLoaderExecutable => "runtime-loader-executable",
+            Self::RuntimeLibrary => "runtime-library",
+        }
+    }
+}
+
 /// Contains one nonempty trusted-computing-base entry.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct TrustedComputingBaseEntry {
-    role: String,
+    role: TrustedComputingBaseRole,
     identity: String,
 }
 
 impl TrustedComputingBaseEntry {
     /// Validates a trusted-computing-base role and identity.
-    pub fn new(role: impl Into<String>, identity: impl Into<String>) -> Result<Self, ReceiptError> {
-        let role = role.into();
+    pub fn new(
+        role: TrustedComputingBaseRole,
+        identity: impl Into<String>,
+    ) -> Result<Self, ReceiptError> {
         let identity = identity.into();
-        if role.is_empty() || identity.is_empty() {
+        if identity.is_empty() {
             return Err(ReceiptError::EmptyText);
         }
         Ok(Self { role, identity })
@@ -460,6 +525,15 @@ impl ExecutionReceipt {
                 .collect(),
         )?;
         let assumptions = canonical_string_set(core::mem::take(&mut parts.assumptions))?;
+        for required in REQUIRED_RUNTIME_ASSUMPTIONS {
+            if assumptions
+                .binary_search_by(|value| value.as_str().cmp(required))
+                .is_err()
+            {
+                return Err(ReceiptError::AssumptionMissing);
+            }
+        }
+        require_tcb_roles(&parts)?;
         let facts = ReceiptFacts::new(
             parts.boundary.state,
             parts.outcome,
@@ -758,7 +832,7 @@ impl From<&ExecutionReceipt> for WireExecutionReceipt {
                 .iter()
                 .map(|entry| WireTrustedComputingBaseEntry {
                     identity: entry.identity.clone(),
-                    role: entry.role.clone(),
+                    role: entry.role.as_str().to_owned(),
                 })
                 .collect(),
         }
@@ -844,6 +918,10 @@ pub enum ReceiptError {
     ObservationOrder,
     /// The trusted computing base contains no entry.
     TrustedComputingBaseEmpty,
+    /// A registered runtime assumption is absent.
+    AssumptionMissing,
+    /// A required trusted-computing-base role is absent.
+    TrustedComputingBaseRoleMissing,
     /// Canonical JSON encoding failed.
     CanonicalEncoding,
 }
@@ -870,6 +948,8 @@ impl ReceiptError {
             }
             Self::ObservationOrder => "receipt.observation.order",
             Self::TrustedComputingBaseEmpty => "receipt.tcb.empty",
+            Self::AssumptionMissing => "receipt.assumption.missing",
+            Self::TrustedComputingBaseRoleMissing => "receipt.tcb.role.missing",
             Self::CanonicalEncoding => "receipt.canonical.encoding-failed",
         }
     }
@@ -950,6 +1030,55 @@ fn reject_duplicates<T: PartialEq>(values: &[T]) -> Result<(), ReceiptError> {
         Err(ReceiptError::DuplicateSetValue)
     } else {
         Ok(())
+    }
+}
+
+fn require_tcb_roles(parts: &ExecutionReceiptParts) -> Result<(), ReceiptError> {
+    const ALWAYS_REQUIRED: [TrustedComputingBaseRole; 12] = [
+        TrustedComputingBaseRole::HostHardwareFirmware,
+        TrustedComputingBaseRole::LinuxKernel,
+        TrustedComputingBaseRole::Landlock,
+        TrustedComputingBaseRole::Seccomp,
+        TrustedComputingBaseRole::CgroupV2,
+        TrustedComputingBaseRole::NoNewPrivileges,
+        TrustedComputingBaseRole::Filesystem,
+        TrustedComputingBaseRole::RuntimeBinary,
+        TrustedComputingBaseRole::LauncherBinary,
+        TrustedComputingBaseRole::RustToolchain,
+        TrustedComputingBaseRole::CryptographicDigest,
+        TrustedComputingBaseRole::RuntimeExecutable,
+    ];
+
+    for role in ALWAYS_REQUIRED {
+        require_tcb_role(&parts.trusted_computing_base, role)?;
+    }
+    if parts.command.loader.is_some() {
+        require_tcb_role(
+            &parts.trusted_computing_base,
+            TrustedComputingBaseRole::RuntimeLoaderExecutable,
+        )?;
+    }
+    if parts
+        .inputs
+        .iter()
+        .any(|identity| identity.role() == ArtifactRole::RuntimeLibrary)
+    {
+        require_tcb_role(
+            &parts.trusted_computing_base,
+            TrustedComputingBaseRole::RuntimeLibrary,
+        )?;
+    }
+    Ok(())
+}
+
+fn require_tcb_role(
+    entries: &[TrustedComputingBaseEntry],
+    required: TrustedComputingBaseRole,
+) -> Result<(), ReceiptError> {
+    if entries.iter().any(|entry| entry.role == required) {
+        Ok(())
+    } else {
+        Err(ReceiptError::TrustedComputingBaseRoleMissing)
     }
 }
 
@@ -1035,11 +1164,33 @@ mod tests {
             outcome: ExecutionOutcome::Exited { code: 0 },
             outputs: vec![artifact(ArtifactRole::OutputArtifact, 19)],
             producer: runtime,
-            assumptions: vec!["PBR-LINUX-AX-001".to_owned(), "PBR-HOST-AX-002".to_owned()],
-            trusted_computing_base: vec![
-                TrustedComputingBaseEntry::new("kernel", "linux:6.12.0")
-                    .expect("fixture TCB entry is valid"),
-            ],
+            assumptions: REQUIRED_RUNTIME_ASSUMPTIONS
+                .into_iter()
+                .rev()
+                .map(str::to_owned)
+                .collect(),
+            trusted_computing_base: [
+                TrustedComputingBaseRole::HostHardwareFirmware,
+                TrustedComputingBaseRole::LinuxKernel,
+                TrustedComputingBaseRole::Landlock,
+                TrustedComputingBaseRole::Seccomp,
+                TrustedComputingBaseRole::CgroupV2,
+                TrustedComputingBaseRole::NoNewPrivileges,
+                TrustedComputingBaseRole::Filesystem,
+                TrustedComputingBaseRole::RuntimeBinary,
+                TrustedComputingBaseRole::LauncherBinary,
+                TrustedComputingBaseRole::RustToolchain,
+                TrustedComputingBaseRole::CryptographicDigest,
+                TrustedComputingBaseRole::RuntimeExecutable,
+                TrustedComputingBaseRole::RuntimeLoaderExecutable,
+                TrustedComputingBaseRole::RuntimeLibrary,
+            ]
+            .into_iter()
+            .map(|role| {
+                TrustedComputingBaseEntry::new(role, format!("{}:fixture", role.as_str()))
+                    .expect("fixture TCB entry is valid")
+            })
+            .collect(),
         }
     }
 
@@ -1048,7 +1199,7 @@ mod tests {
         let receipt = ExecutionReceipt::new(parts()).expect("fixture receipt is valid");
         assert_eq!(receipt.eligibility(), &ReceiptEligibility::Reusable);
         assert_eq!(receipt.environment, ["LANG", "PATH"]);
-        assert_eq!(receipt.assumptions, ["PBR-HOST-AX-002", "PBR-LINUX-AX-001"]);
+        assert_eq!(receipt.assumptions, REQUIRED_RUNTIME_ASSUMPTIONS);
         assert_eq!(receipt.parts.inputs[0].role(), ArtifactRole::RuntimeLibrary);
     }
 
@@ -1112,6 +1263,27 @@ mod tests {
         assert_eq!(
             ExecutionId::from_bytes([0; 16]),
             Err(ReceiptError::InvalidExecutionId)
+        );
+    }
+
+    #[test]
+    fn constructor_rejects_assumption_and_tcb_role_loss() {
+        let mut missing_assumption = parts();
+        missing_assumption
+            .assumptions
+            .retain(|value| value != "PBR-HOST-AX-002");
+        assert_eq!(
+            ExecutionReceipt::new(missing_assumption),
+            Err(ReceiptError::AssumptionMissing)
+        );
+
+        let mut missing_tcb_role = parts();
+        missing_tcb_role
+            .trusted_computing_base
+            .retain(|entry| entry.role != TrustedComputingBaseRole::Seccomp);
+        assert_eq!(
+            ExecutionReceipt::new(missing_tcb_role),
+            Err(ReceiptError::TrustedComputingBaseRoleMissing)
         );
     }
 }
