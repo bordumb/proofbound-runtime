@@ -14,3 +14,7 @@ sha2.workspace = true
 
 [dev-dependencies]
 toml.workspace = true
+
+[[bin]]
+name = "pbr-compose"
+path = "src/main.rs"
