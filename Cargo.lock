@@ -107,6 +107,7 @@ dependencies = [
 name = "proofbound-runtime-cli"
 version = "0.0.0"
 dependencies = [
+ "proofbound-runtime-core",
  "proofbound-runtime-linux",
  "serde_json",
 ]

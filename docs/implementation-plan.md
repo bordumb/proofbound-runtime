@@ -96,7 +96,7 @@ committed with the source that generated it.
 ### Wave 4: product surface
 
 - [x] Implement `pbr doctor`.
-- [ ] Implement `pbr plan check`.
+- [x] Implement `pbr plan check`.
 - [ ] Implement `pbr run` and canonical receipt emission.
 - [ ] Implement `pbr inspect` without validity decisions.
 - [ ] Verify one end-to-end supported Linux execution with `pbr-verify`.

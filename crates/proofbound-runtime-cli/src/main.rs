@@ -1,9 +1,11 @@
 #![forbid(unsafe_code)]
 
 mod doctor;
+mod plan;
 
 use std::env;
 use std::ffi::{OsStr, OsString};
+use std::fs;
 use std::io;
 use std::path::Path;
 use std::process::ExitCode;
@@ -20,15 +22,17 @@ fn main() -> ExitCode {
     ExitCode::from(run_with(
         env::args_os(),
         probe_capabilities,
+        |path| fs::read_to_string(path),
         &mut stdout,
         &mut stderr,
     ))
 }
 
-fn run_with<I, P, W, E>(args: I, probe: P, stdout: &mut W, stderr: &mut E) -> u8
+fn run_with<I, P, R, W, E>(args: I, probe: P, mut read: R, stdout: &mut W, stderr: &mut E) -> u8
 where
     I: IntoIterator<Item = OsString>,
     P: FnOnce(&Path) -> CapabilityReport,
+    R: FnMut(&Path) -> io::Result<String>,
     W: io::Write,
     E: io::Write,
 {
@@ -48,6 +52,28 @@ where
             return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
         }
         return write_success(stdout, concat!("pbr ", env!("CARGO_PKG_VERSION")));
+    }
+    if command == "plan" {
+        let Some(subcommand) = args.next() else {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        };
+        let Some(option) = args.next() else {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        };
+        let Some(plan_path) = args.next() else {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        };
+        if subcommand != "check" || option != OsStr::new("--plan") || args.next().is_some() {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        }
+        let input = match read(Path::new(&plan_path)) {
+            Ok(input) => input,
+            Err(_) => return fail(stderr, INVALID_INPUT, "plan.input.read-failed"),
+        };
+        return match plan::write_check(&input, stdout) {
+            Ok(()) => SUCCESS,
+            Err(error) => fail(stderr, INVALID_INPUT, error.code()),
+        };
     }
     if command != "doctor" {
         return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
@@ -100,6 +126,7 @@ mod tests {
         let code = run_with(
             args(&["pbr", "doctor", "--cgroup-root", "/unsupported"]),
             probe_capabilities,
+            |_| unreachable!("doctor does not read a plan"),
             &mut stdout,
             &mut stderr,
         );
@@ -124,6 +151,7 @@ mod tests {
             let code = run_with(
                 args(values),
                 |_| unreachable!("invalid usage does not probe"),
+                |_| unreachable!("invalid usage does not read"),
                 &mut stdout,
                 &mut stderr,
             );
@@ -141,6 +169,7 @@ mod tests {
             let code = run_with(
                 args(&["pbr", option]),
                 |_| unreachable!("informational option does not probe"),
+                |_| unreachable!("informational option does not read"),
                 &mut stdout,
                 &mut stderr,
             );
@@ -148,5 +177,44 @@ mod tests {
             assert!(!stdout.is_empty());
             assert!(stderr.is_empty());
         }
+    }
+
+    #[test]
+    fn plan_check_reads_once_and_does_not_probe() {
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+        let code = run_with(
+            args(&["pbr", "plan", "check", "--plan", "plan.toml"]),
+            |_| unreachable!("plan check does not probe"),
+            |path| {
+                assert_eq!(path, Path::new("plan.toml"));
+                Ok(crate::plan::TEST_PLAN.to_owned())
+            },
+            &mut stdout,
+            &mut stderr,
+        );
+        let report: serde_json::Value =
+            serde_json::from_slice(&stdout).expect("check report is JSON");
+
+        assert_eq!(code, SUCCESS);
+        assert_eq!(report["id"], "cli.plan-check");
+        assert!(stderr.is_empty());
+    }
+
+    #[test]
+    fn plan_read_failure_has_a_stable_error() {
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+        let code = run_with(
+            args(&["pbr", "plan", "check", "--plan", "missing.toml"]),
+            |_| unreachable!("plan check does not probe"),
+            |_| Err(io::Error::from(io::ErrorKind::NotFound)),
+            &mut stdout,
+            &mut stderr,
+        );
+
+        assert_eq!(code, INVALID_INPUT);
+        assert!(stdout.is_empty());
+        assert_eq!(stderr, b"pbr: plan.input.read-failed\n");
     }
 }
