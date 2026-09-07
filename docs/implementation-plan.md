@@ -21,10 +21,12 @@ dependency order, commit boundaries, and completion evidence.
 ## Current baseline
 
 - `PBR-AUTH-001` is source-refined at Tier 3. Release-artifact binding is open.
+- `PBR-POLICY-002` is source-refined at Tier 3. Release-artifact binding is
+  open.
 - `PBR-RECEIPT-004` is source-refined at Tier 3. Release-artifact binding is
   open.
-- `PBR-POLICY-002`, `PBR-SEQUENCE-003`, `PBR-BINDING-005`, and
-  `PBR-VERIFY-006` remain at Tier 0.
+- `PBR-SEQUENCE-003` and `PBR-BINDING-005` remain open at Tier 0.
+- `PBR-VERIFY-006` has tested model-only evidence at Tier 0.
 - The repository has no executable runtime or native Linux enforcement crate.
 - The independent verifier implements receipt-eligibility derivation only.
 
@@ -49,7 +51,7 @@ committed with the source that generated it.
 - [x] Implement typed artifact identities and stable role validation.
 - [x] Implement the platform-neutral compiled-policy model.
 - [x] Implement deterministic Linux policy compilation semantics.
-- [ ] Advance `PBR-POLICY-002` through its declared evidence path.
+- [x] Advance `PBR-POLICY-002` through its declared evidence path.
 - [ ] Implement closed execution outcomes and stable machine errors.
 - [ ] Implement canonical execution-receipt construction.
 - [ ] Advance `PBR-BINDING-005` through omission, substitution, replay,
