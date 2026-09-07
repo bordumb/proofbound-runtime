@@ -28,13 +28,27 @@ verifiers apply these rules:
 - Preserve array order. Arrays that represent sets must already be sorted by
   their specified semantic key and contain no duplicates.
 
+## Carrier integrity
+
+Canonical bytes are stable; they are not self-authenticating. Independent
+verification requires an algorithm-qualified SHA-256 commitment obtained
+through a channel the receipt carrier cannot alter. The verifier never trusts
+a commitment stored beside or inside the receipt.
+
+The verifier first rejects malformed or non-canonical bytes, then compares the
+exact bytes with the expected commitment, then validates semantic
+relationships and independently derives eligibility. A canonical,
+internally-consistent substitution fails with `receipt.commitment.mismatch`.
+Without the external commitment, a receipt can be inspected but cannot satisfy
+independent verification or reuse.
+
 ## Independent decisions
 
 The producer records observations and its derived eligibility. The independent
 verifier checks structure, canonical bytes, identities, role completeness, and
-relationships before it independently derives eligibility. A mismatch is a
-verification failure. The producer cannot make a receipt reusable by writing
-`"status":"reusable"`.
+relationships after checking the external commitment, then independently
+derives eligibility. A mismatch is a verification failure. The producer cannot
+make a receipt reusable by writing `"status":"reusable"`.
 
 A structurally valid receipt is reusable only when the complete boundary was
 installed, the child exited with code zero, both streams are complete, and all

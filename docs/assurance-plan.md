@@ -96,6 +96,7 @@ contains:
 
 - strict receipt decoding;
 - canonical-byte validation;
+- validation of an independently supplied exact-byte commitment;
 - identity and artifact-role validation;
 - independent reuse-eligibility derivation;
 - typed errors and stable exit behavior; and
@@ -109,8 +110,10 @@ The evidence path is:
 4. producer/verifier differential conformance; and
 5. exact release-artifact binding.
 
-The claim stays bounded to registered attacks. Acceptance of a finite corpus is
-not proof that an unrepresented receipt property is correct.
+The claim stays bounded to registered attacks and retains
+`PBR-COMMITMENT-AX-007`. Acceptance of a finite corpus is not proof that an
+unrepresented receipt property is correct or that a carrier-independent
+commitment was supplied correctly.
 
 ## Promotion rule
 

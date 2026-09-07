@@ -197,7 +197,7 @@ The first public commands are:
 | `pbr plan check --plan <path>` | Parse, validate, normalize, and explain a plan. It MUST NOT install a boundary or run the command. |
 | `pbr run --plan <path> --receipt <path>` | Run the exact registered command and write one receipt. |
 | `pbr inspect <receipt>` | Render the receipt for a person without changing its meaning. |
-| `pbr-verify <receipt>` | Independently validate schema, identities, derivation, and reuse eligibility. |
+| `pbr-verify --expected-commitment sha256:<digest> <receipt>` | Independently validate exact committed bytes, schema, identities, derivation, and reuse eligibility. |
 
 The `run` command MUST NOT accept extra positional command arguments. This rule
 prevents the command that runs from drifting away from the command that was
@@ -428,6 +428,13 @@ The canonical wire format is JSON. Canonical encoding follows one specified
 byte-level format. Map ordering, integer grammar, Unicode handling, and forbidden
 values are normative. A parser accepting JSON is not enough to establish that
 the input has canonical bytes.
+
+Independent verification also requires an exact SHA-256 commitment supplied
+through a channel the receipt carrier cannot alter. A commitment embedded in
+or discovered beside the receipt is not a trust anchor. Canonical receipt
+substitution that retains every internal relationship MUST fail commitment
+validation. This requirement carries `PBR-COMMITMENT-AX-007` until a verified
+parent receipt or equivalently authenticated channel supplies the commitment.
 
 The version 1 receipt records:
 

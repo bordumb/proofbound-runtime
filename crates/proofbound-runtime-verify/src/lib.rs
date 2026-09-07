@@ -3,6 +3,7 @@
 //! Defines independent receipt verification decisions.
 
 mod canonical;
+mod commitment;
 mod decode;
 mod derive;
 mod error;
@@ -12,6 +13,7 @@ mod identity;
 mod test_support;
 
 pub use canonical::{CanonicalError, validate_canonical_receipt};
+pub use commitment::{CommitmentError, ReceiptCommitment};
 pub use decode::{DecodeError, DecodedReceipt, RecordedEligibility, decode_receipt};
 pub use derive::{
     BoundaryState, CaptureState, EligibilityDecision, EligibilityInput, FailureReason,
@@ -23,6 +25,7 @@ pub use identity::{ValidationError, validate_receipt};
 /// Contains one independently verified receipt decision.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VerificationReport {
+    commitment: ReceiptCommitment,
     eligibility: EligibilityDecision,
 }
 
@@ -31,6 +34,12 @@ impl VerificationReport {
     #[must_use]
     pub const fn eligibility(&self) -> &EligibilityDecision {
         &self.eligibility
+    }
+
+    /// Returns the externally supplied commitment that was verified.
+    #[must_use]
+    pub const fn commitment(&self) -> ReceiptCommitment {
+        self.commitment
     }
 
     /// Returns one compact machine-readable JSON result.
@@ -49,6 +58,7 @@ impl VerificationReport {
         };
         serde_json::json!({
             "eligibility": {"reasons": reasons, "status": status},
+            "receipt_commitment": self.commitment.to_text(),
             "valid": true
         })
         .to_string()
@@ -56,10 +66,15 @@ impl VerificationReport {
 }
 
 /// Independently validates canonical bytes, identities, and eligibility.
-pub fn verify_receipt(input: &[u8]) -> Result<VerificationReport, VerifyError> {
+pub fn verify_receipt(
+    input: &[u8],
+    expected: ReceiptCommitment,
+) -> Result<VerificationReport, VerifyError> {
     let decoded = validate_canonical_receipt(input)?;
+    expected.verify(input)?;
     validate_receipt(&decoded)?;
     Ok(VerificationReport {
+        commitment: expected,
         eligibility: derive_eligibility(&decoded.eligibility_input()),
     })
 }
@@ -71,11 +86,17 @@ mod verification_tests {
 
     #[test]
     fn complete_pipeline_reports_reusable_receipt_as_machine_json() {
-        let report = verify_receipt(&bytes(&receipt())).expect("fixture verifies");
+        let input = bytes(&receipt());
+        let commitment = ReceiptCommitment::for_bytes(&input);
+        let report = verify_receipt(&input, commitment).expect("fixture verifies");
         assert_eq!(report.eligibility(), &EligibilityDecision::Reusable);
+        assert_eq!(report.commitment(), commitment);
         assert_eq!(
             report.machine_json(),
-            r#"{"eligibility":{"reasons":[],"status":"reusable"},"valid":true}"#
+            format!(
+                "{{\"eligibility\":{{\"reasons\":[],\"status\":\"reusable\"}},\"receipt_commitment\":\"{}\",\"valid\":true}}",
+                commitment.to_text()
+            )
         );
     }
 
@@ -84,11 +105,24 @@ mod verification_tests {
         let mut forged = receipt();
         forged["eligibility"]["status"] = serde_json::json!("non-reusable");
         forged["eligibility"]["reasons"] = serde_json::json!(["denied"]);
+        let input = bytes(&forged);
         assert_eq!(
-            verify_receipt(&bytes(&forged)),
+            verify_receipt(&input, ReceiptCommitment::for_bytes(&input)),
             Err(VerifyError::Validation(
                 ValidationError::EligibilityMismatch
             ))
+        );
+    }
+
+    #[test]
+    fn complete_pipeline_rejects_a_canonical_substitution() {
+        let original = bytes(&receipt());
+        let commitment = ReceiptCommitment::for_bytes(&original);
+        let mut substituted = receipt();
+        substituted["command"]["executable"]["sha256"] = serde_json::json!("f".repeat(64));
+        assert_eq!(
+            verify_receipt(&bytes(&substituted), commitment),
+            Err(VerifyError::Commitment(CommitmentError::Mismatch))
         );
     }
 }

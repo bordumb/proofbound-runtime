@@ -2,13 +2,15 @@
 
 use core::fmt;
 
-use crate::{CanonicalError, ValidationError};
+use crate::{CanonicalError, CommitmentError, ValidationError};
 
 /// Identifies one failure from the complete independent verifier pipeline.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum VerifyError {
     /// Canonical decoding or byte validation failed.
     Canonical(CanonicalError),
+    /// The trusted expected commitment does not match the receipt bytes.
+    Commitment(CommitmentError),
     /// Identity or semantic validation failed.
     Validation(ValidationError),
 }
@@ -19,6 +21,7 @@ impl VerifyError {
     pub const fn code(self) -> &'static str {
         match self {
             Self::Canonical(error) => error.code(),
+            Self::Commitment(error) => error.code(),
             Self::Validation(error) => error.code(),
         }
     }
@@ -40,6 +43,7 @@ impl std::error::Error for VerifyError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Canonical(error) => Some(error),
+            Self::Commitment(error) => Some(error),
             Self::Validation(error) => Some(error),
         }
     }
@@ -54,5 +58,11 @@ impl From<CanonicalError> for VerifyError {
 impl From<ValidationError> for VerifyError {
     fn from(error: ValidationError) -> Self {
         Self::Validation(error)
+    }
+}
+
+impl From<CommitmentError> for VerifyError {
+    fn from(error: CommitmentError) -> Self {
+        Self::Commitment(error)
     }
 }

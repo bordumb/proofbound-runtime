@@ -7,7 +7,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use proofbound_runtime_verify::verify_receipt;
+use proofbound_runtime_verify::{ReceiptCommitment, verify_receipt};
 
 const SUCCESS: u8 = 0;
 const INVALID_INPUT: u8 = 2;
@@ -32,25 +32,50 @@ where
 {
     let mut args = args.into_iter();
     let _program = args.next();
-    let Some(argument) = args.next() else {
+    let Some(first) = args.next() else {
+        return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+    };
+    if first == "--help" || first == "-h" {
+        if args.next().is_some() {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        }
+        return write_success(
+            stdout,
+            "usage: pbr-verify --expected-commitment sha256:<digest> <receipt>",
+        );
+    }
+    if first == "--version" {
+        if args.next().is_some() {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        }
+        return write_success(stdout, concat!("pbr-verify ", env!("CARGO_PKG_VERSION")));
+    }
+    if first != "--expected-commitment" {
+        return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+    }
+    let Some(commitment) = args.next() else {
+        return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+    };
+    let Some(path) = args.next() else {
         return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
     };
     if args.next().is_some() {
         return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
     }
-    if argument == "--help" || argument == "-h" {
-        return write_success(stdout, "usage: pbr-verify <receipt>");
-    }
-    if argument == "--version" {
-        return write_success(stdout, concat!("pbr-verify ", env!("CARGO_PKG_VERSION")));
-    }
+    let Some(commitment) = commitment.to_str() else {
+        return fail(stderr, INVALID_INPUT, "receipt.commitment.invalid");
+    };
+    let commitment = match ReceiptCommitment::parse(commitment) {
+        Ok(commitment) => commitment,
+        Err(error) => return fail(stderr, INVALID_INPUT, error.code()),
+    };
 
-    let path = PathBuf::from(argument);
+    let path = PathBuf::from(path);
     let input = match read(&path) {
         Ok(input) => input,
         Err(_) => return fail(stderr, INVALID_INPUT, "receipt.input.read-failed"),
     };
-    match verify_receipt(&input) {
+    match verify_receipt(&input, commitment) {
         Ok(report) => write_success(stdout, &report.machine_json()),
         Err(error) => fail(stderr, error.exit_code(), error.code()),
     }
@@ -96,8 +121,14 @@ mod tests {
     fn read_failures_are_invalid_input() {
         let mut stdout = Vec::new();
         let mut stderr = Vec::new();
+        let commitment = ReceiptCommitment::for_bytes(b"receipt").to_text();
         let code = run_with(
-            args(&["pbr-verify", "missing.json"]),
+            args(&[
+                "pbr-verify",
+                "--expected-commitment",
+                &commitment,
+                "missing.json",
+            ]),
             |_| Err(io::Error::from(io::ErrorKind::NotFound)),
             &mut stdout,
             &mut stderr,
@@ -111,9 +142,16 @@ mod tests {
     fn verification_failures_use_exit_seven_and_the_typed_code() {
         let mut stdout = Vec::new();
         let mut stderr = Vec::new();
+        let malformed = br#"{"schema":"#.to_vec();
+        let commitment = ReceiptCommitment::for_bytes(&malformed).to_text();
         let code = run_with(
-            args(&["pbr-verify", "receipt.json"]),
-            |_| Ok(br#"{"schema":"#.to_vec()),
+            args(&[
+                "pbr-verify",
+                "--expected-commitment",
+                &commitment,
+                "receipt.json",
+            ]),
+            |_| Ok(malformed.clone()),
             &mut stdout,
             &mut stderr,
         );
@@ -137,5 +175,25 @@ mod tests {
             assert!(!stdout.is_empty());
             assert!(stderr.is_empty());
         }
+    }
+
+    #[test]
+    fn invalid_commitments_are_invalid_input() {
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+        let code = run_with(
+            args(&[
+                "pbr-verify",
+                "--expected-commitment",
+                "sha256:INVALID",
+                "receipt.json",
+            ]),
+            |_| unreachable!("invalid commitment does not read"),
+            &mut stdout,
+            &mut stderr,
+        );
+        assert_eq!(code, INVALID_INPUT);
+        assert!(stdout.is_empty());
+        assert_eq!(stderr, b"pbr-verify: receipt.commitment.invalid\n");
     }
 }

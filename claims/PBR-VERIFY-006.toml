@@ -6,7 +6,7 @@ subject = "planned:proofbound_runtime_verify::verify_receipt"
 profile = "ledger"
 tier = 0
 evidence = ["example-test:receipt-eligibility-verifier-conformance"]
-assumptions = ["PBR-TOOLCHAIN-AX-003"]
+assumptions = ["PBR-COMMITMENT-AX-007", "PBR-TOOLCHAIN-AX-003"]
 open_obligations = [
   "Implement the independent receipt decoder, canonical-byte checks, identity validation, and verifier CLI.",
   "Execute the frozen adversarial receipt corpus and preserve every exact rejection reason.",

@@ -66,7 +66,10 @@ semantics.
 
 A party transporting or storing a receipt can alter, truncate, reorder,
 substitute, replay, or remove fields. Canonical encoding, typed identities, and
-independent validation must detect the registered forms of these attacks.
+independent validation detect locally decidable defects. An exact SHA-256
+commitment delivered through a channel independent of the carrier detects
+canonical substitutions that retain all internal relationships. A receipt and
+commitment controlled by the same carrier do not establish integrity.
 
 ## Trusted computing base
 
@@ -186,6 +189,8 @@ The initial product does not protect against:
 A valid execution receipt can establish that the producer recorded an exact
 plan, boundary identity, execution outcome, and output inventory in the
 registered format and that the verifier accepted the derived relationships.
+This interpretation requires the independently supplied receipt commitment;
+without it, the receipt is inspectable data rather than a verified statement.
 
 It cannot by itself establish that:
 
