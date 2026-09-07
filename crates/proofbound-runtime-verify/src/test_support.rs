@@ -39,11 +39,14 @@ pub(crate) fn receipt() -> serde_json::Value {
         },
         "command": {
             "executable": artifact("runtime-executable", "6"),
-            "loader": null,
+            "loader": artifact("runtime-loader-executable", "7"),
             "working_directory": artifact("working-directory", "8"),
             "arguments_sha256": "9".repeat(64)
         },
-        "inputs": [artifact("project-input", "a")],
+        "inputs": [
+            artifact("runtime-library", "7"),
+            artifact("project-input", "a")
+        ],
         "environment": ["PATH"],
         "output_root": artifact("output-root", "b"),
         "boundary": {
@@ -78,7 +81,9 @@ pub(crate) fn receipt() -> serde_json::Value {
             {"role": "launcher-binary", "identity": "sha256:launcher"},
             {"role": "rust-toolchain", "identity": "rustc:fixture"},
             {"role": "cryptographic-digest", "identity": "sha256:fixture"},
-            {"role": "runtime-executable", "identity": "sha256:executable"}
+            {"role": "runtime-executable", "identity": "sha256:executable"},
+            {"role": "runtime-loader-executable", "identity": "sha256:loader"},
+            {"role": "runtime-library", "identity": "sha256:library"}
         ]
     })
 }

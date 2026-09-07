@@ -108,6 +108,7 @@ name = "proofbound-runtime-core"
 version = "0.0.0"
 dependencies = [
  "proofbound-runtime-receipt",
+ "proofbound-runtime-verify",
  "serde",
  "serde_json",
  "toml",
@@ -138,6 +139,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "toml",
 ]
 
 [[package]]

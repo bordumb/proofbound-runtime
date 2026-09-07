@@ -10,6 +10,8 @@ mod error;
 mod identity;
 
 #[cfg(test)]
+mod attack_tests;
+#[cfg(test)]
 mod test_support;
 
 pub use canonical::{CanonicalError, validate_canonical_receipt};
