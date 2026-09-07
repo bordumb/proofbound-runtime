@@ -17,7 +17,7 @@ const INVALID_INPUT: u8 = 2;
 const VERIFICATION_FAILED: u8 = 7;
 const MAX_INPUT_BYTES: u64 = 64 * 1024 * 1024;
 const MAX_VERIFIER_OUTPUT_BYTES: usize = 16 * 1024 * 1024;
-const HELP: &str = "usage: pbr-compose --release <directory> --proofbound-verifier <path> --runtime-bundle <directory> --execution-receipt <path> --execution-commitment sha256:<digest> --expected-execution-id <uuid> --output <absent-path>";
+const HELP: &str = "usage: pbr-compose --release <directory> --proofbound-verifier <path> --proofbound-observation-inputs <path> --runtime-bundle <directory> --execution-receipt <path> --execution-commitment sha256:<digest> --expected-execution-id <uuid> --output <absent-path>";
 
 fn main() -> ExitCode {
     let mut stdout = io::stdout().lock();
@@ -50,6 +50,7 @@ impl CliError {
 struct Args {
     release: PathBuf,
     proofbound_verifier: PathBuf,
+    proofbound_observation_inputs: PathBuf,
     runtime_bundle: PathBuf,
     execution_receipt: PathBuf,
     execution_commitment: String,
@@ -82,8 +83,12 @@ fn run_inner(args: Vec<OsString>) -> Result<Option<String>, CliError> {
     let compiled_release = read_regular(&args.release.join("compiled-receipt.json"))?;
     let release_tcb = read_regular(&args.release.join("tcb-ledger.json"))?;
     let proofbound_verifier = read_executable(&args.proofbound_verifier)?;
-    let proofbound_verification =
-        run_proofbound_verifier(&args.proofbound_verifier, &args.release)?;
+    let proofbound_observation_inputs = read_regular(&args.proofbound_observation_inputs)?;
+    let proofbound_verification = run_proofbound_verifier(
+        &args.proofbound_verifier,
+        &args.release,
+        &args.proofbound_observation_inputs,
+    )?;
 
     let runtime_manifest = read_regular(&args.runtime_bundle.join("RELEASE-MANIFEST.json"))?;
     let runtime = read_executable(&args.runtime_bundle.join("pbr"))?;
@@ -108,6 +113,10 @@ fn run_inner(args: Vec<OsString>) -> Result<Option<String>, CliError> {
         compiled_release: named("compiled-receipt.json", &compiled_release),
         release_verification: named("proofbound-verification.json", &proofbound_verification),
         release_verifier: named("proofbound-verify", &proofbound_verifier),
+        release_observation_inputs: named(
+            "proofbound-observation-inputs.json",
+            &proofbound_observation_inputs,
+        ),
         release_tcb_ledger: named("tcb-ledger.json", &release_tcb),
         runtime_manifest: named("RELEASE-MANIFEST.json", &runtime_manifest),
         runtime: named("pbr", &runtime),
@@ -137,14 +146,15 @@ fn run_inner(args: Vec<OsString>) -> Result<Option<String>, CliError> {
 }
 
 fn parse_args(args: &[OsString]) -> Result<Args, CliError> {
-    if args.len() != 15
+    if args.len() != 17
         || args[1] != "--release"
         || args[3] != "--proofbound-verifier"
-        || args[5] != "--runtime-bundle"
-        || args[7] != "--execution-receipt"
-        || args[9] != "--execution-commitment"
-        || args[11] != "--expected-execution-id"
-        || args[13] != "--output"
+        || args[5] != "--proofbound-observation-inputs"
+        || args[7] != "--runtime-bundle"
+        || args[9] != "--execution-receipt"
+        || args[11] != "--execution-commitment"
+        || args[13] != "--expected-execution-id"
+        || args[15] != "--output"
     {
         return Err(CliError::invalid("cli.usage.invalid"));
     }
@@ -158,11 +168,12 @@ fn parse_args(args: &[OsString]) -> Result<Args, CliError> {
     Ok(Args {
         release: PathBuf::from(&args[2]),
         proofbound_verifier: PathBuf::from(&args[4]),
-        runtime_bundle: PathBuf::from(&args[6]),
-        execution_receipt: PathBuf::from(&args[8]),
-        execution_commitment: text(10)?,
-        expected_execution_id: text(12)?,
-        output: PathBuf::from(&args[14]),
+        proofbound_observation_inputs: PathBuf::from(&args[6]),
+        runtime_bundle: PathBuf::from(&args[8]),
+        execution_receipt: PathBuf::from(&args[10]),
+        execution_commitment: text(12)?,
+        expected_execution_id: text(14)?,
+        output: PathBuf::from(&args[16]),
     })
 }
 
@@ -231,10 +242,16 @@ fn read_executable(path: &Path) -> Result<Vec<u8>, CliError> {
     Ok(bytes)
 }
 
-fn run_proofbound_verifier(path: &Path, release: &Path) -> Result<Vec<u8>, CliError> {
+fn run_proofbound_verifier(
+    path: &Path,
+    release: &Path,
+    observation_inputs: &Path,
+) -> Result<Vec<u8>, CliError> {
     let output = Command::new(path)
         .arg("--release")
         .arg(release)
+        .arg("--observation-inputs")
+        .arg(observation_inputs)
         .arg("--json")
         .env_clear()
         .output()
@@ -394,6 +411,11 @@ mod tests {
             );
             assert!(!stdout.is_empty());
             assert!(stderr.is_empty());
+            if option == "--help" {
+                assert!(
+                    String::from_utf8_lossy(&stdout).contains("--proofbound-observation-inputs")
+                );
+            }
         }
     }
 
@@ -409,6 +431,42 @@ mod tests {
             exact_pbr_error(b"pbr-verify: receipt.bad\ntrailing\n"),
             None
         );
+    }
+
+    #[test]
+    fn proofbound_verifier_receives_exact_observation_inputs() {
+        let directory = std::env::temp_dir().join(format!(
+            "proofbound-runtime-compose-verifier-test-{}",
+            std::process::id()
+        ));
+        let _ignored = fs::remove_dir_all(&directory);
+        fs::create_dir(&directory).expect("test directory is created");
+        let verifier = directory.join("proofbound-verify");
+        let release = directory.join("release");
+        let observation_inputs = directory.join("observations.json");
+        fs::create_dir(&release).unwrap();
+        fs::write(&observation_inputs, b"{}").unwrap();
+        fs::write(
+            &verifier,
+            format!(
+                "#!/bin/sh\nset -eu\ntest \"$1\" = --release\ntest \"$2\" = '{}'\ntest \"$3\" = --observation-inputs\ntest \"$4\" = '{}'\ntest \"$5\" = --json\nprintf '{{}}'\n",
+                release.display(),
+                observation_inputs.display()
+            ),
+        )
+        .unwrap();
+        let mut permissions = fs::metadata(&verifier).unwrap().permissions();
+        permissions.set_mode(0o700);
+        fs::set_permissions(&verifier, permissions).unwrap();
+
+        assert_eq!(
+            run_proofbound_verifier(&verifier, &release, &observation_inputs).unwrap(),
+            b"{}"
+        );
+        let substituted = directory.join("substituted.json");
+        let error = run_proofbound_verifier(&verifier, &release, &substituted).unwrap_err();
+        assert_eq!(error.code, "composition.release.verification-failed");
+        fs::remove_dir_all(directory).expect("test directory is removed");
     }
 
     #[test]

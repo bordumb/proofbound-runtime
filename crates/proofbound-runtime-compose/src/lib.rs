@@ -10,9 +10,9 @@ use sha2::{Digest, Sha256};
 
 const COMPOSITION_SCHEMA: &str = "proofbound-runtime-composed-receipt/1";
 const COMPOSITION_DOMAIN: &[u8] = b"proofbound-runtime-composed-receipt/1\n";
-const RELEASE_ENVELOPE_SCHEMA: &str = "proofbound-release-envelope/3";
-const RELEASE_REPORT_SCHEMA: &str = "proofbound-verification-report/1";
-const COMPILED_RELEASE_SCHEMA: &str = "proofbound-compiled-release/3";
+const RELEASE_ENVELOPE_SCHEMA: &str = "proofbound-release-envelope/5";
+const RELEASE_REPORT_SCHEMA: &str = "proofbound-verification-report/3";
+const COMPILED_RELEASE_SCHEMA: &str = "proofbound-compiled-release/5";
 const RELEASE_MANIFEST_SCHEMA: &str = "proofbound-runtime-release-manifest/1";
 const EXECUTION_RECEIPT_SCHEMA: &str = "proofbound-runtime-receipt/1";
 
@@ -31,6 +31,7 @@ pub struct CompositionInputs<'a> {
     pub compiled_release: ArtifactBytes<'a>,
     pub release_verification: ArtifactBytes<'a>,
     pub release_verifier: ArtifactBytes<'a>,
+    pub release_observation_inputs: ArtifactBytes<'a>,
     pub release_tcb_ledger: ArtifactBytes<'a>,
     pub runtime_manifest: ArtifactBytes<'a>,
     pub runtime: ArtifactBytes<'a>,
@@ -50,6 +51,7 @@ pub enum CompositionError {
     ReleaseClaimOmitted,
     ReleaseSubstituted,
     ReleaseDowngraded,
+    ReleaseContextMismatch,
     BundleSubstituted,
     BundleRoleMismatch,
     ExecutionReplayed,
@@ -68,6 +70,7 @@ impl CompositionError {
             Self::ReleaseClaimOmitted => "composition.release.claim-omitted",
             Self::ReleaseSubstituted => "composition.release.substituted",
             Self::ReleaseDowngraded => "composition.release.downgraded",
+            Self::ReleaseContextMismatch => "composition.release.context-mismatch",
             Self::BundleSubstituted => "composition.bundle.substituted",
             Self::BundleRoleMismatch => "composition.bundle.role-mismatch",
             Self::ExecutionReplayed => "composition.execution.replayed",
@@ -90,6 +93,8 @@ struct ReleaseEnvelope {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ClaimStatus {
+    #[serde(default)]
+    artifact_observations: Vec<Value>,
     assumption: String,
     assumptions: Vec<String>,
     claim_id: String,
@@ -104,6 +109,7 @@ pub struct ClaimStatus {
 #[serde(deny_unknown_fields)]
 struct ReleaseReport {
     claims: Vec<ClaimStatus>,
+    evidence_context: Option<String>,
     not_proved_out_of_scope: Value,
     payload_sha256: String,
     project: String,
@@ -121,6 +127,7 @@ struct CompiledRelease {
     claims: Value,
     closures: Value,
     evidence: Value,
+    evidence_context: Option<String>,
     graph: Value,
     graph_sha256: String,
     policies: Value,
@@ -258,10 +265,13 @@ struct ComposedTcbEntry {
 #[serde(deny_unknown_fields)]
 struct ReleaseIdentity {
     envelope: ArtifactIdentity,
+    evidence_context: String,
+    observation_inputs: ArtifactIdentity,
     payload_sha256: String,
     project: String,
     project_revision: String,
     verification_report: ArtifactIdentity,
+    verification_verdict: String,
     verifier: ArtifactIdentity,
 }
 
@@ -318,7 +328,7 @@ pub fn compose(inputs: &CompositionInputs<'_>) -> Result<Vec<u8>, CompositionErr
     let execution: ExecutionReceipt = parse(inputs.execution_receipt.bytes)?;
     let execution_verification: ExecutionVerification = parse(inputs.execution_verification.bytes)?;
 
-    validate_release(&release_envelope, &release_report, &compiled, inputs)?;
+    let evidence_context = validate_release(&release_envelope, &release_report, &compiled, inputs)?;
     let bundle_artifacts = validate_bundle(&manifest, inputs)?;
     validate_execution(
         &execution,
@@ -347,10 +357,13 @@ pub fn compose(inputs: &CompositionInputs<'_>) -> Result<Vec<u8>, CompositionErr
         not_proved_out_of_scope: release_report.not_proved_out_of_scope,
         release: ReleaseIdentity {
             envelope: artifact_identity(inputs.release_envelope),
+            evidence_context,
+            observation_inputs: artifact_identity(inputs.release_observation_inputs),
             payload_sha256: release_envelope.payload_sha256,
             project: release_report.project,
             project_revision: release_report.project_revision,
             verification_report: artifact_identity(inputs.release_verification),
+            verification_verdict: release_report.verdict,
             verifier: artifact_identity(inputs.release_verifier),
         },
         runtime_bundle: RuntimeBundleIdentity {
@@ -397,20 +410,46 @@ fn validate_release(
     report: &ReleaseReport,
     compiled: &CompiledRelease,
     inputs: &CompositionInputs<'_>,
-) -> Result<(), CompositionError> {
+) -> Result<String, CompositionError> {
+    if matches!(
+        envelope.schema.as_str(),
+        "proofbound-release-envelope/3" | "proofbound-release-envelope/4"
+    ) || matches!(
+        report.schema.as_str(),
+        "proofbound-verification-report/1" | "proofbound-verification-report/2"
+    ) || matches!(
+        compiled.schema.as_str(),
+        "proofbound-compiled-release/3" | "proofbound-compiled-release/4"
+    ) || matches!(
+        report.verdict.as_str(),
+        "receipt-consistent" | "record-consistent"
+    ) {
+        return Err(CompositionError::ReleaseDowngraded);
+    }
     if envelope.schema != RELEASE_ENVELOPE_SCHEMA
         || envelope.payload != "compiled-receipt.json"
         || report.schema != RELEASE_REPORT_SCHEMA
-        || report.verdict != "receipt-consistent"
+        || report.verdict != "bytes-observed"
         || report.trust_boundary.is_empty()
         || compiled.schema != COMPILED_RELEASE_SCHEMA
         || compiled.tree_state != "clean"
         || compiled.project_tier > 3
         || compiled.graph_sha256.is_empty()
+        || inputs.release_observation_inputs.name != "proofbound-observation-inputs.json"
+        || inputs.release_observation_inputs.bytes.is_empty()
     {
         return Err(CompositionError::SchemaInvalid);
     }
-    let compiled_digest = digest_text(inputs.compiled_release.bytes);
+    let context = report
+        .evidence_context
+        .as_deref()
+        .filter(|context| valid_context_name(context))
+        .ok_or(CompositionError::ReleaseContextMismatch)?;
+    if compiled.evidence_context.as_deref() != Some(context) {
+        return Err(CompositionError::ReleaseContextMismatch);
+    }
+    let compiled_digest =
+        domain_digest_text(COMPILED_RELEASE_SCHEMA, inputs.compiled_release.bytes);
     if envelope.payload_sha256 != compiled_digest
         || report.payload_sha256 != envelope.payload_sha256
         || report.project != compiled.project
@@ -440,7 +479,7 @@ fn validate_release(
         &compiled.sealed_files,
         report.publication_blocked,
     );
-    Ok(())
+    Ok(context.to_owned())
 }
 
 fn claim_ids(claims: &[ClaimStatus]) -> Result<BTreeSet<&str>, CompositionError> {
@@ -676,6 +715,29 @@ fn digest_text(bytes: &[u8]) -> String {
     format!("sha256:{}", digest_hex(bytes))
 }
 
+fn domain_digest_text(domain: &str, bytes: &[u8]) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(domain.as_bytes());
+    hasher.update([0]);
+    hasher.update(bytes);
+    format!("sha256:{}", hex_digest(&hasher.finalize()))
+}
+
+fn valid_context_name(value: &str) -> bool {
+    value.len() <= 128
+        && value.split('-').enumerate().all(|(index, segment)| {
+            !segment.is_empty()
+                && (index != 0
+                    || segment
+                        .as_bytes()
+                        .first()
+                        .is_some_and(u8::is_ascii_lowercase))
+                && segment
+                    .bytes()
+                    .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit())
+        })
+}
+
 fn is_digest(value: &str) -> bool {
     value.len() == 71
         && value.starts_with("sha256:")
@@ -723,6 +785,7 @@ mod tests {
         compiled_release: Vec<u8>,
         release_verification: Vec<u8>,
         release_verifier: Vec<u8>,
+        release_observation_inputs: Vec<u8>,
         release_tcb_ledger: Vec<u8>,
         runtime_manifest: Vec<u8>,
         runtime: Vec<u8>,
@@ -745,7 +808,33 @@ mod tests {
             let launcher_digest = digest_hex(&launcher);
             let verifier_digest = digest_hex(&execution_verifier);
             let composer_digest = digest_hex(&composer);
+            let artifact_observation = json!({
+                "artifact": {
+                    "logical_name": "dist/release-observation/x86_64/pbr",
+                    "sha256": digest_text(&runtime),
+                    "size_bytes": runtime.len()
+                },
+                "dependencies": [digest_text(b"runtime evidence")],
+                "evidence": digest_text(b"observation evidence"),
+                "identity": digest_text(b"observation relation"),
+                "platform": {
+                    "architecture": "x86_64",
+                    "operating_system": "linux"
+                },
+                "procedure": {
+                    "logical_name": "crates/proofbound-runtime-compose/tests/release_observation.rs",
+                    "sha256": digest_text(b"observation procedure"),
+                    "size_bytes": 21
+                },
+                "semantic_kind": "example-test",
+                "subject_role": "runtime-release",
+                "toolchain_closure": {
+                    "kind": "toolchain",
+                    "sha256": digest_text(b"toolchain closure")
+                }
+            });
             let claim = json!({
+                "artifact_observations": [artifact_observation],
                 "assumption": "ASSUMED",
                 "assumptions": ["PBR-TOOLCHAIN-AX-003"],
                 "claim_id": "PBR-TEST-001",
@@ -760,6 +849,7 @@ mod tests {
                 "claims": [],
                 "closures": [],
                 "evidence": [],
+                "evidence_context": "release-linux-x86-64",
                 "graph": {},
                 "graph_sha256": digest_text(b"graph"),
                 "policies": [],
@@ -772,7 +862,7 @@ mod tests {
                 "sealed_files": [],
                 "tree_state": "clean"
             }));
-            let payload_digest = digest_text(&compiled_release);
+            let payload_digest = domain_digest_text(COMPILED_RELEASE_SCHEMA, &compiled_release);
             let release_envelope = canonical_json(json!({
                 "payload": "compiled-receipt.json",
                 "payload_sha256": payload_digest,
@@ -780,6 +870,7 @@ mod tests {
             }));
             let release_verification = canonical_json(json!({
                 "claims": [claim],
+                "evidence_context": "release-linux-x86-64",
                 "not_proved_out_of_scope": {
                     "assumptions": ["PBR-TEST-001: PBR-TOOLCHAIN-AX-003"],
                     "exclusions": [],
@@ -791,8 +882,21 @@ mod tests {
                 "project_revision": "0123456789abcdef0123456789abcdef01234567",
                 "publication_blocked": false,
                 "schema": RELEASE_REPORT_SCHEMA,
-                "trust_boundary": "Receipt-consistent only.",
-                "verdict": "receipt-consistent"
+                "trust_boundary": "Exact observation bytes were supplied externally.",
+                "verdict": "bytes-observed"
+            }));
+            let release_observation_inputs = canonical_json(json!({
+                "observations": [{
+                    "artifact_path": "dist/release-observation/x86_64/pbr",
+                    "claim_id": "PBR-TEST-001",
+                    "platform": {
+                        "architecture": "x86_64",
+                        "operating_system": "linux"
+                    },
+                    "procedure_path": "crates/proofbound-runtime-compose/tests/release_observation.rs",
+                    "subject_role": "runtime-release"
+                }],
+                "schema": "proofbound-observation-inputs/1"
             }));
             let release_tcb_ledger = canonical_json(json!({
                 "components": [{
@@ -867,6 +971,7 @@ mod tests {
                 compiled_release,
                 release_verification,
                 release_verifier: b"proofbound-verifier".to_vec(),
+                release_observation_inputs,
                 release_tcb_ledger,
                 runtime_manifest,
                 runtime,
@@ -889,6 +994,10 @@ mod tests {
                     &self.release_verification,
                 ),
                 release_verifier: named("proofbound-verify", &self.release_verifier),
+                release_observation_inputs: named(
+                    "proofbound-observation-inputs.json",
+                    &self.release_observation_inputs,
+                ),
                 release_tcb_ledger: named("tcb-ledger.json", &self.release_tcb_ledger),
                 runtime_manifest: named("RELEASE-MANIFEST.json", &self.runtime_manifest),
                 runtime: named("pbr", &self.runtime),
@@ -970,6 +1079,15 @@ mod tests {
         assert_eq!(value["schema"], COMPOSITION_SCHEMA);
         assert_eq!(value["eligibility"]["status"], "composed");
         assert_eq!(value["claims"][0]["linkage"], "MODEL_ONLY");
+        assert_eq!(value["release"]["evidence_context"], "release-linux-x86-64");
+        assert_eq!(value["release"]["verification_verdict"], "bytes-observed");
+        assert_eq!(
+            value["claims"][0]["artifact_observations"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1
+        );
         assert_eq!(value["execution"]["execution_id"], EXECUTION_ID);
         assert_eq!(serde_json::to_vec(&value).unwrap(), bytes);
         verify_composed_receipt(&bytes, &fixture.inputs()).expect("output independently agrees");
@@ -1001,6 +1119,49 @@ mod tests {
         });
         assert_eq!(
             compose(&downgraded.inputs()).unwrap_err(),
+            CompositionError::ReleaseDowngraded
+        );
+    }
+
+    #[test]
+    fn contextual_release_downgrade_substitution_and_observation_loss_fail_closed() {
+        let mut unframed = Fixture::new();
+        let plain_digest = digest_text(&unframed.compiled_release);
+        unframed.mutate_json(FixtureField::Envelope, |value| {
+            value["payload_sha256"] = Value::String(plain_digest.clone());
+        });
+        unframed.mutate_json(FixtureField::Report, |value| {
+            value["payload_sha256"] = Value::String(plain_digest);
+        });
+        assert_eq!(
+            compose(&unframed.inputs()).unwrap_err(),
+            CompositionError::ReleaseSubstituted
+        );
+
+        let mut downgraded = Fixture::new();
+        downgraded.mutate_json(FixtureField::Envelope, |value| {
+            value["schema"] = Value::String("proofbound-release-envelope/4".to_owned());
+        });
+        assert_eq!(
+            compose(&downgraded.inputs()).unwrap_err(),
+            CompositionError::ReleaseDowngraded
+        );
+
+        let mut substituted = Fixture::new();
+        substituted.mutate_json(FixtureField::Report, |value| {
+            value["evidence_context"] = Value::String("release-linux-aarch64".to_owned());
+        });
+        assert_eq!(
+            compose(&substituted.inputs()).unwrap_err(),
+            CompositionError::ReleaseContextMismatch
+        );
+
+        let mut omitted = Fixture::new();
+        omitted.mutate_json(FixtureField::Report, |value| {
+            value["claims"][0]["artifact_observations"] = json!([]);
+        });
+        assert_eq!(
+            compose(&omitted.inputs()).unwrap_err(),
             CompositionError::ReleaseDowngraded
         );
     }
