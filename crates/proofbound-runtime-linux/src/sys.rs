@@ -435,29 +435,30 @@ pub(crate) fn set_descriptor_close_on_exec(descriptor: RawFd) -> io::Result<()> 
     }
 }
 
-pub(crate) fn close_descriptors_from(first: u32) -> io::Result<()> {
-    // SAFETY: close_range receives only integer bounds and flags. The caller
-    // retains every declared descriptor below `first`.
-    let result = unsafe { libc::syscall(libc::SYS_close_range, first, u32::MAX, 0) };
-    if result == 0 {
-        Ok(())
-    } else {
-        Err(io::Error::last_os_error())
+pub(crate) fn close_descriptors_except(keep: &[RawFd]) -> io::Result<()> {
+    let mut keep = keep
+        .iter()
+        .copied()
+        .map(|descriptor| {
+            u32::try_from(descriptor).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))
+        })
+        .collect::<io::Result<Vec<_>>>()?;
+    keep.sort_unstable();
+    keep.dedup();
+    if keep.iter().any(|descriptor| *descriptor < 3) {
+        return Err(io::Error::from(io::ErrorKind::InvalidInput));
     }
-}
 
-pub(crate) fn close_descriptors_except(first: u32, keep: RawFd) -> io::Result<()> {
-    let keep = u32::try_from(keep).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
-    if keep < first {
-        return close_descriptors_from(first);
+    let mut first = 3_u32;
+    for descriptor in keep {
+        if first < descriptor {
+            close_descriptor_range(first, descriptor - 1)?;
+        }
+        first = descriptor
+            .checked_add(1)
+            .ok_or_else(|| io::Error::from(io::ErrorKind::InvalidInput))?;
     }
-    if keep > first {
-        close_descriptor_range(first, keep - 1)?;
-    }
-    if keep < u32::MAX {
-        close_descriptor_range(keep + 1, u32::MAX)?;
-    }
-    Ok(())
+    close_descriptor_range(first, u32::MAX)
 }
 
 fn close_descriptor_range(first: u32, last: u32) -> io::Result<()> {

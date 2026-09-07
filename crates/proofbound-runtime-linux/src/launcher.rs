@@ -669,11 +669,13 @@ pub fn run_launcher(
             .map_err(|error| report_failure(channel, expected, LauncherStage::Exec, error))?;
         let environment = build_environment(request)
             .map_err(|error| report_failure(channel, expected, LauncherStage::Exec, error))?;
-        crate::sys::close_descriptors_except(
-            request.close_file_descriptors_from(),
-            channel.raw_descriptor(),
-        )
-        .map_err(|_| {
+        let retained_descriptors = core::iter::once(request.executable_fd())
+            .chain(core::iter::once(request.working_directory_fd()))
+            .chain(request.filesystem().iter().map(|rule| rule.descriptor()))
+            .map(|descriptor| descriptor as i32)
+            .chain(core::iter::once(channel.raw_descriptor()))
+            .collect::<Vec<_>>();
+        crate::sys::close_descriptors_except(&retained_descriptors).map_err(|_| {
             report_failure(
                 channel,
                 expected,
@@ -1795,6 +1797,22 @@ mod tests {
                 request.close_file_descriptors_from,
             ),
             Err(LauncherError::Malformed)
+        );
+    }
+
+    #[test]
+    fn retained_descriptor_set_is_exact_not_threshold_based() {
+        let request = install_request();
+        let retained = core::iter::once(request.executable_fd())
+            .chain(core::iter::once(request.working_directory_fd()))
+            .chain(request.filesystem().iter().map(|rule| rule.descriptor()))
+            .collect::<Vec<_>>();
+        assert!(retained.iter().all(|descriptor| {
+            *descriptor >= 3 && *descriptor < request.close_file_descriptors_from()
+        }));
+        assert!(
+            (3..request.close_file_descriptors_from())
+                .any(|descriptor| !retained.contains(&descriptor))
         );
     }
 

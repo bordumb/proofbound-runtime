@@ -15,6 +15,7 @@ expected_error = "supervisor.protocol.failed"
 [[attack]]
 id = "extra-inherited-descriptor"
 expected_error = "supervisor.descriptor-set.invalid"
+expected_child_state = "all-undeclared-descriptors-closed"
 
 [[attack]]
 id = "declared-descriptor-leak"
