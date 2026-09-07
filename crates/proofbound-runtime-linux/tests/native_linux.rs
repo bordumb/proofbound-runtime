@@ -262,6 +262,10 @@ mod linux {
             resolver.resolve_read_path(&link, ArtifactRole::ProjectInput),
             Err(proofbound_runtime_linux::ResolutionError::SymlinkInvalid)
         ));
+        assert_eq!(
+            resolved.revalidate_identity(),
+            Err(proofbound_runtime_linux::ResolutionError::SymlinkInvalid)
+        );
     }
 
     #[test]

@@ -149,7 +149,9 @@ impl RootedPathResolver {
             )
             .metadata()
             .map_err(|_| ResolutionError::IdentityUnavailable)?;
-            if metadata.is_file() {
+            if metadata.file_type().is_symlink() {
+                Err(ResolutionError::SymlinkInvalid)
+            } else if metadata.is_file() {
                 let file = if role == ArtifactRole::ProjectInput {
                     self.resolve_rooted_file(requested, role)?
                 } else {
@@ -290,7 +292,9 @@ fn inventory_directory(
         )
         .metadata()
         .map_err(|_| ResolutionError::IdentityUnavailable)?;
-        if metadata.is_dir() {
+        if metadata.file_type().is_symlink() {
+            return Err(ResolutionError::SymlinkInvalid);
+        } else if metadata.is_dir() {
             let directory = crate::sys::openat2_directory(
                 descriptor.as_raw_fd(),
                 path,
