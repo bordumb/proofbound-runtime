@@ -2,10 +2,71 @@
 
 use std::ffi::CString;
 use std::io;
+use std::os::fd::{FromRawFd as _, OwnedFd, RawFd};
 use std::os::unix::ffi::OsStrExt as _;
 use std::path::Path;
 
 const LANDLOCK_CREATE_RULESET_VERSION: libc::c_uint = 1;
+pub(crate) const RESOLVE_NO_MAGICLINKS: u64 = 0x02;
+pub(crate) const RESOLVE_BENEATH: u64 = 0x08;
+
+#[repr(C)]
+struct OpenHow {
+    flags: u64,
+    mode: u64,
+    resolve: u64,
+}
+
+pub(crate) fn open_directory(path: &Path) -> io::Result<OwnedFd> {
+    let path = CString::new(path.as_os_str().as_bytes())
+        .map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    // SAFETY: `path` is NUL-terminated and remains alive for the call. The
+    // returned descriptor is uniquely owned when `open` succeeds.
+    let descriptor = unsafe {
+        libc::open(
+            path.as_ptr(),
+            libc::O_PATH | libc::O_DIRECTORY | libc::O_CLOEXEC | libc::O_NOFOLLOW,
+        )
+    };
+    if descriptor < 0 {
+        Err(io::Error::last_os_error())
+    } else {
+        // SAFETY: `open` returned a new descriptor and ownership transfers to
+        // this `OwnedFd` exactly once.
+        Ok(unsafe { OwnedFd::from_raw_fd(descriptor) })
+    }
+}
+
+pub(crate) fn openat2_file(directory: RawFd, path: &Path, resolution: u64) -> io::Result<OwnedFd> {
+    let path = CString::new(path.as_os_str().as_bytes())
+        .map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    let how = OpenHow {
+        flags: u64::try_from(libc::O_RDONLY | libc::O_CLOEXEC | libc::O_NOCTTY)
+            .expect("open flags fit u64"),
+        mode: 0,
+        resolve: resolution,
+    };
+    // SAFETY: `path` and `how` remain valid for the call, `how` has the kernel
+    // ABI layout, and a successful syscall returns a fresh descriptor.
+    let descriptor = unsafe {
+        libc::syscall(
+            libc::SYS_openat2,
+            directory,
+            path.as_ptr(),
+            &raw const how,
+            core::mem::size_of::<OpenHow>(),
+        )
+    };
+    if descriptor < 0 {
+        Err(io::Error::last_os_error())
+    } else {
+        let descriptor =
+            i32::try_from(descriptor).map_err(|_| io::Error::from(io::ErrorKind::InvalidData))?;
+        // SAFETY: `openat2` returned a new descriptor and ownership transfers
+        // to this `OwnedFd` exactly once.
+        Ok(unsafe { OwnedFd::from_raw_fd(descriptor) })
+    }
+}
 
 pub(crate) fn landlock_abi() -> io::Result<u32> {
     // SAFETY: A version query requires a null attributes pointer and zero size.

@@ -119,6 +119,8 @@ name = "proofbound-runtime-linux"
 version = "0.0.0"
 dependencies = [
  "libc",
+ "proofbound-runtime-core",
+ "sha2",
 ]
 
 [[package]]

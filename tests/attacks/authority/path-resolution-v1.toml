@@ -1,0 +1,57 @@
+schema = "proofbound-runtime-path-resolution-attacks/1"
+
+[[attack]]
+id = "parent-traversal"
+operation = "resolve-rooted"
+path = "../outside"
+expected_error = "resolve.path.escapes-root"
+
+[[attack]]
+id = "absolute-rooted-path"
+operation = "resolve-rooted"
+path = "/etc/passwd"
+expected_error = "resolve.path.escapes-root"
+
+[[attack]]
+id = "external-role-amplification"
+operation = "resolve-external"
+path = "/etc/passwd"
+role = "project-input"
+expected_error = "resolve.role.external-invalid"
+
+[[attack]]
+id = "relative-external-path"
+operation = "resolve-external"
+path = "bin/tool"
+role = "runtime-executable"
+expected_error = "resolve.path.external-invalid"
+
+[[attack]]
+id = "magic-link-substitution"
+operation = "resolve-rooted"
+path = "proc-link/exe"
+expected_error = "resolve.path.symlink-invalid"
+
+[[attack]]
+id = "executable-identity-substitution"
+operation = "resolve-executable"
+path = "bin/tool"
+expected_error = "resolve.identity.mismatch"
+
+[[attack]]
+id = "loader-identity-omission"
+operation = "resolve-executable"
+path = "bin/dynamic-tool"
+expected_error = "resolve.loader.identity-missing"
+
+[[attack]]
+id = "loader-identity-substitution"
+operation = "resolve-executable"
+path = "bin/dynamic-tool"
+expected_error = "resolve.identity.mismatch"
+
+[[attack]]
+id = "post-resolution-mutation"
+operation = "revalidate-identity"
+path = "bin/tool"
+expected_error = "resolve.identity.drift"
