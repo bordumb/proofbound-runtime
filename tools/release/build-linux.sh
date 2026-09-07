@@ -32,6 +32,7 @@ commit="$(git -C "$repository_root" rev-parse HEAD)"
 source_date_epoch="$(git -C "$repository_root" show -s --format=%ct HEAD)"
 toolchain="$(rustc --version)"
 bundle_name="proofbound-runtime-v${version}-${target}.tar.gz"
+mkdir -p "$repository_root/target"
 work_root="$(mktemp -d "$repository_root/target/proofbound-release.XXXXXX")"
 trap 'rm -rf -- "$work_root"' EXIT
 
