@@ -1,6 +1,7 @@
 target/
 .proofbound/
 .lake/
+dist/
 
 *.profraw
 *.profdata
