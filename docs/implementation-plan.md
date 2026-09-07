@@ -82,7 +82,7 @@ committed with the source that generated it.
 - [x] Add capability probes for architecture, Landlock, seccomp, and cgroup v2.
 - [x] Implement rooted path, executable, ELF interpreter, and loader resolution.
 - [x] Implement fresh output roots and post-run output inventories.
-- [ ] Implement the fresh cgroup lifecycle and registered limits.
+- [x] Implement the fresh cgroup lifecycle and registered limits.
 - [ ] Implement privilege removal and `no_new_privs`.
 - [ ] Implement Landlock filesystem enforcement.
 - [ ] Implement deny-network seccomp enforcement.

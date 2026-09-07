@@ -66,6 +66,7 @@ impl SeccompCapability {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CgroupV2Capability {
     directory: PathBuf,
+    mount_id: u64,
     controllers: Vec<String>,
 }
 
@@ -74,6 +75,12 @@ impl CgroupV2Capability {
     #[must_use]
     pub fn directory(&self) -> &Path {
         &self.directory
+    }
+
+    /// Returns the kernel mount identifier for the unified hierarchy.
+    #[must_use]
+    pub const fn mount_id(&self) -> u64 {
+        self.mount_id
     }
 
     /// Returns available controllers in canonical order.
@@ -307,7 +314,7 @@ fn probe_seccomp() -> Capability<SeccompCapability> {
 
 #[cfg(target_os = "linux")]
 fn probe_cgroup_v2() -> Capability<CgroupV2Capability> {
-    let Some(mount) = cgroup_v2_mount() else {
+    let Some((mount_id, mount)) = cgroup_v2_mount() else {
         return Capability::Unavailable(ProbeError::CgroupV2Unavailable);
     };
     let Some(relative) = current_cgroup() else {
@@ -323,6 +330,15 @@ fn probe_cgroup_v2() -> Capability<CgroupV2Capability> {
     {
         return Capability::Unavailable(ProbeError::CgroupV2ControllerMissing);
     }
+    let Capability::Available(enabled) = read_set(directory.join("cgroup.subtree_control")) else {
+        return Capability::Unavailable(ProbeError::CgroupV2DelegationUnavailable);
+    };
+    if enabled
+        .binary_search_by(|item| item.as_str().cmp("pids"))
+        .is_err()
+    {
+        return Capability::Unavailable(ProbeError::CgroupV2DelegationUnavailable);
+    }
     if !crate::sys::path_is_writable(&directory)
         || std::fs::OpenOptions::new()
             .write(true)
@@ -333,19 +349,28 @@ fn probe_cgroup_v2() -> Capability<CgroupV2Capability> {
     }
     Capability::Available(CgroupV2Capability {
         directory,
+        mount_id,
         controllers,
     })
 }
 
 #[cfg(target_os = "linux")]
-fn cgroup_v2_mount() -> Option<PathBuf> {
+fn cgroup_v2_mount() -> Option<(u64, PathBuf)> {
     let mountinfo = std::fs::read_to_string("/proc/self/mountinfo").ok()?;
+    parse_cgroup_v2_mount(&mountinfo)
+}
+
+#[cfg(any(test, target_os = "linux"))]
+fn parse_cgroup_v2_mount(mountinfo: &str) -> Option<(u64, PathBuf)> {
     mountinfo.lines().find_map(|line| {
         let (mount, filesystem) = line.split_once(" - ")?;
         if filesystem.split_whitespace().next()? != "cgroup2" {
             return None;
         }
-        mount.split_whitespace().nth(4).map(decode_mount_path)
+        let mut fields = mount.split_whitespace();
+        let mount_id = fields.next()?.parse().ok()?;
+        let path = fields.nth(3).map(decode_mount_path)?;
+        Some((mount_id, path))
     })
 }
 
@@ -357,7 +382,7 @@ fn current_cgroup() -> Option<String> {
         .find_map(|line| line.strip_prefix("0::").map(str::to_owned))
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(test, target_os = "linux"))]
 fn decode_mount_path(value: &str) -> PathBuf {
     PathBuf::from(
         value
@@ -450,5 +475,17 @@ mod tests {
         codes.sort_unstable();
         codes.dedup();
         assert_eq!(codes.len(), errors.len());
+    }
+
+    #[test]
+    fn parses_exact_cgroup_v2_mount_identity() {
+        let mountinfo = concat!(
+            "22 1 0:20 / /proc rw - proc proc rw\n",
+            "37 1 0:42 / /sys/fs/cgroup\\040delegated rw - cgroup2 cgroup rw\n",
+        );
+        assert_eq!(
+            parse_cgroup_v2_mount(mountinfo),
+            Some((37, PathBuf::from("/sys/fs/cgroup delegated")))
+        );
     }
 }

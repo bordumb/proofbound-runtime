@@ -246,6 +246,18 @@ impl CgroupIdentity {
     pub const fn new(mount_id: u64, inode: u64) -> Self {
         Self { mount_id, inode }
     }
+
+    /// Returns the kernel mount identifier.
+    #[must_use]
+    pub const fn mount_id(self) -> u64 {
+        self.mount_id
+    }
+
+    /// Returns the cgroup directory inode.
+    #[must_use]
+    pub const fn inode(self) -> u64 {
+        self.inode
+    }
 }
 
 /// Contains the launcher's boundary-installation acknowledgement.

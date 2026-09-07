@@ -1,0 +1,25 @@
+schema = "proofbound-runtime-cgroup-attacks/1"
+
+[[attack]]
+id = "preexisting-cgroup"
+expected_error = "cgroup.exists"
+
+[[attack]]
+id = "missing-pids-controller"
+expected_error = "cgroup.capability.mismatch"
+
+[[attack]]
+id = "pids-limit-substitution"
+expected_error = "cgroup.limit.mismatch"
+
+[[attack]]
+id = "launcher-membership-omission"
+expected_error = "cgroup.membership.mismatch"
+
+[[attack]]
+id = "launcher-membership-substitution"
+expected_error = "cgroup.membership.mismatch"
+
+[[attack]]
+id = "populated-cleanup"
+expected_error = "cgroup.drain.failed"

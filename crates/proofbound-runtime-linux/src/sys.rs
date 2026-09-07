@@ -69,6 +69,15 @@ pub(crate) fn openat2_path(directory: RawFd, path: &Path, resolution: u64) -> io
     )
 }
 
+pub(crate) fn openat2_write(directory: RawFd, path: &Path, resolution: u64) -> io::Result<OwnedFd> {
+    openat2(
+        directory,
+        path,
+        libc::O_WRONLY | libc::O_CLOEXEC | libc::O_NOFOLLOW,
+        resolution,
+    )
+}
+
 fn openat2(
     directory: RawFd,
     path: &Path,
@@ -114,6 +123,19 @@ pub(crate) fn create_directory_at(
     // SAFETY: `name` is NUL-terminated and remains alive for the call. The
     // caller owns a live parent directory descriptor.
     let result = unsafe { libc::mkdirat(directory, name.as_ptr(), mode) };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+pub(crate) fn remove_directory_at(directory: RawFd, name: &Path) -> io::Result<()> {
+    let name = CString::new(name.as_os_str().as_bytes())
+        .map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    // SAFETY: `name` is NUL-terminated and remains alive for the call. The
+    // `AT_REMOVEDIR` flag restricts removal to the exact child directory.
+    let result = unsafe { libc::unlinkat(directory, name.as_ptr(), libc::AT_REMOVEDIR) };
     if result == 0 {
         Ok(())
     } else {
