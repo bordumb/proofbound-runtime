@@ -101,7 +101,8 @@ The initial supported profile requires:
 3. Exact resolution and identity of security-relevant files before execution.
 4. A fresh cgroup v2 boundary with the registered limits.
 5. Closure of undeclared file descriptors.
-6. Removal of ambient privilege and installation of `no_new_privs`.
+6. Rejection of root or mismatched saved identities, removal of ambient and
+   active capability sets, and verified installation of `no_new_privs`.
 7. Installation of the complete Landlock filesystem ruleset.
 8. Installation of the complete seccomp filter.
 9. A typed acknowledgement bound to the compiled policy identity.

@@ -4,6 +4,7 @@
 
 pub mod cgroup;
 pub mod output;
+pub mod privilege;
 pub mod probe;
 pub mod resolve;
 
@@ -13,6 +14,7 @@ mod sys;
 
 pub use cgroup::{CgroupError, FreshCgroup};
 pub use output::{FreshOutputRoot, OutputEntry, OutputInventory, OutputRootError};
+pub use privilege::{LockedPrivileges, PrivilegeError, lock_privileges};
 pub use probe::{
     Architecture, Capability, CapabilityReport, CgroupV2Capability, ProbeError, SeccompCapability,
     SupportedLinux, probe_capabilities,

@@ -1,0 +1,25 @@
+schema = "proofbound-runtime-privilege-attacks/1"
+
+[[attack]]
+id = "root-launcher"
+expected_error = "privilege.identity.root"
+
+[[attack]]
+id = "saved-id-mismatch"
+expected_error = "privilege.identity.mismatch"
+
+[[attack]]
+id = "ambient-capability-retained"
+expected_error = "privilege.capability.verification-failed"
+
+[[attack]]
+id = "permitted-capability-retained"
+expected_error = "privilege.capability.verification-failed"
+
+[[attack]]
+id = "no-new-privileges-omitted"
+expected_error = "privilege.no-new-privileges.verification-failed"
+
+[[attack]]
+id = "no-new-privileges-forged"
+expected_error = "privilege.no-new-privileges.verification-failed"

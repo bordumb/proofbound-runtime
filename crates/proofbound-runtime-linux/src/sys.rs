@@ -7,6 +7,10 @@ use std::os::unix::ffi::OsStrExt as _;
 use std::path::Path;
 
 const LANDLOCK_CREATE_RULESET_VERSION: libc::c_uint = 1;
+const LINUX_CAPABILITY_VERSION_3: u32 = 0x2008_0522;
+const PR_CAP_AMBIENT: libc::c_int = 47;
+const PR_CAP_AMBIENT_IS_SET: libc::c_ulong = 1;
+const PR_CAP_AMBIENT_CLEAR_ALL: libc::c_ulong = 4;
 pub(crate) const RESOLVE_NO_MAGICLINKS: u64 = 0x02;
 pub(crate) const RESOLVE_NO_SYMLINKS: u64 = 0x04;
 pub(crate) const RESOLVE_BENEATH: u64 = 0x08;
@@ -16,6 +20,27 @@ struct OpenHow {
     flags: u64,
     mode: u64,
     resolve: u64,
+}
+
+#[repr(C)]
+struct CapabilityHeader {
+    version: u32,
+    pid: i32,
+}
+
+#[derive(Clone, Copy, Default)]
+#[repr(C)]
+struct CapabilityData {
+    effective: u32,
+    permitted: u32,
+    inheritable: u32,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct CapabilitySets {
+    pub(crate) effective: u64,
+    pub(crate) permitted: u64,
+    pub(crate) inheritable: u64,
 }
 
 pub(crate) fn open_directory(path: &Path) -> io::Result<OwnedFd> {
@@ -178,6 +203,130 @@ pub(crate) fn no_new_privileges_supported() -> io::Result<bool> {
     let result = unsafe { libc::prctl(libc::PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0) };
     match result {
         0 => Ok(true),
+        1 => Ok(true),
+        _ => Err(io::Error::last_os_error()),
+    }
+}
+
+pub(crate) fn set_no_new_privileges() -> io::Result<()> {
+    // SAFETY: PR_SET_NO_NEW_PRIVS takes integer arguments only. The required
+    // value is one and every unused argument is zero.
+    let result = unsafe { libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+pub(crate) fn no_new_privileges_enabled() -> io::Result<bool> {
+    // SAFETY: PR_GET_NO_NEW_PRIVS takes no pointer arguments and all unused
+    // arguments are zero.
+    let result = unsafe { libc::prctl(libc::PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0) };
+    match result {
+        0 => Ok(false),
+        1 => Ok(true),
+        _ => Err(io::Error::last_os_error()),
+    }
+}
+
+pub(crate) fn process_ids() -> io::Result<(u32, u32, u32, u32, u32, u32)> {
+    let (mut real_uid, mut effective_uid, mut saved_uid) = (0, 0, 0);
+    let (mut real_gid, mut effective_gid, mut saved_gid) = (0, 0, 0);
+    // SAFETY: Each pointer refers to live writable storage for the duration of
+    // `getresuid`, and the call does not retain the pointers.
+    let uid_result = unsafe {
+        libc::getresuid(
+            &raw mut real_uid,
+            &raw mut effective_uid,
+            &raw mut saved_uid,
+        )
+    };
+    if uid_result != 0 {
+        return Err(io::Error::last_os_error());
+    }
+    // SAFETY: Each pointer refers to live writable storage for the duration of
+    // `getresgid`, and the call does not retain the pointers.
+    let gid_result = unsafe {
+        libc::getresgid(
+            &raw mut real_gid,
+            &raw mut effective_gid,
+            &raw mut saved_gid,
+        )
+    };
+    if gid_result != 0 {
+        return Err(io::Error::last_os_error());
+    }
+    Ok((
+        real_uid,
+        effective_uid,
+        saved_uid,
+        real_gid,
+        effective_gid,
+        saved_gid,
+    ))
+}
+
+pub(crate) fn capability_sets() -> io::Result<CapabilitySets> {
+    let mut header = CapabilityHeader {
+        version: LINUX_CAPABILITY_VERSION_3,
+        pid: 0,
+    };
+    let mut data = [CapabilityData::default(); 2];
+    // SAFETY: `header` and both data words use the Linux capability ABI layout,
+    // remain live for the call, and the kernel writes only within those words.
+    let result = unsafe { libc::syscall(libc::SYS_capget, &raw mut header, data.as_mut_ptr()) };
+    if result != 0 {
+        return Err(io::Error::last_os_error());
+    }
+    Ok(CapabilitySets {
+        effective: u64::from(data[0].effective) | (u64::from(data[1].effective) << 32),
+        permitted: u64::from(data[0].permitted) | (u64::from(data[1].permitted) << 32),
+        inheritable: u64::from(data[0].inheritable) | (u64::from(data[1].inheritable) << 32),
+    })
+}
+
+pub(crate) fn clear_capability_sets() -> io::Result<()> {
+    let mut header = CapabilityHeader {
+        version: LINUX_CAPABILITY_VERSION_3,
+        pid: 0,
+    };
+    let data = [CapabilityData::default(); 2];
+    // SAFETY: `header` and both zeroed data words use the Linux capability ABI
+    // layout and remain live for the call. `capset` does not retain pointers.
+    let result = unsafe { libc::syscall(libc::SYS_capset, &raw mut header, data.as_ptr()) };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+pub(crate) fn clear_ambient_capabilities() -> io::Result<()> {
+    // SAFETY: PR_CAP_AMBIENT_CLEAR_ALL takes integer arguments only. Every
+    // unused argument is zero.
+    let result = unsafe { libc::prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_CLEAR_ALL, 0, 0, 0) };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+pub(crate) fn ambient_capability_is_set(capability: u32) -> io::Result<bool> {
+    // SAFETY: PR_CAP_AMBIENT_IS_SET takes only the integer capability index and
+    // zeroed unused arguments.
+    let result = unsafe {
+        libc::prctl(
+            PR_CAP_AMBIENT,
+            PR_CAP_AMBIENT_IS_SET,
+            libc::c_ulong::from(capability),
+            0,
+            0,
+        )
+    };
+    match result {
+        0 => Ok(false),
         1 => Ok(true),
         _ => Err(io::Error::last_os_error()),
     }
