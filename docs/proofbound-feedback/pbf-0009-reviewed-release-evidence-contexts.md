@@ -1,6 +1,6 @@
 # PBF-0009: Reviewed release evidence contexts
 
-- **Status:** `upstream-ready`
+- **Status:** `resolved`
 - **Priority:** `blocking`
 - **Kind:** `workflow`
 - **Created:** 2026-09-07
@@ -9,7 +9,7 @@
   `PBR-COMPOSE-008`
 - **Runtime milestone:** Version 0.1 release linkage
 - **Proofbound target:** project and claim manifests, compiler, release command, and receipts
-- **Upstream record:** not upstreamed
+- **Upstream record:** `proof-bound` ADR 0021 and commits `23065d2` through `50fb2f9`
 - **Supersedes:** none
 - **Superseded by:** none
 
@@ -113,17 +113,33 @@ the new schema rather than silently ignore context-owned evidence.
 ## Local treatment
 
 Runtime keeps ordinary Proofbound checks intact and does not generate ignored
-evidence manifests. Version 0.1 exact release-artifact observation remains
-blocked until reviewed release contexts can be activated independently on the
-two native architecture runners.
+evidence manifests. It preregisters one reviewed context for each native Linux
+release architecture and activates only the matching context after the exact
+bundle exists on that runner.
 
 ## Upstream handoff
 
 - **Destination:** `proof-bound` manifest schemas, compiler, release receipt, and verifier
 - **Issue:** none
-- **Specification or ADR:** none
-- **Commit or pull request:** none
+- **Specification or ADR:** `proof-bound/docs/adr/0021-reviewed-evidence-contexts.md`
+- **Commit or pull request:** `proof-bound@23065d2`, `proof-bound@94b3fe5`,
+  `proof-bound@88388da`, `proof-bound@5a97c62`, `proof-bound@d8a3b80`,
+  `proof-bound@c9e47ca`, and `proof-bound@50fb2f9`
 
 ## Resolution
 
-Unresolved.
+Proofbound accepted reviewed evidence contexts in ADR 0021. Project schema
+version 2 registers a canonical context set and the subset required for
+release. Evidence-unit schema version 5 binds a context to a tracked exact-
+observation manifest. A full check activates exactly one context; base checks
+exclude contextual units. Compiled project schema version 4 and portable
+release schema version 5 bind the selected context through every observation
+record and the independent verification report.
+
+The release command rejects a missing required context, inactive-context
+evidence, context replay, and selected units without admitted exact
+observations. The manifest, compiler, release producer, and standalone verifier
+execute the frozen eight-case context attack corpus with stable `PB-CTX-0001`
+through `PB-CTX-0008` diagnostics. Runtime pins the complete implementation at
+`proof-bound@50fb2f9` and can now adopt the two native release contexts without
+weakening its ordinary source-only gate.
