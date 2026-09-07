@@ -1,0 +1,36 @@
+schema = "proofbound-claim/1"
+id = "PBR-COMPOSE-008"
+title = "Verified release and execution receipts compose without premise loss"
+statement = "Given an independently verified Proofbound release receipt, an independently verified Runtime execution receipt and commitment, and the exact Runtime bundle, the typed composer rejects every registered omission, substitution, downgrade, replay, role-swap, noncanonical-carrier, output-replacement, assumption-loss, and trusted-computing-base-loss attack."
+public_language = "The typed composer validates and binds the exact Proofbound release, verifier, Runtime bundle, execution receipt, execution verifier result, assumptions, and trusted-computing-base identities. Its current evidence is a closed 12-case attack corpus and CLI fail-closed tests; native release-workflow observation and source-to-artifact binding remain open."
+subject = "rust:proofbound_runtime_compose::compose"
+profile = "ledger"
+tier = 0
+evidence = [
+  "example-test:release-composition-attacks",
+  "example-test:release-composition-cli",
+]
+assumptions = ["PBR-COMMITMENT-AX-007", "PBR-TOOLCHAIN-AX-003"]
+open_obligations = [
+  "Observe one complete composed receipt chain from each supported native Linux release workflow.",
+  "Bind the tested composer and its admitted inputs to exact release artifacts.",
+]
+out_of_scope = [
+  "Promotion of model-only or tested claims to artifact-bound linkage merely because their receipts were composed.",
+  "Correctness of the supplied Proofbound or Runtime verifier binaries beyond their separately admitted claims and visible identities.",
+  "Authenticity of the independently supplied execution commitment beyond PBR-COMMITMENT-AX-007.",
+]
+source_roots = [
+  ".github/workflows/release.yml",
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-compose/Cargo.toml",
+  "crates/proofbound-runtime-compose/src/lib.rs",
+  "crates/proofbound-runtime-compose/src/main.rs",
+  "docs/specs/0003_release_receipt_composition.md",
+  "proofbound/evidence/release-composition-attacks.toml",
+  "proofbound/evidence/release-composition-cli.toml",
+  "schemas/composed-receipt-v1.schema.json",
+  "schemas/runtime-release-manifest-v1.schema.json",
+  "tests/attacks/composition/v1.toml",
+]

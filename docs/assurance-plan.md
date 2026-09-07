@@ -15,6 +15,7 @@ status. A target below is a work commitment, not present evidence.
 | `PBR-BINDING-005` | Tier 3, artifact-bound | Receipt construction and role completeness can be isolated as a pure deterministic core. |
 | `PBR-VERIFY-006` | Registered attack-corpus evidence, artifact-bound | The statement is intentionally bounded to registered mutations and exact rejection reasons. |
 | `PBR-RUN-007` | Native end-to-end evidence, artifact-bound | Effectful orchestration must retain the exact plan, boundary result, observations, and receipt inputs without substitution. |
+| `PBR-COMPOSE-008` | Registered composition attacks plus native release observation, artifact-bound | Composition must retain exact release, execution, assumption, and trusted-computing-base identities without upgrading their admitted facets. |
 
 Artifact binding does not upgrade the behavioral evidence by itself. It only
 connects admitted evidence to exact release bytes.
@@ -138,6 +139,35 @@ The evidence path is:
 This claim remains effectful and assumption-bearing. Pure core proofs do not
 prove that the CLI selected the corresponding observations or that Linux
 installed the boundary.
+
+## PBR-COMPOSE-008
+
+The production subject is the pure typed composition boundary, with the
+`pbr-compose` executable responsible only for closed input acquisition,
+independent verifier execution, and no-replace publication. Its source closure
+contains:
+
+- strict decoders for the Proofbound release, Runtime bundle, execution
+  receipt, and both verifier reports;
+- exact artifact identity and bundle-role validation;
+- equality between verified and compiled claim-status inventories;
+- union-with-origin for assumptions and trusted-computing-base entries;
+- a domain-separated composition identity over canonical bytes; and
+- an independent complete-byte recomputation path for mutation tests.
+
+The evidence path is:
+
+1. the frozen omission, substitution, downgrade, replay, and premise-loss
+   attack catalog;
+2. closed CLI grammar, verifier-failure propagation, and no-replace output
+   tests;
+3. one native release-workflow observation on each supported architecture;
+4. retention of every inherited claim facet, assumption, and trusted component;
+5. exact release-artifact binding for the composer and both verified inputs.
+
+Composition does not increase any inherited claim's formal or linkage facet.
+It retains `PBR-COMMITMENT-AX-007`: placing a receipt and its expected
+commitment into the same replaceable carrier is still not authentication.
 
 ## Promotion rule
 

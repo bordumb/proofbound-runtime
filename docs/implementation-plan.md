@@ -25,8 +25,9 @@ dependency order, commit boundaries, and completion evidence.
   open.
 - `PBR-RECEIPT-004` is source-refined at Tier 3. Release-artifact binding is
   open.
-- `PBR-BINDING-005` has tested model-only constructor evidence; its formal
-  completeness and source linkage remain open.
+- `PBR-BINDING-005` has a kernel-checked model theorem and tested production
+  constructor evidence; source refinement and release-artifact binding remain
+  open.
 - `PBR-SEQUENCE-003` has tested protocol-state evidence and bounded native
   `x86_64`/`aarch64` Linux evidence at Tier 0. Release-artifact binding is open.
 - `PBR-VERIFY-006` has tested model-only evidence over all 22 registered
@@ -35,6 +36,9 @@ dependency order, commit boundaries, and completion evidence.
   enforcement crate, and the first fail-closed `pbr doctor` product command.
 - Independent verification covers closed decoding, canonical bytes, external
   receipt commitment, identities, relationships, and eligibility derivation.
+- `PBR-COMPOSE-008` has tested model-only evidence over its closed 12-case
+  cross-receipt attack corpus. Native workflow observation and release-artifact
+  binding remain open.
 
 ## Ordered work queue
 
@@ -115,10 +119,10 @@ committed with the source that generated it.
 
 ### Wave 6: Proofbound composition
 
-- [ ] Define the typed Proofbound plugin outside Proofbound core.
+- [x] Define the typed Proofbound plugin outside Proofbound core.
 - [ ] Compose one verified runtime execution receipt with its verified Runtime
   release receipt.
-- [ ] Reject omission, substitution, downgrade, replay, and premise loss across
+- [x] Reject omission, substitution, downgrade, replay, and premise loss across
   the composed receipt chain.
 
 ## Definition of complete
