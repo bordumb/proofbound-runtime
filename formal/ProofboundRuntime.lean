@@ -1,6 +1,8 @@
 import ProofboundRuntime.Authority
 import ProofboundRuntime.Claims.Authority
+import ProofboundRuntime.Claims.Policy
 import ProofboundRuntime.Claims.Receipt
+import ProofboundRuntime.Policy
 import ProofboundRuntime.Receipt
 import ProofboundRuntime.Refinement.AuthorityNormalization
 import ProofboundRuntime.Refinement.AuthorityNormalizationClaim
