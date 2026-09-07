@@ -280,7 +280,7 @@ mod linux {
         let mut rules = vec![
             LauncherFilesystemRule::new(
                 u32::try_from(executable_fd).expect("positive executable descriptor"),
-                vec![LandlockAccess::Execute],
+                vec![LandlockAccess::Read, LandlockAccess::Execute],
             )
             .expect("executable rule"),
         ];

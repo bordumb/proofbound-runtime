@@ -33,6 +33,7 @@ if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
   test -x "$PROOFBOUND_NATIVE_FIXTURE"
   "$PROOFBOUND_NATIVE_FIXTURE" preflight
   "$PROOFBOUND_NATIVE_FIXTURE" fd-exec-preflight "$PROOFBOUND_NATIVE_FIXTURE"
+  "$PROOFBOUND_NATIVE_FIXTURE" landlock-exec-only-denied "$PROOFBOUND_NATIVE_FIXTURE"
   "$PROOFBOUND_NATIVE_FIXTURE" landlock-fd-exec-preflight "$PROOFBOUND_NATIVE_FIXTURE"
   uname -a
   systemd --version | head -n 1

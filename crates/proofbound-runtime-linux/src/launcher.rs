@@ -154,12 +154,17 @@ impl InstallRequest {
             return Err(LauncherError::Malformed);
         }
         filesystem.sort_unstable_by_key(LauncherFilesystemRule::descriptor);
+        let executable_rule_is_closed = filesystem.iter().any(|rule| {
+            rule.descriptor == executable_fd
+                && rule.access.as_slice() == [LandlockAccess::Read, LandlockAccess::Execute]
+        });
         if filesystem
             .windows(2)
             .any(|pair| pair[0].descriptor == pair[1].descriptor)
             || filesystem
                 .iter()
                 .any(|rule| rule.descriptor < 3 || rule.descriptor >= close_file_descriptors_from)
+            || !executable_rule_is_closed
         {
             return Err(LauncherError::Malformed);
         }
@@ -1676,9 +1681,9 @@ mod tests {
                 ("PATH".to_owned(), "/usr/bin".to_owned()),
             ]),
             vec![
-                LauncherFilesystemRule::new(5, vec![LandlockAccess::Read])
+                LauncherFilesystemRule::new(3, vec![LandlockAccess::Read, LandlockAccess::Execute])
                     .expect("fixture rule is valid"),
-                LauncherFilesystemRule::new(6, vec![LandlockAccess::Read, LandlockAccess::Execute])
+                LauncherFilesystemRule::new(5, vec![LandlockAccess::Read])
                     .expect("fixture rule is valid"),
             ],
             vec![1, 2, 3, 4],
@@ -1815,6 +1820,46 @@ mod tests {
     }
 
     #[test]
+    fn install_request_requires_exact_executable_read_execute_closure() {
+        fn rebuild(request: InstallRequest) -> Result<InstallRequest, LauncherError> {
+            InstallRequest::new(
+                request.identity,
+                request.executable_id,
+                request.executable_fd,
+                request.working_directory_fd,
+                request.arguments,
+                request.environment,
+                request.filesystem,
+                request.seccomp_program,
+                request.close_file_descriptors_from,
+            )
+        }
+
+        let mut execute_only = install_request();
+        execute_only.filesystem[0] = LauncherFilesystemRule::new(3, vec![LandlockAccess::Execute])
+            .expect("execute-only rule is structurally valid");
+        assert_eq!(rebuild(execute_only), Err(LauncherError::Malformed));
+
+        let mut writable = install_request();
+        writable.filesystem[0] = LauncherFilesystemRule::new(
+            3,
+            vec![
+                LandlockAccess::Read,
+                LandlockAccess::Write,
+                LandlockAccess::Execute,
+            ],
+        )
+        .expect("writable executable rule is structurally valid");
+        assert_eq!(rebuild(writable), Err(LauncherError::Malformed));
+
+        let mut wrong_descriptor = install_request();
+        wrong_descriptor.filesystem[0] =
+            LauncherFilesystemRule::new(6, vec![LandlockAccess::Read, LandlockAccess::Execute])
+                .expect("wrong-descriptor rule is structurally valid");
+        assert_eq!(rebuild(wrong_descriptor), Err(LauncherError::Malformed));
+    }
+
+    #[test]
     fn retained_descriptor_set_is_exact_not_threshold_based() {
         let request = install_request();
         let retained = core::iter::once(request.executable_fd())
@@ -1909,6 +1954,7 @@ mod tests {
             "execution-substitution",
             "acknowledgement-forgery",
             "acknowledgement-omission",
+            "executable-closure-substitution",
         ];
         assert!(ATTACK_CATALOG.starts_with("schema = \"proofbound-runtime-launcher-attacks/1\""));
         assert_eq!(

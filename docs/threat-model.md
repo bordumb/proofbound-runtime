@@ -125,7 +125,11 @@ older or newer ABI is unsupported until its guarantees are reviewed. The
 ruleset handles truncation from ABI 3, device `ioctl` from ABI 5, and pathname
 Unix-socket resolution from ABI 9. Read and write rules may cover registered
 directory trees; execute rules are accepted only for exact regular-file
-descriptors, never directories.
+descriptors, never directories. Because the closed ruleset also handles
+`READ_FILE`, Linux's internal executable reopen requires each exact executable
+rule to grant both `READ_FILE` and `EXECUTE`. This platform closure exposes only
+the already identified executable bytes; it does not grant directory-wide read
+or execute authority.
 
 ### Executables and runtime closure
 

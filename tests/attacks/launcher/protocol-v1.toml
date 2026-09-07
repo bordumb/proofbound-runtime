@@ -59,3 +59,8 @@ expected_error = "launcher.sequence.boundary-not-installed"
 id = "acknowledgement-omission"
 mutation = "exec-without-acknowledgement"
 expected_error = "launcher.sequence.acknowledgement-missing"
+
+[[cases]]
+id = "executable-closure-substitution"
+mutation = "replace-exact-read-execute-rule-with-execute-only-rule"
+expected_error = "launcher.protocol.malformed"

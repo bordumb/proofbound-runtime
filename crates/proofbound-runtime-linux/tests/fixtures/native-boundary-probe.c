@@ -16,7 +16,8 @@
 
 extern char **environ;
 
-static int landlock_fd_exec_preflight(const char *program, const char *path) {
+static int landlock_fd_exec_preflight(const char *program, const char *path,
+                                      int grant_read, int expect_denial) {
     int descriptor = open(path, O_RDONLY | O_CLOEXEC | O_NONBLOCK);
     if (descriptor < 0) {
         perror("landlock preflight executable open");
@@ -27,7 +28,7 @@ static int landlock_fd_exec_preflight(const char *program, const char *path) {
         return 70;
     }
     struct landlock_ruleset_attr ruleset_attributes = {
-        .handled_access_fs = LANDLOCK_ACCESS_FS_EXECUTE,
+        .handled_access_fs = LANDLOCK_ACCESS_FS_EXECUTE | LANDLOCK_ACCESS_FS_READ_FILE,
     };
     int ruleset = syscall(SYS_landlock_create_ruleset, &ruleset_attributes,
                           sizeof(ruleset_attributes.handled_access_fs), 0);
@@ -36,7 +37,8 @@ static int landlock_fd_exec_preflight(const char *program, const char *path) {
         return 71;
     }
     struct landlock_path_beneath_attr rule = {
-        .allowed_access = LANDLOCK_ACCESS_FS_EXECUTE,
+        .allowed_access = LANDLOCK_ACCESS_FS_EXECUTE |
+                          (grant_read ? LANDLOCK_ACCESS_FS_READ_FILE : 0),
         .parent_fd = descriptor,
     };
     if (syscall(SYS_landlock_add_rule, ruleset, LANDLOCK_RULE_PATH_BENEATH, &rule, 0) != 0) {
@@ -48,8 +50,15 @@ static int landlock_fd_exec_preflight(const char *program, const char *path) {
         return 73;
     }
     close(ruleset);
-    char *const child_argv[] = { (char *)program, "preflight", NULL };
+    char *const child_argv[] = {
+        (char *)program,
+        expect_denial ? "unexpected-exec" : "preflight",
+        NULL,
+    };
     syscall(SYS_execveat, descriptor, "", child_argv, environ, AT_EMPTY_PATH);
+    if (expect_denial && errno == EACCES) {
+        return 0;
+    }
     perror("landlock preflight execveat");
     return 74;
 }
@@ -74,6 +83,9 @@ int main(int argc, char **argv) {
     if (strcmp(argv[1], "preflight") == 0) {
         return 0;
     }
+    if (strcmp(argv[1], "unexpected-exec") == 0) {
+        return 75;
+    }
     if (strcmp(argv[1], "fd-exec-preflight") == 0 && argc == 3) {
         int descriptor = open(argv[2], O_RDONLY | O_CLOEXEC | O_NONBLOCK);
         if (descriptor < 0) {
@@ -83,8 +95,11 @@ int main(int argc, char **argv) {
         syscall(SYS_execveat, descriptor, "", child_argv, environ, AT_EMPTY_PATH);
         return errno == EACCES ? 67 : 68;
     }
+    if (strcmp(argv[1], "landlock-exec-only-denied") == 0 && argc == 3) {
+        return landlock_fd_exec_preflight(argv[0], argv[2], 0, 1);
+    }
     if (strcmp(argv[1], "landlock-fd-exec-preflight") == 0 && argc == 3) {
-        return landlock_fd_exec_preflight(argv[0], argv[2]);
+        return landlock_fd_exec_preflight(argv[0], argv[2], 1, 0);
     }
     if (strcmp(argv[1], "positive") == 0) {
         if (prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0) != 1 || getuid() == 0 || getuid() != geteuid()) {

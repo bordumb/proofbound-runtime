@@ -48,6 +48,12 @@ execution cgroup, and supplies the validated compiled policy through a private
 channel. The launcher installs every remaining restriction before it calls
 `execve`.
 
+The Landlock ruleset handles file reads globally. Linux opens a selected native
+executable internally with both read and execute intent, so the exact-file rule
+for each identified executable grants `READ_FILE | EXECUTE`. This is a typed
+platform closure over already identified executable bytes, not permission to
+read or execute the containing directory.
+
 An unsupported Landlock ABI, seccomp feature, cgroup controller, architecture,
 or sequencing step stops the operation. The runtime emits no reusable execution
 receipt and does not fall back.
