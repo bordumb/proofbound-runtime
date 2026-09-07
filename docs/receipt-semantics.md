@@ -4,6 +4,11 @@ An execution receipt is a canonical account of one observed execution attempt.
 It binds registered identities and observations. It does not prove that Linux,
 the host, or the executed program behaved correctly.
 
+`pbr run` emits the receipt bytes and prints their separate `sha256:`
+commitment in its machine result. `pbr-verify` requires that independently
+transported commitment. `pbr inspect` only formats JSON and makes no validity
+or reuse decision.
+
 ## Version 1 wire contract
 
 The wire schema is
@@ -96,6 +101,12 @@ The runtime publishes canonical receipt bytes through a same-directory
 temporary file and a no-replace hard link. An existing receipt path is never
 opened for writing. The separately printed commitment hashes the exact bytes
 that became visible at the requested path.
+
+An execution receipt is distinct from a Proofbound release receipt. The former
+records one child execution and names the runtime and launcher bytes it used;
+the latter records the evidence, assumptions, source closure, and artifact
+linkage admitted for a Runtime release. Consumers must verify each receipt with
+its independent verifier before composing their meanings.
 
 ## Secrets
 

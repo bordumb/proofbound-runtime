@@ -109,7 +109,7 @@ committed with the source that generated it.
 - [ ] Bind all admitted claims to exact release artifacts.
 - [ ] Verify the release receipt independently.
 - [ ] Run the complete release gate and publish the honest assurance language.
-- [ ] Update the quick start, supported-platform statement, receipt semantics,
+- [x] Update the quick start, supported-platform statement, receipt semantics,
   threat model, and changelog.
 - [ ] Tag and publish version 0.1.
 

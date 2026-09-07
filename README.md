@@ -3,10 +3,11 @@
 Run untrusted tools with declared authority and produce an independently
 verifiable account of the execution boundary.
 
-> **Status:** proof-linked foundation. Authority normalization and receipt
-> eligibility have kernel-checked source-refinement evidence at Tier 3. Release
-> artifact binding remains open. The repository does not yet provide an
-> executable runtime or containment guarantee.
+> **Status:** 0.1.0 release candidate. The executable product surface and
+> native Linux boundary are implemented and exercised on `x86_64` and
+> `aarch64`. Exact release-artifact binding and the independently verified
+> Proofbound release receipt remain open, so no 0.1.0 release has been
+> published yet.
 
 ## What it is
 
@@ -79,6 +80,69 @@ normalization does not amplify authority, and `PBR-RECEIPT-004`, incomplete
 executions are not reusable. Both still require release-artifact binding before
 their statements can apply to shipping binaries.
 
+## Quick start
+
+Build the three colocated binaries on a supported native Linux host:
+
+```console
+cargo build --locked --release --bins
+target/release/pbr --version
+target/release/pbr-verify --version
+```
+
+The host must provide a delegated cgroup v2 directory with the `pids`
+controller enabled and no direct processes. Confirm all required mechanisms
+before running a workload:
+
+```console
+target/release/pbr doctor --cgroup-root /path/to/delegated/cgroup
+```
+
+Create a plan beside an existing statically linked executable. Replace the
+absolute executable path below, and make sure `output/` and `receipt.json` do
+not already exist:
+
+```toml
+schema = "proofbound-runtime-plan/1"
+id = "example.hello"
+
+[command]
+executable = "/absolute/path/to/static-tool"
+arguments = []
+working_directory = "."
+
+[authority]
+network = "deny"
+environment = []
+read = []
+runtime_read = []
+write = ["output"]
+execute = ["/absolute/path/to/static-tool"]
+
+[limits]
+wall_time_ms = 5000
+stdout_bytes = 65536
+stderr_bytes = 65536
+processes = 1
+```
+
+Validate, execute, independently verify, and inspect it:
+
+```console
+target/release/pbr plan check --plan plan.toml
+target/release/pbr run --plan plan.toml --receipt receipt.json \
+  --cgroup-root /path/to/delegated/cgroup >run-result.json
+COMMITMENT=$(python3 -c \
+  'import json; print(json.load(open("run-result.json"))["commitment"])')
+target/release/pbr-verify --expected-commitment "$COMMITMENT" receipt.json
+target/release/pbr inspect receipt.json
+```
+
+`runtime_read` must explicitly list canonical absolute library roots for a
+dynamically linked workload. Those roots are measured authority, not an
+implicit convenience. `tools/ci/native-linux.sh` is the maintained reference
+for creating a delegated test boundary with systemd.
+
 ## Repository checks
 
 Install the pinned Rust and Lean toolchains, `just`, `cargo-deny`, Kani 0.67.0,
@@ -89,9 +153,10 @@ just ci
 ```
 
 The current CI checks documentation, project metadata, the Rust workspace,
-independent conformance, dependency policy, Lean models, source-refinement
-bridges, bounded Kani domains, and Proofbound status derivation. Release-artifact
-binding and native Linux enforcement remain open.
+independent conformance, dependency policy, Lean 4.33 models,
+source-refinement bridges, bounded Kani domains, Proofbound status derivation,
+and native Linux enforcement. The release workflow builds each architecture
+twice and rejects byte drift before it executes the exact release binaries.
 
 ## Documentation
 
@@ -105,10 +170,13 @@ binding and native Linux enforcement remain open.
 
 ## Supported platforms
 
-No platform is supported while the product remains pre-implementation. The
-first intended target is native Linux on `x86_64` and `aarch64` with the exact
-Landlock, seccomp, and cgroup capabilities required by the selected profile.
-Unsupported capability will fail closed. A container or mock will not count as
+Version 0.1 targets native Linux on `x86_64` and `aarch64`. A supported host is
+non-root, exposes the reviewed Landlock ABI range 3 through 11, supports
+`no_new_privs` and the registered seccomp actions, and supplies a delegated
+cgroup v2 root with the `pids` controller enabled. `pbr doctor` reports the
+observed capability identity. Any missing, older, newer, mismatched, or
+unreviewed mechanism fails closed; macOS and Windows can validate plans and
+inspect receipts but cannot execute them. A container or mock does not count as
 native enforcement evidence.
 
 ## License

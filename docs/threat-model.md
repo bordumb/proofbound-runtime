@@ -1,9 +1,9 @@
 # Threat model
 
-- **Status:** initial normative boundary
+- **Status:** implemented version 1 boundary; release-artifact linkage pending
 - **Version:** 0.1.0
-- **Date:** 2026-09-04
-- **Applies to:** the intended Proofbound Runtime version 1 execution profile
+- **Date:** 2026-09-07
+- **Applies to:** the Proofbound Runtime version 1 execution profile
 
 ## Purpose
 
@@ -11,10 +11,11 @@ Proofbound Runtime runs a command that the caller does not fully trust. It gives
 the command declared authority and records the installed boundary and observed
 outcome in an execution receipt.
 
-This threat model defines what the initial product intends to protect, which
-attacks it must reject, what it trusts, and what remains outside its claims. The
-runtime is pre-implementation. No statement in this document describes a
-currently shipping containment mechanism.
+This threat model defines what the initial product protects, which attacks it
+rejects, what it trusts, and what remains outside its claims. The boundary is
+implemented and has bounded native evidence on identified `x86_64` and
+`aarch64` Linux runners. Until release binding is complete, these statements do
+not apply to a published 0.1.0 artifact.
 
 ## Protected assets
 
@@ -90,6 +91,12 @@ Initial execution claims depend on:
 
 Proofbound must retain these roles and any narrower claim-specific premises. A
 receipt signature or digest does not discharge them.
+
+Release interpretation additionally trusts the independently supplied release
+artifact, its recorded digest, the reproducible-build environment, and the
+Proofbound release-receipt verifier. Reproducibility establishes agreement of
+bytes under the registered build recipe; it does not establish compiler or
+kernel correctness.
 
 ## Initial enforced boundary
 
