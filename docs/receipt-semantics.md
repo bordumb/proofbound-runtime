@@ -62,6 +62,15 @@ mode. Equality establishes that the recorded bytes and metadata have the same
 identity. It does not establish behavioral correctness. Paths are diagnostic
 context and are deliberately absent from artifact identity.
 
+The fresh output-root identity is the SHA-256 digest of the domain-separation
+bytes `proofbound-runtime-empty-output-root/1\n`, byte size zero, and the mode
+observed on the newly created empty directory. Version 1 requires mode `0700`.
+Each post-run output-artifact identity hashes the regular file bytes and records
+that file's size and mode. The output inventory is a content-identity set:
+multiple diagnostic paths with the same bytes and mode produce one receipt
+identity, while the runtime retains each path and descriptor during collection.
+Symlinks and non-regular output objects are rejected rather than followed.
+
 The receipt binds the source and normalized plans, compiled policy, platform,
 runtime and launcher, executable closure, working directory, inputs, output
 root, streams, output artifacts, producer, assumptions, and trusted computing

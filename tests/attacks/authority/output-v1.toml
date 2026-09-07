@@ -1,0 +1,25 @@
+schema = "proofbound-runtime-output-attacks/1"
+
+[[attack]]
+id = "preexisting-output-root"
+expected_error = "output.root.exists"
+
+[[attack]]
+id = "output-root-symlink-parent"
+expected_error = "output.parent.unavailable"
+
+[[attack]]
+id = "output-symlink"
+expected_error = "output.file-kind.forbidden"
+
+[[attack]]
+id = "output-special-file"
+expected_error = "output.file-kind.forbidden"
+
+[[attack]]
+id = "output-content-drift"
+expected_error = "output.identity.drift"
+
+[[attack]]
+id = "output-directory-drift"
+expected_error = "output.identity.drift"

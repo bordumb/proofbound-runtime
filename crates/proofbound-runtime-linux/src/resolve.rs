@@ -142,6 +142,12 @@ impl RootedPathResolver {
         &self.resolved_root
     }
 
+    #[cfg(target_os = "linux")]
+    pub(crate) fn root_fd(&self) -> std::os::fd::BorrowedFd<'_> {
+        use std::os::fd::AsFd as _;
+        self.descriptor.as_fd()
+    }
+
     /// Resolves a relative file beneath the retained plan root.
     pub fn resolve_rooted_file(
         &self,
@@ -541,7 +547,9 @@ fn finish_resolution(
 }
 
 #[cfg(target_os = "linux")]
-fn descriptor_target(descriptor: &std::os::fd::OwnedFd) -> Result<PathBuf, ResolutionError> {
+pub(crate) fn descriptor_target(
+    descriptor: &std::os::fd::OwnedFd,
+) -> Result<PathBuf, ResolutionError> {
     use std::os::fd::AsRawFd as _;
 
     std::fs::read_link(format!("/proc/self/fd/{}", descriptor.as_raw_fd()))
@@ -549,7 +557,7 @@ fn descriptor_target(descriptor: &std::os::fd::OwnedFd) -> Result<PathBuf, Resol
 }
 
 #[cfg(target_os = "linux")]
-fn identify_descriptor(
+pub(crate) fn identify_descriptor(
     descriptor: &std::os::fd::OwnedFd,
     role: ArtifactRole,
 ) -> Result<ArtifactIdentity, ResolutionError> {

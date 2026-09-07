@@ -8,6 +8,7 @@ use std::path::Path;
 
 const LANDLOCK_CREATE_RULESET_VERSION: libc::c_uint = 1;
 pub(crate) const RESOLVE_NO_MAGICLINKS: u64 = 0x02;
+pub(crate) const RESOLVE_NO_SYMLINKS: u64 = 0x04;
 pub(crate) const RESOLVE_BENEATH: u64 = 0x08;
 
 #[repr(C)]
@@ -38,11 +39,46 @@ pub(crate) fn open_directory(path: &Path) -> io::Result<OwnedFd> {
 }
 
 pub(crate) fn openat2_file(directory: RawFd, path: &Path, resolution: u64) -> io::Result<OwnedFd> {
+    openat2(
+        directory,
+        path,
+        libc::O_RDONLY | libc::O_CLOEXEC | libc::O_NOCTTY | libc::O_NONBLOCK,
+        resolution,
+    )
+}
+
+pub(crate) fn openat2_directory(
+    directory: RawFd,
+    path: &Path,
+    resolution: u64,
+) -> io::Result<OwnedFd> {
+    openat2(
+        directory,
+        path,
+        libc::O_RDONLY | libc::O_DIRECTORY | libc::O_CLOEXEC | libc::O_NOFOLLOW,
+        resolution,
+    )
+}
+
+pub(crate) fn openat2_path(directory: RawFd, path: &Path, resolution: u64) -> io::Result<OwnedFd> {
+    openat2(
+        directory,
+        path,
+        libc::O_PATH | libc::O_CLOEXEC | libc::O_NOFOLLOW,
+        resolution,
+    )
+}
+
+fn openat2(
+    directory: RawFd,
+    path: &Path,
+    flags: libc::c_int,
+    resolution: u64,
+) -> io::Result<OwnedFd> {
     let path = CString::new(path.as_os_str().as_bytes())
         .map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
     let how = OpenHow {
-        flags: u64::try_from(libc::O_RDONLY | libc::O_CLOEXEC | libc::O_NOCTTY)
-            .expect("open flags fit u64"),
+        flags: u64::try_from(flags).expect("open flags fit u64"),
         mode: 0,
         resolve: resolution,
     };
@@ -65,6 +101,23 @@ pub(crate) fn openat2_file(directory: RawFd, path: &Path, resolution: u64) -> io
         // SAFETY: `openat2` returned a new descriptor and ownership transfers
         // to this `OwnedFd` exactly once.
         Ok(unsafe { OwnedFd::from_raw_fd(descriptor) })
+    }
+}
+
+pub(crate) fn create_directory_at(
+    directory: RawFd,
+    name: &Path,
+    mode: libc::mode_t,
+) -> io::Result<()> {
+    let name = CString::new(name.as_os_str().as_bytes())
+        .map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    // SAFETY: `name` is NUL-terminated and remains alive for the call. The
+    // caller owns a live parent directory descriptor.
+    let result = unsafe { libc::mkdirat(directory, name.as_ptr(), mode) };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
     }
 }
 
