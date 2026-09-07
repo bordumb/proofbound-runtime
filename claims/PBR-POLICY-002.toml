@@ -26,7 +26,7 @@ source_roots = [
 ]
 
 [bounded_domain]
-id = "policy-two-path-two-environment-catalog"
-description = "All normalized results from two path slots and two environment slots over two typed values per slot; 2^4 finite source plans."
-cardinality = 16
-ordering_key = [0, 1, 2, 3]
+id = "policy-one-path-one-environment-catalog"
+description = "All normalized authorities with one path and one environment name over two typed values each; 2^2 finite states."
+cardinality = 4
+ordering_key = [0, 1]
