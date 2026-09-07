@@ -1,6 +1,6 @@
 # PBF-0008: Tested release-artifact observations
 
-- **Status:** `upstream-ready`
+- **Status:** `resolved`
 - **Priority:** `blocking`
 - **Kind:** `evidence-semantics`
 - **Created:** 2026-09-07
@@ -9,7 +9,7 @@
   `PBR-COMPOSE-008`
 - **Runtime milestone:** Version 0.1 release linkage
 - **Proofbound target:** evidence semantics, status engine, release receipt, and independent verifier
-- **Upstream record:** not upstreamed
+- **Upstream record:** `proof-bound` ADR 0020 and commits `dd5893d` through `cf8f2ba`
 - **Supersedes:** none
 - **Superseded by:** none
 
@@ -170,9 +170,26 @@ fails.
 
 - **Destination:** `proof-bound` evidence algebra, schemas, compiler, release receipt, and verifier
 - **Issue:** none
-- **Specification or ADR:** not yet upstreamed
-- **Commit or pull request:** none
+- **Specification or ADR:** `proof-bound/docs/adr/0020-exact-artifact-observations.md`
+- **Commit or pull request:** `proof-bound@dd5893d`, `proof-bound@15d1d55`,
+  `proof-bound@c5605e0`, `proof-bound@c24be52`, `proof-bound@1732444`,
+  `proof-bound@a4471f8`, and `proof-bound@cf8f2ba`
 
 ## Resolution
 
-Unresolved.
+Proofbound accepted the exact-artifact observation as an orthogonal receipt
+relation in ADR 0020. Evidence-unit schema version 5 registers an empirical
+procedure, exact artifact identity, closed role, platform, toolchain closure,
+and complete typed evidence dependencies. Compiled release and envelope schema
+version 4 preserve the relation without promoting the formal or linkage facet.
+The independent verifier reconstructs the relation, hashes supplied external
+artifact and procedure bytes, and requires the `bytes-observed` verdict before
+publication. The frozen twelve-case attack corpus is executable with stable
+`PB-OBS-0001` through `PB-OBS-0012` diagnostics.
+
+Runtime can now replace its open PBF-0008 workaround with architecture-specific
+release observation units and pass the exact bundle and procedure bytes to the
+independent verifier. The remaining Runtime work is adoption: produce the
+observations in the native release workflow, retain their assumptions and
+dependencies, and consume the resulting version 4 release receipt in the
+composition step.
