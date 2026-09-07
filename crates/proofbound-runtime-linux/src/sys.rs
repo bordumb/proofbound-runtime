@@ -7,6 +7,7 @@ use std::os::unix::ffi::OsStrExt as _;
 use std::path::Path;
 
 const LANDLOCK_CREATE_RULESET_VERSION: libc::c_uint = 1;
+const LANDLOCK_RULE_PATH_BENEATH: libc::c_int = 1;
 const LINUX_CAPABILITY_VERSION_3: u32 = 0x2008_0522;
 const PR_CAP_AMBIENT: libc::c_int = 47;
 const PR_CAP_AMBIENT_IS_SET: libc::c_ulong = 1;
@@ -34,6 +35,17 @@ struct CapabilityData {
     effective: u32,
     permitted: u32,
     inheritable: u32,
+}
+
+#[repr(C)]
+struct LandlockRulesetAttr {
+    handled_access_fs: u64,
+}
+
+#[repr(C)]
+struct LandlockPathBeneathAttr {
+    allowed_access: u64,
+    parent_fd: i32,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -183,6 +195,67 @@ pub(crate) fn landlock_abi() -> io::Result<u32> {
         Err(io::Error::last_os_error())
     } else {
         u32::try_from(result).map_err(|_| io::Error::from(io::ErrorKind::InvalidData))
+    }
+}
+
+pub(crate) fn create_landlock_ruleset(handled_access_fs: u64) -> io::Result<OwnedFd> {
+    let attributes = LandlockRulesetAttr { handled_access_fs };
+    // SAFETY: `attributes` has the versioned Linux ABI layout and remains live
+    // for the call. A successful syscall returns a fresh descriptor.
+    let descriptor = unsafe {
+        libc::syscall(
+            libc::SYS_landlock_create_ruleset,
+            &raw const attributes,
+            core::mem::size_of::<LandlockRulesetAttr>(),
+            0,
+        )
+    };
+    if descriptor < 0 {
+        Err(io::Error::last_os_error())
+    } else {
+        let descriptor =
+            i32::try_from(descriptor).map_err(|_| io::Error::from(io::ErrorKind::InvalidData))?;
+        // SAFETY: the syscall returned a new descriptor and ownership
+        // transfers to this `OwnedFd` exactly once.
+        Ok(unsafe { OwnedFd::from_raw_fd(descriptor) })
+    }
+}
+
+pub(crate) fn add_landlock_path_rule(
+    ruleset: RawFd,
+    parent: RawFd,
+    allowed_access: u64,
+) -> io::Result<()> {
+    let attributes = LandlockPathBeneathAttr {
+        allowed_access,
+        parent_fd: parent,
+    };
+    // SAFETY: `attributes` has the Linux path-beneath ABI layout and remains
+    // live for the call. Both descriptors are borrowed and remain open.
+    let result = unsafe {
+        libc::syscall(
+            libc::SYS_landlock_add_rule,
+            ruleset,
+            LANDLOCK_RULE_PATH_BENEATH,
+            &raw const attributes,
+            0,
+        )
+    };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+pub(crate) fn restrict_with_landlock(ruleset: RawFd) -> io::Result<()> {
+    // SAFETY: the ruleset descriptor remains open for the duration of the
+    // syscall and the versioned flags argument is zero.
+    let result = unsafe { libc::syscall(libc::SYS_landlock_restrict_self, ruleset, 0) };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
     }
 }
 

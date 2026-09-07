@@ -120,6 +120,13 @@ resolve paths under explicit roots, retain requested and resolved identities,
 control symlink traversal, and prefer descriptor-relative operations where the
 platform supports them.
 
+Version 1 accepts the explicitly reviewed Landlock ABI range 3 through 11; an
+older or newer ABI is unsupported until its guarantees are reviewed. The
+ruleset handles truncation from ABI 3, device `ioctl` from ABI 5, and pathname
+Unix-socket resolution from ABI 9. Read and write rules may cover registered
+directory trees; execute rules are accepted only for exact regular-file
+descriptors, never directories.
+
 ### Executables and runtime closure
 
 The plan must identify allowed executables. Dynamically linked programs also

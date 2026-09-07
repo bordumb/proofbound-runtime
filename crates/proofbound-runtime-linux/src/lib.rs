@@ -3,6 +3,7 @@
 //! Owns the native Linux enforcement boundary.
 
 pub mod cgroup;
+pub mod landlock;
 pub mod output;
 pub mod privilege;
 pub mod probe;
@@ -13,6 +14,9 @@ pub mod resolve;
 mod sys;
 
 pub use cgroup::{CgroupError, FreshCgroup};
+pub use landlock::{
+    LandlockAccess, LandlockBoundary, LandlockError, LandlockRule, install_landlock,
+};
 pub use output::{FreshOutputRoot, OutputEntry, OutputInventory, OutputRootError};
 pub use privilege::{LockedPrivileges, PrivilegeError, lock_privileges};
 pub use probe::{

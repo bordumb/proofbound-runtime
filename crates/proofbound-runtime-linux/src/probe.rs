@@ -4,6 +4,11 @@ use core::fmt;
 use core::num::NonZeroU32;
 use std::path::{Path, PathBuf};
 
+#[cfg(target_os = "linux")]
+const MIN_LANDLOCK_ABI: u32 = 3;
+#[cfg(target_os = "linux")]
+const MAX_REVIEWED_LANDLOCK_ABI: u32 = 11;
+
 /// Identifies one supported native Linux architecture.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Architecture {
@@ -185,6 +190,8 @@ pub enum ProbeError {
     KernelReleaseUnavailable,
     /// The kernel did not report a nonzero Landlock ABI.
     LandlockUnavailable,
+    /// The kernel Landlock ABI is outside the reviewed version 1 range.
+    LandlockAbiUnsupported,
     /// The kernel did not support querying `no_new_privs`.
     NoNewPrivilegesUnavailable,
     /// The kernel did not expose seccomp filter actions.
@@ -208,6 +215,7 @@ impl ProbeError {
             Self::UnsupportedArchitecture => "platform.architecture.unsupported",
             Self::KernelReleaseUnavailable => "platform.kernel-release.unavailable",
             Self::LandlockUnavailable => "platform.landlock.unavailable",
+            Self::LandlockAbiUnsupported => "platform.landlock.abi-unsupported",
             Self::NoNewPrivilegesUnavailable => "platform.no-new-privileges.unavailable",
             Self::SeccompUnavailable => "platform.seccomp.unavailable",
             Self::SeccompActionMissing => "platform.seccomp.action-missing",
@@ -275,13 +283,13 @@ fn probe_architecture() -> Capability<Architecture> {
 
 #[cfg(target_os = "linux")]
 fn probe_landlock() -> Capability<NonZeroU32> {
-    crate::sys::landlock_abi()
-        .ok()
-        .and_then(NonZeroU32::new)
-        .map_or(
-            Capability::Unavailable(ProbeError::LandlockUnavailable),
-            Capability::Available,
-        )
+    match crate::sys::landlock_abi().ok().and_then(NonZeroU32::new) {
+        Some(abi) if (MIN_LANDLOCK_ABI..=MAX_REVIEWED_LANDLOCK_ABI).contains(&abi.get()) => {
+            Capability::Available(abi)
+        }
+        Some(_) => Capability::Unavailable(ProbeError::LandlockAbiUnsupported),
+        None => Capability::Unavailable(ProbeError::LandlockUnavailable),
+    }
 }
 
 #[cfg(target_os = "linux")]
@@ -464,6 +472,7 @@ mod tests {
             ProbeError::UnsupportedArchitecture,
             ProbeError::KernelReleaseUnavailable,
             ProbeError::LandlockUnavailable,
+            ProbeError::LandlockAbiUnsupported,
             ProbeError::NoNewPrivilegesUnavailable,
             ProbeError::SeccompUnavailable,
             ProbeError::SeccompActionMissing,

@@ -84,7 +84,7 @@ committed with the source that generated it.
 - [x] Implement fresh output roots and post-run output inventories.
 - [x] Implement the fresh cgroup lifecycle and registered limits.
 - [x] Implement privilege removal and `no_new_privs`.
-- [ ] Implement Landlock filesystem enforcement.
+- [x] Implement Landlock filesystem enforcement.
 - [ ] Implement deny-network seccomp enforcement.
 - [ ] Implement the paused launcher and private typed protocol.
 - [ ] Implement the supervisor, bounded streams, timeouts, outcomes, and cleanup.

@@ -1,0 +1,29 @@
+schema = "proofbound-runtime-landlock-attacks/1"
+
+[[attack]]
+id = "missing-read-rule"
+expected_error = "landlock.rule.installation-failed"
+
+[[attack]]
+id = "undeclared-read"
+expected_denial = "EACCES"
+
+[[attack]]
+id = "undeclared-write"
+expected_denial = "EACCES"
+
+[[attack]]
+id = "write-root-escape"
+expected_denial = "EACCES"
+
+[[attack]]
+id = "directory-execute-amplification"
+expected_error = "landlock.execute.directory-forbidden"
+
+[[attack]]
+id = "truncate-with-old-abi"
+expected_error = "landlock.abi.unsupported"
+
+[[attack]]
+id = "restriction-omitted"
+expected_error = "launcher.sequence.invalid"
