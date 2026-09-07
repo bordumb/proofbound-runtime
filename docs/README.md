@@ -4,6 +4,12 @@ This directory is the entry point for Proofbound Runtime specifications,
 security boundaries, architecture decisions, and cross-repository feedback.
 The document type determines its authority.
 
+## Delivery tracking
+
+- [Implementation plan](implementation-plan.md) records the ordered work queue,
+  commit boundaries, and release completion criteria. It does not replace the
+  normative specification or claim ledger.
+
 ## Normative specification
 
 - [Specification 0001](specs/0001_initial_spec.md) defines the initial product,
