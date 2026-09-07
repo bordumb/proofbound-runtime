@@ -1,0 +1,37 @@
+schema = "proofbound-evidence-unit/1"
+id = "policy-compilation-refinement-theorem"
+adapter = "lean"
+kind = "theorem"
+claims = ["PBR-POLICY-002"]
+tier = 3
+evaluation_mode = "kernel"
+theorem = "ProofboundRuntime.Refinement.PolicyCompilationClaim.compile_policy_refines"
+premises = []
+expected_inventory = [
+  "ProofboundRuntime.Refinement.PolicyCompilationClaim.compile_policy_refines",
+]
+inputs = [
+  "formal/ProofboundRuntime/Policy.lean",
+  "formal/ProofboundRuntime/Refinement/PolicyCompilation.lean",
+  "formal/ProofboundRuntime/Refinement/PolicyCompilationClaim.lean",
+  "formal/generated/ProofboundRuntimePolicy/Funs.lean",
+  "formal/generated/ProofboundRuntimePolicy/Types.lean",
+  "lake-manifest.json",
+  "lakefile.toml",
+  "lean-toolchain",
+]
+environment_allowlist = ["LEAN_PATH", "PATH"]
+
+[operation]
+type = "lean-audit"
+targets = [
+  "ProofboundRuntime.Refinement.PolicyCompilationClaim.compile_policy_refines",
+]
+paths = [
+  "formal/ProofboundRuntime/Refinement/PolicyCompilationClaim.lean",
+]
+
+[resource_budget]
+time_seconds = 300
+disk_bytes = 2147483648
+memory_bytes = 8589934592

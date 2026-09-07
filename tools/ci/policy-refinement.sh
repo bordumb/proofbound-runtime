@@ -6,6 +6,8 @@ cd "$repo_root"
 
 output_root=".lake/build/lib/lean/ProofboundRuntimePolicy"
 mkdir -p "$output_root"
+refinement_root=".lake/build/lib/lean/ProofboundRuntime/Refinement"
+mkdir -p "$refinement_root"
 
 lake build Aeneas
 
@@ -16,6 +18,8 @@ lake env lean \
   formal/generated/ProofboundRuntimePolicy/Funs.lean \
   -o "$output_root/Funs.olean"
 lake env lean \
-  formal/ProofboundRuntime/Refinement/PolicyCompilation.lean
+  formal/ProofboundRuntime/Refinement/PolicyCompilation.lean \
+  -o "$refinement_root/PolicyCompilation.olean"
 lake env lean \
-  formal/ProofboundRuntime/Refinement/PolicyCompilationClaim.lean
+  formal/ProofboundRuntime/Refinement/PolicyCompilationClaim.lean \
+  -o "$refinement_root/PolicyCompilationClaim.olean"

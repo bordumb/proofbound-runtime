@@ -10,7 +10,8 @@ review_evidence = [
   "formal/ProofboundRuntime/Refinement/PolicyCompilation.lean",
   "formal/ProofboundRuntime/Refinement/PolicyCompilationClaim.lean",
 ]
-discharge_plan = "Discharge with an unconditional registered policy refinement theorem over every translated normalized authority."
+discharge_plan = "Discharged by the unconditional registered policy refinement theorem over every translated normalized authority."
 source_citation = "formal/ProofboundRuntime/Refinement/PolicyCompilationClaim.lean#compile_policy_refines"
-status = "active"
+status = "discharged"
 premise_scope = { kind = "all-registered-inputs" }
+discharge = { theorem = "policy-compilation-refinement-theorem", scope = { kind = "all-registered-inputs" } }

@@ -2,18 +2,18 @@ schema = "proofbound-claim/1"
 id = "PBR-POLICY-002"
 title = "Linux policy compilation does not amplify modeled authority"
 statement = "For every supported normalized plan, policy compilation produces Landlock, seccomp, and cgroup inputs that grant no authority absent from the registered platform model."
-public_language = "A kernel-checked theorem proves that the version 1 policy model preserves the exact filesystem, environment, and limit authority of every normalized input while selecting deny-network seccomp and required no-new-privileges. This theorem remains model-only until source refinement and artifact binding are registered."
+public_language = "A kernel-checked source-refinement theorem proves that the translated Rust policy compiler preserves the exact ordered filesystem, environment, and limit authority of every normalized input while selecting deny-network seccomp and required no-new-privileges. Release-artifact binding remains open."
 subject = "rust:proofbound_runtime_core::compile_policy"
 profile = "kernel-with-assumptions"
 tier = 3
 primary_linkage = "refined"
-formal_declaration = "ProofboundRuntime.Claims.Policy.compilation_does_not_amplify"
+formal_declaration = "ProofboundRuntime.Refinement.PolicyCompilationClaim.compile_policy_refines"
 statement_encoding = "lean-expr-cbor/1"
-statement_sha256 = "sha256:8dbfe25bd1cc4813d2ae87ad9fb3d6cc311a93bd3c6520a6e7338ce2873b2621"
+statement_sha256 = "sha256:9ef151a15760bb529f9d19ec054f64c92b04120b50345a38e0118d2fe763b79b"
 foundational_axioms = ["Quot.sound", "propext"]
 evidence = [
   "bounded-check:policy-compilation-bounds",
-  "theorem:policy-compilation-theorem",
+  "theorem:policy-compilation-refinement-theorem",
   "source-refinement:policy-compilation-refinement",
 ]
 assumptions = ["PBR-TOOLCHAIN-AX-003"]
@@ -37,8 +37,8 @@ source_roots = [
   "formal/ProofboundRuntime/Refinement/PolicyCompilationClaim.lean",
   "formal/generated/ProofboundRuntimePolicy/",
   "proofbound/evidence/policy-compilation-bounds.toml",
-  "proofbound/evidence/policy-compilation-theorem.toml",
   "proofbound/evidence/policy-compilation-refinement.toml",
+  "proofbound/evidence/policy-compilation-refinement-theorem.toml",
   "proofbound/model-checks/policy-compilation.toml",
   "proofbound/translations/policy-compilation.toml",
   "docs/specs/0001_initial_spec.md",
