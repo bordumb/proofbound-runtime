@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
   "crates/proofbound-runtime-core",
+  "crates/proofbound-runtime-cli",
   "crates/proofbound-runtime-linux",
   "crates/proofbound-runtime-policy-kani",
   "crates/proofbound-runtime-receipt",
@@ -20,6 +21,7 @@ publish = false
 [workspace.dependencies]
 libc = "=0.2.189"
 proofbound-runtime-core = { path = "crates/proofbound-runtime-core" }
+proofbound-runtime-linux = { path = "crates/proofbound-runtime-linux" }
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.151"
 sha2 = { version = "=0.11.0", default-features = false }

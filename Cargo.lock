@@ -104,6 +104,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "proofbound-runtime-cli"
+version = "0.0.0"
+dependencies = [
+ "proofbound-runtime-linux",
+ "serde_json",
+]
+
+[[package]]
 name = "proofbound-runtime-core"
 version = "0.0.0"
 dependencies = [

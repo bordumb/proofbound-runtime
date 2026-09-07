@@ -31,8 +31,8 @@ dependency order, commit boundaries, and completion evidence.
   `x86_64`/`aarch64` Linux evidence at Tier 0. Release-artifact binding is open.
 - `PBR-VERIFY-006` has tested model-only evidence over all 22 registered
   carrier attacks; release-artifact binding remains open.
-- The repository has a standalone `pbr-verify` executable but no `pbr` runtime
-  or native Linux enforcement crate.
+- The repository has a standalone `pbr-verify` executable, the native Linux
+  enforcement crate, and the first fail-closed `pbr doctor` product command.
 - Independent verification covers closed decoding, canonical bytes, external
   receipt commitment, identities, relationships, and eligibility derivation.
 
@@ -95,7 +95,7 @@ committed with the source that generated it.
 
 ### Wave 4: product surface
 
-- [ ] Implement `pbr doctor`.
+- [x] Implement `pbr doctor`.
 - [ ] Implement `pbr plan check`.
 - [ ] Implement `pbr run` and canonical receipt emission.
 - [ ] Implement `pbr inspect` without validity decisions.

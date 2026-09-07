@@ -1,0 +1,17 @@
+[package]
+name = "proofbound-runtime-cli"
+description = "Command-line interface for Proofbound Runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "pbr"
+path = "src/main.rs"
+
+[dependencies]
+proofbound-runtime-linux.workspace = true
+serde_json.workspace = true
