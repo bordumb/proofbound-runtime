@@ -1,0 +1,37 @@
+schema = "proofbound-runtime-native-boundary-attacks/1"
+
+[[case]]
+id = "boundary-positive"
+expected = "installed-zero-exit"
+
+[[case]]
+id = "filesystem-read-allowed"
+expected = "zero-exit"
+
+[[case]]
+id = "filesystem-read-denied"
+expected = "eacces-observed"
+
+[[case]]
+id = "network-denied"
+expected = "eperm-observed"
+
+[[case]]
+id = "process-limit-denied"
+expected = "eagain-observed"
+
+[[case]]
+id = "undeclared-descriptor"
+expected = "ebadf-observed"
+
+[[case]]
+id = "stdout-over-limit"
+expected = "truncated"
+
+[[case]]
+id = "wall-time-over-limit"
+expected = "timed-out"
+
+[[case]]
+id = "lingering-descendant"
+expected = "killed-and-cgroup-removed"
