@@ -63,6 +63,11 @@ committed with the source that generated it.
 - [x] Implement independent canonical-byte validation.
 - [x] Implement independent identity and artifact-role validation.
 - [x] Implement the `pbr-verify` CLI and stable exit behavior.
+- [x] Record the external receipt-commitment requirement exposed by attack
+  conformance analysis.
+- [ ] Implement mandatory expected-commitment verification and update the CLI.
+- [ ] Revise the frozen carrier-attack expectations to distinguish locally
+  decidable defects from authenticated byte substitutions.
 - [ ] Run producer/verifier conformance over positive, negative, and attack
   vectors.
 - [ ] Advance `PBR-VERIFY-006` through its declared evidence path.

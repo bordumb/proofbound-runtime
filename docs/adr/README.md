@@ -18,3 +18,4 @@ inevitable. Add a new ADR and mark the earlier record as superseded.
 | ADR | Decision | Status |
 | --- | --- | --- |
 | [0001](0001-linux-enforcement-boundary.md) | Use a native Linux enforcement boundary for version 1 | accepted |
+| [0002](0002-external-receipt-commitment.md) | Require an external receipt commitment | accepted |
