@@ -5,9 +5,9 @@ verifiable account of the execution boundary.
 
 > **Status:** 0.1.0 release candidate. The executable product surface and
 > native Linux boundary are implemented and exercised on `x86_64` and
-> `aarch64`. Exact release-artifact binding and the independently verified
-> Proofbound release receipt remain open, so no 0.1.0 release has been
-> published yet.
+> `aarch64`. The Proofbound release envelope is independently verified; exact
+> release-artifact binding remains open, so no 0.1.0 release has been published
+> yet.
 
 ## What it is
 
@@ -157,6 +157,9 @@ independent conformance, dependency policy, Lean 4.33 models,
 source-refinement bridges, bounded Kani domains, Proofbound status derivation,
 and native Linux enforcement. The release workflow builds each architecture
 twice and rejects byte drift before it executes the exact release binaries.
+`just release-receipt /absent/output/path` rebuilds the current assurance graph,
+creates a fresh Proofbound release envelope, and retains the independent
+verifier report beside it.
 
 ## Documentation
 

@@ -23,6 +23,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   independently implemented `pbr-verify` verifier.
 - Proofbound claim, falsifier, bounded-check, Lean refinement, native boundary,
   orchestration, and release-reproduction evidence.
+- A fail-closed Proofbound release-envelope gate that retains the independent
+  verifier's canonical report.
 
 ## [0.0.0] - 2026-09-04
 
