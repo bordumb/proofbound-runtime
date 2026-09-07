@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the canonical product version and Cargo workspace version."""
+"""Validate the canonical product, Cargo workspace, and Lake package version."""
 
 from __future__ import annotations
 
@@ -34,6 +34,14 @@ def validate(root: Path) -> list[str]:
     if cargo_version != version:
         errors.append(
             f"Cargo.toml workspace version {cargo_version!r} does not match {version!r}"
+        )
+
+    lake = (root / "lakefile.toml").read_text(encoding="utf-8")
+    lake_match = TOML_VERSION.search(lake)
+    lake_version = lake_match.group(1) if lake_match else None
+    if lake_version != version:
+        errors.append(
+            f"lakefile.toml package version {lake_version!r} does not match {version!r}"
         )
     return errors
 
