@@ -105,7 +105,7 @@ dependencies = [
 
 [[package]]
 name = "proofbound-runtime-cli"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "proofbound-runtime-core",
  "proofbound-runtime-linux",
@@ -116,7 +116,7 @@ dependencies = [
 
 [[package]]
 name = "proofbound-runtime-core"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "proofbound-runtime-receipt",
  "proofbound-runtime-verify",
@@ -127,7 +127,7 @@ dependencies = [
 
 [[package]]
 name = "proofbound-runtime-linux"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "libc",
  "proofbound-runtime-core",
@@ -136,25 +136,25 @@ dependencies = [
 
 [[package]]
 name = "proofbound-runtime-policy-kani"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "proofbound-runtime-core",
 ]
 
 [[package]]
 name = "proofbound-runtime-receipt"
-version = "0.0.0"
+version = "0.1.0"
 
 [[package]]
 name = "proofbound-runtime-receipt-kani"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "proofbound-runtime-core",
 ]
 
 [[package]]
 name = "proofbound-runtime-verify"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "serde",
  "serde_json",
