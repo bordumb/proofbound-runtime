@@ -1,0 +1,28 @@
+schema = "proofbound-model-check-unit/1"
+id = "policy-compilation-bounds"
+adapter = "kani"
+package = "proofbound-runtime-core"
+harnesses = [
+  "policy::kani_harnesses::policy_compilation_does_not_amplify_bounded_catalog",
+]
+claims = ["PBR-POLICY-002"]
+solver = "cadical"
+unwind = 5
+assumptions = [
+  "The normalized plan starts from exactly two path slots and exactly two environment-name slots.",
+  "Each path slot is either the project-input read entry for path b or the output-root write entry for path a.",
+  "Each environment-name slot is either LANG or PATH.",
+  "The process, wall-time, standard-output, and standard-error limits are fixed to one in their declared units.",
+  "The network mode is deny.",
+]
+
+[domain]
+id = "policy-two-path-two-environment-catalog"
+description = "All normalized results from two path slots and two environment slots over two typed values per slot; 2^4 finite source plans."
+cardinality = 16
+ordering_key = [0, 1, 2, 3]
+
+[resource_budget]
+time_seconds = 900
+disk_bytes = 2147483648
+memory_bytes = 8589934592

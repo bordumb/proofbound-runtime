@@ -7,7 +7,6 @@ rationale = "Source tests, bounded checks, model theorems, and source refinement
 scope = "The source-to-artifact interpretation of the Runtime claims listed in affected_claims."
 affected_claims = [
   "PBR-AUTH-001",
-  "PBR-POLICY-002",
   "PBR-SEQUENCE-003",
   "PBR-BINDING-005",
   "PBR-RECEIPT-004",

@@ -3,15 +3,12 @@ id = "PBR-POLICY-002"
 title = "Linux policy compilation does not amplify modeled authority"
 statement = "For every supported normalized plan, policy compilation produces Landlock, seccomp, and cgroup inputs that grant no authority absent from the registered platform model."
 subject = "rust:proofbound_runtime_core::compile_policy"
-profile = "ledger"
-tier = 0
-evidence = []
-assumptions = [
-  "PBR-LINUX-AX-001",
-  "PBR-TOOLCHAIN-AX-003",
-]
+profile = "bounded"
+tier = 1
+evidence = ["bounded-check:policy-compilation-bounds"]
+assumptions = []
 open_obligations = [
-  "Register bounded checks, a Lean policy theorem, source refinement, and release artifact linkage.",
+  "Register a Lean policy theorem, source refinement, and release artifact linkage.",
 ]
 out_of_scope = [
   "Linux behavior outside the registered Landlock, seccomp, and cgroup model.",
@@ -21,7 +18,15 @@ source_roots = [
   "crates/proofbound-runtime-core/src/authority.rs",
   "crates/proofbound-runtime-core/src/normalize.rs",
   "crates/proofbound-runtime-core/src/policy.rs",
+  "proofbound/evidence/policy-compilation-bounds.toml",
+  "proofbound/model-checks/policy-compilation.toml",
   "docs/specs/0001_initial_spec.md",
   "docs/threat-model.md",
   "docs/adr/0001-linux-enforcement-boundary.md",
 ]
+
+[bounded_domain]
+id = "policy-two-path-two-environment-catalog"
+description = "All normalized results from two path slots and two environment slots over two typed values per slot; 2^4 finite source plans."
+cardinality = 16
+ordering_key = [0, 1, 2, 3]

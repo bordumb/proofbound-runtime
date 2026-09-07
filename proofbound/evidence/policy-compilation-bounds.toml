@@ -1,0 +1,35 @@
+schema = "proofbound-evidence-unit/1"
+id = "policy-compilation-bounds"
+adapter = "kani"
+kind = "bounded-check"
+claims = ["PBR-POLICY-002"]
+tier = 1
+expected_inventory = [
+  "policy::kani_harnesses::policy_compilation_does_not_amplify_bounded_catalog",
+]
+inputs = [
+  "crates/proofbound-runtime-core/src/authority.rs",
+  "crates/proofbound-runtime-core/src/normalize.rs",
+  "crates/proofbound-runtime-core/src/policy.rs",
+  "proofbound/model-checks/policy-compilation.toml",
+]
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "kani"
+package = "proofbound-runtime-core"
+manifest = "proofbound/model-checks/policy-compilation.toml"
+targets = [
+  "policy::kani_harnesses::policy_compilation_does_not_amplify_bounded_catalog",
+]
+
+[bounded_domain]
+id = "policy-two-path-two-environment-catalog"
+description = "All normalized results from two path slots and two environment slots over two typed values per slot; 2^4 finite source plans."
+cardinality = 16
+ordering_key = [0, 1, 2, 3]
+
+[resource_budget]
+time_seconds = 900
+disk_bytes = 2147483648
+memory_bytes = 8589934592
