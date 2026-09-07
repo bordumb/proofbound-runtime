@@ -25,10 +25,15 @@ dependency order, commit boundaries, and completion evidence.
   open.
 - `PBR-RECEIPT-004` is source-refined at Tier 3. Release-artifact binding is
   open.
-- `PBR-SEQUENCE-003` and `PBR-BINDING-005` remain open at Tier 0.
-- `PBR-VERIFY-006` has tested model-only evidence at Tier 0.
-- The repository has no executable runtime or native Linux enforcement crate.
-- The independent verifier implements receipt-eligibility derivation only.
+- `PBR-BINDING-005` has tested model-only constructor evidence; its formal
+  completeness and source linkage remain open.
+- `PBR-SEQUENCE-003` remains open at Tier 0.
+- `PBR-VERIFY-006` has tested model-only evidence over all 22 registered
+  carrier attacks; release-artifact binding remains open.
+- The repository has a standalone `pbr-verify` executable but no `pbr` runtime
+  or native Linux enforcement crate.
+- Independent verification covers closed decoding, canonical bytes, external
+  receipt commitment, identities, relationships, and eligibility derivation.
 
 ## Ordered work queue
 
@@ -70,7 +75,7 @@ committed with the source that generated it.
   decidable defects from authenticated byte substitutions.
 - [x] Run producer/verifier conformance over positive, negative, and attack
   vectors.
-- [ ] Advance `PBR-VERIFY-006` through its declared evidence path.
+- [x] Advance `PBR-VERIFY-006` through its declared evidence path.
 
 ### Wave 3: native Linux boundary
 

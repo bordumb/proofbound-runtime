@@ -14,7 +14,6 @@ assumptions = [
 ]
 open_obligations = [
   "Prove that reusable construction retains every required role and source-refine that theorem to the production constructor.",
-  "Execute the remaining wire-format downgrade, duplicate-key, and canonical-byte mutations with the independent verifier.",
   "Link admitted receipt properties to exact release artifacts.",
 ]
 out_of_scope = [

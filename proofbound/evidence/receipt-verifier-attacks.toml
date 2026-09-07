@@ -1,0 +1,38 @@
+schema = "proofbound-evidence-unit/1"
+id = "receipt-verifier-attacks"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-VERIFY-006"]
+tier = 0
+expected_inventory = [
+  "proofbound_runtime_verify::attack_tests::frozen_carrier_attack_catalog_is_closed",
+  "proofbound_runtime_verify::attack_tests::verifier_rejects_every_registered_carrier_attack",
+]
+inputs = [
+  "crates/proofbound-runtime-verify/Cargo.toml",
+  "crates/proofbound-runtime-verify/src/attack_tests.rs",
+  "crates/proofbound-runtime-verify/src/canonical.rs",
+  "crates/proofbound-runtime-verify/src/commitment.rs",
+  "crates/proofbound-runtime-verify/src/decode.rs",
+  "crates/proofbound-runtime-verify/src/derive.rs",
+  "crates/proofbound-runtime-verify/src/error.rs",
+  "crates/proofbound-runtime-verify/src/identity.rs",
+  "crates/proofbound-runtime-verify/src/lib.rs",
+  "crates/proofbound-runtime-verify/src/test_support.rs",
+  "tests/attacks/receipt/receipt-v1.toml",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-verify"
+manifest = "Cargo.toml"
+targets = ["--lib"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

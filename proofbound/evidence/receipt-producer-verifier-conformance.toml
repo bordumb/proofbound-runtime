@@ -1,0 +1,45 @@
+schema = "proofbound-evidence-unit/1"
+id = "receipt-producer-verifier-conformance"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-VERIFY-006"]
+tier = 0
+expected_inventory = [
+  "receipt_verifier_conformance::producer_and_verifier_agree_on_non_reuse",
+  "receipt_verifier_conformance::producer_bytes_verify_as_reusable",
+]
+inputs = [
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/authority.rs",
+  "crates/proofbound-runtime-core/src/error.rs",
+  "crates/proofbound-runtime-core/src/identity.rs",
+  "crates/proofbound-runtime-core/src/lib.rs",
+  "crates/proofbound-runtime-core/src/outcome.rs",
+  "crates/proofbound-runtime-core/src/plan.rs",
+  "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-core/tests/receipt_verifier_conformance.rs",
+  "crates/proofbound-runtime-receipt/src/lib.rs",
+  "crates/proofbound-runtime-verify/Cargo.toml",
+  "crates/proofbound-runtime-verify/src/canonical.rs",
+  "crates/proofbound-runtime-verify/src/commitment.rs",
+  "crates/proofbound-runtime-verify/src/decode.rs",
+  "crates/proofbound-runtime-verify/src/derive.rs",
+  "crates/proofbound-runtime-verify/src/error.rs",
+  "crates/proofbound-runtime-verify/src/identity.rs",
+  "crates/proofbound-runtime-verify/src/lib.rs",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-core"
+manifest = "Cargo.toml"
+targets = ["--test=receipt_verifier_conformance"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

@@ -1,25 +1,41 @@
 schema = "proofbound-claim/1"
 id = "PBR-VERIFY-006"
 title = "The independent verifier rejects registered receipt attacks"
-statement = "The standalone verifier independently derives receipt validity and reuse eligibility and rejects every registered receipt mutation with its exact typed reason."
-subject = "planned:proofbound_runtime_verify::verify_receipt"
+statement = "Given an independently supplied expected receipt commitment, the standalone verifier independently derives receipt validity and reuse eligibility and rejects every registered receipt mutation with its exact typed reason."
+public_language = "The standalone verifier checks closed canonical receipt bytes against an independently supplied SHA-256 commitment, validates identities and relationships, independently derives reuse eligibility, and rejects all 22 registered carrier mutations with their exact typed reasons. Release-artifact binding remains open."
+subject = "rust:proofbound_runtime_verify::verify_receipt"
 profile = "ledger"
 tier = 0
-evidence = ["example-test:receipt-eligibility-verifier-conformance"]
+evidence = [
+  "example-test:receipt-eligibility-verifier-conformance",
+  "example-test:receipt-producer-verifier-conformance",
+  "example-test:receipt-verifier-attacks",
+]
 assumptions = ["PBR-COMMITMENT-AX-007", "PBR-TOOLCHAIN-AX-003"]
 open_obligations = [
-  "Implement the independent receipt decoder, canonical-byte checks, identity validation, and verifier CLI.",
-  "Execute the frozen adversarial receipt corpus and preserve every exact rejection reason.",
   "Bind the independent verifier to exact release artifacts.",
 ]
 out_of_scope = [
   "Correctness of the receipt producer merely because the verifier accepts one bounded corpus.",
   "Receipt properties not represented by the versioned schema and derivation rules.",
+  "Correct delivery of the expected commitment beyond PBR-COMMITMENT-AX-007.",
 ]
 source_roots = [
+  "crates/proofbound-runtime-verify/Cargo.toml",
+  "crates/proofbound-runtime-verify/src/attack_tests.rs",
+  "crates/proofbound-runtime-verify/src/canonical.rs",
+  "crates/proofbound-runtime-verify/src/commitment.rs",
+  "crates/proofbound-runtime-verify/src/decode.rs",
   "crates/proofbound-runtime-verify/src/derive.rs",
+  "crates/proofbound-runtime-verify/src/error.rs",
+  "crates/proofbound-runtime-verify/src/identity.rs",
+  "crates/proofbound-runtime-verify/src/lib.rs",
+  "crates/proofbound-runtime-verify/src/main.rs",
+  "crates/proofbound-runtime-verify/src/test_support.rs",
   "crates/proofbound-runtime-verify/tests/receipt_vectors.rs",
   "proofbound/evidence/receipt-eligibility-verifier-conformance.toml",
+  "proofbound/evidence/receipt-producer-verifier-conformance.toml",
+  "proofbound/evidence/receipt-verifier-attacks.toml",
   "schemas/receipt-eligibility-vector-v1.schema.json",
   "schemas/execution-receipt-v1.schema.json",
   "tests/conformance/receipt/positive/eligibility-v1.json",
