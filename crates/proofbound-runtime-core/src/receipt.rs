@@ -593,6 +593,17 @@ impl ExecutionReceipt {
     }
 }
 
+/// Constructs one complete execution receipt through the translation boundary.
+///
+/// Keeping this boundary as a free function gives the source-refinement tool a
+/// stable production entry point while preserving `ExecutionReceipt::new` as
+/// the single implementation of construction semantics.
+pub fn construct_execution_receipt(
+    parts: ExecutionReceiptParts,
+) -> Result<ExecutionReceipt, ReceiptError> {
+    ExecutionReceipt::new(parts)
+}
+
 #[derive(Serialize)]
 struct WireArtifact {
     mode: u16,

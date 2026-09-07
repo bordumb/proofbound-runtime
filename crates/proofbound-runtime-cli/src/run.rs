@@ -468,7 +468,7 @@ fn build_receipt(input: ReceiptInputs<'_>) -> Result<ExecutionReceipt, RunError>
         STREAM_MODE,
     )?;
     let trusted_computing_base = trusted_computing_base(&input)?;
-    let receipt = ExecutionReceipt::new(ExecutionReceiptParts {
+    let receipt = proofbound_runtime_core::construct_execution_receipt(ExecutionReceiptParts {
         execution_id: input.execution_id,
         plan: ReceiptPlan::new(
             input.plan.id().clone(),
