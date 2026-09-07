@@ -1,0 +1,111 @@
+schema = "proofbound-translation-unit/3"
+id = "receipt-eligibility"
+pipeline = "charon-aeneas"
+generated_dir = "formal/generated/ProofboundRuntimeReceipt"
+handwritten_refinement = "formal/ProofboundRuntime/Refinement/ReceiptEligibilityClaim.lean"
+determinism_runs = 2
+determinism_normalization = "pretty-printed-llbc/1"
+forbid_generated_axioms = true
+claims = ["PBR-RECEIPT-004"]
+warning_inventory = []
+
+[[template_axioms]]
+file = "formal/generated/ProofboundRuntimeReceipt/FunsExternal_Template.lean"
+count = 1
+compiled = false
+
+[[external_bridges]]
+file = "formal/bridges/ProofboundRuntimeReceipt/FunsExternal.lean"
+module = "ProofboundRuntimeReceipt.FunsExternal"
+reviewed_sha256 = "sha256:c21cf5843fdac68296db45624857f515b8f8720c7f9a321ed4f48782d9ca02c7"
+
+[[invocations]]
+id = "receipt-eligibility"
+cargo_package = "proofbound-runtime-receipt"
+cargo_manifest = "crates/proofbound-runtime-receipt/Cargo.toml"
+crate_name = "proofbound_runtime_receipt"
+llbc_file = "proofbound_runtime_receipt.llbc"
+start_from = ["proofbound_runtime_receipt::derive_receipt_eligibility"]
+opaque = []
+include = []
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_receipt::derive_receipt_eligibility"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_receipt::{impl core::cmp::PartialEq<proofbound_runtime_receipt::BoundaryInstallation> for proofbound_runtime_receipt::BoundaryInstallation}::eq"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_receipt::{impl core::cmp::PartialEq<proofbound_runtime_receipt::ReceiptStructure> for proofbound_runtime_receipt::ReceiptStructure}::eq"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_receipt::{impl core::cmp::PartialEq<proofbound_runtime_receipt::StreamCapture> for proofbound_runtime_receipt::StreamCapture}::eq"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_receipt::BoundaryInstallation"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_receipt::ExecutionOutcome"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_receipt::NonReusableReason"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_receipt::NonReusableReasons"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_receipt::ReceiptEligibility"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_receipt::ReceiptFacts"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_receipt::ReceiptStructure"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_receipt::SignalNumber"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_receipt::StreamCapture"
+
+[[invocations.outputs]]
+kind = "lean-source"
+produced = "Funs.lean"
+destination = "formal/generated/ProofboundRuntimeReceipt/Funs.lean"
+
+[[invocations.outputs]]
+kind = "lean-source"
+produced = "FunsExternal_Template.lean"
+destination = "formal/generated/ProofboundRuntimeReceipt/FunsExternal_Template.lean"
+
+[[invocations.outputs]]
+kind = "lean-source"
+produced = "Types.lean"
+destination = "formal/generated/ProofboundRuntimeReceipt/Types.lean"
+
+[[invocations.outputs]]
+kind = "translation-report"
+produced = "translation.json"
+destination = "formal/generated/ProofboundRuntimeReceipt/translation.json"
+
+[import_mapping]
+mode = "external-source-root"
+source_roots = ["formal", "formal/bridges"]
+
+[resource_budget]
+time_seconds = 1800
+disk_bytes = 26843545600
+memory_bytes = 8589934592

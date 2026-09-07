@@ -10,6 +10,7 @@ affected_claims = [
   "PBR-POLICY-002",
   "PBR-SEQUENCE-003",
   "PBR-BINDING-005",
+  "PBR-RECEIPT-004",
   "PBR-VERIFY-006",
 ]
 review_evidence = [

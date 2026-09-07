@@ -1,0 +1,35 @@
+schema = "proofbound-evidence-unit/1"
+id = "receipt-eligibility-refinement"
+adapter = "charon-aeneas"
+kind = "source-refinement"
+claims = ["PBR-RECEIPT-004"]
+tier = 3
+refinement_theorem = "ProofboundRuntime.Refinement.ReceiptEligibilityClaim.derive_receipt_eligibility_refines"
+premises = ["PBR-RECEIPT-REP-005"]
+assumptions = []
+inputs = [
+  "crates/proofbound-runtime-receipt/Cargo.toml",
+  "crates/proofbound-runtime-receipt/src/lib.rs",
+  "formal/ProofboundRuntime/Receipt.lean",
+  "formal/ProofboundRuntime/Refinement/ReceiptEligibility.lean",
+  "formal/ProofboundRuntime/Refinement/ReceiptEligibilityClaim.lean",
+  "formal/bridges/ProofboundRuntimeReceipt/FunsExternal.lean",
+  "formal/generated/ProofboundRuntimeReceipt/Funs.lean",
+  "formal/generated/ProofboundRuntimeReceipt/FunsExternal_Template.lean",
+  "formal/generated/ProofboundRuntimeReceipt/Types.lean",
+  "formal/generated/ProofboundRuntimeReceipt/translation.json",
+  "proofbound/toolchains/translation.lock",
+  "proofbound/translations/receipt-eligibility.toml",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "LEAN_PATH", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "translation"
+manifest = "proofbound/translations/receipt-eligibility.toml"
+targets = ["proofbound_runtime_receipt::derive_receipt_eligibility"]
+
+[resource_budget]
+time_seconds = 1800
+disk_bytes = 26843545600
+memory_bytes = 8589934592

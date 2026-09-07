@@ -26,9 +26,10 @@ python3 tools/conformance/authority_reference.py
 printf '%s\n' '[6/8] Lean model, generated source translation, and claim audit executable'
 lake build
 bash tools/ci/authority-refinement.sh
+bash tools/ci/receipt-refinement.sh
 
 printf '%s\n' '[7/8] dependency licenses, versions, and sources'
 cargo deny --locked check bans licenses sources
 
-printf '%s\n' '[8/8] Proofbound Tier 2 evidence and status derivation'
+printf '%s\n' '[8/8] Proofbound evidence and status derivation'
 bash tools/ci/manifests.sh

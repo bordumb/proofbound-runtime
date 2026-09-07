@@ -1,7 +1,7 @@
 schema = "proofbound-translation-unit/3"
 id = "authority-normalization"
 pipeline = "charon-aeneas"
-generated_dir = "formal/generated"
+generated_dir = "formal/generated/ProofboundRuntimeCore"
 handwritten_refinement = "formal/ProofboundRuntime/Refinement/AuthorityNormalizationClaim.lean"
 determinism_runs = 2
 determinism_normalization = "pretty-printed-llbc/1"

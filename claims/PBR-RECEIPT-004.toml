@@ -2,30 +2,33 @@ schema = "proofbound-claim/1"
 id = "PBR-RECEIPT-004"
 title = "Incomplete executions are not reusable"
 statement = "Receipt eligibility is reusable only for a structurally valid, boundary-installed execution that exits with code zero and has complete output streams; every other represented state is non-reusable with all applicable typed reasons."
-public_language = "A kernel-checked theorem proves that the version 1 receipt model has exactly one reusable state and that every other represented state returns its complete nonempty canonical reason list. This theorem is model-only until source refinement and artifact binding are registered."
+public_language = "A kernel-checked theorem over the deterministic Aeneas translation proves that the production Rust receipt decision equals the exact version 1 model for every represented state. Release-artifact binding remains open."
 subject = "rust:proofbound_runtime_receipt::derive_receipt_eligibility"
-profile = "kernel"
-tier = 2
-primary_linkage = "model-only"
-formal_declaration = "ProofboundRuntime.Claims.Receipt.eligibility_is_exact"
+profile = "kernel-with-assumptions"
+tier = 3
+primary_linkage = "refined"
+formal_declaration = "ProofboundRuntime.Refinement.ReceiptEligibilityClaim.derive_receipt_eligibility_refines"
 statement_encoding = "lean-expr-cbor/1"
-statement_sha256 = "sha256:5115b20f250c1a81bc32bcf5f6677ec3ae216a0b3316883b0173669f21c0fb46"
-foundational_axioms = ["propext"]
+statement_sha256 = "sha256:e9779a7adebbeb9a46d9506e7bb075935c2751f23db824561cad047de78a08b7"
+foundational_axioms = ["Classical.choice", "Quot.sound", "propext"]
 evidence = [
   "example-test:receipt-eligibility-conformance",
   "example-test:receipt-eligibility-verifier-conformance",
   "bounded-check:receipt-eligibility-bounds",
-  "theorem:receipt-eligibility-theorem",
+  "theorem:receipt-eligibility-refinement-theorem",
+  "source-refinement:receipt-eligibility-refinement",
 ]
-assumptions = []
+assumptions = ["PBR-TOOLCHAIN-AX-003"]
+premises = ["PBR-RECEIPT-REP-005"]
 open_obligations = [
-  "Register source refinement and artifact linkage.",
+  "Bind the refined claim to release artifacts before making a shipping-binary claim.",
 ]
 out_of_scope = [
   "Semantic correctness of outputs produced by an otherwise reusable execution.",
   "Execution failures or attack classes that the versioned outcome schema cannot represent.",
 ]
 source_roots = [
+  "assumptions/PBR-RECEIPT-REP-005.toml",
   "crates/proofbound-runtime-core/src/receipt.rs",
   "crates/proofbound-runtime-receipt/src/lib.rs",
   "crates/proofbound-runtime-core/tests/receipt_vectors.rs",
@@ -34,11 +37,17 @@ source_roots = [
   "crates/proofbound-runtime-verify/tests/receipt_vectors.rs",
   "formal/ProofboundRuntime/Claims/Receipt.lean",
   "formal/ProofboundRuntime/Receipt.lean",
+  "formal/ProofboundRuntime/Refinement/ReceiptEligibility.lean",
+  "formal/ProofboundRuntime/Refinement/ReceiptEligibilityClaim.lean",
+  "formal/bridges/ProofboundRuntimeReceipt/FunsExternal.lean",
+  "formal/generated/ProofboundRuntimeReceipt/",
   "proofbound/evidence/receipt-eligibility-conformance.toml",
   "proofbound/evidence/receipt-eligibility-bounds.toml",
   "proofbound/evidence/receipt-eligibility-verifier-conformance.toml",
-  "proofbound/evidence/receipt-eligibility-theorem.toml",
+  "proofbound/evidence/receipt-eligibility-refinement.toml",
+  "proofbound/evidence/receipt-eligibility-refinement-theorem.toml",
   "proofbound/model-checks/receipt-eligibility.toml",
+  "proofbound/translations/receipt-eligibility.toml",
   "schemas/receipt-eligibility-vector-v1.schema.json",
   "tests/conformance/receipt/positive/eligibility-v1.json",
 ]

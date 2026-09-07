@@ -18,3 +18,7 @@ lake env lean \
 lake env lean \
   formal/generated/ProofboundRuntimeReceipt/Funs.lean \
   -o "$output_root/Funs.olean"
+lake env lean \
+  formal/ProofboundRuntime/Refinement/ReceiptEligibility.lean
+lake env lean \
+  formal/ProofboundRuntime/Refinement/ReceiptEligibilityClaim.lean

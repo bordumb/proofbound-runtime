@@ -5,3 +5,5 @@ import ProofboundRuntime.Receipt
 import ProofboundRuntime.Refinement.AuthorityNormalization
 import ProofboundRuntime.Refinement.AuthorityNormalizationClaim
 import ProofboundRuntime.Refinement.AuthorityCarrierClaim
+import ProofboundRuntime.Refinement.ReceiptEligibility
+import ProofboundRuntime.Refinement.ReceiptEligibilityClaim

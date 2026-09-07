@@ -1,0 +1,38 @@
+schema = "proofbound-evidence-unit/1"
+id = "receipt-eligibility-refinement-theorem"
+adapter = "lean"
+kind = "theorem"
+claims = ["PBR-RECEIPT-004"]
+tier = 3
+evaluation_mode = "kernel"
+theorem = "ProofboundRuntime.Refinement.ReceiptEligibilityClaim.derive_receipt_eligibility_refines"
+premises = []
+expected_inventory = [
+  "ProofboundRuntime.Refinement.ReceiptEligibilityClaim.derive_receipt_eligibility_refines",
+]
+inputs = [
+  "formal/ProofboundRuntime/Receipt.lean",
+  "formal/ProofboundRuntime/Refinement/ReceiptEligibility.lean",
+  "formal/ProofboundRuntime/Refinement/ReceiptEligibilityClaim.lean",
+  "formal/bridges/ProofboundRuntimeReceipt/FunsExternal.lean",
+  "formal/generated/ProofboundRuntimeReceipt/Funs.lean",
+  "formal/generated/ProofboundRuntimeReceipt/Types.lean",
+  "lake-manifest.json",
+  "lakefile.toml",
+  "lean-toolchain",
+]
+environment_allowlist = ["LEAN_PATH", "PATH"]
+
+[operation]
+type = "lean-audit"
+targets = [
+  "ProofboundRuntime.Refinement.ReceiptEligibilityClaim.derive_receipt_eligibility_refines",
+]
+paths = [
+  "formal/ProofboundRuntime/Refinement/ReceiptEligibilityClaim.lean",
+]
+
+[resource_budget]
+time_seconds = 300
+disk_bytes = 2147483648
+memory_bytes = 4294967296
