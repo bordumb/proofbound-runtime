@@ -1,0 +1,46 @@
+name: Reproducible release artifacts
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Reproduce release (${{ matrix.architecture }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x86_64
+            runner: ubuntu-24.04
+          - architecture: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - name: Check out the exact requested head
+        uses: actions/checkout@v4
+
+      - name: Confirm the exact requested head
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@1.94.0
+
+      - name: Build and byte-compare two release bundles
+        run: bash tools/release/build-linux.sh dist
+
+      - name: Verify the published bundle checksum
+        run: sha256sum --check dist/*.sha256
+
+      - name: Upload the reproduced release bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: proofbound-runtime-${{ matrix.architecture }}
+          path: dist/*
+          if-no-files-found: error

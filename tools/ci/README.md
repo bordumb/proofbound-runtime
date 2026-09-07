@@ -11,6 +11,7 @@ and hosted CI.
 | `manifests.sh` | Compile Proofbound manifests and derive current claim status. |
 | `pre-commit.sh` | Run the fast metadata, documentation, formatting, and manifest checks. |
 | `ci.sh` | Run the complete current repository gate in a fixed order. |
+| `../release/build-linux.sh` | Build a native Linux release bundle twice and require byte equality. |
 
 Run the full gate with:
 
