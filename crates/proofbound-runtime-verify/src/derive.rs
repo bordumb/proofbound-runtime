@@ -105,6 +105,25 @@ pub enum FailureReason {
     ReceiptMalformed,
 }
 
+impl FailureReason {
+    /// Returns the stable version 1 wire name.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::BoundaryIncomplete => "boundary-incomplete",
+            Self::ExitCodeNonzero => "exit-code-nonzero",
+            Self::ProcessSignaled => "process-signaled",
+            Self::TimedOut => "timed-out",
+            Self::Denied => "denied",
+            Self::LauncherFailed => "launcher-failed",
+            Self::ExecutionIncomplete => "execution-incomplete",
+            Self::StandardOutputTruncated => "stdout-truncated",
+            Self::StandardErrorTruncated => "stderr-truncated",
+            Self::ReceiptMalformed => "receipt-malformed",
+        }
+    }
+}
+
 /// Contains one or more independently derived failures in canonical order.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FailureReasons(Vec<FailureReason>);

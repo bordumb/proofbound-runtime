@@ -62,7 +62,7 @@ committed with the source that generated it.
 - [x] Implement the independent closed receipt decoder.
 - [x] Implement independent canonical-byte validation.
 - [x] Implement independent identity and artifact-role validation.
-- [ ] Implement the `pbr-verify` CLI and stable exit behavior.
+- [x] Implement the `pbr-verify` CLI and stable exit behavior.
 - [ ] Run producer/verifier conformance over positive, negative, and attack
   vectors.
 - [ ] Advance `PBR-VERIFY-006` through its declared evidence path.
