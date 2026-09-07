@@ -201,6 +201,37 @@ mod linux {
         assert_outcome(&lingering, ExecutionOutcome::Exited { code: 0 });
     }
 
+    #[test]
+    fn discovers_and_retains_the_native_shell_executable_closure() {
+        let architecture = if cfg!(target_arch = "x86_64") {
+            proofbound_runtime_linux::Architecture::X86_64
+        } else {
+            proofbound_runtime_linux::Architecture::Aarch64
+        };
+        let resolver =
+            RootedPathResolver::open(Path::new("/")).expect("native root descriptor is available");
+        let executable = AuthorityPath::new("/bin/sh").expect("shell path is valid");
+        let closure = resolver
+            .discover_executable(&executable, architecture)
+            .expect("native shell closure resolves");
+
+        assert_eq!(
+            closure.executable().identity().role(),
+            ArtifactRole::RuntimeExecutable
+        );
+        assert_eq!(
+            closure
+                .loader()
+                .expect("native shell is dynamic")
+                .identity()
+                .role(),
+            ArtifactRole::RuntimeLoaderExecutable
+        );
+        closure
+            .revalidate_identities()
+            .expect("retained executable closure is unchanged");
+    }
+
     fn assert_outcome(
         execution: &proofbound_runtime_linux::SupervisedExecution,
         expected: ExecutionOutcome,

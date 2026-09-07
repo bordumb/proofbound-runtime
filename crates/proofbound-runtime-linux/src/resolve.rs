@@ -237,32 +237,47 @@ impl RootedPathResolver {
             require_role(loader, ArtifactRole::RuntimeLoaderExecutable)?;
         }
 
+        let closure = self.discover_executable(requested, architecture)?;
+        require_identity(&closure.executable, expected_executable)?;
+        match (&closure.loader, expected_loader) {
+            (Some(loader), Some(expected)) => require_identity(loader, expected)?,
+            (Some(_), None) => return Err(ResolutionError::LoaderIdentityMissing),
+            (None, Some(_)) => return Err(ResolutionError::LoaderIdentityUnexpected),
+            (None, None) => {}
+        }
+        Ok(closure)
+    }
+
+    /// Resolves and identifies an executable and its exact ELF interpreter.
+    ///
+    /// The returned descriptors retain the observed files. The caller must
+    /// bind both identities into the execution receipt and revalidate them
+    /// immediately before launcher handoff.
+    pub fn discover_executable(
+        &self,
+        requested: &AuthorityPath,
+        architecture: Architecture,
+    ) -> Result<ExecutableClosure, ResolutionError> {
         let executable = if Path::new(requested.as_str()).is_absolute() {
             self.resolve_external_file(requested, ArtifactRole::RuntimeExecutable)?
         } else {
             self.resolve_rooted_file(requested, ArtifactRole::RuntimeExecutable)?
         };
         require_executable_mode(&executable)?;
-        require_identity(&executable, expected_executable)?;
 
-        let interpreter = read_elf_interpreter(&executable, architecture)?;
-        let loader = match (interpreter, expected_loader) {
-            (Some(path), Some(expected)) => {
+        let loader = read_elf_interpreter(&executable, architecture)?
+            .map(|path| {
                 let path = path
                     .to_str()
                     .ok_or(ResolutionError::ElfInterpreterInvalid)?;
                 let path = AuthorityPath::new(path.to_owned())
                     .map_err(|_| ResolutionError::ElfInterpreterInvalid)?;
-                let resolved =
+                let loader =
                     self.resolve_external_file(&path, ArtifactRole::RuntimeLoaderExecutable)?;
-                require_executable_mode(&resolved)?;
-                require_identity(&resolved, expected)?;
-                Some(resolved)
-            }
-            (Some(_), None) => return Err(ResolutionError::LoaderIdentityMissing),
-            (None, Some(_)) => return Err(ResolutionError::LoaderIdentityUnexpected),
-            (None, None) => None,
-        };
+                require_executable_mode(&loader)?;
+                Ok(loader)
+            })
+            .transpose()?;
 
         Ok(ExecutableClosure { executable, loader })
     }
