@@ -72,3 +72,25 @@ jobs:
 
       - name: Run the repository gate on Linux
         run: just ci
+
+  native-boundary:
+    name: Native boundary (${{ matrix.architecture }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x86_64
+            runner: ubuntu-24.04
+          - architecture: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    steps:
+      - name: Check out the exact event head
+        uses: actions/checkout@v4
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@1.94.0
+
+      - name: Run the required native boundary corpus
+        run: bash tools/ci/native-linux.sh
