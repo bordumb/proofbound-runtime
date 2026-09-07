@@ -38,6 +38,68 @@ if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
   uname -a
   systemd --version | head -n 1
   cargo test --locked -p proofbound-runtime-linux --test native_linux -- --test-threads=1 --nocapture
+
+  cargo build --locked --workspace
+  e2e_root="$(mktemp -d "$PWD/target/native-cli-e2e.XXXXXX")"
+  trap 'rm -rf -- "$e2e_root"' EXIT
+  plan="$e2e_root/plan.toml"
+  receipt="$e2e_root/receipt.json"
+  result="$e2e_root/run-result.json"
+  verification="$e2e_root/verification.json"
+  printf '%s\n' \
+    'schema = "proofbound-runtime-plan/1"' \
+    'id = "ci.native-cli-e2e"' \
+    '' \
+    '[command]' \
+    "executable = \"$PROOFBOUND_NATIVE_FIXTURE\"" \
+    'arguments = ["positive"]' \
+    'working_directory = "."' \
+    '' \
+    '[authority]' \
+    'network = "deny"' \
+    'environment = []' \
+    'read = []' \
+    'runtime_read = []' \
+    'write = ["output"]' \
+    "execute = [\"$PROOFBOUND_NATIVE_FIXTURE\"]" \
+    '' \
+    '[limits]' \
+    'wall_time_ms = 5000' \
+    'stdout_bytes = 4096' \
+    'stderr_bytes = 4096' \
+    'processes = 1' >"$plan"
+
+  target/debug/pbr plan check --plan "$plan"
+  target/debug/pbr run \
+    --plan "$plan" \
+    --receipt "$receipt" \
+    --cgroup-root "$PROOFBOUND_CGROUP_ROOT" >"$result"
+  commitment="$(python3 -c '
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as source:
+    result = json.load(source)
+assert result["schema"] == "proofbound-runtime-run-result/1"
+assert result["outcome"] == {"kind": "exited", "code": 0}
+print(result["commitment"])
+' "$result")"
+  target/debug/pbr-verify \
+    --expected-commitment "$commitment" \
+    "$receipt" >"$verification"
+  python3 -c '
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as source:
+    verification = json.load(source)
+assert verification == {
+    "eligibility": {"reasons": [], "status": "reusable"},
+    "receipt_commitment": sys.argv[2],
+    "valid": True,
+}
+' "$verification" "$commitment"
+  target/debug/pbr inspect "$receipt" >/dev/null
   exit 0
 fi
 
