@@ -11,12 +11,13 @@
     },
     "artifacts": {
       "type": "array",
-      "minItems": 3,
-      "maxItems": 3,
+      "minItems": 4,
+      "maxItems": 4,
       "prefixItems": [
         { "$ref": "#/$defs/pbr" },
         { "$ref": "#/$defs/launcher" },
-        { "$ref": "#/$defs/verifier" }
+        { "$ref": "#/$defs/verifier" },
+        { "$ref": "#/$defs/composer" }
       ],
       "items": false
     },
@@ -63,6 +64,12 @@
       "allOf": [
         { "$ref": "#/$defs/artifact" },
         { "properties": { "name": { "const": "pbr-verify" } } }
+      ]
+    },
+    "composer": {
+      "allOf": [
+        { "$ref": "#/$defs/artifact" },
+        { "properties": { "name": { "const": "pbr-compose" } } }
       ]
     }
   }

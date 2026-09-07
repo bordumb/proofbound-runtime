@@ -75,15 +75,20 @@ The extracted directory must contain exactly these regular files:
 
 - `pbr`;
 - `pbr-native-launcher`;
-- `pbr-verify`; and
+- `pbr-verify`;
+- `pbr-compose`; and
 - `RELEASE-MANIFEST.json`.
 
 The manifest uses `proofbound-runtime-release-manifest/1`. Its architecture,
 target, toolchain, and version are nonempty closed values. Its artifact list
-must contain the three binary logical names exactly once in the order above.
+must contain the four binary logical names exactly once in the order above.
 The plugin recomputes every binary's SHA-256 and byte size and rejects
 symlinks, non-regular files, missing executable bits, extra manifest roles,
 duplicates, substitutions, and size drift.
+
+The running `pbr-compose` executable must have the same bytes as the bundled
+`pbr-compose` entry. This makes the exact composition tool identity visible; it
+does not prove that the tool is correct.
 
 ### Runtime execution
 

@@ -90,6 +90,12 @@ fn run_inner(args: Vec<OsString>) -> Result<Option<String>, CliError> {
     let launcher = read_executable(&args.runtime_bundle.join("pbr-native-launcher"))?;
     let execution_verifier_path = args.runtime_bundle.join("pbr-verify");
     let execution_verifier = read_executable(&execution_verifier_path)?;
+    let composer = read_executable(&args.runtime_bundle.join("pbr-compose"))?;
+    let running_composer =
+        env::current_exe().map_err(|_| CliError::invalid("composition.input.read-failed"))?;
+    if read_executable(&running_composer)? != composer {
+        return Err(CliError::verification("composition.bundle.substituted"));
+    }
     let execution_receipt = read_regular(&args.execution_receipt)?;
     let execution_verification = run_execution_verifier(
         &execution_verifier_path,
@@ -107,6 +113,7 @@ fn run_inner(args: Vec<OsString>) -> Result<Option<String>, CliError> {
         runtime: named("pbr", &runtime),
         launcher: named("pbr-native-launcher", &launcher),
         execution_verifier: named("pbr-verify", &execution_verifier),
+        composer: named("pbr-compose", &composer),
         execution_receipt: named("execution-receipt.json", &execution_receipt),
         execution_verification: named("execution-verification.json", &execution_verification),
         expected_execution_commitment: &args.execution_commitment,
@@ -183,6 +190,7 @@ fn require_bundle_inventory(path: &Path) -> Result<(), CliError> {
     let expected = [
         "RELEASE-MANIFEST.json",
         "pbr",
+        "pbr-compose",
         "pbr-native-launcher",
         "pbr-verify",
     ]

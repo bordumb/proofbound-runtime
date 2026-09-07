@@ -58,6 +58,7 @@ build_bundle() {
     "$target_directory/$target/release/pbr-native-launcher" \
     "$stage/pbr-native-launcher"
   install -m 0755 "$target_directory/$target/release/pbr-verify" "$stage/pbr-verify"
+  install -m 0755 "$target_directory/$target/release/pbr-compose" "$stage/pbr-compose"
   python3 - "$stage" "$architecture" "$target" "$version" "$toolchain" <<'PY'
 import hashlib
 import json
@@ -67,7 +68,7 @@ import sys
 
 stage = pathlib.Path(sys.argv[1])
 artifacts = []
-for name in ("pbr", "pbr-native-launcher", "pbr-verify"):
+for name in ("pbr", "pbr-native-launcher", "pbr-verify", "pbr-compose"):
     data = (stage / name).read_bytes()
     artifacts.append(
         {
@@ -97,7 +98,7 @@ PY
     --numeric-owner \
     -C "$stage" \
     -cf - \
-    RELEASE-MANIFEST.json pbr pbr-native-launcher pbr-verify | gzip -n >"$bundle"
+    RELEASE-MANIFEST.json pbr pbr-native-launcher pbr-verify pbr-compose | gzip -n >"$bundle"
 }
 
 mkdir -p "$output_directory"

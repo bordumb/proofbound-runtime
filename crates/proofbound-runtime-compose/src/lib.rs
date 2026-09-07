@@ -36,6 +36,7 @@ pub struct CompositionInputs<'a> {
     pub runtime: ArtifactBytes<'a>,
     pub launcher: ArtifactBytes<'a>,
     pub execution_verifier: ArtifactBytes<'a>,
+    pub composer: ArtifactBytes<'a>,
     pub execution_receipt: ArtifactBytes<'a>,
     pub execution_verification: ArtifactBytes<'a>,
     pub expected_execution_commitment: &'a str,
@@ -472,6 +473,7 @@ fn validate_bundle(
         ("pbr", inputs.runtime),
         ("pbr-native-launcher", inputs.launcher),
         ("pbr-verify", inputs.execution_verifier),
+        ("pbr-compose", inputs.composer),
     ];
     if manifest.artifacts.len() != expected.len() {
         return Err(CompositionError::BundleRoleMismatch);
@@ -726,6 +728,7 @@ mod tests {
         runtime: Vec<u8>,
         launcher: Vec<u8>,
         execution_verifier: Vec<u8>,
+        composer: Vec<u8>,
         execution_receipt: Vec<u8>,
         execution_verification: Vec<u8>,
         commitment: String,
@@ -737,9 +740,11 @@ mod tests {
             let runtime = b"exact-pbr".to_vec();
             let launcher = b"exact-launcher".to_vec();
             let execution_verifier = b"exact-pbr-verify".to_vec();
+            let composer = b"exact-pbr-compose".to_vec();
             let runtime_digest = digest_hex(&runtime);
             let launcher_digest = digest_hex(&launcher);
             let verifier_digest = digest_hex(&execution_verifier);
+            let composer_digest = digest_hex(&composer);
             let claim = json!({
                 "assumption": "ASSUMED",
                 "assumptions": ["PBR-TOOLCHAIN-AX-003"],
@@ -802,7 +807,8 @@ mod tests {
                 "artifacts": [
                     {"name": "pbr", "sha256": runtime_digest, "size": runtime.len()},
                     {"name": "pbr-native-launcher", "sha256": launcher_digest, "size": launcher.len()},
-                    {"name": "pbr-verify", "sha256": verifier_digest, "size": execution_verifier.len()}
+                    {"name": "pbr-verify", "sha256": verifier_digest, "size": execution_verifier.len()},
+                    {"name": "pbr-compose", "sha256": composer_digest, "size": composer.len()}
                 ],
                 "schema": RELEASE_MANIFEST_SCHEMA,
                 "target": "x86_64-unknown-linux-gnu",
@@ -866,6 +872,7 @@ mod tests {
                 runtime,
                 launcher,
                 execution_verifier,
+                composer,
                 execution_receipt,
                 execution_verification,
                 commitment,
@@ -887,6 +894,7 @@ mod tests {
                 runtime: named("pbr", &self.runtime),
                 launcher: named("pbr-native-launcher", &self.launcher),
                 execution_verifier: named("pbr-verify", &self.execution_verifier),
+                composer: named("pbr-compose", &self.composer),
                 execution_receipt: named("execution-receipt.json", &self.execution_receipt),
                 execution_verification: named(
                     "execution-verification.json",
