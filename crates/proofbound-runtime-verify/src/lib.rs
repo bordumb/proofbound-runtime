@@ -5,6 +5,7 @@
 mod canonical;
 mod decode;
 mod derive;
+mod identity;
 
 #[cfg(test)]
 mod test_support;
@@ -15,3 +16,4 @@ pub use derive::{
     BoundaryState, CaptureState, EligibilityDecision, EligibilityInput, FailureReason,
     FailureReasons, OutcomeState, StructureState, derive_eligibility,
 };
+pub use identity::{ValidationError, validate_receipt};

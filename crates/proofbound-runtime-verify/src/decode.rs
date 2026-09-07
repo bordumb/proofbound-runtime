@@ -1,10 +1,5 @@
 //! Strictly decodes the closed version 1 execution-receipt structure.
 
-#![allow(
-    dead_code,
-    reason = "the complete decoded carrier is consumed incrementally by later independent checks"
-)]
-
 use core::fmt;
 use core::num::NonZeroU32;
 
@@ -59,6 +54,7 @@ pub enum RecordedEligibility {
 #[derive(Clone, Debug, PartialEq)]
 pub struct DecodedReceipt {
     value: serde_json::Value,
+    wire: WireReceipt,
     eligibility_input: EligibilityInput,
     recorded_eligibility: RecordedEligibility,
 }
@@ -68,6 +64,10 @@ impl DecodedReceipt {
     #[must_use]
     pub const fn value(&self) -> &serde_json::Value {
         &self.value
+    }
+
+    pub(crate) const fn wire(&self) -> &WireReceipt {
+        &self.wire
     }
 
     /// Returns the closed inputs for independent eligibility derivation.
@@ -120,13 +120,14 @@ pub fn decode_receipt(input: &[u8]) -> Result<DecodedReceipt, DecodeError> {
             RecordedEligibility::Reusable
         }
         WireEligibilityStatus::NonReusable if !wire.eligibility.reasons.is_empty() => {
-            RecordedEligibility::NonReusable(wire.eligibility.reasons)
+            RecordedEligibility::NonReusable(wire.eligibility.reasons.clone())
         }
         _ => return Err(DecodeError::InvalidSchema),
     };
 
     Ok(DecodedReceipt {
         value,
+        wire,
         eligibility_input: EligibilityInput::new(
             boundary,
             outcome,
@@ -153,92 +154,92 @@ fn capture_state(capture: WireCapture) -> CaptureState {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
-struct WireReceipt {
-    schema: String,
-    product_version: String,
-    execution_id: String,
-    plan: WirePlan,
-    policy: WirePolicy,
-    platform: WirePlatform,
-    runtime: WireRuntime,
-    command: WireCommand,
-    inputs: Vec<WireArtifact>,
-    environment: Vec<String>,
-    output_root: WireArtifact,
-    boundary: WireBoundary,
-    observations: WireObservations,
-    streams: WireStreams,
-    outcome: WireOutcome,
-    outputs: Vec<WireArtifact>,
-    eligibility: WireEligibility,
-    producer: WireArtifact,
-    assumptions: Vec<String>,
-    trusted_computing_base: Vec<WireTcbEntry>,
+pub(crate) struct WireReceipt {
+    pub(crate) schema: String,
+    pub(crate) product_version: String,
+    pub(crate) execution_id: String,
+    pub(crate) plan: WirePlan,
+    pub(crate) policy: WirePolicy,
+    pub(crate) platform: WirePlatform,
+    pub(crate) runtime: WireRuntime,
+    pub(crate) command: WireCommand,
+    pub(crate) inputs: Vec<WireArtifact>,
+    pub(crate) environment: Vec<String>,
+    pub(crate) output_root: WireArtifact,
+    pub(crate) boundary: WireBoundary,
+    pub(crate) observations: WireObservations,
+    pub(crate) streams: WireStreams,
+    pub(crate) outcome: WireOutcome,
+    pub(crate) outputs: Vec<WireArtifact>,
+    pub(crate) eligibility: WireEligibility,
+    pub(crate) producer: WireArtifact,
+    pub(crate) assumptions: Vec<String>,
+    pub(crate) trusted_computing_base: Vec<WireTcbEntry>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
-struct WirePlan {
-    id: String,
-    source: WireArtifact,
-    normalized: WireArtifact,
+pub(crate) struct WirePlan {
+    pub(crate) id: String,
+    pub(crate) source: WireArtifact,
+    pub(crate) normalized: WireArtifact,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
-struct WirePolicy {
-    identity: WireArtifact,
-    model_version: String,
+pub(crate) struct WirePolicy {
+    pub(crate) identity: WireArtifact,
+    pub(crate) model_version: String,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
-struct WirePlatform {
-    operating_system: String,
-    architecture: WireArchitecture,
-    kernel_release: String,
-    landlock_abi: u32,
-    seccomp_features: Vec<String>,
-    cgroup_controllers: Vec<String>,
+pub(crate) struct WirePlatform {
+    pub(crate) operating_system: String,
+    pub(crate) architecture: WireArchitecture,
+    pub(crate) kernel_release: String,
+    pub(crate) landlock_abi: u32,
+    pub(crate) seccomp_features: Vec<String>,
+    pub(crate) cgroup_controllers: Vec<String>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "snake_case")]
-enum WireArchitecture {
+pub(crate) enum WireArchitecture {
     X86_64,
     Aarch64,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
-struct WireRuntime {
-    runtime: WireArtifact,
-    launcher: WireArtifact,
+pub(crate) struct WireRuntime {
+    pub(crate) runtime: WireArtifact,
+    pub(crate) launcher: WireArtifact,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
-struct WireCommand {
-    executable: WireArtifact,
-    loader: Option<WireArtifact>,
-    working_directory: WireArtifact,
-    arguments_sha256: String,
+pub(crate) struct WireCommand {
+    pub(crate) executable: WireArtifact,
+    pub(crate) loader: Option<WireArtifact>,
+    pub(crate) working_directory: WireArtifact,
+    pub(crate) arguments_sha256: String,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
-struct WireArtifact {
-    role: WireArtifactRole,
-    sha256: String,
-    size: String,
-    mode: u16,
+pub(crate) struct WireArtifact {
+    pub(crate) role: WireArtifactRole,
+    pub(crate) sha256: String,
+    pub(crate) size: String,
+    pub(crate) mode: u16,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd)]
 #[serde(rename_all = "kebab-case")]
-enum WireArtifactRole {
+pub(crate) enum WireArtifactRole {
     ExecutionPlan,
     NormalizedPlan,
     CompiledPolicy,
@@ -256,61 +257,61 @@ enum WireArtifactRole {
     OutputArtifact,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
-struct WireBoundary {
-    state: WireBoundaryState,
-    execution_id: String,
-    policy_sha256: String,
-    cgroup: WireCgroup,
+pub(crate) struct WireBoundary {
+    pub(crate) state: WireBoundaryState,
+    pub(crate) execution_id: String,
+    pub(crate) policy_sha256: String,
+    pub(crate) cgroup: WireCgroup,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "kebab-case")]
-enum WireBoundaryState {
+pub(crate) enum WireBoundaryState {
     Installed,
     Incomplete,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
-struct WireCgroup {
-    mount_id: String,
-    inode: String,
+pub(crate) struct WireCgroup {
+    pub(crate) mount_id: String,
+    pub(crate) inode: String,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
-struct WireObservations {
-    clock: String,
-    started_ns: String,
-    finished_ns: String,
+pub(crate) struct WireObservations {
+    pub(crate) clock: String,
+    pub(crate) started_ns: String,
+    pub(crate) finished_ns: String,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
-struct WireStreams {
-    stdout: WireStream,
-    stderr: WireStream,
+pub(crate) struct WireStreams {
+    pub(crate) stdout: WireStream,
+    pub(crate) stderr: WireStream,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
-struct WireStream {
-    artifact: WireArtifact,
-    capture: WireCapture,
+pub(crate) struct WireStream {
+    pub(crate) artifact: WireArtifact,
+    pub(crate) capture: WireCapture,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "kebab-case")]
-enum WireCapture {
+pub(crate) enum WireCapture {
     Complete,
     Truncated,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
 #[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
-enum WireOutcome {
+pub(crate) enum WireOutcome {
     Exited { code: i32 },
     Signaled { signal: u32 },
     TimedOut,
@@ -319,16 +320,16 @@ enum WireOutcome {
     Incomplete,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
-struct WireEligibility {
-    status: WireEligibilityStatus,
-    reasons: Vec<WireReason>,
+pub(crate) struct WireEligibility {
+    pub(crate) status: WireEligibilityStatus,
+    pub(crate) reasons: Vec<WireReason>,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "kebab-case")]
-enum WireEligibilityStatus {
+pub(crate) enum WireEligibilityStatus {
     Reusable,
     NonReusable,
 }
@@ -359,11 +360,11 @@ pub enum WireReason {
     ReceiptMalformed,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
-struct WireTcbEntry {
-    role: String,
-    identity: String,
+pub(crate) struct WireTcbEntry {
+    pub(crate) role: String,
+    pub(crate) identity: String,
 }
 
 #[cfg(test)]

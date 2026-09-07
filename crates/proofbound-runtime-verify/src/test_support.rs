@@ -65,8 +65,21 @@ pub(crate) fn receipt() -> serde_json::Value {
         "outputs": [artifact("output-artifact", "e")],
         "eligibility": {"status": "reusable", "reasons": []},
         "producer": artifact("runtime-binary", "4"),
-        "assumptions": ["PBR-HOST-AX-002"],
-        "trusted_computing_base": [{"role": "linux-kernel", "identity": "linux:6.12.0"}]
+        "assumptions": ["PBR-HOST-AX-002", "PBR-LINUX-AX-001", "PBR-TOOLCHAIN-AX-003"],
+        "trusted_computing_base": [
+            {"role": "host-hardware-firmware", "identity": "fixture:host"},
+            {"role": "linux-kernel", "identity": "linux:6.12.0"},
+            {"role": "landlock", "identity": "abi:6"},
+            {"role": "seccomp", "identity": "feature:tsync"},
+            {"role": "cgroup-v2", "identity": "controller:pids"},
+            {"role": "no-new-privileges", "identity": "linux:prctl"},
+            {"role": "filesystem", "identity": "fixture:filesystem"},
+            {"role": "runtime-binary", "identity": "sha256:runtime"},
+            {"role": "launcher-binary", "identity": "sha256:launcher"},
+            {"role": "rust-toolchain", "identity": "rustc:fixture"},
+            {"role": "cryptographic-digest", "identity": "sha256:fixture"},
+            {"role": "runtime-executable", "identity": "sha256:executable"}
+        ]
     })
 }
 
