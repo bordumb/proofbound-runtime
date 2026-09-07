@@ -48,7 +48,7 @@ committed with the source that generated it.
 - [x] Implement strict plan decoding and validated domain conversion.
 - [x] Implement typed artifact identities and stable role validation.
 - [x] Implement the platform-neutral compiled-policy model.
-- [ ] Implement deterministic Linux policy compilation semantics.
+- [x] Implement deterministic Linux policy compilation semantics.
 - [ ] Advance `PBR-POLICY-002` through its declared evidence path.
 - [ ] Implement closed execution outcomes and stable machine errors.
 - [ ] Implement canonical execution-receipt construction.
