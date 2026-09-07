@@ -26,6 +26,10 @@ pub use policy::{
     CgroupPolicy, CompiledPolicy, FilesystemPolicy, NoNewPrivileges, SeccompPolicy, compile_policy,
 };
 pub use receipt::{
-    BoundaryInstallation, NonReusableReason, NonReusableReasons, ReceiptEligibility, ReceiptFacts,
-    ReceiptStructure, StreamCapture, derive_receipt_eligibility,
+    Architecture, BoundaryInstallation, BoundaryRecord, CgroupIdentity, EXECUTION_RECEIPT_SCHEMA,
+    ExecutionId, ExecutionObservations, ExecutionReceipt, ExecutionReceiptParts, NonReusableReason,
+    NonReusableReasons, POLICY_MODEL_VERSION, PlatformIdentity, ReceiptArtifactField,
+    ReceiptCommand, ReceiptEligibility, ReceiptError, ReceiptFacts, ReceiptIdentityField,
+    ReceiptPlan, ReceiptPolicy, ReceiptStreams, ReceiptStructure, RuntimeIdentity, StreamCapture,
+    TrustedComputingBaseEntry, derive_receipt_eligibility,
 };
