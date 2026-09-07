@@ -159,7 +159,8 @@ pub(crate) fn execute(
         identify_external_artifact(&launcher_path, ArtifactRole::LauncherBinary)
             .map_err(map_resolution)?;
 
-    let environment = collect_environment(compiled.environment())?;
+    let receipt_environment = compiled.environment().to_vec();
+    let environment = collect_environment(&receipt_environment)?;
     let arguments = execution_arguments(&plan);
     let argument_identity = arguments_identity(&arguments);
     let seccomp = compile_deny_network_program(compiled.network(), supported.architecture())
@@ -287,6 +288,7 @@ pub(crate) fn execute(
         cgroup_identity,
         execution_id,
         argument_identity,
+        environment: receipt_environment,
         execution: &execution,
         outputs: outputs.receipt_identities(),
     })?;
@@ -446,6 +448,7 @@ struct ReceiptInputs<'a> {
     cgroup_identity: proofbound_runtime_core::CgroupIdentity,
     execution_id: proofbound_runtime_core::ExecutionId,
     argument_identity: Sha256Digest,
+    environment: Vec<EnvironmentName>,
     execution: &'a proofbound_runtime_linux::SupervisedExecution,
     outputs: Vec<ArtifactIdentity>,
 }
@@ -499,7 +502,7 @@ fn build_receipt(input: ReceiptInputs<'_>) -> Result<ExecutionReceipt, RunError>
         )
         .map_err(|error| RunError::receipt(error.code()))?,
         inputs: canonical_input_identities(input.readable),
-        environment: input.plan.authority().environment().to_vec(),
+        environment: input.environment,
         output_root: input.output_root,
         boundary: BoundaryRecord::new(
             input.execution.boundary(),
