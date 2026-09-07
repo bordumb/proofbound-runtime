@@ -46,7 +46,7 @@ committed with the source that generated it.
 ### Wave 1: pure product core
 
 - [x] Implement strict plan decoding and validated domain conversion.
-- [ ] Implement typed artifact identities and stable role validation.
+- [x] Implement typed artifact identities and stable role validation.
 - [ ] Implement the platform-neutral compiled-policy model.
 - [ ] Implement deterministic Linux policy compilation semantics.
 - [ ] Advance `PBR-POLICY-002` through its declared evidence path.

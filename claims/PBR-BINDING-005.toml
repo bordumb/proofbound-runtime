@@ -21,6 +21,7 @@ out_of_scope = [
   "Secret values, which must not appear in a receipt.",
 ]
 source_roots = [
+  "crates/proofbound-runtime-core/src/identity.rs",
   "docs/specs/0001_initial_spec.md",
   "docs/threat-model.md",
   "docs/receipt-semantics.md",
