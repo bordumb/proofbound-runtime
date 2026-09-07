@@ -9,6 +9,8 @@ The document type determines its authority.
 - [Implementation plan](implementation-plan.md) records the ordered work queue,
   commit boundaries, and release completion criteria. It does not replace the
   normative specification or claim ledger.
+- [Assurance plan](assurance-plan.md) records target tiers, source closures, and
+  evidence paths. Claim manifests remain authoritative for current status.
 
 ## Normative specification
 
