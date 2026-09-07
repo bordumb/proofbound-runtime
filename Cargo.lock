@@ -115,6 +115,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "proofbound-runtime-compose"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sha2",
+ "toml",
+]
+
+[[package]]
 name = "proofbound-runtime-core"
 version = "0.1.0"
 dependencies = [
