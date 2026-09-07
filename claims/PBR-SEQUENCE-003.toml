@@ -27,6 +27,7 @@ source_roots = [
   "crates/proofbound-runtime-linux/Cargo.toml",
   "crates/proofbound-runtime-linux/src/bin/pbr-native-launcher.rs",
   "crates/proofbound-runtime-linux/src/cgroup.rs",
+  "crates/proofbound-runtime-linux/src/inventory.rs",
   "crates/proofbound-runtime-linux/src/landlock.rs",
   "crates/proofbound-runtime-linux/src/launcher.rs",
   "crates/proofbound-runtime-linux/src/lib.rs",

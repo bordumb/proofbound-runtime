@@ -62,6 +62,13 @@ mode. Equality establishes that the recorded bytes and metadata have the same
 identity. It does not establish behavioral correctness. Paths are diagnostic
 context and are deliberately absent from artifact identity.
 
+A registered readable directory or working directory uses the domain-separated
+encoding `proofbound-runtime-directory-inventory/1\n`. The encoding retains the
+directory role and mode plus each recursively observed regular file's relative
+path, digest, size, and mode in bytewise path order. Symlinks and other file
+kinds are rejected. The runtime re-creates this identity before launcher
+handoff so directory mutation cannot silently change a reusable input identity.
+
 The fresh output-root identity is the SHA-256 digest of the domain-separation
 bytes `proofbound-runtime-empty-output-root/1\n`, byte size zero, and the mode
 observed on the newly created empty directory. Version 1 requires mode `0700`.

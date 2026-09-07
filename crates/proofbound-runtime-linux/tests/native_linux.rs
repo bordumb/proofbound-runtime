@@ -232,6 +232,38 @@ mod linux {
             .expect("retained executable closure is unchanged");
     }
 
+    #[test]
+    fn read_directory_inventory_detects_drift_and_symlinks() {
+        use std::os::unix::fs::symlink;
+
+        let workspace = create_fixture_directory();
+        std::fs::create_dir(workspace.0.join("inputs")).expect("create input directory");
+        std::fs::write(workspace.0.join("inputs/data.txt"), b"first\n")
+            .expect("write input fixture");
+        let resolver = RootedPathResolver::open(&workspace.0).expect("open fixture root");
+        let inputs = AuthorityPath::new("inputs").expect("input path is valid");
+        let resolved = resolver
+            .resolve_read_path(&inputs, ArtifactRole::ProjectInput)
+            .expect("read directory resolves");
+        assert_eq!(resolved.identity().role(), ArtifactRole::ProjectInput);
+        resolved
+            .revalidate_identity()
+            .expect("unchanged input inventory revalidates");
+
+        std::fs::write(workspace.0.join("inputs/data.txt"), b"second\n")
+            .expect("mutate input fixture");
+        assert_eq!(
+            resolved.revalidate_identity(),
+            Err(proofbound_runtime_linux::ResolutionError::IdentityDrift)
+        );
+        symlink("data.txt", workspace.0.join("inputs/link")).expect("create input symlink");
+        let link = AuthorityPath::new("inputs/link").expect("link path is valid");
+        assert_eq!(
+            resolver.resolve_read_path(&link, ArtifactRole::ProjectInput),
+            Err(proofbound_runtime_linux::ResolutionError::SymlinkInvalid)
+        );
+    }
+
     fn assert_outcome(
         execution: &proofbound_runtime_linux::SupervisedExecution,
         expected: ExecutionOutcome,

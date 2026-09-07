@@ -536,7 +536,9 @@ fn require_canonical_absolute_path(path: &Path) -> Result<(), ResolutionError> {
 fn require_external_role(role: ArtifactRole) -> Result<(), ResolutionError> {
     if matches!(
         role,
-        ArtifactRole::RuntimeExecutable | ArtifactRole::RuntimeLoaderExecutable
+        ArtifactRole::RuntimeExecutable
+            | ArtifactRole::RuntimeLoaderExecutable
+            | ArtifactRole::RuntimeLibrary
     ) {
         Ok(())
     } else {
@@ -713,7 +715,7 @@ fn read_elf_interpreter(
 }
 
 #[cfg(target_os = "linux")]
-fn map_open_error(error: std::io::Error) -> ResolutionError {
+pub(crate) fn map_open_error(error: std::io::Error) -> ResolutionError {
     match error.raw_os_error() {
         Some(libc::ENOSYS) => ResolutionError::Openat2Unavailable,
         Some(libc::EXDEV) => ResolutionError::PathEscapesRoot,
@@ -847,6 +849,8 @@ mod tests {
             "loader-identity-omission",
             "loader-identity-substitution",
             "post-resolution-mutation",
+            "read-directory-symlink",
+            "read-directory-inventory-drift",
         ];
         assert!(
             ATTACK_CATALOG.starts_with("schema = \"proofbound-runtime-path-resolution-attacks/1\"")

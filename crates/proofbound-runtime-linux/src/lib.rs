@@ -3,6 +3,7 @@
 //! Owns the native Linux enforcement boundary.
 
 pub mod cgroup;
+pub mod inventory;
 pub mod landlock;
 pub mod launcher;
 pub mod output;
@@ -17,6 +18,7 @@ pub mod supervisor;
 mod sys;
 
 pub use cgroup::{CgroupError, FreshCgroup};
+pub use inventory::{ResolvedDirectory, ResolvedReadPath};
 pub use landlock::{
     LandlockAccess, LandlockBoundary, LandlockError, LandlockRule, install_landlock,
 };

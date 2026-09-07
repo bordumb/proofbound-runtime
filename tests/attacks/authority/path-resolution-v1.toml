@@ -55,3 +55,15 @@ id = "post-resolution-mutation"
 operation = "revalidate-identity"
 path = "bin/tool"
 expected_error = "resolve.identity.drift"
+
+[[attack]]
+id = "read-directory-symlink"
+operation = "resolve-read-directory"
+path = "inputs/link"
+expected_error = "resolve.path.symlink-invalid"
+
+[[attack]]
+id = "read-directory-inventory-drift"
+operation = "revalidate-read-directory"
+path = "inputs"
+expected_error = "resolve.identity.drift"
