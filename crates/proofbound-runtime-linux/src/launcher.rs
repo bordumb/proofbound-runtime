@@ -419,6 +419,8 @@ pub enum LauncherError {
     WorkingDirectoryFailed,
     /// Descriptor-relative exec was denied by the installed boundary or host.
     ExecPermissionDenied,
+    /// Descriptor-relative exec was rejected as an impermissible operation.
+    ExecOperationNotPermitted,
     /// Descriptor-relative exec could not resolve a required image component.
     ExecNotFound,
     /// Descriptor-relative exec rejected the executable image format.
@@ -463,6 +465,7 @@ impl LauncherError {
             Self::SeccompInstallationFailed => "launcher.seccomp.installation-failed",
             Self::WorkingDirectoryFailed => "launcher.working-directory.failed",
             Self::ExecPermissionDenied => "launcher.exec.permission-denied",
+            Self::ExecOperationNotPermitted => "launcher.exec.operation-not-permitted",
             Self::ExecNotFound => "launcher.exec.not-found",
             Self::ExecFormatInvalid => "launcher.exec.format-invalid",
             Self::ExecFailed => "launcher.exec.failed",
@@ -774,7 +777,8 @@ pub fn run_launcher(
         )
         .map_err(|error| {
             let error = match error.raw_os_error() {
-                Some(libc::EACCES | libc::EPERM) => LauncherError::ExecPermissionDenied,
+                Some(libc::EACCES) => LauncherError::ExecPermissionDenied,
+                Some(libc::EPERM) => LauncherError::ExecOperationNotPermitted,
                 Some(libc::ENOENT) => LauncherError::ExecNotFound,
                 Some(libc::ENOEXEC) => LauncherError::ExecFormatInvalid,
                 _ => LauncherError::ExecFailed,
@@ -1944,6 +1948,7 @@ mod tests {
             LauncherError::SeccompInstallationFailed,
             LauncherError::WorkingDirectoryFailed,
             LauncherError::ExecPermissionDenied,
+            LauncherError::ExecOperationNotPermitted,
             LauncherError::ExecNotFound,
             LauncherError::ExecFormatInvalid,
             LauncherError::ExecFailed,
