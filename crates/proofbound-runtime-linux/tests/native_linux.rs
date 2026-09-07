@@ -264,6 +264,24 @@ mod linux {
         );
     }
 
+    #[test]
+    fn runtime_artifacts_and_execution_ids_are_exact() {
+        let current = std::fs::canonicalize(std::env::current_exe().expect("current executable"))
+            .expect("canonical current executable");
+        let artifact = proofbound_runtime_linux::identify_external_artifact(
+            &current,
+            ArtifactRole::RuntimeBinary,
+        )
+        .expect("runtime artifact resolves");
+        assert_eq!(
+            artifact.read_bytes().expect("retained bytes read"),
+            std::fs::read(&current).expect("current executable reads")
+        );
+        let first = proofbound_runtime_linux::fresh_execution_id().expect("first execution ID");
+        let second = proofbound_runtime_linux::fresh_execution_id().expect("second execution ID");
+        assert_ne!(first, second);
+    }
+
     fn assert_outcome(
         execution: &proofbound_runtime_linux::SupervisedExecution,
         expected: ExecutionOutcome,

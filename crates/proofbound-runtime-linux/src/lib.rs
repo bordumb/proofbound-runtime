@@ -3,6 +3,7 @@
 //! Owns the native Linux enforcement boundary.
 
 pub mod cgroup;
+pub mod execution;
 pub mod inventory;
 pub mod landlock;
 pub mod launcher;
@@ -18,6 +19,7 @@ pub mod supervisor;
 mod sys;
 
 pub use cgroup::{CgroupError, FreshCgroup};
+pub use execution::{ExecutionSetupError, fresh_execution_id};
 pub use inventory::{ResolvedDirectory, ResolvedReadPath};
 pub use landlock::{
     LandlockAccess, LandlockBoundary, LandlockError, LandlockRule, install_landlock,
@@ -36,8 +38,8 @@ pub use probe::{
     SupportedLinux, probe_capabilities,
 };
 pub use resolve::{
-    ExecutableClosure, ResolutionError, ResolvedFile, RootedPathResolver, parse_elf_interpreter,
-    revalidate_inherited_executable,
+    ExecutableClosure, ResolutionError, ResolvedFile, RootedPathResolver,
+    identify_external_artifact, parse_elf_interpreter, revalidate_inherited_executable,
 };
 pub use seccomp::{
     SeccompBoundary, SeccompError, compile_deny_network_program, install_deny_network,

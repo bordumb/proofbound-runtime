@@ -61,12 +61,63 @@ impl ResolvedFile {
         }
     }
 
+    /// Reads the exact retained file bytes and verifies their registered identity.
+    pub fn read_bytes(&self) -> Result<Vec<u8>, ResolutionError> {
+        #[cfg(target_os = "linux")]
+        {
+            use std::fs::File;
+            use std::os::unix::fs::FileExt as _;
+
+            let file = File::from(
+                self.descriptor
+                    .try_clone()
+                    .map_err(|_| ResolutionError::IdentityUnavailable)?,
+            );
+            let length = usize::try_from(self.identity.size())
+                .map_err(|_| ResolutionError::IdentityUnavailable)?;
+            let mut bytes = vec![0_u8; length];
+            file.read_exact_at(&mut bytes, 0)
+                .map_err(|_| ResolutionError::IdentityUnavailable)?;
+            self.revalidate_identity()?;
+            Ok(bytes)
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            Err(ResolutionError::UnsupportedOperatingSystem)
+        }
+    }
+
     /// Borrows the retained descriptor for descriptor-relative launch.
     #[cfg(target_os = "linux")]
     #[must_use]
     pub fn as_fd(&self) -> std::os::fd::BorrowedFd<'_> {
         use std::os::fd::AsFd as _;
         self.descriptor.as_fd()
+    }
+}
+
+/// Opens and identifies one external runtime-owned regular file.
+pub fn identify_external_artifact(
+    path: &Path,
+    role: ArtifactRole,
+) -> Result<ResolvedFile, ResolutionError> {
+    if !matches!(
+        role,
+        ArtifactRole::ExecutionPlan | ArtifactRole::RuntimeBinary | ArtifactRole::LauncherBinary
+    ) {
+        return Err(ResolutionError::ArtifactRoleMismatch);
+    }
+    require_canonical_absolute_path(path)?;
+    #[cfg(target_os = "linux")]
+    {
+        let descriptor =
+            crate::sys::openat2_file(libc::AT_FDCWD, path, crate::sys::RESOLVE_NO_MAGICLINKS)
+                .map_err(map_open_error)?;
+        finish_resolution(path, role, descriptor)
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        Err(ResolutionError::UnsupportedOperatingSystem)
     }
 }
 
