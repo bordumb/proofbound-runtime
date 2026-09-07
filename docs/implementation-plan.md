@@ -105,7 +105,7 @@ committed with the source that generated it.
 ### Wave 5: release linkage
 
 - [x] Add the identified native-Linux enforcement workflow.
-- [ ] Add reproducible `x86_64` and `aarch64` release builds.
+- [x] Add reproducible `x86_64` and `aarch64` release builds.
 - [ ] Bind all admitted claims to exact release artifacts.
 - [ ] Verify the release receipt independently.
 - [ ] Run the complete release gate and publish the honest assurance language.
