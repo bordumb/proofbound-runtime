@@ -39,7 +39,7 @@ committed with the source that generated it.
 - [x] Record explicit target evidence and source closures for the four open
   claims.
 - [x] Freeze the version 1 execution-plan schema and negative vectors.
-- [ ] Freeze the version 1 launcher-message schema and protocol attacks.
+- [x] Freeze the version 1 launcher-message schema and protocol attacks.
 - [ ] Freeze the version 1 execution-receipt schema, canonical encoding, and
   mutation inventory.
 

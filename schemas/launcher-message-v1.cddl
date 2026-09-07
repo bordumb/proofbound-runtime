@@ -1,0 +1,81 @@
+; Proofbound Runtime launcher protocol version 1.
+;
+; Each frame contains one deterministic CBOR item as defined by RFC 8949
+; section 4.2. A receiver rejects indefinite-length items, duplicate map keys,
+; non-shortest integers, invalid UTF-8, trailing bytes, and frames above the
+; registered implementation limit.
+
+launcher-message = install-request / boundary-installed / launcher-failure
+
+install-request = {
+  "schema": "proofbound-runtime-launcher-install/1",
+  "execution_id": execution-id,
+  "policy_id": sha256-identity,
+  "cgroup_id": cgroup-identity,
+  "executable_id": artifact-identity,
+  "executable_fd": uint,
+  "working_directory_fd": uint,
+  "arguments": [* tstr],
+  "environment": {* environment-name => tstr},
+  "filesystem": [* filesystem-rule],
+  "seccomp_program": bstr,
+  "close_file_descriptors_from": uint
+}
+
+boundary-installed = {
+  "schema": "proofbound-runtime-launcher-boundary-installed/1",
+  "execution_id": execution-id,
+  "policy_id": sha256-identity,
+  "cgroup_id": cgroup-identity,
+  "state": "installed"
+}
+
+launcher-failure = {
+  "schema": "proofbound-runtime-launcher-failure/1",
+  "execution_id": execution-id,
+  "policy_id": sha256-identity,
+  "cgroup_id": cgroup-identity,
+  "stage": launcher-stage,
+  "error_code": error-code
+}
+
+execution-id = bytes .size 16
+
+sha256-identity = {
+  "algorithm": "sha256",
+  "digest": bytes .size 32
+}
+
+cgroup-identity = {
+  "mount_id": uint,
+  "inode": uint
+}
+
+artifact-identity = {
+  "role": "runtime-executable",
+  "digest": sha256-identity,
+  "size": uint,
+  "mode": uint
+}
+
+environment-name = tstr .size (1..255)
+
+filesystem-rule = {
+  "fd": uint,
+  "access": [+ filesystem-access]
+}
+
+filesystem-access = "read" / "write" / "execute"
+
+launcher-stage =
+  "decode" /
+  "identity" /
+  "file-descriptors" /
+  "privileges" /
+  "no-new-privileges" /
+  "landlock" /
+  "seccomp" /
+  "acknowledgement" /
+  "exec"
+
+error-code = tstr .size (1..128)

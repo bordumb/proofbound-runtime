@@ -1,0 +1,61 @@
+schema = "proofbound-runtime-launcher-attacks/1"
+
+[[cases]]
+id = "empty-channel"
+mutation = "eof-before-message"
+expected_error = "launcher.protocol.eof"
+
+[[cases]]
+id = "truncated-install-request"
+mutation = "truncate-install-request"
+expected_error = "launcher.protocol.truncated"
+
+[[cases]]
+id = "malformed-cbor"
+mutation = "replace-with-malformed-cbor"
+expected_error = "launcher.protocol.malformed"
+
+[[cases]]
+id = "non-canonical-cbor"
+mutation = "encode-non-canonically"
+expected_error = "launcher.protocol.non-canonical"
+
+[[cases]]
+id = "duplicate-map-key"
+mutation = "duplicate-policy-id-key"
+expected_error = "launcher.protocol.duplicate-key"
+
+[[cases]]
+id = "trailing-data"
+mutation = "append-trailing-data"
+expected_error = "launcher.protocol.trailing-data"
+
+[[cases]]
+id = "unknown-version"
+mutation = "substitute-schema-version"
+expected_error = "launcher.protocol.unsupported-version"
+
+[[cases]]
+id = "policy-substitution"
+mutation = "substitute-policy-id"
+expected_error = "launcher.identity.policy-mismatch"
+
+[[cases]]
+id = "cgroup-substitution"
+mutation = "substitute-cgroup-id"
+expected_error = "launcher.identity.cgroup-mismatch"
+
+[[cases]]
+id = "execution-substitution"
+mutation = "substitute-execution-id"
+expected_error = "launcher.identity.execution-mismatch"
+
+[[cases]]
+id = "acknowledgement-forgery"
+mutation = "send-acknowledgement-before-install"
+expected_error = "launcher.sequence.boundary-not-installed"
+
+[[cases]]
+id = "acknowledgement-omission"
+mutation = "exec-without-acknowledgement"
+expected_error = "launcher.sequence.acknowledgement-missing"
