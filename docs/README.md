@@ -24,6 +24,8 @@ revision requires explicit review because it can change claim meaning.
 
 - [Threat model](threat-model.md) defines protected assets, attackers, trusted
   components, enforced boundaries, and exclusions.
+- [Receipt semantics](receipt-semantics.md) defines canonical receipt bytes,
+  independent derivation, identity meaning, and limits.
 
 The threat model constrains every security claim. An implementation detail MUST
 NOT silently broaden or narrow it.

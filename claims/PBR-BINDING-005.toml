@@ -12,8 +12,8 @@ assumptions = [
   "PBR-TOOLCHAIN-AX-003",
 ]
 open_obligations = [
-  "Freeze the version 1 execution receipt schema and canonical encoding.",
-  "Register omission, substitution, replay, truncation, and assumption-loss attacks for every security-relevant role.",
+  "Implement the pure version 1 receipt constructor and role-completeness validation.",
+  "Execute the registered omission, substitution, replay, truncation, and assumption-loss attacks against the production constructor.",
   "Link admitted receipt properties to exact release artifacts.",
 ]
 out_of_scope = [
@@ -23,4 +23,7 @@ out_of_scope = [
 source_roots = [
   "docs/specs/0001_initial_spec.md",
   "docs/threat-model.md",
+  "docs/receipt-semantics.md",
+  "schemas/execution-receipt-v1.schema.json",
+  "tests/attacks/receipt/",
 ]

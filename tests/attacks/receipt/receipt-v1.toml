@@ -1,0 +1,111 @@
+schema = "proofbound-runtime-receipt-attacks/1"
+
+[[cases]]
+id = "omit-plan"
+mutation = "omit-plan"
+expected_error = "receipt.role.plan.missing"
+
+[[cases]]
+id = "substitute-normalized-plan"
+mutation = "substitute-normalized-plan-identity"
+expected_error = "receipt.identity.normalized-plan-mismatch"
+
+[[cases]]
+id = "omit-policy"
+mutation = "omit-policy"
+expected_error = "receipt.role.policy.missing"
+
+[[cases]]
+id = "substitute-policy"
+mutation = "substitute-policy-identity"
+expected_error = "receipt.identity.policy-mismatch"
+
+[[cases]]
+id = "substitute-platform"
+mutation = "substitute-platform-capability"
+expected_error = "receipt.identity.platform-mismatch"
+
+[[cases]]
+id = "substitute-runtime"
+mutation = "substitute-runtime-identity"
+expected_error = "receipt.identity.runtime-mismatch"
+
+[[cases]]
+id = "substitute-launcher"
+mutation = "substitute-launcher-identity"
+expected_error = "receipt.identity.launcher-mismatch"
+
+[[cases]]
+id = "substitute-executable"
+mutation = "substitute-executable-identity"
+expected_error = "receipt.identity.executable-mismatch"
+
+[[cases]]
+id = "omit-loader"
+mutation = "omit-required-loader"
+expected_error = "receipt.role.loader.missing"
+
+[[cases]]
+id = "substitute-working-directory"
+mutation = "substitute-working-directory-identity"
+expected_error = "receipt.identity.working-directory-mismatch"
+
+[[cases]]
+id = "substitute-input"
+mutation = "substitute-input-identity"
+expected_error = "receipt.identity.input-mismatch"
+
+[[cases]]
+id = "substitute-output-root"
+mutation = "substitute-output-root-identity"
+expected_error = "receipt.identity.output-root-mismatch"
+
+[[cases]]
+id = "replace-output"
+mutation = "substitute-output-artifact-identity"
+expected_error = "receipt.identity.output-mismatch"
+
+[[cases]]
+id = "truncate-stdout"
+mutation = "mark-truncated-stdout-complete"
+expected_error = "receipt.capture.stdout-mismatch"
+
+[[cases]]
+id = "truncate-stderr"
+mutation = "mark-truncated-stderr-complete"
+expected_error = "receipt.capture.stderr-mismatch"
+
+[[cases]]
+id = "forge-reusable"
+mutation = "replace-non-reusable-eligibility"
+expected_error = "receipt.eligibility.mismatch"
+
+[[cases]]
+id = "duplicate-field"
+mutation = "duplicate-policy-field"
+expected_error = "receipt.canonical.duplicate-key"
+
+[[cases]]
+id = "non-canonical-bytes"
+mutation = "reorder-object-members"
+expected_error = "receipt.canonical.bytes-mismatch"
+
+[[cases]]
+id = "unknown-version"
+mutation = "substitute-schema-version"
+expected_error = "receipt.schema.unsupported-version"
+
+[[cases]]
+id = "replay"
+mutation = "substitute-execution-id"
+expected_error = "receipt.identity.execution-mismatch"
+
+[[cases]]
+id = "remove-assumption"
+mutation = "remove-inherited-assumption"
+expected_error = "receipt.assumption.missing"
+
+[[cases]]
+id = "remove-tcb-role"
+mutation = "remove-trusted-computing-base-role"
+expected_error = "receipt.tcb.role.missing"

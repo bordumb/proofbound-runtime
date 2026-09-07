@@ -40,7 +40,7 @@ committed with the source that generated it.
   claims.
 - [x] Freeze the version 1 execution-plan schema and negative vectors.
 - [x] Freeze the version 1 launcher-message schema and protocol attacks.
-- [ ] Freeze the version 1 execution-receipt schema, canonical encoding, and
+- [x] Freeze the version 1 execution-receipt schema, canonical encoding, and
   mutation inventory.
 
 ### Wave 1: pure product core

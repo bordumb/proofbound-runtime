@@ -1,0 +1,242 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bordumb/proofbound-runtime/schemas/execution-receipt-v1.schema.json",
+  "title": "Proofbound Runtime execution receipt version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "product_version", "execution_id", "plan", "policy",
+    "platform", "runtime", "command", "inputs", "environment",
+    "output_root", "boundary", "observations", "streams", "outcome",
+    "outputs", "eligibility", "producer", "assumptions",
+    "trusted_computing_base"
+  ],
+  "properties": {
+    "schema": { "const": "proofbound-runtime-receipt/1" },
+    "product_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "execution_id": { "$ref": "#/$defs/executionId" },
+    "plan": { "$ref": "#/$defs/plan" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "platform": { "$ref": "#/$defs/platform" },
+    "runtime": { "$ref": "#/$defs/runtime" },
+    "command": { "$ref": "#/$defs/command" },
+    "inputs": { "$ref": "#/$defs/artifactList" },
+    "environment": { "$ref": "#/$defs/stringSet" },
+    "output_root": { "$ref": "#/$defs/artifact" },
+    "boundary": { "$ref": "#/$defs/boundary" },
+    "observations": { "$ref": "#/$defs/observations" },
+    "streams": { "$ref": "#/$defs/streams" },
+    "outcome": { "$ref": "#/$defs/outcome" },
+    "outputs": { "$ref": "#/$defs/artifactList" },
+    "eligibility": { "$ref": "#/$defs/eligibility" },
+    "producer": { "$ref": "#/$defs/artifact" },
+    "assumptions": { "$ref": "#/$defs/stringSet" },
+    "trusted_computing_base": { "$ref": "#/$defs/tcbList" }
+  },
+  "$defs": {
+    "executionId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "unsignedDecimal": { "type": "string", "pattern": "^(0|[1-9][0-9]*)$" },
+    "stringSet": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "artifactRole": {
+      "enum": [
+        "execution-plan", "normalized-plan", "compiled-policy",
+        "runtime-binary", "launcher-binary", "verifier-binary",
+        "runtime-executable", "runtime-loader-executable", "runtime-library",
+        "working-directory", "project-input", "output-root",
+        "standard-output", "standard-error", "output-artifact"
+      ]
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "sha256", "size", "mode"],
+      "properties": {
+        "role": { "$ref": "#/$defs/artifactRole" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "size": { "$ref": "#/$defs/unsignedDecimal" },
+        "mode": { "type": "integer", "minimum": 0, "maximum": 4095 }
+      }
+    },
+    "artifactList": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/artifact" }
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "source", "normalized"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "source": { "$ref": "#/$defs/artifact" },
+        "normalized": { "$ref": "#/$defs/artifact" }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity", "model_version"],
+      "properties": {
+        "identity": { "$ref": "#/$defs/artifact" },
+        "model_version": { "const": "proofbound-runtime-linux-policy/1" }
+      }
+    },
+    "platform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operating_system", "architecture", "kernel_release", "landlock_abi", "seccomp_features", "cgroup_controllers"],
+      "properties": {
+        "operating_system": { "const": "linux" },
+        "architecture": { "enum": ["x86_64", "aarch64"] },
+        "kernel_release": { "type": "string", "minLength": 1 },
+        "landlock_abi": { "type": "integer", "minimum": 1, "maximum": 4294967295 },
+        "seccomp_features": { "$ref": "#/$defs/stringSet" },
+        "cgroup_controllers": { "$ref": "#/$defs/stringSet" }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runtime", "launcher"],
+      "properties": {
+        "runtime": { "$ref": "#/$defs/artifact" },
+        "launcher": { "$ref": "#/$defs/artifact" }
+      }
+    },
+    "command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["executable", "loader", "working_directory", "arguments_sha256"],
+      "properties": {
+        "executable": { "$ref": "#/$defs/artifact" },
+        "loader": { "oneOf": [{ "$ref": "#/$defs/artifact" }, { "type": "null" }] },
+        "working_directory": { "$ref": "#/$defs/artifact" },
+        "arguments_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "cgroupIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mount_id", "inode"],
+      "properties": {
+        "mount_id": { "$ref": "#/$defs/unsignedDecimal" },
+        "inode": { "$ref": "#/$defs/unsignedDecimal" }
+      }
+    },
+    "boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "execution_id", "policy_sha256", "cgroup"],
+      "properties": {
+        "state": { "enum": ["installed", "incomplete"] },
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "policy_sha256": { "$ref": "#/$defs/sha256" },
+        "cgroup": { "$ref": "#/$defs/cgroupIdentity" }
+      }
+    },
+    "observations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["clock", "started_ns", "finished_ns"],
+      "properties": {
+        "clock": { "const": "linux-monotonic" },
+        "started_ns": { "$ref": "#/$defs/unsignedDecimal" },
+        "finished_ns": { "$ref": "#/$defs/unsignedDecimal" }
+      }
+    },
+    "stream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact", "capture"],
+      "properties": {
+        "artifact": { "$ref": "#/$defs/artifact" },
+        "capture": { "enum": ["complete", "truncated"] }
+      }
+    },
+    "streams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stdout", "stderr"],
+      "properties": {
+        "stdout": { "$ref": "#/$defs/stream" },
+        "stderr": { "$ref": "#/$defs/stream" }
+      }
+    },
+    "outcome": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "code"],
+          "properties": {
+            "kind": { "const": "exited" },
+            "code": { "type": "integer", "minimum": -2147483648, "maximum": 2147483647 }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "signal"],
+          "properties": {
+            "kind": { "const": "signaled" },
+            "signal": { "type": "integer", "minimum": 1, "maximum": 4294967295 }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "enum": ["timed-out", "denied", "launcher-failed", "incomplete"] } }
+        }
+      ]
+    },
+    "reason": {
+      "enum": [
+        "boundary-incomplete", "exit-code-nonzero", "process-signaled",
+        "timed-out", "denied", "launcher-failed", "execution-incomplete",
+        "stdout-truncated", "stderr-truncated", "receipt-malformed"
+      ]
+    },
+    "eligibility": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["status", "reasons"],
+          "properties": {
+            "status": { "const": "reusable" },
+            "reasons": { "type": "array", "maxItems": 0 }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["status", "reasons"],
+          "properties": {
+            "status": { "const": "non-reusable" },
+            "reasons": {
+              "type": "array", "minItems": 1, "uniqueItems": true,
+              "items": { "$ref": "#/$defs/reason" }
+            }
+          }
+        }
+      ]
+    },
+    "tcbEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "identity"],
+      "properties": {
+        "role": { "type": "string", "minLength": 1 },
+        "identity": { "type": "string", "minLength": 1 }
+      }
+    },
+    "tcbList": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/tcbEntry" }
+    }
+  }
+}

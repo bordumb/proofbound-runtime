@@ -9,7 +9,7 @@ evidence = ["example-test:receipt-eligibility-verifier-conformance"]
 assumptions = ["PBR-TOOLCHAIN-AX-003"]
 open_obligations = [
   "Implement the independent receipt decoder, canonical-byte checks, identity validation, and verifier CLI.",
-  "Freeze shared adversarial receipt vectors and register exact rejection reasons.",
+  "Execute the frozen adversarial receipt corpus and preserve every exact rejection reason.",
   "Bind the independent verifier to exact release artifacts.",
 ]
 out_of_scope = [
@@ -21,5 +21,7 @@ source_roots = [
   "crates/proofbound-runtime-verify/tests/receipt_vectors.rs",
   "proofbound/evidence/receipt-eligibility-verifier-conformance.toml",
   "schemas/receipt-eligibility-vector-v1.schema.json",
+  "schemas/execution-receipt-v1.schema.json",
   "tests/conformance/receipt/positive/eligibility-v1.json",
+  "tests/attacks/receipt/",
 ]
