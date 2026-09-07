@@ -10,8 +10,100 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  assurance:
+    name: Seal verified assurance receipt
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check out the exact requested head
+        uses: actions/checkout@v4
+
+      - name: Confirm the exact requested head
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@1.94.0
+        with:
+          components: clippy,rustfmt
+
+      - name: Install pinned Lean toolchain
+        uses: leanprover/lean-action@38fbc41a8c28c4cbaec22d7f7de508ec2e7c0dd9 # v1.5.0
+        with:
+          auto-config: false
+          build: false
+          test: false
+          lint: false
+          mk_all-check: false
+          check-reservoir-eligibility: false
+          leanchecker: false
+          nanoda: false
+
+      - name: Install pinned repository tools
+        run: |
+          cargo install --locked just --version 1.46.0
+          cargo install --locked cargo-deny --version 0.20.2
+
+      - name: Install pinned Proofbound tools
+        run: >-
+          cargo install
+          --locked
+          --git https://github.com/bordumb/proof-bound
+          --rev 504d17df0451975cf051bd0a8a2dc819da502efd
+          proofbound-cli
+          proofbound-verify
+          proofbound-adapter-test
+          proofbound-adapter-kani
+          proofbound-adapter-lean
+
+      - name: Verify Proofbound executables
+        run: |
+          command -v proofbound
+          command -v proofbound-verify
+          command -v proofbound-adapter-test
+          command -v proofbound-adapter-kani
+          command -v proofbound-adapter-lean
+
+      - name: Install pinned Kani verifier
+        run: |
+          cargo install --locked kani-verifier --version 0.67.0
+          cargo kani setup
+
+      - name: Fetch locked project dependencies
+        run: just bootstrap
+
+      - name: Reject bootstrap lockfile drift
+        run: git diff --exit-code -- Cargo.lock lake-manifest.json
+
+      - name: Run the complete repository gate
+        run: just ci
+
+      - name: Create and independently verify the Proofbound release receipt
+        run: bash tools/release/proofbound-release.sh dist/assurance/proofbound-release
+
+      - name: Confirm the sealed revision and verdict
+        run: |
+          python3 - "$GITHUB_SHA" \
+            dist/assurance/proofbound-release.verification.json <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          report = json.loads(pathlib.Path(sys.argv[2]).read_bytes())
+          assert report["project_revision"] == sys.argv[1]
+          assert report["publication_blocked"] is False
+          assert report["verdict"] == "receipt-consistent"
+          PY
+
+      - name: Upload the exact assurance receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: proofbound-runtime-assurance
+          path: dist/assurance/
+          if-no-files-found: error
+
   build:
     name: Reproduce release (${{ matrix.architecture }})
+    needs: assurance
     strategy:
       fail-fast: false
       matrix:
@@ -32,27 +124,65 @@ jobs:
       - name: Install pinned Rust toolchain
         uses: dtolnay/rust-toolchain@1.94.0
 
+      - name: Download the exact assurance receipt
+        uses: actions/download-artifact@v4
+        with:
+          name: proofbound-runtime-assurance
+          path: ${{ runner.temp }}/proofbound-assurance
+
       - name: Build and byte-compare two release bundles
-        run: bash tools/release/build-linux.sh dist
+        run: bash tools/release/build-linux.sh dist/runtime
 
       - name: Verify the published bundle checksum
-        working-directory: dist
-        run: sha256sum --check *.sha256
+        working-directory: dist/runtime
+        run: sha256sum --check ./*.sha256
 
-      - name: Execute and independently verify the exact release binaries
+      - name: Execute, verify, and compose the exact release binaries
         env:
           PROOFBOUND_EXPECTED_ARCH: ${{ matrix.architecture }}
         run: |
           runtime_directory="$(mktemp -d "$RUNNER_TEMP/proofbound-runtime.XXXXXX")"
           trap 'rm -rf -- "$runtime_directory"' EXIT
-          tar -xzf dist/*.tar.gz -C "$runtime_directory"
+          tar -xzf dist/runtime/*.tar.gz -C "$runtime_directory"
           PROOFBOUND_RUNTIME_BIN_DIR="$runtime_directory" \
           PROOFBOUND_EVIDENCE_DIRECTORY="$PWD/dist/native-evidence" \
             bash tools/ci/native-linux.sh
+          commitment="$(tr -d '\n' <dist/native-evidence/receipt-commitment.txt)"
+          execution_id="$(python3 -c '
+          import json
+          import sys
+          print(json.load(open(sys.argv[1], encoding="utf-8"))["execution_id"])
+          ' dist/native-evidence/execution-receipt.json)"
+          proofbound_release="$RUNNER_TEMP/proofbound-assurance/proofbound-release"
+          "$runtime_directory/pbr-compose" \
+            --release "$proofbound_release" \
+            --proofbound-verifier "$proofbound_release/bin/proofbound-verify" \
+            --runtime-bundle "$runtime_directory" \
+            --execution-receipt dist/native-evidence/execution-receipt.json \
+            --execution-commitment "$commitment" \
+            --expected-execution-id "$execution_id" \
+            --output dist/native-evidence/composed-receipt.json
+
+      - name: Confirm the composed receipt binds this revision and architecture
+        run: |
+          python3 - "$GITHUB_SHA" "${{ matrix.architecture }}" \
+            dist/native-evidence/composed-receipt.json <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          receipt = json.loads(pathlib.Path(sys.argv[3]).read_bytes())
+          assert receipt["schema"] == "proofbound-runtime-composed-receipt/1"
+          assert receipt["eligibility"] == {"status": "composed"}
+          assert receipt["release"]["project_revision"] == sys.argv[1]
+          assert receipt["runtime_bundle"]["architecture"] == sys.argv[2]
+          PY
 
       - name: Upload the reproduced release bundle
         uses: actions/upload-artifact@v4
         with:
           name: proofbound-runtime-${{ matrix.architecture }}
-          path: dist/*
+          path: |
+            dist/runtime/*
+            dist/native-evidence/*
           if-no-files-found: error
