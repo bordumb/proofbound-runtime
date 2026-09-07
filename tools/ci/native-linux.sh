@@ -2,10 +2,16 @@
 set -euo pipefail
 
 supervisor_leaf="proofbound-supervisor"
+expected_architecture="${PROOFBOUND_EXPECTED_ARCH:-$(uname -m)}"
 
 if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
   if [[ "$(id -u)" == "0" ]]; then
     echo "native corpus must execute as a non-root user" >&2
+    exit 1
+  fi
+  actual_architecture="$(uname -m)"
+  if [[ "$actual_architecture" != "$expected_architecture" ]]; then
+    echo "native corpus architecture mismatch: expected $expected_architecture, observed $actual_architecture" >&2
     exit 1
   fi
   current_cgroup="$(awk -F: '$1 == "0" { print $3 }' /proc/self/cgroup)"
@@ -138,5 +144,6 @@ exec sudo systemd-run \
   --working-directory="$repository_root" \
   --setenv=PROOFBOUND_NATIVE_INNER=1 \
   --setenv="PROOFBOUND_NATIVE_FIXTURE=$fixture" \
+  --setenv="PROOFBOUND_EXPECTED_ARCH=$expected_architecture" \
   --setenv="PATH=$PATH" \
   /usr/bin/env bash tools/ci/native-linux.sh
