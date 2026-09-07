@@ -5,7 +5,8 @@
 - **Kind:** `evidence-semantics`
 - **Created:** 2026-09-07
 - **Last updated:** 2026-09-07
-- **Runtime claim:** `PBR-RUN-007`, `PBR-SEQUENCE-003`, and `PBR-VERIFY-006`
+- **Runtime claim:** `PBR-RUN-007`, `PBR-SEQUENCE-003`, `PBR-VERIFY-006`, and
+  `PBR-COMPOSE-008`
 - **Runtime milestone:** Version 0.1 release linkage
 - **Proofbound target:** evidence semantics, status engine, release receipt, and independent verifier
 - **Upstream record:** not upstreamed
@@ -24,19 +25,24 @@ an admitted theorem whose exact outer proposition is
 ## Runtime observation
 
 The version 0.1 release workflow builds reproducible `x86_64` and `aarch64`
-bundles containing `pbr`, `pbr-native-launcher`, and `pbr-verify`. It extracts
-each completed bundle and runs `tools/ci/native-linux.sh` with
-`PROOFBOUND_RUNTIME_BIN_DIR` set to that exact extracted directory. The script
-retains the plan, canonical execution receipt, external receipt commitment,
-and independent verification result under its requested evidence directory.
+bundles containing `pbr`, `pbr-native-launcher`, `pbr-verify`, and
+`pbr-compose`. It extracts each completed bundle and runs
+`tools/ci/native-linux.sh` with `PROOFBOUND_RUNTIME_BIN_DIR` set to that exact
+extracted directory. The script retains the plan, canonical execution receipt,
+externally transported receipt commitment and execution identity, and
+independent verification result under its requested evidence directory. The
+workflow then uses that exact `pbr-compose` binary to join those records to the
+independently verified Proofbound release envelope.
 
-Those observations are relevant to three admitted claims:
+Those observations are relevant to four admitted claims:
 
 - `PBR-RUN-007` concerns the production `pbr run` orchestration path;
 - `PBR-SEQUENCE-003` concerns boundary installation before child start; and
-- `PBR-VERIFY-006` concerns the separately built `pbr-verify` executable.
+- `PBR-VERIFY-006` concerns the separately built `pbr-verify` executable; and
+- `PBR-COMPOSE-008` concerns complete, typed composition of the exact release
+  and execution records without upgrading any admitted facet.
 
-All three claims are intentionally supported by tests or bounded native
+All four claims are intentionally supported by tests or bounded native
 observations, not by universal theorems about the executable bytes. Their
 current evidence therefore derives `TESTED · MODEL_ONLY`.
 
