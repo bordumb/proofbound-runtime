@@ -258,10 +258,10 @@ mod linux {
         );
         symlink("data.txt", workspace.0.join("inputs/link")).expect("create input symlink");
         let link = AuthorityPath::new("inputs/link").expect("link path is valid");
-        assert_eq!(
+        assert!(matches!(
             resolver.resolve_read_path(&link, ArtifactRole::ProjectInput),
             Err(proofbound_runtime_linux::ResolutionError::SymlinkInvalid)
-        );
+        ));
     }
 
     #[test]
