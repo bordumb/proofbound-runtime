@@ -1,0 +1,46 @@
+schema = "proofbound-runtime-run-attacks/1"
+
+[[case]]
+id = "command-override"
+mutation = "append-an-unregistered-command-argument-to-the-cli"
+expected = "cli.usage.invalid"
+
+[[case]]
+id = "unsupported-boundary"
+mutation = "run-with-one-required-platform-capability-unavailable"
+expected = "no-child-and-no-receipt"
+
+[[case]]
+id = "plan-root-escape"
+mutation = "resolve-a-relative-input-above-the-plan-root"
+expected = "no-child-and-no-receipt"
+
+[[case]]
+id = "environment-amplification"
+mutation = "place-an-undeclared-name-in-the-launcher-environment"
+expected = "construction-rejected"
+
+[[case]]
+id = "executable-drift"
+mutation = "replace-the-executable-after-identification"
+expected = "no-child-and-no-receipt"
+
+[[case]]
+id = "launcher-substitution"
+mutation = "start-launcher-by-a-path-that-does-not-match-its-recorded-identity"
+expected = "no-child-and-no-receipt"
+
+[[case]]
+id = "output-root-substitution"
+mutation = "replace-the-fresh-output-root-before-launch-or-inventory"
+expected = "no-reusable-receipt"
+
+[[case]]
+id = "outcome-substitution"
+mutation = "construct-a-receipt-with-an-outcome-other-than-the-supervisor-result"
+expected = "construction-rejected"
+
+[[case]]
+id = "receipt-preexists"
+mutation = "select-an-existing-receipt-path"
+expected = "existing-file-preserved"

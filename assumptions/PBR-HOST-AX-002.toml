@@ -4,10 +4,11 @@ statement = "The host administrator, host root, hardware, firmware, and filesyst
 category = "runtime-environment"
 owner = "Proofbound Runtime deployment operator"
 rationale = "The initial local gateway has no hardware root of trust and cannot protect an execution from the system that controls its kernel, storage, memory, and process state."
-scope = "Only the host-integrity interpretation of launcher sequencing and execution receipt binding for PBR-SEQUENCE-003 and PBR-BINDING-005."
+scope = "Only the host-integrity interpretation of launcher sequencing, execution receipt binding, and runtime orchestration for PBR-SEQUENCE-003, PBR-BINDING-005, and PBR-RUN-007."
 affected_claims = [
   "PBR-SEQUENCE-003",
   "PBR-BINDING-005",
+  "PBR-RUN-007",
 ]
 review_evidence = ["docs/threat-model.md#out-of-scope"]
 discharge_plan = "Introduce a separately specified confidential-computing or measured-deployment profile with typed attestation evidence. Do not present remote attestation as behavioral correctness."

@@ -14,6 +14,7 @@ status. A target below is a work commitment, not present evidence.
 | `PBR-RECEIPT-004` | Tier 3, artifact-bound | The receipt-eligibility decision is source-refined. Only release binding remains. |
 | `PBR-BINDING-005` | Tier 3, artifact-bound | Receipt construction and role completeness can be isolated as a pure deterministic core. |
 | `PBR-VERIFY-006` | Registered attack-corpus evidence, artifact-bound | The statement is intentionally bounded to registered mutations and exact rejection reasons. |
+| `PBR-RUN-007` | Native end-to-end evidence, artifact-bound | Effectful orchestration must retain the exact plan, boundary result, observations, and receipt inputs without substitution. |
 
 Artifact binding does not upgrade the behavioral evidence by itself. It only
 connects admitted evidence to exact release bytes.
@@ -118,6 +119,25 @@ The claim stays bounded to registered attacks and retains
 `PBR-COMMITMENT-AX-007`. Acceptance of a finite corpus is not proof that an
 unrepresented receipt property is correct or that a carrier-independent
 commitment was supplied correctly.
+
+## PBR-RUN-007
+
+The production subject is the `pbr run` orchestrator. Its source closure joins
+the independently assessed pure core to the effectful Linux boundary without
+moving either component's decisions into the CLI.
+
+The evidence path is:
+
+1. closed CLI grammar tests that forbid command overrides;
+2. negative orchestration cases for capability, path, environment, identity,
+   output-root, outcome, and receipt-carrier substitution;
+3. one native end-to-end execution on each supported architecture;
+4. independent verification of the emitted canonical receipt bytes; and
+5. exact release-artifact binding for the runtime, launcher, and verifier.
+
+This claim remains effectful and assumption-bearing. Pure core proofs do not
+prove that the CLI selected the corresponding observations or that Linux
+installed the boundary.
 
 ## Promotion rule
 

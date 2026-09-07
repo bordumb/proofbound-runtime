@@ -12,6 +12,7 @@ affected_claims = [
   "PBR-POLICY-002",
   "PBR-RECEIPT-004",
   "PBR-VERIFY-006",
+  "PBR-RUN-007",
 ]
 review_evidence = [
   "rust-toolchain.toml",

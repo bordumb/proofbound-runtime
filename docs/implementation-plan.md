@@ -95,6 +95,7 @@ committed with the source that generated it.
 
 ### Wave 4: product surface
 
+- [x] Register the runtime-orchestration claim and adversarial cases.
 - [x] Implement `pbr doctor`.
 - [x] Implement `pbr plan check`.
 - [ ] Implement `pbr run` and canonical receipt emission.

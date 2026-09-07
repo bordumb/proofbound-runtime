@@ -880,6 +880,7 @@ formal statement and evidence path are registered.
 | `PBR-RECEIPT-004` | A denied, incomplete, malformed, or launcher-failed attempt is never reusable. |
 | `PBR-BINDING-005` | A reusable receipt binds every registered security-relevant plan, policy, platform, runtime, input, and output identity. |
 | `PBR-VERIFY-006` | The independent verifier rejects every registered receipt mutation with its exact reason. |
+| `PBR-RUN-007` | The runtime receipt preserves the exact reviewed plan, enforced boundary, observations, and outputs from one execution attempt. |
 
 The first three claims separate pure policy meaning from effectful launcher
 behavior. `PBR-SEQUENCE-003` cannot become a pure refinement theorem merely

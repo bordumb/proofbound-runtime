@@ -1,0 +1,30 @@
+schema = "proofbound-claim/1"
+id = "PBR-RUN-007"
+title = "Runtime orchestration preserves the reviewed execution"
+statement = "Every receipt emitted by pbr run is constructed from the exact validated plan, compiled policy, resolved artifacts, installed boundary acknowledgement, supervised outcome, bounded streams, and post-run output inventory of that execution attempt."
+subject = "planned:proofbound_runtime_cli::run::execute"
+profile = "ledger"
+tier = 0
+evidence = []
+assumptions = [
+  "PBR-LINUX-AX-001",
+  "PBR-HOST-AX-002",
+  "PBR-TOOLCHAIN-AX-003",
+]
+open_obligations = [
+  "Implement the production pbr run orchestrator and bind this claim to its exact source closure.",
+  "Register the end-to-end supported-Linux execution and independent receipt verification evidence.",
+  "Bind the tested runtime, launcher, and verifier to exact release artifacts.",
+]
+out_of_scope = [
+  "Correctness of the Linux kernel or host platform under the recorded assumptions.",
+  "Semantic correctness of the child program or its outputs.",
+  "Receipt properties not represented by the version 1 schema.",
+]
+source_roots = [
+  "docs/specs/0001_initial_spec.md",
+  "docs/specs/0002_cli_surface.md",
+  "docs/threat-model.md",
+  "docs/receipt-semantics.md",
+  "tests/attacks/run/",
+]
