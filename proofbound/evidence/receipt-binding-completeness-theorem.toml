@@ -1,0 +1,34 @@
+schema = "proofbound-evidence-unit/1"
+id = "receipt-binding-completeness-theorem"
+adapter = "lean"
+kind = "theorem"
+claims = ["PBR-BINDING-005"]
+tier = 3
+evaluation_mode = "kernel"
+theorem = "ProofboundRuntime.Claims.Binding.constructed_receipt_is_complete_and_exact"
+premises = []
+expected_inventory = [
+  "ProofboundRuntime.Claims.Binding.constructed_receipt_is_complete_and_exact",
+]
+inputs = [
+  "formal/ProofboundRuntime/Binding.lean",
+  "formal/ProofboundRuntime/Claims/Binding.lean",
+  "lake-manifest.json",
+  "lakefile.toml",
+  "lean-toolchain",
+]
+environment_allowlist = ["LEAN_PATH", "PATH"]
+
+[operation]
+type = "lean-audit"
+targets = [
+  "ProofboundRuntime.Claims.Binding.constructed_receipt_is_complete_and_exact",
+]
+paths = [
+  "formal/ProofboundRuntime/Claims/Binding.lean",
+]
+
+[resource_budget]
+time_seconds = 300
+disk_bytes = 2147483648
+memory_bytes = 4294967296

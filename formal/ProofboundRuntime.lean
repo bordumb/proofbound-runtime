@@ -1,5 +1,7 @@
 import ProofboundRuntime.Authority
+import ProofboundRuntime.Binding
 import ProofboundRuntime.Claims.Authority
+import ProofboundRuntime.Claims.Binding
 import ProofboundRuntime.Claims.Policy
 import ProofboundRuntime.Claims.Receipt
 import ProofboundRuntime.Policy
