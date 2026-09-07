@@ -8,7 +8,7 @@ and hosted CI.
 | `version.py` | Verify that `VERSION` and Cargo workspace metadata agree. |
 | `changelog.py` | Validate changelog structure and release-version coverage. |
 | `documentation.py` | Check text hygiene, Markdown fences, local links, and feedback IDs. |
-| `manifests.sh` | Run Proofbound Tier 0 manifest compilation and status derivation. |
+| `manifests.sh` | Compile Proofbound manifests and derive current claim status. |
 | `pre-commit.sh` | Run the fast metadata, documentation, formatting, and manifest checks. |
 | `ci.sh` | Run the complete current repository gate in a fixed order. |
 

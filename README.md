@@ -3,10 +3,10 @@
 Run untrusted tools with declared authority and produce an independently
 verifiable account of the execution boundary.
 
-> **Status:** foundation implementation. The repository contains the first
-> typed authority-normalization core and its Tier 0 through Tier 2 assurance
-> evidence. It does not yet provide an executable runtime or containment
-> guarantee.
+> **Status:** proof-linked foundation. Authority normalization and receipt
+> eligibility have kernel-checked source-refinement evidence at Tier 3. Release
+> artifact binding remains open. The repository does not yet provide an
+> executable runtime or containment guarantee.
 
 ## What it is
 
@@ -74,8 +74,10 @@ The project uses Proof-Driven Development:
    linkage.
 5. Rebuild every affected evidence path after source or artifact changes.
 
-The first walking-skeleton claim is `PBR-AUTH-001`: authority normalization does
-not amplify authority.
+The first two completed source-linkage waves are `PBR-AUTH-001`, authority
+normalization does not amplify authority, and `PBR-RECEIPT-004`, incomplete
+executions are not reusable. Both still require release-artifact binding before
+their statements can apply to shipping binaries.
 
 ## Repository checks
 
@@ -87,9 +89,9 @@ just ci
 ```
 
 The current CI checks documentation, project metadata, the Rust workspace,
-independent authority conformance, dependency policy, the Lean model, the
-bounded Kani domain, and Proofbound Tier 2 status derivation. Source refinement,
-artifact binding, and native Linux enforcement remain open.
+independent conformance, dependency policy, Lean models, source-refinement
+bridges, bounded Kani domains, and Proofbound status derivation. Release-artifact
+binding and native Linux enforcement remain open.
 
 ## Documentation
 

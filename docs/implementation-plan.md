@@ -35,7 +35,7 @@ committed with the source that generated it.
 
 ### Wave 0: contracts and falsifiers
 
-- [ ] Refresh project status and CI language after the receipt Tier 3 work.
+- [x] Refresh project status and CI language after the receipt Tier 3 work.
 - [ ] Record explicit target evidence and source closures for the four open
   claims.
 - [ ] Freeze the version 1 execution-plan schema and negative vectors.

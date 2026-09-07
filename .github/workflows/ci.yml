@@ -12,7 +12,7 @@ env:
 
 jobs:
   bootstrap:
-    name: Tier 2 assurance gate
+    name: Current assurance gate
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -41,7 +41,7 @@ jobs:
           cargo install --locked just --version 1.46.0
           cargo install --locked cargo-deny --version 0.20.2
 
-      - name: Install pinned Proofbound Tier 2 tools
+      - name: Install pinned Proofbound tools
         run: >-
           cargo install
           --locked
@@ -52,7 +52,7 @@ jobs:
           proofbound-adapter-kani
           proofbound-adapter-lean
 
-      - name: Verify Proofbound Tier 2 executables
+      - name: Verify Proofbound executables
         run: |
           command -v proofbound
           command -v proofbound-adapter-test
@@ -70,5 +70,5 @@ jobs:
       - name: Reject bootstrap lockfile drift
         run: git diff --exit-code -- Cargo.lock lake-manifest.json
 
-      - name: Run the Tier 2 repository gate on Linux
+      - name: Run the repository gate on Linux
         run: just ci
