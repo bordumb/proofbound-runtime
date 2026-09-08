@@ -48,6 +48,7 @@ jobs:
           --git https://github.com/bordumb/proof-bound
           --rev 65b46980716636eed53b87691e860e16cbe86836
           proofbound-cli
+          proofbound-adapter-aeneas
           proofbound-adapter-test
           proofbound-adapter-kani
           proofbound-adapter-lean
@@ -55,6 +56,7 @@ jobs:
       - name: Verify Proofbound executables
         run: |
           command -v proofbound
+          command -v proofbound-adapter-aeneas
           command -v proofbound-adapter-test
           command -v proofbound-adapter-kani
           command -v proofbound-adapter-lean
