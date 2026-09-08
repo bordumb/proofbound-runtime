@@ -158,13 +158,15 @@ migration.
 
 ## Local treatment
 
-Runtime keeps the exact release binaries, native execution evidence, and
-release-envelope verification as separate records. It does not label the
-empirical claims `ARTIFACT_BOUND`, does not add a vacuous digest theorem, and
-keeps the Wave 5 release-linkage milestone blocked until the exact observation
-can be represented and independently verified. The native and release
-workflows still fail closed if exact-binary execution or receipt verification
-fails.
+Runtime registers eight context-specific observations across four binary roles
+and two native architectures. Its release workflow keeps the exact release
+binaries, native execution evidence, observation-input manifest, independently
+verified release envelope, and composed receipt as distinct retained records.
+It does not label the empirical claims `ARTIFACT_BOUND` and does not add a
+vacuous digest theorem. The Wave 5 execution milestone remains open until both
+hosted native contexts produce and independently verify those records. The
+native and release workflows fail closed if exact-binary execution, observation
+verification, or contextual composition fails.
 
 ## Upstream handoff
 
@@ -187,9 +189,9 @@ artifact and procedure bytes, and requires the `bytes-observed` verdict before
 publication. The frozen twelve-case attack corpus is executable with stable
 `PB-OBS-0001` through `PB-OBS-0012` diagnostics.
 
-Runtime can now replace its open PBF-0008 workaround with architecture-specific
-release observation units and pass the exact bundle and procedure bytes to the
-independent verifier. The remaining Runtime work is adoption: produce the
-observations in the native release workflow, retain their assumptions and
-dependencies, and consume the resulting version 4 release receipt in the
-composition step.
+Runtime has adopted the upstream behavior with architecture-specific release
+observation units, closed external observation inputs, required reviewed
+contexts, independent `bytes-observed` verification, and context-preserving
+composition. The remaining Runtime work is execution: run both hosted native
+contexts, retain their version 4 release receipts and composed receipts, and
+review the resulting honest public assurance language before publication.

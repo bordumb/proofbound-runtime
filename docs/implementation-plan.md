@@ -36,9 +36,27 @@ dependency order, commit boundaries, and completion evidence.
   enforcement crate, and the first fail-closed `pbr doctor` product command.
 - Independent verification covers closed decoding, canonical bytes, external
   receipt commitment, identities, relationships, and eligibility derivation.
-- `PBR-COMPOSE-008` has tested model-only evidence over its closed 12-case
+- `PBR-COMPOSE-008` has tested model-only evidence over its closed 16-case
   cross-receipt attack corpus. Native workflow observation and release-artifact
   binding remain open.
+
+## Current completion boundary
+
+The Tier 3 release-observation implementation is complete in the repository:
+
+- both required native release contexts are registered;
+- all eight architecture-and-role observation units are registered;
+- observation inputs are generated as a closed canonical manifest;
+- release receipt production requires the reviewed context and exact inputs;
+- the independent verifier must return `bytes-observed`; and
+- the release workflow builds, observes, verifies, composes, and retains each
+  native release independently on `x86_64` and `aarch64` Linux.
+
+Completion still requires successful hosted executions of both native context
+jobs. Those executions must produce and independently verify the two contextual
+release receipts and their composed Runtime receipts. The source-refined claims
+also retain their distinct theorem-to-release-byte binding obligations; exact
+empirical observations do not promote them to `ARTIFACT_BOUND`.
 
 ## Ordered work queue
 
@@ -110,15 +128,18 @@ committed with the source that generated it.
 
 - [x] Add the identified native-Linux enforcement workflow.
 - [x] Add reproducible `x86_64` and `aarch64` release builds.
-- [ ] Require and preserve a reviewed exact-observation context in the receipt
+- [x] Require and preserve a reviewed exact-observation context in the receipt
   composer.
-- [ ] Register the exact release-binary observation procedures for both native
+- [x] Register the exact release-binary observation procedures for both native
   architectures.
+- [x] Implement context-bound release production, independent verification,
+  and retention for both native architectures.
 - [ ] Produce and independently verify one context-bound release receipt on
   each native architecture.
 - [ ] Bind all admitted claims to exact release artifacts.
 - [x] Verify the release receipt independently.
-- [x] Run the complete release gate and publish the honest assurance language.
+- [ ] Run the complete context-bound release gate and publish the honest
+  assurance language.
 - [x] Update the quick start, supported-platform statement, receipt semantics,
   threat model, and changelog.
 - [ ] Tag and publish version 0.1.

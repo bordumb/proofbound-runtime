@@ -6,9 +6,11 @@ verifiable account of the execution boundary.
 > **Status:** 0.1.0 release candidate. The executable product surface and
 > native Linux boundary are implemented and exercised on `x86_64` and
 > `aarch64`. The Proofbound release envelope is independently verified, and a
-> typed Runtime plugin composes it with one verified execution receipt. Exact
-> release-artifact binding remains open, so no 0.1.0 release has been published
-> yet.
+> typed Runtime plugin composes it with one verified execution receipt. The
+> context-bound exact-artifact observation workflow is implemented but has not
+> yet produced both hosted native release records. The distinct semantic
+> release-artifact binding obligations also remain open, so no 0.1.0 release
+> has been published yet.
 
 ## What it is
 
