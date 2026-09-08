@@ -8,6 +8,9 @@ and hosted CI.
 | `version.py` | Verify that `VERSION` and Cargo workspace metadata agree. |
 | `changelog.py` | Validate changelog structure and release-version coverage. |
 | `documentation.py` | Check text hygiene, Markdown fences, local links, and feedback IDs. |
+| `authority-refinement.sh` | Compile the generated authority translation and handwritten refinement modules. |
+| `policy-refinement.sh` | Compile the generated policy translation and handwritten refinement modules. |
+| `receipt-refinement.sh` | Compile the generated receipt translation and handwritten refinement modules. |
 | `manifests.sh` | Compile Proofbound manifests and derive current claim status. |
 | `pre-commit.sh` | Run the fast metadata, documentation, formatting, and manifest checks. |
 | `ci.sh` | Run the complete current repository gate in a fixed order. |
@@ -44,6 +47,12 @@ just hooks
 The scripts must not fetch dependencies or update committed files. Bootstrap
 and dependency installation are separate operations. CI installs exact tool
 versions before it invokes the same scripts.
+
+Each refinement script compiles one generated Aeneas environment as a separate
+Lean root. The policy translation repeats declarations from the authority
+translation, so the root library cannot import both generated environments.
+The complete gate must invoke every refinement script before Proofbound audits
+the registered theorem modules.
 
 As the implementation grows, add a named script for each distinct evidence
 family. Keep `ci.sh` as an ordered coordinator. Do not hide theorem, bounded,
