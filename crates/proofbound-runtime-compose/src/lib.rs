@@ -601,7 +601,11 @@ fn validate_wire_artifact(
     if wire.role != role {
         return Err(CompositionError::BundleRoleMismatch);
     }
-    if wire.sha256 != expected.sha256 || wire.size != expected.size || wire.mode == 0 {
+    let expected_sha256 = expected
+        .sha256
+        .strip_prefix("sha256:")
+        .ok_or(CompositionError::SchemaInvalid)?;
+    if wire.sha256 != expected_sha256 || wire.size != expected.size || wire.mode == 0 {
         return Err(CompositionError::BundleSubstituted);
     }
     Ok(())
@@ -923,7 +927,7 @@ mod tests {
                 json!({
                     "mode": 493,
                     "role": role,
-                    "sha256": format!("sha256:{digest}"),
+                    "sha256": digest,
                     "size": size.to_string()
                 })
             };
@@ -1172,6 +1176,19 @@ mod tests {
         substituted.runtime.push(b'!');
         assert_eq!(
             compose(&substituted.inputs()).unwrap_err(),
+            CompositionError::BundleSubstituted
+        );
+
+        let mut prefixed_execution_digest = Fixture::new();
+        prefixed_execution_digest.mutate_json(FixtureField::Execution, |value| {
+            let digest = value["runtime"]["runtime"]["sha256"]
+                .as_str()
+                .unwrap()
+                .to_owned();
+            value["runtime"]["runtime"]["sha256"] = Value::String(format!("sha256:{digest}"));
+        });
+        assert_eq!(
+            compose(&prefixed_execution_digest.inputs()).unwrap_err(),
             CompositionError::BundleSubstituted
         );
 
