@@ -7,6 +7,8 @@ subject = "rust:proofbound_runtime_compose::compose"
 profile = "ledger"
 tier = 0
 evidence = [
+  "example-test:release-observe-composer-linux-aarch64",
+  "example-test:release-observe-composer-linux-x86-64",
   "example-test:release-composition-attacks",
   "example-test:release-composition-cli",
 ]
@@ -30,6 +32,9 @@ source_roots = [
   "docs/specs/0003_release_receipt_composition.md",
   "proofbound/evidence/release-composition-attacks.toml",
   "proofbound/evidence/release-composition-cli.toml",
+  "proofbound/evidence/release-observe-composer-linux-aarch64.toml",
+  "proofbound/evidence/release-observe-composer-linux-x86-64.toml",
+  "crates/proofbound-runtime-compose/tests/release_observation.rs",
   "schemas/composed-receipt-v1.schema.json",
   "schemas/runtime-release-manifest-v1.schema.json",
   "tests/attacks/composition/v1.toml",

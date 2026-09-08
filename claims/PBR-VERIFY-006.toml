@@ -7,6 +7,8 @@ subject = "rust:proofbound_runtime_verify::verify_receipt"
 profile = "ledger"
 tier = 0
 evidence = [
+  "example-test:release-observe-verifier-linux-aarch64",
+  "example-test:release-observe-verifier-linux-x86-64",
   "example-test:receipt-eligibility-verifier-conformance",
   "example-test:receipt-producer-verifier-conformance",
   "example-test:receipt-verifier-attacks",
@@ -36,6 +38,9 @@ source_roots = [
   "proofbound/evidence/receipt-eligibility-verifier-conformance.toml",
   "proofbound/evidence/receipt-producer-verifier-conformance.toml",
   "proofbound/evidence/receipt-verifier-attacks.toml",
+  "proofbound/evidence/release-observe-verifier-linux-aarch64.toml",
+  "proofbound/evidence/release-observe-verifier-linux-x86-64.toml",
+  "crates/proofbound-runtime-compose/tests/release_observation.rs",
   "schemas/receipt-eligibility-vector-v1.schema.json",
   "schemas/execution-receipt-v1.schema.json",
   "tests/conformance/receipt/positive/eligibility-v1.json",

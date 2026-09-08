@@ -6,7 +6,11 @@ public_language = "The production launcher uses a typed acknowledgement gate tha
 subject = "rust:proofbound_runtime_linux::supervise_launcher"
 profile = "ledger"
 tier = 0
-evidence = ["example-test:launcher-sequence-protocol"]
+evidence = [
+  "example-test:launcher-sequence-protocol",
+  "example-test:release-observe-launcher-linux-aarch64",
+  "example-test:release-observe-launcher-linux-x86-64",
+]
 assumptions = [
   "PBR-LINUX-AX-001",
   "PBR-HOST-AX-002",
@@ -42,6 +46,9 @@ source_roots = [
   "crates/proofbound-runtime-linux/tests/fixtures/native-boundary-probe.c",
   "crates/proofbound-runtime-linux/tests/native_linux.rs",
   "proofbound/evidence/launcher-sequence-protocol.toml",
+  "proofbound/evidence/release-observe-launcher-linux-aarch64.toml",
+  "proofbound/evidence/release-observe-launcher-linux-x86-64.toml",
+  "crates/proofbound-runtime-compose/tests/release_observation.rs",
   "tests/attacks/cgroup/",
   "tests/attacks/landlock/",
   "tests/attacks/launcher/",

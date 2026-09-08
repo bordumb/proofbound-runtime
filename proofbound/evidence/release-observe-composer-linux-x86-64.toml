@@ -1,0 +1,46 @@
+schema = "proofbound-evidence-unit/5"
+id = "release-observe-composer-linux-x86-64"
+context = "release-linux-x86-64"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-COMPOSE-008"]
+tier = 0
+expected_inventory = ["release_observation::observes_composer_release"]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "VERSION",
+  "crates/proofbound-runtime-compose/Cargo.toml",
+  "crates/proofbound-runtime-compose/tests/release_observation.rs",
+  "dist/release-observation/x86_64/RELEASE-MANIFEST.json",
+  "dist/release-observation/x86_64/pbr-compose",
+  "rust-toolchain.toml",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "PROOFBOUND_EXPECTED_ARCH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-compose"
+manifest = "Cargo.toml"
+targets = ["--test=release_observation"]
+paths = []
+arguments = []
+
+[artifact_observation]
+schema = "proofbound-exact-artifact-observation/1"
+subject_role = "composer-release"
+artifact = "dist/release-observation/x86_64/pbr-compose"
+procedure = "crates/proofbound-runtime-compose/tests/release_observation.rs"
+operating_system = "linux"
+architecture = "x86_64"
+toolchain_inputs = ["Cargo.lock", "rust-toolchain.toml"]
+dependencies = [
+  "example-test:release-composition-attacks",
+  "example-test:release-composition-cli",
+]
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

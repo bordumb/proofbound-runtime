@@ -6,7 +6,11 @@ public_language = "The production run path rejects every registered orchestratio
 subject = "rust:proofbound_runtime_cli::run::execute"
 profile = "ledger"
 tier = 0
-evidence = ["example-test:runtime-orchestration-attacks"]
+evidence = [
+  "example-test:release-observe-runtime-linux-aarch64",
+  "example-test:release-observe-runtime-linux-x86-64",
+  "example-test:runtime-orchestration-attacks",
+]
 assumptions = [
   "PBR-LINUX-AX-001",
   "PBR-HOST-AX-002",
@@ -40,6 +44,9 @@ source_roots = [
   "docs/threat-model.md",
   "docs/receipt-semantics.md",
   "proofbound/evidence/runtime-orchestration-attacks.toml",
+  "proofbound/evidence/release-observe-runtime-linux-aarch64.toml",
+  "proofbound/evidence/release-observe-runtime-linux-x86-64.toml",
+  "crates/proofbound-runtime-compose/tests/release_observation.rs",
   "schemas/run-result-v1.schema.json",
   "tests/attacks/run/",
 ]
