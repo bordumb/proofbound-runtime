@@ -25,7 +25,7 @@ package = "proofbound-runtime-compose"
 manifest = "Cargo.toml"
 targets = ["--test=release_observation"]
 paths = []
-arguments = []
+arguments = ["--features=release-observation"]
 
 [artifact_observation]
 schema = "proofbound-exact-artifact-observation/1"

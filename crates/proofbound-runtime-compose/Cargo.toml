@@ -15,6 +15,14 @@ sha2.workspace = true
 [dev-dependencies]
 toml.workspace = true
 
+[features]
+release-observation = []
+
 [[bin]]
 name = "pbr-compose"
 path = "src/main.rs"
+
+[[test]]
+name = "release_observation"
+path = "tests/release_observation.rs"
+required-features = ["release-observation"]
