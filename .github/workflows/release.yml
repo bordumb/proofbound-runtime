@@ -48,7 +48,7 @@ jobs:
           cargo install
           --locked
           --git https://github.com/bordumb/proof-bound
-          --rev 50fb2f92946ff2b22fff9980813d64ae0e5b4a5c
+          --rev 65b46980716636eed53b87691e860e16cbe86836
           proofbound-cli
           proofbound-verify
           proofbound-adapter-test

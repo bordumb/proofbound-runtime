@@ -9,7 +9,7 @@
   `PBR-COMPOSE-008`
 - **Runtime milestone:** Version 0.1 release linkage
 - **Proofbound target:** project and claim manifests, compiler, release command, and receipts
-- **Upstream record:** `proof-bound` ADR 0021 and commits `23065d2` through `50fb2f9`
+- **Upstream record:** `proof-bound` ADR 0021 and commits `23065d2` through `65b4698`
 - **Supersedes:** none
 - **Superseded by:** none
 
@@ -124,7 +124,7 @@ bundle exists on that runner.
 - **Specification or ADR:** `proof-bound/docs/adr/0021-reviewed-evidence-contexts.md`
 - **Commit or pull request:** `proof-bound@23065d2`, `proof-bound@94b3fe5`,
   `proof-bound@88388da`, `proof-bound@5a97c62`, `proof-bound@d8a3b80`,
-  `proof-bound@c9e47ca`, and `proof-bound@50fb2f9`
+  `proof-bound@c9e47ca`, `proof-bound@50fb2f9`, and `proof-bound@65b4698`
 
 ## Resolution
 
@@ -141,5 +141,7 @@ evidence, context replay, and selected units without admitted exact
 observations. The manifest, compiler, release producer, and standalone verifier
 execute the frozen eight-case context attack corpus with stable `PB-CTX-0001`
 through `PB-CTX-0008` diagnostics. Runtime pins the complete implementation at
-`proof-bound@50fb2f9` and can now adopt the two native release contexts without
-weakening its ordinary source-only gate.
+`proof-bound@65b4698`; that revision also keeps Charon/Aeneas source-refinement
+evidence available after the project-schema migration. Runtime can now adopt
+the two native release contexts without weakening its ordinary source-only
+gate.
