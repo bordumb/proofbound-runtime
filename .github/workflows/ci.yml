@@ -36,6 +36,26 @@ jobs:
           leanchecker: false
           nanoda: false
 
+      - name: Install Nix for pinned translation tools
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31
+
+      - name: Install pinned Charon and Aeneas tools
+        env:
+          AENEAS_SOURCE_REVISION: 3a8586facab25b31bdb1e1f5f45acd60d1cc5ff0
+          AENEAS_VERSION: 3a8586fa
+        run: |
+          tools_path="$(AENEAS_RELEASE_VERSION="$AENEAS_VERSION" nix build \
+            --impure \
+            --no-link \
+            --print-out-paths \
+            "github:AeneasVerif/aeneas/$AENEAS_SOURCE_REVISION#aeneas")"
+          echo "$tools_path/bin" >> "$GITHUB_PATH"
+
+      - name: Verify pinned translation tools
+        run: |
+          test "$(charon version)" = "0.1.225"
+          test "$(aeneas -version)" = "aeneas 3a8586fa"
+
       - name: Install pinned repository tools
         run: |
           cargo install --locked just --version 1.46.0
