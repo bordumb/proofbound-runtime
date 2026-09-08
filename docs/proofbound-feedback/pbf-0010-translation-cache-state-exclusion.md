@@ -106,4 +106,5 @@ closure builder before constructing cache identities. The regression recreates
 Runtime's nested `.lake` package file and symlink, proves they are excluded,
 and retains the existing checks that nested ordinary import files are bound and
 non-excluded symlinks fail closed. Runtime consumes the fix by pinning
-`proof-bound@585c0e0` in both hosted workflows.
+the lint-clean follow-up revision `proof-bound@b4f73a1` in both hosted
+workflows; the cache correction itself remains `proof-bound@585c0e0`.
