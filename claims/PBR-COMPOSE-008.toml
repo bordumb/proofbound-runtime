@@ -38,4 +38,5 @@ source_roots = [
   "schemas/composed-receipt-v1.schema.json",
   "schemas/runtime-release-manifest-v1.schema.json",
   "tests/attacks/composition/v1.toml",
+  "tools/release/observation_inputs.py",
 ]

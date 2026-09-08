@@ -12,6 +12,7 @@ and hosted CI.
 | `pre-commit.sh` | Run the fast metadata, documentation, formatting, and manifest checks. |
 | `ci.sh` | Run the complete current repository gate in a fixed order. |
 | `../release/build-linux.sh` | Build a native Linux release bundle twice and require byte equality. |
+| `../release/observation_inputs.py` | Build the closed external byte-input manifest for one native release context. |
 | `../release/proofbound-release.sh` | Build a fresh Proofbound release envelope and retain the independent verification report beside it. |
 
 Run the full gate with:
