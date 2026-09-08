@@ -185,7 +185,8 @@ and native Linux enforcement. The release workflow builds each architecture
 twice and rejects byte drift before it executes, verifies, and composes the
 exact release binaries.
 
-`just release-receipt /absent/output/path` rebuilds the current assurance graph,
+`just release-receipt <context> <observation-inputs> /absent/output/path`
+rebuilds the current assurance graph for one reviewed native release context,
 creates a fresh Proofbound release envelope, and retains the independent
 verifier report beside it.
 

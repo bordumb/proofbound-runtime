@@ -1,13 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -ne 1 ]]; then
-  echo "usage: tools/release/proofbound-release.sh <absent-output-directory>" >&2
+if [[ $# -ne 3 ]]; then
+  echo "usage: tools/release/proofbound-release.sh <evidence-context> <observation-inputs> <absent-output-directory>" >&2
   exit 2
 fi
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-output_directory="${1%/}"
+evidence_context="$1"
+observation_inputs="$2"
+output_directory="${3%/}"
+case "$evidence_context" in
+  release-linux-aarch64 | release-linux-x86-64) ;;
+  *)
+    echo "release receipt evidence context is unsupported: $evidence_context" >&2
+    exit 2
+    ;;
+esac
+if [[ ! -f "$observation_inputs" || -L "$observation_inputs" ]]; then
+  echo "release observation inputs must be a regular non-symlink file: $observation_inputs" >&2
+  exit 2
+fi
 if [[ -z "$output_directory" ]]; then
   echo "release receipt output directory must not be empty" >&2
   exit 2
@@ -51,7 +64,7 @@ trap 'rm -f -- "$temporary_verification"' EXIT
 
 cd "$repository_root"
 set +e
-check_output="$("$proofbound_bin" check --root "$repository_root" --json 2>&1)"
+check_output="$("$proofbound_bin" check --root "$repository_root" --evidence-context "$evidence_context" --json 2>&1)"
 check_status=$?
 set -e
 if [[ $check_status -ne 0 || "$check_output" == *'"schema":"proofbound-error/1"'* ]]; then
@@ -63,17 +76,25 @@ if [[ $check_status -ne 0 || "$check_output" == *'"schema":"proofbound-error/1"'
 fi
 
 "$proofbound_bin" release --root "$repository_root" --output "$output_directory"
-"$proofbound_verify_bin" --release "$output_directory" --json >"$temporary_verification"
-python3 - "$temporary_verification" <<'PY'
+"$proofbound_verify_bin" \
+  --release "$output_directory" \
+  --observation-inputs "$observation_inputs" \
+  --json >"$temporary_verification"
+python3 - "$temporary_verification" "$evidence_context" <<'PY'
 import json
 import pathlib
 import sys
 
 report = json.loads(pathlib.Path(sys.argv[1]).read_bytes())
-if report.get("verdict") != "receipt-consistent":
+if report.get("verdict") != "bytes-observed":
     raise SystemExit(
         "release receipt verification failed: "
         f"unexpected verdict {report.get('verdict')!r}"
+    )
+if report.get("evidence_context") != sys.argv[2]:
+    raise SystemExit(
+        "release receipt verification failed: "
+        f"unexpected evidence context {report.get('evidence_context')!r}"
     )
 PY
 mv "$temporary_verification" "$verification_path"
@@ -81,3 +102,4 @@ trap - EXIT
 
 printf 'Proofbound release: %s\n' "$output_directory"
 printf 'Independent verification: %s\n' "$verification_path"
+printf 'Evidence context: %s\n' "$evidence_context"

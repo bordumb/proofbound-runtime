@@ -46,5 +46,5 @@ check: fast-checks
 ci:
     bash tools/ci/ci.sh
 
-release-receipt output:
-    bash tools/release/proofbound-release.sh "{{output}}"
+release-receipt context observation_inputs output:
+    bash tools/release/proofbound-release.sh "{{context}}" "{{observation_inputs}}" "{{output}}"

@@ -24,7 +24,10 @@ Create and independently verify a Proofbound release envelope at a path that
 does not yet exist:
 
 ```console
-just release-receipt /absolute/path/to/proofbound-runtime-release
+just release-receipt \
+  release-linux-x86-64 \
+  dist/native-evidence/x86_64/proofbound-observation-inputs.json \
+  /absolute/path/to/proofbound-runtime-release
 ```
 
 The command writes the independent verifier's canonical JSON report beside the
