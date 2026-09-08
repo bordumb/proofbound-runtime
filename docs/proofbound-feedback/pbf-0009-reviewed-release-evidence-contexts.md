@@ -140,8 +140,9 @@ The release command rejects a missing required context, inactive-context
 evidence, context replay, and selected units without admitted exact
 observations. The manifest, compiler, release producer, and standalone verifier
 execute the frozen eight-case context attack corpus with stable `PB-CTX-0001`
-through `PB-CTX-0008` diagnostics. Runtime pins the complete implementation at
-`proof-bound@65b4698`; that revision also keeps Charon/Aeneas source-refinement
-evidence available after the project-schema migration. Runtime can now adopt
-the two native release contexts without weakening its ordinary source-only
-gate.
+through `PB-CTX-0008` diagnostics. Runtime first pinned the complete context
+implementation at `proof-bound@65b4698`; that revision also keeps
+Charon/Aeneas source-refinement evidence available after the project-schema
+migration. The current pin additionally contains the translation-cache state
+exclusion recorded in PBF-0010. Runtime can adopt the two native release
+contexts without weakening its ordinary source-only gate.

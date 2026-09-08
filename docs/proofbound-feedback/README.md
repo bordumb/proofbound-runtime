@@ -213,6 +213,7 @@ and superseded items in the table.
 | [PBF-0007](pbf-0007-claim-evidence-domain-consistency.md) | Claim/evidence bounded-domain consistency | `verifier` | `near-term` | `upstream-ready` | Policy compilation | Not upstreamed |
 | [PBF-0008](pbf-0008-tested-release-artifact-observations.md) | Tested release-artifact observations | `evidence-semantics` | `blocking` | `resolved` | Version 0.1 release linkage | `proof-bound` ADR 0020; `dd5893d..cf8f2ba` |
 | [PBF-0009](pbf-0009-reviewed-release-evidence-contexts.md) | Reviewed release evidence contexts | `workflow` | `blocking` | `resolved` | Version 0.1 release linkage | `proof-bound` ADR 0021; `23065d2..65b4698` |
+| [PBF-0010](pbf-0010-translation-cache-state-exclusion.md) | Translation cache state exclusion | `workflow` | `blocking` | `resolved` | Version 0.1 release linkage | `proof-bound@585c0e0` |
 
 ## Rules for agents
 
