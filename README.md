@@ -7,11 +7,11 @@ verifiable account of the execution boundary.
 > native Linux boundary are implemented and exercised on `x86_64` and
 > `aarch64`. The Proofbound release envelope is independently verified, and a
 > typed Runtime plugin composes it with one verified execution receipt. The
-> context-bound exact-artifact observation workflow produced both hosted native
-> records for revision `8ed15fc`, but those historical records predate the
-> current receipt-binding source refinement and do not support a current
-> release. The distinct semantic release-artifact binding obligations also
-> remain open, so no 0.1.0 release has been published yet.
+> complete contextual release rehearsal at revision `ced2871` bound all four
+> source-refined claims to the exact native `pbr` member and independently
+> observed the Runtime, launcher, verifier, and composer roles on both native
+> architectures. No claim facet was promoted by observation. Merge, final-tag
+> reproduction, and publication remain before 0.1.0 is released.
 
 ## What it is
 
@@ -82,11 +82,13 @@ The project uses Proof-Driven Development:
    linkage.
 5. Rebuild every affected evidence path after source or artifact changes.
 
-Four claims have completed source-refinement linkage: `PBR-AUTH-001`,
-`PBR-POLICY-002`, `PBR-RECEIPT-004`, and `PBR-BINDING-005`. They cover authority
-normalization, policy compilation, receipt eligibility, and the production
-receipt binding projection. All four still require release-artifact binding
-before their statements can apply to shipping binaries.
+Four claims have completed source-refinement linkage and contextual exact-
+artifact binding: `PBR-AUTH-001`, `PBR-POLICY-002`, `PBR-RECEIPT-004`, and
+`PBR-BINDING-005`. They cover authority normalization, policy compilation,
+receipt eligibility, and the production receipt binding projection. Each keeps
+the compiler/toolchain assumption visible. The remaining four claims retain
+their tested/model-only status even when their exact release roles are
+independently observed.
 
 ## Quick start
 

@@ -4,7 +4,7 @@
 - **Priority:** `near-term`
 - **Kind:** `workflow`
 - **Created:** 2026-09-05
-- **Last updated:** 2026-09-08
+- **Last updated:** 2026-09-09
 - **Runtime claim:** `PBR-AUTH-001`
 - **Runtime milestone:** Milestone 1
 - **Proofbound target:** CLI reporting
@@ -54,6 +54,13 @@ the exact normalized result across the same 16-state catalog. The revised
 harness completed through the sealed Proofbound adapter protocol in 322
 seconds. This repairs Runtime's immediate CI margin, but it does not repair the
 generic diagnostic loss.
+
+A third occurrence in GitHub Actions run `34341395699` initially appeared only
+as four missing theorem-evidence citations. Once Runtime printed the retained
+unit-run diagnostics, the actual cause was precise: the default Lake target had
+not compiled the four new public artifact-theorem modules, so each audit import
+failed on its absent `.olean`. The distinction prevented an unnecessary proof
+or evidence-policy change and led directly to the build-graph fix in `ced2871`.
 
 ## Ownership test
 
@@ -108,10 +115,12 @@ schema. Existing status derivation and exit codes do not need reinterpretation.
 
 Runtime CI installs the orchestrator and every adapter required by its manifests
 at one exact Proofbound revision. It checks that each executable is available
-before running the offline assurance gate. Missing adapters and timed-out
-evidence units continue to fail CI. Runtime also keeps expensive bounded
-harnesses comfortably below their declared budgets, but does not treat that as
-a substitute for reporting the causal adapter diagnostic.
+before running the offline assurance gate. The manifest gate now forces fresh
+evidence execution and prints every failed unit's structured diagnostic from
+the compiled project before exiting. Missing adapters and timed-out evidence
+units continue to fail CI. Runtime also keeps expensive bounded harnesses
+comfortably below their declared budgets, but these local safeguards do not
+replace the proposed generic Proofbound report extension.
 
 ## Upstream handoff
 

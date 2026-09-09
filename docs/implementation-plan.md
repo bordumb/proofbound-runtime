@@ -20,25 +20,28 @@ dependency order, commit boundaries, and completion evidence.
 
 ## Current baseline
 
-- `PBR-AUTH-001` is source-refined at Tier 3. Release-artifact binding is open.
-- `PBR-POLICY-002` is source-refined at Tier 3. Release-artifact binding is
-  open.
-- `PBR-RECEIPT-004` is source-refined at Tier 3. Release-artifact binding is
-  open.
+- `PBR-AUTH-001` is source-refined at Tier 3 and contextually bound to the exact
+  native `pbr` member in both reviewed release contexts.
+- `PBR-POLICY-002` is source-refined at Tier 3 and contextually bound to the
+  exact native `pbr` member in both reviewed release contexts.
+- `PBR-RECEIPT-004` is source-refined at Tier 3 and contextually bound to the
+  exact native `pbr` member in both reviewed release contexts.
 - `PBR-BINDING-005` is source-refined at Tier 3 through the production-used
-  binding constructor and canonical wire projection. Release-artifact binding
-  is open.
+  binding constructor and canonical wire projection, then contextually bound
+  to the exact native `pbr` member in both reviewed release contexts.
 - `PBR-SEQUENCE-003` has tested protocol-state evidence and bounded native
-  `x86_64`/`aarch64` Linux evidence at Tier 0. Release-artifact binding is open.
+  `x86_64`/`aarch64` Linux evidence at Tier 0, plus exact launcher-role
+  observations in both release contexts.
 - `PBR-VERIFY-006` has tested model-only evidence over all 22 registered
-  carrier attacks; release-artifact binding remains open.
+  carrier attacks and exact verifier-role observations in both release
+  contexts.
 - The repository has a standalone `pbr-verify` executable, the native Linux
   enforcement crate, and the first fail-closed `pbr doctor` product command.
 - Independent verification covers closed decoding, canonical bytes, external
   receipt commitment, identities, relationships, and eligibility derivation.
 - `PBR-COMPOSE-008` has tested model-only evidence over its closed 16-case
-  cross-receipt attack corpus. Native workflow observation and release-artifact
-  binding remain open.
+  cross-receipt attack corpus and exact composer-role observations in both
+  native release contexts.
 
 ## Current completion boundary
 
@@ -52,12 +55,14 @@ The Tier 3 release-observation implementation is complete in the repository:
 - the release workflow builds, observes, verifies, composes, and retains each
   native release independently on `x86_64` and `aarch64` Linux.
 
-Revision `8ed15fc` produced and independently verified both native context
-receipts and their composed Runtime receipts. Those records remain historical:
-the current receipt-binding source refinement changed the reviewed source and
-requires new exact-SHA release records. The four source-refined claims also
-retain their distinct theorem-to-release-byte binding obligations; exact
-empirical observations do not promote them to `ARTIFACT_BOUND`.
+Revision `ced2871` produced and independently verified both native context
+receipts and their composed Runtime receipts in GitHub Actions run
+`34346773261`. Each contextual release contains four distinct theorem-derived
+bindings to the exact `pbr` bytes and four distinct empirical observations of
+the Runtime, launcher, verifier, and composer roles. The former retain their
+toolchain assumption; the latter do not promote tested/model-only claims. A
+final exact-SHA reproduction is still required after merge before tagging and
+publishing 0.1.0.
 
 ## Ordered work queue
 
@@ -135,11 +140,12 @@ committed with the source that generated it.
   architectures.
 - [x] Implement context-bound release production, independent verification,
   and retention for both native architectures.
-- [ ] Produce and independently verify one context-bound release receipt on
+- [x] Produce and independently verify one context-bound release receipt on
   each native architecture.
-- [ ] Bind all admitted claims to exact release artifacts.
+- [x] Bind every source-refined claim to the exact native `pbr` artifacts and
+  retain exact observations for every tested/model-only release role.
 - [x] Verify the release receipt independently.
-- [ ] Run the complete context-bound release gate and publish the honest
+- [x] Run the complete context-bound release gate and publish the honest
   assurance language.
 - [x] Update the quick start, supported-platform statement, receipt semantics,
   threat model, and changelog.
@@ -148,7 +154,7 @@ committed with the source that generated it.
 ### Wave 6: Proofbound composition
 
 - [x] Define the typed Proofbound plugin outside Proofbound core.
-- [ ] Compose one verified runtime execution receipt with its verified Runtime
+- [x] Compose one verified runtime execution receipt with its verified Runtime
   release receipt.
 - [x] Reject omission, substitution, downgrade, replay, and premise loss across
   the composed receipt chain.
