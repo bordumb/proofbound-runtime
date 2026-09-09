@@ -31,6 +31,11 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Independent transport of the expected execution ID in the `pbr run` result,
   preventing composition from deriving its replay expectation from the receipt
   carrier.
+- Lean 4.33 source refinement for the production receipt-binding constructor
+  and canonical wire projection.
+- Contextual theorem-derived binding of the four Tier 3 claims to the exact
+  native `pbr` artifacts, with independent verification and no promotion of
+  observation-only claims.
 
 ## [0.0.0] - 2026-09-04
 
