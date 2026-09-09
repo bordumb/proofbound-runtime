@@ -27,6 +27,9 @@ The document type determines its authority.
 - [Specification 0004](specs/0004_doctor_explanations.md) defines the
   read-only host-readiness explanation projection without changing capability
   or support semantics.
+- [Specification 0005](specs/0005_read_only_preflight.md) defines a read-only
+  execution preflight that joins plan, host, path, and identity diagnostics
+  without installing a boundary or starting child code.
 
 Normative product or wire behavior belongs in `docs/specs/`. A specification
 revision requires explicit review because it can change claim meaning.
