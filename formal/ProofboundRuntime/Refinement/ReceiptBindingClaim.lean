@@ -7,7 +7,7 @@ namespace ProofboundRuntime.Refinement.ReceiptBindingClaim
 
 open ProofboundRuntime.Refinement.ReceiptBinding
 
-@[proofbound_claim "PBR-BINDING-005"]
+@[proofbound_exempt "Supporting source-refinement lemma consumed by the public release-artifact theorem."]
 theorem construct_and_project_receipt_binding_refines
     (parts : proofbound_runtime_binding.ReceiptBindingParts) :
     ∃ output,

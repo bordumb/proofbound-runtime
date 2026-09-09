@@ -7,7 +7,7 @@ namespace ProofboundRuntime.Refinement.ReceiptEligibilityClaim
 
 open ProofboundRuntime.Refinement.ReceiptEligibility
 
-@[proofbound_claim "PBR-RECEIPT-004"]
+@[proofbound_exempt "Supporting source-refinement lemma consumed by the public release-artifact theorem."]
 theorem derive_receipt_eligibility_refines
     (facts : proofbound_runtime_receipt.ReceiptFacts) :
     ∃ eligibility,

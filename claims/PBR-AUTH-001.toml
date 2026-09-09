@@ -7,11 +7,13 @@ subject = "rust:proofbound_runtime_core::normalize_authority"
 profile = "kernel-with-assumptions"
 tier = 3
 primary_linkage = "refined"
-formal_declaration = "ProofboundRuntime.Refinement.AuthorityNormalizationClaim.normalize_authority_refines"
+formal_declaration = "ProofboundRuntime.ReleaseArtifacts.Authority.authorityReleaseArtifacts"
 statement_encoding = "lean-expr-cbor/1"
-statement_sha256 = "sha256:5f6b14cbe8d5d0b88cf4d79dbbf305b0607e78c4ecff059daac87ef9d292f818"
+statement_sha256 = "sha256:ab98d670b27ac76b0aa8a533f543fcdae9f37a6e461fd52c703d29e0429215f2"
 foundational_axioms = ["Classical.choice", "Quot.sound", "propext"]
 evidence = [
+  "artifact-soundness:release-bind-authority-linux-aarch64",
+  "artifact-soundness:release-bind-authority-linux-x86-64",
   "example-test:authority-conformance",
   "bounded-check:authority-normalization-bounds",
   "theorem:authority-normalization-refinement-theorem",
@@ -33,6 +35,8 @@ source_roots = [
   "formal/ProofboundRuntime/Refinement/AuthorityNormalization.lean",
   "formal/ProofboundRuntime/Refinement/AuthorityCarrierClaim.lean",
   "formal/ProofboundRuntime/Refinement/AuthorityNormalizationClaim.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts/Authority.lean",
   "formal/bridges/ProofboundRuntimeCore/FunsExternal.lean",
   "formal/generated/ProofboundRuntimeCore/",
   "assumptions/PBR-STRING-REP-004.toml",
@@ -40,9 +44,12 @@ source_roots = [
   "proofbound/evidence/authority-normalization-bounds.toml",
   "proofbound/evidence/authority-normalization-refinement-theorem.toml",
   "proofbound/evidence/authority-normalization-refinement.toml",
+  "proofbound/evidence/release-bind-authority-linux-aarch64.toml",
+  "proofbound/evidence/release-bind-authority-linux-x86-64.toml",
   "proofbound/translations/authority-normalization.toml",
   "proofbound/model-checks/authority-normalization.toml",
   "tests/conformance/",
+  "tools/release/artifact_checker.py",
 ]
 
 [bounded_domain]

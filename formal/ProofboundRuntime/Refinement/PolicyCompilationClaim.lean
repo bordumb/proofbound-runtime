@@ -7,7 +7,7 @@ namespace ProofboundRuntime.Refinement.PolicyCompilationClaim
 
 open ProofboundRuntime.Refinement.PolicyCompilation
 
-@[proofbound_claim "PBR-POLICY-002"]
+@[proofbound_exempt "Supporting source-refinement lemma consumed by the public release-artifact theorem."]
 theorem compile_policy_refines
     (authority : proofbound_runtime_core.normalize.NormalizedAuthority) :
     ∃ compiled,

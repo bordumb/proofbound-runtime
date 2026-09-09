@@ -8,7 +8,7 @@ namespace ProofboundRuntime.Refinement.AuthorityNormalizationClaim
 open proofbound_runtime_core
 open ProofboundRuntime.Refinement.AuthorityNormalization
 
-@[proofbound_claim "PBR-AUTH-001"]
+@[proofbound_exempt "Supporting source-refinement lemma consumed by the public release-artifact theorem."]
 theorem normalize_authority_refines
     (plan : authority.AuthorityPlan) :
     normalize.normalize_authority plan

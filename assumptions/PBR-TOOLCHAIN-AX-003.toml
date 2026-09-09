@@ -25,4 +25,5 @@ review_evidence = [
 ]
 discharge_plan = "Use exact toolchain identity, reproducible builds, source refinement, artifact binding, and an independently verified release receipt. Retain any compiler premise that those routes do not close."
 source_citation = "docs/specs/0001_initial_spec.md#93-rust-policy"
+formal_axioms = ["ProofboundRuntime.ReleaseArtifacts.toolchainWitness"]
 status = "active"

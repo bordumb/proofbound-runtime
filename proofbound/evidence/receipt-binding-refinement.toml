@@ -4,15 +4,17 @@ adapter = "charon-aeneas"
 kind = "source-refinement"
 claims = ["PBR-BINDING-005"]
 tier = 3
-refinement_theorem = "ProofboundRuntime.Refinement.ReceiptBindingClaim.construct_and_project_receipt_binding_refines"
+refinement_theorem = "ProofboundRuntime.ReleaseArtifacts.ReceiptBinding.receiptBindingReleaseArtifacts"
 premises = ["PBR-BINDING-REP-008"]
-assumptions = []
+assumptions = ["PBR-TOOLCHAIN-AX-003"]
 inputs = [
   "crates/proofbound-runtime-binding/Cargo.toml",
   "crates/proofbound-runtime-binding/src/lib.rs",
   "formal/ProofboundRuntime/Binding.lean",
   "formal/ProofboundRuntime/Refinement/ReceiptBinding.lean",
   "formal/ProofboundRuntime/Refinement/ReceiptBindingClaim.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts/ReceiptBinding.lean",
   "formal/generated/ProofboundRuntimeBinding/Funs.lean",
   "formal/generated/ProofboundRuntimeBinding/Types.lean",
   "formal/generated/ProofboundRuntimeBinding/translation.json",

@@ -4,15 +4,17 @@ adapter = "charon-aeneas"
 kind = "source-refinement"
 claims = ["PBR-RECEIPT-004"]
 tier = 3
-refinement_theorem = "ProofboundRuntime.Refinement.ReceiptEligibilityClaim.derive_receipt_eligibility_refines"
+refinement_theorem = "ProofboundRuntime.ReleaseArtifacts.ReceiptEligibility.receiptEligibilityReleaseArtifacts"
 premises = ["PBR-RECEIPT-REP-005"]
-assumptions = []
+assumptions = ["PBR-TOOLCHAIN-AX-003"]
 inputs = [
   "crates/proofbound-runtime-receipt/Cargo.toml",
   "crates/proofbound-runtime-receipt/src/lib.rs",
   "formal/ProofboundRuntime/Receipt.lean",
   "formal/ProofboundRuntime/Refinement/ReceiptEligibility.lean",
   "formal/ProofboundRuntime/Refinement/ReceiptEligibilityClaim.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts/ReceiptEligibility.lean",
   "formal/bridges/ProofboundRuntimeReceipt/FunsExternal.lean",
   "formal/generated/ProofboundRuntimeReceipt/Funs.lean",
   "formal/generated/ProofboundRuntimeReceipt/FunsExternal_Template.lean",

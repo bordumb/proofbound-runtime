@@ -7,11 +7,13 @@ subject = "rust:proofbound_runtime_binding::construct_and_project_receipt_bindin
 profile = "kernel-with-assumptions"
 tier = 3
 primary_linkage = "refined"
-formal_declaration = "ProofboundRuntime.Refinement.ReceiptBindingClaim.construct_and_project_receipt_binding_refines"
+formal_declaration = "ProofboundRuntime.ReleaseArtifacts.ReceiptBinding.receiptBindingReleaseArtifacts"
 statement_encoding = "lean-expr-cbor/1"
-statement_sha256 = "sha256:85b90ff329249bc50ae97df5a5b6a94e214ab7dfe8d6a6b3ee46c506738e84f1"
-foundational_axioms = ["propext"]
+statement_sha256 = "sha256:c3e310298d3b57afa07acb6162820616be1b03ebdf5a0ffe3ecefb7c4fb86ed7"
+foundational_axioms = ["Classical.choice", "Quot.sound", "propext"]
 evidence = [
+  "artifact-soundness:release-bind-receipt-binding-linux-aarch64",
+  "artifact-soundness:release-bind-receipt-binding-linux-x86-64",
   "example-test:receipt-binding-constructor-attacks",
   "theorem:receipt-binding-refinement-theorem",
   "source-refinement:receipt-binding-refinement",
@@ -46,12 +48,17 @@ source_roots = [
   "formal/ProofboundRuntime/Claims/Binding.lean",
   "formal/ProofboundRuntime/Refinement/ReceiptBinding.lean",
   "formal/ProofboundRuntime/Refinement/ReceiptBindingClaim.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts/ReceiptBinding.lean",
   "formal/generated/ProofboundRuntimeBinding/",
   "proofbound/evidence/receipt-binding-constructor-attacks.toml",
   "proofbound/evidence/receipt-binding-refinement-theorem.toml",
   "proofbound/evidence/receipt-binding-refinement.toml",
+  "proofbound/evidence/release-bind-receipt-binding-linux-aarch64.toml",
+  "proofbound/evidence/release-bind-receipt-binding-linux-x86-64.toml",
   "proofbound/translations/receipt-binding.toml",
   "schemas/execution-receipt-v1.schema.json",
   "tests/attacks/receipt/construction-v1.toml",
   "tests/attacks/receipt/",
+  "tools/release/artifact_checker.py",
 ]

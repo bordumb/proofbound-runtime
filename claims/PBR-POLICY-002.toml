@@ -7,11 +7,13 @@ subject = "rust:proofbound_runtime_core::compile_policy"
 profile = "kernel-with-assumptions"
 tier = 3
 primary_linkage = "refined"
-formal_declaration = "ProofboundRuntime.Refinement.PolicyCompilationClaim.compile_policy_refines"
+formal_declaration = "ProofboundRuntime.ReleaseArtifacts.Policy.policyReleaseArtifacts"
 statement_encoding = "lean-expr-cbor/1"
-statement_sha256 = "sha256:9ef151a15760bb529f9d19ec054f64c92b04120b50345a38e0118d2fe763b79b"
-foundational_axioms = ["Quot.sound", "propext"]
+statement_sha256 = "sha256:aa7d7e022fe8dd3538aef2fc9126e0e14a3d53e3c4bb803a4c2a87ed044fb649"
+foundational_axioms = ["Classical.choice", "Quot.sound", "propext"]
 evidence = [
+  "artifact-soundness:release-bind-policy-linux-aarch64",
+  "artifact-soundness:release-bind-policy-linux-x86-64",
   "bounded-check:policy-compilation-bounds",
   "theorem:policy-compilation-refinement-theorem",
   "source-refinement:policy-compilation-refinement",
@@ -35,15 +37,20 @@ source_roots = [
   "formal/ProofboundRuntime/Policy.lean",
   "formal/ProofboundRuntime/Refinement/PolicyCompilation.lean",
   "formal/ProofboundRuntime/Refinement/PolicyCompilationClaim.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts/Policy.lean",
   "formal/generated/ProofboundRuntimePolicy/",
   "proofbound/evidence/policy-compilation-bounds.toml",
   "proofbound/evidence/policy-compilation-refinement.toml",
   "proofbound/evidence/policy-compilation-refinement-theorem.toml",
+  "proofbound/evidence/release-bind-policy-linux-aarch64.toml",
+  "proofbound/evidence/release-bind-policy-linux-x86-64.toml",
   "proofbound/model-checks/policy-compilation.toml",
   "proofbound/translations/policy-compilation.toml",
   "docs/specs/0001_initial_spec.md",
   "docs/threat-model.md",
   "docs/adr/0001-linux-enforcement-boundary.md",
+  "tools/release/artifact_checker.py",
 ]
 
 [bounded_domain]

@@ -4,9 +4,9 @@ adapter = "charon-aeneas"
 kind = "source-refinement"
 claims = ["PBR-POLICY-002"]
 tier = 3
-refinement_theorem = "ProofboundRuntime.Refinement.PolicyCompilationClaim.compile_policy_refines"
+refinement_theorem = "ProofboundRuntime.ReleaseArtifacts.Policy.policyReleaseArtifacts"
 premises = ["PBR-POLICY-REP-006"]
-assumptions = []
+assumptions = ["PBR-TOOLCHAIN-AX-003"]
 inputs = [
   "crates/proofbound-runtime-core/Cargo.toml",
   "crates/proofbound-runtime-core/src/authority.rs",
@@ -15,6 +15,8 @@ inputs = [
   "formal/ProofboundRuntime/Policy.lean",
   "formal/ProofboundRuntime/Refinement/PolicyCompilation.lean",
   "formal/ProofboundRuntime/Refinement/PolicyCompilationClaim.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts/Policy.lean",
   "formal/generated/ProofboundRuntimePolicy/Funs.lean",
   "formal/generated/ProofboundRuntimePolicy/Types.lean",
   "formal/generated/ProofboundRuntimePolicy/translation.json",

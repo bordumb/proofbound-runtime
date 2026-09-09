@@ -5,15 +5,18 @@ kind = "theorem"
 claims = ["PBR-AUTH-001"]
 tier = 3
 evaluation_mode = "kernel"
-theorem = "ProofboundRuntime.Refinement.AuthorityNormalizationClaim.normalize_authority_refines"
+theorem = "ProofboundRuntime.ReleaseArtifacts.Authority.authorityReleaseArtifacts"
 premises = []
+assumptions = ["PBR-TOOLCHAIN-AX-003"]
 expected_inventory = [
-  "ProofboundRuntime.Refinement.AuthorityNormalizationClaim.normalize_authority_refines",
+  "ProofboundRuntime.ReleaseArtifacts.Authority.authorityReleaseArtifacts",
 ]
 inputs = [
   "formal/ProofboundRuntime/Refinement/Authority.lean",
   "formal/ProofboundRuntime/Refinement/AuthorityNormalization.lean",
   "formal/ProofboundRuntime/Refinement/AuthorityNormalizationClaim.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts/Authority.lean",
   "formal/bridges/ProofboundRuntimeCore/FunsExternal.lean",
   "formal/generated/ProofboundRuntimeCore/Funs.lean",
   "formal/generated/ProofboundRuntimeCore/Types.lean",
@@ -26,10 +29,10 @@ environment_allowlist = ["LEAN_PATH", "PATH"]
 [operation]
 type = "lean-audit"
 targets = [
-  "ProofboundRuntime.Refinement.AuthorityNormalizationClaim.normalize_authority_refines",
+  "ProofboundRuntime.ReleaseArtifacts.Authority.authorityReleaseArtifacts",
 ]
 paths = [
-  "formal/ProofboundRuntime/Refinement/AuthorityNormalizationClaim.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts/Authority.lean",
 ]
 
 [resource_budget]
