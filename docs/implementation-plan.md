@@ -149,7 +149,8 @@ committed with the source that generated it.
   assurance language.
 - [x] Update the quick start, supported-platform statement, receipt semantics,
   threat model, and changelog.
-- [ ] Tag and publish version 0.1.
+- [x] Reproduce the merged revision on both native architectures, tag it, and
+  publish version 0.1 with checksummed runtime and assurance bundles.
 
 ### Wave 6: Proofbound composition
 

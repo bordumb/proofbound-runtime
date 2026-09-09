@@ -3,15 +3,19 @@
 Run untrusted tools with declared authority and produce an independently
 verifiable account of the execution boundary.
 
-> **Status:** 0.1.0 release candidate. The executable product surface and
+> **Status:** version 0.1.0 released. The executable product surface and
 > native Linux boundary are implemented and exercised on `x86_64` and
 > `aarch64`. The Proofbound release envelope is independently verified, and a
 > typed Runtime plugin composes it with one verified execution receipt. The
-> complete contextual release rehearsal at revision `ced2871` bound all four
+> final contextual release build at revision
+> `c78e189e2e098489ebf9f45840bdf9ff6cb0fd6d` bound all four
 > source-refined claims to the exact native `pbr` member and independently
 > observed the Runtime, launcher, verifier, and composer roles on both native
-> architectures. No claim facet was promoted by observation. Merge, final-tag
-> reproduction, and publication remain before 0.1.0 is released.
+> architectures. No claim facet was promoted by observation. The exact-SHA
+> build passed on both architectures in
+> [run 34361101393](https://github.com/bordumb/proofbound-runtime/actions/runs/34361101393),
+> and its runtime and assurance bundles are published in the
+> [v0.1.0 release](https://github.com/bordumb/proofbound-runtime/releases/tag/v0.1.0).
 
 ## What it is
 
