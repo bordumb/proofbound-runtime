@@ -7,10 +7,11 @@ verifiable account of the execution boundary.
 > native Linux boundary are implemented and exercised on `x86_64` and
 > `aarch64`. The Proofbound release envelope is independently verified, and a
 > typed Runtime plugin composes it with one verified execution receipt. The
-> context-bound exact-artifact observation workflow is implemented but has not
-> yet produced both hosted native release records. The distinct semantic
-> release-artifact binding obligations also remain open, so no 0.1.0 release
-> has been published yet.
+> context-bound exact-artifact observation workflow produced both hosted native
+> records for revision `8ed15fc`, but those historical records predate the
+> current receipt-binding source refinement and do not support a current
+> release. The distinct semantic release-artifact binding obligations also
+> remain open, so no 0.1.0 release has been published yet.
 
 ## What it is
 
@@ -81,10 +82,11 @@ The project uses Proof-Driven Development:
    linkage.
 5. Rebuild every affected evidence path after source or artifact changes.
 
-The first two completed source-linkage waves are `PBR-AUTH-001`, authority
-normalization does not amplify authority, and `PBR-RECEIPT-004`, incomplete
-executions are not reusable. Both still require release-artifact binding before
-their statements can apply to shipping binaries.
+Four claims have completed source-refinement linkage: `PBR-AUTH-001`,
+`PBR-POLICY-002`, `PBR-RECEIPT-004`, and `PBR-BINDING-005`. They cover authority
+normalization, policy compilation, receipt eligibility, and the production
+receipt binding projection. All four still require release-artifact binding
+before their statements can apply to shipping binaries.
 
 ## Quick start
 

@@ -25,9 +25,9 @@ dependency order, commit boundaries, and completion evidence.
   open.
 - `PBR-RECEIPT-004` is source-refined at Tier 3. Release-artifact binding is
   open.
-- `PBR-BINDING-005` has a kernel-checked model theorem and tested production
-  constructor evidence; source refinement and release-artifact binding remain
-  open.
+- `PBR-BINDING-005` is source-refined at Tier 3 through the production-used
+  binding constructor and canonical wire projection. Release-artifact binding
+  is open.
 - `PBR-SEQUENCE-003` has tested protocol-state evidence and bounded native
   `x86_64`/`aarch64` Linux evidence at Tier 0. Release-artifact binding is open.
 - `PBR-VERIFY-006` has tested model-only evidence over all 22 registered
@@ -52,10 +52,11 @@ The Tier 3 release-observation implementation is complete in the repository:
 - the release workflow builds, observes, verifies, composes, and retains each
   native release independently on `x86_64` and `aarch64` Linux.
 
-Completion still requires successful hosted executions of both native context
-jobs. Those executions must produce and independently verify the two contextual
-release receipts and their composed Runtime receipts. The source-refined claims
-also retain their distinct theorem-to-release-byte binding obligations; exact
+Revision `8ed15fc` produced and independently verified both native context
+receipts and their composed Runtime receipts. Those records remain historical:
+the current receipt-binding source refinement changed the reviewed source and
+requires new exact-SHA release records. The four source-refined claims also
+retain their distinct theorem-to-release-byte binding obligations; exact
 empirical observations do not promote them to `ARTIFACT_BOUND`.
 
 ## Ordered work queue
