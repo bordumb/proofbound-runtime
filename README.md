@@ -96,7 +96,53 @@ independently observed.
 
 ## Quick start
 
-Build the four colocated binaries on a supported native Linux host:
+Install the four colocated `v0.1.0` binaries on a supported native Linux host.
+The expected archive digest is part of this reviewed source document; the
+GitHub repository and release channel remain distribution trust inputs.
+
+```console
+version=0.1.0
+case "$(uname -m)" in
+  x86_64)
+    architecture=x86_64
+    target=x86_64-unknown-linux-gnu
+    expected_sha256=e0bf91c787d67be9c96f76992b661c3fa905707491e51310673302bf88776040
+    ;;
+  aarch64)
+    architecture=aarch64
+    target=aarch64-unknown-linux-gnu
+    expected_sha256=a30e3b83eaa56a2a97b111a551d75c63261e0247ac65c30c51e787f49db6138f
+    ;;
+  *)
+    echo "unsupported architecture: $(uname -m)" >&2
+    exit 3
+    ;;
+esac
+archive="proofbound-runtime-v${version}-${target}.tar.gz"
+install_root="$PWD/proofbound-runtime-v${version}-${architecture}"
+test ! -e "$archive"
+test ! -e "$install_root"
+curl --proto '=https' --tlsv1.2 --fail --location \
+  --output "$archive" \
+  "https://github.com/bordumb/proofbound-runtime/releases/download/v${version}/${archive}"
+printf '%s  %s\n' "$expected_sha256" "$archive" | sha256sum --check -
+mkdir "$install_root"
+tar --extract --gzip --file "$archive" --directory "$install_root"
+"$install_root/pbr" --version
+"$install_root/pbr-verify" --version
+"$install_root/pbr-compose" --version
+```
+
+The maintained installer performs the same archive check, rejects any changed
+member or embedded binary identity, and requires a new absolute destination:
+
+```console
+python3 tools/install_release.py \
+  --version 0.1.0 \
+  --destination /absolute/new/proofbound-runtime-v0.1.0
+```
+
+To build from source instead:
 
 ```console
 cargo build --locked --release --bins
@@ -106,7 +152,9 @@ target/release/pbr-compose --version
 ```
 
 The host must provide a delegated cgroup v2 directory with the `pids`
-controller enabled and no direct processes. Confirm all required mechanisms
+controller enabled and no direct processes. See the
+[version 0.1 installation and host-readiness guide](docs/guides/install-v0.1.md)
+for the maintained systemd delegation recipe. Confirm all required mechanisms
 before running a workload:
 
 ```console

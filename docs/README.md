@@ -28,6 +28,14 @@ The document type determines its authority.
 Normative product or wire behavior belongs in `docs/specs/`. A specification
 revision requires explicit review because it can change claim meaning.
 
+## User guides
+
+- [Install and prepare version 0.1](guides/install-v0.1.md) verifies one exact
+  release archive and prepares the supported systemd cgroup delegation.
+
+Guides describe maintained procedures. They do not strengthen a product claim,
+replace a receipt, or remove a documented host or distribution assumption.
+
 ## Security model
 
 - [Threat model](threat-model.md) defines protected assets, attackers, trusted
