@@ -24,6 +24,9 @@ The document type determines its authority.
 - [Specification 0003](specs/0003_release_receipt_composition.md) fixes the
   typed release/execution receipt join, preserved evidence, and cross-receipt
   attack inventory.
+- [Specification 0004](specs/0004_doctor_explanations.md) defines the
+  read-only host-readiness explanation projection without changing capability
+  or support semantics.
 
 Normative product or wire behavior belongs in `docs/specs/`. A specification
 revision requires explicit review because it can change claim meaning.
