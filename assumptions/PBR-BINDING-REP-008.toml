@@ -1,0 +1,17 @@
+schema = "proofbound-assumption/1"
+id = "PBR-BINDING-REP-008"
+statement = "Each Aeneas owned-vector carrier preserves the exact canonical field-value bytes moved through the production receipt binding constructor and wire projection."
+category = "representation-premise"
+owner = "Proofbound Runtime formalization maintainer"
+rationale = "The production binding boundary moves twenty canonical JSON field-value byte vectors through a dedicated typed constructor and projection. The refinement theorem must connect every translated owned vector to the corresponding exact-byte identity in the receipt model without omission, substitution, duplication, or reordering."
+scope = "Only the source-refinement edge from the production receipt binding kernel to PBR-BINDING-005."
+affected_claims = ["PBR-BINDING-005"]
+review_evidence = [
+  "formal/ProofboundRuntime/Refinement/ReceiptBinding.lean",
+  "formal/ProofboundRuntime/Refinement/ReceiptBindingClaim.lean",
+]
+discharge_plan = "Discharged by the unconditional registered binding refinement theorem over all twenty translated canonical field-value vectors."
+source_citation = "formal/ProofboundRuntime/Refinement/ReceiptBindingClaim.lean#construct_and_project_receipt_binding_refines"
+status = "discharged"
+premise_scope = { kind = "all-registered-inputs" }
+discharge = { theorem = "receipt-binding-refinement-theorem", scope = { kind = "all-registered-inputs" } }

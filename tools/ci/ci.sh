@@ -29,6 +29,7 @@ python3 tools/conformance/authority_reference.py
 printf '%s\n' '[7/9] Lean model, generated source translation, and claim audit executable'
 lake build
 bash tools/ci/authority-refinement.sh
+bash tools/ci/binding-refinement.sh
 bash tools/ci/policy-refinement.sh
 bash tools/ci/receipt-refinement.sh
 

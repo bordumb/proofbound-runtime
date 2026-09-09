@@ -104,6 +104,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "proofbound-runtime-binding"
+version = "0.1.0"
+
+[[package]]
 name = "proofbound-runtime-cli"
 version = "0.1.0"
 dependencies = [
@@ -128,6 +132,7 @@ dependencies = [
 name = "proofbound-runtime-core"
 version = "0.1.0"
 dependencies = [
+ "proofbound-runtime-binding",
  "proofbound-runtime-receipt",
  "proofbound-runtime-verify",
  "serde",

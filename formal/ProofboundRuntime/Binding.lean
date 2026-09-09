@@ -49,15 +49,19 @@ def requiredFields : List ReceiptField := [
   .trustedComputingBase
 ]
 
-/-- A pre-construction inventory. The natural-number payload abstracts one
-exact typed value identity without assigning it domain meaning. -/
+/-- Exact canonical bytes of one top-level field value. The model deliberately
+does not assign domain meaning to the bytes; it proves that the production
+binding boundary cannot omit, duplicate, reorder, or change them. -/
+abbrev FieldIdentity := List Nat
+
+/-- A pre-construction inventory. -/
 structure Candidate where
-  bindings : List (ReceiptField × Nat)
+  bindings : List (ReceiptField × FieldIdentity)
   deriving DecidableEq, Repr
 
 /-- A constructed receipt retains the complete accepted binding inventory. -/
 structure Receipt where
-  bindings : List (ReceiptField × Nat)
+  bindings : List (ReceiptField × FieldIdentity)
   deriving DecidableEq, Repr
 
 def Complete (candidate : Candidate) : Prop :=

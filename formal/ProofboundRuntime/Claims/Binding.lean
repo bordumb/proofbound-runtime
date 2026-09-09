@@ -1,9 +1,9 @@
-import Proofbound.Attribute
 import ProofboundRuntime.Binding
+import Proofbound.Attribute
 
 namespace ProofboundRuntime.Claims.Binding
 
-@[proofbound_claim "PBR-BINDING-005"]
+@[proofbound_exempt "Abstract model theorem consumed by the production source-refinement claim."]
 theorem constructed_receipt_is_complete_and_exact
     (candidate : ProofboundRuntime.Binding.Candidate)
     (receipt : ProofboundRuntime.Binding.Receipt)

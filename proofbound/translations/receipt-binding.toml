@@ -1,0 +1,64 @@
+schema = "proofbound-translation-unit/3"
+id = "receipt-binding"
+pipeline = "charon-aeneas"
+generated_dir = "formal/generated/ProofboundRuntimeBinding"
+handwritten_refinement = "formal/ProofboundRuntime/Refinement/ReceiptBindingClaim.lean"
+determinism_runs = 2
+determinism_normalization = "pretty-printed-llbc/1"
+forbid_generated_axioms = true
+claims = ["PBR-BINDING-005"]
+warning_inventory = []
+
+[[invocations]]
+id = "receipt-binding"
+cargo_package = "proofbound-runtime-binding"
+cargo_manifest = "crates/proofbound-runtime-binding/Cargo.toml"
+crate_name = "proofbound_runtime_binding"
+llbc_file = "proofbound_runtime_binding.llbc"
+start_from = ["proofbound_runtime_binding::construct_and_project_receipt_binding"]
+opaque = []
+include = []
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_binding::construct_and_project_receipt_binding"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_binding::construct_receipt_binding"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_binding::project_receipt_binding"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_binding::ReceiptBinding"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_binding::ReceiptBindingParts"
+
+[[invocations.outputs]]
+kind = "lean-source"
+produced = "Funs.lean"
+destination = "formal/generated/ProofboundRuntimeBinding/Funs.lean"
+
+[[invocations.outputs]]
+kind = "lean-source"
+produced = "Types.lean"
+destination = "formal/generated/ProofboundRuntimeBinding/Types.lean"
+
+[[invocations.outputs]]
+kind = "translation-report"
+produced = "translation.json"
+destination = "formal/generated/ProofboundRuntimeBinding/translation.json"
+
+[import_mapping]
+mode = "external-source-root"
+source_roots = ["formal", "formal/bridges"]
+
+[resource_budget]
+time_seconds = 1800
+disk_bytes = 26843545600
+memory_bytes = 8589934592

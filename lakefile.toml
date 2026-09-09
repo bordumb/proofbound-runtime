@@ -19,6 +19,8 @@ srcDir = "formal"
 name = "ProofboundRuntimeGenerated"
 srcDir = "formal/generated"
 roots = [
+  "ProofboundRuntimeBinding.Types",
+  "ProofboundRuntimeBinding.Funs",
   "ProofboundRuntimeCore.Types",
   "ProofboundRuntimeCore.Funs",
   "ProofboundRuntimePolicy.Types",

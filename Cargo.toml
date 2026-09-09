@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+  "crates/proofbound-runtime-binding",
   "crates/proofbound-runtime-core",
   "crates/proofbound-runtime-cli",
   "crates/proofbound-runtime-compose",
@@ -21,6 +22,7 @@ publish = false
 
 [workspace.dependencies]
 libc = "=0.2.189"
+proofbound-runtime-binding = { path = "crates/proofbound-runtime-binding" }
 proofbound-runtime-core = { path = "crates/proofbound-runtime-core" }
 proofbound-runtime-linux = { path = "crates/proofbound-runtime-linux" }
 serde = { version = "=1.0.229", features = ["derive"] }

@@ -2,26 +2,27 @@ schema = "proofbound-claim/1"
 id = "PBR-BINDING-005"
 title = "Reusable receipts bind security-relevant execution inputs"
 statement = "Every reusable execution receipt binds the registered plan, compiled policy, platform, launcher, runtime, executable closure, inputs, outputs, limits, and observed outcome."
-public_language = "A kernel-checked model theorem proves that successful abstract construction requires the closed 20-field version 1 inventory and retains every associated identity exactly. The typed production constructor rejects the registered role, substitution, replay, duplicate, truncation, and premise-loss attacks. Source refinement of completeness to the production constructor and wire projection remains open."
-subject = "rust:proofbound_runtime_core::construct_execution_receipt"
+public_language = "A kernel-checked source-refinement theorem proves that the production-used receipt binding constructor and canonical wire projection retain the exact canonical value bytes of all 20 version 1 top-level fields. The typed production constructor rejects the registered role, substitution, replay, duplicate, truncation, and premise-loss attacks."
+subject = "rust:proofbound_runtime_binding::construct_and_project_receipt_binding"
 profile = "kernel-with-assumptions"
 tier = 3
-primary_linkage = "model-only"
-formal_declaration = "ProofboundRuntime.Claims.Binding.constructed_receipt_is_complete_and_exact"
+primary_linkage = "refined"
+formal_declaration = "ProofboundRuntime.Refinement.ReceiptBindingClaim.construct_and_project_receipt_binding_refines"
 statement_encoding = "lean-expr-cbor/1"
-statement_sha256 = "sha256:b2221695a3b34e7f684385b8fb1b2e206c8e3ff460e8def4fa55563659ea3c98"
+statement_sha256 = "sha256:85b90ff329249bc50ae97df5a5b6a94e214ab7dfe8d6a6b3ee46c506738e84f1"
 foundational_axioms = ["propext"]
 evidence = [
   "example-test:receipt-binding-constructor-attacks",
-  "theorem:receipt-binding-completeness-theorem",
+  "theorem:receipt-binding-refinement-theorem",
+  "source-refinement:receipt-binding-refinement",
 ]
 assumptions = [
   "PBR-LINUX-AX-001",
   "PBR-HOST-AX-002",
   "PBR-TOOLCHAIN-AX-003",
 ]
+premises = ["PBR-BINDING-REP-008"]
 open_obligations = [
-  "Source-refine the completeness theorem to the production constructor and canonical wire projection.",
   "Link admitted receipt properties to exact release artifacts.",
 ]
 out_of_scope = [
@@ -29,6 +30,8 @@ out_of_scope = [
   "Secret values, which must not appear in a receipt.",
 ]
 source_roots = [
+  "assumptions/PBR-BINDING-REP-008.toml",
+  "crates/proofbound-runtime-binding/",
   "crates/proofbound-runtime-core/Cargo.toml",
   "crates/proofbound-runtime-core/src/error.rs",
   "crates/proofbound-runtime-core/src/identity.rs",
@@ -41,8 +44,13 @@ source_roots = [
   "docs/receipt-semantics.md",
   "formal/ProofboundRuntime/Binding.lean",
   "formal/ProofboundRuntime/Claims/Binding.lean",
+  "formal/ProofboundRuntime/Refinement/ReceiptBinding.lean",
+  "formal/ProofboundRuntime/Refinement/ReceiptBindingClaim.lean",
+  "formal/generated/ProofboundRuntimeBinding/",
   "proofbound/evidence/receipt-binding-constructor-attacks.toml",
-  "proofbound/evidence/receipt-binding-completeness-theorem.toml",
+  "proofbound/evidence/receipt-binding-refinement-theorem.toml",
+  "proofbound/evidence/receipt-binding-refinement.toml",
+  "proofbound/translations/receipt-binding.toml",
   "schemas/execution-receipt-v1.schema.json",
   "tests/attacks/receipt/construction-v1.toml",
   "tests/attacks/receipt/",

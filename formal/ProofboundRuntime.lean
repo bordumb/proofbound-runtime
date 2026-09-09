@@ -9,5 +9,7 @@ import ProofboundRuntime.Receipt
 import ProofboundRuntime.Refinement.AuthorityNormalization
 import ProofboundRuntime.Refinement.AuthorityNormalizationClaim
 import ProofboundRuntime.Refinement.AuthorityCarrierClaim
+import ProofboundRuntime.Refinement.ReceiptBinding
+import ProofboundRuntime.Refinement.ReceiptBindingClaim
 import ProofboundRuntime.Refinement.ReceiptEligibility
 import ProofboundRuntime.Refinement.ReceiptEligibilityClaim

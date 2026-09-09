@@ -1,0 +1,38 @@
+schema = "proofbound-evidence-unit/1"
+id = "receipt-binding-refinement-theorem"
+adapter = "lean"
+kind = "theorem"
+claims = ["PBR-BINDING-005"]
+tier = 3
+evaluation_mode = "kernel"
+theorem = "ProofboundRuntime.Refinement.ReceiptBindingClaim.construct_and_project_receipt_binding_refines"
+premises = []
+expected_inventory = [
+  "ProofboundRuntime.Refinement.ReceiptBindingClaim.construct_and_project_receipt_binding_refines",
+]
+inputs = [
+  "formal/ProofboundRuntime/Binding.lean",
+  "formal/ProofboundRuntime/Refinement/ReceiptBinding.lean",
+  "formal/ProofboundRuntime/Refinement/ReceiptBindingClaim.lean",
+  "formal/generated/ProofboundRuntimeBinding/Funs.lean",
+  "formal/generated/ProofboundRuntimeBinding/Types.lean",
+  "lake-manifest.json",
+  "lakefile.toml",
+  "lean-toolchain",
+]
+outputs = ["claims/PBR-BINDING-005.toml"]
+environment_allowlist = ["LEAN_PATH", "PATH"]
+
+[operation]
+type = "lean-audit"
+targets = [
+  "ProofboundRuntime.Refinement.ReceiptBindingClaim.construct_and_project_receipt_binding_refines",
+]
+paths = [
+  "formal/ProofboundRuntime/Refinement/ReceiptBindingClaim.lean",
+]
+
+[resource_budget]
+time_seconds = 1800
+disk_bytes = 2147483648
+memory_bytes = 4294967296
