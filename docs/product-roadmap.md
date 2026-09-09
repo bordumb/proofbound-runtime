@@ -1,6 +1,6 @@
 # Proofbound Runtime product and delivery roadmap
 
-- **Status:** planning document
+- **Status:** execution in progress
 - **Date:** 2026-09-09
 - **Runtime baseline:** `0b83bfe` (`v0.1.0` is `c78e189`)
 - **Proofbound baseline consumed by Runtime:** `70af5e6`
@@ -28,6 +28,24 @@ The roadmap uses these sources:
 - the Runtime and Proofbound source trees, commit histories, GitHub pull
   requests, branch controls, and representative CI and release runs; and
 - the external product critique reproduced in the planning request.
+
+### Execution checkpoint
+
+As of 2026-09-09, Order 0 is implemented on the roadmap branch, the version
+0.1 installation path and host-prerequisite explanations are implemented and
+locally verified, and the two measured upstream workflow observations are
+recorded. The remaining installation-slice work is the read-only host
+preflight and the downloadable maintained example.
+
+Upstream promotion is intentionally paused at its review boundary. Proofbound
+PR 2 is green but still needs an independent approving review. A dry run of
+the later integration promotion correctly failed because its head retained an
+older approval envelope followed by newer changes. The obsolete envelope has
+been retired in a local subject commit. After PR 2 merges, the promotion diff
+must be recomputed against the new exact `main`, independently reviewed, and
+sealed by a new approval-only envelope before the promotion PR can become a
+merge candidate. No Runtime claim wave depends on treating that pending stack
+as released.
 
 ## 1. Executive decision
 
@@ -164,10 +182,21 @@ the work there as an incidental side effect of a Runtime feature PR.
 
 ### UP-0.1 Promote the consumed upstream state
 
-- Open one explicit promotion PR from the reviewed integration line containing
-  `70af5e6` to Proofbound `main`.
+- Complete the existing language-support PR 2 first. It must receive an
+  independent approving review before merge; a green self-authored
+  implementation check is not that review.
+- Prepare one final subject commit on the integration line after PR 2 lands.
+  Retire the superseded review envelope in that subject so the resulting
+  `main..subject` tree comparison does not reinterpret an older approval.
+- Re-run `proofbound diff` against the new exact `main` and the exact subject.
+  An independent reviewer must inspect that regression set and add a later
+  approval-envelope commit containing only the newly registered review
+  manifest. Any post-envelope byte change invalidates the approval.
+- Use that exact envelope head for the explicit promotion PR. The draft
+  promotion PR may be used as a fail-closed preflight, but it is not a merge
+  candidate while the exact envelope or independent approval is absent.
 - Re-run the full Proofbound verify-only gate against the actual mainline merge
-  base and the exact promotion head.
+  base and the exact promotion envelope head.
 - Review the merge topology regressions from Proofbound
   [PR 3](https://github.com/bordumb/proof-bound/pull/3),
   [PR 4](https://github.com/bordumb/proof-bound/pull/4), and
