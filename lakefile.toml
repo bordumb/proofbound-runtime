@@ -14,6 +14,13 @@ path = "formal/vendor/aeneas"
 [[lean_lib]]
 name = "ProofboundRuntime"
 srcDir = "formal"
+roots = [
+  "ProofboundRuntime",
+  "ProofboundRuntime.ReleaseArtifacts.Authority",
+  "ProofboundRuntime.ReleaseArtifacts.Policy",
+  "ProofboundRuntime.ReleaseArtifacts.ReceiptBinding",
+  "ProofboundRuntime.ReleaseArtifacts.ReceiptEligibility",
+]
 
 [[lean_lib]]
 name = "ProofboundRuntimeGenerated"
