@@ -3,6 +3,7 @@
 use core::fmt;
 use core::fmt::Write as _;
 
+use proofbound_runtime_binding::{ReceiptBindingParts, construct_and_project_receipt_binding};
 use serde::Serialize;
 
 pub use proofbound_runtime_receipt::{
@@ -47,7 +48,9 @@ impl ExecutionId {
         &self.0
     }
 
-    fn to_wire(self) -> String {
+    /// Returns the canonical lowercase RFC 4122 text carried on version 1 wires.
+    #[must_use]
+    pub fn to_text(self) -> String {
         let mut output = String::with_capacity(36);
         for (index, byte) in self.0.into_iter().enumerate() {
             if matches!(index, 4 | 6 | 8 | 10) {
@@ -587,10 +590,94 @@ impl ExecutionReceipt {
     /// ASCII, every 64-bit counter is a decimal string, and conversion through
     /// `serde_json::Value` sorts every object key before compact encoding.
     pub fn canonical_bytes(&self) -> Result<Vec<u8>, ReceiptError> {
-        let value = serde_json::to_value(WireExecutionReceipt::from(self))
-            .map_err(|_| ReceiptError::CanonicalEncoding)?;
-        serde_json::to_vec(&value).map_err(|_| ReceiptError::CanonicalEncoding)
+        let wire = WireExecutionReceipt::from(self);
+        let parts = ReceiptBindingParts {
+            assumptions: canonical_field_bytes(&wire.assumptions)?,
+            boundary: canonical_field_bytes(&wire.boundary)?,
+            command: canonical_field_bytes(&wire.command)?,
+            eligibility: canonical_field_bytes(&wire.eligibility)?,
+            environment: canonical_field_bytes(&wire.environment)?,
+            execution_id: canonical_field_bytes(&wire.execution_id)?,
+            inputs: canonical_field_bytes(&wire.inputs)?,
+            observations: canonical_field_bytes(&wire.observations)?,
+            outcome: canonical_field_bytes(&wire.outcome)?,
+            output_root: canonical_field_bytes(&wire.output_root)?,
+            outputs: canonical_field_bytes(&wire.outputs)?,
+            plan: canonical_field_bytes(&wire.plan)?,
+            platform: canonical_field_bytes(&wire.platform)?,
+            policy: canonical_field_bytes(&wire.policy)?,
+            producer: canonical_field_bytes(&wire.producer)?,
+            product_version: canonical_field_bytes(&wire.product_version)?,
+            runtime: canonical_field_bytes(&wire.runtime)?,
+            schema: canonical_field_bytes(&wire.schema)?,
+            streams: canonical_field_bytes(&wire.streams)?,
+            trusted_computing_base: canonical_field_bytes(&wire.trusted_computing_base)?,
+        };
+        encode_binding(construct_and_project_receipt_binding(parts))
     }
+}
+
+fn canonical_field_bytes<T: Serialize>(value: &T) -> Result<Vec<u8>, ReceiptError> {
+    let value = serde_json::to_value(value).map_err(|_| ReceiptError::CanonicalEncoding)?;
+    serde_json::to_vec(&value).map_err(|_| ReceiptError::CanonicalEncoding)
+}
+
+fn encode_binding(parts: ReceiptBindingParts) -> Result<Vec<u8>, ReceiptError> {
+    let mut output = Vec::new();
+    output.push(b'{');
+    append_bound_field(&mut output, b"\"assumptions\":", parts.assumptions, false);
+    append_bound_field(&mut output, b"\"boundary\":", parts.boundary, true);
+    append_bound_field(&mut output, b"\"command\":", parts.command, true);
+    append_bound_field(&mut output, b"\"eligibility\":", parts.eligibility, true);
+    append_bound_field(&mut output, b"\"environment\":", parts.environment, true);
+    append_bound_field(&mut output, b"\"execution_id\":", parts.execution_id, true);
+    append_bound_field(&mut output, b"\"inputs\":", parts.inputs, true);
+    append_bound_field(&mut output, b"\"observations\":", parts.observations, true);
+    append_bound_field(&mut output, b"\"outcome\":", parts.outcome, true);
+    append_bound_field(&mut output, b"\"output_root\":", parts.output_root, true);
+    append_bound_field(&mut output, b"\"outputs\":", parts.outputs, true);
+    append_bound_field(&mut output, b"\"plan\":", parts.plan, true);
+    append_bound_field(&mut output, b"\"platform\":", parts.platform, true);
+    append_bound_field(&mut output, b"\"policy\":", parts.policy, true);
+    append_bound_field(&mut output, b"\"producer\":", parts.producer, true);
+    append_bound_field(
+        &mut output,
+        b"\"product_version\":",
+        parts.product_version,
+        true,
+    );
+    append_bound_field(&mut output, b"\"runtime\":", parts.runtime, true);
+    append_bound_field(&mut output, b"\"schema\":", parts.schema, true);
+    append_bound_field(&mut output, b"\"streams\":", parts.streams, true);
+    append_bound_field(
+        &mut output,
+        b"\"trusted_computing_base\":",
+        parts.trusted_computing_base,
+        true,
+    );
+    output.push(b'}');
+    serde_json::from_slice::<serde_json::Value>(&output)
+        .map_err(|_| ReceiptError::CanonicalEncoding)?;
+    Ok(output)
+}
+
+fn append_bound_field(output: &mut Vec<u8>, name: &[u8], value: Vec<u8>, comma: bool) {
+    if comma {
+        output.push(b',');
+    }
+    output.extend_from_slice(name);
+    output.extend(value);
+}
+
+/// Constructs one complete execution receipt through the translation boundary.
+///
+/// Keeping this boundary as a free function gives the source-refinement tool a
+/// stable production entry point while preserving `ExecutionReceipt::new` as
+/// the single implementation of construction semantics.
+pub fn construct_execution_receipt(
+    parts: ExecutionReceiptParts,
+) -> Result<ExecutionReceipt, ReceiptError> {
+    ExecutionReceipt::new(parts)
 }
 
 #[derive(Serialize)]
@@ -795,7 +882,7 @@ impl From<&ExecutionReceipt> for WireExecutionReceipt {
                     inode: parts.boundary.cgroup.inode.to_string(),
                     mount_id: parts.boundary.cgroup.mount_id.to_string(),
                 },
-                execution_id: parts.boundary.execution_id.to_wire(),
+                execution_id: parts.boundary.execution_id.to_text(),
                 policy_sha256: parts.boundary.policy_sha256.to_hex(),
                 state: boundary_wire_name(parts.boundary.state),
             },
@@ -807,7 +894,7 @@ impl From<&ExecutionReceipt> for WireExecutionReceipt {
             },
             eligibility: WireEligibility::from(&receipt.eligibility),
             environment: receipt.environment.clone(),
-            execution_id: parts.execution_id.to_wire(),
+            execution_id: parts.execution_id.to_text(),
             inputs: parts.inputs.iter().map(WireArtifact::from).collect(),
             observations: WireObservations {
                 clock: "linux-monotonic",
@@ -1259,7 +1346,13 @@ mod tests {
         let receipt = ExecutionReceipt::new(parts()).expect("fixture receipt is valid");
         let first = receipt.canonical_bytes().expect("fixture encodes");
         let second = receipt.canonical_bytes().expect("fixture re-encodes");
+        let reference = serde_json::to_vec(
+            &serde_json::to_value(WireExecutionReceipt::from(&receipt))
+                .expect("wire projection serializes"),
+        )
+        .expect("canonical reference serializes");
         assert_eq!(first, second);
+        assert_eq!(first, reference);
         assert!(!first.ends_with(b"\n"));
 
         let text = String::from_utf8(first.clone()).expect("JSON is UTF-8");

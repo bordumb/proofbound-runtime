@@ -1,9 +1,9 @@
 # Threat model
 
-- **Status:** initial normative boundary
+- **Status:** implemented version 1 boundary; native release candidate verified
 - **Version:** 0.1.0
-- **Date:** 2026-09-04
-- **Applies to:** the intended Proofbound Runtime version 1 execution profile
+- **Date:** 2026-09-09
+- **Applies to:** the Proofbound Runtime version 1 execution profile
 
 ## Purpose
 
@@ -11,10 +11,14 @@ Proofbound Runtime runs a command that the caller does not fully trust. It gives
 the command declared authority and records the installed boundary and observed
 outcome in an execution receipt.
 
-This threat model defines what the initial product intends to protect, which
-attacks it must reject, what it trusts, and what remains outside its claims. The
-runtime is pre-implementation. No statement in this document describes a
-currently shipping containment mechanism.
+This threat model defines what the initial product protects, which attacks it
+rejects, what it trusts, and what remains outside its claims. The boundary is
+implemented and has bounded native evidence on identified `x86_64` and
+`aarch64` Linux runners. The retained release rehearsal at revision `ced2871`
+contextually binds the four source-refined claims to exact native `pbr` bytes
+and independently observes the four tested release roles. These records
+support the release candidate; a final merged-SHA reproduction, tag, and
+publication are still required for a published 0.1.0 artifact.
 
 ## Protected assets
 
@@ -67,9 +71,17 @@ semantics.
 A party transporting or storing a receipt can alter, truncate, reorder,
 substitute, replay, or remove fields. Canonical encoding, typed identities, and
 independent validation detect locally decidable defects. An exact SHA-256
-commitment delivered through a channel independent of the carrier detects
-canonical substitutions that retain all internal relationships. A receipt and
-commitment controlled by the same carrier do not establish integrity.
+commitment and expected execution ID delivered through a channel independent
+of the carrier detect canonical substitutions and replays that retain all
+internal relationships. Expectations controlled by the same carrier as the
+receipt do not establish integrity.
+
+The same adversary can target a composed chain by omitting a release claim,
+downgrading a claim facet, substituting a Runtime binary or verifier, replaying
+an execution ID, or removing an inherited assumption or trusted component.
+`pbr-compose` rejects the registered cross-receipt mutations and never emits a
+partial or `non-composed` success artifact. It does not authenticate inputs and
+expectations that were all delivered through the same compromised channel.
 
 ## Trusted computing base
 
@@ -90,6 +102,18 @@ Initial execution claims depend on:
 
 Proofbound must retain these roles and any narrower claim-specific premises. A
 receipt signature or digest does not discharge them.
+
+Release interpretation additionally trusts the independently supplied release
+artifact, its recorded digest, the reproducible-build environment, and the
+Proofbound release-receipt verifier. Reproducibility establishes agreement of
+bytes under the registered build recipe; it does not establish compiler or
+kernel correctness.
+
+Composition interpretation additionally trusts the exact `pbr-compose` and
+domain verifier binaries whose identities it records. The running composer
+must byte-match the bundle's composer role. This closes silent tool
+substitution within the represented bundle; it does not prove the composer's
+behavior or discharge the compiler premise.
 
 ## Initial enforced boundary
 
@@ -236,6 +260,12 @@ It cannot by itself establish that:
 - every unregistered attack was impossible; or
 - the Runtime release possessed a stronger Proofbound status than its release
   receipt admits.
+
+A valid composed receipt additionally establishes that both independent
+verifications succeeded and that the represented release, Runtime bundle,
+execution, assumptions, and trusted-computing-base inventories passed the
+specified exact-byte joins. It preserves the assurance report's status facets;
+it cannot strengthen them.
 
 ## Review triggers
 

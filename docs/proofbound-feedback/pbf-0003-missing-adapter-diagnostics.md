@@ -4,7 +4,7 @@
 - **Priority:** `near-term`
 - **Kind:** `workflow`
 - **Created:** 2026-09-05
-- **Last updated:** 2026-09-05
+- **Last updated:** 2026-09-09
 - **Runtime claim:** `PBR-AUTH-001`
 - **Runtime milestone:** Milestone 1
 - **Proofbound target:** CLI reporting
@@ -38,6 +38,29 @@ missing:
 The JSON report did not include the unit-run diagnostics that identified the
 missing adapter executables. The resulting remediation, "run the registered
 evidence unit," did not explain that the units could not start.
+
+A second occurrence showed that this is not limited to absent executables.
+GitHub Actions run `34256391222` installed every registered adapter and reached
+the final Proofbound evidence stage. That stage ran for 30 minutes 47 seconds,
+after which `PBR-AUTH-001` reported only that
+`bounded-check:authority-normalization-bounds` was missing. The registered Kani
+unit had a 900-second budget, while successful local receipts for the original
+harness took between 388 and 532 seconds. The report did not expose whether the
+adapter timed out, failed, or was skipped, so the downstream missing-citation
+error was the only hosted diagnostic available.
+
+Runtime retained the 900-second limit and strengthened the harness to assert
+the exact normalized result across the same 16-state catalog. The revised
+harness completed through the sealed Proofbound adapter protocol in 322
+seconds. This repairs Runtime's immediate CI margin, but it does not repair the
+generic diagnostic loss.
+
+A third occurrence in GitHub Actions run `34341395699` initially appeared only
+as four missing theorem-evidence citations. Once Runtime printed the retained
+unit-run diagnostics, the actual cause was precise: the default Lake target had
+not compiled the four new public artifact-theorem modules, so each audit import
+failed on its absent `.olean`. The distinction prevented an unnecessary proof
+or evidence-policy change and led directly to the build-graph fix in `ced2871`.
 
 ## Ownership test
 
@@ -90,10 +113,14 @@ schema. Existing status derivation and exit codes do not need reinterpretation.
 
 ## Local treatment
 
-Runtime CI installs the orchestrator and every adapter required by its Tier 2
-manifests at one exact Proofbound revision. It checks that each executable is
-available before running the offline assurance gate. Missing adapters continue
-to fail CI.
+Runtime CI installs the orchestrator and every adapter required by its manifests
+at one exact Proofbound revision. It checks that each executable is available
+before running the offline assurance gate. The manifest gate now forces fresh
+evidence execution and prints every failed unit's structured diagnostic from
+the compiled project before exiting. Missing adapters and timed-out evidence
+units continue to fail CI. Runtime also keeps expensive bounded harnesses
+comfortably below their declared budgets, but these local safeguards do not
+replace the proposed generic Proofbound report extension.
 
 ## Upstream handoff
 

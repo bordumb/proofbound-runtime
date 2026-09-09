@@ -10,18 +10,20 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-    name: Reproduce release (${{ matrix.architecture }})
+  release:
+    name: Reproduce and seal release (${{ matrix.architecture }})
     strategy:
       fail-fast: false
       matrix:
         include:
           - architecture: x86_64
+            context: release-linux-x86-64
             runner: ubuntu-24.04
           - architecture: aarch64
+            context: release-linux-aarch64
             runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 30
+    timeout-minutes: 90
     steps:
       - name: Check out the exact requested head
         uses: actions/checkout@v4
@@ -31,17 +33,231 @@ jobs:
 
       - name: Install pinned Rust toolchain
         uses: dtolnay/rust-toolchain@1.94.0
+        with:
+          components: clippy,rustfmt
+
+      - name: Install pinned Lean toolchain
+        uses: leanprover/lean-action@38fbc41a8c28c4cbaec22d7f7de508ec2e7c0dd9 # v1.5.0
+        with:
+          auto-config: false
+          build: false
+          test: false
+          lint: false
+          mk_all-check: false
+          check-reservoir-eligibility: false
+          leanchecker: false
+          nanoda: false
+
+      - name: Install Nix for pinned translation tools
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31
+
+      - name: Install pinned Charon and Aeneas tools
+        env:
+          AENEAS_SOURCE_REVISION: 3a8586facab25b31bdb1e1f5f45acd60d1cc5ff0
+          AENEAS_VERSION: 3a8586fa
+        run: |
+          tools_path="$(AENEAS_RELEASE_VERSION="$AENEAS_VERSION" nix build \
+            --impure \
+            --no-link \
+            --print-out-paths \
+            "github:AeneasVerif/aeneas/$AENEAS_SOURCE_REVISION#aeneas")"
+          echo "$tools_path/bin" >> "$GITHUB_PATH"
+
+      - name: Verify pinned translation tools
+        run: |
+          test "$(charon version)" = "0.1.225"
+          test "$(aeneas -version)" = "aeneas 3a8586fa"
+
+      - name: Install pinned repository tools
+        run: |
+          cargo install --locked just --version 1.46.0
+          cargo install --locked cargo-deny --version 0.20.2
+
+      - name: Install pinned Proofbound tools
+        run: >-
+          cargo install
+          --locked
+          --git https://github.com/bordumb/proof-bound
+          --rev 70af5e61110fc09704076a6d8b00fd8ff011b1c8
+          proofbound-cli
+          proofbound-verify
+          proofbound-adapter-aeneas
+          proofbound-adapter-test
+          proofbound-adapter-kani
+          proofbound-adapter-lean
+
+      - name: Verify Proofbound executables
+        run: |
+          command -v proofbound
+          command -v proofbound-verify
+          command -v proofbound-adapter-aeneas
+          command -v proofbound-adapter-test
+          command -v proofbound-adapter-kani
+          command -v proofbound-adapter-lean
+
+      - name: Install pinned Kani verifier
+        run: |
+          cargo install --locked kani-verifier --version 0.67.0
+          cargo kani setup
+
+      - name: Fetch locked project dependencies
+        run: just bootstrap
+
+      - name: Reject bootstrap lockfile drift
+        run: git diff --exit-code -- Cargo.lock lake-manifest.json
+
+      - name: Run the complete repository base gate
+        run: just ci
 
       - name: Build and byte-compare two release bundles
-        run: bash tools/release/build-linux.sh dist
+        run: bash tools/release/build-linux.sh dist/runtime
 
       - name: Verify the published bundle checksum
-        working-directory: dist
-        run: sha256sum --check *.sha256
+        working-directory: dist/runtime
+        run: sha256sum --check ./*.sha256
 
-      - name: Upload the reproduced release bundle
+      - name: Extract the exact release observation bundle
+        run: |
+          observation_directory="dist/release-observation/${{ matrix.architecture }}"
+          mkdir -p "$observation_directory"
+          tar -xzf dist/runtime/*.tar.gz -C "$observation_directory"
+
+      - name: Execute and verify the exact release binaries
+        env:
+          PROOFBOUND_EXPECTED_ARCH: ${{ matrix.architecture }}
+        run: |
+          runtime_directory="$PWD/dist/release-observation/${{ matrix.architecture }}"
+          evidence_directory="$PWD/dist/native-evidence/${{ matrix.architecture }}"
+          PROOFBOUND_RUNTIME_BIN_DIR="$runtime_directory" \
+          PROOFBOUND_EVIDENCE_DIRECTORY="$evidence_directory" \
+            bash tools/ci/native-linux.sh
+
+      - name: Create the closed observation input manifest
+        run: >-
+          python3 tools/release/observation_inputs.py
+          --architecture "${{ matrix.architecture }}"
+          --output "dist/native-evidence/${{ matrix.architecture }}/proofbound-observation-inputs.json"
+
+      - name: Create and independently observe the contextual release receipt
+        env:
+          PROOFBOUND_EXPECTED_ARCH: ${{ matrix.architecture }}
+        run: |
+          bash tools/release/proofbound-release.sh \
+            "${{ matrix.context }}" \
+            "dist/native-evidence/${{ matrix.architecture }}/proofbound-observation-inputs.json" \
+            "dist/assurance/${{ matrix.architecture }}/proofbound-release"
+
+      - name: Compose the exact contextual release and execution receipts
+        run: |
+          runtime_directory="$PWD/dist/release-observation/${{ matrix.architecture }}"
+          evidence_directory="$PWD/dist/native-evidence/${{ matrix.architecture }}"
+          proofbound_release="$PWD/dist/assurance/${{ matrix.architecture }}/proofbound-release"
+          commitment="$(tr -d '\n' <"$evidence_directory/receipt-commitment.txt")"
+          execution_id="$(tr -d '\n' <"$evidence_directory/execution-id.txt")"
+          "$runtime_directory/pbr-compose" \
+            --release "$proofbound_release" \
+            --proofbound-verifier "$proofbound_release/bin/proofbound-verify" \
+            --proofbound-observation-inputs "$evidence_directory/proofbound-observation-inputs.json" \
+            --runtime-bundle "$runtime_directory" \
+            --execution-receipt "$evidence_directory/execution-receipt.json" \
+            --execution-commitment "$commitment" \
+            --expected-execution-id "$execution_id" \
+            --output "$evidence_directory/composed-receipt.json"
+
+      - name: Confirm the complete observed release chain
+        run: |
+          python3 - \
+            "$GITHUB_SHA" \
+            "${{ matrix.architecture }}" \
+            "${{ matrix.context }}" \
+            "dist/assurance/${{ matrix.architecture }}/proofbound-release.verification.json" \
+            "dist/native-evidence/${{ matrix.architecture }}/composed-receipt.json" \
+            "dist/assurance/${{ matrix.architecture }}/proofbound-release/compiled-receipt.json" \
+            "dist/release-observation/${{ matrix.architecture }}/RELEASE-MANIFEST.json" <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          revision, architecture, context = sys.argv[1:4]
+          report = json.loads(pathlib.Path(sys.argv[4]).read_bytes())
+          receipt = json.loads(pathlib.Path(sys.argv[5]).read_bytes())
+          compiled = json.loads(pathlib.Path(sys.argv[6]).read_bytes())
+          manifest = json.loads(pathlib.Path(sys.argv[7]).read_bytes())
+          assert report["project_revision"] == revision
+          assert report["evidence_context"] == context
+          assert report["publication_blocked"] is False
+          assert report["verdict"] == "bytes-observed"
+          assert compiled["schema"] == "proofbound-compiled-release/6"
+          assert compiled["project_revision"] == revision
+          assert compiled["evidence_context"] == context
+          assert receipt["schema"] == "proofbound-runtime-composed-receipt/1"
+          assert receipt["eligibility"] == {"status": "composed"}
+          assert receipt["release"]["project_revision"] == revision
+          assert receipt["release"]["evidence_context"] == context
+          assert receipt["release"]["verification_verdict"] == "bytes-observed"
+          assert receipt["runtime_bundle"]["architecture"] == architecture
+          observed = {
+              (
+                  claim["claim_id"],
+                  observation["subject_role"],
+                  observation["platform"]["operating_system"],
+                  observation["platform"]["architecture"],
+              )
+              for claim in receipt["claims"]
+              for observation in claim["artifact_observations"]
+          }
+          assert observed == {
+              ("PBR-COMPOSE-008", "composer-release", "linux", architecture),
+              ("PBR-RUN-007", "runtime-release", "linux", architecture),
+              ("PBR-SEQUENCE-003", "launcher-release", "linux", architecture),
+              ("PBR-VERIFY-006", "verifier-release", "linux", architecture),
+          }
+          pbr = next(item for item in manifest["artifacts"] if item["name"] == "pbr")
+          bindings = []
+          for wrapper in compiled["evidence"]:
+              record = wrapper["record"]
+              binding = record.get("artifact_binding")
+              if binding is None:
+                  continue
+              assert record["schema"] == "proofbound-evidence/5"
+              assert record["kind"] == "artifact-soundness"
+              assert record["outcome"] == "passed"
+              assert record["evaluation_mode"] == "kernel"
+              assert record["binding_mode"] == "digest-theorem"
+              assert record["evidence_context"] == context
+              assert len(record["claim_ids"]) == 1
+              assert binding["theorem_evidence"].startswith("sha256:")
+              assert binding["artifact"] == {
+                  "logical_name": f"dist/release-observation/{architecture}/pbr",
+                  "sha256": f"sha256:{pbr['sha256']}",
+                  "size_bytes": pbr["size"],
+              }
+              bindings.append(record["claim_ids"][0])
+          assert sorted(bindings) == [
+              "PBR-AUTH-001",
+              "PBR-BINDING-005",
+              "PBR-POLICY-002",
+              "PBR-RECEIPT-004",
+          ]
+          tier3 = {
+              claim["claim_id"]: claim
+              for claim in receipt["claims"]
+              if claim["claim_id"] in bindings
+          }
+          assert set(tier3) == set(bindings)
+          for claim in tier3.values():
+              assert claim["formal"] == "PROVED"
+              assert claim["linkage"] == "REFINED"
+              assert claim["assumption"] == "ASSUMED"
+          PY
+
+      - name: Upload the reproduced and observed release chain
         uses: actions/upload-artifact@v4
         with:
           name: proofbound-runtime-${{ matrix.architecture }}
-          path: dist/*
+          path: |
+            dist/assurance/${{ matrix.architecture }}/
+            dist/native-evidence/${{ matrix.architecture }}/
+            dist/release-observation/${{ matrix.architecture }}/
+            dist/runtime/
           if-no-files-found: error

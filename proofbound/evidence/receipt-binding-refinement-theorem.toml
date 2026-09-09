@@ -1,0 +1,41 @@
+schema = "proofbound-evidence-unit/1"
+id = "receipt-binding-refinement-theorem"
+adapter = "lean"
+kind = "theorem"
+claims = ["PBR-BINDING-005"]
+tier = 3
+evaluation_mode = "kernel"
+theorem = "ProofboundRuntime.ReleaseArtifacts.ReceiptBinding.receiptBindingReleaseArtifacts"
+premises = []
+assumptions = ["PBR-TOOLCHAIN-AX-003"]
+expected_inventory = [
+  "ProofboundRuntime.ReleaseArtifacts.ReceiptBinding.receiptBindingReleaseArtifacts",
+]
+inputs = [
+  "formal/ProofboundRuntime/Binding.lean",
+  "formal/ProofboundRuntime/Refinement/ReceiptBinding.lean",
+  "formal/ProofboundRuntime/Refinement/ReceiptBindingClaim.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts/ReceiptBinding.lean",
+  "formal/generated/ProofboundRuntimeBinding/Funs.lean",
+  "formal/generated/ProofboundRuntimeBinding/Types.lean",
+  "lake-manifest.json",
+  "lakefile.toml",
+  "lean-toolchain",
+]
+outputs = ["claims/PBR-BINDING-005.toml"]
+environment_allowlist = ["LEAN_PATH", "PATH"]
+
+[operation]
+type = "lean-audit"
+targets = [
+  "ProofboundRuntime.ReleaseArtifacts.ReceiptBinding.receiptBindingReleaseArtifacts",
+]
+paths = [
+  "formal/ProofboundRuntime/ReleaseArtifacts/ReceiptBinding.lean",
+]
+
+[resource_budget]
+time_seconds = 1800
+disk_bytes = 2147483648
+memory_bytes = 4294967296

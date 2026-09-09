@@ -1,11 +1,11 @@
 name = "proofbound-runtime"
-version = "0.0.0"
+version = "0.1.0"
 defaultTargets = ["ProofboundRuntime", "proofbound_lean_audit"]
 
 [[require]]
 name = "proofbound"
 git = "https://github.com/bordumb/proof-bound"
-rev = "504d17df0451975cf051bd0a8a2dc819da502efd"
+rev = "70af5e61110fc09704076a6d8b00fd8ff011b1c8"
 
 [[require]]
 name = "aeneas"
@@ -14,11 +14,20 @@ path = "formal/vendor/aeneas"
 [[lean_lib]]
 name = "ProofboundRuntime"
 srcDir = "formal"
+roots = [
+  "ProofboundRuntime",
+  "ProofboundRuntime.ReleaseArtifacts.Authority",
+  "ProofboundRuntime.ReleaseArtifacts.Policy",
+  "ProofboundRuntime.ReleaseArtifacts.ReceiptBinding",
+  "ProofboundRuntime.ReleaseArtifacts.ReceiptEligibility",
+]
 
 [[lean_lib]]
 name = "ProofboundRuntimeGenerated"
 srcDir = "formal/generated"
 roots = [
+  "ProofboundRuntimeBinding.Types",
+  "ProofboundRuntimeBinding.Funs",
   "ProofboundRuntimeCore.Types",
   "ProofboundRuntimeCore.Funs",
   "ProofboundRuntimePolicy.Types",

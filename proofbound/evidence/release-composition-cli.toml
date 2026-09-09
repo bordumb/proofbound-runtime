@@ -1,0 +1,31 @@
+schema = "proofbound-evidence-unit/1"
+id = "release-composition-cli"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-COMPOSE-008"]
+tier = 0
+expected_inventory = [
+  "pbr-compose::tests::closed_usage_and_version_are_stable",
+  "pbr-compose::tests::publication_never_replaces_an_existing_path",
+  "pbr-compose::tests::verifier_error_propagation_is_closed",
+]
+inputs = [
+  "crates/proofbound-runtime-compose/Cargo.toml",
+  "crates/proofbound-runtime-compose/src/lib.rs",
+  "crates/proofbound-runtime-compose/src/main.rs",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-compose"
+manifest = "Cargo.toml"
+targets = ["--bin=pbr-compose"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

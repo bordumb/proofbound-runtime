@@ -5,15 +5,18 @@ kind = "theorem"
 claims = ["PBR-RECEIPT-004"]
 tier = 3
 evaluation_mode = "kernel"
-theorem = "ProofboundRuntime.Refinement.ReceiptEligibilityClaim.derive_receipt_eligibility_refines"
+theorem = "ProofboundRuntime.ReleaseArtifacts.ReceiptEligibility.receiptEligibilityReleaseArtifacts"
 premises = []
+assumptions = ["PBR-TOOLCHAIN-AX-003"]
 expected_inventory = [
-  "ProofboundRuntime.Refinement.ReceiptEligibilityClaim.derive_receipt_eligibility_refines",
+  "ProofboundRuntime.ReleaseArtifacts.ReceiptEligibility.receiptEligibilityReleaseArtifacts",
 ]
 inputs = [
   "formal/ProofboundRuntime/Receipt.lean",
   "formal/ProofboundRuntime/Refinement/ReceiptEligibility.lean",
   "formal/ProofboundRuntime/Refinement/ReceiptEligibilityClaim.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts/ReceiptEligibility.lean",
   "formal/bridges/ProofboundRuntimeReceipt/FunsExternal.lean",
   "formal/generated/ProofboundRuntimeReceipt/Funs.lean",
   "formal/generated/ProofboundRuntimeReceipt/Types.lean",
@@ -26,10 +29,10 @@ environment_allowlist = ["LEAN_PATH", "PATH"]
 [operation]
 type = "lean-audit"
 targets = [
-  "ProofboundRuntime.Refinement.ReceiptEligibilityClaim.derive_receipt_eligibility_refines",
+  "ProofboundRuntime.ReleaseArtifacts.ReceiptEligibility.receiptEligibilityReleaseArtifacts",
 ]
 paths = [
-  "formal/ProofboundRuntime/Refinement/ReceiptEligibilityClaim.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts/ReceiptEligibility.lean",
 ]
 
 [resource_budget]

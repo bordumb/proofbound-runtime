@@ -28,8 +28,8 @@ case "$(uname -m)" in
 esac
 
 version="$(tr -d '\n' <"$repository_root/VERSION")"
-commit="$(git -C "$repository_root" rev-parse HEAD)"
-source_date_epoch="$(git -C "$repository_root" show -s --format=%ct HEAD)"
+# Archive metadata is canonical; source provenance belongs in the release receipt.
+source_date_epoch="946684800"
 toolchain="$(rustc --version)"
 bundle_name="proofbound-runtime-v${version}-${target}.tar.gz"
 mkdir -p "$repository_root/target"
@@ -58,7 +58,8 @@ build_bundle() {
     "$target_directory/$target/release/pbr-native-launcher" \
     "$stage/pbr-native-launcher"
   install -m 0755 "$target_directory/$target/release/pbr-verify" "$stage/pbr-verify"
-  python3 - "$stage" "$architecture" "$target" "$version" "$commit" "$toolchain" <<'PY'
+  install -m 0755 "$target_directory/$target/release/pbr-compose" "$stage/pbr-compose"
+  python3 - "$stage" "$architecture" "$target" "$version" "$toolchain" <<'PY'
 import hashlib
 import json
 import os
@@ -67,7 +68,7 @@ import sys
 
 stage = pathlib.Path(sys.argv[1])
 artifacts = []
-for name in ("pbr", "pbr-native-launcher", "pbr-verify"):
+for name in ("pbr", "pbr-native-launcher", "pbr-verify", "pbr-compose"):
     data = (stage / name).read_bytes()
     artifacts.append(
         {
@@ -79,10 +80,9 @@ for name in ("pbr", "pbr-native-launcher", "pbr-verify"):
 manifest = {
     "architecture": sys.argv[2],
     "artifacts": artifacts,
-    "commit": sys.argv[5],
     "schema": "proofbound-runtime-release-manifest/1",
     "target": sys.argv[3],
-    "toolchain": sys.argv[6],
+    "toolchain": sys.argv[5],
     "version": sys.argv[4],
 }
 (stage / "RELEASE-MANIFEST.json").write_bytes(
@@ -98,7 +98,7 @@ PY
     --numeric-owner \
     -C "$stage" \
     -cf - \
-    RELEASE-MANIFEST.json pbr pbr-native-launcher pbr-verify | gzip -n >"$bundle"
+    RELEASE-MANIFEST.json pbr pbr-native-launcher pbr-verify pbr-compose | gzip -n >"$bundle"
 }
 
 mkdir -p "$output_directory"

@@ -1,0 +1,29 @@
+schema = "proofbound-evidence-unit/6"
+id = "release-bind-policy-linux-aarch64"
+context = "release-linux-aarch64"
+adapter = "canonical-artifact"
+kind = "artifact-soundness"
+claims = ["PBR-POLICY-002"]
+tier = 3
+evaluation_mode = "kernel"
+binding_mode = "digest-theorem"
+theorem = "ProofboundRuntime.ReleaseArtifacts.Policy.policyReleaseArtifacts"
+premises = []
+assumptions = ["PBR-TOOLCHAIN-AX-003"]
+expected_inventory = ["dist/release-observation/aarch64/pbr"]
+inputs = [
+  "dist/release-observation/aarch64/pbr",
+  "tools/release/artifact_checker.py",
+]
+outputs = []
+environment_allowlist = ["PATH"]
+
+[operation]
+type = "artifact-check"
+checker = "tools/release/artifact_checker.py"
+arguments = ["dist/release-observation/aarch64/pbr"]
+
+[resource_budget]
+time_seconds = 60
+disk_bytes = 67108864
+memory_bytes = 134217728

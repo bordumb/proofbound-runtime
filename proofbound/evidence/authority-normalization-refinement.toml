@@ -4,9 +4,9 @@ adapter = "charon-aeneas"
 kind = "source-refinement"
 claims = ["PBR-AUTH-001"]
 tier = 3
-refinement_theorem = "ProofboundRuntime.Refinement.AuthorityNormalizationClaim.normalize_authority_refines"
+refinement_theorem = "ProofboundRuntime.ReleaseArtifacts.Authority.authorityReleaseArtifacts"
 premises = ["PBR-STRING-REP-004"]
-assumptions = []
+assumptions = ["PBR-TOOLCHAIN-AX-003"]
 inputs = [
   "crates/proofbound-runtime-core/Cargo.toml",
   "crates/proofbound-runtime-core/src/authority.rs",
@@ -14,6 +14,8 @@ inputs = [
   "formal/ProofboundRuntime/Refinement/Authority.lean",
   "formal/ProofboundRuntime/Refinement/AuthorityNormalization.lean",
   "formal/ProofboundRuntime/Refinement/AuthorityNormalizationClaim.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts/Authority.lean",
   "formal/bridges/ProofboundRuntimeCore/FunsExternal.lean",
   "formal/generated/ProofboundRuntimeCore/Funs.lean",
   "formal/generated/ProofboundRuntimeCore/FunsExternal_Template.lean",

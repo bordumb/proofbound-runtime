@@ -11,6 +11,32 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Nothing yet.
 
+## [0.1.0] - 2026-09-09
+
+### Added
+
+- Strict execution-plan validation and normalized authority explanation through
+  `pbr plan check`.
+- Native `x86_64` and `aarch64` Linux enforcement with Landlock, seccomp,
+  `no_new_privs`, cgroup v2, bounded streams, and fail-closed capability probes.
+- Canonical execution receipts, external receipt commitments, and the
+  independently implemented `pbr-verify` verifier.
+- Proofbound claim, falsifier, bounded-check, Lean refinement, native boundary,
+  orchestration, and release-reproduction evidence.
+- A fail-closed Proofbound release-envelope gate that retains the independent
+  verifier's canonical report.
+- The `pbr-compose` typed plugin, closed cross-receipt attack corpus, and native
+  release workflow that joins exact Proofbound release assurance to one exact
+  independently verified Runtime execution without upgrading claim facets.
+- Independent transport of the expected execution ID in the `pbr run` result,
+  preventing composition from deriving its replay expectation from the receipt
+  carrier.
+- Lean 4.33 source refinement for the production receipt-binding constructor
+  and canonical wire projection.
+- Contextual theorem-derived binding of the four Tier 3 claims to the exact
+  native `pbr` artifacts, with independent verification and no promotion of
+  observation-only claims.
+
 ## [0.0.0] - 2026-09-04
 
 ### Added
@@ -19,5 +45,6 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Contributor guidance and the Proofbound feedback loop.
 - Tier 0 claims, assumptions, repository checks, and CI bootstrap.
 
-[Unreleased]: https://github.com/bordumb/proofbound-runtime/compare/v0.0.0...HEAD
+[Unreleased]: https://github.com/bordumb/proofbound-runtime/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/bordumb/proofbound-runtime/compare/v0.0.0...v0.1.0
 [0.0.0]: https://github.com/bordumb/proofbound-runtime/releases/tag/v0.0.0

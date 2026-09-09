@@ -1,23 +1,25 @@
 # Assurance plan
 
-This document records the intended evidence path for each load-bearing version
+This document records the completed evidence path for each load-bearing version
 0.1 claim. Claim manifests remain the source of truth for current admitted
-status. A target below is a work commitment, not present evidence.
+status, assumptions, exclusions, and exact evidence identities.
 
-## Target summary
+## Assurance summary
 
-| Claim | Target | Reason |
+| Claim | Admitted result | Meaning |
 | --- | --- | --- |
-| `PBR-AUTH-001` | Tier 3, artifact-bound | The deterministic normalization core is source-refined. Only release binding remains. |
-| `PBR-POLICY-002` | Tier 3, artifact-bound | Policy compilation is a pure total function over closed authority and platform types. |
-| `PBR-SEQUENCE-003` | Native bounded evidence, artifact-bound | Launcher sequencing is effectful Linux behavior. A pure model cannot prove kernel effects occurred. |
-| `PBR-RECEIPT-004` | Tier 3, artifact-bound | The receipt-eligibility decision is source-refined. Only release binding remains. |
-| `PBR-BINDING-005` | Tier 3, artifact-bound | Receipt construction and role completeness can be isolated as a pure deterministic core. |
-| `PBR-VERIFY-006` | Registered attack-corpus evidence, artifact-bound | The statement is intentionally bounded to registered mutations and exact rejection reasons. |
-| `PBR-RUN-007` | Native end-to-end evidence, artifact-bound | Effectful orchestration must retain the exact plan, boundary result, observations, and receipt inputs without substitution. |
+| `PBR-AUTH-001` | Tier 3, source-refined with contextual artifact binding | The theorem-derived closed set binds the refined normalization claim to the exact native `pbr` member in each reviewed release context. |
+| `PBR-POLICY-002` | Tier 3, source-refined with contextual artifact binding | The pure policy compiler is source-refined and its theorem-derived closed set selects the exact native `pbr` members. |
+| `PBR-SEQUENCE-003` | Tested/model-only with exact native artifact observation | Launcher sequencing is effectful Linux behavior. Exact execution observations do not prove kernel effects generally. |
+| `PBR-RECEIPT-004` | Tier 3, source-refined with contextual artifact binding | The receipt decision is source-refined and its theorem-derived closed set selects the exact native `pbr` members. |
+| `PBR-BINDING-005` | Tier 3, source-refined with contextual artifact binding | The production constructor and wire projection are source-refined and bound to the exact native `pbr` members. |
+| `PBR-VERIFY-006` | Tested/model-only with exact native artifact observation | The evidence remains bounded to the registered mutations and exact rejection reasons exercised by each native `pbr-verify`. |
+| `PBR-RUN-007` | Tested/model-only with exact native artifact observation | Each native release executes the exact `pbr` bundle role end to end without turning that observation into a theorem. |
+| `PBR-COMPOSE-008` | Tested/model-only with exact native artifact observation | Each exact native composer joins verified receipts without upgrading any inherited facet. |
 
-Artifact binding does not upgrade the behavioral evidence by itself. It only
-connects admitted evidence to exact release bytes.
+The contextual theorem bindings do not change the four Tier 3 claims' selected
+`REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
+observations do not promote the four test-based claims to `ARTIFACT_BOUND`.
 
 ## PBR-POLICY-002
 
@@ -62,14 +64,14 @@ The evidence path is:
 4. denial tests for undeclared filesystem, network, environment, descriptor,
    and process authority;
 5. unsupported-host tests that produce no positive enforcement evidence; and
-6. exact release-artifact binding.
+6. exact native release-artifact observation of the launcher bundle role.
 
 This claim must not be presented as a pure refinement theorem. It keeps the
 Linux and host assumptions visible. The typed protocol transition test is
 registered as Proofbound example evidence. The production-path native corpus
 is additionally required on both `x86_64` and `aarch64` Linux CI hosts; it is
-bounded platform evidence and does not discharge the kernel, host, toolchain,
-or release-artifact premises.
+bounded platform evidence and does not discharge the kernel, host, or toolchain
+premises.
 
 ## PBR-BINDING-005
 
@@ -113,7 +115,7 @@ The evidence path is:
 2. the complete registered receipt attack corpus;
 3. exact typed rejection reasons from the independent implementation;
 4. producer/verifier differential conformance; and
-5. exact release-artifact binding.
+5. exact native release-artifact observation of the `pbr-verify` bundle role.
 
 The claim stays bounded to registered attacks and retains
 `PBR-COMMITMENT-AX-007`. Acceptance of a finite corpus is not proof that an
@@ -133,11 +135,42 @@ The evidence path is:
    output-root, outcome, and receipt-carrier substitution;
 3. one native end-to-end execution on each supported architecture;
 4. independent verification of the emitted canonical receipt bytes; and
-5. exact release-artifact binding for the runtime, launcher, and verifier.
+5. exact native release-artifact observation of the runtime, launcher, and
+   verifier bundle roles.
 
 This claim remains effectful and assumption-bearing. Pure core proofs do not
 prove that the CLI selected the corresponding observations or that Linux
 installed the boundary.
+
+## PBR-COMPOSE-008
+
+The production subject is the pure typed composition boundary, with the
+`pbr-compose` executable responsible only for closed input acquisition,
+independent verifier execution, and no-replace publication. Its source closure
+contains:
+
+- strict decoders for the Proofbound release, Runtime bundle, execution
+  receipt, and both verifier reports;
+- exact artifact identity and bundle-role validation;
+- equality between verified and compiled claim-status inventories;
+- union-with-origin for assumptions and trusted-computing-base entries;
+- a domain-separated composition identity over canonical bytes; and
+- an independent complete-byte recomputation path for mutation tests.
+
+The evidence path is:
+
+1. the frozen omission, substitution, downgrade, replay, and premise-loss
+   attack catalog;
+2. closed CLI grammar, verifier-failure propagation, and no-replace output
+   tests;
+3. one native release-workflow observation on each supported architecture;
+4. retention of every inherited claim facet, assumption, and trusted component;
+5. exact native release-artifact observation of the composer plus retention of
+   both verified inputs' exact identities.
+
+Composition does not increase any inherited claim's formal or linkage facet.
+It retains `PBR-COMMITMENT-AX-007`: placing a receipt and its expected
+commitment into the same replaceable carrier is still not authentication.
 
 ## Promotion rule
 

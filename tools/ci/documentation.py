@@ -10,7 +10,7 @@ from urllib.parse import unquote
 
 
 TEXT_SUFFIXES = {".json", ".md", ".py", ".rs", ".sh", ".toml", ".yaml", ".yml"}
-SKIPPED_PARTS = {".git", ".lake", ".proofbound", "target"}
+SKIPPED_PARTS = {".git", ".lake", ".proofbound", "dist", "target"}
 LOCAL_LINK = re.compile(r"\[[^]]*]\(([^)]+)\)")
 FEEDBACK_FILE = re.compile(r"pbf-([0-9]{4})-[a-z0-9]+(?:-[a-z0-9]+)*\.md")
 
@@ -74,6 +74,18 @@ def feedback_errors(root: Path) -> list[str]:
     return errors
 
 
+def refinement_inventory_errors(root: Path) -> list[str]:
+    """Return errors for refinement checks absent from the complete CI gate."""
+
+    ci_script = (root / "tools" / "ci" / "ci.sh").read_text(encoding="utf-8")
+    errors: list[str] = []
+    for script in sorted((root / "tools" / "ci").glob("*-refinement.sh")):
+        relative = script.relative_to(root).as_posix()
+        if f"bash {relative}" not in ci_script:
+            errors.append(f"{relative}: refinement check is absent from tools/ci/ci.sh")
+    return errors
+
+
 def validate(root: Path) -> list[str]:
     """Return all detected documentation errors."""
 
@@ -97,6 +109,7 @@ def validate(root: Path) -> list[str]:
                 errors.append(f"{path}: fenced code block is not closed")
             errors.extend(local_link_errors(path, text))
     errors.extend(feedback_errors(root))
+    errors.extend(refinement_inventory_errors(root))
     return errors
 
 

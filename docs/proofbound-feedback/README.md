@@ -211,6 +211,10 @@ and superseded items in the table.
 | [PBF-0005](pbf-0005-source-refinement-premise-edges.md) | Source-refinement premise edges | `evidence-semantics` | `blocking` | `resolved` | Milestone 1 | `proof-bound@d6ed79d` |
 | [PBF-0006](pbf-0006-typed-premise-discharge-joins.md) | Typed premise discharge joins | `evidence-semantics` | `blocking` | `resolved` | Milestone 1 | `proof-bound@504d17d` |
 | [PBF-0007](pbf-0007-claim-evidence-domain-consistency.md) | Claim/evidence bounded-domain consistency | `verifier` | `near-term` | `upstream-ready` | Policy compilation | Not upstreamed |
+| [PBF-0008](pbf-0008-tested-release-artifact-observations.md) | Tested release-artifact observations | `evidence-semantics` | `blocking` | `resolved` | Version 0.1 release linkage | `proof-bound` ADR 0020; `dd5893d..cf8f2ba` |
+| [PBF-0009](pbf-0009-reviewed-release-evidence-contexts.md) | Reviewed release evidence contexts | `workflow` | `blocking` | `resolved` | Version 0.1 release linkage | `proof-bound` ADR 0021; `23065d2..65b4698` |
+| [PBF-0010](pbf-0010-translation-cache-state-exclusion.md) | Translation cache state exclusion | `workflow` | `blocking` | `resolved` | Version 0.1 release linkage | `proof-bound@585c0e0` |
+| [PBF-0011](pbf-0011-contextual-semantic-artifact-binding.md) | Contextual semantic artifact binding | `evidence-semantics` | `blocking` | `resolved` | Version 0.1 release linkage | `proof-bound` ADR 0022; `3ec98f5..70af5e6` |
 
 ## Rules for agents
 

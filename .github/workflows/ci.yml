@@ -14,7 +14,7 @@ jobs:
   bootstrap:
     name: Current assurance gate
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
       - name: Check out the exact event head
         uses: actions/checkout@v4
@@ -36,6 +36,26 @@ jobs:
           leanchecker: false
           nanoda: false
 
+      - name: Install Nix for pinned translation tools
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31
+
+      - name: Install pinned Charon and Aeneas tools
+        env:
+          AENEAS_SOURCE_REVISION: 3a8586facab25b31bdb1e1f5f45acd60d1cc5ff0
+          AENEAS_VERSION: 3a8586fa
+        run: |
+          tools_path="$(AENEAS_RELEASE_VERSION="$AENEAS_VERSION" nix build \
+            --impure \
+            --no-link \
+            --print-out-paths \
+            "github:AeneasVerif/aeneas/$AENEAS_SOURCE_REVISION#aeneas")"
+          echo "$tools_path/bin" >> "$GITHUB_PATH"
+
+      - name: Verify pinned translation tools
+        run: |
+          test "$(charon version)" = "0.1.225"
+          test "$(aeneas -version)" = "aeneas 3a8586fa"
+
       - name: Install pinned repository tools
         run: |
           cargo install --locked just --version 1.46.0
@@ -46,8 +66,9 @@ jobs:
           cargo install
           --locked
           --git https://github.com/bordumb/proof-bound
-          --rev 504d17df0451975cf051bd0a8a2dc819da502efd
+          --rev 70af5e61110fc09704076a6d8b00fd8ff011b1c8
           proofbound-cli
+          proofbound-adapter-aeneas
           proofbound-adapter-test
           proofbound-adapter-kani
           proofbound-adapter-lean
@@ -55,6 +76,7 @@ jobs:
       - name: Verify Proofbound executables
         run: |
           command -v proofbound
+          command -v proofbound-adapter-aeneas
           command -v proofbound-adapter-test
           command -v proofbound-adapter-kani
           command -v proofbound-adapter-lean

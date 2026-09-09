@@ -2,19 +2,21 @@ schema = "proofbound-claim/1"
 id = "PBR-SEQUENCE-003"
 title = "Child code starts only after boundary installation"
 statement = "Every supported execution that starts child code first installs the registered cgroup, privilege, filesystem, and syscall boundaries for the same compiled policy identity."
-public_language = "The production launcher uses a typed acknowledgement gate that rejects execution before boundary installation, and the required native corpus observes the installed boundary and registered denials on x86_64 and aarch64 Linux. This is bounded platform evidence, not a proof of Linux or exact release artifacts."
+public_language = "The production launcher uses a typed acknowledgement gate that rejects execution before boundary installation. The required native release workflows execute the exact launcher bundle role and observe the installed boundary and registered denials on x86_64 and aarch64 Linux. This is bounded exact-artifact observation, not theorem-derived artifact soundness or a proof of Linux."
 subject = "rust:proofbound_runtime_linux::supervise_launcher"
 profile = "ledger"
 tier = 0
-evidence = ["example-test:launcher-sequence-protocol"]
+evidence = [
+  "example-test:launcher-sequence-protocol",
+  "example-test:release-observe-launcher-linux-aarch64",
+  "example-test:release-observe-launcher-linux-x86-64",
+]
 assumptions = [
   "PBR-LINUX-AX-001",
   "PBR-HOST-AX-002",
   "PBR-TOOLCHAIN-AX-003",
 ]
-open_obligations = [
-  "Bind the tested launcher, supervisor, and native Linux corpus to exact release artifacts.",
-]
+open_obligations = []
 out_of_scope = [
   "A malicious host administrator, compromised kernel, hostile firmware, or hostile hardware.",
   "Correctness of the untrusted child after the boundary starts it.",
@@ -42,6 +44,9 @@ source_roots = [
   "crates/proofbound-runtime-linux/tests/fixtures/native-boundary-probe.c",
   "crates/proofbound-runtime-linux/tests/native_linux.rs",
   "proofbound/evidence/launcher-sequence-protocol.toml",
+  "proofbound/evidence/release-observe-launcher-linux-aarch64.toml",
+  "proofbound/evidence/release-observe-launcher-linux-x86-64.toml",
+  "crates/proofbound-runtime-compose/tests/release_observation.rs",
   "tests/attacks/cgroup/",
   "tests/attacks/landlock/",
   "tests/attacks/launcher/",

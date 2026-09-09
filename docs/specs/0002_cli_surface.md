@@ -130,9 +130,13 @@ command does not resolve artifacts.
 
 Inputs: a plan path, a new receipt path, and a delegated cgroup v2 root. The
 receipt path must not exist and must be outside the child's writable authority.
-The API returns a summary with schema `proofbound-runtime-run-result/1`, the
-receipt path, receipt commitment, and recorded child outcome. Receipt bytes use
-the existing canonical producer and are never reserialized by the CLI.
+The API returns a closed summary with schema
+`proofbound-runtime-run-result/1`, the receipt path, receipt commitment,
+execution ID, and recorded child outcome. The execution ID and commitment are
+the independently transportable expectations for composition and verification;
+they must not be re-derived from a receipt supplied by the receipt carrier.
+Receipt bytes use the existing canonical producer and are never reserialized
+by the CLI.
 
 ### `inspect`
 

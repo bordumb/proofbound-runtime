@@ -1,0 +1,29 @@
+schema = "proofbound-evidence-unit/6"
+id = "release-bind-receipt-binding-linux-x86-64"
+context = "release-linux-x86-64"
+adapter = "canonical-artifact"
+kind = "artifact-soundness"
+claims = ["PBR-BINDING-005"]
+tier = 3
+evaluation_mode = "kernel"
+binding_mode = "digest-theorem"
+theorem = "ProofboundRuntime.ReleaseArtifacts.ReceiptBinding.receiptBindingReleaseArtifacts"
+premises = []
+assumptions = ["PBR-TOOLCHAIN-AX-003"]
+expected_inventory = ["dist/release-observation/x86_64/pbr"]
+inputs = [
+  "dist/release-observation/x86_64/pbr",
+  "tools/release/artifact_checker.py",
+]
+outputs = []
+environment_allowlist = ["PATH"]
+
+[operation]
+type = "artifact-check"
+checker = "tools/release/artifact_checker.py"
+arguments = ["dist/release-observation/x86_64/pbr"]
+
+[resource_budget]
+time_seconds = 60
+disk_bytes = 67108864
+memory_bytes = 134217728

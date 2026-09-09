@@ -1,0 +1,36 @@
+schema = "proofbound-evidence-unit/1"
+id = "release-composition-attacks"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-COMPOSE-008"]
+tier = 0
+expected_inventory = [
+  "proofbound_runtime_compose::tests::bundle_substitution_and_role_swap_fail_closed",
+  "proofbound_runtime_compose::tests::composed_assumption_tcb_and_status_mutations_fail_closed",
+  "proofbound_runtime_compose::tests::execution_replay_and_unknown_fields_fail_closed",
+  "proofbound_runtime_compose::tests::frozen_attack_catalog_is_closed",
+  "proofbound_runtime_compose::tests::release_omission_substitution_and_downgrade_fail_closed",
+  "proofbound_runtime_compose::tests::valid_chain_is_canonical_and_self_verifying",
+]
+inputs = [
+  "crates/proofbound-runtime-compose/Cargo.toml",
+  "crates/proofbound-runtime-compose/src/lib.rs",
+  "schemas/composed-receipt-v1.schema.json",
+  "schemas/runtime-release-manifest-v1.schema.json",
+  "tests/attacks/composition/v1.toml",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-compose"
+manifest = "Cargo.toml"
+targets = ["--lib"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

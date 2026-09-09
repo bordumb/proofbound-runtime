@@ -1,9 +1,11 @@
-schema = "proofbound-project/1"
+schema = "proofbound-project/2"
 project = "proofbound-runtime"
 tier = 3
 claim_manifests = ["claims/*.toml"]
 assumption_manifests = ["assumptions/*.toml"]
 evidence_units = ["proofbound/evidence/*.toml"]
+evidence_contexts = ["release-linux-aarch64", "release-linux-x86-64"]
+required_release_contexts = ["release-linux-aarch64", "release-linux-x86-64"]
 model_check_units = ["proofbound/model-checks/*.toml"]
 translation_units = ["proofbound/translations/*.toml"]
 

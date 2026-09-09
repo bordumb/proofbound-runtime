@@ -46,11 +46,17 @@ if ! git rev-parse --verify HEAD^{commit} >/dev/null 2>&1; then
 fi
 
 set +e
-check_output="$("$proofbound_bin" check --root "$check_root" --json 2>&1)"
+check_output="$("$proofbound_bin" check --root "$check_root" --fresh --json 2>&1)"
 check_status=$?
 set -e
 if [[ $check_status -ne 0 || "$check_output" == *'"schema":"proofbound-error/1"'* ]]; then
   printf '%s\n' "$check_output" >&2
+  compiled_project="$check_root/.proofbound/compiled/project.json"
+  if [[ -f "$compiled_project" ]] && command -v jq >/dev/null 2>&1; then
+    printf '%s\n' 'Proofbound failed evidence units:' >&2
+    jq '.unit_runs[] | select(.outcome == "unavailable-or-failed" or .outcome == "failed")' \
+      "$compiled_project" >&2
+  fi
   if [[ $check_status -ne 0 ]]; then
     exit "$check_status"
   fi

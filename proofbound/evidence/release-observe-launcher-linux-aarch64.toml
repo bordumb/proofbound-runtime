@@ -1,0 +1,43 @@
+schema = "proofbound-evidence-unit/5"
+id = "release-observe-launcher-linux-aarch64"
+context = "release-linux-aarch64"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-SEQUENCE-003"]
+tier = 0
+expected_inventory = ["release_observation::observes_launcher_release"]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-compose/Cargo.toml",
+  "crates/proofbound-runtime-compose/tests/release_observation.rs",
+  "dist/native-evidence/aarch64/execution-receipt.json",
+  "dist/release-observation/aarch64/RELEASE-MANIFEST.json",
+  "dist/release-observation/aarch64/pbr-native-launcher",
+  "rust-toolchain.toml",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "PROOFBOUND_EXPECTED_ARCH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-compose"
+manifest = "Cargo.toml"
+targets = ["--test=release_observation"]
+paths = []
+arguments = ["--features=release-observation"]
+
+[artifact_observation]
+schema = "proofbound-exact-artifact-observation/1"
+subject_role = "launcher-release"
+artifact = "dist/release-observation/aarch64/pbr-native-launcher"
+procedure = "crates/proofbound-runtime-compose/tests/release_observation.rs"
+operating_system = "linux"
+architecture = "aarch64"
+toolchain_inputs = ["Cargo.lock", "rust-toolchain.toml"]
+dependencies = ["example-test:launcher-sequence-protocol"]
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

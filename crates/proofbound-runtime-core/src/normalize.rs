@@ -214,22 +214,63 @@ mod kani_harnesses {
             .expect("catalog names are valid")
     }
 
+    fn assert_path_matches_catalog(item: &PathAuthority, selector: bool) {
+        if selector {
+            assert!(item.path().as_str() == "b");
+            assert!(item.access() == FileAccess::Read);
+            assert!(item.role() == PathRole::ProjectInput);
+        } else {
+            assert!(item.path().as_str() == "a");
+            assert!(item.access() == FileAccess::Write);
+            assert!(item.role() == PathRole::OutputRoot);
+        }
+    }
+
+    fn assert_environment_matches_catalog(item: &EnvironmentName, selector: bool) {
+        assert!(item.as_str() == if selector { "LANG" } else { "PATH" });
+    }
+
     #[kani::proof]
     #[kani::unwind(5)]
     fn normalization_does_not_amplify_bounded_catalog() {
-        let plan = AuthorityPlan::new(
-            vec![path_from(kani::any()), path_from(kani::any())],
-            vec![environment_from(kani::any()), environment_from(kani::any())],
-            ResourceLimits::new(
-                ProcessLimit::new(1).expect("nonzero fixture"),
-                WallTimeLimit::from_milliseconds(1).expect("nonzero fixture"),
-                OutputByteLimit::new(1),
-                OutputByteLimit::new(1),
-            ),
+        let first_path = kani::any();
+        let second_path = kani::any();
+        let first_environment = kani::any();
+        let second_environment = kani::any();
+        let limits = ResourceLimits::new(
+            ProcessLimit::new(1).expect("nonzero fixture"),
+            WallTimeLimit::from_milliseconds(1).expect("nonzero fixture"),
+            OutputByteLimit::new(1),
+            OutputByteLimit::new(1),
         );
-        let normalized = normalize_authority(plan.clone()).expect("validated plan normalizes");
-        assert!(normalized.is_subset_of(&plan));
-        assert!(normalized.is_canonical());
+        let plan = AuthorityPlan::new(
+            vec![path_from(first_path), path_from(second_path)],
+            vec![
+                environment_from(first_environment),
+                environment_from(second_environment),
+            ],
+            limits,
+        );
+        let normalized = normalize_authority(plan).expect("validated plan normalizes");
+
+        if first_path == second_path {
+            assert!(normalized.paths().len() == 1);
+            assert_path_matches_catalog(&normalized.paths()[0], first_path);
+        } else {
+            assert!(normalized.paths().len() == 2);
+            assert_path_matches_catalog(&normalized.paths()[0], false);
+            assert_path_matches_catalog(&normalized.paths()[1], true);
+        }
+        if first_environment == second_environment {
+            assert!(normalized.environment().len() == 1);
+            assert_environment_matches_catalog(&normalized.environment()[0], first_environment);
+        } else {
+            assert!(normalized.environment().len() == 2);
+            assert_environment_matches_catalog(&normalized.environment()[0], true);
+            assert_environment_matches_catalog(&normalized.environment()[1], false);
+        }
+        assert!(normalized.limits() == limits);
+        assert!(normalized.network() == crate::NetworkMode::Deny);
     }
 }
 

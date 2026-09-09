@@ -5,15 +5,18 @@ kind = "theorem"
 claims = ["PBR-POLICY-002"]
 tier = 3
 evaluation_mode = "kernel"
-theorem = "ProofboundRuntime.Refinement.PolicyCompilationClaim.compile_policy_refines"
+theorem = "ProofboundRuntime.ReleaseArtifacts.Policy.policyReleaseArtifacts"
 premises = []
+assumptions = ["PBR-TOOLCHAIN-AX-003"]
 expected_inventory = [
-  "ProofboundRuntime.Refinement.PolicyCompilationClaim.compile_policy_refines",
+  "ProofboundRuntime.ReleaseArtifacts.Policy.policyReleaseArtifacts",
 ]
 inputs = [
   "formal/ProofboundRuntime/Policy.lean",
   "formal/ProofboundRuntime/Refinement/PolicyCompilation.lean",
   "formal/ProofboundRuntime/Refinement/PolicyCompilationClaim.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts/Policy.lean",
   "formal/generated/ProofboundRuntimePolicy/Funs.lean",
   "formal/generated/ProofboundRuntimePolicy/Types.lean",
   "lake-manifest.json",
@@ -25,10 +28,10 @@ environment_allowlist = ["LEAN_PATH", "PATH"]
 [operation]
 type = "lean-audit"
 targets = [
-  "ProofboundRuntime.Refinement.PolicyCompilationClaim.compile_policy_refines",
+  "ProofboundRuntime.ReleaseArtifacts.Policy.policyReleaseArtifacts",
 ]
 paths = [
-  "formal/ProofboundRuntime/Refinement/PolicyCompilationClaim.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts/Policy.lean",
 ]
 
 [resource_budget]

@@ -2,20 +2,21 @@ schema = "proofbound-claim/1"
 id = "PBR-RUN-007"
 title = "Runtime orchestration preserves the reviewed execution"
 statement = "Every receipt emitted by pbr run is constructed from the exact validated plan, compiled policy, resolved artifacts, installed boundary acknowledgement, supervised outcome, bounded streams, and post-run output inventory of that execution attempt."
+public_language = "The production run path rejects every registered orchestration and receipt-publication attack. Both native release workflows execute the exact pbr bundle role end to end and independently verify its canonical receipt. This remains bounded native exact-artifact observation, not theorem-derived artifact soundness."
 subject = "rust:proofbound_runtime_cli::run::execute"
 profile = "ledger"
 tier = 0
-evidence = []
+evidence = [
+  "example-test:release-observe-runtime-linux-aarch64",
+  "example-test:release-observe-runtime-linux-x86-64",
+  "example-test:runtime-orchestration-attacks",
+]
 assumptions = [
   "PBR-LINUX-AX-001",
   "PBR-HOST-AX-002",
   "PBR-TOOLCHAIN-AX-003",
 ]
-open_obligations = [
-  "Register every frozen orchestration attack against the production pbr run path.",
-  "Register the end-to-end supported-Linux execution and independent receipt verification evidence.",
-  "Bind the tested runtime, launcher, and verifier to exact release artifacts.",
-]
+open_obligations = []
 out_of_scope = [
   "Correctness of the Linux kernel or host platform under the recorded assumptions.",
   "Semantic correctness of the child program or its outputs.",
@@ -39,5 +40,10 @@ source_roots = [
   "docs/specs/0002_cli_surface.md",
   "docs/threat-model.md",
   "docs/receipt-semantics.md",
+  "proofbound/evidence/runtime-orchestration-attacks.toml",
+  "proofbound/evidence/release-observe-runtime-linux-aarch64.toml",
+  "proofbound/evidence/release-observe-runtime-linux-x86-64.toml",
+  "crates/proofbound-runtime-compose/tests/release_observation.rs",
+  "schemas/run-result-v1.schema.json",
   "tests/attacks/run/",
 ]

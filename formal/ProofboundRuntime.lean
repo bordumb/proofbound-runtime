@@ -1,5 +1,7 @@
 import ProofboundRuntime.Authority
+import ProofboundRuntime.Binding
 import ProofboundRuntime.Claims.Authority
+import ProofboundRuntime.Claims.Binding
 import ProofboundRuntime.Claims.Policy
 import ProofboundRuntime.Claims.Receipt
 import ProofboundRuntime.Policy
@@ -7,5 +9,7 @@ import ProofboundRuntime.Receipt
 import ProofboundRuntime.Refinement.AuthorityNormalization
 import ProofboundRuntime.Refinement.AuthorityNormalizationClaim
 import ProofboundRuntime.Refinement.AuthorityCarrierClaim
+import ProofboundRuntime.Refinement.ReceiptBinding
+import ProofboundRuntime.Refinement.ReceiptBindingClaim
 import ProofboundRuntime.Refinement.ReceiptEligibility
 import ProofboundRuntime.Refinement.ReceiptEligibilityClaim

@@ -2,16 +2,18 @@ schema = "proofbound-claim/1"
 id = "PBR-AUTH-001"
 title = "Authority normalization does not amplify authority"
 statement = "For every valid authority plan, normalization returns a duplicate-free plan and every returned authority entry was present in the input plan."
-public_language = "A kernel-checked theorem directly over the deterministic Aeneas translation proves that authority normalization removes duplicate entries, never adds an entry, and preserves resource limits and network mode exactly. A separate kernel-checked theorem discharges the translated byte-carrier premise for every registered input."
+public_language = "A kernel-checked theorem directly over the deterministic Aeneas translation proves that authority normalization removes duplicate entries, never adds an entry, and preserves resource limits and network mode exactly. In each reviewed native release context, the theorem's closed artifact set selects the exact pbr bytes and independent verification recomputes the match, subject to the registered toolchain assumption."
 subject = "rust:proofbound_runtime_core::normalize_authority"
 profile = "kernel-with-assumptions"
 tier = 3
 primary_linkage = "refined"
-formal_declaration = "ProofboundRuntime.Refinement.AuthorityNormalizationClaim.normalize_authority_refines"
+formal_declaration = "ProofboundRuntime.ReleaseArtifacts.Authority.authorityReleaseArtifacts"
 statement_encoding = "lean-expr-cbor/1"
-statement_sha256 = "sha256:5f6b14cbe8d5d0b88cf4d79dbbf305b0607e78c4ecff059daac87ef9d292f818"
+statement_sha256 = "sha256:ab98d670b27ac76b0aa8a533f543fcdae9f37a6e461fd52c703d29e0429215f2"
 foundational_axioms = ["Classical.choice", "Quot.sound", "propext"]
 evidence = [
+  "artifact-soundness:release-bind-authority-linux-aarch64",
+  "artifact-soundness:release-bind-authority-linux-x86-64",
   "example-test:authority-conformance",
   "bounded-check:authority-normalization-bounds",
   "theorem:authority-normalization-refinement-theorem",
@@ -19,9 +21,7 @@ evidence = [
 ]
 assumptions = ["PBR-TOOLCHAIN-AX-003"]
 premises = ["PBR-STRING-REP-004"]
-open_obligations = [
-  "Bind the refined claim to release artifacts before making a shipping-binary claim.",
-]
+open_obligations = []
 out_of_scope = [
   "Correctness of any Linux enforcement mechanism that later consumes the normalized plan.",
   "Whether the authority requested by a caller is appropriate for the caller's real-world intent.",
@@ -33,6 +33,8 @@ source_roots = [
   "formal/ProofboundRuntime/Refinement/AuthorityNormalization.lean",
   "formal/ProofboundRuntime/Refinement/AuthorityCarrierClaim.lean",
   "formal/ProofboundRuntime/Refinement/AuthorityNormalizationClaim.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts.lean",
+  "formal/ProofboundRuntime/ReleaseArtifacts/Authority.lean",
   "formal/bridges/ProofboundRuntimeCore/FunsExternal.lean",
   "formal/generated/ProofboundRuntimeCore/",
   "assumptions/PBR-STRING-REP-004.toml",
@@ -40,9 +42,12 @@ source_roots = [
   "proofbound/evidence/authority-normalization-bounds.toml",
   "proofbound/evidence/authority-normalization-refinement-theorem.toml",
   "proofbound/evidence/authority-normalization-refinement.toml",
+  "proofbound/evidence/release-bind-authority-linux-aarch64.toml",
+  "proofbound/evidence/release-bind-authority-linux-x86-64.toml",
   "proofbound/translations/authority-normalization.toml",
   "proofbound/model-checks/authority-normalization.toml",
   "tests/conformance/",
+  "tools/release/artifact_checker.py",
 ]
 
 [bounded_domain]

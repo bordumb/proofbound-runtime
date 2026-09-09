@@ -26,3 +26,10 @@ authority normalization, the separate Lean module keeps each extraction's
 closed function inventory and generated-tree ownership independent. The two
 generated modules must not be imported into the same Lean environment because
 they intentionally contain overlapping translated Rust declarations.
+
+`PBR-BINDING-005` routes the production canonical receipt encoder through the
+pure `proofbound-runtime-binding` crate. Its closed Rust input structure carries
+the canonical value bytes of all 20 top-level version 1 fields, making omission,
+duplication, reordering, and unknown fields unrepresentable at the translated
+boundary. The registered theorem proves that construction and projection retain
+every byte vector exactly before the production encoder emits the object.

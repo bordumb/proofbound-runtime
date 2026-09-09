@@ -32,5 +32,5 @@ pub use receipt::{
     ReceiptArtifactField, ReceiptCommand, ReceiptEligibility, ReceiptError, ReceiptFacts,
     ReceiptIdentityField, ReceiptPlan, ReceiptPolicy, ReceiptStreams, ReceiptStructure,
     RuntimeIdentity, StreamCapture, TrustedComputingBaseEntry, TrustedComputingBaseRole,
-    derive_receipt_eligibility,
+    construct_execution_receipt, derive_receipt_eligibility,
 };

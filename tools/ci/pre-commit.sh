@@ -7,6 +7,7 @@ cd "$repo_root"
 python3 tools/ci/version.py --check
 python3 tools/ci/changelog.py --staged
 python3 tools/ci/documentation.py
+python3 tools/release/observation_inputs.py --check
 cargo fmt --all -- --check
 cargo metadata --locked --offline --format-version 1 >/dev/null
 cargo check --workspace --all-targets --locked --offline

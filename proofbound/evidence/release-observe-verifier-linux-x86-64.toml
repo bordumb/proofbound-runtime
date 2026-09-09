@@ -1,0 +1,50 @@
+schema = "proofbound-evidence-unit/5"
+id = "release-observe-verifier-linux-x86-64"
+context = "release-linux-x86-64"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-VERIFY-006"]
+tier = 0
+expected_inventory = ["release_observation::observes_verifier_release"]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "VERSION",
+  "crates/proofbound-runtime-compose/Cargo.toml",
+  "crates/proofbound-runtime-compose/tests/release_observation.rs",
+  "dist/native-evidence/x86_64/execution-receipt.json",
+  "dist/native-evidence/x86_64/receipt-commitment.txt",
+  "dist/native-evidence/x86_64/verification.json",
+  "dist/release-observation/x86_64/RELEASE-MANIFEST.json",
+  "dist/release-observation/x86_64/pbr-verify",
+  "rust-toolchain.toml",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "PROOFBOUND_EXPECTED_ARCH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-compose"
+manifest = "Cargo.toml"
+targets = ["--test=release_observation"]
+paths = []
+arguments = ["--features=release-observation"]
+
+[artifact_observation]
+schema = "proofbound-exact-artifact-observation/1"
+subject_role = "verifier-release"
+artifact = "dist/release-observation/x86_64/pbr-verify"
+procedure = "crates/proofbound-runtime-compose/tests/release_observation.rs"
+operating_system = "linux"
+architecture = "x86_64"
+toolchain_inputs = ["Cargo.lock", "rust-toolchain.toml"]
+dependencies = [
+  "example-test:receipt-eligibility-verifier-conformance",
+  "example-test:receipt-producer-verifier-conformance",
+  "example-test:receipt-verifier-attacks",
+]
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

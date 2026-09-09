@@ -15,6 +15,9 @@ rust:
 formal:
     lake build
     bash tools/ci/authority-refinement.sh
+    bash tools/ci/binding-refinement.sh
+    bash tools/ci/policy-refinement.sh
+    bash tools/ci/receipt-refinement.sh
 
 bounded:
     cargo kani -q -p proofbound-runtime-core --harness normalization_does_not_amplify_bounded_catalog
@@ -45,3 +48,6 @@ check: fast-checks
 
 ci:
     bash tools/ci/ci.sh
+
+release-receipt context observation_inputs output:
+    bash tools/release/proofbound-release.sh "{{context}}" "{{observation_inputs}}" "{{output}}"

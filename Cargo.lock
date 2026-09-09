@@ -104,8 +104,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "proofbound-runtime-binding"
+version = "0.1.0"
+
+[[package]]
 name = "proofbound-runtime-cli"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "proofbound-runtime-core",
  "proofbound-runtime-linux",
@@ -115,9 +119,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "proofbound-runtime-core"
-version = "0.0.0"
+name = "proofbound-runtime-compose"
+version = "0.1.0"
 dependencies = [
+ "serde",
+ "serde_json",
+ "sha2",
+ "toml",
+]
+
+[[package]]
+name = "proofbound-runtime-core"
+version = "0.1.0"
+dependencies = [
+ "proofbound-runtime-binding",
  "proofbound-runtime-receipt",
  "proofbound-runtime-verify",
  "serde",
@@ -127,7 +142,7 @@ dependencies = [
 
 [[package]]
 name = "proofbound-runtime-linux"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "libc",
  "proofbound-runtime-core",
@@ -136,25 +151,25 @@ dependencies = [
 
 [[package]]
 name = "proofbound-runtime-policy-kani"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "proofbound-runtime-core",
 ]
 
 [[package]]
 name = "proofbound-runtime-receipt"
-version = "0.0.0"
+version = "0.1.0"
 
 [[package]]
 name = "proofbound-runtime-receipt-kani"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "proofbound-runtime-core",
 ]
 
 [[package]]
 name = "proofbound-runtime-verify"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "serde",
  "serde_json",

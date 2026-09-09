@@ -2,19 +2,19 @@ schema = "proofbound-claim/1"
 id = "PBR-VERIFY-006"
 title = "The independent verifier rejects registered receipt attacks"
 statement = "Given an independently supplied expected receipt commitment, the standalone verifier independently derives receipt validity and reuse eligibility and rejects every registered receipt mutation with its exact typed reason."
-public_language = "The standalone verifier checks closed canonical receipt bytes against an independently supplied SHA-256 commitment, validates identities and relationships, independently derives reuse eligibility, and rejects all 22 registered carrier mutations with their exact typed reasons. Release-artifact binding remains open."
+public_language = "The standalone verifier checks closed canonical receipt bytes against an independently supplied SHA-256 commitment, validates identities and relationships, independently derives reuse eligibility, and rejects all 22 registered carrier mutations with their exact typed reasons. Both native release workflows execute and observe the exact pbr-verify bundle role; this remains registered attack-corpus evidence, not theorem-derived artifact soundness."
 subject = "rust:proofbound_runtime_verify::verify_receipt"
 profile = "ledger"
 tier = 0
 evidence = [
+  "example-test:release-observe-verifier-linux-aarch64",
+  "example-test:release-observe-verifier-linux-x86-64",
   "example-test:receipt-eligibility-verifier-conformance",
   "example-test:receipt-producer-verifier-conformance",
   "example-test:receipt-verifier-attacks",
 ]
 assumptions = ["PBR-COMMITMENT-AX-007", "PBR-TOOLCHAIN-AX-003"]
-open_obligations = [
-  "Bind the independent verifier to exact release artifacts.",
-]
+open_obligations = []
 out_of_scope = [
   "Correctness of the receipt producer merely because the verifier accepts one bounded corpus.",
   "Receipt properties not represented by the versioned schema and derivation rules.",
@@ -36,6 +36,9 @@ source_roots = [
   "proofbound/evidence/receipt-eligibility-verifier-conformance.toml",
   "proofbound/evidence/receipt-producer-verifier-conformance.toml",
   "proofbound/evidence/receipt-verifier-attacks.toml",
+  "proofbound/evidence/release-observe-verifier-linux-aarch64.toml",
+  "proofbound/evidence/release-observe-verifier-linux-x86-64.toml",
+  "crates/proofbound-runtime-compose/tests/release_observation.rs",
   "schemas/receipt-eligibility-vector-v1.schema.json",
   "schemas/execution-receipt-v1.schema.json",
   "tests/conformance/receipt/positive/eligibility-v1.json",

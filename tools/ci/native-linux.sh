@@ -3,6 +3,16 @@ set -euo pipefail
 
 supervisor_leaf="proofbound-supervisor"
 expected_architecture="${PROOFBOUND_EXPECTED_ARCH:-$(uname -m)}"
+runtime_bins_prebuilt="${PROOFBOUND_RUNTIME_BINS_PREBUILT:-}"
+if [[ -z "$runtime_bins_prebuilt" ]]; then
+  if [[ -n "${PROOFBOUND_RUNTIME_BIN_DIR:-}" ]]; then
+    runtime_bins_prebuilt=1
+  else
+    runtime_bins_prebuilt=0
+  fi
+fi
+runtime_bin_directory="${PROOFBOUND_RUNTIME_BIN_DIR:-$PWD/target/debug}"
+evidence_directory="${PROOFBOUND_EVIDENCE_DIRECTORY:-}"
 
 if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
   if [[ "$(id -u)" == "0" ]]; then
@@ -45,7 +55,12 @@ if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
   systemd --version | head -n 1
   cargo test --locked -p proofbound-runtime-linux --test native_linux -- --test-threads=1 --nocapture
 
-  cargo build --locked --workspace
+  if [[ "$runtime_bins_prebuilt" != "1" ]]; then
+    cargo build --locked --workspace
+  fi
+  for binary in pbr pbr-native-launcher pbr-verify; do
+    test -x "$runtime_bin_directory/$binary"
+  done
   e2e_root="$(mktemp -d "$PWD/target/native-cli-e2e.XXXXXX")"
   trap 'rm -rf -- "$e2e_root"' EXIT
   plan="$e2e_root/plan.toml"
@@ -75,8 +90,8 @@ if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
     'stderr_bytes = 4096' \
     'processes = 1' >"$plan"
 
-  target/debug/pbr plan check --plan "$plan"
-  target/debug/pbr run \
+  "$runtime_bin_directory/pbr" plan check --plan "$plan"
+  "$runtime_bin_directory/pbr" run \
     --plan "$plan" \
     --receipt "$receipt" \
     --cgroup-root "$PROOFBOUND_CGROUP_ROOT" >"$result"
@@ -88,9 +103,10 @@ with open(sys.argv[1], encoding="utf-8") as source:
     result = json.load(source)
 assert result["schema"] == "proofbound-runtime-run-result/1"
 assert result["outcome"] == {"kind": "exited", "code": 0}
+assert result["execution_id"]
 print(result["commitment"])
 ' "$result")"
-  target/debug/pbr-verify \
+  "$runtime_bin_directory/pbr-verify" \
     --expected-commitment "$commitment" \
     "$receipt" >"$verification"
   python3 -c '
@@ -105,7 +121,21 @@ assert verification == {
     "valid": True,
 }
 ' "$verification" "$commitment"
-  target/debug/pbr inspect "$receipt" >/dev/null
+  "$runtime_bin_directory/pbr" inspect "$receipt" >/dev/null
+  if [[ -n "$evidence_directory" ]]; then
+    mkdir -p "$evidence_directory"
+    install -m 0644 "$plan" "$evidence_directory/plan.toml"
+    install -m 0644 "$receipt" "$evidence_directory/execution-receipt.json"
+    install -m 0644 "$verification" "$evidence_directory/verification.json"
+    printf '%s\n' "$commitment" >"$evidence_directory/receipt-commitment.txt"
+    python3 -c '
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as source:
+    print(json.load(source)["execution_id"])
+' "$result" >"$evidence_directory/execution-id.txt"
+  fi
   exit 0
 fi
 
@@ -145,5 +175,8 @@ exec sudo systemd-run \
   --setenv=PROOFBOUND_NATIVE_INNER=1 \
   --setenv="PROOFBOUND_NATIVE_FIXTURE=$fixture" \
   --setenv="PROOFBOUND_EXPECTED_ARCH=$expected_architecture" \
+  --setenv="PROOFBOUND_RUNTIME_BINS_PREBUILT=$runtime_bins_prebuilt" \
+  --setenv="PROOFBOUND_RUNTIME_BIN_DIR=$runtime_bin_directory" \
+  --setenv="PROOFBOUND_EVIDENCE_DIRECTORY=$evidence_directory" \
   --setenv="PATH=$PATH" \
   /usr/bin/env bash tools/ci/native-linux.sh

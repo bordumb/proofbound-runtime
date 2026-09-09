@@ -4,6 +4,13 @@ An execution receipt is a canonical account of one observed execution attempt.
 It binds registered identities and observations. It does not prove that Linux,
 the host, or the executed program behaved correctly.
 
+`pbr run` emits the receipt bytes and prints their separate `sha256:`
+commitment and execution ID in its machine result. `pbr-verify` requires the
+independently transported commitment, while composition additionally requires
+the independently transported execution ID. Neither expectation may be
+re-derived from a receipt supplied by the receipt carrier. `pbr inspect` only
+formats JSON and makes no validity or reuse decision.
+
 ## Version 1 wire contract
 
 The wire schema is
@@ -96,6 +103,27 @@ The runtime publishes canonical receipt bytes through a same-directory
 temporary file and a no-replace hard link. An existing receipt path is never
 opened for writing. The separately printed commitment hashes the exact bytes
 that became visible at the requested path.
+
+An execution receipt is distinct from a Proofbound release receipt. The former
+records one child execution and names the runtime and launcher bytes it used;
+the latter records the evidence, assumptions, source closure, and artifact
+linkage admitted for a Runtime release. Consumers must verify each receipt with
+its independent verifier before composing their meanings.
+
+`pbr-compose` performs the version 1 typed join. It executes the explicitly
+supplied Proofbound verifier and the exact `pbr-verify` from the Runtime bundle,
+checks the bundle manifest and cross-receipt identities, and emits canonical
+`proofbound-runtime-composed-receipt/1` bytes. The composed receipt retains the
+exact verifier and input identities, every claim facet, inherited assumptions,
+open obligations, exclusions, and trusted-computing-base roles. Its
+domain-separated `composition_id` covers all other output fields.
+
+Composition is not evidence promotion. A `TESTED · MODEL_ONLY` claim remains
+`TESTED · MODEL_ONLY`; an artifact digest establishes identity, not behavior.
+The expected execution commitment and expected execution ID must still arrive
+independently of an attacker-controlled execution-receipt carrier. The closed
+wire contract and attacks are specified in
+[`specification 0003`](specs/0003_release_receipt_composition.md).
 
 ## Secrets
 

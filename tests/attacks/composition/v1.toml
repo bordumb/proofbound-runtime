@@ -1,0 +1,81 @@
+schema = "proofbound-runtime-composition-attacks/1"
+
+[[cases]]
+id = "PBR-COMP-001"
+mutation = "omit-release-claim"
+expected_error = "composition.release.claim-omitted"
+
+[[cases]]
+id = "PBR-COMP-002"
+mutation = "substitute-release-payload"
+expected_error = "composition.release.substituted"
+
+[[cases]]
+id = "PBR-COMP-003"
+mutation = "downgrade-release-claim"
+expected_error = "composition.release.downgraded"
+
+[[cases]]
+id = "PBR-COMP-004"
+mutation = "substitute-runtime-binary"
+expected_error = "composition.bundle.substituted"
+
+[[cases]]
+id = "PBR-COMP-005"
+mutation = "swap-runtime-launcher-roles"
+expected_error = "composition.bundle.role-mismatch"
+
+[[cases]]
+id = "PBR-COMP-006"
+mutation = "replay-execution-id"
+expected_error = "composition.execution.replayed"
+
+[[cases]]
+id = "PBR-COMP-007"
+mutation = "omit-inherited-assumption"
+expected_error = "composition.assumption.omitted"
+
+[[cases]]
+id = "PBR-COMP-008"
+mutation = "omit-inherited-tcb"
+expected_error = "composition.tcb.omitted"
+
+[[cases]]
+id = "PBR-COMP-009"
+mutation = "noncanonical-execution-receipt"
+expected_error = "receipt.canonical.non-canonical"
+
+[[cases]]
+id = "PBR-COMP-010"
+mutation = "unknown-schema-field"
+expected_error = "composition.schema.invalid"
+
+[[cases]]
+id = "PBR-COMP-011"
+mutation = "replace-existing-output"
+expected_error = "composition.output.exists"
+
+[[cases]]
+id = "PBR-COMP-012"
+mutation = "promote-model-only-to-artifact-bound"
+expected_error = "composition.release.downgraded"
+
+[[cases]]
+id = "PBR-COMP-013"
+mutation = "downgrade-contextual-release"
+expected_error = "composition.release.downgraded"
+
+[[cases]]
+id = "PBR-COMP-014"
+mutation = "substitute-release-context"
+expected_error = "composition.release.context-mismatch"
+
+[[cases]]
+id = "PBR-COMP-015"
+mutation = "omit-release-artifact-observation"
+expected_error = "composition.release.downgraded"
+
+[[cases]]
+id = "PBR-COMP-016"
+mutation = "substitute-release-observation-inputs"
+expected_error = "composition.release.verification-failed"
