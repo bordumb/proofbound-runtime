@@ -15,6 +15,7 @@ python3 tools/ci/documentation.py
 
 printf '%s\n' '[4/9] closed release observation inputs'
 python3 tools/release/observation_inputs.py --check
+python3 tools/release/artifact_checker.py --self-check
 
 printf '%s\n' '[5/9] Rust formatting, linting, tests, and locked metadata'
 cargo fmt --all -- --check
