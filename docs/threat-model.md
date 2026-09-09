@@ -1,6 +1,6 @@
 # Threat model
 
-- **Status:** implemented version 1 boundary; native release candidate verified
+- **Status:** implemented version 1 boundary; version 0.1.0 released
 - **Version:** 0.1.0
 - **Date:** 2026-09-09
 - **Applies to:** the Proofbound Runtime version 1 execution profile
@@ -14,11 +14,12 @@ outcome in an execution receipt.
 This threat model defines what the initial product protects, which attacks it
 rejects, what it trusts, and what remains outside its claims. The boundary is
 implemented and has bounded native evidence on identified `x86_64` and
-`aarch64` Linux runners. The retained release rehearsal at revision `ced2871`
-contextually binds the four source-refined claims to exact native `pbr` bytes
-and independently observes the four tested release roles. These records
-support the release candidate; a final merged-SHA reproduction, tag, and
-publication are still required for a published 0.1.0 artifact.
+`aarch64` Linux runners. The published release at revision
+`c78e189e2e098489ebf9f45840bdf9ff6cb0fd6d` contextually binds the four
+source-refined claims to exact native `pbr` bytes and independently observes
+the four tested release roles. The final exact-SHA reproduction passed on both
+architectures, and the checksummed runtime and assurance bundles are retained
+with the `v0.1.0` GitHub release.
 
 ## Protected assets
 
