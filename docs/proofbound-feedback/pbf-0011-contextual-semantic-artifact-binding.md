@@ -1,16 +1,17 @@
 # PBF-0011: Contextual semantic artifact binding
 
-- **Status:** `upstream-ready`
+- **Status:** `resolved`
 - **Priority:** `blocking`
 - **Kind:** `evidence-semantics`
 - **Created:** 2026-09-08
-- **Last updated:** 2026-09-08
+- **Last updated:** 2026-09-09
 - **Runtime claim:** `PBR-AUTH-001`, `PBR-POLICY-002`, `PBR-RECEIPT-004`, and
   `PBR-BINDING-005`
 - **Runtime milestone:** Version 0.1 release linkage
 - **Proofbound target:** artifact-binding proposition, reviewed evidence contexts,
   compiler, portable receipt, and independent verifier
-- **Upstream record:** not upstreamed
+- **Upstream record:** `proof-bound` ADR 0022; `3ec98f5..70af5e6`; pull
+  requests 3 and 5
 - **Supersedes:** none
 - **Superseded by:** none
 
@@ -173,20 +174,40 @@ verifiers must fail closed on the new form.
 
 ## Local treatment
 
-Runtime leaves the four semantic claims at `PROVED / REFINED / ASSUMED`, keeps
-their release-artifact obligations open, and does not publish version 0.1. The
-existing contextual observations continue to identify and exercise the exact
-four release binaries per architecture without changing any claim's semantic
-linkage facet.
+Runtime adopts evidence-unit schema version 6 for eight contextual theorem
+bindings: the four source-refined claims each select the exact `pbr` member of
+the closed theorem set in both reviewed native release contexts. The release
+composer requires the corresponding Proofbound compiled release and envelope
+schemas and retains the four binding records separately from the four empirical
+observations.
+
+The four semantic claims remain `PROVED / REFINED / ASSUMED`; selecting exact
+release bytes does not remove `PBR-TOOLCHAIN-AX-003` or change the claims'
+primary linkage. The tested Runtime, launcher, verifier, and composer claims
+remain `TESTED / MODEL_ONLY / ASSUMED`. Their exact release observations do not
+become theorem-derived artifact soundness.
 
 ## Upstream handoff
 
 - **Destination:** `proof-bound` specification or ADR, manifest schemas,
   artifact theorem parser, compiler, release receipt, and independent verifier
-- **Issue:** none
-- **Specification or ADR:** none
-- **Commit or pull request:** none
+- **Issue:** Runtime feedback PBF-0011
+- **Specification or ADR:** `proof-bound` ADR 0022, "Bind closed artifact sets
+  inside reviewed release contexts"
+- **Commit or pull request:** `proof-bound@3ec98f5..70af5e6`; pull requests 3
+  and 5
 
 ## Resolution
 
-Unresolved.
+Accepted and implemented upstream. Proofbound now admits a strictly parsed
+`DigestBindingSetV1` theorem, activates exactly one reviewed member through a
+schema-version-6 contextual `artifact-soundness` unit, carries the selected
+context and artifact identity through compiled release schema 6 and envelope
+schema 6, and independently re-derives the same relation during verification.
+
+The upstream regression corpus rejects malformed or unrelated theorem sets,
+context omission and replay, member and theorem substitution, empirical
+downgrade, portable-record mutation, and stale-parent merge topology. Runtime
+pins the final verified upstream revision `70af5e61110fc09704076a6d8b00fd8ff011b1c8`
+and registers the exact x86_64 and aarch64 `pbr` members for all four
+source-refined claims.
