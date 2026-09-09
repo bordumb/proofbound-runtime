@@ -67,6 +67,7 @@ if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
   receipt="$e2e_root/receipt.json"
   result="$e2e_root/run-result.json"
   verification="$e2e_root/verification.json"
+  preflight="$e2e_root/preflight.json"
   printf '%s\n' \
     'schema = "proofbound-runtime-plan/1"' \
     'id = "ci.native-cli-e2e"' \
@@ -91,6 +92,128 @@ if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
     'processes = 1' >"$plan"
 
   "$runtime_bin_directory/pbr" plan check --plan "$plan"
+  cgroup_before="$(
+    stat -Lc '%d:%i:%f' "$PROOFBOUND_CGROUP_ROOT"
+    sed -n '1p' "$PROOFBOUND_CGROUP_ROOT/cgroup.controllers"
+    sed -n '1p' "$PROOFBOUND_CGROUP_ROOT/cgroup.subtree_control"
+    sed -n '1p' "$PROOFBOUND_CGROUP_ROOT/cgroup.procs"
+  )"
+  test ! -e "$e2e_root/output"
+  test ! -e "$receipt"
+  "$runtime_bin_directory/pbr" preflight \
+    --plan "$plan" \
+    --receipt "$receipt" \
+    --cgroup-root "$PROOFBOUND_CGROUP_ROOT" >"$preflight"
+  test ! -e "$e2e_root/output"
+  test ! -e "$receipt"
+  cgroup_after="$(
+    stat -Lc '%d:%i:%f' "$PROOFBOUND_CGROUP_ROOT"
+    sed -n '1p' "$PROOFBOUND_CGROUP_ROOT/cgroup.controllers"
+    sed -n '1p' "$PROOFBOUND_CGROUP_ROOT/cgroup.subtree_control"
+    sed -n '1p' "$PROOFBOUND_CGROUP_ROOT/cgroup.procs"
+  )"
+  test "$cgroup_before" = "$cgroup_after"
+  python3 -c '
+import hashlib
+import json
+import os
+import stat
+import sys
+
+report_path, plan_path, executable_path, cgroup_root, receipt_path, expected_arch = sys.argv[1:]
+with open(report_path, encoding="utf-8") as source:
+    report = json.load(source)
+assert set(report) == {
+    "caveat", "command", "inputs", "output_root", "plan_id", "plan_source",
+    "platform", "ready", "receipt", "schema",
+}
+assert report["schema"] == "proofbound-runtime-preflight/1"
+assert report["ready"] is True
+assert report["caveat"] == "preflight.point-in-time"
+assert report["plan_id"] == "ci.native-cli-e2e"
+assert report["inputs"] == []
+assert report["command"]["interpreter"] is None
+assert report["command"]["executable"]["resolved"] == os.path.realpath(executable_path)
+assert report["command"]["working_directory"]["resolved"] == os.path.dirname(plan_path)
+assert report["output_root"] == {
+    "requested": "output",
+    "resolved_parent": os.path.dirname(plan_path),
+    "resolved_target": os.path.join(os.path.dirname(plan_path), "output"),
+}
+assert report["receipt"] == {"resolved_target": receipt_path}
+assert report["platform"]["architecture"] == expected_arch
+assert report["platform"]["cgroup_v2"]["directory"] == cgroup_root
+assert "pids" in report["platform"]["cgroup_v2"]["controllers"]
+
+def expected_artifact(path, role):
+    with open(path, "rb") as source:
+        data = source.read()
+    return {
+        "role": role,
+        "sha256": hashlib.sha256(data).hexdigest(),
+        "size": len(data),
+        "mode": stat.S_IMODE(os.stat(path).st_mode),
+    }
+
+assert report["plan_source"]["artifact"] == expected_artifact(plan_path, "execution-plan")
+assert report["command"]["executable"]["artifact"] == expected_artifact(
+    executable_path, "runtime-executable"
+)
+' "$preflight" "$plan" "$PROOFBOUND_NATIVE_FIXTURE" \
+    "$PROOFBOUND_CGROUP_ROOT" "$receipt" "$expected_architecture"
+
+  occupied_receipt="$e2e_root/occupied-receipt.json"
+  printf '%s\n' 'preserve-me' >"$occupied_receipt"
+  set +e
+  "$runtime_bin_directory/pbr" preflight \
+    --plan "$plan" \
+    --receipt "$occupied_receipt" \
+    --cgroup-root "$PROOFBOUND_CGROUP_ROOT" \
+    >"$e2e_root/occupied-receipt-result.json" \
+    2>"$e2e_root/occupied-receipt-error.txt"
+  occupied_receipt_status=$?
+  set -e
+  test "$occupied_receipt_status" -eq 2
+  test "$(<"$occupied_receipt")" = 'preserve-me'
+  test "$(<"$e2e_root/occupied-receipt-error.txt")" = 'pbr: receipt.path.exists'
+  python3 -c '
+import json
+import sys
+with open(sys.argv[1], encoding="utf-8") as source:
+    assert json.load(source) == {
+        "schema": "proofbound-runtime-preflight/1",
+        "ready": False,
+        "phase": "receipt-target",
+        "code": "receipt.path.exists",
+    }
+' "$e2e_root/occupied-receipt-result.json"
+
+  mkdir "$e2e_root/output"
+  set +e
+  "$runtime_bin_directory/pbr" preflight \
+    --plan "$plan" \
+    --receipt "$receipt" \
+    --cgroup-root "$PROOFBOUND_CGROUP_ROOT" \
+    >"$e2e_root/occupied-output-result.json" \
+    2>"$e2e_root/occupied-output-error.txt"
+  occupied_output_status=$?
+  set -e
+  test "$occupied_output_status" -eq 2
+  test -d "$e2e_root/output"
+  test "$(<"$e2e_root/occupied-output-error.txt")" = 'pbr: output.root.exists'
+  python3 -c '
+import json
+import sys
+with open(sys.argv[1], encoding="utf-8") as source:
+    assert json.load(source) == {
+        "schema": "proofbound-runtime-preflight/1",
+        "ready": False,
+        "phase": "output-root",
+        "code": "output.root.exists",
+    }
+' "$e2e_root/occupied-output-result.json"
+  rmdir "$e2e_root/output"
+
   "$runtime_bin_directory/pbr" run \
     --plan "$plan" \
     --receipt "$receipt" \
