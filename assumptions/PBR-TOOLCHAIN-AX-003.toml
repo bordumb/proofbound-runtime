@@ -14,6 +14,7 @@ affected_claims = [
   "PBR-VERIFY-006",
   "PBR-RUN-007",
   "PBR-COMPOSE-008",
+  "PBR-PREFLIGHT-009",
 ]
 review_evidence = [
   "rust-toolchain.toml",

@@ -1,0 +1,48 @@
+schema = "proofbound-claim/1"
+id = "PBR-PREFLIGHT-009"
+title = "Preflight observes execution readiness without mutation"
+statement = "A successful pbr preflight report is produced only after the exact plan is validated, the supported host is probed, every registered command and input path is resolved and identified, the proposed output and receipt targets are observed absent, and retained artifact identities are revalidated, without starting child code or installing an execution boundary."
+public_language = "The development preflight path reports bounded, point-in-time host, path, and artifact observations and rejects the registered orchestration attacks without creating an output root, receipt, execution cgroup, or child process. This is test evidence, not an execution receipt, a guarantee that a later run will succeed, or released exact-artifact evidence."
+subject = "rust:proofbound_runtime_cli::preflight::execute"
+profile = "ledger"
+tier = 0
+evidence = ["example-test:preflight-orchestration-attacks"]
+assumptions = [
+  "PBR-LINUX-AX-001",
+  "PBR-HOST-AX-002",
+  "PBR-TOOLCHAIN-AX-003",
+]
+open_obligations = [
+  "Execute the complete preflight success and occupied-target corpus on both supported native architectures at the next release head.",
+  "Bind exact native pbr artifacts containing preflight before describing the command as released.",
+]
+out_of_scope = [
+  "Proof that an observed host capability, path, identity, or absent target remains unchanged after preflight returns.",
+  "Proof that a later execution boundary is installed or that child code runs.",
+  "Use of a preflight report as an execution receipt, verification report, or reuse decision.",
+  "Correctness of the Linux kernel or host platform under the recorded assumptions.",
+]
+source_roots = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-cli/Cargo.toml",
+  "crates/proofbound-runtime-cli/src/main.rs",
+  "crates/proofbound-runtime-cli/src/preflight.rs",
+  "crates/proofbound-runtime-cli/src/run.rs",
+  "crates/proofbound-runtime-core/src/authority.rs",
+  "crates/proofbound-runtime-core/src/identity.rs",
+  "crates/proofbound-runtime-core/src/normalize.rs",
+  "crates/proofbound-runtime-core/src/plan.rs",
+  "crates/proofbound-runtime-core/src/policy.rs",
+  "crates/proofbound-runtime-linux/src/inventory.rs",
+  "crates/proofbound-runtime-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/output.rs",
+  "crates/proofbound-runtime-linux/src/probe.rs",
+  "crates/proofbound-runtime-linux/src/resolve.rs",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "docs/specs/0005_read_only_preflight.md",
+  "proofbound/evidence/preflight-orchestration-attacks.toml",
+  "schemas/preflight-v1.schema.json",
+  "tests/attacks/preflight/",
+  "tools/ci/native-linux.sh",
+]

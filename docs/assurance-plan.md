@@ -16,6 +16,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-VERIFY-006` | Tested/model-only with exact native artifact observation | The evidence remains bounded to the registered mutations and exact rejection reasons exercised by each native `pbr-verify`. |
 | `PBR-RUN-007` | Tested/model-only with exact native artifact observation | Each native release executes the exact `pbr` bundle role end to end without turning that observation into a theorem. |
 | `PBR-COMPOSE-008` | Tested/model-only with exact native artifact observation | Each exact native composer joins verified receipts without upgrading any inherited facet. |
+| `PBR-PREFLIGHT-009` | Tested/model-only on the development branch | The point-in-time preflight projection and registered failure surface are tested; exact native release observation remains an explicit obligation. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -171,6 +172,31 @@ The evidence path is:
 Composition does not increase any inherited claim's formal or linkage facet.
 It retains `PBR-COMMITMENT-AX-007`: placing a receipt and its expected
 commitment into the same replaceable carrier is still not authentication.
+
+## PBR-PREFLIGHT-009
+
+The production subject is the read-only `pbr preflight` orchestration path. It
+reuses the strict plan parser, pure normalizer and policy compiler, Linux host
+probe, confined resolver, ELF interpreter discovery, and artifact identity
+implementation used by `pbr run`. It stops before execution identifiers,
+output-root creation, cgroup creation, launcher startup, or boundary
+installation.
+
+The current bounded evidence path is:
+
+1. closed command grammar and typed failure-report tests;
+2. a frozen attack inventory for invalid plans, unsupported hosts, occupied
+   targets, path escape, symlink, executable, interpreter, and identity drift;
+3. unit tests for the exact identity projection and the read-only output-target
+   inspection primitive; and
+4. a required native workflow step that checks point-in-time identities and
+   snapshots the cgroup and absent targets on both supported architectures.
+
+The claim remains `TESTED` and `MODEL_ONLY`. Until a release head executes the
+native workflow and binds the resulting exact `pbr` members, the command is a
+development capability rather than a released artifact claim. A successful
+report is never evidence that a later run will observe the same identities or
+install a boundary.
 
 ## Promotion rule
 

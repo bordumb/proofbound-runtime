@@ -1,0 +1,48 @@
+schema = "proofbound-evidence-unit/1"
+id = "preflight-orchestration-attacks"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-PREFLIGHT-009"]
+tier = 0
+expected_inventory = [
+  "pbr::preflight::tests::artifact_projection_uses_receipt_identity_fields",
+  "pbr::preflight::tests::failure_report_is_closed_and_typed",
+  "pbr::preflight::tests::preflight_attack_catalog_is_closed",
+  "pbr::tests::preflight_failure_is_structured_and_preserves_the_machine_code",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-cli/Cargo.toml",
+  "crates/proofbound-runtime-cli/src/main.rs",
+  "crates/proofbound-runtime-cli/src/preflight.rs",
+  "crates/proofbound-runtime-cli/src/run.rs",
+  "crates/proofbound-runtime-core/src/authority.rs",
+  "crates/proofbound-runtime-core/src/identity.rs",
+  "crates/proofbound-runtime-core/src/normalize.rs",
+  "crates/proofbound-runtime-core/src/plan.rs",
+  "crates/proofbound-runtime-core/src/policy.rs",
+  "crates/proofbound-runtime-linux/src/inventory.rs",
+  "crates/proofbound-runtime-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/output.rs",
+  "crates/proofbound-runtime-linux/src/probe.rs",
+  "crates/proofbound-runtime-linux/src/resolve.rs",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "schemas/preflight-v1.schema.json",
+  "tests/attacks/preflight/orchestration-v1.toml",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-cli"
+manifest = "Cargo.toml"
+targets = ["--bin=pbr"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824
