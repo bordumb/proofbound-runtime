@@ -60,9 +60,10 @@ or noncanonical execution receipt fails closed.
 ### Proofbound release
 
 The Proofbound release directory must contain a valid contextual exact-
-observation release: `proofbound-release-envelope/5` with a
-`proofbound-compiled-release/5` payload. The independent verifier result must
-be a closed `proofbound-verification-report/3` with verdict `bytes-observed`.
+observation and semantic artifact-binding release:
+`proofbound-release-envelope/6` with a `proofbound-compiled-release/6` payload.
+The independent verifier result must be a closed
+`proofbound-verification-report/3` with verdict `bytes-observed`.
 The report and payload must name the same nonempty evidence context. The plugin
 binds that context, the exact envelope bytes, its payload identity, the exact
 verification-report bytes, the observation-input manifest bytes, the verifier
@@ -71,11 +72,14 @@ manifest is an explicit carrier supplied outside the release directory. It is
 not inferred from a generated directory or adjacent file.
 
 Every claim row is retained with its formal, linkage, assumption, and policy
-facets and its complete exact-artifact observation inventory. Every assumption
-and every entry in `not_proved_out_of_scope` is retained. The plugin never
-removes a claim because its status is weak or its publication policy is
-blocked. It rejects a version 3 or version 4 release because those carriers do
-not bind Runtime's required release evidence context.
+facets and its complete exact-artifact observation inventory. Contextual
+artifact-binding records remain in the exact compiled payload sealed by the
+release identity; they do not masquerade as empirical observations in claim
+rows. Every assumption and every entry in `not_proved_out_of_scope` is
+retained. The plugin never removes a claim because its status is weak or its
+publication policy is blocked. It rejects version 3, version 4, and version 5
+releases because those carriers do not retain Runtime's required contextual
+semantic binding evidence.
 
 ### Runtime bundle
 
@@ -160,7 +164,9 @@ Eligibility is derived, never caller supplied:
 The plugin records Proofbound's exact claim facets but derives no new
 Proofbound facet. In particular, this receipt does not turn `MODEL_ONLY` into
 `ARTIFACT_BOUND`. The `bytes-observed` verdict records complete independent
-byte observation; it does not establish theorem-to-artifact linkage.
+byte observation. The distinct contextual binding records establish only the
+theorem-to-artifact correspondence admitted by their exact theorem statements
+and explicit assumptions.
 
 ## Attack inventory
 
@@ -180,7 +186,7 @@ The version 1 implementation must freeze and reject at least these cases:
 | `PBR-COMP-010` | Supply an unknown schema or field | `composition.schema.invalid` |
 | `PBR-COMP-011` | Replace an existing output path | `composition.output.exists` |
 | `PBR-COMP-012` | Present `MODEL_ONLY` as `ARTIFACT_BOUND` | `composition.release.downgraded` |
-| `PBR-COMP-013` | Downgrade the contextual release to a pre-context schema or verdict | `composition.release.downgraded` |
+| `PBR-COMP-013` | Downgrade the contextual release to a pre-binding schema or verdict | `composition.release.downgraded` |
 | `PBR-COMP-014` | Omit or substitute the evidence context across the release and report | `composition.release.context-mismatch` |
 | `PBR-COMP-015` | Omit or change an exact-artifact observation retained by a claim | `composition.release.downgraded` |
 | `PBR-COMP-016` | Omit or substitute the external observation-input manifest | `composition.release.verification-failed` |
@@ -201,5 +207,7 @@ The caller remains responsible for transporting the execution commitment and
 expected execution ID independently of the receipt. The release operator
 remains responsible for the source-to-binary build relationship under
 `PBR-TOOLCHAIN-AX-003`. Exact-artifact observation records show which bytes the
-registered procedures exercised. They do not prove that the source produced
-those bytes or that the bytes implement the source model.
+registered procedures exercised and do not prove source semantics. The
+separate contextual binding records connect admitted source-refinement meaning
+to exact release bytes subject to the explicit toolchain assumption; they do
+not discharge compiler, linker, verifier, or platform trust.
