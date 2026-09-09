@@ -2,6 +2,8 @@ target/
 .proofbound/
 .lake/
 dist/
+__pycache__/
+*.py[cod]
 
 *.profraw
 *.profdata

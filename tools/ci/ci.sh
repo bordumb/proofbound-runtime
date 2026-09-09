@@ -13,9 +13,10 @@ python3 tools/ci/changelog.py
 printf '%s\n' '[3/9] documentation and feedback records'
 python3 tools/ci/documentation.py
 
-printf '%s\n' '[4/9] closed release observation inputs'
+printf '%s\n' '[4/9] closed release observation inputs and installer'
 python3 tools/release/observation_inputs.py --check
 python3 tools/release/artifact_checker.py --self-check
+python3 -m unittest tools.ci.test_install_release
 
 printf '%s\n' '[5/9] Rust formatting, linting, tests, and locked metadata'
 cargo fmt --all -- --check
