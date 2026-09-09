@@ -31,7 +31,9 @@ pub use launcher::{
     decode_launcher_message, encode_launcher_message, pause_for_supervisor,
     receive_install_request, run_launcher, verify_launcher_response,
 };
-pub use output::{FreshOutputRoot, OutputEntry, OutputInventory, OutputRootError};
+pub use output::{
+    FreshOutputRoot, OutputEntry, OutputInventory, OutputRootError, OutputRootPreflight,
+};
 pub use privilege::{LockedPrivileges, PrivilegeError, lock_privileges};
 pub use probe::{
     Architecture, Capability, CapabilityReport, CgroupV2Capability, ProbeError, SeccompCapability,
