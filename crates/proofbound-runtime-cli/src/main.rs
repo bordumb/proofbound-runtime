@@ -3,6 +3,7 @@
 mod doctor;
 mod inspect;
 mod plan;
+mod preflight;
 mod run;
 
 use std::env;
@@ -47,7 +48,10 @@ where
         if args.next().is_some() {
             return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
         }
-        return write_success(stdout, "usage: pbr <doctor|plan|run|inspect> [options]");
+        return write_success(
+            stdout,
+            "usage: pbr <doctor|plan|preflight|run|inspect> [options]",
+        );
     }
     if command == "--version" {
         if args.next().is_some() {
@@ -116,6 +120,49 @@ where
             },
             Err(error) => fail(stderr, error.exit_code(), error.code()),
         };
+    }
+    if command == "preflight" {
+        let Some(plan_option) = args.next() else {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        };
+        let Some(plan_path) = args.next() else {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        };
+        let Some(receipt_option) = args.next() else {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        };
+        let Some(receipt_path) = args.next() else {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        };
+        let Some(cgroup_option) = args.next() else {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        };
+        let Some(cgroup_root) = args.next() else {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        };
+        if plan_option != OsStr::new("--plan")
+            || receipt_option != OsStr::new("--receipt")
+            || cgroup_option != OsStr::new("--cgroup-root")
+            || args.next().is_some()
+        {
+            return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+        }
+        let (report, exit_code, error_code) = match preflight::execute(
+            Path::new(&plan_path),
+            Path::new(&receipt_path),
+            Path::new(&cgroup_root),
+            probe,
+        ) {
+            Ok(report) => (report, SUCCESS, None),
+            Err(error) => (error.report(), error.exit_code(), Some(error.code())),
+        };
+        if serde_json::to_writer(&mut *stdout, &report)
+            .and_then(|()| writeln!(stdout).map_err(serde_json::Error::io))
+            .is_err()
+        {
+            return fail(stderr, INVALID_INPUT, "cli.output.write-failed");
+        }
+        return error_code.map_or(exit_code, |code| fail(stderr, exit_code, code));
     }
     if command == "inspect" {
         let Some(receipt_path) = args.next() else {
@@ -247,6 +294,25 @@ mod tests {
                 "/cgroup",
                 "extra",
             ][..],
+            &[
+                "pbr",
+                "preflight",
+                "--plan",
+                "plan.toml",
+                "--receipt",
+                "receipt.json",
+                "--cgroup-root",
+            ][..],
+            &[
+                "pbr",
+                "preflight",
+                "--receipt",
+                "receipt.json",
+                "--plan",
+                "plan.toml",
+                "--cgroup-root",
+                "/cgroup",
+            ][..],
             &["pbr", "doctor", "--explain", "--cgroup-root", "/tmp"][..],
             &[
                 "pbr",
@@ -326,6 +392,46 @@ mod tests {
 
         assert_eq!(code, INVALID_INPUT);
         assert!(stdout.is_empty());
+        assert_eq!(stderr, b"pbr: plan.input.read-failed\n");
+    }
+
+    #[test]
+    fn preflight_failure_is_structured_and_preserves_the_machine_code() {
+        let missing = std::env::temp_dir().join(format!(
+            "proofbound-runtime-missing-preflight-plan-{}",
+            std::process::id()
+        ));
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+        let code = run_with(
+            vec![
+                OsString::from("pbr"),
+                OsString::from("preflight"),
+                OsString::from("--plan"),
+                missing.into_os_string(),
+                OsString::from("--receipt"),
+                OsString::from("receipt.json"),
+                OsString::from("--cgroup-root"),
+                OsString::from("/cgroup"),
+            ],
+            |_| unreachable!("missing plan fails before capability probing"),
+            |_| unreachable!("preflight uses identified plan input"),
+            &mut stdout,
+            &mut stderr,
+        );
+        let report: serde_json::Value =
+            serde_json::from_slice(&stdout).expect("preflight failure is JSON");
+
+        assert_eq!(code, INVALID_INPUT);
+        assert_eq!(
+            report,
+            serde_json::json!({
+                "schema": "proofbound-runtime-preflight/1",
+                "ready": false,
+                "phase": "plan-input",
+                "code": "plan.input.read-failed",
+            })
+        );
         assert_eq!(stderr, b"pbr: plan.input.read-failed\n");
     }
 }

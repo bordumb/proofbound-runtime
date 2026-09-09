@@ -9,6 +9,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- A read-only `pbr preflight` command that validates a plan, probes the
+  supported host boundary, resolves exact command and input identities, and
+  inspects fresh output and receipt targets without starting child code or
+  mutating the host.
 - A fail-closed exact-release installer with closed archive/member validation
   and embedded reviewed digests for both version 0.1 architectures.
 - A separate read-only `pbr doctor --cgroup-root <path> --explain` projection

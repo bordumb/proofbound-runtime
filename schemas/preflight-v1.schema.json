@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://proofbound.dev/runtime/preflight-v1.schema.json",
+  "title": "Proofbound Runtime read-only preflight version 1",
+  "oneOf": [
+    {"$ref": "#/$defs/success"},
+    {"$ref": "#/$defs/failure"}
+  ],
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "role", "sha256", "size"],
+      "properties": {
+        "mode": {"type": "integer", "minimum": 0, "maximum": 4095},
+        "role": {
+          "enum": [
+            "execution-plan",
+            "project-input",
+            "runtime-executable",
+            "runtime-library",
+            "runtime-loader-executable",
+            "working-directory"
+          ]
+        },
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "size": {"type": "integer", "minimum": 0}
+      }
+    },
+    "pathArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact", "requested", "resolved"],
+      "properties": {
+        "artifact": {"$ref": "#/$defs/artifact"},
+        "requested": {"type": "string", "minLength": 1},
+        "resolved": {"type": "string", "minLength": 1}
+      }
+    },
+    "failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "phase", "ready", "schema"],
+      "properties": {
+        "code": {"type": "string", "minLength": 1},
+        "phase": {
+          "enum": [
+            "plan-input",
+            "plan-validation",
+            "authority-normalization",
+            "plan-root",
+            "host-capabilities",
+            "receipt-target",
+            "output-root",
+            "working-directory",
+            "executable-closure",
+            "read-authority",
+            "identity-revalidation"
+          ]
+        },
+        "ready": {"const": false},
+        "schema": {"const": "proofbound-runtime-preflight/1"}
+      }
+    },
+    "success": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "caveat",
+        "command",
+        "inputs",
+        "output_root",
+        "plan_id",
+        "plan_source",
+        "platform",
+        "ready",
+        "receipt",
+        "schema"
+      ],
+      "properties": {
+        "caveat": {"const": "preflight.point-in-time"},
+        "command": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["executable", "interpreter", "working_directory"],
+          "properties": {
+            "executable": {"$ref": "#/$defs/pathArtifact"},
+            "interpreter": {
+              "oneOf": [
+                {"type": "null"},
+                {"$ref": "#/$defs/pathArtifact"}
+              ]
+            },
+            "working_directory": {"$ref": "#/$defs/pathArtifact"}
+          }
+        },
+        "inputs": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/pathArtifact"}
+        },
+        "output_root": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requested", "resolved_parent", "resolved_target"],
+          "properties": {
+            "requested": {"type": "string", "minLength": 1},
+            "resolved_parent": {"type": "string", "minLength": 1},
+            "resolved_target": {"type": "string", "minLength": 1}
+          }
+        },
+        "plan_id": {"type": "string", "minLength": 1},
+        "plan_source": {"$ref": "#/$defs/pathArtifact"},
+        "platform": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "architecture",
+            "cgroup_v2",
+            "kernel_release",
+            "landlock_abi",
+            "seccomp_actions"
+          ],
+          "properties": {
+            "architecture": {"enum": ["aarch64", "x86_64"]},
+            "cgroup_v2": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["controllers", "directory", "directory_inode", "mount_id"],
+              "properties": {
+                "controllers": {
+                  "type": "array",
+                  "items": {"type": "string", "minLength": 1},
+                  "uniqueItems": true
+                },
+                "directory": {"type": "string", "minLength": 1},
+                "directory_inode": {"type": "integer", "minimum": 1},
+                "mount_id": {"type": "integer", "minimum": 1}
+              }
+            },
+            "kernel_release": {"type": "string", "minLength": 1},
+            "landlock_abi": {"type": "integer", "minimum": 1},
+            "seccomp_actions": {
+              "type": "array",
+              "items": {"type": "string", "minLength": 1},
+              "uniqueItems": true
+            }
+          }
+        },
+        "ready": {"const": true},
+        "receipt": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["resolved_target"],
+          "properties": {
+            "resolved_target": {"type": "string", "minLength": 1}
+          }
+        },
+        "schema": {"const": "proofbound-runtime-preflight/1"}
+      }
+    }
+  }
+}

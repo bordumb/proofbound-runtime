@@ -77,6 +77,24 @@ pub enum ResolvedReadPath {
 }
 
 impl ResolvedReadPath {
+    /// Returns the exact path supplied by the execution plan.
+    #[must_use]
+    pub fn requested_path(&self) -> &Path {
+        match self {
+            Self::File(file) => file.requested_path(),
+            Self::Directory(directory) => directory.requested_path(),
+        }
+    }
+
+    /// Returns the target observed through the retained descriptor.
+    #[must_use]
+    pub fn resolved_target(&self) -> &Path {
+        match self {
+            Self::File(file) => file.resolved_target(),
+            Self::Directory(directory) => directory.resolved_target(),
+        }
+    }
+
     /// Returns the identity bound into the receipt input set.
     #[must_use]
     pub const fn identity(&self) -> &ArtifactIdentity {

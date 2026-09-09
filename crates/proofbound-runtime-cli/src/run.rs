@@ -642,7 +642,7 @@ fn descriptor(value: i32) -> Result<u32, RunError> {
     u32::try_from(value).map_err(|_| RunError::launcher("launcher.file-descriptor.invalid"))
 }
 
-fn prepare_receipt_path(path: &Path) -> Result<PathBuf, RunError> {
+pub(crate) fn prepare_receipt_path(path: &Path) -> Result<PathBuf, RunError> {
     let absolute = if path.is_absolute() {
         path.to_path_buf()
     } else {
