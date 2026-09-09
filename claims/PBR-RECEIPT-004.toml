@@ -2,7 +2,7 @@ schema = "proofbound-claim/1"
 id = "PBR-RECEIPT-004"
 title = "Incomplete executions are not reusable"
 statement = "Receipt eligibility is reusable only for a structurally valid, boundary-installed execution that exits with code zero and has complete output streams; every other represented state is non-reusable with all applicable typed reasons."
-public_language = "A kernel-checked theorem over the deterministic Aeneas translation proves that the production Rust receipt decision equals the exact version 1 model for every represented state. Release-artifact binding remains open."
+public_language = "A kernel-checked theorem over the deterministic Aeneas translation proves that the production Rust receipt decision equals the exact version 1 model for every represented state. In each reviewed native release context, the theorem's closed artifact set selects the exact pbr bytes and independent verification recomputes the match, subject to the registered toolchain assumption."
 subject = "rust:proofbound_runtime_receipt::derive_receipt_eligibility"
 profile = "kernel-with-assumptions"
 tier = 3
@@ -22,9 +22,7 @@ evidence = [
 ]
 assumptions = ["PBR-TOOLCHAIN-AX-003"]
 premises = ["PBR-RECEIPT-REP-005"]
-open_obligations = [
-  "Bind the refined claim to release artifacts before making a shipping-binary claim.",
-]
+open_obligations = []
 out_of_scope = [
   "Semantic correctness of outputs produced by an otherwise reusable execution.",
   "Execution failures or attack classes that the versioned outcome schema cannot represent.",

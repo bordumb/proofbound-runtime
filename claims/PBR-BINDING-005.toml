@@ -2,7 +2,7 @@ schema = "proofbound-claim/1"
 id = "PBR-BINDING-005"
 title = "Reusable receipts bind security-relevant execution inputs"
 statement = "Every reusable execution receipt binds the registered plan, compiled policy, platform, launcher, runtime, executable closure, inputs, outputs, limits, and observed outcome."
-public_language = "A kernel-checked source-refinement theorem proves that the production-used receipt binding constructor and canonical wire projection retain the exact canonical value bytes of all 20 version 1 top-level fields. The typed production constructor rejects the registered role, substitution, replay, duplicate, truncation, and premise-loss attacks."
+public_language = "A kernel-checked source-refinement theorem proves that the production-used receipt binding constructor and canonical wire projection retain the exact canonical value bytes of all 20 version 1 top-level fields. The typed production constructor rejects the registered role, substitution, replay, duplicate, truncation, and premise-loss attacks. In each reviewed native release context, the theorem's closed artifact set selects the exact pbr bytes and independent verification recomputes the match, subject to every registered assumption."
 subject = "rust:proofbound_runtime_binding::construct_and_project_receipt_binding"
 profile = "kernel-with-assumptions"
 tier = 3
@@ -24,9 +24,7 @@ assumptions = [
   "PBR-TOOLCHAIN-AX-003",
 ]
 premises = ["PBR-BINDING-REP-008"]
-open_obligations = [
-  "Link admitted receipt properties to exact release artifacts.",
-]
+open_obligations = []
 out_of_scope = [
   "Behavioral correctness inferred only from an artifact digest.",
   "Secret values, which must not appear in a receipt.",

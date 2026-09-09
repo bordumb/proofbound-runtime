@@ -2,7 +2,7 @@ schema = "proofbound-claim/1"
 id = "PBR-AUTH-001"
 title = "Authority normalization does not amplify authority"
 statement = "For every valid authority plan, normalization returns a duplicate-free plan and every returned authority entry was present in the input plan."
-public_language = "A kernel-checked theorem directly over the deterministic Aeneas translation proves that authority normalization removes duplicate entries, never adds an entry, and preserves resource limits and network mode exactly. A separate kernel-checked theorem discharges the translated byte-carrier premise for every registered input."
+public_language = "A kernel-checked theorem directly over the deterministic Aeneas translation proves that authority normalization removes duplicate entries, never adds an entry, and preserves resource limits and network mode exactly. In each reviewed native release context, the theorem's closed artifact set selects the exact pbr bytes and independent verification recomputes the match, subject to the registered toolchain assumption."
 subject = "rust:proofbound_runtime_core::normalize_authority"
 profile = "kernel-with-assumptions"
 tier = 3
@@ -21,9 +21,7 @@ evidence = [
 ]
 assumptions = ["PBR-TOOLCHAIN-AX-003"]
 premises = ["PBR-STRING-REP-004"]
-open_obligations = [
-  "Bind the refined claim to release artifacts before making a shipping-binary claim.",
-]
+open_obligations = []
 out_of_scope = [
   "Correctness of any Linux enforcement mechanism that later consumes the normalized plan.",
   "Whether the authority requested by a caller is appropriate for the caller's real-world intent.",

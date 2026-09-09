@@ -2,7 +2,7 @@ schema = "proofbound-claim/1"
 id = "PBR-POLICY-002"
 title = "Linux policy compilation does not amplify modeled authority"
 statement = "For every supported normalized plan, policy compilation produces Landlock, seccomp, and cgroup inputs that grant no authority absent from the registered platform model."
-public_language = "A kernel-checked source-refinement theorem proves that the translated Rust policy compiler preserves the exact ordered filesystem, environment, and limit authority of every normalized input while selecting deny-network seccomp and required no-new-privileges. Release-artifact binding remains open."
+public_language = "A kernel-checked source-refinement theorem proves that the translated Rust policy compiler preserves the exact ordered filesystem, environment, and limit authority of every normalized input while selecting deny-network seccomp and required no-new-privileges. In each reviewed native release context, the theorem's closed artifact set selects the exact pbr bytes and independent verification recomputes the match, subject to the registered toolchain assumption."
 subject = "rust:proofbound_runtime_core::compile_policy"
 profile = "kernel-with-assumptions"
 tier = 3
@@ -20,9 +20,7 @@ evidence = [
 ]
 assumptions = ["PBR-TOOLCHAIN-AX-003"]
 premises = ["PBR-POLICY-REP-006"]
-open_obligations = [
-  "Bind the refined claim to release artifacts before making a shipping-binary claim.",
-]
+open_obligations = []
 out_of_scope = [
   "Linux behavior outside the registered Landlock, seccomp, and cgroup model.",
   "Kernel vulnerabilities, side channels, and authority deliberately present in the input plan.",
