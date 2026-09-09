@@ -9,7 +9,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- Nothing yet.
+- A fail-closed exact-release installer with closed archive/member validation
+  and embedded reviewed digests for both version 0.1 architectures.
+- A separate read-only `pbr doctor --cgroup-root <path> --explain` projection
+  with stable missing requirements and non-mutating remediation.
 
 ## [0.1.0] - 2026-09-09
 

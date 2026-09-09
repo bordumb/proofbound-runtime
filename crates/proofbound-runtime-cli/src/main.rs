@@ -141,11 +141,22 @@ where
     let Some(cgroup_root) = args.next() else {
         return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
     };
+    let explain = match args.next() {
+        None => false,
+        Some(option) if option == OsStr::new("--explain") => true,
+        Some(_) => return fail(stderr, INVALID_INPUT, "cli.usage.invalid"),
+    };
     if args.next().is_some() {
         return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
     }
 
-    match doctor::write_report(&probe(Path::new(&cgroup_root)), stdout) {
+    let report = probe(Path::new(&cgroup_root));
+    let result = if explain {
+        doctor::write_explanation(&report, stdout)
+    } else {
+        doctor::write_report(&report, stdout)
+    };
+    match result {
         Ok(true) => SUCCESS,
         Ok(false) => UNSUPPORTED_BOUNDARY,
         Err(_) => fail(stderr, INVALID_INPUT, "cli.output.write-failed"),
@@ -192,6 +203,32 @@ mod tests {
     }
 
     #[test]
+    fn doctor_explanation_uses_a_separate_schema_and_same_exit_class() {
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+        let code = run_with(
+            args(&[
+                "pbr",
+                "doctor",
+                "--cgroup-root",
+                "/unsupported",
+                "--explain",
+            ]),
+            probe_capabilities,
+            |_| unreachable!("doctor does not read a plan"),
+            &mut stdout,
+            &mut stderr,
+        );
+        let value: serde_json::Value =
+            serde_json::from_slice(&stdout).expect("doctor writes explanation JSON");
+
+        assert_eq!(code, UNSUPPORTED_BOUNDARY);
+        assert_eq!(value["schema"], "proofbound-runtime-doctor-explanation/1");
+        assert_eq!(value["supported"], false);
+        assert!(stderr.is_empty());
+    }
+
+    #[test]
     fn usage_is_closed() {
         for values in [
             &["pbr"][..],
@@ -208,6 +245,15 @@ mod tests {
                 "receipt.json",
                 "--cgroup-root",
                 "/cgroup",
+                "extra",
+            ][..],
+            &["pbr", "doctor", "--explain", "--cgroup-root", "/tmp"][..],
+            &[
+                "pbr",
+                "doctor",
+                "--cgroup-root",
+                "/tmp",
+                "--explain",
                 "extra",
             ][..],
         ] {
