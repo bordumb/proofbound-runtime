@@ -10,7 +10,7 @@ from urllib.parse import unquote
 
 
 TEXT_SUFFIXES = {".json", ".md", ".py", ".rs", ".sh", ".toml", ".yaml", ".yml"}
-SKIPPED_PARTS = {".git", ".lake", ".proofbound", "target"}
+SKIPPED_PARTS = {".git", ".lake", ".proofbound", "dist", "target"}
 LOCAL_LINK = re.compile(r"\[[^]]*]\(([^)]+)\)")
 FEEDBACK_FILE = re.compile(r"pbf-([0-9]{4})-[a-z0-9]+(?:-[a-z0-9]+)*\.md")
 
