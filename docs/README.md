@@ -6,6 +6,9 @@ The document type determines its authority.
 
 ## Delivery tracking
 
+- [Product and delivery roadmap](product-roadmap.md) records the ordered
+  post-0.1 product, workflow, cross-repository, and assurance work. It does not
+  replace a specification, ADR, or claim manifest.
 - [Implementation plan](implementation-plan.md) records the ordered work queue,
   commit boundaries, and release completion criteria. It does not replace the
   normative specification or claim ledger.
