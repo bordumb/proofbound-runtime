@@ -171,7 +171,9 @@ jobs:
             "${{ matrix.architecture }}" \
             "${{ matrix.context }}" \
             "dist/assurance/${{ matrix.architecture }}/proofbound-release.verification.json" \
-            "dist/native-evidence/${{ matrix.architecture }}/composed-receipt.json" <<'PY'
+            "dist/native-evidence/${{ matrix.architecture }}/composed-receipt.json" \
+            "dist/assurance/${{ matrix.architecture }}/proofbound-release/compiled-receipt.json" \
+            "dist/release-observation/${{ matrix.architecture }}/RELEASE-MANIFEST.json" <<'PY'
           import json
           import pathlib
           import sys
@@ -179,10 +181,15 @@ jobs:
           revision, architecture, context = sys.argv[1:4]
           report = json.loads(pathlib.Path(sys.argv[4]).read_bytes())
           receipt = json.loads(pathlib.Path(sys.argv[5]).read_bytes())
+          compiled = json.loads(pathlib.Path(sys.argv[6]).read_bytes())
+          manifest = json.loads(pathlib.Path(sys.argv[7]).read_bytes())
           assert report["project_revision"] == revision
           assert report["evidence_context"] == context
           assert report["publication_blocked"] is False
           assert report["verdict"] == "bytes-observed"
+          assert compiled["schema"] == "proofbound-compiled-release/6"
+          assert compiled["project_revision"] == revision
+          assert compiled["evidence_context"] == context
           assert receipt["schema"] == "proofbound-runtime-composed-receipt/1"
           assert receipt["eligibility"] == {"status": "composed"}
           assert receipt["release"]["project_revision"] == revision
@@ -205,6 +212,43 @@ jobs:
               ("PBR-SEQUENCE-003", "launcher-release", "linux", architecture),
               ("PBR-VERIFY-006", "verifier-release", "linux", architecture),
           }
+          pbr = next(item for item in manifest["artifacts"] if item["name"] == "pbr")
+          bindings = []
+          for wrapper in compiled["evidence"]:
+              record = wrapper["record"]
+              binding = record.get("artifact_binding")
+              if binding is None:
+                  continue
+              assert record["schema"] == "proofbound-evidence/5"
+              assert record["kind"] == "artifact-soundness"
+              assert record["outcome"] == "passed"
+              assert record["evaluation_mode"] == "kernel"
+              assert record["binding_mode"] == "digest-theorem"
+              assert record["evidence_context"] == context
+              assert len(record["claim_ids"]) == 1
+              assert binding["theorem_evidence"].startswith("sha256:")
+              assert binding["artifact"] == {
+                  "logical_name": f"dist/release-observation/{architecture}/pbr",
+                  "sha256": f"sha256:{pbr['sha256']}",
+                  "size_bytes": pbr["size"],
+              }
+              bindings.append(record["claim_ids"][0])
+          assert sorted(bindings) == [
+              "PBR-AUTH-001",
+              "PBR-BINDING-005",
+              "PBR-POLICY-002",
+              "PBR-RECEIPT-004",
+          ]
+          tier3 = {
+              claim["claim_id"]: claim
+              for claim in receipt["claims"]
+              if claim["claim_id"] in bindings
+          }
+          assert set(tier3) == set(bindings)
+          for claim in tier3.values():
+              assert claim["formal"] == "PROVED"
+              assert claim["linkage"] == "REFINED"
+              assert claim["assumption"] == "ASSUMED"
           PY
 
       - name: Upload the reproduced and observed release chain

@@ -10,9 +10,9 @@ use sha2::{Digest, Sha256};
 
 const COMPOSITION_SCHEMA: &str = "proofbound-runtime-composed-receipt/1";
 const COMPOSITION_DOMAIN: &[u8] = b"proofbound-runtime-composed-receipt/1\n";
-const RELEASE_ENVELOPE_SCHEMA: &str = "proofbound-release-envelope/5";
+const RELEASE_ENVELOPE_SCHEMA: &str = "proofbound-release-envelope/6";
 const RELEASE_REPORT_SCHEMA: &str = "proofbound-verification-report/3";
-const COMPILED_RELEASE_SCHEMA: &str = "proofbound-compiled-release/5";
+const COMPILED_RELEASE_SCHEMA: &str = "proofbound-compiled-release/6";
 const RELEASE_MANIFEST_SCHEMA: &str = "proofbound-runtime-release-manifest/1";
 const EXECUTION_RECEIPT_SCHEMA: &str = "proofbound-runtime-receipt/1";
 
@@ -413,13 +413,17 @@ fn validate_release(
 ) -> Result<String, CompositionError> {
     if matches!(
         envelope.schema.as_str(),
-        "proofbound-release-envelope/3" | "proofbound-release-envelope/4"
+        "proofbound-release-envelope/3"
+            | "proofbound-release-envelope/4"
+            | "proofbound-release-envelope/5"
     ) || matches!(
         report.schema.as_str(),
         "proofbound-verification-report/1" | "proofbound-verification-report/2"
     ) || matches!(
         compiled.schema.as_str(),
-        "proofbound-compiled-release/3" | "proofbound-compiled-release/4"
+        "proofbound-compiled-release/3"
+            | "proofbound-compiled-release/4"
+            | "proofbound-compiled-release/5"
     ) || matches!(
         report.verdict.as_str(),
         "receipt-consistent" | "record-consistent"
@@ -852,7 +856,24 @@ mod tests {
                 "assumptions": [],
                 "claims": [],
                 "closures": [],
-                "evidence": [],
+                "evidence": [{
+                    "record": {
+                        "artifact_binding": {
+                            "artifact": {
+                                "logical_name": "dist/release-observation/x86_64/pbr",
+                                "sha256": digest_text(&runtime),
+                                "size_bytes": runtime.len()
+                            },
+                            "theorem_evidence": digest_text(b"theorem evidence")
+                        },
+                        "claim_ids": ["PBR-TEST-001"],
+                        "evidence_context": "release-linux-x86-64",
+                        "kind": "artifact-soundness",
+                        "outcome": "passed",
+                        "schema": "proofbound-evidence/5"
+                    },
+                    "sha256": digest_text(b"artifact evidence")
+                }],
                 "evidence_context": "release-linux-x86-64",
                 "graph": {},
                 "graph_sha256": digest_text(b"graph"),
@@ -1021,6 +1042,7 @@ mod tests {
         fn mutate_json(&mut self, field: FixtureField, mutation: impl FnOnce(&mut Value)) {
             let bytes = match field {
                 FixtureField::Envelope => &mut self.release_envelope,
+                FixtureField::Compiled => &mut self.compiled_release,
                 FixtureField::Report => &mut self.release_verification,
                 FixtureField::Manifest => &mut self.runtime_manifest,
                 FixtureField::Execution => &mut self.execution_receipt,
@@ -1042,6 +1064,7 @@ mod tests {
     #[derive(Clone, Copy)]
     enum FixtureField {
         Envelope,
+        Compiled,
         Report,
         Manifest,
         Execution,
@@ -1144,10 +1167,19 @@ mod tests {
 
         let mut downgraded = Fixture::new();
         downgraded.mutate_json(FixtureField::Envelope, |value| {
-            value["schema"] = Value::String("proofbound-release-envelope/4".to_owned());
+            value["schema"] = Value::String("proofbound-release-envelope/5".to_owned());
         });
         assert_eq!(
             compose(&downgraded.inputs()).unwrap_err(),
+            CompositionError::ReleaseDowngraded
+        );
+
+        let mut downgraded_payload = Fixture::new();
+        downgraded_payload.mutate_json(FixtureField::Compiled, |value| {
+            value["schema"] = Value::String("proofbound-compiled-release/5".to_owned());
+        });
+        assert_eq!(
+            compose(&downgraded_payload.inputs()).unwrap_err(),
             CompositionError::ReleaseDowngraded
         );
 
