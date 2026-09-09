@@ -4,7 +4,7 @@
 - **Priority:** `near-term`
 - **Kind:** `workflow`
 - **Created:** 2026-09-04
-- **Last updated:** 2026-09-04
+- **Last updated:** 2026-09-09
 - **Runtime claim:** `PBR-AUTH-001`
 - **Runtime milestone:** Milestone 1
 - **Proofbound target:** CLI and Lean adapter
@@ -117,9 +117,16 @@ diff and must never reinterpret an existing receipt.
 ## Local treatment
 
 Runtime uses the compiled Lean audit and Proofbound core's canonical digest
-implementation to prepare a reviewed claim-manifest patch. It immediately runs
-the verify-only gate afterward. This workaround only seals theorem identity;
-`PBR-AUTH-001` remains model-only and its Tier 3 obligations remain open.
+implementation to prepare reviewed claim-manifest patches. It immediately runs
+the verify-only gate afterward. The same manual workflow now seals the theorem
+identities for all four source-refined Runtime claims, including
+`PBR-AUTH-001`; their version 0.1 receipts record source refinement and
+contextual exact-artifact binding under visible toolchain assumptions.
+
+The workaround still requires a maintainer to construct the patch outside the
+sealed update operation. It does not make `proofbound update` capable of
+preparing those identities, and it does not admit a changed theorem until the
+subsequent verify-only run succeeds.
 
 ## Upstream handoff
 

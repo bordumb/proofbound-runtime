@@ -4,7 +4,7 @@
 - **Priority:** `near-term`
 - **Kind:** `verifier`
 - **Created:** 2026-09-06
-- **Last updated:** 2026-09-06
+- **Last updated:** 2026-09-09
 - **Runtime claim:** `PBR-POLICY-002`
 - **Runtime milestone:** Policy compilation
 - **Proofbound target:** compiler, status engine, and independent verifier
@@ -84,8 +84,14 @@ wire schemas need not change if equality is enforced over existing fields.
 ## Local treatment
 
 Runtime aligns all three policy domain declarations manually and treats their
-equality as a review invariant. The policy claim remains model-only until its
-stronger theorem and linkage work are complete.
+equality as a review invariant. `PBR-POLICY-002` now has admitted bounded,
+model-theorem, source-refinement, and contextual exact-artifact evidence for
+the version 0.1 subjects. None of that evidence makes the duplicated-domain
+invariant generic or independently enforced.
+
+The next bounded resource-policy claim remains blocked on PBF-0007 or an
+equivalent local fail-closed checker. Runtime will not rely on review-only
+domain equality for the memory and swap claim wave.
 
 ## Upstream handoff
 
