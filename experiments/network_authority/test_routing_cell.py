@@ -230,6 +230,21 @@ class RoutingCellTests(unittest.TestCase):
             with self.subTest(case=case.identifier), self.assertRaises(RoutingCellError):
                 classify(raw, case, "landlock-port")
 
+    def test_eacces_is_routing_only_and_eperm_is_required_at_child_boundary(self) -> None:
+        routing_case = self.case("direct-tcp-other-port")
+        routing = self.observed_raw(routing_case, "landlock-port")
+        routing["client"] = dict(routing["client"])
+        routing["client"]["errno"] = errno.EACCES
+        observed = classify(routing, routing_case, "landlock-port")
+        self.assertEqual((observed.outcome, observed.stage), ("denied", "routing"))
+
+        boundary_case = self.case("direct-udp-dns-shaped")
+        boundary = self.observed_raw(boundary_case, "landlock-port")
+        boundary["client"] = dict(boundary["client"])
+        boundary["client"]["errno"] = errno.EACCES
+        with self.assertRaises(RoutingCellError):
+            classify(boundary, boundary_case, "landlock-port")
+
     def test_prelaunch_and_postlaunch_markers_cannot_be_swapped(self) -> None:
         case = self.case("literal-undeclared-address")
         prelaunch = self.observed_raw(case, "preconnected-channel")

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import errno
 from dataclasses import dataclass
 
 from experiments.network_authority.routing_transport_case import (
@@ -228,16 +229,18 @@ def classify(raw: object, case: RoutingCase, mechanism: str) -> ObservedCell:
     if event == "operation-error":
         if phase in {"socket", "bind", "listen", "datagram"}:
             stage = "child-boundary"
+            expected_errnos = {errno.EPERM}
         elif phase == "connect":
             stage = "routing"
+            expected_errnos = {errno.EPERM, errno.EACCES}
         else:
             raise RoutingCellError("non-syscall error cannot prove a denial")
         if (
-            client["errno"] != 1
+            client["errno"] not in expected_errnos
             or raw["fixture_contact"]
             or raw["fixture_complete"]
         ):
-            raise RoutingCellError("denial lacks exact EPERM or has fixture success")
+            raise RoutingCellError("denial errno or fixture markers are inconsistent")
         return ObservedCell("denied", stage)
     if event == "certificate-rejected":
         if not raw["fixture_contact"] or raw["fixture_complete"]:
