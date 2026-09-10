@@ -40,6 +40,7 @@ python3 -m unittest experiments.network_authority.test_routing_mediator
 python3 -m unittest experiments.network_authority.test_routing_cell
 python3 -m unittest experiments.network_authority.test_run_routing_direct_case
 python3 -m unittest experiments.network_authority.test_run_routing_broker_case
+python3 -m unittest experiments.network_authority.test_run_routing_preconnected_case
 
 printf '%s\n' '[5/9] Rust formatting, linting, tests, and locked metadata'
 cargo fmt --all -- --check
