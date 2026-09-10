@@ -32,6 +32,7 @@ python3 -m unittest experiments.network_authority.test_decision_proxy_fixture
 python3 -m unittest experiments.network_authority.test_decision_socket_fixture
 python3 -m unittest experiments.network_authority.test_routing_transport_case
 python3 -m unittest experiments.network_authority.test_routing_child_control
+python3 -m unittest experiments.network_authority.test_routing_endpoint_control
 
 printf '%s\n' '[5/9] Rust formatting, linting, tests, and locked metadata'
 cargo fmt --all -- --check

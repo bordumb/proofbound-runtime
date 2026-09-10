@@ -46,12 +46,14 @@ jobs:
             experiments.network_authority.test_decision_proxy_fixture \
             experiments.network_authority.test_decision_socket_fixture \
             experiments.network_authority.test_routing_transport_case \
-            experiments.network_authority.test_routing_child_control
+            experiments.network_authority.test_routing_child_control \
+            experiments.network_authority.test_routing_endpoint_control
 
-      - name: Falsify the native routing child boundary
+      - name: Falsify the native routing boundaries
         run: |
           sudo python3 -m unittest \
-            experiments.network_authority.test_routing_child_control
+            experiments.network_authority.test_routing_child_control \
+            experiments.network_authority.test_routing_endpoint_control
 
   landlock-port-control:
     name: Landlock port control (${{ matrix.architecture }})
