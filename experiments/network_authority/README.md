@@ -17,10 +17,12 @@ cc -std=c11 -Wall -Wextra -Werror -O2 \
   -o /tmp/landlock-port-control
 ```
 
-The wrapper exits `3` when the host is not Linux or does not expose Landlock
-ABI 4. Setup or enforcement failure exits `4`. Invalid command grammar exits
-`2`. After successful installation, the wrapper replaces itself with the
-requested command and preserves that command's exit behavior.
+`landlock-port-control --print-abi` prints the exact observed ABI without
+installing a rule. The wrapper exits `3` when the host is not Linux or does not
+expose Landlock ABI 4 for command execution. Setup or enforcement failure exits
+`4`. Invalid command grammar exits `2`. After successful installation, the
+wrapper replaces itself with the requested command and preserves that command's
+exit behavior.
 
 The wrapper deliberately installs no filesystem policy and no general Runtime
 boundary. It exists only to falsify the proposition that a Landlock port rule

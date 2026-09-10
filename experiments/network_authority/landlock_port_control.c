@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #if defined(__linux__)
 
@@ -42,11 +43,22 @@ static int fail_errno(const char *phase) {
 
 int main(int argc, char **argv) {
   if (argc < 2) {
-    fputs("usage: landlock-port-control <command> [argument ...]\n", stderr);
+    fputs("usage: landlock-port-control --print-abi | <command> [argument ...]\n",
+          stderr);
     return 2;
   }
 
   int abi = landlock_create_ruleset(NULL, 0, LANDLOCK_CREATE_RULESET_VERSION);
+  if (argc == 2 && strcmp(argv[1], "--print-abi") == 0) {
+    if (abi < 0) {
+      fprintf(stderr,
+              "landlock-port-control: landlock ABI unavailable: errno=%d\n",
+              errno);
+      return 3;
+    }
+    printf("%d\n", abi);
+    return 0;
+  }
   if (abi < 4) {
     if (abi < 0) {
       fprintf(stderr,
