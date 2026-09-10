@@ -303,7 +303,7 @@ def classify(raw_value: object, case: ResolutionCase, mechanism: str) -> Observe
         if mechanism == "explicit-broker":
             if network != ["operation-rejected"]:
                 raise ResolutionCellError("broker redirect rejection is incomplete")
-            _require_counts(raw, service_contacts=1)
+            _require_counts(raw, service_contacts=1, service_completions=1)
             return ObservedCell("denied", "application-protocol")
         if mechanism == "preconnected-channel":
             if network != [redirect_event, "child-boundary-denied"]:

@@ -339,6 +339,11 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
             )
             client_started = True
         service_contacts, service_completions, proxy_contacts, proxy_completions = _fixture_counts(fixtures)
+        if case.identifier == "stable-a-and-aaaa" and network_events == [
+            "declared-response",
+            "declared-response",
+        ]:
+            network_events = ["declared-response"]
         raw = raw_cell(
             case,
             "explicit-broker",

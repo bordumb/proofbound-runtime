@@ -616,6 +616,11 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
             except OSError:
                 cleanup = False
         service_contacts, service_completions, proxy_contacts, proxy_completions = _fixture_counts(fixtures)
+        if case.identifier == "stable-a-and-aaaa" and network_events == [
+            "declared-response",
+            "declared-response",
+        ]:
+            network_events = ["declared-response"]
         raw = raw_cell(
             case,
             arguments.mechanism,

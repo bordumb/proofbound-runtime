@@ -68,7 +68,7 @@ class ResolutionCellTests(unittest.TestCase):
         if identifier.startswith("redirect-"):
             event = {"redirect-undeclared-host": "redirect-host", "redirect-cleartext": "redirect-cleartext", "redirect-other-port": "redirect-port"}[identifier]
             if mechanism == "explicit-broker":
-                return raw_cell(case, mechanism, client_started=True, network_events=["operation-rejected"], service_contact_count=1)
+                return raw_cell(case, mechanism, client_started=True, network_events=["operation-rejected"], service_contact_count=1, service_complete_count=1)
             if mechanism == "preconnected-channel":
                 return raw_cell(case, mechanism, client_started=True, network_events=[event, "child-boundary-denied"], service_contact_count=1, service_complete_count=1)
             if mechanism == "landlock-port" and identifier == "redirect-undeclared-host":
