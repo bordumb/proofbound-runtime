@@ -1,6 +1,6 @@
 # Experiment 0001E: Decision matrix execution
 
-- **Status:** execution protocol frozen; routing/transport slice recorded
+- **Status:** all three functional slices recorded; measurement next
 - **Date:** 2026-09-10
 - **Parent protocol:** [Experiment 0001](0001-network-authority-mechanisms.md)
 - **Roadmap:** RT-4.2 and RT-4.3
@@ -216,7 +216,7 @@ change begins until the reviewed ADR accepts one exact boundary.
 
 ## Execution record
 
-Steps 1 through 3 are complete. The machine-readable domain, completeness
+Steps 1 through 5 are complete. The machine-readable domain, completeness
 falsifiers, deterministic fixtures, and routing/transport runner and recorder
 were implemented as separate history. The routing/transport slice then ran at
 exact commit `eb1c3954b44d4faf04994c861241f34e38e08e4b` in GitHub Actions run
@@ -224,10 +224,14 @@ exact commit `eb1c3954b44d4faf04994c861241f34e38e08e4b` in GitHub Actions run
 All four mechanisms matched all 16 registered cells on both x86_64 and
 aarch64, and every downloaded result inventory passed the independent
 verifier. The exact result identities and interpretation are recorded in
-[Experiment 0001F](0001f-routing-transport-slice.md).
+[Experiment 0001F](0001f-routing-transport-slice.md). The resolution and
+application-indirection slice then matched all 144 registered cells at
+`3efbd6d` in run `34495928504`, as recorded in
+[Experiment 0001G](0001g-resolution-indirection-slice.md). The bypass and
+lifecycle slice matched all 144 registered cells at `7719ea2` in run
+`34506078724`; every downloaded inventory passed the strengthened independent
+verifier, as recorded in [Experiment 0001H](0001h-bypass-lifecycle-slice.md).
 
-Steps 4 through 9 remain open. The next permitted implementation step is the
-resolution and application-indirection slice, whose implementation contract is
-frozen in [Experiment 0001G](0001g-resolution-indirection-slice.md); the
-recorded routing result is not a mechanism decision and authorizes no
-production network behavior.
+Steps 6 through 9 remain open. The next permitted implementation step is the
+frozen measurement slice. No functional result is a mechanism decision, and
+none authorizes production network behavior.

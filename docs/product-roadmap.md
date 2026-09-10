@@ -100,8 +100,16 @@ executed all 18 cases for all four mechanisms on both architectures. All eight
 downloaded immutable inventories independently verified, matching 144 of 144
 registered cells. The retained result identities are recorded in
 [`0001g-resolution-indirection-slice.md`](experiments/0001g-resolution-indirection-slice.md).
-The next experiment step is bypass/lifecycle, followed by measurement,
-deterministic comparison, and the independently reviewed ADR.
+The bypass/lifecycle slice is complete. At exact commit
+`7719ea2cbd0a4e54b77ed2eef0ee2ed8800caa97`, GitHub Actions run
+[`34506078724`](https://github.com/bordumb/proofbound-runtime/actions/runs/34506078724)
+executed all 18 cases for all four mechanisms on x86_64 and aarch64 Linux. All
+eight downloaded immutable inventories passed the strengthened independent
+verifier, matching 144 of 144 registered cells. The retained identities and
+failure history are recorded in
+[`0001h-bypass-lifecycle-slice.md`](experiments/0001h-bypass-lifecycle-slice.md).
+The next experiment step is measurement, followed by deterministic comparison
+and the independently reviewed ADR.
 No production network implementation is authorized yet. The decision-grade
 execution protocol is frozen in
 [`0001e-decision-matrix-execution.md`](experiments/0001e-decision-matrix-execution.md),
