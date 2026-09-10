@@ -23,6 +23,8 @@ class BypassLifecycleEvidenceTests(unittest.TestCase):
                 value = crash_evidence(phase)
                 self.assertEqual(value["event"], f"mediator-crashed-{phase}")
                 self.assertGreater(value["identity"]["pid"], 0)
+                self.assertEqual(value["identity"]["generation"], 1)
+                self.assertIn(f"peer-{value['identity']['pid']}", value["identity"]["channel_peer"])
                 self.assertEqual(value["termination"]["status"], "signaled")
         with self.assertRaises(LifecycleEvidenceError):
             crash_evidence("unknown")
@@ -30,6 +32,8 @@ class BypassLifecycleEvidenceTests(unittest.TestCase):
     def test_restart_retains_distinct_process_generations(self) -> None:
         value = restart_evidence()
         self.assertNotEqual(value["first"]["pid"], value["second"]["pid"])
+        self.assertEqual((value["first"]["generation"], value["second"]["generation"]), (1, 2))
+        self.assertNotEqual(value["first"]["channel_peer"], value["second"]["channel_peer"])
         self.assertEqual(value["event"], "mediator-identity-mismatch")
 
     def test_single_subject_substitution_retains_both_digests(self) -> None:
@@ -41,7 +45,9 @@ class BypassLifecycleEvidenceTests(unittest.TestCase):
             self.assertEqual(value["mutation_count"], 1)
 
     def test_cleanup_has_no_surviving_process(self) -> None:
-        self.assertEqual(cleanup_evidence()["survivor_count"], 0)
+        value = cleanup_evidence()
+        self.assertEqual(value["survivor_count"], 0)
+        self.assertEqual(value["mediator_identity"]["generation"], 1)
 
     def test_publication_replacement_preserves_exact_bytes(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

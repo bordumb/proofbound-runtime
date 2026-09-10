@@ -5,9 +5,14 @@ from __future__ import annotations
 
 import hashlib
 import os
+import shutil
 import signal
+import socket
+import struct
 import subprocess
 import sys
+import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 
 from experiments.network_authority.record_common import RecordError, regular_bytes, write_new
@@ -25,36 +30,90 @@ def executable_digest() -> str:
     return sha256(Path(sys.executable).resolve(strict=True))
 
 
-def start_mediator() -> subprocess.Popen[bytes]:
-    return subprocess.Popen(
-        [sys.executable, "-c", "import time; time.sleep(30)"],
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        env={"PATH": "/usr/bin:/bin", "PYTHONHASHSEED": "0"},
-    )
+@dataclass
+class Mediator:
+    process: subprocess.Popen[bytes]
+    channel: socket.socket
+    channel_peer: str
+    generation: int
+    root: Path
 
 
-def stop_mediator(process: subprocess.Popen[bytes]) -> dict[str, object]:
+def start_mediator(generation: int = 1) -> Mediator:
+    if type(generation) is not int or generation <= 0:
+        raise LifecycleEvidenceError("mediator generation is invalid")
+    root = Path(tempfile.mkdtemp(prefix="proofbound-mediator-"))
+    listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    process: subprocess.Popen[bytes] | None = None
+    try:
+        listener.bind(str(root / "channel.sock"))
+        listener.listen(1)
+        listener.settimeout(2)
+        program = (
+            "import os,socket,sys,time;"
+            "root=sys.argv[1];"
+            "peer=f'{root}/peer-{os.getpid()}';"
+            "channel=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM);"
+            "channel.bind(peer);channel.connect(root+'/channel.sock');"
+            "channel.sendall(b'ready\\n');time.sleep(30)"
+        )
+        process = subprocess.Popen(
+            [sys.executable, "-c", program, str(root)],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            env={"PATH": "/usr/bin:/bin", "PYTHONHASHSEED": "0"},
+        )
+        channel, _address = listener.accept()
+        channel.settimeout(2)
+        peer = channel.getpeername()
+        if peer != str(root / f"peer-{process.pid}") or channel.recv(6) != b"ready\n":
+            raise LifecycleEvidenceError("mediator channel peer is invalid")
+        if sys.platform.startswith("linux"):
+            raw = channel.getsockopt(socket.SOL_SOCKET, 17, 12)
+            if len(raw) != 12 or struct.unpack("=3i", raw)[0] != process.pid:
+                raise LifecycleEvidenceError("mediator kernel peer identity changed")
+        return Mediator(process, channel, peer, generation, root)
+    except BaseException:
+        if process is not None and process.poll() is None:
+            process.kill()
+            process.wait(timeout=2)
+        shutil.rmtree(root, ignore_errors=True)
+        raise
+    finally:
+        listener.close()
+
+
+def mediator_identity(mediator: Mediator) -> dict[str, object]:
+    return {
+        "channel_peer": mediator.channel_peer,
+        "executable_sha256": executable_digest(),
+        "generation": mediator.generation,
+        "pid": mediator.process.pid,
+    }
+
+
+def stop_mediator(mediator: Mediator) -> dict[str, object]:
+    process = mediator.process
     process.send_signal(signal.SIGKILL)
     status = process.wait(timeout=2)
     if status != -signal.SIGKILL:
         raise LifecycleEvidenceError("mediator did not retain the injected signal")
+    mediator.channel.close()
+    shutil.rmtree(mediator.root)
     return {"pid": process.pid, "signal": signal.SIGKILL, "status": "signaled"}
 
 
 def crash_evidence(phase: str) -> dict[str, object]:
     if phase not in {"before-release", "during-exchange"}:
         raise LifecycleEvidenceError("crash phase is unknown")
-    digest = executable_digest()
-    process = start_mediator()
-    identity = {"executable_sha256": digest, "pid": process.pid}
+    mediator = start_mediator(1)
+    identity = mediator_identity(mediator)
     try:
-        stopped = stop_mediator(process)
+        stopped = stop_mediator(mediator)
     finally:
-        if process.poll() is None:
-            process.kill()
-            process.wait(timeout=2)
+        if mediator.process.poll() is None:
+            stop_mediator(mediator)
     return {
         "event": f"mediator-crashed-{phase}",
         "identity": identity,
@@ -64,18 +123,16 @@ def crash_evidence(phase: str) -> dict[str, object]:
 
 
 def restart_evidence() -> dict[str, object]:
-    digest = executable_digest()
-    first = start_mediator()
-    first_identity = {"executable_sha256": digest, "pid": first.pid}
+    first = start_mediator(1)
+    first_identity = mediator_identity(first)
     try:
         stop_mediator(first)
     finally:
-        if first.poll() is None:
-            first.kill()
-            first.wait(timeout=2)
-    second = start_mediator()
+        if first.process.poll() is None:
+            stop_mediator(first)
+    second = start_mediator(2)
     try:
-        second_identity = {"executable_sha256": digest, "pid": second.pid}
+        second_identity = mediator_identity(second)
         if first_identity == second_identity:
             raise LifecycleEvidenceError("mediator restart did not change identity")
         return {
@@ -104,13 +161,15 @@ def substitution_evidence(subject: Path, replacement: bytes) -> dict[str, object
 
 
 def cleanup_evidence() -> dict[str, object]:
-    process = start_mediator()
-    stopped = stop_mediator(process)
-    if process.poll() is None:
+    mediator = start_mediator(1)
+    identity = mediator_identity(mediator)
+    stopped = stop_mediator(mediator)
+    if mediator.process.poll() is None:
         raise LifecycleEvidenceError("cleanup retained a live process")
     return {
         "event": "failure-retained",
         "injected": "teardown-failure",
+        "mediator_identity": identity,
         "schema": "proofbound-runtime-cleanup-evidence/1",
         "survivor_count": 0,
         "termination": stopped,
