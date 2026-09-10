@@ -83,15 +83,20 @@ wire schemas need not change if equality is enforced over existing fields.
 
 ## Local treatment
 
-Runtime aligns all three policy domain declarations manually and treats their
-equality as a review invariant. `PBR-POLICY-002` now has admitted bounded,
-model-theorem, source-refinement, and contextual exact-artifact evidence for
-the version 0.1 subjects. None of that evidence makes the duplicated-domain
-invariant generic or independently enforced.
+Runtime aligns all three policy domain declarations and now enforces that
+equality with the repository integration test added at Runtime commit
+`9154c7f`. The guard rejects differences in identifier, description,
+cardinality, or ordering key; cross-claim substitution; mixed domains;
+malformed or missing domains; non-confined model manifests; and duplicate
+claim or evidence identities before Proofbound runs. The exact local contract
+is [Specification 0006](../specs/0006_bounded_domain_consistency_guard.md).
 
-The next bounded resource-policy claim remains blocked on PBF-0007 or an
-equivalent local fail-closed checker. Runtime will not rely on review-only
-domain equality for the memory and swap claim wave.
+`PBR-POLICY-002` has admitted bounded, model-theorem, source-refinement, and
+contextual exact-artifact evidence for the version 0.1 subjects. The local
+guard now satisfies Runtime's fail-closed prerequisite for designing the
+memory and swap domain. It does not protect Proofbound's portable compiled
+bundle, resolve the generic compiler/verifier omission, or strengthen any
+existing evidence facet.
 
 ## Upstream handoff
 

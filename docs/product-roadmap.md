@@ -41,6 +41,14 @@ green hosted run on both architectures followed by reviewed publication of the
 example bundle. Neither is described as part of the existing `v0.1.0` binary
 release.
 
+The local bounded-domain consistency guard required before a new resource
+claim wave is implemented at `9154c7f`. It fails the ordinary workspace test
+stage when a claim, cited bounded evidence unit, and model-check manifest do
+not declare the same closed domain. This satisfies the roadmap's temporary
+local prerequisite for memory contract work. It does not resolve PBF-0007 or
+permit Runtime to describe the generic Proofbound compiler and verifier as
+fixed.
+
 Upstream promotion is intentionally paused at its review boundary. Proofbound
 PR 2 is green but still needs an independent approving review. A dry run of
 the later integration promotion correctly failed because its head retained an
@@ -484,8 +492,10 @@ the [cgroup v2 documentation](https://www.kernel.org/doc/html/latest/admin-guide
   domains, Lean model, translated source closure, and refinement theorem.
 - Add negative cases for zero, overflow, missing fields, version downgrade,
   and more-permissive normalization.
-- Complete PBF-0007 first or add an explicit local checker that fails on every
-  claim/evidence bounded-domain mismatch.
+- Retain the local bounded-domain consistency guard added at `9154c7f` until a
+  reviewed Proofbound release resolves PBF-0007 in both the compiler and
+  independent verifier. Extend its fixtures with the new resource domain in
+  the same commit that registers that domain.
 
 ### RT-1.3 Install and verify the Linux boundary
 

@@ -198,6 +198,19 @@ development capability rather than a released artifact claim. A successful
 report is never evidence that a later run will observe the same identities or
 install a boundary.
 
+## Bounded-domain declaration guard
+
+The workspace test stage checks every Runtime claim that cites bounded-check
+evidence before Proofbound manifest compilation. The local guard requires the
+claim, cited evidence unit, and referenced model-check manifest to declare the
+same identifier, description, cardinality, and ordering key. It also rejects
+cross-claim evidence substitution and non-confined model-manifest paths.
+
+This is a repository declaration invariant, not claim evidence. It does not
+prove that an adapter visited the finite domain or make the same check inside
+Proofbound's portable compiled bundle. PBF-0007 remains open until a reviewed
+Proofbound compiler and independent verifier enforce the relation.
+
 ## Promotion rule
 
 A claim changes tier, profile, public language, or primary linkage only in the
