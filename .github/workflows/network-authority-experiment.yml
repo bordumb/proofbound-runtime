@@ -1,0 +1,49 @@
+name: Network authority experiment
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  landlock-port-control:
+    name: Landlock port control (${{ matrix.architecture }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x86_64
+            runner: ubuntu-24.04
+          - architecture: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
+    steps:
+      - name: Check out the exact dispatch head
+        uses: actions/checkout@v4
+
+      - name: Confirm the exact dispatch head
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Falsify result publication
+        run: python3 -m unittest experiments.network_authority.test_record_port_control
+
+      - name: Run the disposable Landlock port control
+        run: |
+          mkdir -p "$RUNNER_TEMP/network-authority"
+          sudo experiments/network_authority/run_port_control.sh \
+            "$RUNNER_TEMP/network-authority/${{ matrix.architecture }}"
+
+      - name: Retain the exact experiment result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: network-authority-port-control-${{ matrix.architecture }}-${{ github.sha }}
+          path: ${{ runner.temp }}/network-authority/${{ matrix.architecture }}
+          if-no-files-found: error
+          retention-days: 14

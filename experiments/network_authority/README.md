@@ -47,3 +47,8 @@ case log plus canonical attack, fixture, kernel, tool, and artifact manifests.
 The expected control result is that both distinct services on port 443 are
 reachable, port 8443 is denied, and the TLS client rejects a wrong certificate.
 The runner retains an unexpected result and then exits nonzero.
+
+The `Network authority experiment` workflow runs only through an explicit
+manual dispatch. It executes this control on hosted x86_64 and aarch64 Linux
+and retains each exact result for 14 days. Ordinary pushes and pull requests do
+not run experiments.
