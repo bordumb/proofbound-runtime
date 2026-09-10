@@ -92,7 +92,10 @@ jobs:
             experiments.network_authority.test_measurement_domain \
             experiments.network_authority.test_measurement_observation \
             experiments.network_authority.test_run_network_measurement \
-            experiments.network_authority.test_record_network_measurement
+            experiments.network_authority.test_record_network_measurement \
+            experiments.network_authority.test_comparison_domain \
+            experiments.network_authority.test_compare_network_results \
+            experiments.network_authority.test_verify_network_comparison
 
       - name: Falsify the native routing boundaries
         run: |
