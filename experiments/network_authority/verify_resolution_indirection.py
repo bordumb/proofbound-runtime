@@ -534,6 +534,47 @@ def verify(root: Path) -> dict[str, object]:
             or plan["schema"] != "proofbound-runtime-resolution-case-plan/1"
         ):
             raise VerificationError("prelaunch case plan changed")
+        ttl_sequence_name = f"evidence/cases/{case}/ttl-sequence.json"
+        if case == "ttl-rebind-to-undeclared":
+            sequence = document(root / ttl_sequence_name)
+            if (
+                set(sequence)
+                != {
+                    "first_exchange_complete_monotonic_ns",
+                    "first_resolution_monotonic_ns",
+                    "minimum_ttl_wait_ns",
+                    "order",
+                    "refresh_query_monotonic_ns",
+                    "schema",
+                }
+                or sequence["schema"]
+                != "proofbound-runtime-resolution-ttl-sequence/1"
+                or sequence["order"]
+                != [
+                    "declared-resolution",
+                    "declared-exchange-complete",
+                    "ttl-expired",
+                    "resolver-refresh",
+                ]
+                or sequence["minimum_ttl_wait_ns"] != 1_000_000_000
+                or not all(
+                    type(sequence[name]) is int
+                    for name in (
+                        "first_resolution_monotonic_ns",
+                        "first_exchange_complete_monotonic_ns",
+                        "refresh_query_monotonic_ns",
+                    )
+                )
+                or not sequence["first_resolution_monotonic_ns"]
+                <= sequence["first_exchange_complete_monotonic_ns"]
+                <= sequence["refresh_query_monotonic_ns"]
+                or sequence["refresh_query_monotonic_ns"]
+                - sequence["first_resolution_monotonic_ns"]
+                < sequence["minimum_ttl_wait_ns"]
+            ):
+                raise VerificationError("TTL execution sequence changed")
+        elif ttl_sequence_name in actual:
+            raise VerificationError("unexpected TTL execution sequence")
         if cell["failure"] is not None or cell["raw"] is None:
             raise VerificationError("cell retains a harness failure")
         derived = derive(cell["raw"], case, mechanism)

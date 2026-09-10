@@ -75,6 +75,24 @@ class ResolutionRecorderTests(unittest.TestCase):
             (case_root / "raw-cell.json").write_bytes(
                 canonical_json(helper.observed_raw(case, "landlock-port"))
             )
+            if case.identifier == "ttl-rebind-to-undeclared":
+                (case_root / "ttl-sequence.json").write_bytes(
+                    canonical_json(
+                        {
+                            "first_exchange_complete_monotonic_ns": 1_000_000_001,
+                            "first_resolution_monotonic_ns": 1,
+                            "minimum_ttl_wait_ns": 1_000_000_000,
+                            "order": [
+                                "declared-resolution",
+                                "declared-exchange-complete",
+                                "ttl-expired",
+                                "resolver-refresh",
+                            ],
+                            "refresh_query_monotonic_ns": 1_000_000_001,
+                            "schema": "proofbound-runtime-resolution-ttl-sequence/1",
+                        }
+                    )
+                )
             (case_root / "trace.txt").write_bytes(b"bounded trace\n")
         return evidence
 

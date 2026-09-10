@@ -31,10 +31,12 @@ from experiments.network_authority.resolution_indirection_case import (
 )
 from experiments.network_authority.resolution_network_client import SCHEMA as CLIENT_SCHEMA
 from experiments.network_authority.run_resolution_direct_case import (
+    ResolutionDirectError,
     StartedFixture,
     _fixture_counts,
     read_document,
     resolve_group,
+    resolve_rebind_sequence,
     start_http,
     stop_fixture,
 )
@@ -274,6 +276,23 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
             specifications = parameters_for(case.identifier)["queries"]
             if not isinstance(specifications, list):
                 raise ResolutionBrokerOrchestrationError("broker DNS plan is invalid")
+            if case.identifier == "ttl-rebind-to-undeclared":
+                resolver_events, first_events = resolve_rebind_sequence(
+                    arguments,
+                    arguments.case_root,
+                    specifications,
+                    True,
+                    lambda fact: _service_exchange(
+                        arguments,
+                        case,
+                        arguments.case_root,
+                        fixtures,
+                        0,
+                        str(fact["address"]),
+                    ),
+                )
+                network_events.extend(first_events)
+                client_started = True
             groups: list[tuple[str, list[dict[str, object]]]] = []
             for specification in specifications:
                 if not isinstance(specification, dict):
@@ -283,10 +302,11 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
                     groups[-1][1].append(specification)
                 else:
                     groups.append((script, [specification]))
-            for ordinal, (script, queries) in enumerate(groups):
-                resolver_events.extend(
-                    resolve_group(arguments, arguments.case_root, ordinal, script, queries, True)
-                )
+            if case.identifier != "ttl-rebind-to-undeclared":
+                for ordinal, (script, queries) in enumerate(groups):
+                    resolver_events.extend(
+                        resolve_group(arguments, arguments.case_root, ordinal, script, queries, True)
+                    )
             resolved_events = [item for item in resolver_events if item["event"] == "resolved"]
             if case.identifier == "stable-a-and-aaaa" and len(resolved_events) == 2:
                 for ordinal, fact in enumerate(resolved_events):
@@ -295,11 +315,6 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
                     )
                 client_started = True
             elif case.identifier in {"cname-to-declared-service", "resolver-truncated-tcp-fallback"} and len(resolved_events) == 1:
-                network_events.extend(
-                    _service_exchange(arguments, case, arguments.case_root, fixtures, 0, str(resolved_events[0]["address"]))
-                )
-                client_started = True
-            elif case.identifier == "ttl-rebind-to-undeclared" and resolved_events:
                 network_events.extend(
                     _service_exchange(arguments, case, arguments.case_root, fixtures, 0, str(resolved_events[0]["address"]))
                 )
@@ -395,7 +410,13 @@ def main() -> int:
             raise ResolutionBrokerOrchestrationError("broker resolution paths are invalid")
         run(arguments)
         return 0
-    except (OSError, RecordError, ResolutionBrokerOrchestrationError, ValueError) as error:
+    except (
+        OSError,
+        RecordError,
+        ResolutionBrokerOrchestrationError,
+        ResolutionDirectError,
+        ValueError,
+    ) as error:
         print(f"broker resolution case failed: {error}", file=sys.stderr)
         return 4
 

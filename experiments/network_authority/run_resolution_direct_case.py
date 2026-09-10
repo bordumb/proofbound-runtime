@@ -13,6 +13,7 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -421,6 +422,73 @@ def resolve_group(
     return facts
 
 
+def resolve_rebind_sequence(
+    arguments: argparse.Namespace,
+    case_root: Path,
+    query_specs: list[dict[str, object]],
+    require_declared: bool,
+    declared_exchange: Callable[[dict[str, object]], list[str]],
+) -> tuple[list[dict[str, object]], list[str]]:
+    """Resolve, exchange, expire the TTL, then refresh through one DNS fixture."""
+
+    if len(query_specs) != 2 or any(item.get("script") != "rebind" for item in query_specs):
+        raise ResolutionDirectError("rebind sequence is not exact")
+    fixture, port = start_dns(arguments, case_root / "dns-00", "rebind", 2)
+
+    def query(index: int) -> dict[str, object]:
+        specification = query_specs[index]
+        observation = resolve_once(
+            "127.0.0.1",
+            port,
+            str(specification["name"]),
+            int(specification["question_type"]),
+            int(specification["identifier"]),
+            allow_cname=False,
+            require_declared=require_declared,
+            allow_tcp_fallback=False,
+            timeout_seconds=1.0,
+        )
+        write_new(fixture.root / f"resolution-{index:02d}.json", canonical_json(observation))
+        return resolution_fact(observation)
+
+    try:
+        first = query(0)
+        first_resolution = time.monotonic_ns()
+        network_events = declared_exchange(first)
+        first_exchange_complete = time.monotonic_ns()
+        minimum_wait = 1_000_000_000
+        remaining = minimum_wait - (time.monotonic_ns() - first_resolution)
+        if remaining > 0:
+            time.sleep(remaining / 1_000_000_000)
+        refresh_query = time.monotonic_ns()
+        second = query(1)
+        write_new(
+            case_root / "ttl-sequence.json",
+            canonical_json(
+                {
+                    "first_exchange_complete_monotonic_ns": first_exchange_complete,
+                    "first_resolution_monotonic_ns": first_resolution,
+                    "minimum_ttl_wait_ns": minimum_wait,
+                    "order": [
+                        "declared-resolution",
+                        "declared-exchange-complete",
+                        "ttl-expired",
+                        "resolver-refresh",
+                    ],
+                    "refresh_query_monotonic_ns": refresh_query,
+                    "schema": "proofbound-runtime-resolution-ttl-sequence/1",
+                }
+            ),
+        )
+        if not stop_fixture(fixture):
+            raise ResolutionDirectError("DNS fixture cleanup failed")
+        return [first, second], network_events
+    finally:
+        if fixture.process.poll() is None:
+            fixture.process.kill()
+            fixture.process.wait(timeout=2)
+
+
 def _fixture_counts(fixtures: list[StartedFixture]) -> tuple[int, int, int, int]:
     service = [item for item in fixtures if item.kind == "service"]
     proxies = [item for item in fixtures if item.kind == "proxy"]
@@ -493,6 +561,39 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
             specifications = parameters_for(case.identifier)["queries"]
             if not isinstance(specifications, list):
                 raise ResolutionDirectError("DNS query plan is invalid")
+            if case.identifier == "ttl-rebind-to-undeclared":
+                resolver_events, first_events = resolve_rebind_sequence(
+                    arguments,
+                    arguments.case_root,
+                    specifications,
+                    False,
+                    lambda fact: _service_action(
+                        arguments,
+                        case,
+                        arguments.case_root,
+                        fixtures,
+                        0,
+                        "exact",
+                        str(fact["address"]),
+                        443,
+                        "exact",
+                    ),
+                )
+                network_events.extend(first_events)
+                network_events.extend(
+                    _service_action(
+                        arguments,
+                        case,
+                        arguments.case_root,
+                        fixtures,
+                        1,
+                        "raw-contact",
+                        str(resolver_events[1]["address"]),
+                        443,
+                        "exact",
+                    )
+                )
+                client_started = True
             groups: list[tuple[str, list[dict[str, object]]]] = []
             for specification in specifications:
                 if not isinstance(specification, dict):
@@ -507,11 +608,14 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
                 "cname-to-undeclared-service",
                 "resolver-configuration-substitution",
             }
-            for ordinal, (script, queries) in enumerate(groups):
-                resolver_events.extend(
-                    resolve_group(arguments, arguments.case_root, ordinal, script, queries, require_declared)
-                )
-            if all(item["event"] == "resolved" for item in resolver_events):
+            if case.identifier != "ttl-rebind-to-undeclared":
+                for ordinal, (script, queries) in enumerate(groups):
+                    resolver_events.extend(
+                        resolve_group(arguments, arguments.case_root, ordinal, script, queries, require_declared)
+                    )
+            if case.identifier != "ttl-rebind-to-undeclared" and all(
+                item["event"] == "resolved" for item in resolver_events
+            ):
                 if case.identifier == "stable-a-and-aaaa":
                     for ordinal, fact in enumerate(resolver_events):
                         network_events.extend(
@@ -537,20 +641,6 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
                         _service_action(
                             arguments, case, arguments.case_root, fixtures, 0,
                             "raw-contact", str(resolver_events[-1]["address"]), 443, "exact",
-                        )
-                    )
-                    client_started = True
-                elif case.identifier == "ttl-rebind-to-undeclared":
-                    network_events.extend(
-                        _service_action(
-                            arguments, case, arguments.case_root, fixtures, 0,
-                            "exact", str(resolver_events[0]["address"]), 443, "exact",
-                        )
-                    )
-                    network_events.extend(
-                        _service_action(
-                            arguments, case, arguments.case_root, fixtures, 1,
-                            "raw-contact", str(resolver_events[1]["address"]), 443, "exact",
                         )
                     )
                     client_started = True

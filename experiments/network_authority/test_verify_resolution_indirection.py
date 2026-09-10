@@ -107,6 +107,41 @@ class ResolutionVerifierTests(unittest.TestCase):
             with self.assertRaisesRegex(VerificationError, "prelaunch case plan changed"):
                 verify(result)
 
+    def test_ttl_refresh_before_expiry_fails_after_outer_digest_is_rehashed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            result = self.result(Path(temporary))
+            relative = "evidence/cases/ttl-rebind-to-undeclared/ttl-sequence.json"
+            path = result / relative
+            sequence = json.loads(path.read_bytes())
+            sequence["refresh_query_monotonic_ns"] = 999_999_999
+            data = canonical_json(sequence)
+            path.write_bytes(data)
+
+            evidence_path = result / "evidence-manifest.json"
+            evidence = json.loads(evidence_path.read_bytes())
+            evidence_entry = next(
+                item
+                for item in evidence["files"]
+                if item["name"] == "cases/ttl-rebind-to-undeclared/ttl-sequence.json"
+            )
+            evidence_entry["size"] = len(data)
+            evidence_entry["sha256"] = hashlib.sha256(data).hexdigest()
+            evidence_data = canonical_json(evidence)
+            evidence_path.write_bytes(evidence_data)
+
+            outer = json.loads((result / "RESULT.json").read_bytes())
+            for name, contents in (
+                (relative, data),
+                ("evidence-manifest.json", evidence_data),
+            ):
+                entry = next(item for item in outer["inputs"] if item["name"] == name)
+                entry["size"] = len(contents)
+                entry["sha256"] = hashlib.sha256(contents).hexdigest()
+            (result / "RESULT.json").write_bytes(canonical_json(outer))
+
+            with self.assertRaises(VerificationError):
+                verify(result)
+
 
 if __name__ == "__main__":
     unittest.main()
