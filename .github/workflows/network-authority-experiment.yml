@@ -55,7 +55,8 @@ jobs:
             experiments.network_authority.test_routing_cell \
             experiments.network_authority.test_run_routing_direct_case \
             experiments.network_authority.test_run_routing_broker_case \
-            experiments.network_authority.test_run_routing_preconnected_case
+            experiments.network_authority.test_run_routing_preconnected_case \
+            experiments.network_authority.test_record_routing_transport
 
       - name: Falsify the native routing boundaries
         run: |
