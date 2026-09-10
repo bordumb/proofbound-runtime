@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -42,7 +43,12 @@ class RoutingChildControlTests(unittest.TestCase):
     def test_complete_native_probe_catalog(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
+            root.chmod(0o755)
             binary = root / "routing-child-control"
+            probe = root / PROBE.name
+            shutil.copyfile(PROBE, probe)
+            probe.chmod(0o644)
+            self.assertEqual(probe.read_bytes(), PROBE.read_bytes())
             compiled = subprocess.run(
                 [
                     "cc",
@@ -71,7 +77,7 @@ class RoutingChildControlTests(unittest.TestCase):
                     str(state),
                     "--",
                     sys.executable,
-                    str(PROBE),
+                    str(probe),
                     "--case",
                     case,
                 ]

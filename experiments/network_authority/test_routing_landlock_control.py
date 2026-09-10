@@ -104,10 +104,15 @@ class RoutingLandlockControlTests(unittest.TestCase):
     def test_port_rule_composes_with_common_child_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
+            root.chmod(0o755)
             landlock = root / "routing-landlock-control"
             boundary = root / "routing-child-control"
+            probe = root / PROBE.name
             landlock_state = root / "landlock-state"
             child_state = root / "child-state"
+            shutil.copyfile(PROBE, probe)
+            probe.chmod(0o644)
+            self.assertEqual(probe.read_bytes(), PROBE.read_bytes())
             self.compile(LANDLOCK_SOURCE, landlock)
             self.compile(BOUNDARY_SOURCE, boundary)
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
@@ -138,7 +143,7 @@ class RoutingLandlockControlTests(unittest.TestCase):
                         str(child_state),
                         "--",
                         sys.executable,
-                        str(PROBE),
+                        str(probe),
                         "--allowed-port",
                         str(allowed_port),
                         "--denied-port",

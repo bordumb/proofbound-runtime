@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import socket
 import subprocess
 import sys
@@ -94,10 +95,15 @@ class RoutingEndpointControlTests(unittest.TestCase):
         try:
             with tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary)
+                root.chmod(0o755)
                 endpoint = root / "routing-endpoint-control"
                 boundary = root / "routing-child-control"
+                probe = root / PROBE.name
                 state = root / "endpoint-state"
                 child_state = root / "child-state"
+                shutil.copyfile(PROBE, probe)
+                probe.chmod(0o644)
+                self.assertEqual(probe.read_bytes(), PROBE.read_bytes())
                 self.compile(ENDPOINT_SOURCE, endpoint)
                 self.compile(BOUNDARY_SOURCE, boundary)
 
@@ -128,7 +134,7 @@ class RoutingEndpointControlTests(unittest.TestCase):
                         str(child_state),
                         "--",
                         sys.executable,
-                        str(PROBE),
+                        str(probe),
                         "--port",
                         str(port),
                     ]
