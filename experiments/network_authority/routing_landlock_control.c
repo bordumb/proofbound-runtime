@@ -3,6 +3,7 @@
 // Port-only Landlock control for experiment 0001F mechanism A.
 
 #include <errno.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,17 +29,38 @@
 #define LANDLOCK_ACCESS_NET_CONNECT_TCP (1ULL << 1)
 #endif
 
+// Network rules entered the Landlock UAPI after the initial filesystem-only
+// header.  Use the frozen ABI-4 wire layouts directly so an older userspace
+// header cannot prevent a capable kernel from running the experiment.
+#ifndef LANDLOCK_RULE_NET_PORT
+#define LANDLOCK_RULE_NET_PORT 2
+#endif
+
+struct routing_landlock_ruleset_attr {
+  uint64_t handled_access_fs;
+  uint64_t handled_access_net;
+};
+
+struct routing_landlock_net_port_attr {
+  uint64_t allowed_access;
+  uint64_t port;
+};
+
+_Static_assert(sizeof(struct routing_landlock_ruleset_attr) == 16,
+               "Landlock ruleset ABI layout changed");
+_Static_assert(sizeof(struct routing_landlock_net_port_attr) == 16,
+               "Landlock network-port ABI layout changed");
+
 static const char *const usage =
     "usage: routing-landlock-control <allowed-port> "
     "<absolute-new-state-directory> -- <command> [args...]";
 
-static int landlock_create_ruleset(const struct landlock_ruleset_attr *attr,
-                                   size_t size, unsigned int flags) {
+static int landlock_create_ruleset(const void *attr, size_t size,
+                                   unsigned int flags) {
   return (int)syscall(SYS_landlock_create_ruleset, attr, size, flags);
 }
 
-static int landlock_add_rule(int ruleset,
-                             enum landlock_rule_type rule_type,
+static int landlock_add_rule(int ruleset, int rule_type,
                              const void *attributes, unsigned int flags) {
   return (int)syscall(SYS_landlock_add_rule, ruleset, rule_type, attributes,
                       flags);
@@ -111,7 +133,7 @@ int main(int argc, char **argv) {
     fprintf(stderr, "routing Landlock ABI %d lacks TCP network rules\n", abi);
     return 3;
   }
-  const struct landlock_ruleset_attr ruleset_attributes = {
+  const struct routing_landlock_ruleset_attr ruleset_attributes = {
       .handled_access_net =
           LANDLOCK_ACCESS_NET_BIND_TCP | LANDLOCK_ACCESS_NET_CONNECT_TCP,
   };
@@ -120,7 +142,7 @@ int main(int argc, char **argv) {
   if (ruleset < 0) {
     return fail_errno("create-ruleset");
   }
-  const struct landlock_net_port_attr port_rule = {
+  const struct routing_landlock_net_port_attr port_rule = {
       .allowed_access = LANDLOCK_ACCESS_NET_CONNECT_TCP,
       .port = port_value,
   };

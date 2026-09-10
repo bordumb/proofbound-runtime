@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import socket
 import subprocess
 import sys
@@ -28,6 +29,50 @@ class RoutingLandlockProbeTests(unittest.TestCase):
     def test_invalid_or_equal_ports_fail_closed(self) -> None:
         self.assertEqual(run(0, 1), 7)
         self.assertEqual(run(443, 443), 7)
+
+
+class RoutingLandlockHeaderCompatibilityTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which("zig"), "zig compiler unavailable")
+    def test_control_compiles_against_filesystem_only_landlock_header(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            linux = root / "linux"
+            linux.mkdir()
+            (linux / "landlock.h").write_text(
+                """\
+#ifndef _LINUX_LANDLOCK_H
+#define _LINUX_LANDLOCK_H
+#include <linux/types.h>
+struct landlock_ruleset_attr { __u64 handled_access_fs; };
+enum landlock_rule_type { LANDLOCK_RULE_PATH_BENEATH = 1 };
+#define LANDLOCK_CREATE_RULESET_VERSION (1U << 0)
+#endif
+""",
+                encoding="ascii",
+            )
+            output = root / "routing-landlock-control"
+            completed = subprocess.run(
+                [
+                    "zig",
+                    "cc",
+                    "-target",
+                    "aarch64-linux-musl",
+                    "-I",
+                    str(root),
+                    "-std=c11",
+                    "-Wall",
+                    "-Wextra",
+                    "-Werror",
+                    "-O2",
+                    str(LANDLOCK_SOURCE),
+                    "-o",
+                    str(output),
+                ],
+                check=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr.decode())
 
 
 @unittest.skipUnless(
