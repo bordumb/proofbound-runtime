@@ -111,6 +111,15 @@ static int fail_errno(const char *phase) {
 }
 
 int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "--print-abi") == 0) {
+    int abi =
+        landlock_create_ruleset(NULL, 0, LANDLOCK_CREATE_RULESET_VERSION);
+    if (abi < 0) {
+      return fail_errno("read-abi");
+    }
+    printf("%d\n", abi);
+    return 0;
+  }
   if (argc < 5 || strcmp(argv[3], "--") != 0 || argv[4] == NULL ||
       argv[2][0] != '/') {
     fprintf(stderr, "%s\n", usage);

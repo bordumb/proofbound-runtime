@@ -101,6 +101,19 @@ class RoutingLandlockControlTests(unittest.TestCase):
         )
         self.assertEqual(completed.returncode, 0, completed.stderr.decode())
 
+    def test_control_reports_the_exact_kernel_abi(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            control = Path(temporary) / "routing-landlock-control"
+            self.compile(LANDLOCK_SOURCE, control)
+            completed = subprocess.run(
+                [str(control), "--print-abi"],
+                check=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr.decode())
+            self.assertGreaterEqual(int(completed.stdout), 4)
+
     def test_port_rule_composes_with_common_child_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
