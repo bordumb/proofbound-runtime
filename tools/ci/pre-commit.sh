@@ -22,6 +22,7 @@ python3 -m unittest experiments.network_authority.test_scripted_dns
 python3 -m unittest experiments.network_authority.test_decision_http_fixture
 python3 -m unittest experiments.network_authority.test_decision_proxy_fixture
 python3 -m unittest experiments.network_authority.test_decision_socket_fixture
+python3 -m unittest experiments.network_authority.test_routing_transport_case
 cargo fmt --all -- --check
 cargo metadata --locked --offline --format-version 1 >/dev/null
 cargo check --workspace --all-targets --locked --offline
