@@ -1,6 +1,6 @@
 # Experiment 0001E: Decision matrix execution
 
-- **Status:** execution protocol frozen; implementation not yet recorded
+- **Status:** execution protocol frozen; routing/transport slice recorded
 - **Date:** 2026-09-10
 - **Parent protocol:** [Experiment 0001](0001-network-authority-mechanisms.md)
 - **Roadmap:** RT-4.2 and RT-4.3
@@ -213,3 +213,19 @@ Implementation proceeds as separate historical commits:
 No step waits for Proofbound PR 2 because these are observation-only
 experiments. No production claim, model, schema, launcher, receipt, or release
 change begins until the reviewed ADR accepts one exact boundary.
+
+## Execution record
+
+Steps 1 through 3 are complete. The machine-readable domain, completeness
+falsifiers, deterministic fixtures, and routing/transport runner and recorder
+were implemented as separate history. The routing/transport slice then ran at
+exact commit `eb1c3954b44d4faf04994c861241f34e38e08e4b` in GitHub Actions run
+[`34484880654`](https://github.com/bordumb/proofbound-runtime/actions/runs/34484880654).
+All four mechanisms matched all 16 registered cells on both x86_64 and
+aarch64, and every downloaded result inventory passed the independent
+verifier. The exact result identities and interpretation are recorded in
+[Experiment 0001F](0001f-routing-transport-slice.md).
+
+Steps 4 through 9 remain open. The next permitted implementation step is the
+resolution and application-indirection slice; the recorded routing result is
+not a mechanism decision and authorizes no production network behavior.

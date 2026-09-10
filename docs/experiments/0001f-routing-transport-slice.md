@@ -1,6 +1,6 @@
 # Experiment 0001F: Routing and transport slice
 
-- **Status:** implementation complete locally; native results not yet recorded
+- **Status:** native results recorded and independently verified
 - **Date:** 2026-09-10
 - **Parent protocol:** [Experiment 0001](0001-network-authority-mechanisms.md)
 - **Decision protocol:** [Experiment 0001E](0001e-decision-matrix-execution.md)
@@ -194,7 +194,37 @@ namespace runner. Portable falsifiers, strict x86_64/aarch64 cross-compilation,
 shell lint, the repository-wide Rust gate, and the Lean 4.33 build pass locally.
 These checks are implementation evidence, not native enforcement results.
 
-Item 7 remains open. The runner must execute from one clean pushed commit on
-x86_64 and aarch64 Linux for all four mechanisms. All eight retained result
-inventories must independently verify before this document can record an
-observed routing/transport conclusion or advance to the next functional slice.
+## Recorded result
+
+Item 7 completed at exact source commit
+`eb1c3954b44d4faf04994c861241f34e38e08e4b` in GitHub Actions run
+[`34484880654`](https://github.com/bordumb/proofbound-runtime/actions/runs/34484880654).
+The workflow ran every mechanism natively on x86_64 and aarch64 Linux. All
+eight runners exited zero, published a complete immutable result inventory,
+and reported the pre-registered conclusion
+`routing-transport-slice-matched`. The two native decision-fixture jobs also
+passed on the same source commit.
+
+After download, the repository's separate verifier reproduced every declared
+input size and SHA-256 digest, rejected no file, confirmed the exact source and
+manifest identities, and matched all 16 registered cells in every result. The
+verified result identities are:
+
+| Mechanism | Architecture | Matched cells | `RESULT.json` SHA-256 |
+| --- | --- | ---: | --- |
+| port-only Landlock | x86_64 | 16/16 | `06767f68c197dfc98dbe2b84ed22090d2979d6de439c3e05b930bd083cadf6ab` |
+| port-only Landlock | aarch64 | 16/16 | `a003c2fbeab6b2731521a7e6c81c996440eab2368cdb7010f641a899669faa51` |
+| cgroup-BPF endpoint | x86_64 | 16/16 | `ccfb40769972e5f7e3ae46b99dba70349c9e2e5c84b51ae148740e3303dd4904` |
+| cgroup-BPF endpoint | aarch64 | 16/16 | `e2228bc7244caeebf4b73ac174ff3af701742ee24e590b60ada95f95931a60a7` |
+| explicit operation broker | x86_64 | 16/16 | `96664e288dc7ed8eaf7b1a3fc6699a47f0fdfb604ca06af7d86935c133566de9` |
+| explicit operation broker | aarch64 | 16/16 | `940a8d15c8a0172c93867c6a22adccc64879c0e6a11cf31c7aa23df672724138` |
+| preconnected authenticated channel | x86_64 | 16/16 | `548ec3244e42f46b162635f57d2139458dcb4f66a1b88a842b798b9288de1bd7` |
+| preconnected authenticated channel | aarch64 | 16/16 | `4e10837395327feb1ea7e2e172f4d2a60ab366d3dd7485d6dad5a76114d0dfc1` |
+
+This records 128 matched native cells over one exact subject. The result means
+only that each mechanism behaved as pre-registered for the routing and
+transport slice. It does not select a mechanism, establish resolution or
+application-indirection behavior, close the bypass/lifecycle or measurement
+slices, authorize a production network profile, or replace the independent
+review required for ADR 0003. Experiment 0001E now advances to its frozen
+resolution and application-indirection slice.

@@ -85,16 +85,16 @@ owned TLS session and denies direct child networking, but deliberately confirms
 that arbitrary bounded application bytes reach that service. All four first
 controls are now recorded.
 
-The routing/transport decision slice is implemented locally on the roadmap
-branch. Its 16-case domain, direct and mediated clients, native Landlock and
-dual-stack cgroup-BPF controls, four one-case orchestrators, prelaunch
-expectation snapshots, no-replace recorder, independent verifier, and
-clean-subject namespace runner are complete. The repository-wide gate passes
-with Lean 4.33; native kernel execution remains unclaimed. The next experiment
-step is to run and independently verify the same clean commit for all four
-mechanisms on x86_64 and aarch64 Linux, then implement the resolution,
-indirection, and bypass/lifecycle slices before the reviewed ADR decision. No
-production network implementation is authorized yet. The decision-grade
+The routing/transport decision slice is complete and recorded. At exact commit
+`eb1c3954b44d4faf04994c861241f34e38e08e4b`, GitHub Actions run
+[`34484880654`](https://github.com/bordumb/proofbound-runtime/actions/runs/34484880654)
+executed its 16-case domain for all four candidate mechanisms on x86_64 and
+aarch64 Linux. All eight immutable results independently verified, matching
+128 of 128 registered cells with distinct recorded result digests. This closes
+only the first functional slice: the next experiment step is the frozen
+resolution and application-indirection slice, followed by bypass/lifecycle,
+measurement, deterministic comparison, and the independently reviewed ADR.
+No production network implementation is authorized yet. The decision-grade
 execution protocol is frozen in
 [`0001e-decision-matrix-execution.md`](experiments/0001e-decision-matrix-execution.md),
 with three bounded functional slices, one measurement slice, a machine-checked
