@@ -9,6 +9,7 @@ import json
 import os
 import socket
 import subprocess
+import struct
 import sys
 import threading
 import time
@@ -22,11 +23,31 @@ from experiments.network_authority.bypass_lifecycle_case import case_plan, load_
 from experiments.network_authority.connection_reuse_channel import broker_server, channel_server
 from experiments.network_authority.connection_reuse_client import SCHEMA
 from experiments.network_authority.record_common import canonical_json, regular_bytes, write_new
-from experiments.network_authority.run_preconnected_case import peer_credentials, socket_cookie
+
+
+SO_COOKIE = 57
+SO_PEERCRED = 17
 
 
 class ReuseOrchestrationError(Exception):
     """The connection-count case did not produce closed evidence."""
+
+
+def socket_cookie(channel: socket.socket) -> int:
+    raw = channel.getsockopt(socket.SOL_SOCKET, SO_COOKIE, 8)
+    if len(raw) != 8 or (value := struct.unpack("=Q", raw)[0]) == 0:
+        raise ReuseOrchestrationError("reuse socket cookie is invalid")
+    return value
+
+
+def peer_credentials(channel: socket.socket) -> dict[str, int]:
+    raw = channel.getsockopt(socket.SOL_SOCKET, SO_PEERCRED, 12)
+    if len(raw) != 12:
+        raise ReuseOrchestrationError("reuse peer credentials are incomplete")
+    pid, uid, gid = struct.unpack("=3i", raw)
+    if pid <= 0 or uid < 0 or gid < 0:
+        raise ReuseOrchestrationError("reuse peer credentials are invalid")
+    return {"gid": gid, "pid": pid, "uid": uid}
 
 
 def document(path: Path) -> dict[str, object]:

@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import socket
+import struct
 import subprocess
 import sys
 from pathlib import Path
@@ -19,11 +20,31 @@ from experiments.network_authority.bypass_cell import raw_cell
 from experiments.network_authority.bypass_lifecycle_case import case_plan, load_bypass_matrix
 from experiments.network_authority.bypass_syscall_probe import ACTIONS, SCHEMA
 from experiments.network_authority.record_common import canonical_json, regular_bytes, write_new
-from experiments.network_authority.run_preconnected_case import peer_credentials, socket_cookie
+
+
+SO_COOKIE = 57
+SO_PEERCRED = 17
 
 
 class BypassSyscallOrchestrationError(Exception):
     """One native bypass case failed to publish exact syscall evidence."""
+
+
+def socket_cookie(channel: socket.socket) -> int:
+    raw = channel.getsockopt(socket.SOL_SOCKET, SO_COOKIE, 8)
+    if len(raw) != 8 or (value := struct.unpack("=Q", raw)[0]) == 0:
+        raise BypassSyscallOrchestrationError("socket cookie is invalid")
+    return value
+
+
+def peer_credentials(channel: socket.socket) -> dict[str, int]:
+    raw = channel.getsockopt(socket.SOL_SOCKET, SO_PEERCRED, 12)
+    if len(raw) != 12:
+        raise BypassSyscallOrchestrationError("peer credentials are incomplete")
+    pid, uid, gid = struct.unpack("=3i", raw)
+    if pid <= 0 or uid < 0 or gid < 0:
+        raise BypassSyscallOrchestrationError("peer credentials are invalid")
+    return {"gid": gid, "pid": pid, "uid": uid}
 
 
 def read_document(path: Path) -> dict[str, object]:
