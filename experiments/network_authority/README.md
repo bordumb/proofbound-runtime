@@ -80,6 +80,13 @@ The committed decision matrix, generated inventory, and deterministic
 DNS/TLS/redirect/proxy/socket fixtures are inputs to those slices; they do not
 change a Runtime network policy or release artifact.
 
+The measurement slice is frozen in
+[`0001i-network-measurement-slice.md`](../../docs/experiments/0001i-network-measurement-slice.md).
+Its machine-readable domain fixes sample counts, aggregation, lifecycle bit
+ordering, inventory categories, platform observations, and residual authority
+before timing data is collected. `measurement_domain.py` validates that closed
+contract and rejects incomplete or changed profiles.
+
 The routing/transport slice implementation uses
 `run_routing_transport.sh`. For one selected mechanism, it requires a clean
 exact Git commit, enters a loopback-only network namespace, stages the closed
