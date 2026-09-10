@@ -194,9 +194,14 @@ class NetworkMeasurementRunnerTests(unittest.TestCase):
             self.assertEqual(landlock[-2:], ["--", "/bin/true"])
             self.assertEqual(
                 endpoint[-2:],
-                ["--", "/proofbound-measurement-intentionally-absent"],
+                ["--", "/bin/false"],
             )
             self.assertEqual(endpoint[1], str(root / "cgroup"))
+
+            landlock_failure = direct_command(
+                arguments(root, "landlock-port"), root / "failed-state", None, True
+            )
+            self.assertEqual(landlock_failure[-2:], ["--", "/bin/false"])
 
     def test_request_commands_reuse_the_exact_functional_runners(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

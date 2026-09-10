@@ -195,7 +195,13 @@ def remove_state(path: Path) -> bool:
 def direct_command(arguments: argparse.Namespace, state: Path, cgroup: Path | None, failure: bool) -> list[str]:
     """Build one direct mechanism setup or forced-failure command."""
 
-    child = "/proofbound-measurement-intentionally-absent" if failure else "/bin/true"
+    # Use one executable with one stable exit status for both direct controls.
+    # A missing executable is not a portable wrapper-level failure: the
+    # Landlock control reports its own exec failure while the endpoint control
+    # faithfully returns the forked child's 127.  /bin/false instead proves
+    # the installed boundary released no request and leaves cleanup semantics
+    # independent of each wrapper's exec-error convention.
+    child = "/bin/false" if failure else "/bin/true"
     if arguments.mechanism == "landlock-port":
         return [str(arguments.landlock_control), "443", str(state), "--", child]
     if arguments.mechanism == "cgroup-endpoint" and cgroup is not None:
@@ -234,7 +240,7 @@ def run_direct_setup(
         completed = bounded_process(
             direct_command(arguments, state, cgroup, failure), arguments.source_root
         )
-        expected_exit = 4 if failure else 0
+        expected_exit = 1 if failure else 0
         if completed.returncode != expected_exit:
             raise MeasurementRunError("direct setup exit changed")
         if {path.name for path in state.iterdir()} != SETUP_STATE_NAMES[arguments.mechanism]:
