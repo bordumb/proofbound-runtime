@@ -47,6 +47,7 @@ jobs:
             experiments.network_authority.test_decision_socket_fixture \
             experiments.network_authority.test_routing_transport_case \
             experiments.network_authority.test_routing_child_control \
+            experiments.network_authority.test_routing_landlock_control \
             experiments.network_authority.test_routing_endpoint_control \
             experiments.network_authority.test_routing_transport_client \
             experiments.network_authority.test_routing_cell
@@ -55,6 +56,7 @@ jobs:
         run: |
           sudo python3 -m unittest \
             experiments.network_authority.test_routing_child_control \
+            experiments.network_authority.test_routing_landlock_control \
             experiments.network_authority.test_routing_endpoint_control
 
   landlock-port-control:
