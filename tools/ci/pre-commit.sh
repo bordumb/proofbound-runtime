@@ -68,6 +68,7 @@ python3 -m unittest experiments.network_authority.test_measurement_observation
 python3 -m unittest experiments.network_authority.test_run_network_measurement
 python3 -m unittest experiments.network_authority.test_record_network_measurement
 python3 -m unittest experiments.network_authority.test_comparison_domain
+python3 -m unittest experiments.network_authority.test_compare_network_results
 cargo fmt --all -- --check
 cargo metadata --locked --offline --format-version 1 >/dev/null
 cargo check --workspace --all-targets --locked --offline
