@@ -226,6 +226,34 @@ def serve_fixture(
     return 0
 
 
+def serve_plaintext_fixture(
+    bind_ip: str, port: int, ready_file: Path, observation_file: Path
+) -> int:
+    """Accept one TLS-shaped contact without speaking TLS."""
+
+    address = str(ipaddress.IPv4Address(bind_ip))
+    if (
+        not 1 <= port <= 65535
+        or not ready_file.is_absolute()
+        or not observation_file.is_absolute()
+    ):
+        raise ConnectorError("plaintext fixture configuration is invalid")
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.bind((address, port))
+        listener.listen(1)
+        listener.settimeout(8)
+        write_new(ready_file, b"ready\n")
+        connection, _ = listener.accept()
+        with connection:
+            connection.settimeout(3)
+            contact = connection.recv(1024)
+            if not contact:
+                raise ConnectorError("plaintext fixture received no contact")
+            write_new(observation_file, b"plaintext-contact-observed\n")
+    return 0
+
+
 def parser() -> argparse.ArgumentParser:
     """Build the fixture's closed command interface."""
 
@@ -236,6 +264,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--private-key", type=Path, required=True)
     result.add_argument("--ready-file", type=Path, required=True)
     result.add_argument("--observation-file", type=Path, required=True)
+    result.add_argument("--plaintext", action="store_true")
     return result
 
 
@@ -244,6 +273,13 @@ def main() -> int:
 
     arguments = parser().parse_args()
     try:
+        if arguments.plaintext:
+            return serve_plaintext_fixture(
+                arguments.bind_ip,
+                arguments.port,
+                arguments.ready_file,
+                arguments.observation_file,
+            )
         return serve_fixture(
             arguments.bind_ip,
             arguments.port,

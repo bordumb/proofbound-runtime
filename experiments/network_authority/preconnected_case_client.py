@@ -156,6 +156,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--case", choices=CASES, required=True)
     result.add_argument("--fd", type=int, required=True)
     result.add_argument("--foreign-fd", type=int)
+    result.add_argument("--started-file", type=Path, required=True)
     return result
 
 
@@ -164,6 +165,8 @@ def main() -> int:
 
     arguments = parser().parse_args()
     try:
+        with arguments.started_file.open("xb") as started:
+            started.write(b"started\n")
         return run(arguments.case, arguments.fd, arguments.foreign_fd)
     except (ConnectorError, OSError, ValueError) as error:
         print(f"preconnected case client failed: {error}", file=sys.stderr)
