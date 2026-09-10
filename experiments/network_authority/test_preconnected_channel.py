@@ -17,6 +17,7 @@ from experiments.network_authority.preconnected_channel import (
     read_bounded,
     relay_session,
     request_result,
+    validate_fixed_response,
 )
 
 
@@ -56,6 +57,12 @@ class PreconnectedChannelTests(unittest.TestCase):
         )
         with self.assertRaises(ConnectorError):
             request_result(ALLOWED_REQUEST + b"x")
+
+    def test_fixed_responses_bind_their_body_lengths(self) -> None:
+        for response in (ALLOWED_RESPONSE, UNDECLARED_PATH_RESPONSE, CONNECT_RESPONSE):
+            validate_fixed_response(response)
+        with self.assertRaises(ConnectorError):
+            validate_fixed_response(CONNECT_RESPONSE.replace(b"Length: 22", b"Length: 23"))
 
     def test_read_bounded_rejects_empty_and_oversized_streams(self) -> None:
         class Reader:

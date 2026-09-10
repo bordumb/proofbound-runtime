@@ -53,7 +53,7 @@ UNDECLARED_PATH_RESPONSE = (
 )
 CONNECT_RESPONSE = (
     b"HTTP/1.1 405 Method Not Allowed\r\n"
-    b"Content-Length: 23\r\n"
+    b"Content-Length: 22\r\n"
     b"Connection: close\r\n"
     b"\r\n"
     b"connect-shape-observed"
@@ -64,16 +64,34 @@ class ConnectorError(Exception):
     """The frozen connector, channel, or fixture contract was violated."""
 
 
+def validate_fixed_response(response: bytes) -> None:
+    """Require one self-consistent bounded fixed HTTP response."""
+
+    head, separator, body = response.partition(b"\r\n\r\n")
+    if not separator or not head.startswith(b"HTTP/1.1 "):
+        raise ConnectorError("fixed response grammar is invalid")
+    lengths = [
+        line.removeprefix(b"Content-Length: ")
+        for line in head.split(b"\r\n")
+        if line.startswith(b"Content-Length: ")
+    ]
+    if len(lengths) != 1 or lengths[0] != str(len(body)).encode("ascii"):
+        raise ConnectorError("fixed response length is invalid")
+
+
 def request_result(request: bytes) -> tuple[str, bytes]:
     """Return the fixed fixture observation and response for exact bytes."""
 
     if request == ALLOWED_REQUEST:
-        return "allowed-request", ALLOWED_RESPONSE
-    if request == UNDECLARED_PATH_REQUEST:
-        return "undeclared-path-observed", UNDECLARED_PATH_RESPONSE
-    if request == CONNECT_REQUEST:
-        return "connect-shape-observed", CONNECT_RESPONSE
-    raise ConnectorError("fixture request is outside the frozen corpus")
+        result = "allowed-request", ALLOWED_RESPONSE
+    elif request == UNDECLARED_PATH_REQUEST:
+        result = "undeclared-path-observed", UNDECLARED_PATH_RESPONSE
+    elif request == CONNECT_REQUEST:
+        result = "connect-shape-observed", CONNECT_RESPONSE
+    else:
+        raise ConnectorError("fixture request is outside the frozen corpus")
+    validate_fixed_response(result[1])
+    return result
 
 
 def read_bounded(channel: object, maximum: int = MAX_DIRECTION_BYTES) -> bytes:
