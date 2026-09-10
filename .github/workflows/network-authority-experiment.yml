@@ -53,7 +53,8 @@ jobs:
             experiments.network_authority.test_routing_mediated_client \
             experiments.network_authority.test_routing_mediator \
             experiments.network_authority.test_routing_cell \
-            experiments.network_authority.test_run_routing_direct_case
+            experiments.network_authority.test_run_routing_direct_case \
+            experiments.network_authority.test_run_routing_broker_case
 
       - name: Falsify the native routing boundaries
         run: |
