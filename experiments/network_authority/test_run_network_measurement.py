@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -39,6 +42,49 @@ def arguments(root: Path, mechanism: str) -> argparse.Namespace:
 
 
 class NetworkMeasurementRunnerTests(unittest.TestCase):
+    @unittest.skipUnless(
+        sys.platform.startswith("linux") and os.geteuid() == 0,
+        "requires Linux root to exercise the dropped measurement identity",
+    )
+    def test_shared_root_allows_dropped_output_but_seals_private_inputs(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            temporary_root = Path(temporary)
+            temporary_root.chmod(0o711)
+            work_root = temporary_root / "work"
+            work_root.mkdir(mode=0o700)
+            work_root.chmod(0o711)
+            output = work_root / "output"
+            output.mkdir(mode=0o700)
+            os.chown(output, 65534, 65534)
+            private = work_root / "private"
+            private.mkdir(mode=0o700)
+            secret = private / "key"
+            secret.write_bytes(b"not-a-real-key")
+            secret.chmod(0o600)
+
+            def drop_measurement_identity() -> None:
+                os.setgid(65534)
+                os.setuid(65534)
+
+            code = (
+                "import pathlib,sys; "
+                "output=pathlib.Path(sys.argv[1]); secret=pathlib.Path(sys.argv[2]); "
+                "output.write_bytes(b'measured\\n'); "
+                "\ntry: secret.read_bytes()\n"
+                "except PermissionError: print('private-denied')\n"
+                "else: raise SystemExit('private input became readable')\n"
+            )
+            completed = subprocess.run(
+                [sys.executable, "-c", code, str(output / "marker"), str(secret)],
+                check=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                preexec_fn=drop_measurement_identity,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            self.assertEqual(completed.stdout, b"private-denied\n")
+            self.assertEqual((output / "marker").read_bytes(), b"measured\n")
+
     def test_total_measurement_uses_frozen_deadline(self) -> None:
         arguments = argparse.Namespace()
         with (
@@ -75,6 +121,11 @@ class NetworkMeasurementRunnerTests(unittest.TestCase):
         failure_exit_index = script.index('exit "$inside_exit"')
         self.assertLess(wait_index, incomplete_index)
         self.assertLess(incomplete_index, failure_exit_index)
+        shared_mode_index = script.index('chmod 0711 "$work_root"')
+        unshare_index = script.index("unshare --net --mount-proc")
+        private_mode_index = script.index('chmod 0700 "$private_root"')
+        self.assertLess(shared_mode_index, unshare_index)
+        self.assertLess(unshare_index, private_mode_index)
 
     def test_clock_is_one_registered_monotonic_source(self) -> None:
         _clock, name = clock_identity()

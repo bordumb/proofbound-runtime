@@ -42,6 +42,10 @@ if [[ "$1" != "--inside" ]]; then
   fi
   source_commit="$(git -C "$repository_root" rev-parse --verify 'HEAD^{commit}')"
   work_root="$(mktemp -d)"
+  # The measured client deliberately drops to uid/gid 65534.  Permit traversal
+  # to its separately owned output directories while keeping the key directory
+  # below this root mode 0700.
+  chmod 0711 "$work_root"
   cleanup_outer() {
     rm -rf -- "$work_root"
   }

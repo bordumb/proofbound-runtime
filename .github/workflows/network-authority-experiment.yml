@@ -99,7 +99,8 @@ jobs:
           sudo python3 -m unittest \
             experiments.network_authority.test_routing_child_control \
             experiments.network_authority.test_routing_landlock_control \
-            experiments.network_authority.test_routing_endpoint_control
+            experiments.network_authority.test_routing_endpoint_control \
+            experiments.network_authority.test_run_network_measurement.NetworkMeasurementRunnerTests.test_shared_root_allows_dropped_output_but_seals_private_inputs
 
   measurement-slice:
     name: measurement (${{ matrix.mechanism }}, ${{ matrix.architecture }})
