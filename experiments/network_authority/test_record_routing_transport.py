@@ -159,6 +159,8 @@ class RoutingRecorderTests(unittest.TestCase):
             self.assertEqual(result["matched_case_count"], 16)
             self.assertEqual(result["conclusion"], "routing-transport-slice-matched")
             self.assertEqual(len(list((first / "cells").glob("*/CELL.json"))), 16)
+            copied_control = first / "evidence/artifacts/routing-landlock-control"
+            self.assertNotEqual(copied_control.stat().st_mode & 0o111, 0)
 
     def test_valid_but_mismatched_cell_is_retained_not_promoted(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

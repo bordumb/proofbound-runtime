@@ -315,10 +315,10 @@ def record(arguments: argparse.Namespace) -> Path:
         write_new(output / relative, data)
         published[relative] = data
 
-    for relative, (data, _mode) in sorted(evidence.items()):
+    for relative, (data, mode) in sorted(evidence.items()):
         target = output / "evidence" / relative
         target.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
-        write_new(target, data)
+        write_new(target, data, stat.S_IMODE(mode))
         published[f"evidence/{relative}"] = data
 
     source_entries = []
