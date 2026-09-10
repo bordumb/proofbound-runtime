@@ -62,6 +62,14 @@ transparent local stream for that session. Its implementation must preserve
 the contrast with the explicit broker: routing and TLS identity are fixed, but
 the connector does not parse or constrain application operations.
 
+`run_preconnected_control.sh` implements that control in a disposable native
+Linux network namespace. It runs 14 cases, including two expected observations
+that undeclared application bytes reach the fixed authenticated service. Its
+recorder requires exact connector, certificate, local-channel, child-start,
+seccomp, case, and cleanup observations before it can publish the narrow
+pre-registered conclusion. This remains experiment code with no Runtime schema
+or release effect.
+
 Run the control as root on a clean exact Git commit:
 
 ```console
