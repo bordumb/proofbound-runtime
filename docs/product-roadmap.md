@@ -31,7 +31,7 @@ The roadmap uses these sources:
 
 ### Execution checkpoint
 
-As of 2026-09-09, Order 0 is implemented on the roadmap branch, the version
+As of 2026-09-10, Order 0 is implemented on the roadmap branch, the version
 0.1 installation path and host-prerequisite explanations are implemented and
 locally verified, and the two measured upstream workflow observations are
 recorded. The read-only host preflight, its separate Proofbound claim, and a
@@ -58,10 +58,13 @@ explicit decisions and the upstream consolidation boundary is satisfied.
 
 RT-4.1 is pre-registered at `946c457`. Experiment 0001 freezes the first HTTPS
 workload, controlled DNS/TLS fixture, four candidate mechanisms, common attack
-matrix, exact result inventory, measurements, and decision criteria. It records
-no result and authorizes no network production code. The next network step is
-to build the disposable fixture and run the port-only Landlock control without
-changing the version 1 Runtime boundary.
+matrix, exact result inventory, measurements, and decision criteria. The
+port-only Landlock control ran at exact source `d8d468b` in GitHub Actions run
+`34430301059` on x86_64 and aarch64 Linux. Both immutable result inventories
+verified independently and reached the pre-registered conclusion:
+`port-only-landlock-cannot-select-service`. This is an observation that rejects
+port-only Landlock for a service-identity claim; it authorizes no network
+production code. The next experiment step is the endpoint-mediation control.
 
 Upstream promotion is intentionally paused at its review boundary. Proofbound
 PR 2 is green but still needs an independent approving review. A dry run of
@@ -727,7 +730,9 @@ Evaluate at least these profiles:
 
 1. **Port-only Landlock.** Small and unprivileged, but it authorizes every
    remote endpoint on an allowed port. It is not sufficient for a service-name
-   claim and should be rejected or named as an explicitly broad authority.
+   claim and should be rejected or named as an explicitly broad authority. The
+   first native control recorded this expected limitation at `d8d468b` on both
+   supported architectures; it did not test or accept a production profile.
 2. **IP endpoint mediation.** A cgroup BPF `connect4`/`connect6` policy can
    enforce network endpoints but adds privilege, loader, attachment, pinning,
    and lifecycle requirements. DNS identity remains outside the kernel rule.

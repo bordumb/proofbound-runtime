@@ -1,7 +1,7 @@
 # Experiment 0001: Network authority mechanisms
 
-- **Status:** pre-registered; no results recorded
-- **Date:** 2026-09-09
+- **Status:** in progress; mechanism A control recorded
+- **Date:** 2026-09-10
 - **Roadmap:** RT-4.1 and RT-4.2
 - **Decision output:** proposed ADR 0003 after reviewed results
 - **Production effect:** none
@@ -290,6 +290,37 @@ profile for the next release and records the missing kernel or product
 capability. Port-only Landlock may still be documented as a distinct broad
 authority only through a separate specification and claim; it is not the
 fallback meaning of a service allow-list.
+
+## Recorded result: mechanism A control
+
+The port-only Landlock control ran at exact source commit
+`d8d468b4d853e407c1437470ba51f25e54315f09` in GitHub Actions run
+[`34430301059`](https://github.com/bordumb/proofbound-runtime/actions/runs/34430301059).
+Both hosted jobs reported Linux `6.17.0-1022-azure`, Landlock ABI 7, and the
+expected native architecture. Each immutable bundle inventoried 14 inputs;
+independent post-download verification reproduced every recorded SHA-256
+digest and found no unlisted file.
+
+| Case | x86_64 | aarch64 | Interpretation |
+| --- | ---: | ---: | --- |
+| Allowed service on TCP 443 | exit 0 | exit 0 | The broad port authority permits the intended fixture. |
+| Different service on TCP 443 | exit 0 | exit 0 | The rule cannot select service identity. |
+| Intended service on TCP 8443 | exit 7 | exit 7 | A different port is denied by Landlock. |
+| Wrong certificate on TCP 443 | exit 60 | exit 60 | The HTTPS client, not Landlock, rejects the certificate. |
+
+The aarch64 `RESULT.json` digest is
+`065a2f232eec5a7d87ed654c61c494a805158e947ed2c897a307ff2610c95fe8`.
+The x86_64 digest is
+`d1ad6b5bdc4be9f614f3f85135819a310ece07cd34e744176b11748659577587`.
+Both results record the pre-registered conclusion
+`port-only-landlock-cannot-select-service`.
+
+This control rejects port-only Landlock as a mechanism for a service-identity
+claim. It does not reject a separately named broad port-authority profile, and
+it does not supply evidence for one. It did not test the full frozen attack
+matrix, benchmark performance, or evaluate mechanisms B through D. The next
+experiment step is the endpoint-mediation control; production schemas and
+Runtime behavior remain unchanged.
 
 ## Evidence and publication boundary
 
