@@ -1,0 +1,14 @@
+schema = "proofbound-runtime-network-experiment-plan/1"
+experiment = "network-authority/1"
+mechanism = "landlock-port-control"
+declared_service = "allowed.test"
+transport = "tcp"
+allowed_port = 443
+expected_conclusion = "port-only-landlock-cannot-select-service"
+
+cases = [
+  "allowed-service",
+  "same-port-service-substitution",
+  "other-port-denied",
+  "wrong-certificate-denied",
+]
