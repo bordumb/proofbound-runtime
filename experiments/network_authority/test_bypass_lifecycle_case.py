@@ -61,9 +61,13 @@ class BypassLifecycleCaseTests(unittest.TestCase):
 
     def test_invalid_identity_and_mechanism_fail_closed(self) -> None:
         matrix = load_bypass_matrix(MATRIX)
-        for mechanism, identities in (("unknown", {"a": "a" * 64}), ("landlock-port", {"a": "not-a-digest"})):
-            with self.subTest(mechanism=mechanism), self.assertRaises(BypassLifecycleError):
-                case_plan(matrix.cases[0], mechanism, matrix.source_sha256, identities)
+        for mechanism, matrix_digest, identities in (
+            ("unknown", matrix.source_sha256, {"a": "a" * 64}),
+            ("landlock-port", matrix.source_sha256, {"a": "not-a-digest"}),
+            ("landlock-port", "z" * 64, {"a": "a" * 64}),
+        ):
+            with self.subTest(mechanism=mechanism, matrix_digest=matrix_digest), self.assertRaises(BypassLifecycleError):
+                case_plan(matrix.cases[0], mechanism, matrix_digest, identities)
 
 
 if __name__ == "__main__":

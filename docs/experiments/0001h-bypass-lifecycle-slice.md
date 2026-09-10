@@ -12,7 +12,7 @@ case, on x86_64 and aarch64 Linux? This experiment may classify a candidate;
 it cannot authorize production network support or select the ADR.
 
 The immutable matrix contains exactly 18 ordered cases: six socket/process
-bypasses, five lifecycle/crash/reuse cases, five identity substitutions, one
+bypasses, six lifecycle/crash/reuse cases, four identity substitutions, one
 cleanup failure, and one no-replace publication case. Each case has exactly
 one expectation per mechanism. Execution code must not read that expectation.
 

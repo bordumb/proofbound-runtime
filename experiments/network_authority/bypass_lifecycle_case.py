@@ -111,7 +111,12 @@ def case_plan(
 ) -> dict[str, object]:
     """Freeze the complete prelaunch identity and expectation."""
 
-    if mechanism not in MECHANISMS or len(matrix_sha256) != 64 or not subject_identities:
+    if (
+        mechanism not in MECHANISMS
+        or len(matrix_sha256) != 64
+        or any(character not in "0123456789abcdef" for character in matrix_sha256)
+        or not subject_identities
+    ):
         raise BypassLifecycleError("case plan identity is invalid")
     if any(
         not isinstance(name, str)
@@ -151,8 +156,11 @@ def load_bypass_matrix(path: Path) -> BypassMatrix:
     mechanisms = decoded["mechanisms"]
     if not isinstance(mechanisms, list) or [item.get("id") for item in mechanisms if isinstance(item, dict)] != list(MECHANISMS):
         raise BypassLifecycleError("mechanism inventory is not exact")
+    raw_cases = decoded["cases"]
+    if not isinstance(raw_cases, list):
+        raise BypassLifecycleError("case inventory is invalid")
     selected = []
-    for raw_case in decoded["cases"]:
+    for raw_case in raw_cases:
         if not isinstance(raw_case, dict) or set(raw_case) != CASE_FIELDS:
             raise BypassLifecycleError("case schema is not closed")
         if raw_case["slice"] != "bypass-lifecycle":
@@ -169,7 +177,9 @@ def load_bypass_matrix(path: Path) -> BypassMatrix:
             or not all(isinstance(item, str) for item in raw_case["parent_rows"])
             or not isinstance(raw_case["attempted_authority"], str)
             or type(raw_case["authority_exposure"]) is not bool
+            or type(raw_case["maximum_seconds"]) is not int
             or raw_case["maximum_seconds"] != 10
+            or len(expectations) != len(MECHANISMS)
             or tuple(item.mechanism for item in expectations) != MECHANISMS
         ):
             raise BypassLifecycleError("bypass case fields are invalid")
