@@ -13,7 +13,7 @@ Compile the control with strict warnings:
 
 ```console
 cc -std=c11 -Wall -Wextra -Werror -O2 \
-  experiments/network-authority/landlock_port_control.c \
+  experiments/network_authority/landlock_port_control.c \
   -o /tmp/landlock-port-control
 ```
 
