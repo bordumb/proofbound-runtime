@@ -26,6 +26,24 @@ exit behavior.
 
 The wrapper deliberately installs no filesystem policy and no general Runtime
 boundary. It exists only to falsify the proposition that a Landlock port rule
-can represent one remote service. Later harness steps add the complete
-disposable TLS fixture, exact result record, and manual native workflow before
-any result is recorded.
+can represent one remote service.
+
+Run the control as root on a clean exact Git commit:
+
+```console
+sudo experiments/network_authority/run_port_control.sh \
+  /absolute/path/to/new-result-directory
+```
+
+The runner creates a disposable network namespace with loopback only. It
+generates temporary certificates and private keys, starts three local TLS
+servers, and executes four port-rule cases. It uses `curl --resolve` so this
+first control isolates port selection from the later DNS experiments. Private
+keys remain in the temporary root and are removed after the recorder stores
+only public certificate identities.
+
+The result directory is created with no-replace semantics and retains every
+case log plus canonical attack, fixture, kernel, tool, and artifact manifests.
+The expected control result is that both distinct services on port 443 are
+reachable, port 8443 is denied, and the TLS client rejects a wrong certificate.
+The runner retains an unexpected result and then exits nonzero.
