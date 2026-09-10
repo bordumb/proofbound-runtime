@@ -41,6 +41,20 @@ This endpoint control can distinguish routing tuples. It cannot establish DNS
 continuity, certificate validity, requested host identity, or application
 redirect policy, and it is not a Runtime boundary or production loader.
 
+The third control begins with `broker_child_control.c`. It accepts exactly one
+inherited Unix stream descriptor, closes every other non-stdio descriptor,
+records and installs a network-denying seccomp program, sets `no_new_privs`,
+drops to uid/gid 65534, and executes the explicit-channel case client. Socket
+creation, direct connection, datagram and message I/O, socket options, and
+`io_uring` setup/entry/registration are denied. Ordinary `read` and `write`
+remain available on the inherited channel, and `shutdown` delimits its single
+frame after all other sockets have been closed.
+
+`explicit_broker.py` supplies the closed frame parser, fixed broker-side
+service/TLS policy, and deterministic TLS fixture. The broker and wrapper are
+experiment trusted computing base. Neither is linked into Runtime or included
+in a release bundle.
+
 Run the control as root on a clean exact Git commit:
 
 ```console

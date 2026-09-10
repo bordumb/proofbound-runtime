@@ -56,7 +56,9 @@ descriptor. Before `exec`, a native wrapper:
 2. sets `no_new_privs`;
 3. installs a classic seccomp filter that returns `EPERM` for socket creation,
    connection, bind/listen/accept, socket-pair creation, datagram send/receive,
-   message send/receive, socket options, and shutdown;
+   message send/receive, and socket options; `shutdown` remains available to
+   delimit the retained local channel after every other socket descriptor is
+   closed and socket creation is denied;
 4. drops supplementary groups and changes to uid/gid 65534; and
 5. executes the identified case client.
 
