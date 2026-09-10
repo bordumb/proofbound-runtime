@@ -29,6 +29,7 @@ python3 -m unittest experiments.network_authority.test_record_preconnected_contr
 python3 -m unittest experiments.network_authority.test_scripted_dns
 python3 -m unittest experiments.network_authority.test_decision_http_fixture
 python3 -m unittest experiments.network_authority.test_decision_proxy_fixture
+python3 -m unittest experiments.network_authority.test_decision_socket_fixture
 
 printf '%s\n' '[5/9] Rust formatting, linting, tests, and locked metadata'
 cargo fmt --all -- --check
