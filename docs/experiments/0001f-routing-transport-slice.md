@@ -33,9 +33,13 @@ external route. Loopback contains these exact roles:
 
 The runner adds both IPv6 addresses to loopback explicitly. It generates one
 certificate for `allowed.test` and one for `denied.test`; private keys never
-leave the temporary root. Each case starts a fresh one-exchange fixture and
-uses an absent state directory, so an unconsumed listener, second connection,
-timeout, or attempted replacement is a harness failure.
+leave the temporary root. Each contact-capable case starts a fresh one-exchange
+fixture and uses an absent state directory. A fixture that remains uncontacted
+after an exact plan, child-boundary, or routing denial is terminated and reaped
+within the cell deadline; its absent contact and completion documents are part
+of the raw denial observation. A second connection, fixture timeout after
+contact, orphaned fixture, cleanup failure, or attempted replacement is a
+harness failure. Plan-rejection and bind/listen cases start no fixture.
 
 The dual-stack TLS fixture requires TLS 1.3, exact SNI `allowed.test`, an exact
 HTTP request, and an exact response. The socket fixture requires one bounded
