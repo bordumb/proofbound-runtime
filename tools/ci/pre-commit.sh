@@ -63,6 +63,11 @@ python3 -m unittest experiments.network_authority.test_run_connection_reuse_case
 python3 -m unittest experiments.network_authority.test_record_bypass_lifecycle
 python3 -m unittest experiments.network_authority.test_verify_bypass_lifecycle
 python3 -m unittest experiments.network_authority.test_run_bypass_lifecycle
+python3 -m unittest experiments.network_authority.test_measurement_domain
+python3 -m unittest experiments.network_authority.test_measurement_observation
+python3 -m unittest experiments.network_authority.test_run_network_measurement
+python3 -m unittest experiments.network_authority.test_record_network_measurement
+python3 -m unittest experiments.network_authority.test_comparison_domain
 cargo fmt --all -- --check
 cargo metadata --locked --offline --format-version 1 >/dev/null
 cargo check --workspace --all-targets --locked --offline
