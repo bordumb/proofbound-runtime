@@ -28,6 +28,19 @@ The wrapper deliberately installs no filesystem policy and no general Runtime
 boundary. It exists only to falsify the proposition that a Landlock port rule
 can represent one remote service.
 
+The second control is `cgroup_endpoint_control.c`. On native Linux, a root
+supervisor loads exact `BPF_CGROUP_INET4_CONNECT` and
+`BPF_CGROUP_INET6_CONNECT` programs, attaches them to one already-created
+cgroup, moves one child into that cgroup, drops the child to uid/gid 65534,
+waits for it, and detaches both programs. The IPv4 program permits only one
+registered address and TCP port tuple. The IPv6 program denies every connect.
+The supervisor writes the exact instruction bytes, verifier logs, observed
+program identifiers, and cgroup inode to one new state directory.
+
+This endpoint control can distinguish routing tuples. It cannot establish DNS
+continuity, certificate validity, requested host identity, or application
+redirect policy, and it is not a Runtime boundary or production loader.
+
 Run the control as root on a clean exact Git commit:
 
 ```console
@@ -48,7 +61,9 @@ The expected control result is that both distinct services on port 443 are
 reachable, port 8443 is denied, and the TLS client rejects a wrong certificate.
 The runner retains an unexpected result and then exits nonzero.
 
-The `Network authority experiment` workflow runs only through an explicit
-manual dispatch. It executes this control on hosted x86_64 and aarch64 Linux
-and retains each exact result for 14 days. Ordinary pushes and pull requests do
-not run experiments.
+The `Network authority experiment` workflow is path-limited to changes in this
+directory or the workflow itself while it is introduced by a pull request.
+After the workflow exists on the default branch it may also be run through an
+explicit manual dispatch. It executes the selected controls on hosted x86_64
+and aarch64 Linux and retains each exact result for 14 days. Unrelated pushes
+and pull-request changes do not run experiments.
