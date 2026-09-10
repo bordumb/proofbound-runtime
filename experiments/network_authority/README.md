@@ -78,6 +78,29 @@ The committed decision matrix, generated inventory, and deterministic
 DNS/TLS/redirect/proxy/socket fixtures are inputs to those slices; they do not
 change a Runtime network policy or release artifact.
 
+The routing/transport slice implementation uses
+`run_routing_transport.sh`. For one selected mechanism, it requires a clean
+exact Git commit, enters a loopback-only network namespace, stages the closed
+child package, compiles the selected native controls, executes all 16 cases,
+and publishes an immutable result. `record_routing_transport.py` is the only
+component that compares raw observations to the frozen expectations.
+`verify_routing_transport.py` independently checks the result inventory,
+digests, manifests, case plans, raw-cell derivation, and conclusion without
+importing the producer or classifier.
+
+Run one routing/transport mechanism as root on native Linux:
+
+```console
+sudo experiments/network_authority/run_routing_transport.sh \
+  cgroup-endpoint \
+  /absolute/path/to/new-routing-result
+```
+
+The four valid mechanism names are `landlock-port`, `cgroup-endpoint`,
+`explicit-broker`, and `preconnected-channel`. A successful local invocation
+does not complete the slice: the exact same clean source commit must produce
+and independently verify all eight mechanism/architecture results.
+
 Run the control as root on a clean exact Git commit:
 
 ```console

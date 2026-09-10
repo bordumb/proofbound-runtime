@@ -1,6 +1,6 @@
 # Experiment 0001F: Routing and transport slice
 
-- **Status:** implementation contract frozen; results not yet recorded
+- **Status:** implementation complete locally; native results not yet recorded
 - **Date:** 2026-09-10
 - **Parent protocol:** [Experiment 0001](0001-network-authority-mechanisms.md)
 - **Decision protocol:** [Experiment 0001E](0001e-decision-matrix-execution.md)
@@ -126,9 +126,11 @@ address, which this case is not.
 
 ## Closed observation derivation
 
-The privileged one-case orchestrator writes one immutable `CELL.json`. It
-copies the expectation from the committed manifest before launch and derives
-the observed cell using this precedence:
+Before launch, the privileged one-case orchestrator copies the registered
+expectation and decision-matrix digest into one immutable `case-plan.json`.
+After execution, it writes one raw cell without comparing the observation to
+that expectation. The generic recorder validates the prelaunch snapshot and
+derives one immutable `CELL.json` using this precedence:
 
 1. missing, malformed, duplicate, oversized, late, or replaceable input or
    output is `harness-failure`;
@@ -183,3 +185,16 @@ mechanism or authorize production code.
 Every item is a separate commit. A discovered mismatch changes implementation
 or amends this protocol in a later commit; it never rewrites the expected cell
 after observing a run.
+
+Items 1 through 6 are implemented on the roadmap branch. The implementation
+includes closed direct and mediated client vocabularies, native A/B controls,
+all four one-case orchestrators, immutable prelaunch expectation snapshots, a
+generic no-replace recorder, an independent verifier, and the clean-subject
+namespace runner. Portable falsifiers, strict x86_64/aarch64 cross-compilation,
+shell lint, the repository-wide Rust gate, and the Lean 4.33 build pass locally.
+These checks are implementation evidence, not native enforcement results.
+
+Item 7 remains open. The runner must execute from one clean pushed commit on
+x86_64 and aarch64 Linux for all four mechanisms. All eight retained result
+inventories must independently verify before this document can record an
+observed routing/transport conclusion or advance to the next functional slice.

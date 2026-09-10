@@ -83,10 +83,19 @@ authenticated-channel control then ran at exact source `9fe5d2c` in run
 82-input inventories verified independently. The control binds one connector-
 owned TLS session and denies direct child networking, but deliberately confirms
 that arbitrary bounded application bytes reach that service. All four first
-controls are now recorded. The next experiment step is the remaining
-cross-mechanism attack and measurement matrix, followed by the reviewed ADR
-decision; no production network implementation is authorized yet. The
-decision-grade execution protocol is frozen in
+controls are now recorded.
+
+The routing/transport decision slice is implemented locally on the roadmap
+branch. Its 16-case domain, direct and mediated clients, native Landlock and
+dual-stack cgroup-BPF controls, four one-case orchestrators, prelaunch
+expectation snapshots, no-replace recorder, independent verifier, and
+clean-subject namespace runner are complete. The repository-wide gate passes
+with Lean 4.33; native kernel execution remains unclaimed. The next experiment
+step is to run and independently verify the same clean commit for all four
+mechanisms on x86_64 and aarch64 Linux, then implement the resolution,
+indirection, and bypass/lifecycle slices before the reviewed ADR decision. No
+production network implementation is authorized yet. The decision-grade
+execution protocol is frozen in
 [`0001e-decision-matrix-execution.md`](experiments/0001e-decision-matrix-execution.md),
 with three bounded functional slices, one measurement slice, a machine-checked
 expectation domain, immutable per-mechanism results, and a deterministic
