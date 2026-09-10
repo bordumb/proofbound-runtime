@@ -51,6 +51,15 @@ revision requires explicit review because it can change claim meaning.
 Guides describe maintained procedures. They do not strengthen a product claim,
 replace a receipt, or remove a documented host or distribution assumption.
 
+## Experiments
+
+- [Experiment index](experiments/README.md)
+- [Experiment 0001: Network authority mechanisms](experiments/0001-network-authority-mechanisms.md)
+
+Experiments pre-register questions, fixtures, attacks, and decision criteria.
+Their results remain bounded observations until a reviewed specification, ADR,
+claim, and evidence path adopt them.
+
 ## Security model
 
 - [Threat model](threat-model.md) defines protected assets, attackers, trusted
