@@ -20,10 +20,11 @@ For every Runtime claim that cites primary `bounded-check` evidence, the claim,
 evidence unit, and bounded model-check manifest must register one byte-for-byte
 equal typed domain before the repository may invoke Proofbound.
 
-The exact subject is a repository-only checker over committed TOML files below
-`claims/`, `proofbound/evidence/`, and `proofbound/model-checks/`, plus its
-placement before Proofbound manifest compilation in every maintained gate. The
-checker is not part of the Runtime binaries or their trusted computing base.
+The exact subject is a repository-only Rust integration test over committed
+TOML files below `claims/`, `proofbound/evidence/`, and
+`proofbound/model-checks/`, plus its placement before Proofbound manifest
+compilation in every maintained gate. The guard is not part of the Runtime
+binaries or their trusted computing base.
 
 ## Typed domain
 
@@ -41,7 +42,7 @@ order and whitespace have no meaning.
 
 ## Selection and ownership
 
-The checker loads every `proofbound-claim/1` manifest in `claims/`. For each
+The guard loads every `proofbound-claim/1` manifest in `claims/`. For each
 entry in the claim's `evidence` array with the exact reference prefix
 `bounded-check:`, it must:
 
@@ -69,9 +70,9 @@ bounded-domain statement.
 
 ## Diagnostics and exit behavior
 
-The checker writes no repository file. Success exits zero without output.
-Failure exits one and writes one diagnostic per detected problem in stable
-claim, reference, and field order. Each line starts with
+The guard writes no repository file. Success returns without output. Failure
+fails the integration test and reports one diagnostic per detected problem in
+stable claim, reference, and field order. Each line starts with
 `bounded-domain check failed:` and includes a stable code from this closed set:
 
 - `manifest.invalid`
@@ -94,14 +95,15 @@ free-form domain description or other unbounded manifest content.
 
 ## Gate placement
 
-The check runs before `proofbound check --fresh` in both the fast contributor
-gate and the complete repository gate. A later Proofbound failure cannot be
-used to mask or reinterpret a local mismatch. The hosted and release workflows
-inherit the guard by invoking those maintained gates.
+The integration test runs as part of the workspace test stage before
+`proofbound check --fresh` in both the fast contributor gate and the complete
+repository gate. A later Proofbound failure cannot be used to mask or
+reinterpret a local mismatch. The hosted and release workflows inherit the
+guard by invoking those maintained gates.
 
-The guard must use only the pinned Python standard library. It must not fetch a
-dependency, consult Git state, read environment configuration, execute an
-evidence adapter, or rewrite a manifest.
+The guard uses the workspace's exact pinned Rust and TOML dependencies. It must
+not add a parser or package dependency, consult Git state, read environment
+configuration, execute an evidence adapter, or rewrite a manifest.
 
 ## Falsification and acceptance
 
