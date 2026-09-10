@@ -174,10 +174,15 @@ def resolve_once(
             require_declared=require_declared,
         )
     except DnsError as error:
+        reason = (
+            "malformed"
+            if response == struct.pack("!H", identifier) + b"malformed"
+            else _dns_rejection(error)
+        )
         return {
             **base,
             "event": "resolver-rejected",
-            "reason": _dns_rejection(error),
+            "reason": reason,
             "responses": responses,
         }
     return {

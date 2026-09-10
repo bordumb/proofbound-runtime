@@ -42,6 +42,7 @@ SCRIPTS = {
     "cname-denied",
     "cname-depth",
     "cname-loop",
+    "denied",
     "truncated-fallback",
     "malformed",
     "dnssec-confusion",
@@ -242,6 +243,8 @@ def response_for(
         answers.append(address_record(query.question_type, True))
     elif script == "stable" or script == "truncated-fallback":
         answers.append(address_record(query.question_type, True))
+    elif script == "denied":
+        answers.append(address_record(query.question_type, False))
     elif script == "rebind":
         answers.append(address_record(query.question_type, ordinal == 0))
     elif script == "cname-allowed":

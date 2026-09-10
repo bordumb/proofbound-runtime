@@ -289,7 +289,7 @@ def classify(raw_value: object, case: ResolutionCase, mechanism: str) -> Observe
     if identifier == "resolver-configuration-substitution":
         if mechanism != "landlock-port":
             raise ResolutionCellError("configuration substitution lacks prelaunch rejection")
-        if resolvers != [denied] or network != ["undeclared-contact"]:
+        if resolvers != [rebound] or network != ["undeclared-contact"]:
             raise ResolutionCellError("substituted resolver exposure is incomplete")
         _require_counts(raw, service_contacts=1)
         return ObservedCell("exposes-limitation", "resolver")

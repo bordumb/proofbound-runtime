@@ -49,6 +49,9 @@ class ScriptedDnsTests(unittest.TestCase):
         self.assertNotEqual(first, second)
         self.assertIn(b"\x7f\x00\x00\x01", first or b"")
         self.assertIn(b"\x7f\x00\x00\x02", second or b"")
+        denied = response_for(query, "denied", 0, "udp")
+        self.assertEqual(denied, response_for(query, "denied", 7, "udp"))
+        self.assertIn(b"\x7f\x00\x00\x02", denied or b"")
 
     def test_cname_scripts_bind_declared_denied_and_loop_targets(self) -> None:
         query = build_query(23, "alias.test", TYPE_AAAA)

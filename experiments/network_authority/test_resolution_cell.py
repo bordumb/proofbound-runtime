@@ -63,7 +63,7 @@ class ResolutionCellTests(unittest.TestCase):
             return raw_cell(case, mechanism, client_started=True, dns_query_count=1, resolver_events=[denied], network_events=network, service_contact_count=contacts)
         if identifier == "resolver-configuration-substitution":
             if mechanism == "landlock-port":
-                return raw_cell(case, mechanism, client_started=True, dns_query_count=1, resolver_events=[denied], network_events=["undeclared-contact"], service_contact_count=1)
+                return raw_cell(case, mechanism, client_started=True, dns_query_count=1, resolver_events=[resolved("127.0.0.2", "allowed.test", "udp")], network_events=["undeclared-contact"], service_contact_count=1)
             return raw_cell(case, mechanism, prelaunch_rejection="resolver-config-digest-mismatch")
         if identifier.startswith("redirect-"):
             event = {"redirect-undeclared-host": "redirect-host", "redirect-cleartext": "redirect-cleartext", "redirect-other-port": "redirect-port"}[identifier]

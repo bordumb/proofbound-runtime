@@ -71,7 +71,7 @@ DNS_PLANS: dict[str, tuple[tuple[str, str, int, int], ...]] = {
         ("dnssec-confusion", "allowed.test", 1, 281),
     ),
     "resolver-configuration-substitution": (
-        ("rebind", "allowed.test", 1, 291),
+        ("denied", "allowed.test", 1, 291),
     ),
 }
 REDIRECT_SCRIPTS = {
@@ -138,7 +138,7 @@ def parameters_for(case_id: str) -> dict[str, object]:
         if case_id == "resolver-truncated-tcp-fallback":
             result["transports"] = ["udp", "tcp"]
         if case_id == "resolver-configuration-substitution":
-            result["configuration_attack"] = "replace-after-plan"
+            result["configuration_attack"] = "replace-after-plan-with-undeclared-endpoint"
         return result
     if case_id in REDIRECT_SCRIPTS:
         return {"redirect_script": REDIRECT_SCRIPTS[case_id]}
