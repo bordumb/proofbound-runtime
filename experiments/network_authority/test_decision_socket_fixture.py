@@ -13,12 +13,15 @@ from pathlib import Path
 
 from experiments.network_authority.decision_socket_fixture import (
     ABSTRACT_NAME,
+    DNS_PROBE,
     PROBE,
+    QUIC_PROBE,
     SENTINEL,
     SCRIPTS,
     SocketFixtureConfig,
     SocketFixtureError,
     observation_document,
+    expected_probe,
     serve_socket_fixture,
     validate_config,
 )
@@ -46,7 +49,7 @@ class DecisionSocketFixtureTests(unittest.TestCase):
     def test_configuration_domain_is_closed_and_loopback_only(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            for script in {"tcp-connect", "udp-send"}:
+            for script in {"tcp-connect", "udp-send", "udp-dns", "udp-quic"}:
                 address = validate_config(
                     self.config(root, script, bind_ip="127.0.0.1", port=0)
                 )
@@ -72,6 +75,13 @@ class DecisionSocketFixtureTests(unittest.TestCase):
                         unix_path=root / "mixed.sock",
                     )
                 )
+
+    def test_udp_attack_transcripts_are_distinct_and_closed(self) -> None:
+        self.assertEqual(expected_probe("udp-dns"), DNS_PROBE)
+        self.assertEqual(expected_probe("udp-quic"), QUIC_PROBE)
+        self.assertNotEqual(DNS_PROBE, QUIC_PROBE)
+        with self.assertRaises(SocketFixtureError):
+            expected_probe("unknown")
 
     def test_observation_is_canonical_and_script_bound(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -186,6 +196,23 @@ class DecisionSocketFixtureTests(unittest.TestCase):
             self.assertEqual(len(errors), 1)
             self.assertIsInstance(errors[0], SocketFixtureError)
             self.assertFalse(config.observation_file.exists())
+
+    def test_live_dns_and_quic_datagrams_remain_distinct(self) -> None:
+        for script in ("udp-dns", "udp-quic"):
+            with self.subTest(script=script), tempfile.TemporaryDirectory() as temporary:
+                config = self.config(
+                    Path(temporary), script, bind_ip="127.0.0.1", port=0
+                )
+                thread, errors = self.run_target(config)
+                ready = json.loads(config.ready_file.read_bytes())
+                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as client:
+                    client.settimeout(2)
+                    client.sendto(
+                        expected_probe(script), (ready["address"], ready["port"])
+                    )
+                    self.assertEqual(client.recv(len(SENTINEL)), SENTINEL)
+                observation = self.finish_target(config, thread, errors)
+                self.assertEqual(observation["script"], script)
 
 
 if __name__ == "__main__":

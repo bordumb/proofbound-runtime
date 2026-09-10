@@ -20,11 +20,15 @@ from experiments.network_authority.record_common import canonical_json, write_ne
 
 MAX_EXCHANGE_BYTES = 256
 PROBE = b"proofbound-socket-bypass-probe\n"
+DNS_PROBE = b"\x00\x01\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07allowed\x04test\x00\x00\x01\x00\x01"
+QUIC_PROBE = b"\xc0\x00\x00\x00\x01\x08pbrquic1\x00\x00\x00\x00"
 SENTINEL = b"proofbound-socket-bypass-sentinel\n"
 ABSTRACT_NAME = b"proofbound-runtime-decision-socket-v1"
 SCRIPTS = {
     "tcp-connect",
     "udp-send",
+    "udp-dns",
+    "udp-quic",
     "pathname-unix",
     "abstract-unix",
 }
@@ -46,6 +50,18 @@ class SocketFixtureConfig:
     observation_file: Path
 
 
+def expected_probe(script: str) -> bytes:
+    """Return the exact payload for one closed socket script."""
+
+    if script == "udp-dns":
+        return DNS_PROBE
+    if script == "udp-quic":
+        return QUIC_PROBE
+    if script in SCRIPTS:
+        return PROBE
+    raise SocketFixtureError("socket fixture script is unknown")
+
+
 def validate_config(config: SocketFixtureConfig) -> ipaddress.IPv4Address | ipaddress.IPv6Address | None:
     """Reject ambiguous, externally reachable, or noncanonical configurations."""
 
@@ -56,7 +72,7 @@ def validate_config(config: SocketFixtureConfig) -> ipaddress.IPv4Address | ipad
         or config.ready_file == config.observation_file
     ):
         raise SocketFixtureError("socket fixture configuration is invalid")
-    if config.script in {"tcp-connect", "udp-send"}:
+    if config.script in {"tcp-connect", "udp-send", "udp-dns", "udp-quic"}:
         if config.bind_ip is None or config.port is None or config.unix_path is not None:
             raise SocketFixtureError("network socket configuration is incomplete")
         try:
@@ -126,7 +142,7 @@ def observation_document(config: SocketFixtureConfig, family: str) -> bytes:
     return canonical_json(
         {
             "family": family,
-            "probe_sha256": hashlib.sha256(PROBE).hexdigest(),
+            "probe_sha256": hashlib.sha256(expected_probe(config.script)).hexdigest(),
             "response_sha256": hashlib.sha256(SENTINEL).hexdigest(),
             "schema": "proofbound-runtime-decision-socket-observation/1",
             "script": config.script,
@@ -168,7 +184,7 @@ def serve_socket_fixture(config: SocketFixtureConfig) -> int:
             listener.bind((str(parsed_address), config.port))
             actual_port = listener.getsockname()[1]
             serve_stream(listener, config, str(parsed_address), family_name, actual_port)
-    elif config.script == "udp-send":
+    elif config.script in {"udp-send", "udp-dns", "udp-quic"}:
         if parsed_address is None or config.port is None:
             raise SocketFixtureError("validated UDP configuration lost its endpoint")
         family = socket.AF_INET if parsed_address.version == 4 else socket.AF_INET6
@@ -182,7 +198,7 @@ def serve_socket_fixture(config: SocketFixtureConfig) -> int:
                 ready_document(config, str(parsed_address), family_name, actual_port),
             )
             probe, peer = target.recvfrom(MAX_EXCHANGE_BYTES + 1)
-            if probe != PROBE:
+            if probe != expected_probe(config.script):
                 raise SocketFixtureError("datagram probe is not exact")
             target.sendto(SENTINEL, peer)
     elif config.script == "pathname-unix":
