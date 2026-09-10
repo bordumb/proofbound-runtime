@@ -7,6 +7,7 @@ import json
 import os
 import re
 import stat
+import tempfile
 from pathlib import Path
 
 
@@ -86,10 +87,16 @@ def canonical_json(value: object) -> bytes:
 
 
 def write_new(path: Path, data: bytes, mode: int = 0o644) -> None:
-    """Write one new file and never replace an existing path."""
+    """Publish complete bytes atomically and never replace an existing path."""
 
-    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode)
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{path.name}.",
+        suffix=".tmp",
+        dir=path.parent,
+    )
+    temporary = Path(temporary_name)
     try:
+        os.fchmod(descriptor, mode)
         view = memoryview(data)
         while view:
             written = os.write(descriptor, view)
@@ -99,6 +106,16 @@ def write_new(path: Path, data: bytes, mode: int = 0o644) -> None:
         os.fsync(descriptor)
     finally:
         os.close(descriptor)
+    try:
+        os.link(temporary, path, follow_symlinks=False)
+        directory_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+        directory = os.open(path.parent, directory_flags)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def bounded_text(value: str, field: str) -> str:

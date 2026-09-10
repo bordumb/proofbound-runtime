@@ -41,6 +41,7 @@ jobs:
       - name: Validate the decision fixtures
         run: |
           python3 -m unittest \
+            experiments.network_authority.test_record_common \
             experiments.network_authority.test_scripted_dns \
             experiments.network_authority.test_decision_http_fixture \
             experiments.network_authority.test_decision_proxy_fixture \
