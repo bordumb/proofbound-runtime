@@ -37,6 +37,21 @@ def arguments(root: Path, mechanism: str) -> argparse.Namespace:
 
 
 class NetworkMeasurementRunnerTests(unittest.TestCase):
+    def test_shell_records_only_after_namespace_process_reap(self) -> None:
+        script = (
+            Path(__file__).resolve().parent / "run_network_measurement.sh"
+        ).read_text(encoding="utf-8")
+        wait_index = script.index('wait "$namespace_pid"')
+        cleanup_index = script.index("namespace-cleanup.json")
+        record_index = script.index("record_network_measurement")
+        self.assertLess(wait_index, cleanup_index)
+        self.assertLess(cleanup_index, record_index)
+        self.assertNotIn("exec unshare", script)
+        self.assertEqual(script.count("status --porcelain"), 2)
+        post_run_identity = script.index("source changed during observation")
+        self.assertLess(wait_index, post_run_identity)
+        self.assertLess(post_run_identity, record_index)
+
     def test_clock_is_one_registered_monotonic_source(self) -> None:
         _clock, name = clock_identity()
         self.assertIn(name, {"CLOCK_MONOTONIC_RAW", "CLOCK_MONOTONIC"})
