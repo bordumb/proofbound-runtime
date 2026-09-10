@@ -14,6 +14,7 @@ from experiments.network_authority.scripted_dns import (
     build_query,
     parse_query,
     response_for,
+    validate_resolution,
 )
 
 
@@ -72,6 +73,54 @@ class ScriptedDnsTests(unittest.TestCase):
             response_for(build_query(31, "allowed.test", TYPE_A), "unknown", 0, "udp")
         with self.assertRaises(DnsError):
             response_for(build_query(31, "allowed.test", TYPE_A), "stable", -1, "udp")
+
+    def test_declared_resolution_accepts_only_exact_address_and_cname_policy(self) -> None:
+        stable_query = build_query(37, "allowed.test", TYPE_A)
+        stable = response_for(stable_query, "stable", 0, "udp")
+        self.assertIsNotNone(stable)
+        resolution = validate_resolution(stable_query, stable or b"", allow_cname=False)
+        self.assertEqual(resolution.address, "127.0.0.1")
+        self.assertEqual(resolution.cname_chain, ("allowed.test",))
+
+        alias_query = build_query(41, "alias.test", TYPE_AAAA)
+        aliased = response_for(alias_query, "cname-allowed", 0, "udp")
+        self.assertIsNotNone(aliased)
+        resolution = validate_resolution(alias_query, aliased or b"", allow_cname=True)
+        self.assertEqual(resolution.address, "fd00::1")
+        self.assertEqual(resolution.cname_chain, ("alias.test", "allowed.test"))
+        with self.assertRaises(DnsError):
+            validate_resolution(alias_query, aliased or b"", allow_cname=False)
+
+    def test_rebinding_cname_confusion_and_dnssec_fail_closed(self) -> None:
+        query = build_query(43, "allowed.test", TYPE_A)
+        for script, ordinal in (
+            ("rebind", 1),
+            ("dnssec-confusion", 0),
+            ("truncated-fallback", 0),
+        ):
+            response = response_for(query, script, ordinal, "udp")
+            self.assertIsNotNone(response)
+            with self.assertRaises(DnsError):
+                validate_resolution(query, response or b"", allow_cname=False)
+
+        alias_query = build_query(47, "alias.test", TYPE_A)
+        for script in ("cname-denied", "cname-loop"):
+            response = response_for(alias_query, script, 0, "udp")
+            self.assertIsNotNone(response)
+            with self.assertRaises(DnsError):
+                validate_resolution(alias_query, response or b"", allow_cname=True)
+
+    def test_response_identity_and_inventory_are_exact(self) -> None:
+        query = build_query(53, "allowed.test", TYPE_A)
+        response = bytearray(response_for(query, "stable", 0, "udp") or b"")
+        response[1] ^= 1
+        with self.assertRaises(DnsError):
+            validate_resolution(query, bytes(response), allow_cname=False)
+
+        response = bytearray(response_for(query, "stable", 0, "udp") or b"")
+        response.extend(b"x")
+        with self.assertRaises(DnsError):
+            validate_resolution(query, bytes(response), allow_cname=False)
 
 
 if __name__ == "__main__":
