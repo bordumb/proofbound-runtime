@@ -7,6 +7,7 @@ import argparse
 import os
 import socket
 import ssl
+import struct
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -20,10 +21,6 @@ from experiments.network_authority.record_common import (
     canonical_json,
     regular_bytes,
     write_new,
-)
-from experiments.network_authority.run_preconnected_case import (
-    peer_credentials,
-    socket_cookie,
 )
 from experiments.network_authority.run_routing_direct_case import (
     FixturePlan,
@@ -56,6 +53,8 @@ DIRECT_CASES = {
     "tcp-bind-listen",
     "udp-bind",
 }
+SO_COOKIE = 57
+SO_PEERCRED = 17
 PRELAUNCH_DETAILS = {
     "undeclared-service-ipv4-443": "connector-endpoint-mismatch",
     "undeclared-service-ipv6-443": "connector-endpoint-mismatch",
@@ -77,6 +76,30 @@ class StartedFixture:
     def close_streams(self) -> None:
         self.stdout.close()  # type: ignore[attr-defined]
         self.stderr.close()  # type: ignore[attr-defined]
+
+
+def socket_cookie(channel: socket.socket) -> int:
+    """Read one nonzero Linux socket identity cookie."""
+
+    raw = channel.getsockopt(socket.SOL_SOCKET, SO_COOKIE, 8)
+    if len(raw) != 8:
+        raise RoutingOrchestrationError("local channel cookie is incomplete")
+    result = struct.unpack("=Q", raw)[0]
+    if result == 0:
+        raise RoutingOrchestrationError("local channel cookie is invalid")
+    return result
+
+
+def peer_credentials(channel: socket.socket) -> dict[str, int]:
+    """Read one exact Linux Unix-peer credential tuple."""
+
+    raw = channel.getsockopt(socket.SOL_SOCKET, SO_PEERCRED, 12)
+    if len(raw) != 12:
+        raise RoutingOrchestrationError("local peer credentials are incomplete")
+    pid, uid, gid = struct.unpack("=3i", raw)
+    if pid <= 0 or uid < 0 or gid < 0:
+        raise RoutingOrchestrationError("local peer credentials are invalid")
+    return {"gid": gid, "pid": pid, "uid": uid}
 
 
 def primary_fixture_plan(case_id: str) -> FixturePlan | None:
