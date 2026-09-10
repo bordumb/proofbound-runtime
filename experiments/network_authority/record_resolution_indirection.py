@@ -76,6 +76,8 @@ COMMON_SUBJECTS = (
     "experiments/network_authority/run_resolution_direct_case.py",
     "experiments/network_authority/run_resolution_broker_case.py",
     "experiments/network_authority/run_resolution_preconnected_case.py",
+    "experiments/network_authority/run_resolution_indirection.sh",
+    "experiments/network_authority/verify_resolution_indirection.py",
 )
 SOURCE_SUBJECTS = {
     "landlock-port": (

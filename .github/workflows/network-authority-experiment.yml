@@ -60,6 +60,18 @@ jobs:
             experiments.network_authority.test_record_routing_transport \
             experiments.network_authority.test_run_routing_transport \
             experiments.network_authority.test_verify_routing_transport
+          python3 -m unittest \
+            experiments.network_authority.test_resolution_indirection_case \
+            experiments.network_authority.test_resolution_indirection_client \
+            experiments.network_authority.test_resolution_network_client \
+            experiments.network_authority.test_resolution_broker \
+            experiments.network_authority.test_resolution_cell \
+            experiments.network_authority.test_run_resolution_direct_case \
+            experiments.network_authority.test_run_resolution_broker_case \
+            experiments.network_authority.test_run_resolution_preconnected_case \
+            experiments.network_authority.test_record_resolution_indirection \
+            experiments.network_authority.test_verify_resolution_indirection \
+            experiments.network_authority.test_run_resolution_indirection
 
       - name: Falsify the native routing boundaries
         run: |

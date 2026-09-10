@@ -37,6 +37,17 @@ python3 -m unittest experiments.network_authority.test_run_routing_preconnected_
 python3 -m unittest experiments.network_authority.test_record_routing_transport
 python3 -m unittest experiments.network_authority.test_run_routing_transport
 python3 -m unittest experiments.network_authority.test_verify_routing_transport
+python3 -m unittest experiments.network_authority.test_resolution_indirection_case
+python3 -m unittest experiments.network_authority.test_resolution_indirection_client
+python3 -m unittest experiments.network_authority.test_resolution_network_client
+python3 -m unittest experiments.network_authority.test_resolution_broker
+python3 -m unittest experiments.network_authority.test_resolution_cell
+python3 -m unittest experiments.network_authority.test_run_resolution_direct_case
+python3 -m unittest experiments.network_authority.test_run_resolution_broker_case
+python3 -m unittest experiments.network_authority.test_run_resolution_preconnected_case
+python3 -m unittest experiments.network_authority.test_record_resolution_indirection
+python3 -m unittest experiments.network_authority.test_verify_resolution_indirection
+python3 -m unittest experiments.network_authority.test_run_resolution_indirection
 cargo fmt --all -- --check
 cargo metadata --locked --offline --format-version 1 >/dev/null
 cargo check --workspace --all-targets --locked --offline
