@@ -25,7 +25,7 @@ class BypassLifecycleOrchestrationTests(unittest.TestCase):
         return argparse.Namespace(
             case=case, mechanism=mechanism, repository_root=ROOT, matrix=MATRIX,
             case_root=root / "case", raw_output=root / "case/raw-cell.json",
-            subject_root=subjects,
+            subject_root=subjects, source_commit="a" * 40,
         )
 
     def test_non_mediator_mechanism_rejects_crash_case_at_plan(self) -> None:

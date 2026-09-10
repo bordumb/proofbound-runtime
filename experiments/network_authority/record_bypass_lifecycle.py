@@ -159,11 +159,11 @@ def expected_identities(evidence: dict[str, tuple[bytes, int]], case: str, mecha
     return result
 
 
-def cell_document(case: BypassCase, mechanism: str, evidence: dict[str, tuple[bytes, int]], root: Path, matrix_sha256: str) -> dict[str, object]:
+def cell_document(case: BypassCase, mechanism: str, evidence: dict[str, tuple[bytes, int]], root: Path, matrix_sha256: str, source_commit: str) -> dict[str, object]:
     expected = case.expectation(mechanism)
     try:
         plan = document(root / f"cases/{case.identifier}/case-plan.json")
-        if plan != case_plan(case, mechanism, matrix_sha256, expected_identities(evidence, case.identifier, mechanism)):
+        if plan != case_plan(case, mechanism, matrix_sha256, source_commit, expected_identities(evidence, case.identifier, mechanism)):
             raise BypassLifecycleError("prelaunch bypass plan changed")
         raw = document(root / f"cases/{case.identifier}/raw-cell.json")
         observed = derive(raw, case, mechanism)
@@ -193,7 +193,7 @@ def record(arguments: argparse.Namespace) -> Path:
     for relative in source_paths:
         path = confined_file(source_root, relative)
         subjects[relative] = (regular_bytes(path), path.lstat().st_mode)
-    cells = [cell_document(case, arguments.mechanism, evidence, evidence_root, matrix.source_sha256) for case in matrix.cases]
+    cells = [cell_document(case, arguments.mechanism, evidence, evidence_root, matrix.source_sha256, arguments.source_commit) for case in matrix.cases]
     complete = len(cells) == 18 and all(cell["matched"] is True for cell in cells)
     if not output.parent.is_dir() or output.exists() or output.is_symlink():
         raise RecordError("bypass output must be absent below an existing directory")

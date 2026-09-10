@@ -40,7 +40,7 @@ class BypassRecorderTests(unittest.TestCase):
                 inventory[path.relative_to(evidence).as_posix()] = (path.read_bytes(), path.stat().st_mode)
         for case in MATRIX.cases:
             case_root = cases / case.identifier; case_root.mkdir()
-            plan = case_plan(case, mechanism, MATRIX.source_sha256, expected_identities(inventory, case.identifier, mechanism))
+            plan = case_plan(case, mechanism, MATRIX.source_sha256, "a" * 40, expected_identities(inventory, case.identifier, mechanism))
             (case_root / "case-plan.json").write_bytes(canonical_json(plan))
             (case_root / "raw-cell.json").write_bytes(canonical_json(observed(case, mechanism)))
             (case_root / "trace.txt").write_bytes(b"bounded trace\n")

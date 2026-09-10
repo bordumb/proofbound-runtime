@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -44,6 +45,7 @@ BYPASS_ACTIONS = {
     "existing-result-replacement": ("replace-existing-result", "publication"),
 }
 BYPASS_CASE_IDS = tuple(BYPASS_ACTIONS)
+SOURCE_COMMIT = re.compile(r"[0-9a-f]{40}")
 
 
 class BypassLifecycleError(Exception):
@@ -107,6 +109,7 @@ def case_plan(
     case: BypassCase,
     mechanism: str,
     matrix_sha256: str,
+    source_commit: str,
     subject_identities: dict[str, str],
 ) -> dict[str, object]:
     """Freeze the complete prelaunch identity and expectation."""
@@ -115,6 +118,7 @@ def case_plan(
         mechanism not in MECHANISMS
         or len(matrix_sha256) != 64
         or any(character not in "0123456789abcdef" for character in matrix_sha256)
+        or not SOURCE_COMMIT.fullmatch(source_commit)
         or not subject_identities
     ):
         raise BypassLifecycleError("case plan identity is invalid")
@@ -135,6 +139,7 @@ def case_plan(
         "mechanism": mechanism,
         "parameters": parameters_for(case.identifier),
         "schema": "proofbound-runtime-bypass-case-plan/1",
+        "source_commit": source_commit,
         "subject_identities": dict(sorted(subject_identities.items())),
     }
 

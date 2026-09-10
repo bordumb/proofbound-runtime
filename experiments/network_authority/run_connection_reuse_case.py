@@ -104,7 +104,7 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
         controls["fixture"] = arguments.fixture
     identities = {name: hashlib.sha256(regular_bytes(path)).hexdigest() for name, path in controls.items()}
     arguments.case_root.mkdir(mode=0o755)
-    write_new(arguments.case_root / "case-plan.json", canonical_json(case_plan(case, arguments.mechanism, matrix.source_sha256, identities)))
+    write_new(arguments.case_root / "case-plan.json", canonical_json(case_plan(case, arguments.mechanism, matrix.source_sha256, arguments.source_commit, identities)))
     output = arguments.case_root / "child-output"
     output.mkdir(mode=0o700)
     os.chown(output, 65534, 65534)
@@ -162,6 +162,7 @@ def parser() -> argparse.ArgumentParser:
     for name in ("repository-root", "matrix", "case-root", "raw-output", "client", "fixture", "routing-child-control", "broker-child-control", "preconnected-child-control"):
         result.add_argument(f"--{name}", type=Path, required=True)
     result.add_argument("--mechanism", required=True)
+    result.add_argument("--source-commit", required=True)
     result.add_argument("--mechanism-control", type=Path)
     result.add_argument("--cgroup-directory", type=Path)
     return result

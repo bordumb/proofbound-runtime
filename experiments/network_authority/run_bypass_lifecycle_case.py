@@ -64,7 +64,7 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
     arguments.case_root.mkdir(mode=0o755)
     write_new(
         arguments.case_root / "case-plan.json",
-        canonical_json(case_plan(case, arguments.mechanism, matrix.source_sha256, subject_identities)),
+        canonical_json(case_plan(case, arguments.mechanism, matrix.source_sha256, arguments.source_commit, subject_identities)),
     )
 
     identifier = case.identifier
@@ -123,6 +123,7 @@ def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(allow_abbrev=False)
     result.add_argument("--case", required=True)
     result.add_argument("--mechanism", required=True)
+    result.add_argument("--source-commit", required=True)
     result.add_argument("--repository-root", type=Path, required=True)
     result.add_argument("--matrix", type=Path, required=True)
     result.add_argument("--case-root", type=Path, required=True)

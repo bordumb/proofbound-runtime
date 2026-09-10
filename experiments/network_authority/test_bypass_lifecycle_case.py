@@ -32,9 +32,10 @@ class BypassLifecycleCaseTests(unittest.TestCase):
     def test_plan_freezes_parameters_expectation_and_sorted_identities(self) -> None:
         matrix = load_bypass_matrix(MATRIX)
         case = next(item for item in matrix.cases if item.identifier == "connection-reuse-beyond-count")
-        plan = case_plan(case, "explicit-broker", matrix.source_sha256, {"z": "b" * 64, "a": "a" * 64})
+        plan = case_plan(case, "explicit-broker", matrix.source_sha256, "c" * 40, {"z": "b" * 64, "a": "a" * 64})
         self.assertEqual(plan["expectation"], {"outcome": "denied", "stage": "application-protocol"})
         self.assertEqual(plan["parameters"], {"registered_connections": 1, "attempted_connections": 2})
+        self.assertEqual(plan["source_commit"], "c" * 40)
         self.assertEqual(list(plan["subject_identities"]), ["a", "z"])
 
     def test_parameter_vocabulary_is_closed(self) -> None:
@@ -61,13 +62,14 @@ class BypassLifecycleCaseTests(unittest.TestCase):
 
     def test_invalid_identity_and_mechanism_fail_closed(self) -> None:
         matrix = load_bypass_matrix(MATRIX)
-        for mechanism, matrix_digest, identities in (
-            ("unknown", matrix.source_sha256, {"a": "a" * 64}),
-            ("landlock-port", matrix.source_sha256, {"a": "not-a-digest"}),
-            ("landlock-port", "z" * 64, {"a": "a" * 64}),
+        for mechanism, matrix_digest, source_commit, identities in (
+            ("unknown", matrix.source_sha256, "c" * 40, {"a": "a" * 64}),
+            ("landlock-port", matrix.source_sha256, "c" * 40, {"a": "not-a-digest"}),
+            ("landlock-port", "z" * 64, "c" * 40, {"a": "a" * 64}),
+            ("landlock-port", matrix.source_sha256, "not-a-commit", {"a": "a" * 64}),
         ):
             with self.subTest(mechanism=mechanism, matrix_digest=matrix_digest), self.assertRaises(BypassLifecycleError):
-                case_plan(matrix.cases[0], mechanism, matrix_digest, identities)
+                case_plan(matrix.cases[0], mechanism, matrix_digest, source_commit, identities)
 
 
 if __name__ == "__main__":

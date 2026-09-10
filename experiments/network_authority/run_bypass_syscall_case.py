@@ -130,7 +130,7 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
         raise BypassSyscallOrchestrationError("native bypass case is not unique")
     case = matches[0]
     arguments.case_root.mkdir(mode=0o755)
-    write_new(arguments.case_root / "case-plan.json", canonical_json(case_plan(case, arguments.mechanism, matrix.source_sha256, subject_identities(arguments))))
+    write_new(arguments.case_root / "case-plan.json", canonical_json(case_plan(case, arguments.mechanism, matrix.source_sha256, arguments.source_commit, subject_identities(arguments))))
     output = arguments.case_root / "child-output"
     output.mkdir(mode=0o700)
     os.chown(output, 65534, 65534)
@@ -205,6 +205,7 @@ def parser() -> argparse.ArgumentParser:
         result.add_argument(f"--{name}", type=Path, required=True)
     result.add_argument("--case", choices=ACTIONS, required=True)
     result.add_argument("--mechanism", required=True)
+    result.add_argument("--source-commit", required=True)
     result.add_argument("--mechanism-control", type=Path)
     result.add_argument("--cgroup-directory", type=Path)
     return result
