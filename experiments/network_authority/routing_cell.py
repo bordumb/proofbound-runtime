@@ -74,6 +74,10 @@ def validate_client(value: object, case: RoutingCase) -> dict[str, object]:
         expected_fields = {"action", "case", "event", "phase", "schema", "verify_code"}
     elif event == "exact-response":
         expected_fields = common | {"response_sha256", "tls_version"}
+    elif event == "mediated-response":
+        expected_fields = common | {"response_sha256"}
+    elif event == "mediator-rejected":
+        expected_fields = common | {"code"}
     elif event == "routing-connected":
         expected_fields = common
     elif event == "socket-sentinel":
@@ -104,8 +108,16 @@ def validate_client(value: object, case: RoutingCase) -> dict[str, object]:
         or value["verify_code"] <= 0
     ):
         raise RoutingCellError("certificate rejection identity is invalid")
+    if event == "mediator-rejected" and value["code"] not in {
+        "certificate-rejected",
+        "connector-endpoint-mismatch",
+        "target-field-rejected",
+    }:
+        raise RoutingCellError("mediator rejection code is invalid")
     exact_phases = {
         "exact-response": "application-protocol",
+        "mediated-response": "application-protocol",
+        "mediator-rejected": "application-protocol",
         "routing-connected": "connect",
         "socket-sentinel": "application-protocol",
         "datagram-sentinel": "application-protocol",
@@ -208,8 +220,16 @@ def classify(raw: object, case: RoutingCase, mechanism: str) -> ObservedCell:
                 raise RoutingCellError("prelaunch rejection started a child")
             if stage != "prelaunch" and not raw["client_started"]:
                 raise RoutingCellError("post-launch mediator rejection lacks a child")
+            if stage != "prelaunch" and (
+                client is None
+                or client["event"] != "mediator-rejected"
+                or client["code"] != mediator["detail"]
+            ):
+                raise RoutingCellError("mediator and child rejection evidence disagree")
             if raw["fixture_complete"]:
                 raise RoutingCellError("rejected mediator completed the fixture")
+            if stage in {"routing", "tls"} and not raw["fixture_contact"]:
+                raise RoutingCellError("post-connect mediator rejection lacks contact")
             return ObservedCell("denied", str(stage))
         if (
             not raw["client_started"]
@@ -217,7 +237,7 @@ def classify(raw: object, case: RoutingCase, mechanism: str) -> ObservedCell:
             or not raw["fixture_contact"]
             or not raw["fixture_complete"]
             or client is None
-            or client["event"] != "exact-response"
+            or client["event"] != "mediated-response"
         ):
             raise RoutingCellError("mediator success markers are incomplete")
         return ObservedCell("allowed", "application-protocol")
@@ -250,6 +270,8 @@ def classify(raw: object, case: RoutingCase, mechanism: str) -> ObservedCell:
         if not raw["fixture_contact"] or not raw["fixture_complete"]:
             raise RoutingCellError("direct success lacks exact fixture completion")
         return ObservedCell("allowed", "application-protocol")
+    if event in {"mediated-response", "mediator-rejected"}:
+        raise RoutingCellError("mediated client event lacks trusted mediator evidence")
     if event == "routing-connected":
         if not raw["fixture_contact"] or raw["fixture_complete"]:
             raise RoutingCellError("routing exposure markers are inconsistent")

@@ -27,7 +27,12 @@ MATRIX = load_routing_matrix(
 )
 
 
-def client(case: RoutingCase, event: str, phase: str) -> dict[str, object]:
+def client(
+    case: RoutingCase,
+    event: str,
+    phase: str,
+    code: str = "target-field-rejected",
+) -> dict[str, object]:
     result: dict[str, object] = {
         "action": case.action,
         "case": case.identifier,
@@ -38,6 +43,8 @@ def client(case: RoutingCase, event: str, phase: str) -> dict[str, object]:
     }
     if event in {"exact-response", "socket-sentinel", "datagram-sentinel"}:
         result["response_sha256"] = "a" * 64
+    if event == "mediated-response":
+        result["response_sha256"] = "a" * 64
     if event == "exact-response":
         result["tls_version"] = "TLSv1.3"
     if event == "datagram-sentinel":
@@ -45,6 +52,8 @@ def client(case: RoutingCase, event: str, phase: str) -> dict[str, object]:
     if event == "certificate-rejected":
         result.pop("errno")
         result["verify_code"] = 18
+    if event == "mediator-rejected":
+        result["code"] = code
     return result
 
 
@@ -84,7 +93,7 @@ class RoutingCellTests(unittest.TestCase):
                 return raw_cell(
                     case,
                     mechanism,
-                    client=client(case, "exact-response", "application-protocol"),
+                    client=client(case, "mediated-response", "application-protocol"),
                     client_started=True,
                     fixture_contact=True,
                     fixture_complete=True,
@@ -114,7 +123,12 @@ class RoutingCellTests(unittest.TestCase):
                 return raw_cell(
                     case,
                     mechanism,
-                    client=client(case, "certificate-rejected", "tls"),
+                    client=client(
+                        case,
+                        "mediator-rejected",
+                        "application-protocol",
+                        "certificate-rejected",
+                    ),
                     client_started=True,
                     fixture_contact=True,
                     mediator=mediator("rejected", "tls", "certificate-rejected"),
@@ -184,8 +198,14 @@ class RoutingCellTests(unittest.TestCase):
             return raw_cell(
                 case,
                 mechanism,
-                client=client(case, "operation-error", "tls"),
+                client=client(
+                    case,
+                    "mediator-rejected",
+                    "application-protocol",
+                    detail,
+                ),
                 client_started=True,
+                fixture_contact=stage == "routing",
                 mediator=mediator("rejected", stage, detail),
             )
         return raw_cell(
