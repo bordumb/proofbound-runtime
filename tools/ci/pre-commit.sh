@@ -28,6 +28,7 @@ python3 -m unittest experiments.network_authority.test_routing_landlock_control
 python3 -m unittest experiments.network_authority.test_routing_endpoint_control
 python3 -m unittest experiments.network_authority.test_routing_transport_client
 python3 -m unittest experiments.network_authority.test_routing_cell
+python3 -m unittest experiments.network_authority.test_run_routing_direct_case
 cargo fmt --all -- --check
 cargo metadata --locked --offline --format-version 1 >/dev/null
 cargo check --workspace --all-targets --locked --offline
