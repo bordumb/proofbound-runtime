@@ -90,10 +90,18 @@ The routing/transport decision slice is complete and recorded. At exact commit
 [`34484880654`](https://github.com/bordumb/proofbound-runtime/actions/runs/34484880654)
 executed its 16-case domain for all four candidate mechanisms on x86_64 and
 aarch64 Linux. All eight immutable results independently verified, matching
-128 of 128 registered cells with distinct recorded result digests. This closes
-only the first functional slice: the next experiment step is the frozen
-resolution and application-indirection slice, followed by bypass/lifecycle,
-measurement, deterministic comparison, and the independently reviewed ADR.
+128 of 128 registered cells with distinct recorded result digests.
+
+The resolution and application-indirection slice is also complete and
+recorded. At exact commit `3efbd6d0c743fa16d2f72230c57171f09df5b009`,
+GitHub Actions run
+[`34495928504`](https://github.com/bordumb/proofbound-runtime/actions/runs/34495928504)
+executed all 18 cases for all four mechanisms on both architectures. All eight
+downloaded immutable inventories independently verified, matching 144 of 144
+registered cells. The retained result identities are recorded in
+[`0001g-resolution-indirection-slice.md`](experiments/0001g-resolution-indirection-slice.md).
+The next experiment step is bypass/lifecycle, followed by measurement,
+deterministic comparison, and the independently reviewed ADR.
 No production network implementation is authorized yet. The decision-grade
 execution protocol is frozen in
 [`0001e-decision-matrix-execution.md`](experiments/0001e-decision-matrix-execution.md),

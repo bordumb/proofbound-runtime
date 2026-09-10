@@ -216,3 +216,28 @@ The slice does not advance to bypass/lifecycle until all eight retained result
 inventories verify. A mismatch changes implementation or amends this protocol
 in a later commit; it never rewrites a registered expectation after observing
 the run.
+
+## Hosted result
+
+The slice completed at exact source
+`3efbd6d0c743fa16d2f72230c57171f09df5b009` in GitHub Actions run
+[`34495928504`](https://github.com/bordumb/proofbound-runtime/actions/runs/34495928504).
+All 18 cases matched for all four mechanisms on x86_64 and aarch64 Linux: 144
+of 144 registered cells. Every downloaded immutable inventory passed the
+independent verifier. The exact `RESULT.json` SHA-256 identities are:
+
+| Mechanism | aarch64 | x86_64 |
+| --- | --- | --- |
+| `landlock-port` | `a697af7b5a060a4eba18148f551e10901687d587f7da3f6f292507fbed2c0b89` | `188e67089f05069fc9d35c8fdf656280757a0043814f8aa2f0259b77ce37ee16` |
+| `cgroup-endpoint` | `0793503a270e9976f1acf11ce842a0c40217f188154d29887efa3f9782aa3186` | `4e0f43827308a55a2cb456c56e9db680692bd9141d964284481cb338ec881a9b` |
+| `explicit-broker` | `ce67d6892b4f5d771b9fe9955f4c48b0ec0812a45f18a2d55eddb91fd2336951` | `558b1dd7f5d39d54bf751b43f12a874d7a66752c6ce665e0dbba7eda129c4072` |
+| `preconnected-channel` | `6fe968fd2c11b0b1e91d80f0ba1706ffd655ea9f664f9ab6b9fd1c367747b218` | `31fe4ad9c671ead0b451b80687e088466f2516e13ab7ab2ff376b1f0a4871ff5` |
+
+The first hosted execution exposed two harness defects at the denial boundary:
+plain `socket.sendall` selected the forbidden `sendto` syscall, and cgroup
+proxy-connect denials escaped instead of becoming typed routing evidence. The
+falsifiers and client were corrected in `3efbd6d`; the successful rerun above
+is the first decision-grade result. This closes the resolution and
+application-indirection slice only. Bypass/lifecycle, measurement,
+deterministic comparison, and ADR review remain required before selecting a
+production mechanism.
