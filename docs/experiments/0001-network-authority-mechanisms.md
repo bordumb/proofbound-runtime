@@ -1,9 +1,9 @@
 # Experiment 0001: Network authority mechanisms
 
-- **Status:** in progress; mechanism A, B, C, and D controls recorded
+- **Status:** experiment and deterministic comparison complete; ADR review open
 - **Date:** 2026-09-10
 - **Roadmap:** RT-4.1 and RT-4.2
-- **Decision output:** proposed ADR 0003 after reviewed results
+- **Decision output:** proposed [ADR 0004](../adr/0004-authenticated-service-session.md)
 - **Production effect:** none
 
 ## Question
@@ -293,7 +293,7 @@ complete the full attack matrix and independent review confirms all of these:
 7. unsupported hosts fail before execution with no weaker fallback; and
 8. the operational cost is acceptable for one real adopter workload.
 
-If no mechanism satisfies the criteria, ADR 0003 rejects the network-enabled
+If no mechanism satisfies the criteria, ADR 0004 rejects the network-enabled
 profile for the next release and records the missing kernel or product
 capability. Port-only Landlock may still be documented as a distinct broad
 authority only through a separate specification and claim; it is not the

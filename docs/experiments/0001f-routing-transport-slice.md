@@ -226,5 +226,5 @@ only that each mechanism behaved as pre-registered for the routing and
 transport slice. It does not select a mechanism, establish resolution or
 application-indirection behavior, close the bypass/lifecycle or measurement
 slices, authorize a production network profile, or replace the independent
-review required for ADR 0003. Experiment 0001E now advances to its frozen
+review required for the network decision ADR. Experiment 0001E now advances to its frozen
 resolution and application-indirection slice.

@@ -1,6 +1,6 @@
 # Experiment 0001G: Resolution and application-indirection slice
 
-- **Status:** implementation contract frozen; no slice result recorded
+- **Status:** complete; all eight hosted results independently verified
 - **Date:** 2026-09-10
 - **Parent protocol:** [Experiment 0001](0001-network-authority-mechanisms.md)
 - **Decision protocol:** [Experiment 0001E](0001e-decision-matrix-execution.md)
@@ -238,6 +238,6 @@ plain `socket.sendall` selected the forbidden `sendto` syscall, and cgroup
 proxy-connect denials escaped instead of becoming typed routing evidence. The
 falsifiers and client were corrected in `3efbd6d`; the successful rerun above
 is the first decision-grade result. This closes the resolution and
-application-indirection slice only. Bypass/lifecycle, measurement,
-deterministic comparison, and ADR review remain required before selecting a
-production mechanism.
+application-indirection slice only. The later bypass/lifecycle, measurement,
+and deterministic comparison results are recorded separately. Independent ADR
+review remains required before selecting a production mechanism.

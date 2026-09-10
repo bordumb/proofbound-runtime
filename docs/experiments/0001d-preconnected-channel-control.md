@@ -170,7 +170,7 @@ It does not mean the mechanism constrains HTTP methods, paths, headers,
 credentials, or application messages; supports DNS refresh, redirects,
 connection reuse, QUIC, or ordinary unmodified clients; or is ready for a
 Runtime schema. Those limitations must remain visible when mechanism D is
-compared with mechanism C and when ADR 0003 decides whether any production
+compared with mechanism C and when ADR 0004 decides whether any production
 claim is worth the added trusted computing base.
 
 ## Recorded control
