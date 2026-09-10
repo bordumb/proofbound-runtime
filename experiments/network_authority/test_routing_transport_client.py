@@ -141,7 +141,7 @@ class RoutingTransportClientTests(unittest.TestCase):
             (
                 "allowed-endpoint-wrong-certificate",
                 "denied.test",
-                "operation-error",
+                "certificate-rejected",
                 "tls",
             ),
         ):
@@ -177,6 +177,9 @@ class RoutingTransportClientTests(unittest.TestCase):
                 self.assertIsInstance(errors[0], ssl.SSLError)
                 self.assertEqual(observation["event"], expected_event)
                 self.assertEqual(observation["phase"], expected_phase)
+                if case == "allowed-endpoint-wrong-certificate":
+                    self.assertEqual(observation["event"], "certificate-rejected")
+                    self.assertGreater(observation["verify_code"], 0)
                 self.assertTrue(contact.is_file())
                 self.assertFalse(fixture_observation.exists())
 

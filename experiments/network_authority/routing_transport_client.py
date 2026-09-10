@@ -67,6 +67,23 @@ def error_event(case_id: str, action: str, phase: str, error: OSError) -> dict[s
     }
 
 
+def certificate_event(
+    case_id: str,
+    action: str,
+    error: ssl.SSLCertVerificationError,
+) -> dict[str, object]:
+    """Retain certificate verification as distinct from syscall errno."""
+
+    return {
+        "action": action,
+        "case": case_id,
+        "event": "certificate-rejected",
+        "phase": "tls",
+        "schema": "proofbound-runtime-routing-client-observation/1",
+        "verify_code": error.verify_code,
+    }
+
+
 def read_exact(channel: object, size: int) -> bytes:
     """Read one exact positive bounded response."""
 
@@ -113,6 +130,8 @@ def tls_request(
                 server_hostname="allowed.test",
                 suppress_ragged_eofs=False,
             )
+        except ssl.SSLCertVerificationError as error:
+            return certificate_event(case_id, action, error)
         except OSError as error:
             return error_event(case_id, action, "tls", error)
         with protected:
