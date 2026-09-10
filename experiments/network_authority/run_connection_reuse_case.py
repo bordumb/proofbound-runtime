@@ -21,7 +21,10 @@ if __package__ in {None, ""}:
 from experiments.network_authority.bypass_cell import raw_cell
 from experiments.network_authority.bypass_lifecycle_case import case_plan, load_bypass_matrix
 from experiments.network_authority.connection_reuse_channel import broker_server, channel_server
-from experiments.network_authority.connection_reuse_client import SCHEMA
+from experiments.network_authority.connection_reuse_client import SCHEMA as CLIENT_SCHEMA
+from experiments.network_authority.connection_reuse_fixture import (
+    PROBE, SCHEMA as FIXTURE_SCHEMA, SENTINEL,
+)
 from experiments.network_authority.record_common import canonical_json, regular_bytes, write_new
 
 
@@ -114,26 +117,27 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
     server_errors: list[BaseException] = []
     server_thread: threading.Thread | None = None
     fixture: subprocess.Popen[bytes] | None = None
-    if arguments.mechanism in {"landlock-port", "cgroup-endpoint"}:
-        fixture = subprocess.Popen([sys.executable, str(arguments.fixture), "--address", "127.0.0.1", "--port", "443", "--ready-file", str(arguments.case_root / "fixture-ready.json"), "--observation-file", str(arguments.case_root / "fixture-observation.json")], cwd=arguments.repository_root, env={"PATH": "/usr/bin:/bin", "PYTHONHASHSEED": "0"}, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        ready = wait_ready(arguments.case_root / "fixture-ready.json", fixture)
-        if ready.get("port") != 443:
-            raise ReuseOrchestrationError("reuse fixture endpoint changed")
-    else:
-        parent, child = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
-        server = broker_server if arguments.mechanism == "explicit-broker" else channel_server
-
-        def target() -> None:
-            try:
-                server_events.append(server(parent.detach()))
-            except BaseException as error:
-                server_errors.append(error)
-
-        server_thread = threading.Thread(target=target)
-        server_thread.start()
-    command = child_command(arguments, output, child)
-    passed = () if child is None else (child.fileno(),)
+    completed: subprocess.CompletedProcess[bytes] | None = None
     try:
+        if arguments.mechanism in {"landlock-port", "cgroup-endpoint"}:
+            fixture = subprocess.Popen([sys.executable, str(arguments.fixture), "--address", "127.0.0.1", "--port", "443", "--ready-file", str(arguments.case_root / "fixture-ready.json"), "--observation-file", str(arguments.case_root / "fixture-observation.json")], cwd=arguments.repository_root, env={"PATH": "/usr/bin:/bin", "PYTHONHASHSEED": "0"}, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            ready = wait_ready(arguments.case_root / "fixture-ready.json", fixture)
+            if ready != {"address": "127.0.0.1", "port": 443, "schema": "proofbound-runtime-connection-reuse-ready/1"}:
+                raise ReuseOrchestrationError("reuse fixture endpoint changed")
+        else:
+            parent, child = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
+            server = broker_server if arguments.mechanism == "explicit-broker" else channel_server
+
+            def target() -> None:
+                try:
+                    server_events.append(server(parent.detach()))
+                except BaseException as error:
+                    server_errors.append(error)
+
+            server_thread = threading.Thread(target=target)
+            server_thread.start()
+        command = child_command(arguments, output, child)
+        passed = () if child is None else (child.fileno(),)
         completed = subprocess.run(command, pass_fds=passed, cwd=arguments.repository_root, env={"PATH": "/usr/bin:/bin", "PYTHONHASHSEED": "0"}, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=case.maximum_seconds, check=False)
     finally:
         if child is not None:
@@ -141,17 +145,38 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
         if server_thread is not None:
             server_thread.join(timeout=2)
         if fixture is not None:
-            fixture.wait(timeout=2)
+            try:
+                fixture.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                fixture.terminate()
+                fixture.wait(timeout=2)
+    if completed is None:
+        raise ReuseOrchestrationError("reuse child did not start")
     write_new(arguments.case_root / "child.stdout", completed.stdout)
     write_new(arguments.case_root / "child.stderr", completed.stderr)
     if completed.returncode != 0 or server_errors or (server_thread is not None and server_thread.is_alive()) or (fixture is not None and fixture.returncode != 0):
         raise ReuseOrchestrationError("reuse participants did not complete")
     observation = document(output / "observation.json")
-    if set(observation) != {"action", "events", "schema", "transcript_sha256"} or observation["schema"] != SCHEMA or not isinstance(observation["events"], list):
+    expected_action = {
+        "landlock-port": "direct", "cgroup-endpoint": "direct",
+        "explicit-broker": "broker", "preconnected-channel": "channel",
+    }[arguments.mechanism]
+    if set(observation) != {"action", "events", "schema", "transcript_sha256"} or observation["schema"] != CLIENT_SCHEMA or observation["action"] != expected_action or not isinstance(observation["events"], list):
         raise ReuseOrchestrationError("reuse client observation changed")
     events = list(observation["events"])
+    if observation["transcript_sha256"] != hashlib.sha256("\n".join(events).encode()).hexdigest():
+        raise ReuseOrchestrationError("reuse client transcript identity changed")
     if server_events and server_events != [events]:
         raise ReuseOrchestrationError("reuse peers disagree")
+    if fixture is not None:
+        fixture_observation = document(arguments.case_root / "fixture-observation.json")
+        if fixture_observation != {
+            "connection_count": 2,
+            "probe_sha256": hashlib.sha256(PROBE).hexdigest(),
+            "schema": FIXTURE_SCHEMA,
+            "sentinel_sha256": hashlib.sha256(SENTINEL).hexdigest(),
+        }:
+            raise ReuseOrchestrationError("reuse fixture observation changed")
     raw = raw_cell(case, arguments.mechanism, connection_count=2 if arguments.mechanism in {"landlock-port", "cgroup-endpoint"} else 1, events=events)
     write_new(arguments.raw_output, canonical_json(raw))
     return raw
