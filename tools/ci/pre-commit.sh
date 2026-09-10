@@ -9,6 +9,7 @@ python3 tools/ci/changelog.py --staged
 python3 tools/ci/documentation.py
 python3 tools/release/observation_inputs.py --check
 python3 -m unittest tools.ci.test_install_release
+python3 -m unittest tools.ci.test_build_example
 cargo fmt --all -- --check
 cargo metadata --locked --offline --format-version 1 >/dev/null
 cargo check --workspace --all-targets --locked --offline

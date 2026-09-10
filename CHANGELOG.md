@@ -13,6 +13,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   supported host boundary, resolves exact command and input identities, and
   inspects fresh output and receipt targets without starting child code or
   mutating the host.
+- A deterministic, checksummed source bundle for the maintained static hello
+  execution and independent receipt-verification example.
 - A fail-closed exact-release installer with closed archive/member validation
   and embedded reviewed digests for both version 0.1 architectures.
 - A separate read-only `pbr doctor --cgroup-root <path> --explain` projection

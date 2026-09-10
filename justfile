@@ -51,3 +51,6 @@ ci:
 
 release-receipt context observation_inputs output:
     bash tools/release/proofbound-release.sh "{{context}}" "{{observation_inputs}}" "{{output}}"
+
+example-bundle output:
+    python3 tools/release/build_example.py --output-directory "{{output}}"

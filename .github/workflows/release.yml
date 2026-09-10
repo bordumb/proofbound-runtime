@@ -116,6 +116,13 @@ jobs:
         working-directory: dist/runtime
         run: sha256sum --check ./*.sha256
 
+      - name: Build and verify the maintained example source bundle
+        run: |
+          mkdir -p dist/example
+          python3 tools/release/build_example.py --output-directory dist/example
+          cd dist/example
+          sha256sum --check ./*.sha256
+
       - name: Extract the exact release observation bundle
         run: |
           observation_directory="dist/release-observation/${{ matrix.architecture }}"
@@ -257,6 +264,7 @@ jobs:
           name: proofbound-runtime-${{ matrix.architecture }}
           path: |
             dist/assurance/${{ matrix.architecture }}/
+            dist/example/
             dist/native-evidence/${{ matrix.architecture }}/
             dist/release-observation/${{ matrix.architecture }}/
             dist/runtime/
