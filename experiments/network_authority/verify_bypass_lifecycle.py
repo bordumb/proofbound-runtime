@@ -57,6 +57,12 @@ SUBJECT_NAMES = {
     "certificate", "channel", "client", "executable", "native-policy",
     "resolver", "trust-root",
 }
+SYSCALL_CASES = {
+    "pathname-unix-socket", "abstract-unix-socket",
+    "io-uring-socket-create-connect", "io-uring-descriptor-send",
+    "raw-and-packet-sockets", "fork-exec-at-process-limit",
+    "concurrent-install-and-connect",
+}
 
 
 class VerificationError(Exception):
@@ -331,6 +337,107 @@ def derive(raw: object, case: str, mechanism: str) -> tuple[str, str]:
     raise VerificationError("raw case has no independent derivation")
 
 
+def _required(files: dict[str, bytes], relative: str) -> bytes:
+    value = files.get("evidence/" + relative)
+    if value is None:
+        raise VerificationError(f"required case evidence is absent: {relative}")
+    return value
+
+
+def _mediator_identity(value: object, generation: int) -> int:
+    if not isinstance(value, dict) or set(value) != {"channel_peer", "executable_sha256", "generation", "pid"}:
+        raise VerificationError("mediator identity schema changed")
+    pid = value["pid"]
+    if type(pid) is not int or pid <= 0 or value["generation"] != generation or not digest(value["executable_sha256"]):
+        raise VerificationError("mediator identity value changed")
+    peer = value["channel_peer"]
+    if not isinstance(peer, str) or not peer.startswith("/tmp/proofbound-mediator-") or not peer.endswith(f"/peer-{pid}"):
+        raise VerificationError("mediator channel peer changed")
+    return pid
+
+
+def verify_case_evidence(root: Path, files: dict[str, bytes], case: str, mechanism: str, raw: dict[str, object], plan: dict[str, object]) -> None:
+    prefix = f"cases/{case}/"
+    if _required(files, prefix + "runner.exit") != b"0\n":
+        raise VerificationError("case runner did not exit successfully")
+    _required(files, prefix + "runner.stdout")
+    _required(files, prefix + "runner.stderr")
+    if case in SYSCALL_CASES:
+        if _required(files, prefix + "child-output/started.txt") != b"started\n":
+            raise VerificationError("syscall child did not retain its start")
+        observation = document(root / "evidence" / prefix / "child-output/observation.json")
+        if observation != {"action": case, "attempts": raw["syscall_attempts"], "schema": "proofbound-runtime-bypass-syscall-observation/1"}:
+            raise VerificationError("syscall observation and raw cell disagree")
+        _required(files, prefix + "child.stdout")
+        _required(files, prefix + "child.stderr")
+        if case == "concurrent-install-and-connect":
+            if _required(files, prefix + "release-sequence/child-stopped.txt") != b"child-stopped\n" or _required(files, prefix + "release-sequence/boundary-acknowledged.txt") != b"boundary-acknowledged\n":
+                raise VerificationError("stopped release sequence changed")
+        return
+    lifecycle_name = "evidence/" + prefix + "lifecycle-evidence.json"
+    if case == "inherited-connected-internet-socket":
+        evidence = document(root / lifecycle_name)
+        local, peer = evidence.get("local"), evidence.get("peer")
+        if set(evidence) != {"event", "family", "local", "peer", "schema", "type"} or evidence["event"] != "foreign-descriptor-present" or evidence["family"] != "AF_INET" or evidence["type"] != "SOCK_STREAM" or evidence["schema"] != "proofbound-runtime-inherited-socket-evidence/1" or not isinstance(local, list) or len(local) != 2 or local[0] != "127.0.0.1" or type(local[1]) is not int or not 1 <= local[1] <= 65535 or peer != ["127.0.0.2", 443]:
+            raise VerificationError("inherited socket evidence changed")
+        return
+    if case.startswith("mediator-"):
+        if mechanism in {"landlock-port", "cgroup-endpoint"}:
+            if lifecycle_name in files:
+                raise VerificationError("non-mediator case retained mediator evidence")
+            return
+        evidence = document(root / lifecycle_name)
+        if case == "mediator-restart-substitution":
+            if set(evidence) != {"event", "first", "schema", "second"} or evidence["event"] != "mediator-identity-mismatch" or evidence["schema"] != "proofbound-runtime-mediator-restart-evidence/1":
+                raise VerificationError("mediator restart evidence changed")
+            first = _mediator_identity(evidence["first"], 1)
+            second = _mediator_identity(evidence["second"], 2)
+            if first == second or evidence["first"] == evidence["second"]:
+                raise VerificationError("mediator restart did not change identity")
+            return
+        phase = "before-release" if case.endswith("before-release") else "during-exchange"
+        if set(evidence) != {"event", "identity", "schema", "termination"} or evidence["event"] != f"mediator-crashed-{phase}" or evidence["schema"] != "proofbound-runtime-mediator-crash-evidence/1":
+            raise VerificationError("mediator crash evidence changed")
+        pid = _mediator_identity(evidence["identity"], 1)
+        if evidence["termination"] != {"pid": pid, "signal": 9, "status": "signaled"}:
+            raise VerificationError("mediator termination changed")
+        return
+    if "substitution" in case:
+        evidence = document(root / lifecycle_name)
+        subject = expected_parameters(case)["mutated_subject"]
+        mutated = _required(files, prefix + "mutated-subject")
+        if set(evidence) != {"after_sha256", "before_sha256", "event", "mutation_count", "schema"} or evidence["event"] != "subject-digest-mismatch" or evidence["mutation_count"] != 1 or evidence["schema"] != "proofbound-runtime-substitution-evidence/1" or evidence["before_sha256"] != plan["subject_identities"][subject] or evidence["after_sha256"] != sha256(mutated) or evidence["before_sha256"] == evidence["after_sha256"]:
+            raise VerificationError("substitution evidence changed")
+        return
+    if case == "connection-reuse-beyond-count":
+        if _required(files, prefix + "child-output/started.txt") != b"started\n":
+            raise VerificationError("reuse child did not retain its start")
+        observation = document(root / "evidence" / prefix / "child-output/observation.json")
+        action = "direct" if mechanism in {"landlock-port", "cgroup-endpoint"} else "broker" if mechanism == "explicit-broker" else "channel"
+        transcript = sha256("\n".join(raw["events"]).encode())
+        if observation != {"action": action, "events": raw["events"], "schema": "proofbound-runtime-connection-reuse-client/1", "transcript_sha256": transcript}:
+            raise VerificationError("reuse client evidence changed")
+        _required(files, prefix + "child.stdout")
+        _required(files, prefix + "child.stderr")
+        if action == "direct":
+            ready = document(root / "evidence" / prefix / "fixture-ready.json")
+            fixture = document(root / "evidence" / prefix / "fixture-observation.json")
+            if ready != {"address": "127.0.0.1", "port": 443, "schema": "proofbound-runtime-connection-reuse-ready/1"} or fixture != {"connection_count": 2, "probe_sha256": sha256(b"proofbound-reuse-probe\n"), "schema": "proofbound-runtime-connection-reuse-observation/1", "sentinel_sha256": sha256(b"proofbound-reuse-sentinel\n")}:
+                raise VerificationError("reuse fixture evidence changed")
+        return
+    evidence = document(root / lifecycle_name)
+    if case == "cleanup-and-namespace-teardown-failure":
+        if set(evidence) != {"event", "injected", "mediator_identity", "schema", "survivor_count", "termination"} or evidence["event"] != "failure-retained" or evidence["injected"] != "teardown-failure" or evidence["schema"] != "proofbound-runtime-cleanup-evidence/1" or evidence["survivor_count"] != 0:
+            raise VerificationError("cleanup evidence changed")
+        pid = _mediator_identity(evidence["mediator_identity"], 1)
+        if evidence["termination"] != {"pid": pid, "signal": 9, "status": "signaled"}:
+            raise VerificationError("cleanup termination changed")
+        return
+    sentinel = _required(files, prefix + "existing-result")
+    if sentinel != b"existing-result\n" or evidence != {"event": "replacement-rejected", "preserved_sha256": sha256(sentinel), "schema": "proofbound-runtime-publication-evidence/1"}:
+        raise VerificationError("publication preservation evidence changed")
+
+
 def _verify_manifest(manifest: dict[str, object], files: dict[str, bytes], prefix: str, schema: str) -> None:
     if set(manifest) != {"files", "schema"} or manifest["schema"] != schema or not isinstance(manifest["files"], list):
         raise VerificationError("file manifest schema is invalid")
@@ -402,6 +509,7 @@ def verify(root: Path) -> dict[str, object]:
         if cell["failure"] is not None or cell["raw"] != evidence_raw:
             raise VerificationError("cell does not retain exact raw evidence")
         derived = derive(cell["raw"], case, str(mechanism))
+        verify_case_evidence(root, files, case, str(mechanism), cell["raw"], plan)
         if cell["expectation"] != {"outcome": outcome, "stage": stage} or cell["observed"] != {"outcome": derived[0], "stage": derived[1]} or derived != (outcome, stage) or cell["matched"] is not True:
             raise VerificationError("cell result does not independently match")
         matched += 1

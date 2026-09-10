@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import tempfile
@@ -40,10 +41,53 @@ class BypassRecorderTests(unittest.TestCase):
                 inventory[path.relative_to(evidence).as_posix()] = (path.read_bytes(), path.stat().st_mode)
         for case in MATRIX.cases:
             case_root = cases / case.identifier; case_root.mkdir()
-            plan = case_plan(case, mechanism, MATRIX.source_sha256, "a" * 40, expected_identities(inventory, case.identifier, mechanism))
+            identities = expected_identities(inventory, case.identifier, mechanism)
+            plan = case_plan(case, mechanism, MATRIX.source_sha256, "a" * 40, identities)
             (case_root / "case-plan.json").write_bytes(canonical_json(plan))
-            (case_root / "raw-cell.json").write_bytes(canonical_json(observed(case, mechanism)))
-            (case_root / "trace.txt").write_bytes(b"bounded trace\n")
+            raw = observed(case, mechanism)
+            (case_root / "raw-cell.json").write_bytes(canonical_json(raw))
+            for name, data in (("runner.exit", b"0\n"), ("runner.stdout", b""), ("runner.stderr", b"")):
+                (case_root / name).write_bytes(data)
+            syscall_cases = {
+                "pathname-unix-socket", "abstract-unix-socket",
+                "io-uring-socket-create-connect", "io-uring-descriptor-send",
+                "raw-and-packet-sockets", "fork-exec-at-process-limit",
+                "concurrent-install-and-connect",
+            }
+            if case.identifier in syscall_cases:
+                child = case_root / "child-output"; child.mkdir()
+                (child / "started.txt").write_bytes(b"started\n")
+                (child / "observation.json").write_bytes(canonical_json({"action": case.identifier, "attempts": raw["syscall_attempts"], "schema": "proofbound-runtime-bypass-syscall-observation/1"}))
+                (case_root / "child.stdout").write_bytes(b"")
+                (case_root / "child.stderr").write_bytes(b"")
+                if case.identifier == "concurrent-install-and-connect":
+                    sequence = case_root / "release-sequence"; sequence.mkdir()
+                    (sequence / "child-stopped.txt").write_bytes(b"child-stopped\n")
+                    (sequence / "boundary-acknowledged.txt").write_bytes(b"boundary-acknowledged\n")
+            elif case.identifier == "inherited-connected-internet-socket":
+                (case_root / "lifecycle-evidence.json").write_bytes(canonical_json({"event": "foreign-descriptor-present", "family": "AF_INET", "local": ["127.0.0.1", 30000], "peer": ["127.0.0.2", 443], "schema": "proofbound-runtime-inherited-socket-evidence/1", "type": "SOCK_STREAM"}))
+            elif case.identifier.startswith("mediator-"):
+                pass
+            elif "substitution" in case.identifier:
+                mutated = b"proofbound-substitute-subject\n"
+                (case_root / "mutated-subject").write_bytes(mutated)
+                subject = plan["parameters"]["mutated_subject"]
+                (case_root / "lifecycle-evidence.json").write_bytes(canonical_json({"after_sha256": hashlib.sha256(mutated).hexdigest(), "before_sha256": identities[subject], "event": "subject-digest-mismatch", "mutation_count": 1, "schema": "proofbound-runtime-substitution-evidence/1"}))
+            elif case.identifier == "connection-reuse-beyond-count":
+                child = case_root / "child-output"; child.mkdir()
+                (child / "started.txt").write_bytes(b"started\n")
+                (child / "observation.json").write_bytes(canonical_json({"action": "direct", "events": raw["events"], "schema": "proofbound-runtime-connection-reuse-client/1", "transcript_sha256": hashlib.sha256("\n".join(raw["events"]).encode()).hexdigest()}))
+                (case_root / "child.stdout").write_bytes(b"")
+                (case_root / "child.stderr").write_bytes(b"")
+                (case_root / "fixture-ready.json").write_bytes(canonical_json({"address": "127.0.0.1", "port": 443, "schema": "proofbound-runtime-connection-reuse-ready/1"}))
+                (case_root / "fixture-observation.json").write_bytes(canonical_json({"connection_count": 2, "probe_sha256": hashlib.sha256(b"proofbound-reuse-probe\n").hexdigest(), "schema": "proofbound-runtime-connection-reuse-observation/1", "sentinel_sha256": hashlib.sha256(b"proofbound-reuse-sentinel\n").hexdigest()}))
+            elif case.identifier == "cleanup-and-namespace-teardown-failure":
+                identity_value = {"channel_peer": "/tmp/proofbound-mediator-test/peer-10", "executable_sha256": "b" * 64, "generation": 1, "pid": 10}
+                (case_root / "lifecycle-evidence.json").write_bytes(canonical_json({"event": "failure-retained", "injected": "teardown-failure", "mediator_identity": identity_value, "schema": "proofbound-runtime-cleanup-evidence/1", "survivor_count": 0, "termination": {"pid": 10, "signal": 9, "status": "signaled"}}))
+            elif case.identifier == "existing-result-replacement":
+                sentinel = b"existing-result\n"
+                (case_root / "existing-result").write_bytes(sentinel)
+                (case_root / "lifecycle-evidence.json").write_bytes(canonical_json({"event": "replacement-rejected", "preserved_sha256": hashlib.sha256(sentinel).hexdigest(), "schema": "proofbound-runtime-publication-evidence/1"}))
         return evidence
 
     def arguments(self, root: Path, evidence: Path, mechanism: str = "landlock-port") -> argparse.Namespace:
@@ -67,7 +111,7 @@ class BypassRecorderTests(unittest.TestCase):
             with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary); evidence = self.evidence(root); arguments = self.arguments(root, evidence)
                 if mutation == "symlink":
-                    path = evidence / "cases/pathname-unix-socket/trace.txt"; path.unlink(); os.symlink("raw-cell.json", path)
+                    path = evidence / "cases/pathname-unix-socket/child.stdout"; path.unlink(); os.symlink("raw-cell.json", path)
                 else:
                     (root / "result").mkdir(); (root / "result/sentinel").write_bytes(b"keep\n")
                 with self.assertRaises(RecordError):

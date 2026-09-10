@@ -87,6 +87,31 @@ class BypassVerifierTests(unittest.TestCase):
             with self.assertRaisesRegex(VerificationError, "prelaunch bypass plan changed"):
                 verify(result)
 
+    def test_lifecycle_semantics_fail_after_all_digests_are_rehashed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            result = self.result(Path(temporary))
+            relative = "evidence/cases/certificate-and-channel-substitution/lifecycle-evidence.json"
+            path = result / relative
+            evidence_value = json.loads(path.read_bytes())
+            evidence_value["mutation_count"] = 2
+            data = canonical_json(evidence_value)
+            path.write_bytes(data)
+            manifest_path = result / "evidence-manifest.json"
+            manifest = json.loads(manifest_path.read_bytes())
+            entry = next(item for item in manifest["files"] if item["name"] == relative.removeprefix("evidence/"))
+            entry["size"] = len(data)
+            entry["sha256"] = hashlib.sha256(data).hexdigest()
+            manifest_data = canonical_json(manifest)
+            manifest_path.write_bytes(manifest_data)
+            outer = json.loads((result / "RESULT.json").read_bytes())
+            for name, contents in ((relative, data), ("evidence-manifest.json", manifest_data)):
+                outer_entry = next(item for item in outer["inputs"] if item["name"] == name)
+                outer_entry["size"] = len(contents)
+                outer_entry["sha256"] = hashlib.sha256(contents).hexdigest()
+            (result / "RESULT.json").write_bytes(canonical_json(outer))
+            with self.assertRaisesRegex(VerificationError, "substitution evidence changed"):
+                verify(result)
+
 
 if __name__ == "__main__":
     unittest.main()
