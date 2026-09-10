@@ -69,6 +69,10 @@ production code. The cgroup-BPF endpoint control then ran at exact source
 tuple, denied address and port substitutions, retained exact BPF/kernel
 identities, and observed cleanup. This confirms endpoint selection, not DNS or
 TLS service identity. The next experiment step is the per-execution broker.
+The explicit broker control design is frozen in
+[`0001c-explicit-broker-control.md`](experiments/0001c-explicit-broker-control.md):
+one preconnected framed channel, direct child network denial, fixed broker-side
+service/TLS policy, and a closed first native corpus. It records no result yet.
 
 Upstream promotion is intentionally paused at its review boundary. Proofbound
 PR 2 is green but still needs an independent approving review. A dry run of
