@@ -58,6 +58,7 @@ case "$mechanism" in
   *) echo 'bypass namespace mechanism changed' >&2; exit 4 ;;
 esac
 cd "$repository_root"
+export PYTHONDONTWRITEBYTECODE=1
 
 for command in cc chown cmp cp git ip openssl python3 stat; do
   if ! command -v "$command" >/dev/null 2>&1; then

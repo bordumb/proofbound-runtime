@@ -148,7 +148,7 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
     try:
         completed = subprocess.run(
             command, pass_fds=passed, cwd=arguments.repository_root,
-            env={"PATH": "/usr/bin:/bin", "PYTHONHASHSEED": "0"},
+            env={"PATH": "/usr/bin:/bin", "PYTHONDONTWRITEBYTECODE": "1", "PYTHONHASHSEED": "0"},
             stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             timeout=case.maximum_seconds, check=False,
         )

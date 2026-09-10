@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -34,7 +35,7 @@ class BypassLifecycleOrchestrationTests(unittest.TestCase):
             raw = run(self.arguments(Path(temporary), "mediator-crash-during-exchange", "landlock-port"))
         self.assertEqual(raw["plan_rejection"], "mechanism-has-no-mediator")
 
-    @unittest.skipUnless(sys.platform.startswith("linux"), "native Linux loopback topology")
+    @unittest.skipUnless(sys.platform.startswith("linux") and os.geteuid() == 0, "root native Linux loopback topology")
     def test_connected_internet_descriptor_is_rejected_before_release(self) -> None:
         with tempfile.TemporaryDirectory() as temporary, mock.patch("os.geteuid", return_value=0):
             arguments = self.arguments(Path(temporary), "inherited-connected-internet-socket")

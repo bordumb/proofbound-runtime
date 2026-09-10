@@ -120,7 +120,7 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
     completed: subprocess.CompletedProcess[bytes] | None = None
     try:
         if arguments.mechanism in {"landlock-port", "cgroup-endpoint"}:
-            fixture = subprocess.Popen([sys.executable, str(arguments.fixture), "--address", "127.0.0.1", "--port", "443", "--ready-file", str(arguments.case_root / "fixture-ready.json"), "--observation-file", str(arguments.case_root / "fixture-observation.json")], cwd=arguments.repository_root, env={"PATH": "/usr/bin:/bin", "PYTHONHASHSEED": "0"}, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            fixture = subprocess.Popen([sys.executable, str(arguments.fixture), "--address", "127.0.0.1", "--port", "443", "--ready-file", str(arguments.case_root / "fixture-ready.json"), "--observation-file", str(arguments.case_root / "fixture-observation.json")], cwd=arguments.repository_root, env={"PATH": "/usr/bin:/bin", "PYTHONDONTWRITEBYTECODE": "1", "PYTHONHASHSEED": "0"}, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             ready = wait_ready(arguments.case_root / "fixture-ready.json", fixture)
             if ready != {"address": "127.0.0.1", "port": 443, "schema": "proofbound-runtime-connection-reuse-ready/1"}:
                 raise ReuseOrchestrationError("reuse fixture endpoint changed")
@@ -138,7 +138,7 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
             server_thread.start()
         command = child_command(arguments, output, child)
         passed = () if child is None else (child.fileno(),)
-        completed = subprocess.run(command, pass_fds=passed, cwd=arguments.repository_root, env={"PATH": "/usr/bin:/bin", "PYTHONHASHSEED": "0"}, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=case.maximum_seconds, check=False)
+        completed = subprocess.run(command, pass_fds=passed, cwd=arguments.repository_root, env={"PATH": "/usr/bin:/bin", "PYTHONDONTWRITEBYTECODE": "1", "PYTHONHASHSEED": "0"}, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=case.maximum_seconds, check=False)
     finally:
         if child is not None:
             child.close()

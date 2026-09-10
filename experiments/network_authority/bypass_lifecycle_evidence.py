@@ -14,6 +14,7 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+import stat
 
 from experiments.network_authority.record_common import RecordError, regular_bytes, write_new
 
@@ -27,7 +28,15 @@ def sha256(path: Path) -> str:
 
 
 def executable_digest() -> str:
-    return sha256(Path(sys.executable).resolve(strict=True))
+    path = Path(sys.executable).resolve(strict=True)
+    metadata = path.lstat()
+    if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > 128 * 1024 * 1024:
+        raise LifecycleEvidenceError("mediator executable is not bounded and regular")
+    value = hashlib.sha256()
+    with path.open("rb") as source:
+        while chunk := source.read(1024 * 1024):
+            value.update(chunk)
+    return value.hexdigest()
 
 
 @dataclass
@@ -62,7 +71,7 @@ def start_mediator(generation: int = 1) -> Mediator:
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            env={"PATH": "/usr/bin:/bin", "PYTHONHASHSEED": "0"},
+            env={"PATH": "/usr/bin:/bin", "PYTHONDONTWRITEBYTECODE": "1", "PYTHONHASHSEED": "0"},
         )
         channel, _address = listener.accept()
         channel.settimeout(2)
@@ -108,8 +117,8 @@ def crash_evidence(phase: str) -> dict[str, object]:
     if phase not in {"before-release", "during-exchange"}:
         raise LifecycleEvidenceError("crash phase is unknown")
     mediator = start_mediator(1)
-    identity = mediator_identity(mediator)
     try:
+        identity = mediator_identity(mediator)
         stopped = stop_mediator(mediator)
     finally:
         if mediator.process.poll() is None:
@@ -124,8 +133,8 @@ def crash_evidence(phase: str) -> dict[str, object]:
 
 def restart_evidence() -> dict[str, object]:
     first = start_mediator(1)
-    first_identity = mediator_identity(first)
     try:
+        first_identity = mediator_identity(first)
         stop_mediator(first)
     finally:
         if first.process.poll() is None:
@@ -162,10 +171,14 @@ def substitution_evidence(subject: Path, replacement: bytes) -> dict[str, object
 
 def cleanup_evidence() -> dict[str, object]:
     mediator = start_mediator(1)
-    identity = mediator_identity(mediator)
-    stopped = stop_mediator(mediator)
-    if mediator.process.poll() is None:
-        raise LifecycleEvidenceError("cleanup retained a live process")
+    try:
+        identity = mediator_identity(mediator)
+        stopped = stop_mediator(mediator)
+        if mediator.process.poll() is None:
+            raise LifecycleEvidenceError("cleanup retained a live process")
+    finally:
+        if mediator.process.poll() is None:
+            stop_mediator(mediator)
     return {
         "event": "failure-retained",
         "injected": "teardown-failure",
