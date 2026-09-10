@@ -43,22 +43,26 @@ REQUIRED_ARTIFACTS = {
         "denied-certificate.pem",
         "routing-child-control",
         "routing-landlock-control",
+        "staged",
     },
     "cgroup-endpoint": {
         "allowed-certificate.pem",
         "denied-certificate.pem",
         "routing-child-control",
         "routing-endpoint-control",
+        "staged",
     },
     "explicit-broker": {
         "allowed-certificate.pem",
         "broker-child-control",
         "denied-certificate.pem",
+        "staged",
     },
     "preconnected-channel": {
         "allowed-certificate.pem",
         "denied-certificate.pem",
         "preconnected-child-control",
+        "staged",
     },
 }
 SOURCE_SUBJECTS = {
@@ -66,24 +70,24 @@ SOURCE_SUBJECTS = {
         "experiments/network_authority/routing_landlock_control.c",
         "experiments/network_authority/routing_child_control.c",
         "experiments/network_authority/routing_transport_client.py",
-        "experiments/network_authority/run_routing_direct_case.py",
     ),
     "cgroup-endpoint": (
         "experiments/network_authority/routing_endpoint_control.c",
         "experiments/network_authority/routing_child_control.c",
         "experiments/network_authority/routing_transport_client.py",
-        "experiments/network_authority/run_routing_direct_case.py",
     ),
     "explicit-broker": (
         "experiments/network_authority/broker_child_control.c",
         "experiments/network_authority/routing_mediator.py",
         "experiments/network_authority/routing_mediated_client.py",
+        "experiments/network_authority/routing_transport_client.py",
         "experiments/network_authority/run_routing_broker_case.py",
     ),
     "preconnected-channel": (
         "experiments/network_authority/preconnected_child_control.c",
         "experiments/network_authority/routing_mediator.py",
         "experiments/network_authority/routing_mediated_client.py",
+        "experiments/network_authority/routing_transport_client.py",
         "experiments/network_authority/run_routing_preconnected_case.py",
     ),
 }
@@ -92,7 +96,51 @@ COMMON_SUBJECTS = (
     "experiments/network_authority/decision-matrix.toml",
     "experiments/network_authority/routing_cell.py",
     "experiments/network_authority/routing_transport_case.py",
+    "experiments/network_authority/record_common.py",
+    "experiments/network_authority/record_routing_transport.py",
+    "experiments/network_authority/decision_http_fixture.py",
+    "experiments/network_authority/decision_socket_fixture.py",
+    "experiments/network_authority/run_routing_direct_case.py",
+    "experiments/network_authority/run_routing_transport.sh",
 )
+STAGED_NETWORK_FILES = {
+    "landlock-port": {
+        "__init__.py",
+        "decision_http_fixture.py",
+        "decision_socket_fixture.py",
+        "record_common.py",
+        "routing_transport_case.py",
+        "routing_transport_client.py",
+    },
+    "cgroup-endpoint": {
+        "__init__.py",
+        "decision_http_fixture.py",
+        "decision_socket_fixture.py",
+        "record_common.py",
+        "routing_transport_case.py",
+        "routing_transport_client.py",
+    },
+    "explicit-broker": {
+        "__init__.py",
+        "decision_http_fixture.py",
+        "decision_socket_fixture.py",
+        "explicit_broker.py",
+        "record_common.py",
+        "routing_mediated_client.py",
+        "routing_transport_case.py",
+        "routing_transport_client.py",
+    },
+    "preconnected-channel": {
+        "__init__.py",
+        "decision_http_fixture.py",
+        "decision_socket_fixture.py",
+        "explicit_broker.py",
+        "record_common.py",
+        "routing_mediated_client.py",
+        "routing_transport_case.py",
+        "routing_transport_client.py",
+    },
+}
 
 
 def evidence_inventory(root: Path, cases: tuple[RoutingCase, ...], mechanism: str):
@@ -120,6 +168,20 @@ def evidence_inventory(root: Path, cases: tuple[RoutingCase, ...], mechanism: st
         mode = path.lstat().st_mode
         if name.endswith("-control") and mode & 0o111 == 0:
             raise RecordError("compiled control is not executable")
+    staged_root = artifacts / "staged"
+    staged_experiments = staged_root / "experiments"
+    staged_network = staged_experiments / "network_authority"
+    if (
+        staged_root.is_symlink()
+        or staged_experiments.is_symlink()
+        or staged_network.is_symlink()
+        or not staged_network.is_dir()
+        or {path.name for path in staged_experiments.iterdir()}
+        != {"__init__.py", "network_authority"}
+        or {path.name for path in staged_network.iterdir()}
+        != STAGED_NETWORK_FILES[mechanism]
+    ):
+        raise RecordError("staged client package inventory is not exact")
     case_names = {path.name for path in case_root.iterdir()}
     if case_names != {case.identifier for case in cases}:
         raise RecordError("routing case directory inventory is not exact")

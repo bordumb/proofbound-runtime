@@ -111,6 +111,18 @@ class RoutingRecorderTests(unittest.TestCase):
             path.write_bytes((name + "\n").encode())
             if name.endswith("-control"):
                 path.chmod(0o755)
+        staged = artifacts / "staged/experiments/network_authority"
+        staged.mkdir(parents=True)
+        (staged.parent / "__init__.py").write_bytes(b"")
+        for name in (
+            "__init__.py",
+            "decision_http_fixture.py",
+            "decision_socket_fixture.py",
+            "record_common.py",
+            "routing_transport_case.py",
+            "routing_transport_client.py",
+        ):
+            (staged / name).write_bytes((name + "\n").encode())
         for case in MATRIX.cases:
             case_root = cases / case.identifier
             case_root.mkdir()
