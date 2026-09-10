@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import ipaddress
 import json
+import resource
 import socket
 import ssl
 import struct
@@ -120,6 +121,28 @@ def marker(event: str, stage: str, detail: str) -> dict[str, object]:
         "event": event,
         "schema": MEDIATOR_SCHEMA,
         "stage": stage,
+    }
+
+
+def ready_marker() -> dict[str, object]:
+    """Return the measurement-only broker readiness marker."""
+
+    return {
+        "schema": "proofbound-runtime-routing-mediator-ready/1",
+        "state": "waiting-for-operation",
+    }
+
+
+def resource_observation() -> dict[str, object]:
+    """Return the broker process high-water resident-set observation."""
+
+    maximum_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    if maximum_rss <= 0:
+        raise MediatorError("mediator resident-set observation is invalid")
+    return {
+        "maximum_process_count": 1,
+        "maximum_resident_set_bytes": maximum_rss * 1024,
+        "schema": "proofbound-runtime-routing-mediator-resource/1",
     }
 
 
@@ -283,6 +306,8 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--ca-certificate", type=Path, required=True)
     result.add_argument("--marker", type=Path, required=True)
     result.add_argument("--session-observation", type=Path, required=True)
+    result.add_argument("--ready", type=Path)
+    result.add_argument("--resource-observation", type=Path)
     return result
 
 
@@ -291,15 +316,24 @@ def main() -> int:
 
     arguments = parser().parse_args()
     try:
+        paths = [
+            arguments.ca_certificate,
+            arguments.marker,
+            arguments.session_observation,
+        ]
+        if arguments.ready is not None:
+            paths.append(arguments.ready)
+        if arguments.resource_observation is not None:
+            paths.append(arguments.resource_observation)
         if (
             arguments.fd < 3
-            or not arguments.ca_certificate.is_absolute()
-            or not arguments.marker.is_absolute()
-            or not arguments.session_observation.is_absolute()
-            or arguments.marker == arguments.session_observation
+            or any(not path.is_absolute() for path in paths)
+            or len(set(paths)) != len(paths)
         ):
             raise MediatorError("routing broker arguments are invalid")
-        return serve_broker(
+        if arguments.ready is not None:
+            write_new(arguments.ready, canonical_json(ready_marker()))
+        result = serve_broker(
             arguments.fd,
             arguments.dial_address,
             arguments.expected_address,
@@ -308,6 +342,12 @@ def main() -> int:
             arguments.marker,
             arguments.session_observation,
         )
+        if arguments.resource_observation is not None:
+            write_new(
+                arguments.resource_observation,
+                canonical_json(resource_observation()),
+            )
+        return result
     except (MediatorError, OSError, ssl.SSLError, ValueError) as error:
         print(f"routing mediator failed: {error}", file=sys.stderr)
         return 4

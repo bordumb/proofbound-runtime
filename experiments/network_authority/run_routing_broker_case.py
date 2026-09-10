@@ -127,7 +127,7 @@ def child_command(
     """Compose the strong broker child boundary with the staged client."""
 
     output = case_root / "child-output"
-    return [
+    command = [
         str(arguments.child_control),
         str(descriptor),
         str(case_root / "child-boundary"),
@@ -145,6 +145,7 @@ def child_command(
         "--observation",
         str(output / "observation.json"),
     ]
+    return command
 
 
 def broker_command(
@@ -156,7 +157,7 @@ def broker_command(
     """Build the exact trusted broker process command."""
 
     dial, expected = broker_endpoints(case.identifier)
-    return [
+    command = [
         sys.executable,
         "-m",
         "experiments.network_authority.routing_mediator",
@@ -175,6 +176,11 @@ def broker_command(
         "--session-observation",
         str(case_root / "session-observation.json"),
     ]
+    if getattr(arguments, "mediator_resource_output", None) is not None:
+        command.extend(
+            ["--resource-observation", str(arguments.mediator_resource_output)]
+        )
+    return command
 
 
 def observed_raw(
@@ -327,6 +333,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--allowed-private-key", type=Path, required=True)
     result.add_argument("--denied-certificate", type=Path, required=True)
     result.add_argument("--denied-private-key", type=Path, required=True)
+    result.add_argument("--mediator-resource-output", type=Path)
     return result
 
 

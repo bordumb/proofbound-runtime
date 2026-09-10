@@ -32,6 +32,7 @@ def arguments(root: Path) -> argparse.Namespace:
         allowed_private_key=root / "allowed-key.pem",
         denied_certificate=root / "denied-certificate.pem",
         denied_private_key=root / "denied-key.pem",
+        mediator_resource_output=None,
     )
 
 
@@ -76,6 +77,21 @@ class RoutingBrokerCaseTests(unittest.TestCase):
             self.assertEqual(child[child.index("--channel-mode") + 1], "explicit-broker")
             self.assertEqual(broker[broker.index("--dial-address") + 1], "fd00::1")
             self.assertEqual(broker[broker.index("--expected-address") + 1], "fd00::1")
+
+    def test_measurement_resource_output_is_forwarded_only_when_requested(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            values = arguments(root)
+            case = self.case("exact-service-ipv4")
+            self.assertNotIn(
+                "--resource-observation", broker_command(case, values, root, 8)
+            )
+            values.mediator_resource_output = root / "resource.json"
+            command = broker_command(case, values, root, 8)
+            self.assertEqual(
+                command[command.index("--resource-observation") + 1],
+                str(root / "resource.json"),
+            )
 
 
 if __name__ == "__main__":

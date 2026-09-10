@@ -7,6 +7,7 @@ import socket
 import ssl
 import struct
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -22,11 +23,77 @@ from experiments.network_authority.routing_mediator import (
     exact_remote_exchange,
     marker,
     open_authenticated,
+    ready_marker,
+    resource_observation,
     serve_broker,
 )
 
 
 class RoutingMediatorTests(unittest.TestCase):
+    def test_measurement_markers_are_closed(self) -> None:
+        self.assertEqual(
+            ready_marker(),
+            {
+                "schema": "proofbound-runtime-routing-mediator-ready/1",
+                "state": "waiting-for-operation",
+            },
+        )
+        observed = resource_observation()
+        self.assertEqual(
+            set(observed),
+            {"maximum_process_count", "maximum_resident_set_bytes", "schema"},
+        )
+        self.assertEqual(observed["maximum_process_count"], 1)
+        self.assertGreater(observed["maximum_resident_set_bytes"], 0)
+
+    def test_ready_marker_precedes_operation_input(self) -> None:
+        parent, child = socket.socketpair()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            ready = root / "ready.json"
+            process = subprocess.Popen(
+                [
+                    sys.executable,
+                    "-m",
+                    "experiments.network_authority.routing_mediator",
+                    "--fd",
+                    str(parent.fileno()),
+                    "--dial-address",
+                    "127.0.0.1",
+                    "--expected-address",
+                    "127.0.0.1",
+                    "--port",
+                    "443",
+                    "--ca-certificate",
+                    str(root / "unused-ca.pem"),
+                    "--marker",
+                    str(root / "marker.json"),
+                    "--session-observation",
+                    str(root / "session.json"),
+                    "--ready",
+                    str(ready),
+                ],
+                pass_fds=(parent.fileno(),),
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            parent.close()
+            try:
+                for _ in range(100):
+                    if ready.is_file() or process.poll() is not None:
+                        break
+                    time.sleep(0.01)
+                self.assertEqual(json.loads(ready.read_bytes()), ready_marker())
+                self.assertIsNone(process.poll())
+                child.close()
+                self.assertEqual(process.wait(timeout=2), 4)
+            finally:
+                child.close()
+                if process.poll() is None:
+                    process.kill()
+                    process.wait(timeout=2)
+
     def certificate(self, root: Path, name: str, stem: str) -> tuple[Path, Path]:
         certificate = root / f"{stem}-certificate.pem"
         private_key = root / f"{stem}-key.pem"
