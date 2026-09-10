@@ -47,6 +47,7 @@ ACTIONS = {
     "channel-redirect-host",
     "channel-redirect-cleartext",
     "channel-redirect-port",
+    "channel-exact",
     "channel-proxy-http",
     "channel-proxy-socks",
     "broker-redirect-rejected",
@@ -216,6 +217,11 @@ def execute(
         if observation["event"] != "proxy-target-reached":
             raise ResolutionNetworkClientError("proxy event changed")
         return ["proxy-target-reached"]
+    if action == "channel-exact":
+        event = _channel_http(descriptor or -1, "exact")
+        if event != "exact-response":
+            raise ResolutionNetworkClientError("channel exact response changed")
+        return ["declared-response"]
     if action.startswith("channel-redirect-"):
         script = action.removeprefix("channel-")
         event = _channel_http(descriptor or -1, script)
