@@ -70,6 +70,14 @@ seccomp, case, and cleanup observations before it can publish the narrow
 pre-registered conclusion. This remains experiment code with no Runtime schema
 or release effect.
 
+The decision-grade execution protocol is specified in
+[`0001e-decision-matrix-execution.md`](../../docs/experiments/0001e-decision-matrix-execution.md).
+Its first functional slice is frozen separately in
+[`0001f-routing-transport-slice.md`](../../docs/experiments/0001f-routing-transport-slice.md).
+The committed decision matrix, generated inventory, and deterministic
+DNS/TLS/redirect/proxy/socket fixtures are inputs to those slices; they do not
+change a Runtime network policy or release artifact.
+
 Run the control as root on a clean exact Git commit:
 
 ```console
