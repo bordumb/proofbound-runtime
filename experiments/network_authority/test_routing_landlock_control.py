@@ -1,0 +1,127 @@
+"""Native falsifiers for experiment 0001F port-only Landlock control."""
+
+from __future__ import annotations
+
+import os
+import socket
+import subprocess
+import sys
+import tempfile
+import threading
+import unittest
+from pathlib import Path
+
+from experiments.network_authority.routing_landlock_probe import run
+
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+LANDLOCK_SOURCE = (
+    REPOSITORY_ROOT / "experiments/network_authority/routing_landlock_control.c"
+)
+BOUNDARY_SOURCE = (
+    REPOSITORY_ROOT / "experiments/network_authority/routing_child_control.c"
+)
+PROBE = REPOSITORY_ROOT / "experiments/network_authority/routing_landlock_probe.py"
+
+
+class RoutingLandlockProbeTests(unittest.TestCase):
+    def test_invalid_or_equal_ports_fail_closed(self) -> None:
+        self.assertEqual(run(0, 1), 7)
+        self.assertEqual(run(443, 443), 7)
+
+
+@unittest.skipUnless(
+    sys.platform.startswith("linux") and os.geteuid() == 0,
+    "native Linux root Landlock test",
+)
+class RoutingLandlockControlTests(unittest.TestCase):
+    def compile(self, source: Path, output: Path) -> None:
+        completed = subprocess.run(
+            [
+                "cc",
+                "-std=c11",
+                "-Wall",
+                "-Wextra",
+                "-Werror",
+                "-O2",
+                str(source),
+                "-o",
+                str(output),
+            ],
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr.decode())
+
+    def test_port_rule_composes_with_common_child_boundary(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            landlock = root / "routing-landlock-control"
+            boundary = root / "routing-child-control"
+            landlock_state = root / "landlock-state"
+            child_state = root / "child-state"
+            self.compile(LANDLOCK_SOURCE, landlock)
+            self.compile(BOUNDARY_SOURCE, boundary)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+                listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                listener.bind(("127.0.0.1", 0))
+                listener.listen(1)
+                listener.settimeout(5)
+                allowed_port = listener.getsockname()[1]
+                denied_port = allowed_port + 1 if allowed_port < 65535 else allowed_port - 1
+                errors: list[BaseException] = []
+
+                def accept_once() -> None:
+                    try:
+                        connection, _peer = listener.accept()
+                        connection.close()
+                    except BaseException as error:
+                        errors.append(error)
+
+                thread = threading.Thread(target=accept_once)
+                thread.start()
+                completed = subprocess.run(
+                    [
+                        str(landlock),
+                        str(allowed_port),
+                        str(landlock_state),
+                        "--",
+                        str(boundary),
+                        str(child_state),
+                        "--",
+                        sys.executable,
+                        str(PROBE),
+                        "--allowed-port",
+                        str(allowed_port),
+                        "--denied-port",
+                        str(denied_port),
+                    ],
+                    check=False,
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    timeout=10,
+                )
+                thread.join(timeout=6)
+            self.assertFalse(thread.is_alive())
+            self.assertEqual(errors, [])
+            self.assertEqual(
+                completed.returncode,
+                0,
+                completed.stderr.decode(errors="replace"),
+            )
+            self.assertEqual(
+                {path.name for path in landlock_state.iterdir()},
+                {"boundary-observations.txt", "ruleset-configuration.txt"},
+            )
+            configuration = (landlock_state / "ruleset-configuration.txt").read_text(
+                encoding="ascii"
+            )
+            self.assertIn(f"allowed_port={allowed_port}\n", configuration)
+            self.assertIn("handled_access=bind-tcp,connect-tcp\n", configuration)
+            self.assertTrue((child_state / "seccomp-program.bin").is_file())
+
+
+if __name__ == "__main__":
+    unittest.main()
