@@ -25,6 +25,7 @@ ACTIONS = (
     "io-uring-socket-create-connect",
     "io-uring-descriptor-send",
     "raw-and-packet-sockets",
+    "fork-exec-at-process-limit",
 )
 
 
@@ -70,6 +71,15 @@ def execute(action: str, inherited_fd: int | None) -> list[dict[str, object]]:
         return [observe("fstat(inherited-inet)", lambda: os.fstat(inherited_fd))]
     if action.startswith("io-uring-"):
         return [observe("io_uring_setup", io_uring_setup)]
+    if action == "fork-exec-at-process-limit":
+        try:
+            child = os.fork()
+        except OSError as error:
+            return [{"errno": error.errno, "result": "error", "syscall": "fork"}]
+        if child == 0:
+            os._exit(0)
+        os.waitpid(child, 0)
+        return [{"errno": None, "result": "success", "syscall": "fork"}]
     packet = getattr(socket, "AF_PACKET", 17)
     return [
         observe("socket(AF_INET,SOCK_RAW)", lambda: socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)),

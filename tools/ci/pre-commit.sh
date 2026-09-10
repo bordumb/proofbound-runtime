@@ -53,6 +53,7 @@ python3 -m unittest experiments.network_authority.test_bypass_syscall_probe
 python3 -m unittest experiments.network_authority.test_bypass_cell
 python3 -m unittest experiments.network_authority.test_bypass_lifecycle_evidence
 python3 -m unittest experiments.network_authority.test_run_bypass_lifecycle_case
+python3 -m unittest experiments.network_authority.test_process_limit_control
 cargo fmt --all -- --check
 cargo metadata --locked --offline --format-version 1 >/dev/null
 cargo check --workspace --all-targets --locked --offline

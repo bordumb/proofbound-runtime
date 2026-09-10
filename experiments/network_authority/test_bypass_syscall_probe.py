@@ -18,7 +18,7 @@ from experiments.network_authority.bypass_syscall_probe import (
 
 class BypassSyscallProbeTests(unittest.TestCase):
     def test_catalog_is_closed(self) -> None:
-        self.assertEqual(len(ACTIONS), 6)
+        self.assertEqual(len(ACTIONS), 7)
         self.assertEqual(len(ACTIONS), len(set(ACTIONS)))
         with self.assertRaises(BypassProbeError):
             execute("unknown", None)
@@ -56,6 +56,13 @@ class BypassSyscallProbeTests(unittest.TestCase):
         channel = mock.MagicMock(spec=socket.socket)
         self.assertEqual(observe("socket", lambda: channel)["result"], "success")
         channel.close.assert_called_once_with()
+
+    def test_fork_limit_errno_is_retained(self) -> None:
+        with mock.patch("os.fork", side_effect=OSError(errno.EAGAIN, "limited")):
+            self.assertEqual(
+                execute("fork-exec-at-process-limit", None),
+                [{"errno": errno.EAGAIN, "result": "error", "syscall": "fork"}],
+            )
 
 
 if __name__ == "__main__":
