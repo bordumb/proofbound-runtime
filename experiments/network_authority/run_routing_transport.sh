@@ -264,6 +264,9 @@ python3 -m experiments.network_authority.record_routing_transport \
   --openssl "$(openssl version)" \
   --python "$(python3 --version)"
 
+python3 -m experiments.network_authority.verify_routing_transport \
+  "$output_directory"
+
 python3 -c \
   'import json,sys; result=json.load(open(sys.argv[1], encoding="utf-8")); raise SystemExit(result["conclusion"] != "routing-transport-slice-matched")' \
   "$output_directory/RESULT.json"

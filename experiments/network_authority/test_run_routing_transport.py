@@ -46,6 +46,7 @@ class RoutingTransportRunnerTests(unittest.TestCase):
             "ip address add fd00::2/128 dev lo nodad",
             "cmp --silent",
             '[[ ${#routing_cases[@]} -ne 16 ]]',
+            "experiments.network_authority.verify_routing_transport",
             "routing-transport-slice-matched",
         ):
             with self.subTest(required=required):

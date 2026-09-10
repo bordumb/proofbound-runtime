@@ -102,6 +102,7 @@ COMMON_SUBJECTS = (
     "experiments/network_authority/decision_socket_fixture.py",
     "experiments/network_authority/run_routing_direct_case.py",
     "experiments/network_authority/run_routing_transport.sh",
+    "experiments/network_authority/verify_routing_transport.py",
 )
 STAGED_NETWORK_FILES = {
     "landlock-port": {

@@ -35,6 +35,7 @@ python3 -m unittest experiments.network_authority.test_run_routing_broker_case
 python3 -m unittest experiments.network_authority.test_run_routing_preconnected_case
 python3 -m unittest experiments.network_authority.test_record_routing_transport
 python3 -m unittest experiments.network_authority.test_run_routing_transport
+python3 -m unittest experiments.network_authority.test_verify_routing_transport
 cargo fmt --all -- --check
 cargo metadata --locked --offline --format-version 1 >/dev/null
 cargo check --workspace --all-targets --locked --offline
