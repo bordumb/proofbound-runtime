@@ -15,6 +15,7 @@ from experiments.network_authority.routing_transport_case import MECHANISMS
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 RUNNER = REPOSITORY_ROOT / "experiments/network_authority/run_routing_transport.sh"
+WORKFLOW = REPOSITORY_ROOT / ".github/workflows/network-authority-experiment.yml"
 
 
 class RoutingTransportRunnerTests(unittest.TestCase):
@@ -52,6 +53,26 @@ class RoutingTransportRunnerTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, source)
         self.assertNotIn("--force", source)
+
+    def test_workflow_runs_every_mechanism_on_both_architectures(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        _prefix, marker, routing_job = workflow.partition("  routing-transport-slice:\n")
+        self.assertTrue(marker)
+        routing_job, marker, _suffix = routing_job.partition(
+            "\n  landlock-port-control:\n"
+        )
+        self.assertTrue(marker)
+        for mechanism in MECHANISMS:
+            with self.subTest(mechanism=mechanism):
+                self.assertEqual(
+                    routing_job.count(f"          - mechanism: {mechanism}\n"), 2
+                )
+        self.assertEqual(routing_job.count("            architecture: x86_64\n"), 4)
+        self.assertEqual(routing_job.count("            architecture: aarch64\n"), 4)
+        self.assertIn("runs-on: ${{ matrix.runner }}", routing_job)
+        self.assertIn("if: always()", routing_job)
+        self.assertIn("run_routing_transport.sh", routing_job)
+        self.assertIn("actions/upload-artifact@v4", routing_job)
 
 
 if __name__ == "__main__":
