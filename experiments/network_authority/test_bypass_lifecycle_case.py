@@ -40,6 +40,7 @@ class BypassLifecycleCaseTests(unittest.TestCase):
 
     def test_parameter_vocabulary_is_closed(self) -> None:
         self.assertEqual(parameters_for("concurrent-install-and-connect")["child_state"], "stopped")
+        self.assertEqual(parameters_for("certificate-and-channel-substitution")["mutated_subject"], "certificate")
         self.assertEqual(parameters_for("existing-result-replacement")["publication"], "no-replace")
         with self.assertRaises(BypassLifecycleError):
             parameters_for("unknown")

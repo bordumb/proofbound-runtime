@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import tempfile
 import unittest
@@ -48,7 +49,9 @@ class BypassLifecycleOrchestrationTests(unittest.TestCase):
             raw = run(arguments)
             self.assertEqual((arguments.case_root / "mutated-subject").read_bytes(), b"proofbound-substitute-subject\n")
             self.assertTrue((arguments.case_root / "lifecycle-evidence.json").is_file())
+            plan = json.loads((arguments.case_root / "case-plan.json").read_bytes())
         self.assertEqual(raw["prelaunch_rejection"], "certificate-channel-identity-mismatch")
+        self.assertEqual(plan["parameters"]["mutated_subject"], "certificate")
 
     def test_existing_result_is_preserved(self) -> None:
         with tempfile.TemporaryDirectory() as temporary, mock.patch("os.geteuid", return_value=0):

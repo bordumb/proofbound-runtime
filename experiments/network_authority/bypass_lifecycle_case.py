@@ -97,7 +97,17 @@ def parameters_for(case_id: str) -> dict[str, object]:
     if case_id.startswith("mediator-"):
         return {"generation": 1, "identity": ["pid", "executable-sha256", "channel-peer"]}
     if "substitution" in case_id:
-        return {"mutation_count": 1, "phase": "after-plan-before-release"}
+        mutated_subject = {
+            "policy-program-map-rule-substitution": "native-policy",
+            "resolver-and-trust-root-substitution": "resolver",
+            "certificate-and-channel-substitution": "certificate",
+            "executable-and-staged-client-substitution": "executable",
+        }[case_id]
+        return {
+            "mutated_subject": mutated_subject,
+            "mutation_count": 1,
+            "phase": "after-plan-before-release",
+        }
     if case_id == "connection-reuse-beyond-count":
         return {"registered_connections": 1, "attempted_connections": 2}
     if case_id == "cleanup-and-namespace-teardown-failure":
