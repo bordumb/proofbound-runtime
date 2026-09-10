@@ -87,6 +87,14 @@ ordering, inventory categories, platform observations, and residual authority
 before timing data is collected. `measurement_domain.py` validates that closed
 contract and rejects incomplete or changed profiles.
 
+The deterministic comparison is recorded in
+[`0001j-deterministic-network-comparison.md`](../../docs/experiments/0001j-deterministic-network-comparison.md).
+`compare_network_results.py` reruns every slice's independent verifier before
+constructing the no-replace comparison. `verify_network_comparison.py` does not
+import the producer or its domain parser; it independently reconstructs the
+comparison from all 32 result directories. The output can admit candidates to
+ADR review but always leaves the production selection null.
+
 The routing/transport slice implementation uses
 `run_routing_transport.sh`. For one selected mechanism, it requires a clean
 exact Git commit, enters a loopback-only network namespace, stages the closed

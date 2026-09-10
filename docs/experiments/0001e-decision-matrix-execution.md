@@ -1,6 +1,6 @@
 # Experiment 0001E: Decision matrix execution
 
-- **Status:** all three functional slices recorded; measurement next
+- **Status:** all slices and deterministic comparison complete; ADR review next
 - **Date:** 2026-09-10
 - **Parent protocol:** [Experiment 0001](0001-network-authority-mechanisms.md)
 - **Roadmap:** RT-4.2 and RT-4.3
@@ -19,7 +19,7 @@ The first controls established one useful fact about each candidate:
 
 Those controls are not a decision. This protocol executes the complete parent
 attack inventory in bounded slices, measures the surviving candidates, and
-produces the exact comparison input for ADR 0003. It does not add a Runtime
+produces the exact comparison input for a separately numbered network ADR. It does not add a Runtime
 network mode or treat an experiment result as assurance evidence.
 
 ## Closed result vocabulary
@@ -191,7 +191,7 @@ and an unregistered residual authority. It may summarize a mechanism as:
 - `eligible-for-adr-review-with-service-session-authority`; or
 - `incomplete-experiment`.
 
-The comparison cannot select a production design. ADR 0003 must name the
+The comparison cannot select a production design. The network decision ADR must name the
 chosen authority granularity, adopter workload, trusted computing base,
 unsupported behavior, receipt meaning, and why the operational cost is
 acceptable. Independent review of the result set and ADR remains mandatory.
@@ -208,7 +208,7 @@ Implementation proceeds as separate historical commits:
 6. measurement runner and recorder;
 7. independently verified hosted results on both architectures;
 8. deterministic comparison; and
-9. ADR 0003 for independent review.
+9. separately numbered network ADR for independent review.
 
 No step waits for Proofbound PR 2 because these are observation-only
 experiments. No production claim, model, schema, launcher, receipt, or release
@@ -232,6 +232,11 @@ lifecycle slice matched all 144 registered cells at `7719ea2` in run
 `34506078724`; every downloaded inventory passed the strengthened independent
 verifier, as recorded in [Experiment 0001H](0001h-bypass-lifecycle-slice.md).
 
-Steps 6 through 9 remain open. The next permitted implementation step is the
-frozen measurement slice. No functional result is a mechanism decision, and
-none authorizes production network behavior.
+Steps 6 through 8 are complete. The measurement slice matched its frozen
+completion condition at `f78fd26` in run `34539937335`. The deterministic
+comparison then consumed all 32 independently verified results and was itself
+independently reproduced at `085a8c8`. Its exact output and interpretation are
+recorded in [Experiment 0001J](0001j-deterministic-network-comparison.md).
+Step 9 remains open: a separately numbered network ADR requires independent
+review. No experiment result is a mechanism decision, and none authorizes
+production network behavior.

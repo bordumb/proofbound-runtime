@@ -79,5 +79,6 @@ failures were corrected in later commits without changing an expectation. A
 downloaded-result recheck then exposed host-dependent `EAGAIN` numbering in the
 portable verifier; the verifier now freezes Linux ABI errno values. This result
 closes only the bypass/lifecycle functional slice. It does not select a
-mechanism or authorize production network behavior. Measurement, deterministic
-comparison, and independently reviewed ADR 0003 remain required.
+mechanism or authorize production network behavior. The later measurement and
+deterministic comparison are recorded separately; an independently reviewed
+network decision ADR remains required.

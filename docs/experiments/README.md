@@ -25,3 +25,4 @@ claim, or Proofbound evidence merely because it is reproducible.
 | --- | --- | --- |
 | [0001](0001-network-authority-mechanisms.md) | Which Linux profile can honestly enforce one declared HTTPS service identity? | pre-registered |
 | [0001I](0001i-network-measurement-slice.md) | What bounded operational cost and lifecycle reliability does each surviving candidate have? | complete |
+| [0001J](0001j-deterministic-network-comparison.md) | Which candidates are eligible for ADR review under the frozen authority classifications? | complete |
