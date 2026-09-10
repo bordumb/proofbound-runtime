@@ -15,6 +15,7 @@ from experiments.network_authority.routing_transport_case import MECHANISMS
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 RUNNER = REPOSITORY_ROOT / "experiments/network_authority/run_resolution_indirection.sh"
+WORKFLOW = REPOSITORY_ROOT / ".github/workflows/network-authority-experiment.yml"
 
 
 class ResolutionIndirectionRunnerTests(unittest.TestCase):
@@ -57,6 +58,22 @@ class ResolutionIndirectionRunnerTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, source)
         self.assertNotIn("--force", source)
+
+    def test_workflow_runs_every_mechanism_on_both_architectures(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        _prefix, marker, job = workflow.partition("  resolution-indirection-slice:\n")
+        self.assertTrue(marker)
+        job, marker, _suffix = job.partition("\n  landlock-port-control:\n")
+        self.assertTrue(marker)
+        for mechanism in MECHANISMS:
+            with self.subTest(mechanism=mechanism):
+                self.assertEqual(job.count(f"          - mechanism: {mechanism}\n"), 2)
+        self.assertEqual(job.count("            architecture: x86_64\n"), 4)
+        self.assertEqual(job.count("            architecture: aarch64\n"), 4)
+        self.assertIn("runs-on: ${{ matrix.runner }}", job)
+        self.assertIn("if: always()", job)
+        self.assertIn("run_resolution_indirection.sh", job)
+        self.assertIn("actions/upload-artifact@v4", job)
 
 
 if __name__ == "__main__":

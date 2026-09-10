@@ -59,7 +59,7 @@ class RoutingTransportRunnerTests(unittest.TestCase):
         _prefix, marker, routing_job = workflow.partition("  routing-transport-slice:\n")
         self.assertTrue(marker)
         routing_job, marker, _suffix = routing_job.partition(
-            "\n  landlock-port-control:\n"
+            "\n  resolution-indirection-slice:\n"
         )
         self.assertTrue(marker)
         for mechanism in MECHANISMS:
