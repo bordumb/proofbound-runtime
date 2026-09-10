@@ -1,6 +1,6 @@
 # Experiment 0001: Network authority mechanisms
 
-- **Status:** in progress; mechanism A and B controls recorded
+- **Status:** in progress; mechanism A, B, and C controls recorded
 - **Date:** 2026-09-10
 - **Roadmap:** RT-4.1 and RT-4.2
 - **Decision output:** proposed ADR 0003 after reviewed results
@@ -370,8 +370,64 @@ bounded fixture. It does not establish that `127.0.0.1` remains associated with
 test the full frozen attack matrix, or justify a production endpoint profile.
 The privileged loader, programs, maps for a future address set, attachment
 lifecycle, BTF/kernel behavior, and resolver/TLS binding would all require
-normative treatment. The next experiment step is the per-execution broker;
+normative treatment. The next experiment step was the per-execution broker;
 production schemas and Runtime behavior remain unchanged.
+
+## Recorded result: mechanism C control
+
+Two bounded harness failures preceded the valid broker observation. Run
+[`34435998227`](https://github.com/bordumb/proofbound-runtime/actions/runs/34435998227)
+did not terminate because an unused fixture listener retained an unbounded
+`accept`; it was canceled, and commit `629cf25` gave every fixture accept a
+deadline. Run
+[`34436379091`](https://github.com/bordumb/proofbound-runtime/actions/runs/34436379091)
+then retained complete failure bundles: after dropping to uid/gid 65534, the
+child could not traverse the hosted checkout path to its identified Python
+client. Commit `1e45d43` staged the exact four-file client package inside the
+disposable root, compared every staged byte with Git source, and recorded the
+expanded source inventory. Neither failed run is treated as a network
+observation.
+
+The explicit per-execution broker control ran at exact source commit
+`1e45d438a3c4fd4b92bd423bc914b3a57b2c2f5a` in GitHub Actions run
+[`34436646720`](https://github.com/bordumb/proofbound-runtime/actions/runs/34436646720).
+Both jobs used Linux `6.17.0-1022-azure` and the expected native architecture.
+Each child retained descriptor 4 as one Unix stream channel, reported
+`no_new_privs`, and installed the same 45-instruction seccomp program in every
+case on its architecture. Independent post-download verification reproduced
+every input digest, found no mismatched case, confirmed empty runner error
+streams and exit zero, and observed experiment cleanup.
+
+| Case group | x86_64 | aarch64 | Interpretation |
+| --- | ---: | ---: | --- |
+| Exact canonical echo request | exit 0 | exit 0 | The broker authenticated the fixed service and returned the exact application response. |
+| Added target field | exit 7 | exit 7 | The closed request schema cannot select another service. |
+| Direct TCP and UDP | exit 7 | exit 7 | Child socket creation is denied instead of bypassing the broker. |
+| Wrong fixture certificate | exit 7 | exit 7 | Broker-side TLS authentication closes the request. |
+| Zero, oversized, truncated, duplicate-key, invalid-UTF-8, and noncanonical frames | exit 7 | exit 7 | Malformed and ambiguous protocol inputs do not broaden the operation. |
+| Fork then direct TCP | exit 7 | exit 7 | A descendant retains the child seccomp boundary. |
+| Broker crash | exit 7 | exit 7 | Channel loss is a closed failure with no direct fallback. |
+| Unexpected inherited descriptor | exit 7 | exit 7 | The wrapper rejects an undeclared descriptor before client execution. |
+
+The architecture-specific seccomp instruction digests are
+`78e4b6f1a7653f58ea9ff2e941292e1cc7065be53bbf4ac28ac015f040419526`
+for x86_64 and
+`5d96d94c1351957a01d921d5f3c7fb25c075bd49b2a640b989667b048bb9159e`
+for aarch64. The x86_64 `RESULT.json` digest is
+`cbba2687382592ae8cd14a253ff2770c9e5a98f9d7611ec14661e848bb4750fc`;
+the aarch64 digest is
+`dd9d5e6d69fc7b36dfc8fc5a002a264aa8009ce72a6bae09a28f891c9d73e88d`.
+Both results record the pre-registered conclusion
+`explicit-broker-binds-fixed-service-control`.
+
+This control establishes only that one immutable explicit request protocol
+survived its bounded first corpus. It does not support arbitrary HTTP clients,
+DNS, CNAMEs, redirects, credentials, QUIC, connection pooling, transparent
+proxying, or a production Runtime profile. The broker, Python runtime and
+standard library, TLS stack, fixed configuration, parser, wrapper, channel,
+and fixture remain experiment trusted computing base. Mechanism D and the
+remaining full attack matrix are still required before an ADR can select a
+production claim.
 
 ## Evidence and publication boundary
 

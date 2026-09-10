@@ -1,6 +1,6 @@
 # Experiment 0001C: Explicit per-execution broker control
 
-- **Status:** design frozen; implementation not yet recorded
+- **Status:** first native control recorded; full parent matrix remains open
 - **Date:** 2026-09-10
 - **Parent protocol:** [Experiment 0001](0001-network-authority-mechanisms.md)
 - **Roadmap:** RT-4.2 mechanism C
@@ -150,3 +150,30 @@ DNS, QUIC, credentials, transparent proxying, or a production Runtime profile.
 If any case fails, the result is `unexpected-control-result`. The design is
 revised or rejected before another exact-subject run; a weaker fallback is not
 substituted silently.
+
+## Recorded control
+
+The valid control ran from exact commit
+`1e45d438a3c4fd4b92bd423bc914b3a57b2c2f5a` in GitHub Actions run
+[`34436646720`](https://github.com/bordumb/proofbound-runtime/actions/runs/34436646720).
+All 14 registered cases matched on x86_64 and aarch64: the canonical request
+exited zero, and target substitution, direct TCP, direct UDP, wrong TLS
+certificate, seven malformed-channel cases, descendant direct TCP, broker
+failure, and an undeclared descriptor each exited 7. Both result bundles
+record `no_new_privs`, one retained Unix stream descriptor, a stable
+45-instruction seccomp program per architecture, and successful cleanup.
+
+Independent download verification reproduced every `RESULT.json` input
+digest and found no unlisted input. The immutable result digests are:
+
+- x86_64:
+  `cbba2687382592ae8cd14a253ff2770c9e5a98f9d7611ec14661e848bb4750fc`;
+- aarch64:
+  `dd9d5e6d69fc7b36dfc8fc5a002a264aa8009ce72a6bae09a28f891c9d73e88d`.
+
+Runs `34435998227` and `34436379091` remain the historical harness failures
+that bounded fixture acceptance and made the dropped-identity client closure
+explicit. They are not positive mechanism evidence. The passing result retains
+the deliberately narrow conclusion
+`explicit-broker-binds-fixed-service-control`; it does not satisfy the parent
+experiment's production decision gate.

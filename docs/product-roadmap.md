@@ -68,11 +68,18 @@ production code. The cgroup-BPF endpoint control then ran at exact source
 `8043ed0` in run `34433053261`. Both architectures selected the allowed routing
 tuple, denied address and port substitutions, retained exact BPF/kernel
 identities, and observed cleanup. This confirms endpoint selection, not DNS or
-TLS service identity. The next experiment step is the per-execution broker.
-The explicit broker control design is frozen in
+TLS service identity. The explicit broker control design is frozen in
 [`0001c-explicit-broker-control.md`](experiments/0001c-explicit-broker-control.md):
 one preconnected framed channel, direct child network denial, fixed broker-side
-service/TLS policy, and a closed first native corpus. It records no result yet.
+service/TLS policy, and a closed first native corpus. After two retained
+harness failures exposed an unbounded fixture accept and an inaccessible
+dropped-identity client path, the corrected control ran at exact source
+`1e45d43` in run `34436646720`. All 14 registered cases matched on x86_64 and
+aarch64, and the downloaded immutable inventories verified independently. The
+result establishes only the narrow explicit-channel control; it does not yet
+cover the full network matrix or authorize production work. The next
+experiment step is the preconnected-descriptor control, followed by the
+remaining cross-mechanism attack and measurement matrix.
 
 Upstream promotion is intentionally paused at its review boundary. Proofbound
 PR 2 is green but still needs an independent approving review. A dry run of
@@ -750,7 +757,10 @@ Evaluate at least these profiles:
 3. **Per-execution egress broker.** Deny direct child network syscalls and give
    the child only an identified channel to a broker that enforces declared
    service and port policy. The broker, resolver, protocol parser, lifecycle,
-   logs, and configuration become TCB and receipt subjects.
+   logs, and configuration become TCB and receipt subjects. The first bounded
+   explicit-channel control passed 14 registered cases on both supported
+   architectures at `1e45d43`; arbitrary HTTP, DNS, redirects, credentials,
+   and transparent proxying remain outside that result.
 4. **Preconnected descriptors.** Strong for a small protocol-specific client,
    but not transparent to ordinary package managers, Git, or LLM SDKs and
    difficult to bind to later remote identity changes.
