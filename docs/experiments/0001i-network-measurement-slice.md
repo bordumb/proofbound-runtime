@@ -18,9 +18,10 @@ An incomplete functional result cannot enter this slice.
 ## Exact workload
 
 Each mechanism runs in a fresh loopback-only network namespace on native Linux.
-The fixture serves one identified TLS response for `allowed.test` at the fixed
-IPv4 endpoint `127.0.0.1:443`. The request is one complete TLS connection, one
-fixed HTTP request, one exact response-body check, and clean connection close.
+The fixture serves the already-frozen `exact` TLS response for `allowed.test`
+at the fixed IPv4 endpoint `127.0.0.1:443`. The request is one complete TLS
+connection, `GET /v1/echo`, one exact 32-byte response-body check, and clean
+connection close.
 The certificate, trust root, request bytes, response bytes, mechanism controls,
 and staged client are identified inputs.
 

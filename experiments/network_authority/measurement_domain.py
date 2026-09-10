@@ -84,8 +84,8 @@ REQUEST = {
     "transport": "tcp",
     "application_protocol": "https",
     "method": "GET",
-    "path": "/exact",
-    "response_body": "allowed-response",
+    "path": "/v1/echo",
+    "response_body": "0123456789abcdef0123456789abcdef",
 }
 PROFILE_FIELDS = {
     "id",
