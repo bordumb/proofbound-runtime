@@ -11,6 +11,7 @@ import platform
 import re
 import resource
 import shutil
+import signal
 import socket
 import ssl
 import subprocess
@@ -23,6 +24,7 @@ if __package__ in {None, ""}:
 
 from experiments.network_authority.measurement_domain import (
     ARCHITECTURES,
+    MAXIMUM_SECONDS,
     MECHANISMS,
     MeasurementDomainError,
     load_measurement_domain,
@@ -75,6 +77,24 @@ SETUP_STATE_NAMES = {
 
 class MeasurementRunError(Exception):
     """The native measurement did not produce one complete raw observation."""
+
+
+def deadline_expired(_signum: int, _frame: object) -> None:
+    """Abort a measurement that exceeds its pre-registered wall-clock bound."""
+
+    raise MeasurementRunError("network measurement exceeded 600 seconds")
+
+
+def run_bounded(arguments: argparse.Namespace) -> Path:
+    """Run one measurement within the frozen total wall-clock bound."""
+
+    previous = signal.signal(signal.SIGALRM, deadline_expired)
+    signal.alarm(MAXIMUM_SECONDS)
+    try:
+        return run(arguments)
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, previous)
 
 
 def clock_identity() -> tuple[int, str]:
@@ -759,7 +779,7 @@ def main() -> int:
             raise MeasurementRunError("measurement paths must be absolute")
         if arguments.mechanism == "cgroup-endpoint" and arguments.cgroup_parent is None:
             raise MeasurementRunError("endpoint measurement requires a cgroup parent")
-        run(arguments)
+        run_bounded(arguments)
         return 0
     except (
         MeasurementDomainError,

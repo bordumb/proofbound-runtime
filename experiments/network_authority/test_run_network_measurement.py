@@ -6,6 +6,7 @@ import argparse
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from experiments.network_authority.run_network_measurement import (
     MAX_STATE_FILES,
@@ -14,6 +15,7 @@ from experiments.network_authority.run_network_measurement import (
     clock_identity,
     direct_command,
     request_command,
+    run_bounded,
     tree_summary,
 )
 
@@ -37,6 +39,24 @@ def arguments(root: Path, mechanism: str) -> argparse.Namespace:
 
 
 class NetworkMeasurementRunnerTests(unittest.TestCase):
+    def test_total_measurement_uses_frozen_deadline(self) -> None:
+        arguments = argparse.Namespace()
+        with (
+            mock.patch(
+                "experiments.network_authority.run_network_measurement.signal.signal"
+            ) as install,
+            mock.patch(
+                "experiments.network_authority.run_network_measurement.signal.alarm"
+            ) as alarm,
+            mock.patch(
+                "experiments.network_authority.run_network_measurement.run",
+                return_value=Path("/measurement"),
+            ),
+        ):
+            self.assertEqual(run_bounded(arguments), Path("/measurement"))
+        self.assertEqual(alarm.call_args_list, [mock.call(600), mock.call(0)])
+        self.assertEqual(install.call_count, 2)
+
     def test_shell_records_only_after_namespace_process_reap(self) -> None:
         script = (
             Path(__file__).resolve().parent / "run_network_measurement.sh"

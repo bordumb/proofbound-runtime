@@ -14,6 +14,7 @@ except ModuleNotFoundError:
 
 
 MAX_DOMAIN_BYTES = 65536
+MAXIMUM_SECONDS = 600
 SCHEMA = "proofbound-runtime-network-measurement-domain/1"
 ARCHITECTURES = ("x86_64", "aarch64")
 MECHANISMS = (
@@ -248,7 +249,7 @@ def load_measurement_domain(path: Path) -> MeasurementDomain:
         "p95_algorithm": "nearest-rank",
         "lifecycle_iteration_count": 1000,
         "lifecycle_bit_order": "least-significant-bit-first",
-        "maximum_seconds": 600,
+        "maximum_seconds": MAXIMUM_SECONDS,
     }
     for field, expected in scalars.items():
         if type(decoded[field]) is not type(expected) or decoded[field] != expected:
