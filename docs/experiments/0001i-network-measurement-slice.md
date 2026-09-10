@@ -1,6 +1,6 @@
 # Experiment 0001I: Network mechanism measurement slice
 
-- **Status:** pre-registered; implementation not yet executed
+- **Status:** complete; all eight hosted results independently verified
 - **Date:** 2026-09-10
 - **Parent protocol:** [Experiment 0001E](0001e-decision-matrix-execution.md)
 - **Roadmap:** RT-4.2 and RT-4.3
@@ -128,3 +128,47 @@ come from one exact clean source commit, pass independent verification after
 download, retain 100 setup and 100 request samples, retain all 1,000 lifecycle
 bits, and report no lifecycle failure. Completion authorizes deterministic
 comparison only. It does not authorize production network behavior.
+
+## Hosted result
+
+The slice completed at exact source
+`f78fd26338e6fe414ca5b8e5586bf8a99c804a9c` in GitHub Actions run
+[`34539937335`](https://github.com/bordumb/proofbound-runtime/actions/runs/34539937335).
+All eight mechanism-and-architecture jobs completed. After download, the
+independent standard-library-only verifier accepted each immutable result
+directory. Every result retains 100 cold setup samples, 100 exact-request
+samples, and 1,000 of 1,000 successful lifecycle trials with no first failure.
+
+| Mechanism | Architecture | Setup median / p95 (ns) | Request median / p95 (ns) | `RESULT.json` SHA-256 |
+| --- | --- | ---: | ---: | --- |
+| `landlock-port` | aarch64 | 2,547,548 / 4,145,144 | 281,141,276 / 313,310,448 | `62abf2a8405521927e96e182bdf8127c0537eedbe4a52ad64bd688b66fd58385` |
+| `landlock-port` | x86_64 | 2,579,103 / 3,380,368 | 288,431,650 / 293,031,600 | `99d527b0fcb04e8d369bec91dd92b683286f0d00df62f0dc026ce38b5350f8f7` |
+| `cgroup-endpoint` | aarch64 | 6,451,516 / 18,002,296 | 278,231,640 / 279,895,480 | `d31bbb7667894c529d99b43c39dabba3efa34551045337774847060bf85d5fa3` |
+| `cgroup-endpoint` | x86_64 | 5,867,338 / 13,800,283 | 288,491,790 / 301,895,344 | `f81f1943a170dded207b5b639a17c7d47ef6c25b0458318bf07655ee5cffff0a` |
+| `explicit-broker` | aarch64 | 86,731,092 / 86,846,136 | 284,100,368 / 295,465,256 | `306a4f9d423471a17134e38b409ade07200813093c564802717d635fe0dd6b17` |
+| `explicit-broker` | x86_64 | 96,946,069 / 97,352,809 | 291,989,294 / 294,363,119 | `2a2158f1b4917791e5e44fe29620577c485979f9a246be75f809a7a987ae1e66` |
+| `preconnected-channel` | aarch64 | 22,391,804 / 22,994,776 | 270,483,508 / 278,302,904 | `4f72fc706356f61f125e3a706ada71f19fea83416d9c55800f0260411ae8313b` |
+| `preconnected-channel` | x86_64 | 14,256,653 / 15,673,552 | 285,143,749 / 291,164,258 | `24dddba925fb8cb9f435af119c5948766f300d917daceb5862fce1205c1ff8b7` |
+
+The mediator observation was one maximum simultaneous mediator process in
+both mediated profiles. Maximum retained mediator RSS was 22,994,944 bytes
+and 24,244,224 bytes for the aarch64 and x86_64 explicit broker, and
+24,510,464 bytes and 25,886,720 bytes for the corresponding preconnected
+connector. Direct profiles correctly report that mediator measurements do not
+apply.
+
+Two earlier hosted attempts remain part of the failure history. Run
+`34537669699` exposed that a dropped child could not traverse the checkout and
+that the mediated profiles had selected the wrong staged client. Run
+`34538916842` then exposed a wrapper-dependent missing-executable exit in the
+cgroup lifecycle trial. Later commits staged the exact client closure under a
+traversable measurement root, replaced the ambiguous injected failure with a
+fixed false result, retained bounded lifecycle diagnostics, and added a
+positive falsifier before this clean run. No registered functional outcome,
+measurement definition, residual authority, or decision criterion changed.
+
+These measurements compare bounded operational observations only. In
+particular, the low setup cost of port-only Landlock does not repair its broad
+port authority, and the request series includes the common fresh TLS exchange.
+The result authorizes the deterministic comparison step; it does not select a
+mechanism or authorize production network behavior.
