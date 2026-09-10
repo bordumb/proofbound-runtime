@@ -75,6 +75,7 @@ class DecisionHttpFixtureTests(unittest.TestCase):
     def live_exchange(self, root: Path, bind_ip: str, script: str) -> dict[str, object]:
         certificate, private_key = self.certificate(root)
         ready = root / "ready.json"
+        contact = root / "contact.json"
         observation = root / "observation.json"
         errors: list[BaseException] = []
 
@@ -87,6 +88,7 @@ class DecisionHttpFixtureTests(unittest.TestCase):
                     certificate,
                     private_key,
                     ready,
+                    contact,
                     observation,
                 )
             except BaseException as error:
@@ -130,6 +132,9 @@ class DecisionHttpFixtureTests(unittest.TestCase):
         self.assertFalse(thread.is_alive())
         self.assertEqual(errors, [])
         self.assertEqual(bytes(response), expected_response)
+        contact_observation = json.loads(contact.read_bytes())
+        self.assertEqual(contact_observation["event"], "tcp-accepted")
+        self.assertEqual(contact_observation["family"], endpoint["family"])
         return json.loads(observation.read_bytes())
 
     def test_live_ipv4_exact_exchange_records_tls_identity(self) -> None:
@@ -144,6 +149,48 @@ class DecisionHttpFixtureTests(unittest.TestCase):
             observation = self.live_exchange(Path(temporary), "::1", "redirect-host")
         self.assertEqual(observation["event"], "redirect-host")
         self.assertEqual(observation["sni"], "allowed.test")
+
+    def test_failed_tls_still_records_routing_contact_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            certificate, private_key = self.certificate(root)
+            ready = root / "ready.json"
+            contact = root / "contact.json"
+            observation = root / "observation.json"
+            errors: list[BaseException] = []
+
+            def target() -> None:
+                try:
+                    serve_tls_fixture(
+                        "127.0.0.1",
+                        0,
+                        "exact",
+                        certificate,
+                        private_key,
+                        ready,
+                        contact,
+                        observation,
+                    )
+                except BaseException as error:
+                    errors.append(error)
+
+            thread = threading.Thread(target=target)
+            thread.start()
+            for _ in range(100):
+                if ready.is_file() or errors:
+                    break
+                time.sleep(0.01)
+            endpoint = json.loads(ready.read_bytes())
+            with socket.create_connection(
+                (endpoint["address"], endpoint["port"]), timeout=2
+            ) as connection:
+                connection.sendall(b"not-tls\n")
+            thread.join(timeout=2)
+            self.assertFalse(thread.is_alive())
+            self.assertEqual(len(errors), 1)
+            self.assertIsInstance(errors[0], ssl.SSLError)
+            self.assertEqual(json.loads(contact.read_bytes())["event"], "tcp-accepted")
+            self.assertFalse(observation.exists())
 
 
 if __name__ == "__main__":
