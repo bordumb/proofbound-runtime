@@ -190,6 +190,14 @@ This mechanism is deliberately narrow. It may fit a purpose-built client but
 is not transparent to ordinary package managers, Git, or general LLM SDKs. The
 decision must not generalize a passing purpose-built fixture to those workloads.
 
+The first control is frozen separately in
+[Experiment 0001D](0001d-preconnected-channel-control.md). Because userspace
+TLS state cannot be transferred as only a kernel descriptor, it keeps one
+authenticated TLS session in a connector and passes one local transparent
+application channel. The control must record that this denies alternate
+network paths but permits arbitrary bounded application bytes to the selected
+service session.
+
 ## Attack matrix
 
 Each row runs against every mechanism. “Allowed” means the exact frozen

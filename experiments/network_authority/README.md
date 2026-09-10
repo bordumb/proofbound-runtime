@@ -55,6 +55,13 @@ service/TLS policy, and deterministic TLS fixture. The broker and wrapper are
 experiment trusted computing base. Neither is linked into Runtime or included
 in a release bundle.
 
+The fourth control is specified in
+[`0001d-preconnected-channel-control.md`](../../docs/experiments/0001d-preconnected-channel-control.md).
+It keeps one authenticated TLS session in a connector and gives the child one
+transparent local stream for that session. Its implementation must preserve
+the contrast with the explicit broker: routing and TLS identity are fixed, but
+the connector does not parse or constrain application operations.
+
 Run the control as root on a clean exact Git commit:
 
 ```console
