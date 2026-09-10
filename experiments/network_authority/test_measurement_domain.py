@@ -43,6 +43,10 @@ class MeasurementDomainTests(unittest.TestCase):
                 )
             )
             self.assertTrue(profile.expected_residual_authority)
+        self.assertIn(
+            "bpf-maps",
+            domain.profile("cgroup-endpoint").nonzero_inventory_categories,
+        )
 
     def test_counts_aggregation_and_bit_order_are_frozen(self) -> None:
         mutations = (

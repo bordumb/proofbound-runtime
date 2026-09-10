@@ -60,8 +60,9 @@ zero-valued categories:
 
 The inventory also retains each nonzero member's logical role, exact SHA-256
 identity, and byte size. Counts and totals are derived from those members. BPF
-instruction bytes and Landlock rule bytes use their canonical experiment
-encoding rather than an in-memory object size.
+instruction bytes, BPF map configuration bytes, Landlock rule bytes, and local
+channel configuration bytes use their canonical experiment encoding rather
+than an in-memory kernel or language-object size.
 
 ## Platform requirements
 

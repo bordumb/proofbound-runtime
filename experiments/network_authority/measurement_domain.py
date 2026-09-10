@@ -121,7 +121,7 @@ PROFILE_RULES = {
         "mediator_metrics": False,
         "nonzero_inventory_categories": (
             "trusted-binaries", "source-configuration", "certificates",
-            "bpf-programs",
+            "bpf-programs", "bpf-maps",
         ),
         "required_harness_features": (
             "root", "network-namespace", "mount-namespace", "cgroup-v2",
