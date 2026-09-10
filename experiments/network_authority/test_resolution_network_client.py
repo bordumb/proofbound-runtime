@@ -95,6 +95,27 @@ class ResolutionNetworkClientTests(unittest.TestCase):
         with mock.patch("socket.socket", return_value=fake):
             self.assertEqual(raw_contact("127.0.0.2", 443), "routing-denied")
 
+    def test_raw_contact_uses_retained_scalar_write(self) -> None:
+        fake = mock.MagicMock()
+        fake.__enter__.return_value = fake
+        fake.fileno.return_value = 9
+        with mock.patch("socket.socket", return_value=fake), mock.patch(
+            "experiments.network_authority.resolution_network_client.os.write",
+            return_value=len(b"not-tls\n"),
+        ) as written:
+            self.assertEqual(raw_contact("127.0.0.2", 443), "undeclared-contact")
+        written.assert_called_once_with(9, memoryview(b"not-tls\n"))
+
+    def test_proxy_connect_policy_denial_is_routing_evidence(self) -> None:
+        with mock.patch(
+            "experiments.network_authority.resolution_network_client.proxy_exchange",
+            side_effect=OSError(errno.EPERM, "denied"),
+        ):
+            self.assertEqual(
+                execute("proxy-http", "127.0.0.2", 443, Path("/absent")),
+                ["routing-denied"],
+            )
+
     def test_channel_redirect_uses_inherited_stream_then_attempts_followup(self) -> None:
         fixture, child = socket.socketpair()
         request, response, _event = __import__(

@@ -117,7 +117,10 @@ def raw_contact(address: str, port: int) -> str:
             if error.errno in {errno.EPERM, errno.EACCES}:
                 return "routing-denied"
             raise
-        channel.sendall(b"not-tls\n")
+        # Use the scalar write syscall retained by the child boundary. Python's
+        # socket.sendall uses sendto on Linux, which is intentionally denied to
+        # close datagram-style ambient authority.
+        _write_all(channel.fileno(), b"not-tls\n")
         channel.shutdown(socket.SHUT_WR)
         return "undeclared-contact"
 
@@ -213,7 +216,12 @@ def execute(
         return [action, raw_contact(target_address, target_port)]
     if action in {"proxy-http", "proxy-socks"}:
         protocol = "http-connect" if action == "proxy-http" else "socks5"
-        observation = proxy_exchange(address, port, ca_certificate, protocol)
+        try:
+            observation = proxy_exchange(address, port, ca_certificate, protocol)
+        except OSError as error:
+            if error.errno in {errno.EPERM, errno.EACCES}:
+                return ["routing-denied"]
+            raise
         if observation["event"] != "proxy-target-reached":
             raise ResolutionNetworkClientError("proxy event changed")
         return ["proxy-target-reached"]
