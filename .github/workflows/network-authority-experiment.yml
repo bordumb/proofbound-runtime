@@ -2,6 +2,10 @@ name: Network authority experiment
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/network-authority-experiment.yml"
+      - "experiments/network_authority/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -13,6 +17,8 @@ permissions:
 jobs:
   landlock-port-control:
     name: Landlock port control (${{ matrix.architecture }})
+    env:
+      EXPERIMENT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     strategy:
       fail-fast: false
       matrix:
@@ -24,11 +30,13 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 10
     steps:
-      - name: Check out the exact dispatch head
+      - name: Check out the exact experiment head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXPERIMENT_SHA }}
 
-      - name: Confirm the exact dispatch head
-        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Confirm the exact experiment head
+        run: test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
 
       - name: Falsify result publication
         run: python3 -m unittest experiments.network_authority.test_record_port_control
@@ -43,7 +51,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: network-authority-port-control-${{ matrix.architecture }}-${{ github.sha }}
+          name: network-authority-port-control-${{ matrix.architecture }}-${{ env.EXPERIMENT_SHA }}
           path: ${{ runner.temp }}/network-authority/${{ matrix.architecture }}
           if-no-files-found: error
           retention-days: 14
