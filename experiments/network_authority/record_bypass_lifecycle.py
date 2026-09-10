@@ -62,6 +62,7 @@ COMMON_SUBJECTS = (
     "experiments/network_authority/run_bypass_syscall_case.py",
     "experiments/network_authority/run_connection_reuse_case.py",
     "experiments/network_authority/stopped_release_control.c",
+    "experiments/network_authority/verify_bypass_lifecycle.py",
 )
 CONTROL_SOURCES = {
     "landlock-port": "experiments/network_authority/routing_landlock_control.c",
