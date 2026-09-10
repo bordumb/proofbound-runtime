@@ -56,6 +56,13 @@ native falsifier inventory. It is not yet an accepted production contract.
 Memory implementation remains paused until review resolves the draft's
 explicit decisions and the upstream consolidation boundary is satisfied.
 
+RT-4.1 is pre-registered at `946c457`. Experiment 0001 freezes the first HTTPS
+workload, controlled DNS/TLS fixture, four candidate mechanisms, common attack
+matrix, exact result inventory, measurements, and decision criteria. It records
+no result and authorizes no network production code. The next network step is
+to build the disposable fixture and run the port-only Landlock control without
+changing the version 1 Runtime boundary.
+
 Upstream promotion is intentionally paused at its review boundary. Proofbound
 PR 2 is green but still needs an independent approving review. A dry run of
 the later integration promotion correctly failed because its head retained an
