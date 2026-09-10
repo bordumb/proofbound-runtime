@@ -17,6 +17,7 @@ from experiments.network_authority.run_network_measurement import (
     broker_setup_command,
     clock_identity,
     direct_command,
+    process_failure_diagnostic,
     request_command,
     run_bounded,
     tree_summary,
@@ -42,6 +43,21 @@ def arguments(root: Path, mechanism: str) -> argparse.Namespace:
 
 
 class NetworkMeasurementRunnerTests(unittest.TestCase):
+    def test_failed_process_diagnostic_retains_exact_bounded_streams(self) -> None:
+        completed = subprocess.CompletedProcess(
+            ["fixture"], 17, stdout=b"out\x00", stderr=b"err\xff"
+        )
+        diagnostic = process_failure_diagnostic(completed)
+        self.assertEqual(
+            diagnostic,
+            '{"returncode":17,'
+            '"schema":"proofbound-runtime-network-measurement-process-failure/1",'
+            '"stderr_base64":"ZXJy/w==",'
+            '"stderr_sha256":"5ba88cd1254e9fb68085dbf9165b786f9de30b3b26b5e77a06c2c030bf1aea6d",'
+            '"stdout_base64":"b3V0AA==",'
+            '"stdout_sha256":"9fa08a0adfa661d19d078477b29d287bd556130ddbb88d8204382802869d5cff"}',
+        )
+
     @unittest.skipUnless(
         sys.platform.startswith("linux") and os.geteuid() == 0,
         "requires Linux root to exercise the dropped measurement identity",

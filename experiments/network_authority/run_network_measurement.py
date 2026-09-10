@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -134,6 +135,19 @@ def bounded_process(command: list[str], root: Path, timeout: int = 10) -> subpro
     if len(completed.stdout) > MAX_PROCESS_OUTPUT or len(completed.stderr) > MAX_PROCESS_OUTPUT:
         raise MeasurementRunError("measurement process output exceeded its bound")
     return completed
+
+
+def process_failure_diagnostic(completed: subprocess.CompletedProcess[bytes]) -> str:
+    """Retain exact bounded child output in an ASCII failure diagnostic."""
+
+    return canonical_json({
+        "returncode": completed.returncode,
+        "schema": "proofbound-runtime-network-measurement-process-failure/1",
+        "stderr_base64": base64.b64encode(completed.stderr).decode("ascii"),
+        "stderr_sha256": sha256(completed.stderr),
+        "stdout_base64": base64.b64encode(completed.stdout).decode("ascii"),
+        "stdout_sha256": sha256(completed.stdout),
+    }).decode("ascii").rstrip("\n")
 
 
 def tree_summary(root: Path) -> dict[str, object]:
@@ -515,9 +529,20 @@ def run_request(
         )
         completed_ns = now_ns(clock)
         if completed.returncode != 0:
-            raise MeasurementRunError("exact request runner failed")
+            raise MeasurementRunError(
+                "exact request runner failed: "
+                f"{process_failure_diagnostic(completed)}"
+            )
         raw = read_document(case_root / "raw-cell.json")
-        observed = classify(raw, exact_case, arguments.mechanism)  # type: ignore[arg-type]
+        try:
+            observed = classify(  # type: ignore[arg-type]
+                raw, exact_case, arguments.mechanism
+            )
+        except RoutingCellError as error:
+            raw_diagnostic = canonical_json(raw).decode("ascii").rstrip("\n")
+            raise MeasurementRunError(
+                f"exact request classification failed: {error}; raw={raw_diagnostic}"
+            ) from error
         if observed.outcome != "allowed" or observed.stage != "application-protocol":
             raise MeasurementRunError("exact request classification changed")
         fixture = read_document(case_root / "fixture-observation.json")
