@@ -6,6 +6,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -22,6 +24,19 @@ CASES = (
 
 
 class RecorderTests(unittest.TestCase):
+    def test_direct_entrypoint_resolves_repository_package(self) -> None:
+        entrypoint = Path(__file__).with_name("record_port_control.py").resolve()
+        with tempfile.TemporaryDirectory() as temporary:
+            completed = subprocess.run(
+                [sys.executable, str(entrypoint), "--help"],
+                cwd=temporary,
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+
     def fixture(self, root: Path) -> tuple[Path, Path]:
         source = root / "source"
         work = root / "work"

@@ -47,6 +47,7 @@ if [[ "$repository_root" != "$expected_root" || $EUID -ne 0 ]]; then
   echo 'network namespace handoff identity mismatch' >&2
   exit 4
 fi
+cd "$repository_root"
 
 for command in awk cc chown curl ip openssl python3 sha256sum ss stat; do
   if ! command -v "$command" >/dev/null 2>&1; then
@@ -274,7 +275,7 @@ fi
 btf_sha256="$(sha256sum /sys/kernel/btf/vmlinux | awk '{ print $1 }')"
 btf_size="$(stat -c %s /sys/kernel/btf/vmlinux)"
 
-python3 "$repository_root/experiments/network_authority/record_endpoint_control.py" \
+python3 -m experiments.network_authority.record_endpoint_control \
   --output "$output_directory" \
   --source-root "$repository_root" \
   --work-root "$work_root" \

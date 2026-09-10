@@ -47,6 +47,7 @@ if [[ "$repository_root" != "$expected_root" || $EUID -ne 0 ]]; then
   echo 'network namespace handoff identity mismatch' >&2
   exit 4
 fi
+cd "$repository_root"
 
 for command in cc curl ip openssl python3 ss; do
   if ! command -v "$command" >/dev/null 2>&1; then
@@ -185,7 +186,7 @@ run_curl \
 wrong_certificate_denied=$?
 set -e
 
-python3 "$repository_root/experiments/network_authority/record_port_control.py" \
+python3 -m experiments.network_authority.record_port_control \
   --output "$output_directory" \
   --source-root "$repository_root" \
   --work-root "$work_root" \
