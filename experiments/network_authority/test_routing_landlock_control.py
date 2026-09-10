@@ -32,8 +32,13 @@ class RoutingLandlockProbeTests(unittest.TestCase):
 
 
 class RoutingLandlockHeaderCompatibilityTests(unittest.TestCase):
-    @unittest.skipUnless(shutil.which("zig"), "zig compiler unavailable")
     def test_control_compiles_against_filesystem_only_landlock_header(self) -> None:
+        if zig := shutil.which("zig"):
+            compiler = [zig, "cc", "-target", "aarch64-linux-musl"]
+        elif sys.platform.startswith("linux") and (cc := shutil.which("cc")):
+            compiler = [cc]
+        else:
+            self.skipTest("Linux compiler unavailable")
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             linux = root / "linux"
@@ -53,10 +58,7 @@ enum landlock_rule_type { LANDLOCK_RULE_PATH_BENEATH = 1 };
             output = root / "routing-landlock-control"
             completed = subprocess.run(
                 [
-                    "zig",
-                    "cc",
-                    "-target",
-                    "aarch64-linux-musl",
+                    *compiler,
                     "-I",
                     str(root),
                     "-std=c11",
