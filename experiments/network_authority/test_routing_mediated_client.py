@@ -9,6 +9,7 @@ import threading
 import unittest
 
 from experiments.network_authority.explicit_broker import wire_json
+from experiments.network_authority.decision_http_fixture import EXACT_REQUEST, script_exchange
 from experiments.network_authority.routing_mediated_client import (
     ALLOWED_RESPONSE,
     DIRECT_CASES,
@@ -88,6 +89,42 @@ class RoutingMediatedClientTests(unittest.TestCase):
         finally:
             child.close()
             thread.join(timeout=2)
+
+    def test_preconnected_mode_uses_transparent_http_not_broker_framing(self) -> None:
+        response = script_exchange("exact")[1]
+        parent, child = socket.socketpair()
+        received: list[bytes] = []
+
+        def serve() -> None:
+            request = bytearray()
+            while True:
+                chunk = parent.recv(1024)
+                if not chunk:
+                    break
+                request.extend(chunk)
+            received.append(bytes(request))
+            parent.sendall(response)
+            parent.shutdown(socket.SHUT_WR)
+            parent.close()
+
+        thread = threading.Thread(target=serve)
+        thread.start()
+        try:
+            observed = run("exact-service-ipv6", child.fileno(), "preconnected-channel")
+        finally:
+            child.close()
+            thread.join(timeout=2)
+        self.assertEqual(received, [EXACT_REQUEST])
+        self.assertEqual(observed["event"], "mediated-response")
+
+    def test_preconnected_mode_rejects_target_cases_before_channel_use(self) -> None:
+        parent, child = socket.socketpair()
+        try:
+            with self.assertRaises(MediatedClientError):
+                run("literal-allowed-address", child.fileno(), "preconnected-channel")
+        finally:
+            parent.close()
+            child.close()
 
     def test_unconfined_direct_action_is_observed_as_exposure(self) -> None:
         parent, child = socket.socketpair()

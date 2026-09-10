@@ -16,6 +16,7 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from experiments.network_authority.explicit_broker import MAX_FRAME_BYTES, wire_json
+from experiments.network_authority.decision_http_fixture import EXACT_REQUEST, script_exchange
 from experiments.network_authority.record_common import canonical_json, write_new
 from experiments.network_authority.routing_transport_case import ROUTING_ACTIONS
 from experiments.network_authority.routing_transport_client import (
@@ -133,7 +134,26 @@ def observation(
     return result
 
 
-def run(case_id: str, descriptor: int) -> dict[str, object]:
+def transparent_exchange(descriptor: int) -> bytes:
+    """Exchange the exact HTTP bytes on a preauthenticated transparent stream."""
+
+    expected = script_exchange("exact")[1]
+    write_all(descriptor, EXACT_REQUEST)
+    library = ctypes.CDLL(None, use_errno=True)
+    if library.shutdown(descriptor, socket.SHUT_WR) != 0:
+        value = ctypes.get_errno()
+        raise OSError(value, os.strerror(value))
+    response = read_exact(descriptor, len(expected))
+    if os.read(descriptor, 1) != b"" or response != expected:
+        raise MediatedClientError("transparent response is not exact")
+    return response
+
+
+def run(
+    case_id: str,
+    descriptor: int,
+    channel_mode: str = "explicit-broker",
+) -> dict[str, object]:
     """Run one child action without interpreting trusted mediator state."""
 
     action = ROUTING_ACTIONS[case_id][0]
@@ -151,6 +171,14 @@ def run(case_id: str, descriptor: int) -> dict[str, object]:
         return bind_attempt(case_id, action, socket.SOCK_STREAM)
     if case_id == "udp-bind":
         return bind_attempt(case_id, action, socket.SOCK_DGRAM)
+
+    if channel_mode == "preconnected-channel":
+        if case_id not in {"exact-service-ipv4", "exact-service-ipv6"}:
+            raise MediatedClientError("case cannot use the transparent channel")
+        response = transparent_exchange(descriptor)
+        return observation(case_id, "mediated-response", response=response)
+    if channel_mode != "explicit-broker":
+        raise MediatedClientError("mediated channel mode is invalid")
 
     response = exchange(descriptor, request_for_case(case_id))
     if case_id in {"exact-service-ipv4", "exact-service-ipv6"}:
@@ -170,6 +198,11 @@ def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(allow_abbrev=False)
     result.add_argument("--case", choices=EXECUTABLE_CASES, required=True)
     result.add_argument("--fd", type=int, required=True)
+    result.add_argument(
+        "--channel-mode",
+        choices=("explicit-broker", "preconnected-channel"),
+        required=True,
+    )
     result.add_argument("--started-file", type=Path, required=True)
     result.add_argument("--observation", type=Path, required=True)
     return result
@@ -188,7 +221,10 @@ def main() -> int:
         ):
             raise MediatedClientError("mediated client arguments are invalid")
         write_new(arguments.started_file, b"started\n")
-        write_new(arguments.observation, canonical_json(run(arguments.case, arguments.fd)))
+        write_new(
+            arguments.observation,
+            canonical_json(run(arguments.case, arguments.fd, arguments.channel_mode)),
+        )
         return 0
     except (MediatedClientError, OSError, ValueError) as error:
         print(f"routing mediated client failed: {error}", file=sys.stderr)
