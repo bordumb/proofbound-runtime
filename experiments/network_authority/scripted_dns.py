@@ -3,9 +3,21 @@
 
 from __future__ import annotations
 
+import argparse
+import hashlib
 import ipaddress
+import select
+import socket
 import struct
+import sys
+import time
 from dataclasses import dataclass
+from pathlib import Path
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from experiments.network_authority.record_common import canonical_json, write_new
 
 
 TYPE_A = 1
@@ -357,3 +369,159 @@ def validate_resolution(
         question_type=query.question_type,
         ttl=TTL,
     )
+
+
+def read_exact(connection: socket.socket, size: int) -> bytes:
+    """Read one exact bounded DNS-over-TCP field."""
+
+    result = bytearray()
+    while len(result) < size:
+        chunk = connection.recv(size - len(result))
+        if not chunk:
+            raise DnsError("DNS-over-TCP message is truncated")
+        result.extend(chunk)
+    return bytes(result)
+
+
+def serve_dns(
+    bind_ip: str,
+    port: int,
+    script: str,
+    maximum_queries: int,
+    ready_file: Path,
+    transcript_file: Path,
+) -> int:
+    """Serve one finite UDP/TCP script without an upstream resolver."""
+
+    address = str(ipaddress.IPv4Address(bind_ip))
+    if (
+        not 0 <= port <= 65535
+        or script not in SCRIPTS
+        or not 1 <= maximum_queries <= 64
+        or not ready_file.is_absolute()
+        or not transcript_file.is_absolute()
+    ):
+        raise DnsError("DNS server configuration is invalid")
+    transcript = []
+    ordinals: dict[tuple[str, int], int] = {}
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcp_listener:
+        tcp_listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        tcp_listener.bind((address, port))
+        actual_port = tcp_listener.getsockname()[1]
+        tcp_listener.listen(4)
+        tcp_listener.setblocking(False)
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_listener:
+            udp_listener.bind((address, actual_port))
+            udp_listener.setblocking(False)
+            write_new(
+                ready_file,
+                canonical_json(
+                    {
+                        "address": address,
+                        "port": actual_port,
+                        "schema": "proofbound-runtime-scripted-dns-ready/1",
+                    }
+                ),
+            )
+            deadline = time.monotonic() + 8
+            while len(transcript) < maximum_queries:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise DnsError("DNS fixture query deadline expired")
+                readable, _, _ = select.select(
+                    [udp_listener, tcp_listener], [], [], remaining
+                )
+                if not readable:
+                    raise DnsError("DNS fixture query deadline expired")
+                transport = "udp" if udp_listener in readable else "tcp"
+                if transport == "udp":
+                    query_data, peer = udp_listener.recvfrom(MAX_PACKET_BYTES + 1)
+                    if len(query_data) > MAX_PACKET_BYTES:
+                        raise DnsError("UDP query exceeded its packet bound")
+                    sender = udp_listener
+                    connection = None
+                else:
+                    connection, peer = tcp_listener.accept()
+                    connection.settimeout(2)
+                    size = struct.unpack("!H", read_exact(connection, 2))[0]
+                    if size == 0 or size > MAX_PACKET_BYTES:
+                        connection.close()
+                        raise DnsError("DNS-over-TCP length is invalid")
+                    query_data = read_exact(connection, size)
+                    sender = connection
+                try:
+                    query = parse_query(query_data)
+                    key = (query.name, query.question_type)
+                    ordinal = ordinals.get(key, 0)
+                    ordinals[key] = ordinal + 1
+                    response = response_for(query_data, script, ordinal, transport)
+                    if response is not None:
+                        if transport == "udp":
+                            sent = sender.sendto(response, peer)
+                            if sent != len(response):
+                                raise DnsError("UDP response was truncated")
+                        else:
+                            sender.sendall(struct.pack("!H", len(response)) + response)
+                    transcript.append(
+                        {
+                            "name": query.name,
+                            "ordinal": ordinal,
+                            "query_sha256": hashlib.sha256(query_data).hexdigest(),
+                            "question_type": query.question_type,
+                            "response_sha256": (
+                                hashlib.sha256(response).hexdigest()
+                                if response is not None
+                                else None
+                            ),
+                            "transport": transport,
+                        }
+                    )
+                finally:
+                    if connection is not None:
+                        connection.close()
+    write_new(
+        transcript_file,
+        canonical_json(
+            {
+                "queries": transcript,
+                "schema": "proofbound-runtime-scripted-dns-transcript/1",
+                "script": script,
+            }
+        ),
+    )
+    return 0
+
+
+def parser() -> argparse.ArgumentParser:
+    """Build the scripted server's closed command interface."""
+
+    result = argparse.ArgumentParser(allow_abbrev=False)
+    result.add_argument("--bind-ip", required=True)
+    result.add_argument("--port", type=int, required=True)
+    result.add_argument("--script", choices=sorted(SCRIPTS), required=True)
+    result.add_argument("--maximum-queries", type=int, required=True)
+    result.add_argument("--ready-file", type=Path, required=True)
+    result.add_argument("--transcript-file", type=Path, required=True)
+    return result
+
+
+def main() -> int:
+    """Run one finite DNS fixture with a bounded diagnostic."""
+
+    arguments = parser().parse_args()
+    try:
+        return serve_dns(
+            arguments.bind_ip,
+            arguments.port,
+            arguments.script,
+            arguments.maximum_queries,
+            arguments.ready_file,
+            arguments.transcript_file,
+        )
+    except (DnsError, OSError, ValueError) as error:
+        print(f"scripted DNS fixture failed: {error}", file=sys.stderr)
+        return 7
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -3,7 +3,13 @@
 from __future__ import annotations
 
 import struct
+import json
+import socket
+import tempfile
+import threading
+import time
 import unittest
+from pathlib import Path
 
 from experiments.network_authority.scripted_dns import (
     FLAG_AD,
@@ -13,7 +19,9 @@ from experiments.network_authority.scripted_dns import (
     DnsError,
     build_query,
     parse_query,
+    read_exact,
     response_for,
+    serve_dns,
     validate_resolution,
 )
 
@@ -116,6 +124,95 @@ class ScriptedDnsTests(unittest.TestCase):
         response[1] ^= 1
         with self.assertRaises(DnsError):
             validate_resolution(query, bytes(response), allow_cname=False)
+
+    def start_server(
+        self, root: Path, script: str, queries: int
+    ) -> tuple[threading.Thread, Path, Path, list[BaseException]]:
+        ready = root / "ready.json"
+        transcript = root / "transcript.json"
+        errors: list[BaseException] = []
+
+        def target() -> None:
+            try:
+                serve_dns("127.0.0.1", 0, script, queries, ready, transcript)
+            except BaseException as error:
+                errors.append(error)
+
+        thread = threading.Thread(target=target)
+        thread.start()
+        for _ in range(100):
+            if ready.is_file() or errors:
+                break
+            time.sleep(0.01)
+        self.assertTrue(ready.is_file(), errors)
+        return thread, ready, transcript, errors
+
+    def test_udp_server_publishes_one_exact_transcript(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            thread, ready, transcript, errors = self.start_server(root, "stable", 1)
+            endpoint = json.loads(ready.read_bytes())
+            query = build_query(59, "allowed.test", TYPE_A)
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as client:
+                client.settimeout(2)
+                client.sendto(query, (endpoint["address"], endpoint["port"]))
+                response, _ = client.recvfrom(512)
+            resolution = validate_resolution(query, response, allow_cname=False)
+            self.assertEqual(resolution.address, "127.0.0.1")
+            thread.join(timeout=2)
+            self.assertFalse(thread.is_alive())
+            self.assertEqual(errors, [])
+            recorded = json.loads(transcript.read_bytes())
+            self.assertEqual(recorded["script"], "stable")
+            self.assertEqual(recorded["queries"][0]["transport"], "udp")
+
+    def test_truncated_udp_requires_exact_tcp_completion(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            thread, ready, transcript, errors = self.start_server(
+                root, "truncated-fallback", 2
+            )
+            endpoint = json.loads(ready.read_bytes())
+            query = build_query(61, "allowed.test", TYPE_AAAA)
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp:
+                udp.settimeout(2)
+                udp.sendto(query, (endpoint["address"], endpoint["port"]))
+                truncated, _ = udp.recvfrom(512)
+            with self.assertRaises(DnsError):
+                validate_resolution(query, truncated, allow_cname=False)
+            with socket.create_connection(
+                (endpoint["address"], endpoint["port"]), timeout=2
+            ) as tcp:
+                tcp.sendall(struct.pack("!H", len(query)) + query)
+                size = struct.unpack("!H", read_exact(tcp, 2))[0]
+                completed = read_exact(tcp, size)
+            resolution = validate_resolution(query, completed, allow_cname=False)
+            self.assertEqual(resolution.address, "fd00::1")
+            thread.join(timeout=2)
+            self.assertFalse(thread.is_alive())
+            self.assertEqual(errors, [])
+            recorded = json.loads(transcript.read_bytes())
+            self.assertEqual(
+                [entry["transport"] for entry in recorded["queries"]],
+                ["udp", "tcp"],
+            )
+
+    def test_timeout_has_no_fallback_and_records_no_response(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            thread, ready, transcript, errors = self.start_server(root, "timeout", 1)
+            endpoint = json.loads(ready.read_bytes())
+            query = build_query(67, "allowed.test", TYPE_A)
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as client:
+                client.settimeout(0.1)
+                client.sendto(query, (endpoint["address"], endpoint["port"]))
+                with self.assertRaises(socket.timeout):
+                    client.recvfrom(512)
+            thread.join(timeout=2)
+            self.assertFalse(thread.is_alive())
+            self.assertEqual(errors, [])
+            recorded = json.loads(transcript.read_bytes())
+            self.assertIsNone(recorded["queries"][0]["response_sha256"])
 
         response = bytearray(response_for(query, "stable", 0, "udp") or b"")
         response.extend(b"x")
