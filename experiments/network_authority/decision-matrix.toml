@@ -1,0 +1,573 @@
+schema = "proofbound-runtime-network-decision-matrix/1"
+architectures = ["x86_64", "aarch64"]
+outcomes = ["allowed", "denied", "exposes-limitation", "unsupported-before-launch"]
+stages = ["plan", "prelaunch", "child-boundary", "resolver", "routing", "tls", "application-protocol", "lifecycle", "cleanup"]
+slices = ["routing-transport", "resolution-indirection", "bypass-lifecycle"]
+fixtures = ["dual-stack-tls", "scripted-dns", "redirect-service", "proxy-service", "socket-bypass", "lifecycle", "publication"]
+attempted_authorities = ["service-session", "routing-endpoint", "resolver-policy", "application-operation", "child-network", "local-socket", "inherited-socket", "kernel-async", "process-tree", "boundary-lifecycle", "subject-identity", "connection-count", "result-publication"]
+parent_rows = [
+  "exact-service",
+  "undeclared-service-443",
+  "literal-ip",
+  "wrong-certificate",
+  "dns-answer-change",
+  "cname-allowed",
+  "cname-undeclared",
+  "redirect",
+  "proxy-tunnel",
+  "ambient-overrides",
+  "direct-tcp-other-port",
+  "direct-udp",
+  "bind-listen",
+  "unix-sockets",
+  "inherited-internet-socket",
+  "io-uring",
+  "address-encodings",
+  "resolver-failures",
+  "broker-connector-crash",
+  "subject-substitution",
+  "process-tree",
+  "install-race",
+  "cleanup-failure",
+  "result-replacement",
+]
+
+[[mechanisms]]
+id = "landlock-port"
+service_identity_enforcement = "untrusted-child"
+may_enter_adr_comparison = false
+
+[[mechanisms]]
+id = "cgroup-endpoint"
+service_identity_enforcement = "untrusted-child"
+may_enter_adr_comparison = false
+
+[[mechanisms]]
+id = "explicit-broker"
+service_identity_enforcement = "trusted-mediator"
+may_enter_adr_comparison = true
+
+[[mechanisms]]
+id = "preconnected-channel"
+service_identity_enforcement = "trusted-mediator"
+may_enter_adr_comparison = true
+
+[[cases]]
+id = "exact-service-ipv4"
+slice = "routing-transport"
+parent_rows = ["exact-service"]
+fixture = "dual-stack-tls"
+attempted_authority = "service-session"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=allowed@application-protocol", "cgroup-endpoint=allowed@application-protocol", "explicit-broker=allowed@application-protocol", "preconnected-channel=allowed@application-protocol"]
+
+[[cases]]
+id = "exact-service-ipv6"
+slice = "routing-transport"
+parent_rows = ["exact-service"]
+fixture = "dual-stack-tls"
+attempted_authority = "service-session"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=allowed@application-protocol", "cgroup-endpoint=allowed@application-protocol", "explicit-broker=allowed@application-protocol", "preconnected-channel=allowed@application-protocol"]
+
+[[cases]]
+id = "undeclared-service-ipv4-443"
+slice = "routing-transport"
+parent_rows = ["undeclared-service-443"]
+fixture = "dual-stack-tls"
+attempted_authority = "service-session"
+authority_exposure = true
+maximum_seconds = 10
+expectations = ["landlock-port=exposes-limitation@routing", "cgroup-endpoint=denied@routing", "explicit-broker=denied@application-protocol", "preconnected-channel=denied@prelaunch"]
+
+[[cases]]
+id = "undeclared-service-ipv6-443"
+slice = "routing-transport"
+parent_rows = ["undeclared-service-443"]
+fixture = "dual-stack-tls"
+attempted_authority = "service-session"
+authority_exposure = true
+maximum_seconds = 10
+expectations = ["landlock-port=exposes-limitation@routing", "cgroup-endpoint=denied@routing", "explicit-broker=denied@application-protocol", "preconnected-channel=denied@prelaunch"]
+
+[[cases]]
+id = "literal-allowed-address"
+slice = "routing-transport"
+parent_rows = ["literal-ip"]
+fixture = "dual-stack-tls"
+attempted_authority = "service-session"
+authority_exposure = true
+maximum_seconds = 10
+expectations = ["landlock-port=exposes-limitation@routing", "cgroup-endpoint=exposes-limitation@routing", "explicit-broker=denied@application-protocol", "preconnected-channel=denied@prelaunch"]
+
+[[cases]]
+id = "literal-undeclared-address"
+slice = "routing-transport"
+parent_rows = ["literal-ip", "undeclared-service-443"]
+fixture = "dual-stack-tls"
+attempted_authority = "service-session"
+authority_exposure = true
+maximum_seconds = 10
+expectations = ["landlock-port=exposes-limitation@routing", "cgroup-endpoint=denied@routing", "explicit-broker=denied@application-protocol", "preconnected-channel=denied@prelaunch"]
+
+[[cases]]
+id = "allowed-endpoint-wrong-certificate"
+slice = "routing-transport"
+parent_rows = ["wrong-certificate"]
+fixture = "dual-stack-tls"
+attempted_authority = "service-session"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@tls", "cgroup-endpoint=denied@tls", "explicit-broker=denied@tls", "preconnected-channel=denied@prelaunch"]
+
+[[cases]]
+id = "alternate-endpoint-allowed-certificate"
+slice = "routing-transport"
+parent_rows = ["undeclared-service-443", "subject-substitution"]
+fixture = "dual-stack-tls"
+attempted_authority = "routing-endpoint"
+authority_exposure = true
+maximum_seconds = 10
+expectations = ["landlock-port=exposes-limitation@routing", "cgroup-endpoint=denied@routing", "explicit-broker=denied@routing", "preconnected-channel=denied@prelaunch"]
+
+[[cases]]
+id = "direct-tcp-other-port"
+slice = "routing-transport"
+parent_rows = ["direct-tcp-other-port"]
+fixture = "socket-bypass"
+attempted_authority = "child-network"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@routing", "cgroup-endpoint=denied@routing", "explicit-broker=denied@child-boundary", "preconnected-channel=denied@child-boundary"]
+
+[[cases]]
+id = "direct-udp-dns-shaped"
+slice = "routing-transport"
+parent_rows = ["direct-udp"]
+fixture = "socket-bypass"
+attempted_authority = "child-network"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@child-boundary", "cgroup-endpoint=denied@child-boundary", "explicit-broker=denied@child-boundary", "preconnected-channel=denied@child-boundary"]
+
+[[cases]]
+id = "direct-udp-quic-shaped"
+slice = "routing-transport"
+parent_rows = ["direct-udp"]
+fixture = "socket-bypass"
+attempted_authority = "child-network"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@child-boundary", "cgroup-endpoint=denied@child-boundary", "explicit-broker=denied@child-boundary", "preconnected-channel=denied@child-boundary"]
+
+[[cases]]
+id = "tcp-bind-listen"
+slice = "routing-transport"
+parent_rows = ["bind-listen"]
+fixture = "socket-bypass"
+attempted_authority = "child-network"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@child-boundary", "cgroup-endpoint=denied@child-boundary", "explicit-broker=denied@child-boundary", "preconnected-channel=denied@child-boundary"]
+
+[[cases]]
+id = "udp-bind"
+slice = "routing-transport"
+parent_rows = ["bind-listen"]
+fixture = "socket-bypass"
+attempted_authority = "child-network"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@child-boundary", "cgroup-endpoint=denied@child-boundary", "explicit-broker=denied@child-boundary", "preconnected-channel=denied@child-boundary"]
+
+[[cases]]
+id = "ipv4-mapped-ipv6"
+slice = "routing-transport"
+parent_rows = ["address-encodings"]
+fixture = "dual-stack-tls"
+attempted_authority = "routing-endpoint"
+authority_exposure = true
+maximum_seconds = 10
+expectations = ["landlock-port=exposes-limitation@routing", "cgroup-endpoint=denied@routing", "explicit-broker=denied@plan", "preconnected-channel=denied@prelaunch"]
+
+[[cases]]
+id = "non-scoped-ipv6-scope-id"
+slice = "routing-transport"
+parent_rows = ["address-encodings"]
+fixture = "dual-stack-tls"
+attempted_authority = "routing-endpoint"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@plan", "cgroup-endpoint=denied@plan", "explicit-broker=denied@plan", "preconnected-channel=denied@plan"]
+
+[[cases]]
+id = "alternate-address-text"
+slice = "routing-transport"
+parent_rows = ["address-encodings"]
+fixture = "dual-stack-tls"
+attempted_authority = "routing-endpoint"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@plan", "cgroup-endpoint=denied@plan", "explicit-broker=denied@plan", "preconnected-channel=denied@plan"]
+
+[[cases]]
+id = "stable-a-and-aaaa"
+slice = "resolution-indirection"
+parent_rows = ["exact-service"]
+fixture = "scripted-dns"
+attempted_authority = "resolver-policy"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=allowed@application-protocol", "cgroup-endpoint=allowed@application-protocol", "explicit-broker=allowed@application-protocol", "preconnected-channel=allowed@application-protocol"]
+
+[[cases]]
+id = "ttl-rebind-to-undeclared"
+slice = "resolution-indirection"
+parent_rows = ["dns-answer-change"]
+fixture = "scripted-dns"
+attempted_authority = "resolver-policy"
+authority_exposure = true
+maximum_seconds = 10
+expectations = ["landlock-port=exposes-limitation@resolver", "cgroup-endpoint=denied@routing", "explicit-broker=denied@resolver", "preconnected-channel=denied@resolver"]
+
+[[cases]]
+id = "cname-to-declared-service"
+slice = "resolution-indirection"
+parent_rows = ["cname-allowed"]
+fixture = "scripted-dns"
+attempted_authority = "resolver-policy"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=allowed@application-protocol", "cgroup-endpoint=allowed@application-protocol", "explicit-broker=allowed@application-protocol", "preconnected-channel=allowed@application-protocol"]
+
+[[cases]]
+id = "cname-to-undeclared-service"
+slice = "resolution-indirection"
+parent_rows = ["cname-undeclared"]
+fixture = "scripted-dns"
+attempted_authority = "resolver-policy"
+authority_exposure = true
+maximum_seconds = 10
+expectations = ["landlock-port=exposes-limitation@resolver", "cgroup-endpoint=denied@routing", "explicit-broker=denied@resolver", "preconnected-channel=denied@resolver"]
+
+[[cases]]
+id = "cname-loop-or-depth"
+slice = "resolution-indirection"
+parent_rows = ["cname-undeclared", "resolver-failures"]
+fixture = "scripted-dns"
+attempted_authority = "resolver-policy"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@resolver", "cgroup-endpoint=denied@resolver", "explicit-broker=denied@resolver", "preconnected-channel=denied@resolver"]
+
+[[cases]]
+id = "resolver-timeout"
+slice = "resolution-indirection"
+parent_rows = ["resolver-failures"]
+fixture = "scripted-dns"
+attempted_authority = "resolver-policy"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@resolver", "cgroup-endpoint=denied@resolver", "explicit-broker=denied@resolver", "preconnected-channel=denied@resolver"]
+
+[[cases]]
+id = "resolver-truncated-tcp-fallback"
+slice = "resolution-indirection"
+parent_rows = ["resolver-failures"]
+fixture = "scripted-dns"
+attempted_authority = "resolver-policy"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=allowed@application-protocol", "cgroup-endpoint=allowed@application-protocol", "explicit-broker=allowed@application-protocol", "preconnected-channel=allowed@application-protocol"]
+
+[[cases]]
+id = "resolver-malformed-response"
+slice = "resolution-indirection"
+parent_rows = ["resolver-failures"]
+fixture = "scripted-dns"
+attempted_authority = "resolver-policy"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@resolver", "cgroup-endpoint=denied@resolver", "explicit-broker=denied@resolver", "preconnected-channel=denied@resolver"]
+
+[[cases]]
+id = "resolver-dnssec-flag-confusion"
+slice = "resolution-indirection"
+parent_rows = ["resolver-failures"]
+fixture = "scripted-dns"
+attempted_authority = "resolver-policy"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@resolver", "cgroup-endpoint=denied@resolver", "explicit-broker=denied@resolver", "preconnected-channel=denied@resolver"]
+
+[[cases]]
+id = "redirect-undeclared-host"
+slice = "resolution-indirection"
+parent_rows = ["redirect"]
+fixture = "redirect-service"
+attempted_authority = "application-operation"
+authority_exposure = true
+maximum_seconds = 10
+expectations = ["landlock-port=exposes-limitation@routing", "cgroup-endpoint=denied@routing", "explicit-broker=denied@application-protocol", "preconnected-channel=denied@child-boundary"]
+
+[[cases]]
+id = "redirect-cleartext"
+slice = "resolution-indirection"
+parent_rows = ["redirect"]
+fixture = "redirect-service"
+attempted_authority = "application-operation"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@routing", "cgroup-endpoint=denied@routing", "explicit-broker=denied@application-protocol", "preconnected-channel=denied@child-boundary"]
+
+[[cases]]
+id = "redirect-other-port"
+slice = "resolution-indirection"
+parent_rows = ["redirect"]
+fixture = "redirect-service"
+attempted_authority = "application-operation"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@routing", "cgroup-endpoint=denied@routing", "explicit-broker=denied@application-protocol", "preconnected-channel=denied@child-boundary"]
+
+[[cases]]
+id = "http-connect-target-confusion"
+slice = "resolution-indirection"
+parent_rows = ["proxy-tunnel"]
+fixture = "proxy-service"
+attempted_authority = "application-operation"
+authority_exposure = true
+maximum_seconds = 10
+expectations = ["landlock-port=exposes-limitation@application-protocol", "cgroup-endpoint=exposes-limitation@application-protocol", "explicit-broker=denied@application-protocol", "preconnected-channel=exposes-limitation@application-protocol"]
+
+[[cases]]
+id = "socks-target-confusion"
+slice = "resolution-indirection"
+parent_rows = ["proxy-tunnel"]
+fixture = "proxy-service"
+attempted_authority = "application-operation"
+authority_exposure = true
+maximum_seconds = 10
+expectations = ["landlock-port=exposes-limitation@application-protocol", "cgroup-endpoint=exposes-limitation@application-protocol", "explicit-broker=denied@application-protocol", "preconnected-channel=exposes-limitation@application-protocol"]
+
+[[cases]]
+id = "ambient-http-proxy"
+slice = "resolution-indirection"
+parent_rows = ["ambient-overrides"]
+fixture = "proxy-service"
+attempted_authority = "application-operation"
+authority_exposure = true
+maximum_seconds = 10
+expectations = ["landlock-port=exposes-limitation@routing", "cgroup-endpoint=denied@routing", "explicit-broker=denied@plan", "preconnected-channel=denied@plan"]
+
+[[cases]]
+id = "ambient-https-proxy"
+slice = "resolution-indirection"
+parent_rows = ["ambient-overrides"]
+fixture = "proxy-service"
+attempted_authority = "application-operation"
+authority_exposure = true
+maximum_seconds = 10
+expectations = ["landlock-port=exposes-limitation@routing", "cgroup-endpoint=denied@routing", "explicit-broker=denied@plan", "preconnected-channel=denied@plan"]
+
+[[cases]]
+id = "ambient-all-proxy"
+slice = "resolution-indirection"
+parent_rows = ["ambient-overrides"]
+fixture = "proxy-service"
+attempted_authority = "application-operation"
+authority_exposure = true
+maximum_seconds = 10
+expectations = ["landlock-port=exposes-limitation@routing", "cgroup-endpoint=denied@routing", "explicit-broker=denied@plan", "preconnected-channel=denied@plan"]
+
+[[cases]]
+id = "resolver-configuration-substitution"
+slice = "resolution-indirection"
+parent_rows = ["ambient-overrides", "subject-substitution"]
+fixture = "scripted-dns"
+attempted_authority = "subject-identity"
+authority_exposure = true
+maximum_seconds = 10
+expectations = ["landlock-port=exposes-limitation@resolver", "cgroup-endpoint=denied@prelaunch", "explicit-broker=denied@prelaunch", "preconnected-channel=denied@prelaunch"]
+
+[[cases]]
+id = "pathname-unix-socket"
+slice = "bypass-lifecycle"
+parent_rows = ["unix-sockets"]
+fixture = "socket-bypass"
+attempted_authority = "local-socket"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@child-boundary", "cgroup-endpoint=denied@child-boundary", "explicit-broker=denied@child-boundary", "preconnected-channel=denied@child-boundary"]
+
+[[cases]]
+id = "abstract-unix-socket"
+slice = "bypass-lifecycle"
+parent_rows = ["unix-sockets"]
+fixture = "socket-bypass"
+attempted_authority = "local-socket"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@child-boundary", "cgroup-endpoint=denied@child-boundary", "explicit-broker=denied@child-boundary", "preconnected-channel=denied@child-boundary"]
+
+[[cases]]
+id = "inherited-connected-internet-socket"
+slice = "bypass-lifecycle"
+parent_rows = ["inherited-internet-socket"]
+fixture = "socket-bypass"
+attempted_authority = "inherited-socket"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@prelaunch", "cgroup-endpoint=denied@prelaunch", "explicit-broker=denied@prelaunch", "preconnected-channel=denied@prelaunch"]
+
+[[cases]]
+id = "io-uring-socket-create-connect"
+slice = "bypass-lifecycle"
+parent_rows = ["io-uring"]
+fixture = "socket-bypass"
+attempted_authority = "kernel-async"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@child-boundary", "cgroup-endpoint=denied@child-boundary", "explicit-broker=denied@child-boundary", "preconnected-channel=denied@child-boundary"]
+
+[[cases]]
+id = "io-uring-descriptor-send"
+slice = "bypass-lifecycle"
+parent_rows = ["io-uring"]
+fixture = "socket-bypass"
+attempted_authority = "kernel-async"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@child-boundary", "cgroup-endpoint=denied@child-boundary", "explicit-broker=denied@child-boundary", "preconnected-channel=denied@child-boundary"]
+
+[[cases]]
+id = "raw-and-packet-sockets"
+slice = "bypass-lifecycle"
+parent_rows = ["direct-udp"]
+fixture = "socket-bypass"
+attempted_authority = "child-network"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@child-boundary", "cgroup-endpoint=denied@child-boundary", "explicit-broker=denied@child-boundary", "preconnected-channel=denied@child-boundary"]
+
+[[cases]]
+id = "fork-exec-at-process-limit"
+slice = "bypass-lifecycle"
+parent_rows = ["process-tree"]
+fixture = "lifecycle"
+attempted_authority = "process-tree"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@child-boundary", "cgroup-endpoint=denied@child-boundary", "explicit-broker=denied@child-boundary", "preconnected-channel=denied@child-boundary"]
+
+[[cases]]
+id = "concurrent-install-and-connect"
+slice = "bypass-lifecycle"
+parent_rows = ["install-race"]
+fixture = "lifecycle"
+attempted_authority = "boundary-lifecycle"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@child-boundary", "cgroup-endpoint=denied@child-boundary", "explicit-broker=denied@child-boundary", "preconnected-channel=denied@child-boundary"]
+
+[[cases]]
+id = "mediator-crash-before-release"
+slice = "bypass-lifecycle"
+parent_rows = ["broker-connector-crash"]
+fixture = "lifecycle"
+attempted_authority = "boundary-lifecycle"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@plan", "cgroup-endpoint=denied@plan", "explicit-broker=denied@prelaunch", "preconnected-channel=denied@prelaunch"]
+
+[[cases]]
+id = "mediator-crash-during-exchange"
+slice = "bypass-lifecycle"
+parent_rows = ["broker-connector-crash"]
+fixture = "lifecycle"
+attempted_authority = "boundary-lifecycle"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@plan", "cgroup-endpoint=denied@plan", "explicit-broker=denied@lifecycle", "preconnected-channel=denied@lifecycle"]
+
+[[cases]]
+id = "mediator-restart-substitution"
+slice = "bypass-lifecycle"
+parent_rows = ["broker-connector-crash", "subject-substitution"]
+fixture = "lifecycle"
+attempted_authority = "subject-identity"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@plan", "cgroup-endpoint=denied@plan", "explicit-broker=denied@lifecycle", "preconnected-channel=denied@lifecycle"]
+
+[[cases]]
+id = "policy-program-map-rule-substitution"
+slice = "bypass-lifecycle"
+parent_rows = ["subject-substitution"]
+fixture = "lifecycle"
+attempted_authority = "subject-identity"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@prelaunch", "cgroup-endpoint=denied@prelaunch", "explicit-broker=denied@prelaunch", "preconnected-channel=denied@prelaunch"]
+
+[[cases]]
+id = "resolver-and-trust-root-substitution"
+slice = "bypass-lifecycle"
+parent_rows = ["subject-substitution"]
+fixture = "lifecycle"
+attempted_authority = "subject-identity"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@prelaunch", "cgroup-endpoint=denied@prelaunch", "explicit-broker=denied@prelaunch", "preconnected-channel=denied@prelaunch"]
+
+[[cases]]
+id = "certificate-and-channel-substitution"
+slice = "bypass-lifecycle"
+parent_rows = ["subject-substitution"]
+fixture = "lifecycle"
+attempted_authority = "subject-identity"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@prelaunch", "cgroup-endpoint=denied@prelaunch", "explicit-broker=denied@prelaunch", "preconnected-channel=denied@prelaunch"]
+
+[[cases]]
+id = "executable-and-staged-client-substitution"
+slice = "bypass-lifecycle"
+parent_rows = ["subject-substitution"]
+fixture = "lifecycle"
+attempted_authority = "subject-identity"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@prelaunch", "cgroup-endpoint=denied@prelaunch", "explicit-broker=denied@prelaunch", "preconnected-channel=denied@prelaunch"]
+
+[[cases]]
+id = "connection-reuse-beyond-count"
+slice = "bypass-lifecycle"
+parent_rows = ["subject-substitution"]
+fixture = "lifecycle"
+attempted_authority = "connection-count"
+authority_exposure = true
+maximum_seconds = 10
+expectations = ["landlock-port=exposes-limitation@routing", "cgroup-endpoint=exposes-limitation@routing", "explicit-broker=denied@application-protocol", "preconnected-channel=denied@lifecycle"]
+
+[[cases]]
+id = "cleanup-and-namespace-teardown-failure"
+slice = "bypass-lifecycle"
+parent_rows = ["cleanup-failure"]
+fixture = "lifecycle"
+attempted_authority = "boundary-lifecycle"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@cleanup", "cgroup-endpoint=denied@cleanup", "explicit-broker=denied@cleanup", "preconnected-channel=denied@cleanup"]
+
+[[cases]]
+id = "existing-result-replacement"
+slice = "bypass-lifecycle"
+parent_rows = ["result-replacement"]
+fixture = "publication"
+attempted_authority = "result-publication"
+authority_exposure = false
+maximum_seconds = 10
+expectations = ["landlock-port=denied@cleanup", "cgroup-endpoint=denied@cleanup", "explicit-broker=denied@cleanup", "preconnected-channel=denied@cleanup"]
