@@ -497,6 +497,13 @@ redirects, credentials, connection reuse, QUIC, measurements, the complete
 parent attack matrix, or a production lifecycle. It authorizes no Runtime
 schema or receipt change.
 
+The decision-grade continuation is frozen in
+[Experiment 0001E](0001e-decision-matrix-execution.md). It divides the complete
+parent inventory into routing/transport, resolution/indirection, and
+bypass/lifecycle slices plus a separate measurement slice. Every mechanism
+must receive one registered outcome for every case; an unrepresentable input
+is executed and recorded rather than silently skipped.
+
 ## Evidence and publication boundary
 
 Experiment output is test or observation material. It does not create a Tier 3

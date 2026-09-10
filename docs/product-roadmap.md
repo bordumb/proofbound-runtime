@@ -85,7 +85,12 @@ owned TLS session and denies direct child networking, but deliberately confirms
 that arbitrary bounded application bytes reach that service. All four first
 controls are now recorded. The next experiment step is the remaining
 cross-mechanism attack and measurement matrix, followed by the reviewed ADR
-decision; no production network implementation is authorized yet.
+decision; no production network implementation is authorized yet. The
+decision-grade execution protocol is frozen in
+[`0001e-decision-matrix-execution.md`](experiments/0001e-decision-matrix-execution.md),
+with three bounded functional slices, one measurement slice, a machine-checked
+expectation domain, immutable per-mechanism results, and a deterministic
+comparison boundary.
 
 Upstream promotion is intentionally paused at its review boundary. Proofbound
 PR 2 is green but still needs an independent approving review. A dry run of
