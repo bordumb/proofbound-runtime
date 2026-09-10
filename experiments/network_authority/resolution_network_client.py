@@ -51,6 +51,7 @@ ACTIONS = {
     "channel-proxy-socks",
     "broker-redirect-rejected",
     "broker-proxy-rejected",
+    "broker-exact",
 }
 REDIRECT_TARGETS = {
     "redirect-host": ("127.0.0.2", 443),
@@ -154,7 +155,10 @@ def _channel_proxy(descriptor: int, protocol: str) -> str:
 
 
 def _broker_rejection(descriptor: int, expected_code: str) -> str:
-    request = wire_json({"operation": "echo", "payload": "bounded payload"})
+    value = {"operation": "echo", "payload": "bounded payload"}
+    if expected_code == "proxy-target-rejected":
+        value["target"] = "denied.test:443"
+    request = wire_json(value)
     _write_all(descriptor, struct.pack(">I", len(request)) + request)
     _shutdown_write(descriptor)
     size = struct.unpack(">I", _read_exact(descriptor, 4))[0]
@@ -162,6 +166,18 @@ def _broker_rejection(descriptor: int, expected_code: str) -> str:
     if os.read(descriptor, 1) != b"" or response != wire_json({"code": expected_code, "status": "error"}):
         raise ResolutionNetworkClientError("broker rejection is not exact")
     return "operation-rejected"
+
+
+def _broker_exact(descriptor: int) -> str:
+    request = wire_json({"operation": "echo", "payload": "bounded payload"})
+    _write_all(descriptor, struct.pack(">I", len(request)) + request)
+    _shutdown_write(descriptor)
+    size = struct.unpack(">I", _read_exact(descriptor, 4))[0]
+    response = _read_exact(descriptor, size)
+    expected = wire_json({"payload": "bounded payload", "status": "ok"})
+    if os.read(descriptor, 1) != b"" or response != expected:
+        raise ResolutionNetworkClientError("broker success response is not exact")
+    return "declared-response"
 
 
 def execute(
@@ -208,6 +224,8 @@ def execute(
     if action in {"channel-proxy-http", "channel-proxy-socks"}:
         protocol = "http-connect" if action.endswith("http") else "socks5"
         return [_channel_proxy(descriptor or -1, protocol)]
+    if action == "broker-exact":
+        return [_broker_exact(descriptor or -1)]
     return [_broker_rejection(descriptor or -1, BROKER_CODES[action])]
 
 
