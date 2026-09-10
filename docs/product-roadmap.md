@@ -49,6 +49,13 @@ local prerequisite for memory contract work. It does not resolve PBF-0007 or
 permit Runtime to describe the generic Proofbound compiler and verifier as
 fixed.
 
+RT-1.1 contract work has started at `d24a1c7` with a draft version 2 memory and
+swap profile. The draft fixes the intended schema transition, cgroup controls,
+terminal observations, outcome separation, historical receipt behavior, and
+native falsifier inventory. It is not yet an accepted production contract.
+Memory implementation remains paused until review resolves the draft's
+explicit decisions and the upstream consolidation boundary is satisfied.
+
 Upstream promotion is intentionally paused at its review boundary. Proofbound
 PR 2 is green but still needs an independent approving review. A dry run of
 the later integration promotion correctly failed because its head retained an
