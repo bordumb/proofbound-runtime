@@ -12,6 +12,7 @@ python3 -m unittest tools.ci.test_install_release
 python3 -m unittest tools.ci.test_build_example
 python3 -m unittest experiments.network_authority.test_record_port_control
 python3 -m unittest experiments.network_authority.test_record_endpoint_control
+python3 -m unittest experiments.network_authority.test_explicit_broker
 cargo fmt --all -- --check
 cargo metadata --locked --offline --format-version 1 >/dev/null
 cargo check --workspace --all-targets --locked --offline
