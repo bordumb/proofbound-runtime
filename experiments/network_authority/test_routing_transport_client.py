@@ -6,6 +6,7 @@ import argparse
 import socket
 import ssl
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -99,6 +100,47 @@ class RoutingTransportClientTests(unittest.TestCase):
             arguments = self.arguments("non-scoped-ipv6-scope-id", ca, service_port=443)
             with self.assertRaises(RoutingClientError):
                 run(arguments)
+
+    def test_command_marks_start_before_runtime_validation_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            started = root / "started.txt"
+            observation = root / "observation.json"
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "experiments.network_authority.routing_transport_client",
+                    "--case",
+                    "exact-service-ipv4",
+                    "--allowed-ipv4",
+                    "127.0.0.1",
+                    "--allowed-ipv6",
+                    "::1",
+                    "--denied-ipv4",
+                    "127.0.0.2",
+                    "--denied-ipv6",
+                    "::2",
+                    "--service-port",
+                    "443",
+                    "--other-port",
+                    "8443",
+                    "--allowed-ca",
+                    str(root / "absent-ca.pem"),
+                    "--started-file",
+                    str(started),
+                    "--observation",
+                    str(observation),
+                ],
+                cwd=Path(__file__).resolve().parents[2],
+                check=False,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertEqual(completed.returncode, 7)
+            self.assertEqual(started.read_bytes(), b"started\n")
+            self.assertFalse(observation.exists())
 
     def test_exact_tls_request_records_only_exact_response(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

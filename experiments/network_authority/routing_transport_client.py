@@ -340,6 +340,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--service-port", type=int, required=True)
     result.add_argument("--other-port", type=int, required=True)
     result.add_argument("--allowed-ca", type=Path, required=True)
+    result.add_argument("--started-file", type=Path, required=True)
     result.add_argument("--observation", type=Path, required=True)
     return result
 
@@ -349,8 +350,13 @@ def main() -> int:
 
     arguments = parser().parse_args()
     try:
-        if not arguments.observation.is_absolute():
-            raise RoutingClientError("routing client observation path is invalid")
+        if (
+            not arguments.started_file.is_absolute()
+            or not arguments.observation.is_absolute()
+            or arguments.started_file == arguments.observation
+        ):
+            raise RoutingClientError("routing client output paths are invalid")
+        write_new(arguments.started_file, b"started\n")
         write_new(arguments.observation, canonical_json(run(arguments)))
         return 0
     except (OSError, RoutingClientError, ValueError) as error:
