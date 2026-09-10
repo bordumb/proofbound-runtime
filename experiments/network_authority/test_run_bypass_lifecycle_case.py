@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -24,13 +25,22 @@ class BypassLifecycleOrchestrationTests(unittest.TestCase):
         return argparse.Namespace(
             case=case, mechanism=mechanism, repository_root=ROOT, matrix=MATRIX,
             case_root=root / "case", raw_output=root / "case/raw-cell.json",
-            subject_root=subjects, foreign_fd=None,
+            subject_root=subjects,
         )
 
     def test_non_mediator_mechanism_rejects_crash_case_at_plan(self) -> None:
         with tempfile.TemporaryDirectory() as temporary, mock.patch("os.geteuid", return_value=0):
             raw = run(self.arguments(Path(temporary), "mediator-crash-during-exchange", "landlock-port"))
         self.assertEqual(raw["plan_rejection"], "mechanism-has-no-mediator")
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "native Linux loopback topology")
+    def test_connected_internet_descriptor_is_rejected_before_release(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary, mock.patch("os.geteuid", return_value=0):
+            arguments = self.arguments(Path(temporary), "inherited-connected-internet-socket")
+            raw = run(arguments)
+            evidence = (arguments.case_root / "lifecycle-evidence.json").read_text()
+        self.assertEqual(raw["prelaunch_rejection"], "foreign-descriptor-present")
+        self.assertIn('"family":"AF_INET"', evidence)
 
     def test_substitution_is_real_and_rejected_prelaunch(self) -> None:
         with tempfile.TemporaryDirectory() as temporary, mock.patch("os.geteuid", return_value=0):

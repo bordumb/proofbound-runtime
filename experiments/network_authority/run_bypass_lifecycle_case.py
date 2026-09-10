@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import os
 import shutil
+import socket
 import sys
 from pathlib import Path
 
@@ -69,9 +70,22 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
     identifier = case.identifier
     evidence: dict[str, object] | None = None
     if identifier == "inherited-connected-internet-socket":
-        if arguments.foreign_fd is None:
-            raise BypassOrchestrationError("foreign descriptor attack is absent")
-        os.fstat(arguments.foreign_fd)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+            listener.bind(("127.0.0.2", 0))
+            listener.listen(1)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as inherited:
+                inherited.connect(listener.getsockname())
+                peer, _address = listener.accept()
+                with peer:
+                    os.fstat(inherited.fileno())
+                    evidence = {
+                        "event": "foreign-descriptor-present",
+                        "family": "AF_INET",
+                        "local": list(inherited.getsockname()),
+                        "peer": list(inherited.getpeername()),
+                        "schema": "proofbound-runtime-inherited-socket-evidence/1",
+                        "type": "SOCK_STREAM",
+                    }
         raw = raw_cell(case, arguments.mechanism, prelaunch_rejection="foreign-descriptor-present")
     elif identifier.startswith("mediator-"):
         if arguments.mechanism in {"landlock-port", "cgroup-endpoint"}:
@@ -114,7 +128,6 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--case-root", type=Path, required=True)
     result.add_argument("--raw-output", type=Path, required=True)
     result.add_argument("--subject-root", type=Path, required=True)
-    result.add_argument("--foreign-fd", type=int)
     return result
 
 
