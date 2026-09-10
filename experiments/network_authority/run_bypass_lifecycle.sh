@@ -1,0 +1,293 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage='usage: run_bypass_lifecycle.sh <landlock-port|cgroup-endpoint|explicit-broker|preconnected-channel> <new-absolute-result-directory>'
+
+if [[ $# -ne 2 ]]; then
+  if [[ $# -ne 5 || "${1:-}" != "--inside" ]]; then
+    echo "$usage" >&2
+    exit 2
+  fi
+fi
+if [[ "$(uname -s)" != "Linux" ]]; then
+  echo 'bypass lifecycle experiment requires native Linux' >&2
+  exit 3
+fi
+
+script_path="$(readlink -f "${BASH_SOURCE[0]}")"
+repository_root="$(cd "$(dirname "$script_path")/../.." && pwd)"
+
+if [[ "$1" != "--inside" ]]; then
+  mechanism="$1"
+  output_directory="$2"
+  case "$mechanism" in
+    landlock-port|cgroup-endpoint|explicit-broker|preconnected-channel) ;;
+    *) echo 'bypass lifecycle mechanism is invalid' >&2; exit 2 ;;
+  esac
+  if [[ "$output_directory" != /* || -e "$output_directory" || -L "$output_directory" ]]; then
+    echo 'result directory must be one absent absolute path' >&2
+    exit 2
+  fi
+  if [[ ! -d "$(dirname "$output_directory")" ]]; then
+    echo 'result parent directory does not exist' >&2
+    exit 2
+  fi
+  if [[ $EUID -ne 0 ]]; then
+    echo 'bypass namespace setup requires root; invoke this script through sudo' >&2
+    exit 3
+  fi
+  if [[ -n "$(git -C "$repository_root" status --porcelain)" ]]; then
+    echo 'bypass experiment requires a clean exact Git commit' >&2
+    exit 2
+  fi
+  source_commit="$(git -C "$repository_root" rev-parse --verify 'HEAD^{commit}')"
+  exec unshare --net --mount-proc -- \
+    "$script_path" --inside "$mechanism" "$output_directory" "$repository_root" "$source_commit"
+fi
+
+mechanism="$2"
+output_directory="$3"
+expected_root="$4"
+source_commit="$5"
+if [[ "$repository_root" != "$expected_root" || $EUID -ne 0 ]]; then
+  echo 'bypass namespace handoff identity mismatch' >&2
+  exit 4
+fi
+case "$mechanism" in
+  landlock-port|cgroup-endpoint|explicit-broker|preconnected-channel) ;;
+  *) echo 'bypass namespace mechanism changed' >&2; exit 4 ;;
+esac
+cd "$repository_root"
+
+for command in cc chown cmp cp git ip openssl python3 stat; do
+  if ! command -v "$command" >/dev/null 2>&1; then
+    echo "bypass experiment prerequisite is unavailable: $command" >&2
+    exit 3
+  fi
+done
+if [[ "$mechanism" == "cgroup-endpoint" ]]; then
+  if [[ "$(stat -f -c %T /sys/fs/cgroup)" != "cgroup2fs" ]]; then
+    echo 'bypass endpoint experiment requires cgroup v2' >&2
+    exit 3
+  fi
+  if [[ ! -f /sys/kernel/btf/vmlinux || -L /sys/kernel/btf/vmlinux ]]; then
+    echo 'bypass endpoint experiment requires regular kernel BTF' >&2
+    exit 3
+  fi
+fi
+
+work_root="$(mktemp -d)"
+cgroup_directories=()
+cleanup() {
+  local directory
+  for directory in "${cgroup_directories[@]}"; do
+    if [[ -d "$directory" ]]; then
+      rmdir -- "$directory" >/dev/null 2>&1 || true
+    fi
+  done
+  rm -rf -- "$work_root"
+}
+trap cleanup EXIT
+
+chmod 0755 "$work_root"
+evidence_root="$work_root/evidence"
+artifact_root="$evidence_root/artifacts"
+case_parent="$evidence_root/cases"
+private_root="$work_root/private"
+log_root="$work_root/orchestration-logs"
+staged_root="$artifact_root/staged"
+staged_network="$staged_root/experiments/network_authority"
+subject_root="$artifact_root/subjects"
+mkdir -p "$artifact_root" "$case_parent" "$private_root" "$log_root" "$staged_network" "$subject_root"
+chmod 0755 "$staged_root" "$staged_root/experiments" "$staged_network"
+ip link set lo up
+ip address add fd00::1/128 dev lo nodad
+ip address add fd00::2/128 dev lo nodad
+
+staged_files=(
+  __init__.py
+  bypass_cell.py
+  bypass_lifecycle_case.py
+  bypass_lifecycle_evidence.py
+  bypass_syscall_probe.py
+  connection_reuse_channel.py
+  connection_reuse_client.py
+  connection_reuse_fixture.py
+  explicit_broker.py
+  record_common.py
+  run_bypass_lifecycle_case.py
+  run_bypass_syscall_case.py
+  run_connection_reuse_case.py
+)
+cp -- experiments/__init__.py "$staged_root/experiments/__init__.py"
+for name in "${staged_files[@]}"; do
+  cp -- "experiments/network_authority/$name" "$staged_network/$name"
+  chmod 0644 "$staged_network/$name"
+  cmp --silent "experiments/network_authority/$name" "$staged_network/$name"
+done
+
+compile_control() {
+  local source="$1"
+  local output="$2"
+  cc -std=c11 -Wall -Wextra -Werror -O2 "$source" -o "$output"
+}
+
+compile_control experiments/network_authority/routing_child_control.c "$artifact_root/routing-child-control"
+compile_control experiments/network_authority/broker_child_control.c "$artifact_root/broker-child-control"
+compile_control experiments/network_authority/preconnected_child_control.c "$artifact_root/preconnected-child-control"
+compile_control experiments/network_authority/process_limit_control.c "$artifact_root/process-limit-control"
+compile_control experiments/network_authority/stopped_release_control.c "$artifact_root/stopped-release-control"
+case "$mechanism" in
+  landlock-port)
+    compile_control experiments/network_authority/routing_landlock_control.c "$artifact_root/routing-landlock-control"
+    mechanism_control="$artifact_root/routing-landlock-control"
+    selected_child="$artifact_root/routing-child-control"
+    ;;
+  cgroup-endpoint)
+    compile_control experiments/network_authority/routing_endpoint_control.c "$artifact_root/routing-endpoint-control"
+    mechanism_control="$artifact_root/routing-endpoint-control"
+    selected_child="$artifact_root/routing-child-control"
+    ;;
+  explicit-broker)
+    mechanism_control=''
+    selected_child="$artifact_root/broker-child-control"
+    ;;
+  preconnected-channel)
+    mechanism_control=''
+    selected_child="$artifact_root/preconnected-child-control"
+    ;;
+esac
+
+openssl req \
+  -x509 -newkey rsa:2048 -nodes -days 1 \
+  -subj '/CN=allowed.test' \
+  -addext 'subjectAltName=DNS:allowed.test' \
+  -keyout "$private_root/allowed-key.pem" \
+  -out "$subject_root/certificate" \
+  >"$private_root/certificate.stdout" \
+  2>"$private_root/certificate.stderr"
+chmod 0600 "$private_root/allowed-key.pem"
+chmod 0644 "$subject_root/certificate"
+cp -- "$subject_root/certificate" "$subject_root/trust-root"
+cp -- "$staged_network/bypass_syscall_probe.py" "$subject_root/client"
+cp -- "$selected_child" "$subject_root/executable"
+cp -- "$selected_child" "$subject_root/native-policy"
+python3 -c \
+  'import sys; from pathlib import Path; from experiments.network_authority.record_common import canonical_json,write_new; write_new(Path(sys.argv[1]),canonical_json({"mechanism":sys.argv[3],"schema":"proofbound-runtime-bypass-channel-subject/1"})); write_new(Path(sys.argv[2]),canonical_json({"address":"127.0.0.1","schema":"proofbound-runtime-bypass-resolver-subject/1"}))' \
+  "$subject_root/channel" "$subject_root/resolver" "$mechanism"
+
+mapfile -t bypass_cases < <(
+  python3 -c \
+    'from pathlib import Path; from experiments.network_authority.bypass_lifecycle_case import load_bypass_matrix; matrix=load_bypass_matrix(Path("experiments/network_authority/decision-matrix.toml").resolve()); print("\n".join(case.identifier for case in matrix.cases))'
+)
+if [[ ${#bypass_cases[@]} -ne 18 ]]; then
+  echo 'bypass case inventory is not exact' >&2
+  exit 4
+fi
+
+current_cgroup=''
+cgroup_parent=''
+if [[ "$mechanism" == "cgroup-endpoint" ]]; then
+  current_cgroup="$(awk -F: '$1 == "0" && $2 == "" { print $3 }' /proc/self/cgroup)"
+  if [[ "$current_cgroup" != /* || "$current_cgroup" == *'..'* ]]; then
+    echo 'current cgroup identity is invalid' >&2
+    exit 4
+  fi
+  cgroup_parent="/sys/fs/cgroup$current_cgroup"
+fi
+
+is_syscall_case() {
+  case "$1" in
+    pathname-unix-socket|abstract-unix-socket|io-uring-socket-create-connect|io-uring-descriptor-send|raw-and-packet-sockets|fork-exec-at-process-limit|concurrent-install-and-connect) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+for case_id in "${bypass_cases[@]}"; do
+  case_root="$case_parent/$case_id"
+  runner_stdout="$log_root/$case_id.stdout"
+  runner_stderr="$log_root/$case_id.stderr"
+  cgroup_arguments=()
+  mechanism_arguments=()
+  if [[ "$mechanism" == "landlock-port" ]]; then
+    mechanism_arguments=(--mechanism-control "$mechanism_control")
+  elif [[ "$mechanism" == "cgroup-endpoint" ]] && { is_syscall_case "$case_id" || [[ "$case_id" == "connection-reuse-beyond-count" ]]; }; then
+    cgroup_directory="$cgroup_parent/proofbound-bypass-$$-${#cgroup_directories[@]}"
+    mkdir "$cgroup_directory"
+    cgroup_directories+=("$cgroup_directory")
+    mechanism_arguments=(--mechanism-control "$mechanism_control")
+    cgroup_arguments=(--cgroup-directory "$cgroup_directory")
+  fi
+  set +e
+  if is_syscall_case "$case_id"; then
+    python3 -m experiments.network_authority.run_bypass_syscall_case \
+      --case "$case_id" \
+      --mechanism "$mechanism" \
+      --source-commit "$source_commit" \
+      --repository-root "$repository_root" \
+      --matrix "$repository_root/experiments/network_authority/decision-matrix.toml" \
+      --case-root "$case_root" \
+      --raw-output "$case_root/raw-cell.json" \
+      --client "$staged_network/bypass_syscall_probe.py" \
+      --process-limit-control "$artifact_root/process-limit-control" \
+      --stopped-release-control "$artifact_root/stopped-release-control" \
+      --routing-child-control "$artifact_root/routing-child-control" \
+      --broker-child-control "$artifact_root/broker-child-control" \
+      --preconnected-child-control "$artifact_root/preconnected-child-control" \
+      "${mechanism_arguments[@]}" "${cgroup_arguments[@]}" \
+      >"$runner_stdout" 2>"$runner_stderr"
+    case_exit=$?
+  elif [[ "$case_id" == "connection-reuse-beyond-count" ]]; then
+    python3 -m experiments.network_authority.run_connection_reuse_case \
+      --mechanism "$mechanism" \
+      --source-commit "$source_commit" \
+      --repository-root "$repository_root" \
+      --matrix "$repository_root/experiments/network_authority/decision-matrix.toml" \
+      --case-root "$case_root" \
+      --raw-output "$case_root/raw-cell.json" \
+      --client "$staged_network/connection_reuse_client.py" \
+      --fixture "$staged_network/connection_reuse_fixture.py" \
+      --routing-child-control "$artifact_root/routing-child-control" \
+      --broker-child-control "$artifact_root/broker-child-control" \
+      --preconnected-child-control "$artifact_root/preconnected-child-control" \
+      "${mechanism_arguments[@]}" "${cgroup_arguments[@]}" \
+      >"$runner_stdout" 2>"$runner_stderr"
+    case_exit=$?
+  else
+    python3 -m experiments.network_authority.run_bypass_lifecycle_case \
+      --case "$case_id" \
+      --mechanism "$mechanism" \
+      --source-commit "$source_commit" \
+      --repository-root "$repository_root" \
+      --matrix "$repository_root/experiments/network_authority/decision-matrix.toml" \
+      --case-root "$case_root" \
+      --raw-output "$case_root/raw-cell.json" \
+      --subject-root "$subject_root" \
+      >"$runner_stdout" 2>"$runner_stderr"
+    case_exit=$?
+  fi
+  set -e
+  mkdir -p "$case_root"
+  mv "$runner_stdout" "$case_root/runner.stdout"
+  mv "$runner_stderr" "$case_root/runner.stderr"
+  printf '%s\n' "$case_exit" >"$case_root/runner.exit"
+done
+
+python3 -m experiments.network_authority.record_bypass_lifecycle \
+  --output "$output_directory" \
+  --source-root "$repository_root" \
+  --evidence-root "$evidence_root" \
+  --source-commit "$source_commit" \
+  --mechanism "$mechanism" \
+  --architecture "$(uname -m)" \
+  --kernel-release "$(uname -r)" \
+  --compiler "$(cc --version | head -n 1)" \
+  --python "$(python3 --version)"
+
+python3 -m experiments.network_authority.verify_bypass_lifecycle "$output_directory"
+
+python3 -c \
+  'import json,sys; result=json.load(open(sys.argv[1], encoding="utf-8")); raise SystemExit(result["conclusion"] != "bypass-lifecycle-slice-matched")' \
+  "$output_directory/RESULT.json"
+
+printf '%s\n' "$output_directory"

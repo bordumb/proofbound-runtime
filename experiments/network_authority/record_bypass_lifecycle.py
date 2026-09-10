@@ -59,6 +59,7 @@ COMMON_SUBJECTS = (
     "experiments/network_authority/record_bypass_lifecycle.py",
     "experiments/network_authority/record_common.py",
     "experiments/network_authority/run_bypass_lifecycle_case.py",
+    "experiments/network_authority/run_bypass_lifecycle.sh",
     "experiments/network_authority/run_bypass_syscall_case.py",
     "experiments/network_authority/run_connection_reuse_case.py",
     "experiments/network_authority/stopped_release_control.c",
