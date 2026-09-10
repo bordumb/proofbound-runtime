@@ -47,17 +47,16 @@ if [[ "$1" != "--inside" ]]; then
   }
   trap cleanup_outer EXIT
   mkdir -p "$work_root/evidence"
+  inner_stdout="$work_root/inner.stdout"
+  inner_stderr="$work_root/inner.stderr"
   set +e
   unshare --net --mount-proc -- \
-    "$script_path" --inside "$mechanism" "$work_root" "$repository_root" "$source_commit" &
+    "$script_path" --inside "$mechanism" "$work_root" "$repository_root" "$source_commit" \
+    >"$inner_stdout" 2>"$inner_stderr" &
   namespace_pid=$!
   wait "$namespace_pid"
   inside_exit=$?
   set -e
-  if [[ $inside_exit -ne 0 ]]; then
-    echo "network measurement inner runner failed: exit=$inside_exit" >&2
-    exit "$inside_exit"
-  fi
   if [[ "$(git -C "$repository_root" rev-parse --verify 'HEAD^{commit}')" != "$source_commit" || \
         -n "$(git -C "$repository_root" status --porcelain)" ]]; then
     echo 'network measurement source changed during observation' >&2
@@ -67,6 +66,32 @@ if [[ "$1" != "--inside" ]]; then
     echo 'measurement namespace handles survived process reap' >&2
     exit 4
   fi
+  if [[ $inside_exit -ne 0 ]]; then
+    compiler_identity='cc unavailable'
+    if command -v cc >/dev/null 2>&1; then
+      compiler_identity="$(cc --version | head -n 1)"
+    fi
+    python3 -m experiments.network_authority.record_network_measurement_failure \
+      --output "$output_directory" \
+      --source-root "$repository_root" \
+      --stdout "$inner_stdout" \
+      --stderr "$inner_stderr" \
+      --source-commit "$source_commit" \
+      --mechanism "$mechanism" \
+      --architecture "$(uname -m)" \
+      --kernel-release "$(uname -r)" \
+      --compiler "$compiler_identity" \
+      --python "$(python3 --version)" \
+      --exit-status "$inside_exit"
+    python3 -m experiments.network_authority.verify_network_measurement \
+      "$output_directory"
+    cat "$inner_stdout"
+    cat "$inner_stderr" >&2
+    echo "network measurement inner runner failed: exit=$inside_exit" >&2
+    exit "$inside_exit"
+  fi
+  cat "$inner_stdout"
+  cat "$inner_stderr" >&2
   python3 -c \
     'import sys; from pathlib import Path; from experiments.network_authority.record_common import canonical_json,write_new; write_new(Path(sys.argv[1]), canonical_json({"mount_namespace_handle_absent":True,"namespace_process_pid":int(sys.argv[2]),"namespace_process_reaped":True,"network_namespace_handle_absent":True,"schema":"proofbound-runtime-network-measurement-namespace-cleanup/1"}))' \
     "$work_root/evidence/observation/namespace-cleanup.json" "$namespace_pid"

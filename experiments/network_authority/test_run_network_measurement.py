@@ -43,7 +43,7 @@ class NetworkMeasurementRunnerTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         wait_index = script.index('wait "$namespace_pid"')
         cleanup_index = script.index("namespace-cleanup.json")
-        record_index = script.index("record_network_measurement")
+        record_index = script.index("record_network_measurement \\\n")
         self.assertLess(wait_index, cleanup_index)
         self.assertLess(cleanup_index, record_index)
         self.assertNotIn("exec unshare", script)
@@ -51,6 +51,10 @@ class NetworkMeasurementRunnerTests(unittest.TestCase):
         post_run_identity = script.index("source changed during observation")
         self.assertLess(wait_index, post_run_identity)
         self.assertLess(post_run_identity, record_index)
+        incomplete_index = script.index("record_network_measurement_failure")
+        failure_exit_index = script.index('exit "$inside_exit"')
+        self.assertLess(wait_index, incomplete_index)
+        self.assertLess(incomplete_index, failure_exit_index)
 
     def test_clock_is_one_registered_monotonic_source(self) -> None:
         _clock, name = clock_identity()

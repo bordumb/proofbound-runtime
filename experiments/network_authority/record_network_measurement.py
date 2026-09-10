@@ -92,6 +92,7 @@ COMMON_SOURCES = (
     "experiments/network_authority/measurement_observation.py",
     "experiments/network_authority/record_common.py",
     "experiments/network_authority/record_network_measurement.py",
+    "experiments/network_authority/record_network_measurement_failure.py",
     "experiments/network_authority/routing_cell.py",
     "experiments/network_authority/routing_mediated_client.py",
     "experiments/network_authority/routing_mediator.py",

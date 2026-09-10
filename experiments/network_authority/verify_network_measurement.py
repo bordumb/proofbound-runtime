@@ -158,6 +158,7 @@ COMMON_SOURCES = (
     "experiments/network_authority/measurement_observation.py",
     "experiments/network_authority/record_common.py",
     "experiments/network_authority/record_network_measurement.py",
+    "experiments/network_authority/record_network_measurement_failure.py",
     "experiments/network_authority/routing_cell.py",
     "experiments/network_authority/routing_mediated_client.py",
     "experiments/network_authority/routing_mediator.py",
@@ -804,9 +805,79 @@ def validate_inventory(files: dict[str, bytes], mechanism: str, sources: dict[st
             raise VerificationError("inventory category identity changed")
 
 
+def verify_incomplete(
+    files: dict[str, bytes], result: dict[str, object]
+) -> dict[str, object]:
+    """Verify a retained native failure without treating it as a measurement."""
+
+    fields = {
+        "architecture", "complete", "conclusion", "decision_matrix_sha256",
+        "exit_status", "inputs", "measurement_domain_sha256", "mechanism",
+        "schema", "source_commit", "stage",
+    }
+    mechanism = result.get("mechanism")
+    architecture = result.get("architecture")
+    source_commit = result.get("source_commit")
+    if (
+        set(result) != fields
+        or result["schema"] != "proofbound-runtime-network-measurement-result/1"
+        or result["complete"] is not False
+        or result["conclusion"] != "network-measurement-incomplete"
+        or result["stage"] != "native-measurement"
+        or mechanism not in MECHANISMS
+        or architecture not in ARCHITECTURES
+        or not isinstance(source_commit, str)
+        or not COMMIT.fullmatch(source_commit)
+        or type(result["exit_status"]) is not int
+        or not 1 <= result["exit_status"] <= 255
+    ):
+        raise VerificationError("incomplete measurement identity is invalid")
+    expected_names = [
+        "diagnostic/stderr.txt", "diagnostic/stdout.txt",
+        "source/decision-matrix.toml", "source/measurement-domain.toml",
+        "tool-manifest.json",
+    ]
+    if sorted(name for name in files if name != "RESULT.json") != expected_names:
+        raise VerificationError("incomplete measurement inventory changed")
+    inputs = manifest_entries(result["inputs"], {"name", "sha256", "size"})
+    if [item["name"] for item in inputs] != expected_names:
+        raise VerificationError("incomplete result input inventory changed")
+    for item in inputs:
+        data = files[str(item["name"])]
+        if (
+            item["sha256"] != sha256(data)
+            or item["size"] != len(data)
+            or not digest(item["sha256"])
+        ):
+            raise VerificationError("incomplete result input identity changed")
+    domain = files["source/measurement-domain.toml"]
+    matrix = files["source/decision-matrix.toml"]
+    if (
+        result["measurement_domain_sha256"] != sha256(domain)
+        or result["decision_matrix_sha256"] != sha256(matrix)
+    ):
+        raise VerificationError("incomplete result domain identity changed")
+    parse_domain(domain, mechanism)
+    parse_exact_case(matrix, mechanism, sha256(matrix))
+    tool = document(files, "tool-manifest.json")
+    if (
+        set(tool) != {"architecture", "compiler", "kernel_release", "python", "schema"}
+        or tool["schema"] != "proofbound-runtime-network-measurement-tool-manifest/1"
+        or tool["architecture"] != architecture
+        or not all(
+            bounded_text(tool[field])
+            for field in ("compiler", "kernel_release", "python")
+        )
+    ):
+        raise VerificationError("incomplete measurement tool identity is invalid")
+    return result
+
+
 def verify(root: Path) -> dict[str, object]:
     files = result_files(root)
     result = document(files, "RESULT.json")
+    if result.get("complete") is False:
+        return verify_incomplete(files, result)
     fields = {
         "architecture", "complete", "conclusion", "decision_matrix_sha256",
         "inputs", "measurement_domain_sha256", "mechanism",
@@ -882,7 +953,8 @@ def main() -> int:
     try:
         result = verify(parser().parse_args().result)
         print(canonical_json({
-            "architecture": result["architecture"], "mechanism": result["mechanism"],
+            "architecture": result["architecture"], "complete": result["complete"],
+            "mechanism": result["mechanism"],
             "result_sha256": sha256(canonical_json(result)),
             "schema": "proofbound-runtime-network-measurement-verification/1",
             "verified": True,

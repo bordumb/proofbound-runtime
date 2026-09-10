@@ -12,6 +12,9 @@ from experiments.network_authority.measurement_domain import load_measurement_do
 from experiments.network_authority.measurement_observation import summarize_samples
 from experiments.network_authority.record_common import RecordError, canonical_json, sha256
 from experiments.network_authority.record_network_measurement import record
+from experiments.network_authority.record_network_measurement_failure import (
+    record_failure,
+)
 from experiments.network_authority.routing_cell import CLIENT_SCHEMA, raw_cell
 from experiments.network_authority.routing_transport_case import load_routing_matrix
 from experiments.network_authority.run_network_measurement import tree_summary
@@ -169,6 +172,25 @@ class NetworkMeasurementPublicationTests(unittest.TestCase):
             python="Python 3.13.0",
         )
 
+    def failure_arguments(self, root: Path) -> argparse.Namespace:
+        stdout = root / "inner.stdout"
+        stderr = root / "inner.stderr"
+        stdout.write_bytes(b"partial native setup\n")
+        stderr.write_bytes(b"required mechanism unavailable\n")
+        return argparse.Namespace(
+            output=str(root / "incomplete"),
+            source_root=str(REPOSITORY_ROOT),
+            stdout=str(stdout),
+            stderr=str(stderr),
+            source_commit=SOURCE_COMMIT,
+            mechanism="cgroup-endpoint",
+            architecture="aarch64",
+            kernel_release="6.11.0-test",
+            compiler="cc test",
+            python="Python 3.13.0",
+            exit_status=3,
+        )
+
     @staticmethod
     def rebind_raw(result_root: Path, raw: dict[str, object]) -> None:
         raw_path = result_root / "evidence/observation/RAW.json"
@@ -226,6 +248,25 @@ class NetworkMeasurementPublicationTests(unittest.TestCase):
             raw["setup_observations"][7]["state"]["files"][0]["size_bytes"] = True
             raw["setup_observations"][7]["state"]["total_bytes"] += 1
             self.rebind_raw(result, raw)
+            with self.assertRaises(VerificationError):
+                verify(result)
+
+    def test_incomplete_native_result_is_retained_and_verified(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            result = record_failure(self.failure_arguments(root))
+            verified = verify(result)
+            self.assertIs(verified["complete"], False)
+            self.assertEqual(verified["conclusion"], "network-measurement-incomplete")
+            self.assertEqual(verified["exit_status"], 3)
+            with self.assertRaises(RecordError):
+                record_failure(self.failure_arguments(root))
+
+    def test_incomplete_result_rejects_diagnostic_substitution(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            result = record_failure(self.failure_arguments(root))
+            (result / "diagnostic/stderr.txt").write_bytes(b"substituted\n")
             with self.assertRaises(VerificationError):
                 verify(result)
 
