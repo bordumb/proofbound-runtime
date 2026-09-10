@@ -77,9 +77,15 @@ dropped-identity client path, the corrected control ran at exact source
 `1e45d43` in run `34436646720`. All 14 registered cases matched on x86_64 and
 aarch64, and the downloaded immutable inventories verified independently. The
 result establishes only the narrow explicit-channel control; it does not yet
-cover the full network matrix or authorize production work. The next
-experiment step is the preconnected-descriptor control, followed by the
-remaining cross-mechanism attack and measurement matrix.
+cover the full network matrix or authorize production work. The preconnected
+authenticated-channel control then ran at exact source `9fe5d2c` in run
+`34439915673`. All 14 cases matched on both architectures and the downloaded
+82-input inventories verified independently. The control binds one connector-
+owned TLS session and denies direct child networking, but deliberately confirms
+that arbitrary bounded application bytes reach that service. All four first
+controls are now recorded. The next experiment step is the remaining
+cross-mechanism attack and measurement matrix, followed by the reviewed ADR
+decision; no production network implementation is authorized yet.
 
 Upstream promotion is intentionally paused at its review boundary. Proofbound
 PR 2 is green but still needs an independent approving review. A dry run of
@@ -763,7 +769,10 @@ Evaluate at least these profiles:
    and transparent proxying remain outside that result.
 4. **Preconnected descriptors.** Strong for a small protocol-specific client,
    but not transparent to ordinary package managers, Git, or LLM SDKs and
-   difficult to bind to later remote identity changes.
+   difficult to bind to later remote identity changes. The first transparent-
+   channel control bound one connector-owned TLS session and denied direct
+   network bypasses on both architectures at `9fe5d2c`, while confirming that
+   undeclared application operations still reach the selected service.
 
 The attack matrix must cover IPv4/IPv6, DNS rebinding, CNAME chains, literal
 IPs, redirects, proxy protocol confusion, TLS SNI/Host mismatch, HTTP CONNECT,

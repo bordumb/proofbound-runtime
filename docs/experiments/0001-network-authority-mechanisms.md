@@ -1,6 +1,6 @@
 # Experiment 0001: Network authority mechanisms
 
-- **Status:** in progress; mechanism A, B, and C controls recorded
+- **Status:** in progress; mechanism A, B, C, and D controls recorded
 - **Date:** 2026-09-10
 - **Roadmap:** RT-4.1 and RT-4.2
 - **Decision output:** proposed ADR 0003 after reviewed results
@@ -436,6 +436,66 @@ standard library, TLS stack, fixed configuration, parser, wrapper, channel,
 and fixture remain experiment trusted computing base. Mechanism D and the
 remaining full attack matrix are still required before an ADR can select a
 production claim.
+
+## Recorded result: mechanism D control
+
+The first native attempt, run
+[`34439277039`](https://github.com/bordumb/proofbound-runtime/actions/runs/34439277039),
+failed on both architectures before the allowed client wrote its start marker.
+The child filter denied every `fcntl` command, including descriptor queries
+needed while starting the staged Python client. The failure also showed that a
+pre-publication recorder rejection retained only its top-level diagnostic.
+Commit `9fe5d2c` narrowed `fcntl` denial to the two duplication commands and
+made any future recorder failure retain sanitized case state, stdout, stderr,
+and public certificates while excluding fixture private keys. The failed run
+contains no mechanism result.
+
+The preconnected authenticated-channel control then ran at exact source commit
+`9fe5d2c936ce92ee1f1f161000d50284445c3b21` in GitHub Actions run
+[`34439915673`](https://github.com/bordumb/proofbound-runtime/actions/runs/34439915673).
+Both jobs used Linux `6.17.0-1022-azure` and the expected native architecture.
+Each immutable bundle declared 82 result inputs. Independent post-download
+verification found exactly those 82 files, reproduced every size and SHA-256,
+confirmed an empty runner error stream and exit zero, and observed cleanup.
+
+| Case group | x86_64 | aarch64 | Interpretation |
+| --- | ---: | ---: | --- |
+| Exact canonical request | exit 0 | exit 0 | One TLS 1.3 session to the registered endpoint and name returned the fixed response. |
+| Undeclared path and CONNECT-shaped request | exit 0 | exit 0 | Transparent application bytes reach the authenticated service; D does not enforce an operation schema. |
+| Direct TCP, direct UDP, and descendant direct TCP | exit 7 | exit 7 | Child and descendant socket creation remain denied. |
+| Alternate endpoint with denied or allowed certificate | exit 7 | exit 7 | The connector rejects routing-tuple substitution before child execution, even when TLS identity could match. |
+| Wrong certificate and plaintext endpoint | exit 7 | exit 7 | TLS identity or transport failure occurs before child execution. |
+| Connector crash | exit 7 | exit 7 | Session loss is closed with no reconnect or direct fallback. |
+| Wrong channel cookie and non-Unix descriptor | exit 2 | exit 2 | Native descriptor validation rejects both before child execution. |
+| Unexpected inherited descriptor | exit 7 | exit 7 | The wrapper closes the undeclared descriptor before the client observes it. |
+
+Per architecture, ten cases established the one authenticated session, four
+failed before child execution, eight installed the child boundary, and only
+the three positive/application-exposure cases completed a relay. Every
+authenticated observation records TLS 1.3, `allowed.test`, peer
+`127.0.0.1:443`, and the exact generated public-certificate digest. Every
+installed boundary records `no_new_privs`, the registered Unix stream cookie
+and peer credentials, and one stable seccomp program for that architecture.
+
+The x86_64 program contains 60 instructions and has digest
+`5a4a2d657e107785c0461328d5975076be2e8318794f7dfae946525336858b2e`.
+The aarch64 program contains 58 instructions and has digest
+`268c855b1364e73f24f0f706d24a2769e7cfb4fbd9b09b111db75536d89b4f5b`;
+the difference reflects architecture-specific syscall availability. The
+x86_64 `RESULT.json` digest is
+`8c56cdf211ad029f30d57e0e4e7dcb46a1c12f14fc7e93a6e5b8f339690dad0b`;
+the aarch64 digest is
+`c959fbacf64b5c628fed143a567f269af3887832ca128cfc22f9f84dcb90be22`.
+Both record the pre-registered conclusion
+`preconnected-channel-binds-one-authenticated-session-control`.
+
+Mechanism D is narrower in session and routing authority than a reusable
+general network client, but broader in application authority than mechanism
+C: the child can send arbitrary bounded bytes to the one authenticated
+service session. This first control does not cover public DNS, IPv6, CNAMEs,
+redirects, credentials, connection reuse, QUIC, measurements, the complete
+parent attack matrix, or a production lifecycle. It authorizes no Runtime
+schema or receipt change.
 
 ## Evidence and publication boundary
 

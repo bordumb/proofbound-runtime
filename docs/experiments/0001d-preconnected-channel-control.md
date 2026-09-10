@@ -1,6 +1,6 @@
 # Experiment 0001D: Preconnected authenticated channel control
 
-- **Status:** design frozen; implementation not yet recorded
+- **Status:** first native control recorded; full parent matrix remains open
 - **Date:** 2026-09-10
 - **Parent protocol:** [Experiment 0001](0001-network-authority-mechanisms.md)
 - **Roadmap:** RT-4.2 mechanism D
@@ -172,3 +172,37 @@ connection reuse, QUIC, or ordinary unmodified clients; or is ready for a
 Runtime schema. Those limitations must remain visible when mechanism D is
 compared with mechanism C and when ADR 0003 decides whether any production
 claim is worth the added trusted computing base.
+
+## Recorded control
+
+The valid control ran from exact commit
+`9fe5d2c936ce92ee1f1f161000d50284445c3b21` in GitHub Actions run
+[`34439915673`](https://github.com/bordumb/proofbound-runtime/actions/runs/34439915673).
+All 14 cases matched on x86_64 and aarch64. The canonical request and both
+expected authority exposures exited zero. Direct TCP, UDP, descendant TCP,
+endpoint substitution, wrong certificate, plaintext transport, connector
+failure, and foreign-descriptor cases exited 7. Wrong-cookie and non-Unix
+descriptor validation exited 2 before child execution.
+
+Each architecture recorded ten authenticated TLS 1.3 sessions, four expected
+prelaunch failures, eight installed child boundaries, three completed relays,
+and successful cleanup. Independent download verification reproduced every
+one of 82 declared input digests and found no unlisted input. The immutable
+result digests are:
+
+- x86_64:
+  `8c56cdf211ad029f30d57e0e4e7dcb46a1c12f14fc7e93a6e5b8f339690dad0b`;
+- aarch64:
+  `c959fbacf64b5c628fed143a567f269af3887832ca128cfc22f9f84dcb90be22`.
+
+Run `34439277039` remains the failed first attempt. Its missing client-start
+markers exposed an overbroad `fcntl` denial and insufficient retained failure
+diagnostics; `9fe5d2c` narrowed the filter and preserved sanitized future
+failure state. It is not positive mechanism evidence.
+
+The passing result retains the deliberately narrow conclusion
+`preconnected-channel-binds-one-authenticated-session-control`. In particular,
+the undeclared-path and CONNECT-shaped sentinels reached the authenticated
+fixture. That is positive evidence of the expected application-authority
+exposure, not operation-level confinement and not satisfaction of the parent
+experiment's production decision gate.
