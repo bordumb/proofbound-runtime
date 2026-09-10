@@ -1,6 +1,6 @@
 # Experiment 0001: Network authority mechanisms
 
-- **Status:** in progress; mechanism A control recorded
+- **Status:** in progress; mechanism A and B controls recorded
 - **Date:** 2026-09-10
 - **Roadmap:** RT-4.1 and RT-4.2
 - **Decision output:** proposed ADR 0003 after reviewed results
@@ -318,9 +318,60 @@ Both results record the pre-registered conclusion
 This control rejects port-only Landlock as a mechanism for a service-identity
 claim. It does not reject a separately named broad port-authority profile, and
 it does not supply evidence for one. It did not test the full frozen attack
-matrix, benchmark performance, or evaluate mechanisms B through D. The next
-experiment step is the endpoint-mediation control; production schemas and
-Runtime behavior remain unchanged.
+matrix, benchmark performance, or evaluate mechanisms C and D. Production
+schemas and Runtime behavior remain unchanged.
+
+## Recorded result: mechanism B control
+
+The first hosted attempt, run
+[`34432834363`](https://github.com/bordumb/proofbound-runtime/actions/runs/34432834363),
+retained four failure envelopes but produced no mechanism result. A shared
+recorder extraction had left the native runners using a direct Python entry
+path that could not resolve the repository package. The failure occurred after
+the mechanisms ran and before result publication. Commit `8043ed0` changed the
+runners to module entry and added foreign-directory direct-entry regressions;
+the twelve recorder falsifiers then passed locally. The failed run is not
+treated as a network observation.
+
+The cgroup-BPF endpoint control ran at exact source commit
+`8043ed0f5f8c500bc2ada475193d35a7c2a605a4` in GitHub Actions run
+[`34433053261`](https://github.com/bordumb/proofbound-runtime/actions/runs/34433053261).
+Both jobs used Linux `6.17.0-1022-azure` with a cgroup v2 filesystem. Each
+immutable endpoint bundle inventoried 15 inputs; independent post-download
+verification reproduced every recorded SHA-256 digest, found no unlisted file,
+and confirmed an empty runner error stream and exit zero.
+
+| Case | x86_64 | aarch64 | Interpretation |
+| --- | ---: | ---: | --- |
+| Allowed endpoint `127.0.0.1:443` | exit 0 | exit 0 | The registered routing tuple is permitted. |
+| `127.0.0.2:443` substitution | exit 7 | exit 7 | The connect4 program rejects a different address on the allowed port. |
+| `127.0.0.1:8443` substitution | exit 7 | exit 7 | The connect4 program rejects a different port on the allowed address. |
+| Wrong name/certificate on the allowed tuple | exit 60 | exit 60 | The HTTPS client, not cgroup BPF, rejects transport identity. |
+
+Both results record clean program detach and cgroup removal. They contain the
+same connect4 instruction digest
+`8b3a18759d38c8c8de26f898f52fd954c260e3c7ab743b343d9a3d33b363c67e`
+and connect6 instruction digest
+`59f4a931744dcdc62944a018ed3990e666ec6444616418d3b09a82dc5c753d52`.
+Their architecture-specific kernel BTF identities, verifier logs, program IDs,
+cgroup IDs, compiler, client, and certificate identities remain in the
+downloadable result bundles.
+
+The aarch64 `RESULT.json` digest is
+`c95c8a916a13c613c76ca24ef739f64113cd50dc2a97d41fc721a4c3d9e7a310`.
+The x86_64 digest is
+`5df5307cd1774bd004f495e7e11d14d4c27c59326c3c7fa5d7f19d9778664e76`.
+Both results record the pre-registered conclusion
+`endpoint-control-selects-routing-tuple-only`.
+
+This control confirms that cgroup BPF can select one routing tuple in the
+bounded fixture. It does not establish that `127.0.0.1` remains associated with
+`allowed.test`, authenticate TLS, constrain redirects or application bytes,
+test the full frozen attack matrix, or justify a production endpoint profile.
+The privileged loader, programs, maps for a future address set, attachment
+lifecycle, BTF/kernel behavior, and resolver/TLS binding would all require
+normative treatment. The next experiment step is the per-execution broker;
+production schemas and Runtime behavior remain unchanged.
 
 ## Evidence and publication boundary
 

@@ -64,7 +64,11 @@ port-only Landlock control ran at exact source `d8d468b` in GitHub Actions run
 verified independently and reached the pre-registered conclusion:
 `port-only-landlock-cannot-select-service`. This is an observation that rejects
 port-only Landlock for a service-identity claim; it authorizes no network
-production code. The next experiment step is the endpoint-mediation control.
+production code. The cgroup-BPF endpoint control then ran at exact source
+`8043ed0` in run `34433053261`. Both architectures selected the allowed routing
+tuple, denied address and port substitutions, retained exact BPF/kernel
+identities, and observed cleanup. This confirms endpoint selection, not DNS or
+TLS service identity. The next experiment step is the per-execution broker.
 
 Upstream promotion is intentionally paused at its review boundary. Proofbound
 PR 2 is green but still needs an independent approving review. A dry run of
@@ -736,6 +740,9 @@ Evaluate at least these profiles:
 2. **IP endpoint mediation.** A cgroup BPF `connect4`/`connect6` policy can
    enforce network endpoints but adds privilege, loader, attachment, pinning,
    and lifecycle requirements. DNS identity remains outside the kernel rule.
+   The first native control selected one IPv4 tuple and denied endpoint and
+   port substitutions on both architectures at `8043ed0`; it did not establish
+   service identity or test a production lifecycle.
 3. **Per-execution egress broker.** Deny direct child network syscalls and give
    the child only an identified channel to a broker that enforces declared
    service and port policy. The broker, resolver, protocol parser, lifecycle,
