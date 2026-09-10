@@ -40,6 +40,7 @@ SCRIPTS = {
     "rebind",
     "cname-allowed",
     "cname-denied",
+    "cname-depth",
     "cname-loop",
     "truncated-fallback",
     "malformed",
@@ -261,6 +262,16 @@ def response_for(
             [
                 resource_record(TYPE_CNAME, "loop.test"),
                 resource_record(TYPE_CNAME, query.name, "loop.test"),
+            ]
+        )
+    elif script == "cname-depth":
+        answers.extend(
+            [
+                resource_record(TYPE_CNAME, "depth-1.test"),
+                resource_record(TYPE_CNAME, "depth-2.test", "depth-1.test"),
+                resource_record(TYPE_CNAME, "depth-3.test", "depth-2.test"),
+                resource_record(TYPE_CNAME, "allowed.test", "depth-3.test"),
+                address_record(query.question_type, True, "allowed.test"),
             ]
         )
     else:

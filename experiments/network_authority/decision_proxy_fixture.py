@@ -102,6 +102,7 @@ def serve_proxy_fixture(
     certificate: Path,
     private_key: Path,
     ready_file: Path,
+    contact_file: Path,
     observation_file: Path,
 ) -> int:
     """Serve one TLS-authenticated interactive proxy transcript."""
@@ -111,7 +112,9 @@ def serve_proxy_fixture(
         not 0 <= port <= 65535
         or script not in SCRIPTS
         or not ready_file.is_absolute()
+        or not contact_file.is_absolute()
         or not observation_file.is_absolute()
+        or len({ready_file, contact_file, observation_file}) != 3
     ):
         raise ProxyFixtureError("proxy fixture configuration is invalid")
     family = socket.AF_INET if address.version == 4 else socket.AF_INET6
@@ -142,6 +145,17 @@ def serve_proxy_fixture(
         )
         connection, peer = listener.accept()
         with connection:
+            write_new(
+                contact_file,
+                canonical_json(
+                    {
+                        "event": "tcp-accepted",
+                        "family": "ipv4" if address.version == 4 else "ipv6",
+                        "peer_ip": peer[0],
+                        "schema": "proofbound-runtime-decision-proxy-contact/1",
+                    }
+                ),
+            )
             with context.wrap_socket(connection, server_side=True) as protected:
                 protected.settimeout(3)
                 if server_names != ["allowed.test"]:
@@ -179,6 +193,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--certificate", type=Path, required=True)
     result.add_argument("--private-key", type=Path, required=True)
     result.add_argument("--ready-file", type=Path, required=True)
+    result.add_argument("--contact-file", type=Path, required=True)
     result.add_argument("--observation-file", type=Path, required=True)
     return result
 
@@ -195,6 +210,7 @@ def main() -> int:
             arguments.certificate,
             arguments.private_key,
             arguments.ready_file,
+            arguments.contact_file,
             arguments.observation_file,
         )
     except (OSError, ProxyFixtureError, ssl.SSLError, ValueError) as error:

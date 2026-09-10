@@ -60,6 +60,15 @@ class ScriptedDnsTests(unittest.TestCase):
         self.assertEqual(looped.count(b"\x04loop\x04test\x00"), 2)
         self.assertNotEqual(allowed, denied)
 
+    def test_over_depth_cname_chain_is_distinct_and_rejected(self) -> None:
+        query = build_query(27, "alias.test", TYPE_A)
+        response = response_for(query, "cname-depth", 0, "udp") or b""
+        self.assertIn(b"\x07depth-1\x04test\x00", response)
+        self.assertIn(b"\x07depth-3\x04test\x00", response)
+        self.assertNotEqual(response, response_for(query, "cname-loop", 0, "udp"))
+        with self.assertRaisesRegex(DnsError, "loops or exceeds"):
+            validate_resolution(query, response, allow_cname=True)
+
     def test_truncation_malformed_dnssec_and_timeout_are_exact(self) -> None:
         query = build_query(29, "allowed.test", TYPE_A)
         truncated = response_for(query, "truncated-fallback", 0, "udp") or b""
@@ -112,7 +121,7 @@ class ScriptedDnsTests(unittest.TestCase):
                 validate_resolution(query, response or b"", allow_cname=False)
 
         alias_query = build_query(47, "alias.test", TYPE_A)
-        for script in ("cname-denied", "cname-loop"):
+        for script in ("cname-denied", "cname-loop", "cname-depth"):
             response = response_for(alias_query, script, 0, "udp")
             self.assertIsNotNone(response)
             with self.assertRaises(DnsError):

@@ -86,6 +86,7 @@ class DecisionProxyFixtureTests(unittest.TestCase):
     def live_exchange(self, root: Path, script: str) -> dict[str, object]:
         certificate, private_key = self.certificate(root)
         ready = root / "ready.json"
+        contact = root / "contact.json"
         observation = root / "observation.json"
         errors: list[BaseException] = []
 
@@ -98,6 +99,7 @@ class DecisionProxyFixtureTests(unittest.TestCase):
                     certificate,
                     private_key,
                     ready,
+                    contact,
                     observation,
                 )
             except BaseException as error:
@@ -150,6 +152,9 @@ class DecisionProxyFixtureTests(unittest.TestCase):
         thread.join(timeout=2)
         self.assertFalse(thread.is_alive())
         self.assertEqual(errors, [])
+        contact_observation = json.loads(contact.read_bytes())
+        self.assertEqual(contact_observation["event"], "tcp-accepted")
+        self.assertEqual(contact_observation["family"], "ipv4")
         return json.loads(observation.read_bytes())
 
     def test_live_http_connect_reaches_denied_sentinel(self) -> None:
