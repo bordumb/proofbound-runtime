@@ -107,6 +107,7 @@ never relays arbitrary stream bytes and never accepts a CONNECT-like target.
 | Zero, oversized, truncated, duplicate-key, unknown-field, invalid-UTF-8, or noncanonical frame | Protocol rejection with no broader parse or retry. |
 | Child forks before attempting direct network | Descendant retains the same seccomp restriction. |
 | Broker exits before or during a request | Closed child failure; no direct fallback. |
+| No client reaches a fixture listener | Fixture timeout and incomplete result rather than an unbounded run. |
 | Unexpected inherited descriptor | Wrapper rejection before child `exec`. |
 | Existing output or result path | No replacement and no positive result. |
 

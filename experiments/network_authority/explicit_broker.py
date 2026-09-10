@@ -197,6 +197,7 @@ def serve_fixture(
         listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         listener.bind((address, port))
         listener.listen(1)
+        listener.settimeout(10)
         write_new(ready_file, b"ready\n")
         connection, _ = listener.accept()
         with connection:
