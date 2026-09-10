@@ -48,7 +48,8 @@ jobs:
             experiments.network_authority.test_routing_transport_case \
             experiments.network_authority.test_routing_child_control \
             experiments.network_authority.test_routing_endpoint_control \
-            experiments.network_authority.test_routing_transport_client
+            experiments.network_authority.test_routing_transport_client \
+            experiments.network_authority.test_routing_cell
 
       - name: Falsify the native routing boundaries
         run: |
