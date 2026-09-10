@@ -62,6 +62,11 @@ descriptor. Before `exec`, a native wrapper:
 4. drops supplementary groups and changes to uid/gid 65534; and
 5. executes the identified case client.
 
+The native runner copies the case client's four-file Python package closure to
+the disposable root, compares every staged file byte-for-byte with the exact
+Git source, and makes only that staging path traversable by the dropped child.
+It does not relax permissions on the checkout or execute an unrecorded client.
+
 The wrapper records its exact source and binary identity plus the seccomp
 instruction bytes. It is experiment trusted computing base. This control does
 not reuse the Runtime launcher and creates no Runtime assurance evidence.

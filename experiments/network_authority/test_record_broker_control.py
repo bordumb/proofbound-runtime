@@ -12,7 +12,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from experiments.network_authority.record_broker_control import CASES, record
+from experiments.network_authority.record_broker_control import CASES, SOURCE_FILES, record
 from experiments.network_authority.record_common import RecordError
 
 
@@ -35,13 +35,7 @@ class RecorderTests(unittest.TestCase):
         work = root / "work"
         source_dir = source / "experiments" / "network_authority"
         source_dir.mkdir(parents=True)
-        for name in (
-            "broker-control.toml",
-            "explicit_broker.py",
-            "broker_case_client.py",
-            "run_broker_case.py",
-            "broker_child_control.c",
-        ):
+        for name in ("broker-control.toml", *SOURCE_FILES):
             (source_dir / name).write_text(f"{name}\n", encoding="utf-8")
         work.mkdir()
         wrapper = work / "broker-child-control"

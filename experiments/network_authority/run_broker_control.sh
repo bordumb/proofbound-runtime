@@ -49,7 +49,7 @@ if [[ "$repository_root" != "$expected_root" || $EUID -ne 0 ]]; then
 fi
 cd "$repository_root"
 
-for command in cc chown ip openssl python3; do
+for command in cc chown cmp cp ip openssl python3; do
   if ! command -v "$command" >/dev/null 2>&1; then
     echo "network experiment prerequisite is unavailable: $command" >&2
     exit 3
@@ -77,9 +77,18 @@ mkdir -p \
   "$work_root/broker-stderr" \
   "$work_root/fixture-stdout" \
   "$work_root/fixture-stderr" \
-  "$work_root/state"
+  "$work_root/state" \
+  "$work_root/client-package/experiments/network_authority"
 chown 65534:65534 "$work_root/home"
 ip link set lo up
+
+client_package="$work_root/client-package/experiments/network_authority"
+for name in __init__.py broker_case_client.py explicit_broker.py record_common.py; do
+  source_file="$repository_root/experiments/network_authority/$name"
+  cp -- "$source_file" "$client_package/$name"
+  chmod 0644 "$client_package/$name"
+  cmp --silent "$source_file" "$client_package/$name"
+done
 
 cc -std=c11 -Wall -Wextra -Werror -O2 \
   "$repository_root/experiments/network_authority/broker_child_control.c" \
@@ -164,7 +173,7 @@ for case_id in "${cases[@]}"; do
     --case "$case_id" \
     --repository-root "$repository_root" \
     --wrapper "$work_root/broker-child-control" \
-    --client "$repository_root/experiments/network_authority/broker_case_client.py" \
+    --client "$client_package/broker_case_client.py" \
     --state-directory "$work_root/state/$case_id" \
     --broker-stdout "$work_root/broker-stdout/$case_id.log" \
     --broker-stderr "$work_root/broker-stderr/$case_id.log" \

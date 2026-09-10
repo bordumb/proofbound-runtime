@@ -42,7 +42,9 @@ CASES = (
     ("foreign-descriptor-denied", False),
 )
 SOURCE_FILES = (
+    "__init__.py",
     "explicit_broker.py",
+    "record_common.py",
     "broker_case_client.py",
     "run_broker_case.py",
     "broker_child_control.c",
