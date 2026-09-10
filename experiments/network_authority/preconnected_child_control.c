@@ -222,7 +222,17 @@ static const struct sock_filter filter_instructions[] = {
 #ifdef __NR_dup3
     DENY_SYSCALL(__NR_dup3),
 #endif
-    DENY_SYSCALL(__NR_fcntl),
+    BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, __NR_fcntl, 0, 5),
+    BPF_STMT(BPF_LD | BPF_W | BPF_ABS,
+             (uint32_t)offsetof(struct seccomp_data, args[1])),
+    BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, F_DUPFD, 0, 1),
+    BPF_STMT(BPF_RET | BPF_K,
+             SECCOMP_RET_ERRNO | (EPERM & SECCOMP_RET_DATA)),
+    BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, F_DUPFD_CLOEXEC, 0, 1),
+    BPF_STMT(BPF_RET | BPF_K,
+             SECCOMP_RET_ERRNO | (EPERM & SECCOMP_RET_DATA)),
+    BPF_STMT(BPF_LD | BPF_W | BPF_ABS,
+             (uint32_t)offsetof(struct seccomp_data, nr)),
 #ifdef __NR_pidfd_getfd
     DENY_SYSCALL(__NR_pidfd_getfd),
 #endif

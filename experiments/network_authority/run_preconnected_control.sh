@@ -169,6 +169,7 @@ print("true" if observed else "false")
 PY
 } 2>/dev/null || printf 'false\n')"
 
+set +e
 python3 -m experiments.network_authority.record_preconnected_control \
   --output "$output_directory" \
   --source-root "$repository_root" \
@@ -194,6 +195,25 @@ python3 -m experiments.network_authority.record_preconnected_control \
   --wrong-cookie-denied "${case_exits[wrong-cookie-denied]}" \
   --non-unix-descriptor-denied "${case_exits[non-unix-descriptor-denied]}" \
   --foreign-descriptor-denied "${case_exits[foreign-descriptor-denied]}"
+record_exit=$?
+set -e
+
+if [[ "$record_exit" -ne 0 ]]; then
+  if [[ ! -e "$output_directory" ]]; then
+    mkdir "$output_directory"
+    cp -R -- "$work_root/state" "$output_directory/state"
+    cp -R -- "$work_root/home" "$output_directory/client-started"
+    cp -R -- "$work_root/stdout" "$output_directory/stdout"
+    cp -R -- "$work_root/stderr" "$output_directory/stderr"
+    cp -R -- "$work_root/fixture-stdout" "$output_directory/fixture-stdout"
+    cp -R -- "$work_root/fixture-stderr" "$output_directory/fixture-stderr"
+    cp -- "$work_root/allowed-certificate.pem" "$output_directory/allowed-certificate.pem"
+    cp -- "$work_root/denied-certificate.pem" "$output_directory/denied-certificate.pem"
+    printf '%s\n' "$source_commit" >"$output_directory/source-commit.txt"
+    printf '%s\n' "$cleanup_observed" >"$output_directory/cleanup-observed.txt"
+  fi
+  exit "$record_exit"
+fi
 
 python3 -c \
   'import json,sys; result=json.load(open(sys.argv[1], encoding="utf-8")); raise SystemExit(result["conclusion"] != "preconnected-channel-binds-one-authenticated-session-control")' \
