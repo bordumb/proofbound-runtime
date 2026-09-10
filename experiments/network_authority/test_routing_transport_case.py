@@ -10,6 +10,7 @@ from experiments.network_authority.routing_transport_case import (
     MECHANISMS,
     ROUTING_CASE_IDS,
     RoutingCaseError,
+    case_plan,
     load_routing_matrix,
     parse_expectation,
     plan_rejection,
@@ -29,6 +30,25 @@ class RoutingTransportCaseTests(unittest.TestCase):
             self.assertEqual(tuple(item.mechanism for item in case.expectations), MECHANISMS)
             for mechanism in MECHANISMS:
                 self.assertEqual(case.expectation(mechanism).mechanism, mechanism)
+
+    def test_case_plan_freezes_matrix_identity_and_expectation(self) -> None:
+        matrix = load_routing_matrix(MATRIX)
+        case = matrix.cases[0]
+        plan = case_plan(case, "landlock-port", matrix.source_sha256)
+        self.assertEqual(
+            plan,
+            {
+                "action": "tls-request-ipv4",
+                "case": "exact-service-ipv4",
+                "decision_matrix_sha256": matrix.source_sha256,
+                "expectation": {
+                    "outcome": "allowed",
+                    "stage": "application-protocol",
+                },
+                "mechanism": "landlock-port",
+                "schema": "proofbound-runtime-routing-case-plan/1",
+            },
+        )
 
     def mutate(self, before: bytes, after: bytes) -> Path:
         self.assertIn(before, MATRIX.read_bytes())

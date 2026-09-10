@@ -214,11 +214,24 @@ def cell_document(
     case: RoutingCase,
     mechanism: str,
     raw_path: Path,
+    plan_path: Path,
+    matrix_sha256: str,
 ) -> dict[str, object]:
     """Derive one cell, retaining invalid raw input as a harness failure."""
 
     expected = case.expectation(mechanism)
     try:
+        plan = read_document(plan_path)
+        expected_plan = {
+            "action": case.action,
+            "case": case.identifier,
+            "decision_matrix_sha256": matrix_sha256,
+            "expectation": {"outcome": expected.outcome, "stage": expected.stage},
+            "mechanism": mechanism,
+            "schema": "proofbound-runtime-routing-case-plan/1",
+        }
+        if plan != expected_plan:
+            raise RoutingOrchestrationError("prelaunch case plan changed")
         raw = read_document(raw_path)
         observed = classify(raw, case, mechanism)
         observed_document: dict[str, object] = {
@@ -292,6 +305,8 @@ def record(arguments: argparse.Namespace) -> Path:
             case,
             arguments.mechanism,
             evidence_root / f"cases/{case.identifier}/raw-cell.json",
+            evidence_root / f"cases/{case.identifier}/case-plan.json",
+            matrix.source_sha256,
         )
         for case in matrix.cases
     ]

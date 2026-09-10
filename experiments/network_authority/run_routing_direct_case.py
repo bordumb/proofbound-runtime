@@ -25,6 +25,7 @@ from experiments.network_authority.record_common import (
 from experiments.network_authority.routing_cell import raw_cell
 from experiments.network_authority.routing_transport_case import (
     RoutingCase,
+    case_plan,
     load_routing_matrix,
     plan_rejection,
 )
@@ -322,6 +323,10 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
         raise RoutingOrchestrationError("routing case identity is not unique")
     case = matches[0]
     arguments.case_root.mkdir(mode=0o755)
+    write_new(
+        arguments.case_root / "case-plan.json",
+        canonical_json(case_plan(case, arguments.mechanism, matrix.source_sha256)),
+    )
     rejection = plan_rejection(case.identifier)
     if rejection is not None:
         raw = raw_cell(case, arguments.mechanism, plan_rejection=rejection)

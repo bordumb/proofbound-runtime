@@ -15,6 +15,7 @@ from experiments.network_authority.record_routing_transport import record
 from experiments.network_authority.routing_cell import CLIENT_SCHEMA, raw_cell
 from experiments.network_authority.routing_transport_case import (
     RoutingCase,
+    case_plan,
     load_routing_matrix,
     plan_rejection,
 )
@@ -126,6 +127,9 @@ class RoutingRecorderTests(unittest.TestCase):
         for case in MATRIX.cases:
             case_root = cases / case.identifier
             case_root.mkdir()
+            (case_root / "case-plan.json").write_bytes(
+                canonical_json(case_plan(case, "landlock-port", MATRIX.source_sha256))
+            )
             (case_root / "raw-cell.json").write_bytes(canonical_json(landlock_raw(case)))
             (case_root / "child.stdout").write_bytes(b"")
             (case_root / "child.stderr").write_bytes(b"")

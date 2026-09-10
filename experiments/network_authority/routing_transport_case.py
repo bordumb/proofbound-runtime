@@ -123,6 +123,25 @@ class RoutingMatrix:
     cases: tuple[RoutingCase, ...]
 
 
+def case_plan(
+    case: RoutingCase, mechanism: str, matrix_sha256: str
+) -> dict[str, object]:
+    """Freeze one registered expectation before its case starts."""
+
+    expectation = case.expectation(mechanism)
+    return {
+        "action": case.action,
+        "case": case.identifier,
+        "decision_matrix_sha256": matrix_sha256,
+        "expectation": {
+            "outcome": expectation.outcome,
+            "stage": expectation.stage,
+        },
+        "mechanism": mechanism,
+        "schema": "proofbound-runtime-routing-case-plan/1",
+    }
+
+
 def parse_expectation(raw: object) -> Expectation:
     """Decode one exact mechanism=outcome@stage cell."""
 

@@ -31,6 +31,7 @@ from experiments.network_authority.run_routing_direct_case import (
 from experiments.network_authority.routing_cell import raw_cell
 from experiments.network_authority.routing_transport_case import (
     RoutingCase,
+    case_plan,
     load_routing_matrix,
     plan_rejection,
 )
@@ -214,6 +215,10 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
         raise RoutingOrchestrationError("broker routing case is not unique")
     case = matches[0]
     arguments.case_root.mkdir(mode=0o755)
+    write_new(
+        arguments.case_root / "case-plan.json",
+        canonical_json(case_plan(case, "explicit-broker", matrix.source_sha256)),
+    )
     rejection = plan_rejection(case.identifier)
     if case.identifier == "ipv4-mapped-ipv6":
         rejection = "interface-cannot-represent-address"

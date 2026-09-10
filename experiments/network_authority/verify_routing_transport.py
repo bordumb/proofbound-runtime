@@ -518,6 +518,17 @@ def verify(root: Path) -> dict[str, object]:
     expectations = expected_cells(matrix_bytes, mechanism)
     matched = 0
     for case, expected_outcome, expected_stage in expectations:
+        plan = document(root / f"evidence/cases/{case}/case-plan.json")
+        expected_plan = {
+            "action": ACTIONS[case],
+            "case": case,
+            "decision_matrix_sha256": sha256(matrix_bytes),
+            "expectation": {"outcome": expected_outcome, "stage": expected_stage},
+            "mechanism": mechanism,
+            "schema": "proofbound-runtime-routing-case-plan/1",
+        }
+        if plan != expected_plan:
+            raise VerificationError("prelaunch case plan does not match the matrix")
         cell = document(root / f"cells/{case}/CELL.json")
         if set(cell) != {
             "case",
