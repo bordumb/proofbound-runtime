@@ -227,5 +227,7 @@ verifier. The exact result identities and interpretation are recorded in
 [Experiment 0001F](0001f-routing-transport-slice.md).
 
 Steps 4 through 9 remain open. The next permitted implementation step is the
-resolution and application-indirection slice; the recorded routing result is
-not a mechanism decision and authorizes no production network behavior.
+resolution and application-indirection slice, whose implementation contract is
+frozen in [Experiment 0001G](0001g-resolution-indirection-slice.md); the
+recorded routing result is not a mechanism decision and authorizes no
+production network behavior.

@@ -74,6 +74,8 @@ The decision-grade execution protocol is specified in
 [`0001e-decision-matrix-execution.md`](../../docs/experiments/0001e-decision-matrix-execution.md).
 Its first functional slice is frozen separately in
 [`0001f-routing-transport-slice.md`](../../docs/experiments/0001f-routing-transport-slice.md).
+The second functional slice is frozen in
+[`0001g-resolution-indirection-slice.md`](../../docs/experiments/0001g-resolution-indirection-slice.md).
 The committed decision matrix, generated inventory, and deterministic
 DNS/TLS/redirect/proxy/socket fixtures are inputs to those slices; they do not
 change a Runtime network policy or release artifact.
