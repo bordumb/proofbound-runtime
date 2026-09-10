@@ -18,7 +18,7 @@ from experiments.network_authority.bypass_syscall_probe import (
 
 class BypassSyscallProbeTests(unittest.TestCase):
     def test_catalog_is_closed(self) -> None:
-        self.assertEqual(len(ACTIONS), 7)
+        self.assertEqual(len(ACTIONS), 8)
         self.assertEqual(len(ACTIONS), len(set(ACTIONS)))
         with self.assertRaises(BypassProbeError):
             execute("unknown", None)
@@ -63,6 +63,14 @@ class BypassSyscallProbeTests(unittest.TestCase):
                 execute("fork-exec-at-process-limit", None),
                 [{"errno": errno.EAGAIN, "result": "error", "syscall": "fork"}],
             )
+
+    def test_install_race_connect_is_attempted_only_for_frozen_target(self) -> None:
+        denied = OSError(errno.EPERM, "denied")
+        with mock.patch("socket.socket", side_effect=denied):
+            result = execute("concurrent-install-and-connect", None, "127.0.0.2", 8443)
+        self.assertEqual(result[0]["errno"], errno.EPERM)
+        with self.assertRaises(BypassProbeError):
+            execute("concurrent-install-and-connect", None, "127.0.0.1", 443)
 
 
 if __name__ == "__main__":

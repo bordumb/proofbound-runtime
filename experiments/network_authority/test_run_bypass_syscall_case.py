@@ -17,6 +17,7 @@ class BypassSyscallOrchestrationTests(unittest.TestCase):
         values = dict(
             case="raw-and-packet-sockets", mechanism=mechanism,
             client=Path("/client"), process_limit_control=Path("/limit"),
+            stopped_release_control=Path("/stopped"),
             routing_child_control=Path("/routing-child"),
             broker_child_control=Path("/broker-child"),
             preconnected_child_control=Path("/channel-child"),
@@ -40,6 +41,13 @@ class BypassSyscallOrchestrationTests(unittest.TestCase):
         command = child_command(arguments, Path("/state"), Path("/output"), None)
         self.assertLess(command.index("/routing-child"), command.index("/limit"))
         self.assertLess(command.index("/limit"), command.index("/client"))
+
+    def test_install_race_inserts_stopped_release_inside_child_boundary(self) -> None:
+        arguments = self.arguments("cgroup-endpoint")
+        arguments.case = "concurrent-install-and-connect"
+        command = child_command(arguments, Path("/state"), Path("/output"), None)
+        self.assertLess(command.index("/routing-child"), command.index("/stopped"))
+        self.assertLess(command.index("/stopped"), command.index("/client"))
 
 
 if __name__ == "__main__":

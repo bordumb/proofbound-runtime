@@ -26,6 +26,7 @@ ACTIONS = (
     "io-uring-descriptor-send",
     "raw-and-packet-sockets",
     "fork-exec-at-process-limit",
+    "concurrent-install-and-connect",
 )
 
 
@@ -56,7 +57,12 @@ def io_uring_setup() -> int:
     return result
 
 
-def execute(action: str, inherited_fd: int | None) -> list[dict[str, object]]:
+def execute(
+    action: str,
+    inherited_fd: int | None,
+    address: str | None = None,
+    port: int | None = None,
+) -> list[dict[str, object]]:
     """Run the exact syscall inventory for one bypass action."""
 
     if action not in ACTIONS:
@@ -80,6 +86,16 @@ def execute(action: str, inherited_fd: int | None) -> list[dict[str, object]]:
             os._exit(0)
         os.waitpid(child, 0)
         return [{"errno": None, "result": "success", "syscall": "fork"}]
+    if action == "concurrent-install-and-connect":
+        if address not in {"127.0.0.2", "fd00::2"} or port != 8443:
+            raise BypassProbeError("race target is outside the frozen topology")
+
+        def connect() -> None:
+            family = socket.AF_INET6 if ":" in address else socket.AF_INET
+            with socket.socket(family, socket.SOCK_STREAM) as channel:
+                channel.connect((address, port))
+
+        return [observe("connect-after-acknowledgement", connect)]
     packet = getattr(socket, "AF_PACKET", 17)
     return [
         observe("socket(AF_INET,SOCK_RAW)", lambda: socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)),
@@ -91,6 +107,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument("--action", choices=ACTIONS, required=True)
     parser.add_argument("--inherited-fd", type=int)
+    parser.add_argument("--address")
+    parser.add_argument("--port", type=int)
     parser.add_argument("--started-file", type=Path, required=True)
     parser.add_argument("--observation", type=Path, required=True)
     arguments = parser.parse_args()
@@ -102,7 +120,7 @@ def main() -> int:
         ):
             raise BypassProbeError("bypass probe output paths are invalid")
         write_new(arguments.started_file, b"started\n")
-        attempts = execute(arguments.action, arguments.inherited_fd)
+        attempts = execute(arguments.action, arguments.inherited_fd, arguments.address, arguments.port)
         write_new(
             arguments.observation,
             canonical_json({"action": arguments.action, "attempts": attempts, "schema": SCHEMA}),

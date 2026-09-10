@@ -49,6 +49,8 @@ def subject_identities(arguments: argparse.Namespace) -> dict[str, str]:
     }
     if arguments.mechanism in {"landlock-port", "cgroup-endpoint"}:
         paths["mechanism-control"] = arguments.mechanism_control
+    if arguments.case == "concurrent-install-and-connect":
+        paths["stopped-release-control"] = arguments.stopped_release_control
     return {name: hashlib.sha256(regular_bytes(path)).hexdigest() for name, path in paths.items()}
 
 
@@ -64,8 +66,17 @@ def child_command(
         "--started-file", str(output / "started.txt"),
         "--observation", str(output / "observation.json"),
     ]
+    if action == "concurrent-install-and-connect":
+        probe.extend(["--address", "127.0.0.2", "--port", "8443"])
     if action == "fork-exec-at-process-limit":
         probe = [str(arguments.process_limit_control), "--", *probe]
+    if action == "concurrent-install-and-connect":
+        probe = [
+            str(arguments.stopped_release_control),
+            str(state / "release-sequence"),
+            "--",
+            *probe,
+        ]
     if arguments.mechanism in {"landlock-port", "cgroup-endpoint"}:
         child = [str(arguments.routing_child_control), str(state / "child-boundary"), "--", *probe]
         if arguments.mechanism == "landlock-port":
@@ -102,6 +113,10 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
     output = arguments.case_root / "child-output"
     output.mkdir(mode=0o700)
     os.chown(output, 65534, 65534)
+    if case.identifier == "concurrent-install-and-connect":
+        sequence = arguments.case_root / "release-sequence"
+        sequence.mkdir(mode=0o700)
+        os.chown(sequence, 65534, 65534)
     parent: socket.socket | None = None
     child: socket.socket | None = None
     passed: tuple[int, ...] = ()
@@ -128,14 +143,44 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
     observation = read_document(output / "observation.json")
     if set(observation) != {"action", "attempts", "schema"} or observation["action"] != case.identifier or observation["schema"] != SCHEMA or not isinstance(observation["attempts"], list):
         raise BypassSyscallOrchestrationError("native bypass observation changed")
-    raw = raw_cell(case, arguments.mechanism, syscall_attempts=observation["attempts"])
+    if case.identifier == "concurrent-install-and-connect":
+        attempts = observation["attempts"]
+        if (
+            attempts
+            != [
+                {
+                    "errno": 1,
+                    "result": "error",
+                    "syscall": "connect-after-acknowledgement",
+                }
+            ]
+            or regular_bytes(arguments.case_root / "release-sequence/child-stopped.txt")
+            != b"child-stopped\n"
+            or regular_bytes(
+                arguments.case_root / "release-sequence/boundary-acknowledged.txt"
+            )
+            != b"boundary-acknowledged\n"
+        ):
+            raise BypassSyscallOrchestrationError("stopped release evidence changed")
+        raw = raw_cell(
+            case,
+            arguments.mechanism,
+            events=[
+                "child-stopped",
+                "boundary-acknowledged",
+                "child-released",
+                "connect-denied",
+            ],
+        )
+    else:
+        raw = raw_cell(case, arguments.mechanism, syscall_attempts=observation["attempts"])
     write_new(arguments.raw_output, canonical_json(raw))
     return raw
 
 
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(allow_abbrev=False)
-    for name in ("matrix", "case-root", "raw-output", "repository-root", "client", "process-limit-control", "routing-child-control", "broker-child-control", "preconnected-child-control"):
+    for name in ("matrix", "case-root", "raw-output", "repository-root", "client", "process-limit-control", "stopped-release-control", "routing-child-control", "broker-child-control", "preconnected-child-control"):
         result.add_argument(f"--{name}", type=Path, required=True)
     result.add_argument("--case", choices=ACTIONS, required=True)
     result.add_argument("--mechanism", required=True)
