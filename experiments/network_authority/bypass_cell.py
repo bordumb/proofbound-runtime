@@ -71,6 +71,8 @@ def derive(raw: object, case: BypassCase, mechanism: str) -> ObservedCell:
     if identifier == "concurrent-install-and-connect":
         if raw["events"] != ["child-stopped", "boundary-acknowledged", "child-released", "connect-denied"]:
             raise BypassCellError("install race sequence changed")
+        number = errno.EACCES if mechanism == "landlock-port" else errno.EPERM
+        _attempts(raw, ("connect-after-acknowledgement",), (number,))
         return ObservedCell("denied", "child-boundary")
     if identifier.startswith("mediator-"):
         if mechanism in {"landlock-port", "cgroup-endpoint"}:

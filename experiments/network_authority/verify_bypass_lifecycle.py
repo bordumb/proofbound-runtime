@@ -282,6 +282,8 @@ def derive(raw: object, case: str, mechanism: str) -> tuple[str, str]:
     if case == "concurrent-install-and-connect":
         if raw["events"] != ["child-stopped", "boundary-acknowledged", "child-released", "connect-denied"]:
             raise VerificationError("install race sequence changed")
+        number = errno.EACCES if mechanism == "landlock-port" else errno.EPERM
+        _attempts(raw, ("connect-after-acknowledgement",), (number,))
         return "denied", "child-boundary"
     if case.startswith("mediator-"):
         if mechanism in {"landlock-port", "cgroup-endpoint"}:

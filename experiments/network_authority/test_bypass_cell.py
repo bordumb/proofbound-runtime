@@ -28,7 +28,8 @@ def observed(case, mechanism: str) -> dict[str, object]:
     if identifier == "fork-exec-at-process-limit":
         return raw_cell(case, mechanism, syscall_attempts=[{"errno": errno.EAGAIN, "result": "error", "syscall": "fork"}])
     if identifier == "concurrent-install-and-connect":
-        return raw_cell(case, mechanism, events=["child-stopped", "boundary-acknowledged", "child-released", "connect-denied"])
+        number = errno.EACCES if mechanism == "landlock-port" else errno.EPERM
+        return raw_cell(case, mechanism, events=["child-stopped", "boundary-acknowledged", "child-released", "connect-denied"], syscall_attempts=[{"errno": number, "result": "error", "syscall": "connect-after-acknowledgement"}])
     if identifier.startswith("mediator-"):
         if mechanism in {"landlock-port", "cgroup-endpoint"}:
             return raw_cell(case, mechanism, plan_rejection="mechanism-has-no-mediator")

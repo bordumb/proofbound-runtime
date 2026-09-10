@@ -166,11 +166,12 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
         raise BypassSyscallOrchestrationError("native bypass observation changed")
     if case.identifier == "concurrent-install-and-connect":
         attempts = observation["attempts"]
+        expected_errno = 13 if arguments.mechanism == "landlock-port" else 1
         if (
             attempts
             != [
                 {
-                    "errno": 1,
+                    "errno": expected_errno,
                     "result": "error",
                     "syscall": "connect-after-acknowledgement",
                 }
@@ -192,6 +193,7 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
                 "child-released",
                 "connect-denied",
             ],
+            syscall_attempts=attempts,
         )
     else:
         raw = raw_cell(case, arguments.mechanism, syscall_attempts=observation["attempts"])
