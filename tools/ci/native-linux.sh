@@ -2,6 +2,7 @@
 set -euo pipefail
 
 supervisor_leaf="proofbound-supervisor"
+repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 expected_architecture="${PROOFBOUND_EXPECTED_ARCH:-$(uname -m)}"
 runtime_bins_prebuilt="${PROOFBOUND_RUNTIME_BINS_PREBUILT:-}"
 if [[ -z "$runtime_bins_prebuilt" ]]; then
@@ -243,12 +244,32 @@ assert verification == {
     "receipt_commitment": sys.argv[2],
     "valid": True,
 }
-' "$verification" "$commitment"
+  ' "$verification" "$commitment"
   "$runtime_bin_directory/pbr" inspect "$receipt" >/dev/null
+  example_result="$e2e_root/maintained-example-result.json"
+  "$repository_root/examples/hello-static/run-example.sh" \
+    "$runtime_bin_directory" \
+    "$PROOFBOUND_CGROUP_ROOT" \
+    "$e2e_root/maintained-example" >"$example_result"
+  python3 -c '
+import json
+import os
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as source:
+    result = json.load(source)
+assert set(result) == {"commitment", "output", "receipt", "schema", "verification"}
+assert result["schema"] == "proofbound-runtime-example-result/1"
+for field in ("output", "receipt", "verification"):
+    assert os.path.isfile(result[field])
+assert result["commitment"].startswith("sha256:")
+' "$example_result"
   if [[ -n "$evidence_directory" ]]; then
     mkdir -p "$evidence_directory"
     install -m 0644 "$plan" "$evidence_directory/plan.toml"
+    install -m 0644 "$preflight" "$evidence_directory/preflight.json"
     install -m 0644 "$receipt" "$evidence_directory/execution-receipt.json"
+    install -m 0644 "$example_result" "$evidence_directory/example-result.json"
     install -m 0644 "$verification" "$evidence_directory/verification.json"
     printf '%s\n' "$commitment" >"$evidence_directory/receipt-commitment.txt"
     python3 -c '
@@ -271,7 +292,6 @@ if [[ "$(id -u)" == "0" ]]; then
   exit 1
 fi
 
-repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 fixture="$repository_root/target/native-boundary-probe"
 mkdir -p "$repository_root/target"
 cc -O2 -static -Wall -Wextra -Werror \
