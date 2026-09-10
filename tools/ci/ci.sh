@@ -23,6 +23,12 @@ python3 -m unittest experiments.network_authority.test_record_endpoint_control
 python3 -m unittest experiments.network_authority.test_explicit_broker
 python3 -m unittest experiments.network_authority.test_broker_case_client
 python3 -m unittest experiments.network_authority.test_record_broker_control
+python3 -m unittest experiments.network_authority.test_preconnected_channel
+python3 -m unittest experiments.network_authority.test_preconnected_case_client
+python3 -m unittest experiments.network_authority.test_record_preconnected_control
+python3 -m unittest experiments.network_authority.test_scripted_dns
+python3 -m unittest experiments.network_authority.test_decision_http_fixture
+python3 -m unittest experiments.network_authority.test_decision_proxy_fixture
 
 printf '%s\n' '[5/9] Rust formatting, linting, tests, and locked metadata'
 cargo fmt --all -- --check

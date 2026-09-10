@@ -15,6 +15,36 @@ permissions:
   contents: read
 
 jobs:
+  decision-fixtures:
+    name: decision fixtures (${{ matrix.architecture }})
+    env:
+      EXPERIMENT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x86_64
+            runner: ubuntu-24.04
+          - architecture: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 5
+    steps:
+      - name: Check out the exact experiment head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXPERIMENT_SHA }}
+
+      - name: Confirm the exact experiment head
+        run: test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+
+      - name: Validate the decision fixtures
+        run: |
+          python3 -m unittest \
+            experiments.network_authority.test_scripted_dns \
+            experiments.network_authority.test_decision_http_fixture \
+            experiments.network_authority.test_decision_proxy_fixture
+
   landlock-port-control:
     name: Landlock port control (${{ matrix.architecture }})
     env:
