@@ -652,8 +652,8 @@ def setup_sample(
 
 def lifecycle_trial(
     arguments: argparse.Namespace, scratch: Path, index: int, clock: int
-) -> str | None:
-    """Run one forced pre-request failure and return a closed failure code."""
+) -> tuple[str | None, str | None]:
+    """Run one forced pre-request failure and retain its bounded diagnostic."""
 
     try:
         if arguments.mechanism in {"landlock-port", "cgroup-endpoint"}:
@@ -667,12 +667,12 @@ def lifecycle_trial(
         else:
             result = run_preconnected_setup(arguments, scratch, index, clock)
         if result["cleanup"] is not True:
-            return "cleanup-failed"
-        return None
-    except FileExistsError:
-        return "create-failed"
-    except (MeasurementRunError, OSError, subprocess.SubprocessError):
-        return "observation-invalid"
+            return "cleanup-failed", "lifecycle result reported incomplete cleanup"
+        return None, None
+    except FileExistsError as error:
+        return "create-failed", f"{type(error).__name__}: {error}"
+    except (MeasurementRunError, OSError, subprocess.SubprocessError) as error:
+        return "observation-invalid", f"{type(error).__name__}: {error}"
 
 
 def run(arguments: argparse.Namespace) -> Path:
@@ -715,12 +715,23 @@ def run(arguments: argparse.Namespace) -> Path:
         request_values.append(observed)
         if maximum_rss is not None:
             mediator_rss.append(maximum_rss)
-    outcomes = [
+    trials = [
         lifecycle_trial(arguments, scratch, index, clock) for index in range(1000)
     ]
+    outcomes = [outcome for outcome, _diagnostic in trials]
     lifecycle = lifecycle_observation(outcomes, 1000)
     if lifecycle["passed_count"] != 1000:
-        raise MeasurementRunError("one or more lifecycle trials failed")
+        first = lifecycle["first_failure"]
+        if not isinstance(first, dict):
+            raise MeasurementRunError("lifecycle failure identity is absent")
+        iteration = first["iteration"]
+        diagnostic = trials[iteration][1]
+        if diagnostic is None or len(diagnostic.encode("utf-8")) > 1024:
+            diagnostic = "bounded lifecycle diagnostic unavailable"
+        raise MeasurementRunError(
+            "one or more lifecycle trials failed: "
+            f"code={first['code']} iteration={iteration} detail={diagnostic}"
+        )
 
     shutil.rmtree(scratch)
     setup_summary = summarize_samples(

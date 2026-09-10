@@ -17,6 +17,7 @@ from experiments.network_authority.run_network_measurement import (
     broker_setup_command,
     clock_identity,
     direct_command,
+    lifecycle_trial,
     process_failure_diagnostic,
     request_command,
     run_bounded,
@@ -236,6 +237,23 @@ class NetworkMeasurementRunnerTests(unittest.TestCase):
                 command[command.index("--ready") + 1], str(root / "ready.json")
             )
             self.assertEqual(command[command.index("--fd") + 1], "8")
+
+    def test_lifecycle_failure_retains_closed_code_and_diagnostic(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with mock.patch(
+                "experiments.network_authority.run_network_measurement.run_direct_setup",
+                side_effect=MeasurementRunError("forced endpoint cleanup mismatch"),
+            ):
+                self.assertEqual(
+                    lifecycle_trial(
+                        arguments(root, "cgroup-endpoint"), root, 7, 1
+                    ),
+                    (
+                        "observation-invalid",
+                        "MeasurementRunError: forced endpoint cleanup mismatch",
+                    ),
+                )
 
     def test_state_identity_is_closed_bounded_and_symlink_free(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
