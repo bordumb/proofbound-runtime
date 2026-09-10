@@ -71,6 +71,7 @@ class Resolution:
     address: str
     cname_chain: tuple[str, ...]
     question_type: int
+    terminal_name: str
     ttl: int
 
 
@@ -291,8 +292,9 @@ def validate_resolution(
     response_data: bytes,
     *,
     allow_cname: bool,
+    require_declared: bool = True,
 ) -> Resolution:
-    """Validate one response as the frozen `allowed.test` resolution."""
+    """Validate one response, optionally requiring the declared service."""
 
     query = parse_query(query_data)
     if len(response_data) < 12 or len(response_data) > MAX_PACKET_BYTES:
@@ -367,17 +369,19 @@ def validate_resolution(
         if current in chain or len(chain) >= 4:
             raise DnsError("DNS CNAME chain loops or exceeds its bound")
         chain.append(current)
-    if current != "allowed.test":
-        raise DnsError("DNS terminal service is undeclared")
     if set(cnames) != set(chain[:-1]) or set(addresses) != {current}:
         raise DnsError("DNS answer inventory is not one exact chain")
-    expected_address = ALLOWED_IPV4 if query.question_type == TYPE_A else ALLOWED_IPV6
-    if addresses[current] != str(expected_address):
-        raise DnsError("DNS answer changed the registered endpoint")
+    if require_declared:
+        if current != "allowed.test":
+            raise DnsError("DNS terminal service is undeclared")
+        expected_address = ALLOWED_IPV4 if query.question_type == TYPE_A else ALLOWED_IPV6
+        if addresses[current] != str(expected_address):
+            raise DnsError("DNS answer changed the registered endpoint")
     return Resolution(
         address=addresses[current],
         cname_chain=tuple(chain),
         question_type=query.question_type,
+        terminal_name=current,
         ttl=TTL,
     )
 
