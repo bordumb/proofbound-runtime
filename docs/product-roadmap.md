@@ -34,8 +34,12 @@ The roadmap uses these sources:
 As of 2026-09-09, Order 0 is implemented on the roadmap branch, the version
 0.1 installation path and host-prerequisite explanations are implemented and
 locally verified, and the two measured upstream workflow observations are
-recorded. The remaining installation-slice work is the read-only host
-preflight and the downloadable maintained example.
+recorded. The read-only host preflight, its separate Proofbound claim, and a
+deterministic maintained example source bundle are also implemented. Both are
+wired into the required native jobs; their final installation-slice gate is a
+green hosted run on both architectures followed by reviewed publication of the
+example bundle. Neither is described as part of the existing `v0.1.0` binary
+release.
 
 Upstream promotion is intentionally paused at its review boundary. Proofbound
 PR 2 is green but still needs an independent approving review. A dry run of

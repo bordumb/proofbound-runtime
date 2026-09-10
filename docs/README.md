@@ -38,6 +38,9 @@ revision requires explicit review because it can change claim meaning.
 
 - [Install and prepare version 0.1](guides/install-v0.1.md) verifies one exact
   release archive and prepares the supported systemd cgroup delegation.
+- [Build and run the maintained static example](guides/maintained-example.md)
+  packages one deterministic source bundle and reaches an independently
+  verified execution receipt without relying on a dynamic runtime closure.
 
 Guides describe maintained procedures. They do not strengthen a product claim,
 replace a receipt, or remove a documented host or distribution assumption.
