@@ -187,9 +187,14 @@ def run(arguments: argparse.Namespace) -> int:
                 "allowed.test",
                 arguments.allowed_certificate,
             )
-        except (ConnectorError, OSError, ssl.SSLError, ValueError) as error:
-            observation["orchestration_outcome"] = f"prelaunch-{type(error).__name__}"
-            case_result = 7 if arguments.case in PRELAUNCH_FAILURES else 0
+        except (ConnectorError, OSError, ssl.SSLError, ValueError):
+            expected = arguments.case in PRELAUNCH_FAILURES
+            observation["orchestration_outcome"] = (
+                "expected-prelaunch-failure"
+                if expected
+                else "unexpected-authentication-failure"
+            )
+            case_result = 7 if expected else 0
         else:
             observation["connector_authenticated"] = True
             observation["connector_observation"] = connector_observation
