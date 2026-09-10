@@ -43,15 +43,78 @@ jobs:
 
       - name: Run the disposable Landlock port control
         run: |
-          mkdir -p "$RUNNER_TEMP/network-authority"
+          result_root="$RUNNER_TEMP/network-authority/port-control-${{ matrix.architecture }}"
+          mkdir -p "$result_root"
+          set +e
+          # The runner, not sudo, intentionally owns the failure envelope.
+          # shellcheck disable=SC2024
           sudo experiments/network_authority/run_port_control.sh \
-            "$RUNNER_TEMP/network-authority/${{ matrix.architecture }}"
+            "$result_root/result" \
+            >"$result_root/runner.stdout" \
+            2>"$result_root/runner.stderr"
+          experiment_exit=$?
+          set -e
+          printf '%s\n' "$experiment_exit" >"$result_root/runner.exit"
+          exit "$experiment_exit"
 
       - name: Retain the exact experiment result
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: network-authority-port-control-${{ matrix.architecture }}-${{ env.EXPERIMENT_SHA }}
-          path: ${{ runner.temp }}/network-authority/${{ matrix.architecture }}
+          path: ${{ runner.temp }}/network-authority/port-control-${{ matrix.architecture }}
+          if-no-files-found: error
+          retention-days: 14
+
+  cgroup-bpf-endpoint-control:
+    name: cgroup-BPF endpoint control (${{ matrix.architecture }})
+    env:
+      EXPERIMENT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x86_64
+            runner: ubuntu-24.04
+          - architecture: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
+    steps:
+      - name: Check out the exact experiment head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXPERIMENT_SHA }}
+
+      - name: Confirm the exact experiment head
+        run: test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+
+      - name: Falsify result publication
+        run: |
+          python3 -m unittest \
+            experiments.network_authority.test_record_endpoint_control
+
+      - name: Run the disposable cgroup-BPF endpoint control
+        run: |
+          result_root="$RUNNER_TEMP/network-authority/endpoint-control-${{ matrix.architecture }}"
+          mkdir -p "$result_root"
+          set +e
+          # The runner, not sudo, intentionally owns the failure envelope.
+          # shellcheck disable=SC2024
+          sudo experiments/network_authority/run_endpoint_control.sh \
+            "$result_root/result" \
+            >"$result_root/runner.stdout" \
+            2>"$result_root/runner.stderr"
+          experiment_exit=$?
+          set -e
+          printf '%s\n' "$experiment_exit" >"$result_root/runner.exit"
+          exit "$experiment_exit"
+
+      - name: Retain the exact experiment result or runner failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: network-authority-endpoint-control-${{ matrix.architecture }}-${{ env.EXPERIMENT_SHA }}
+          path: ${{ runner.temp }}/network-authority/endpoint-control-${{ matrix.architecture }}
           if-no-files-found: error
           retention-days: 14
