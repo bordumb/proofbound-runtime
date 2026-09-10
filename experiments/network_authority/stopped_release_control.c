@@ -26,8 +26,10 @@ static int write_new(const char *directory, const char *name, const char *data) 
   if (output < 0) { close(root); return -1; }
   size_t size = strlen(data);
   ssize_t written = write(output, data, size);
-  int result = written == (ssize_t)size && fsync(output) == 0 && close(output) == 0 && fsync(root) == 0 ? 0 : -1;
-  if (result != 0) close(output);
+  int result = written == (ssize_t)size ? 0 : -1;
+  if (result == 0 && fsync(output) != 0) result = -1;
+  if (close(output) != 0) result = -1;
+  if (result == 0 && fsync(root) != 0) result = -1;
   close(root);
   return result;
 }
