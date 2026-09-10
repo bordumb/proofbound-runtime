@@ -255,6 +255,35 @@ class NetworkMeasurementRunnerTests(unittest.TestCase):
                     ),
                 )
 
+    def test_direct_lifecycle_accepts_only_the_frozen_failure_exit(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            successful = {"cleanup": True, "exit": 1}
+            changed = {"cleanup": True, "exit": 4}
+            with mock.patch(
+                "experiments.network_authority.run_network_measurement.run_direct_setup",
+                return_value=successful,
+            ):
+                self.assertEqual(
+                    lifecycle_trial(
+                        arguments(root, "cgroup-endpoint"), root, 0, 1
+                    ),
+                    (None, None),
+                )
+            with mock.patch(
+                "experiments.network_authority.run_network_measurement.run_direct_setup",
+                return_value=changed,
+            ):
+                self.assertEqual(
+                    lifecycle_trial(
+                        arguments(root, "cgroup-endpoint"), root, 0, 1
+                    ),
+                    (
+                        "failure-injection-failed",
+                        "direct failure injection exit changed: 4",
+                    ),
+                )
+
     def test_state_identity_is_closed_bounded_and_symlink_free(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

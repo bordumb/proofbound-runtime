@@ -658,12 +658,18 @@ def lifecycle_trial(
     try:
         if arguments.mechanism in {"landlock-port", "cgroup-endpoint"}:
             result = run_direct_setup(arguments, scratch, index, clock, True)
-            if result["exit"] != 4:
-                return "failure-injection-failed"
+            if result["exit"] != 1:
+                return (
+                    "failure-injection-failed",
+                    f"direct failure injection exit changed: {result['exit']}",
+                )
         elif arguments.mechanism == "explicit-broker":
             result = run_broker_setup(arguments, scratch, index, clock)
             if result["exit"] != 4:
-                return "failure-injection-failed"
+                return (
+                    "failure-injection-failed",
+                    f"broker failure injection exit changed: {result['exit']}",
+                )
         else:
             result = run_preconnected_setup(arguments, scratch, index, clock)
         if result["cleanup"] is not True:
