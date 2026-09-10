@@ -63,7 +63,7 @@ class ResolutionIndirectionRunnerTests(unittest.TestCase):
         workflow = WORKFLOW.read_text(encoding="utf-8")
         _prefix, marker, job = workflow.partition("  resolution-indirection-slice:\n")
         self.assertTrue(marker)
-        job, marker, _suffix = job.partition("\n  landlock-port-control:\n")
+        job, marker, _suffix = job.partition("\n  bypass-lifecycle-slice:\n")
         self.assertTrue(marker)
         for mechanism in MECHANISMS:
             with self.subTest(mechanism=mechanism):
