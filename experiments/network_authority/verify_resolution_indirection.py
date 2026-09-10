@@ -47,6 +47,32 @@ ACTIONS = {
     "ambient-all-proxy": "consume-all-proxy",
     "resolver-configuration-substitution": "consume-substituted-resolver",
 }
+DNS_PLANS = {
+    "stable-a-and-aaaa": (("stable", "allowed.test", 1, 201), ("stable", "allowed.test", 28, 202)),
+    "ttl-rebind-to-undeclared": (("rebind", "allowed.test", 1, 211), ("rebind", "allowed.test", 1, 212)),
+    "cname-to-declared-service": (("cname-allowed", "alias.test", 1, 221),),
+    "cname-to-undeclared-service": (("cname-denied", "alias.test", 1, 231),),
+    "cname-loop-or-depth": (("cname-loop", "alias.test", 1, 241), ("cname-depth", "alias.test", 1, 242)),
+    "resolver-timeout": (("timeout", "allowed.test", 1, 251),),
+    "resolver-truncated-tcp-fallback": (("truncated-fallback", "allowed.test", 1, 261),),
+    "resolver-malformed-response": (("malformed", "allowed.test", 1, 271),),
+    "resolver-dnssec-flag-confusion": (("dnssec-confusion", "allowed.test", 1, 281),),
+    "resolver-configuration-substitution": (("denied", "allowed.test", 1, 291),),
+}
+REDIRECT_SCRIPTS = {
+    "redirect-undeclared-host": "redirect-host",
+    "redirect-cleartext": "redirect-cleartext",
+    "redirect-other-port": "redirect-port",
+}
+PROXY_PROTOCOLS = {
+    "http-connect-target-confusion": "http-connect",
+    "socks-target-confusion": "socks5",
+}
+AMBIENT_VARIABLES = {
+    "ambient-http-proxy": "HTTP_PROXY",
+    "ambient-https-proxy": "HTTPS_PROXY",
+    "ambient-all-proxy": "ALL_PROXY",
+}
 RAW_FIELDS = {
     "case",
     "cleanup",
@@ -171,6 +197,38 @@ def expected_cells(matrix_bytes: bytes, mechanism: str) -> list[tuple[str, str, 
     if tuple(item[0] for item in result) != tuple(ACTIONS):
         raise VerificationError("resolution case order or coverage changed")
     return result
+
+
+def expected_parameters(case: str) -> dict[str, object]:
+    """Independently reconstruct the frozen attack vocabulary for one case."""
+
+    if case in DNS_PLANS:
+        result: dict[str, object] = {
+            "queries": [
+                {
+                    "identifier": identifier,
+                    "name": name,
+                    "question_type": question_type,
+                    "script": script,
+                }
+                for script, name, question_type, identifier in DNS_PLANS[case]
+            ]
+        }
+        if case == "ttl-rebind-to-undeclared":
+            result["minimum_ttl_wait_ns"] = 1_000_000_000
+        if case == "resolver-truncated-tcp-fallback":
+            result["transports"] = ["udp", "tcp"]
+        if case == "resolver-configuration-substitution":
+            result["configuration_attack"] = "replace-after-plan-with-undeclared-endpoint"
+        return result
+    if case in REDIRECT_SCRIPTS:
+        return {"redirect_script": REDIRECT_SCRIPTS[case]}
+    if case in PROXY_PROTOCOLS:
+        return {"proxy_protocol": PROXY_PROTOCOLS[case]}
+    return {
+        "ambient_environment": {AMBIENT_VARIABLES[case]: "https://127.0.0.2:443"},
+        "proxy_protocol": "http-connect",
+    }
 
 
 def _fact(
@@ -469,7 +527,7 @@ def verify(root: Path) -> dict[str, object]:
             or plan["decision_matrix_sha256"] != result["decision_matrix_sha256"]
             or plan["expectation"] != {"outcome": outcome, "stage": stage}
             or plan["mechanism"] != mechanism
-            or not isinstance(plan["parameters"], dict)
+            or plan["parameters"] != expected_parameters(case)
             or plan["registered_environment"] != {}
             or plan["registered_resolver_sha256"] != registered_digest
             or plan["substitute_resolver_sha256"] != substitute_digest

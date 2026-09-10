@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import tempfile
 import unittest
@@ -73,6 +74,38 @@ class ResolutionVerifierTests(unittest.TestCase):
                 (result / "RESULT.json").write_bytes(canonical_json(result_document))
                 with self.assertRaises(VerificationError):
                     verify(result)
+
+    def test_plan_parameters_fail_after_all_containing_manifests_are_rehashed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            result = self.result(Path(temporary))
+            relative = "evidence/cases/stable-a-and-aaaa/case-plan.json"
+            path = result / relative
+            plan = json.loads(path.read_bytes())
+            plan["parameters"]["queries"][0]["identifier"] = 999
+            plan_data = canonical_json(plan)
+            path.write_bytes(plan_data)
+
+            evidence_path = result / "evidence-manifest.json"
+            evidence = json.loads(evidence_path.read_bytes())
+            evidence_entry = next(
+                item
+                for item in evidence["files"]
+                if item["name"] == "cases/stable-a-and-aaaa/case-plan.json"
+            )
+            evidence_entry["size"] = len(plan_data)
+            evidence_entry["sha256"] = hashlib.sha256(plan_data).hexdigest()
+            evidence_data = canonical_json(evidence)
+            evidence_path.write_bytes(evidence_data)
+
+            outer = json.loads((result / "RESULT.json").read_bytes())
+            for name, data in ((relative, plan_data), ("evidence-manifest.json", evidence_data)):
+                entry = next(item for item in outer["inputs"] if item["name"] == name)
+                entry["size"] = len(data)
+                entry["sha256"] = hashlib.sha256(data).hexdigest()
+            (result / "RESULT.json").write_bytes(canonical_json(outer))
+
+            with self.assertRaisesRegex(VerificationError, "prelaunch case plan changed"):
+                verify(result)
 
 
 if __name__ == "__main__":
