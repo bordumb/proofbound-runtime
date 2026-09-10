@@ -18,6 +18,7 @@ python3 tools/release/observation_inputs.py --check
 python3 tools/release/artifact_checker.py --self-check
 python3 -m unittest tools.ci.test_install_release
 python3 -m unittest tools.ci.test_build_example
+python3 -m unittest experiments.network_authority.test_record_port_control
 
 printf '%s\n' '[5/9] Rust formatting, linting, tests, and locked metadata'
 cargo fmt --all -- --check
