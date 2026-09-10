@@ -133,7 +133,7 @@ esac
 cd "$repository_root"
 export PYTHONDONTWRITEBYTECODE=1
 
-for command in cc cp git ip openssl python3 stat; do
+for command in cc cmp cp git ip openssl python3 stat; do
   if ! command -v "$command" >/dev/null 2>&1; then
     echo "measurement prerequisite is unavailable: $command" >&2
     exit 3
@@ -153,8 +153,41 @@ evidence_root="$work_root/evidence"
 artifact_root="$evidence_root/artifacts"
 observation_root="$evidence_root/observation"
 private_root="$work_root/private"
-mkdir -p "$artifact_root" "$private_root"
+staged_root="$work_root/staged"
+staged_network="$staged_root/experiments/network_authority"
+mkdir -p "$artifact_root" "$private_root" "$staged_network"
 chmod 0700 "$private_root"
+chmod 0755 "$staged_root" "$staged_root/experiments" "$staged_network"
+
+# The request clients run after the mechanism control drops to uid/gid 65534.
+# A hosted checkout may live below a root- or runner-private ancestor, so stage
+# the exact client closure beneath the deliberately traversable measurement
+# root.  Keep the staged tree outside evidence: its original source bytes are
+# already published by the recorder, and cmp binds every executed copy to
+# those source inputs before any sample begins.
+staged_files=(
+  __init__.py
+  decision_http_fixture.py
+  decision_socket_fixture.py
+  record_common.py
+  routing_transport_case.py
+  routing_transport_client.py
+)
+if [[ "$mechanism" == "explicit-broker" || "$mechanism" == "preconnected-channel" ]]; then
+  staged_files+=(explicit_broker.py routing_mediated_client.py)
+fi
+cp -- experiments/__init__.py "$staged_root/experiments/__init__.py"
+chmod 0644 "$staged_root/experiments/__init__.py"
+cmp --silent experiments/__init__.py "$staged_root/experiments/__init__.py"
+for name in "${staged_files[@]}"; do
+  cp -- "experiments/network_authority/$name" "$staged_network/$name"
+  chmod 0644 "$staged_network/$name"
+  cmp --silent "experiments/network_authority/$name" "$staged_network/$name"
+done
+staged_client="$staged_network/routing_transport_client.py"
+if [[ "$mechanism" == "explicit-broker" || "$mechanism" == "preconnected-channel" ]]; then
+  staged_client="$staged_network/routing_mediated_client.py"
+fi
 
 compile_control() {
   local source="$1"
@@ -228,7 +261,7 @@ runner=(
   --routing-child-control "$selected_child"
   --broker-child-control "$selected_child"
   --preconnected-child-control "$selected_child"
-  --client "$repository_root/experiments/network_authority/routing_transport_client.py"
+  --client "$staged_client"
   --allowed-certificate "$artifact_root/certificate"
   --allowed-private-key "$private_root/allowed-key.pem"
   --denied-certificate "$artifact_root/certificate"

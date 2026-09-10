@@ -143,6 +143,38 @@ class NetworkMeasurementRunnerTests(unittest.TestCase):
         self.assertLess(shared_mode_index, unshare_index)
         self.assertLess(unshare_index, private_mode_index)
 
+    def test_shell_stages_the_exact_mechanism_client_before_measurement(self) -> None:
+        script = (
+            Path(__file__).resolve().parent / "run_network_measurement.sh"
+        ).read_text(encoding="utf-8")
+        staging_root = script.index('staged_root="$work_root/staged"')
+        staging_mode = script.index(
+            'chmod 0755 "$staged_root" "$staged_root/experiments" "$staged_network"'
+        )
+        source_comparison = script.index(
+            'cmp --silent "experiments/network_authority/$name" "$staged_network/$name"'
+        )
+        direct_client = script.index(
+            'staged_client="$staged_network/routing_transport_client.py"'
+        )
+        mediated_client = script.index(
+            'staged_client="$staged_network/routing_mediated_client.py"'
+        )
+        runner = script.index("runner=(")
+        selected_client = script.index('--client "$staged_client"')
+        self.assertLess(staging_root, staging_mode)
+        self.assertLess(staging_mode, source_comparison)
+        self.assertLess(source_comparison, direct_client)
+        self.assertLess(direct_client, mediated_client)
+        self.assertLess(mediated_client, runner)
+        self.assertLess(runner, selected_client)
+        self.assertNotIn('staged_root="$artifact_root/', script)
+        self.assertIn(
+            'if [[ "$mechanism" == "explicit-broker" || '
+            '"$mechanism" == "preconnected-channel" ]]; then',
+            script,
+        )
+
     def test_clock_is_one_registered_monotonic_source(self) -> None:
         _clock, name = clock_identity()
         self.assertIn(name, {"CLOCK_MONOTONIC_RAW", "CLOCK_MONOTONIC"})
