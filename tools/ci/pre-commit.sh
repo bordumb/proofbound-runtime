@@ -49,6 +49,7 @@ python3 -m unittest experiments.network_authority.test_record_resolution_indirec
 python3 -m unittest experiments.network_authority.test_verify_resolution_indirection
 python3 -m unittest experiments.network_authority.test_run_resolution_indirection
 python3 -m unittest experiments.network_authority.test_bypass_lifecycle_case
+python3 -m unittest experiments.network_authority.test_bypass_syscall_probe
 cargo fmt --all -- --check
 cargo metadata --locked --offline --format-version 1 >/dev/null
 cargo check --workspace --all-targets --locked --offline
