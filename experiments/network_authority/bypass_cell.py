@@ -3,13 +3,15 @@
 
 from __future__ import annotations
 
-import errno
 from dataclasses import dataclass
 
 from experiments.network_authority.bypass_lifecycle_case import BypassCase
 
 
 RAW_SCHEMA = "proofbound-runtime-bypass-raw-cell/1"
+LINUX_EACCES = 13
+LINUX_EAGAIN = 11
+LINUX_EPERM = 1
 RAW_FIELDS = {
     "case", "cleanup", "connection_count", "events", "mechanism",
     "plan_rejection", "prelaunch_rejection", "publication_preserved",
@@ -53,25 +55,25 @@ def derive(raw: object, case: BypassCase, mechanism: str) -> ObservedCell:
     identifier = case.identifier
     if identifier in {"pathname-unix-socket", "abstract-unix-socket"}:
         suffix = "-abstract" if identifier.startswith("abstract") else ""
-        _attempts(raw, (f"socket(AF_UNIX,SOCK_STREAM){suffix}",), (errno.EPERM,))
+        _attempts(raw, (f"socket(AF_UNIX,SOCK_STREAM){suffix}",), (LINUX_EPERM,))
         return ObservedCell("denied", "child-boundary")
     if identifier.startswith("io-uring-"):
-        _attempts(raw, ("io_uring_setup",), (errno.EPERM,))
+        _attempts(raw, ("io_uring_setup",), (LINUX_EPERM,))
         return ObservedCell("denied", "child-boundary")
     if identifier == "raw-and-packet-sockets":
-        _attempts(raw, ("socket(AF_INET,SOCK_RAW)", "socket(AF_PACKET,SOCK_DGRAM)"), (errno.EPERM, errno.EPERM))
+        _attempts(raw, ("socket(AF_INET,SOCK_RAW)", "socket(AF_PACKET,SOCK_DGRAM)"), (LINUX_EPERM, LINUX_EPERM))
         return ObservedCell("denied", "child-boundary")
     if identifier == "inherited-connected-internet-socket":
         if raw["prelaunch_rejection"] != "foreign-descriptor-present" or raw["syscall_attempts"]:
             raise BypassCellError("inherited descriptor rejection changed")
         return ObservedCell("denied", "prelaunch")
     if identifier == "fork-exec-at-process-limit":
-        _attempts(raw, ("fork",), (errno.EAGAIN,))
+        _attempts(raw, ("fork",), (LINUX_EAGAIN,))
         return ObservedCell("denied", "child-boundary")
     if identifier == "concurrent-install-and-connect":
         if raw["events"] != ["child-stopped", "boundary-acknowledged", "child-released", "connect-denied"]:
             raise BypassCellError("install race sequence changed")
-        number = errno.EACCES if mechanism == "landlock-port" else errno.EPERM
+        number = LINUX_EACCES if mechanism == "landlock-port" else LINUX_EPERM
         _attempts(raw, ("connect-after-acknowledgement",), (number,))
         return ObservedCell("denied", "child-boundary")
     if identifier.startswith("mediator-"):

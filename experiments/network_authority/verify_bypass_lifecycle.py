@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import errno
 import hashlib
 import json
 import os
@@ -22,6 +21,9 @@ except ModuleNotFoundError:
 MAX_FILE_BYTES = 128 * 1024 * 1024
 MAX_FILES = 4096
 COMMIT = re.compile(r"[0-9a-f]{40}")
+LINUX_EACCES = 13
+LINUX_EAGAIN = 11
+LINUX_EPERM = 1
 MECHANISMS = (
     "landlock-port", "cgroup-endpoint", "explicit-broker",
     "preconnected-channel",
@@ -264,25 +266,25 @@ def derive(raw: object, case: str, mechanism: str) -> tuple[str, str]:
         raise VerificationError("raw bypass identity is invalid")
     if case in {"pathname-unix-socket", "abstract-unix-socket"}:
         suffix = "-abstract" if case.startswith("abstract") else ""
-        _attempts(raw, (f"socket(AF_UNIX,SOCK_STREAM){suffix}",), (errno.EPERM,))
+        _attempts(raw, (f"socket(AF_UNIX,SOCK_STREAM){suffix}",), (LINUX_EPERM,))
         return "denied", "child-boundary"
     if case.startswith("io-uring-"):
-        _attempts(raw, ("io_uring_setup",), (errno.EPERM,))
+        _attempts(raw, ("io_uring_setup",), (LINUX_EPERM,))
         return "denied", "child-boundary"
     if case == "raw-and-packet-sockets":
-        _attempts(raw, ("socket(AF_INET,SOCK_RAW)", "socket(AF_PACKET,SOCK_DGRAM)"), (errno.EPERM, errno.EPERM))
+        _attempts(raw, ("socket(AF_INET,SOCK_RAW)", "socket(AF_PACKET,SOCK_DGRAM)"), (LINUX_EPERM, LINUX_EPERM))
         return "denied", "child-boundary"
     if case == "inherited-connected-internet-socket":
         if raw["prelaunch_rejection"] != "foreign-descriptor-present" or raw["syscall_attempts"]:
             raise VerificationError("inherited descriptor rejection changed")
         return "denied", "prelaunch"
     if case == "fork-exec-at-process-limit":
-        _attempts(raw, ("fork",), (errno.EAGAIN,))
+        _attempts(raw, ("fork",), (LINUX_EAGAIN,))
         return "denied", "child-boundary"
     if case == "concurrent-install-and-connect":
         if raw["events"] != ["child-stopped", "boundary-acknowledged", "child-released", "connect-denied"]:
             raise VerificationError("install race sequence changed")
-        number = errno.EACCES if mechanism == "landlock-port" else errno.EPERM
+        number = LINUX_EACCES if mechanism == "landlock-port" else LINUX_EPERM
         _attempts(raw, ("connect-after-acknowledgement",), (number,))
         return "denied", "child-boundary"
     if case.startswith("mediator-"):

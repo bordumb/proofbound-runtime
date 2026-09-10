@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import errno
 import unittest
 from pathlib import Path
 
@@ -12,23 +11,26 @@ from experiments.network_authority.routing_transport_case import MECHANISMS
 
 
 MATRIX = load_bypass_matrix(Path(__file__).resolve().parent / "decision-matrix.toml")
+LINUX_EACCES = 13
+LINUX_EAGAIN = 11
+LINUX_EPERM = 1
 
 
 def observed(case, mechanism: str) -> dict[str, object]:
     identifier = case.identifier
     if identifier in {"pathname-unix-socket", "abstract-unix-socket"}:
         suffix = "-abstract" if identifier.startswith("abstract") else ""
-        return raw_cell(case, mechanism, syscall_attempts=[{"errno": errno.EPERM, "result": "error", "syscall": f"socket(AF_UNIX,SOCK_STREAM){suffix}"}])
+        return raw_cell(case, mechanism, syscall_attempts=[{"errno": LINUX_EPERM, "result": "error", "syscall": f"socket(AF_UNIX,SOCK_STREAM){suffix}"}])
     if identifier.startswith("io-uring-"):
-        return raw_cell(case, mechanism, syscall_attempts=[{"errno": errno.EPERM, "result": "error", "syscall": "io_uring_setup"}])
+        return raw_cell(case, mechanism, syscall_attempts=[{"errno": LINUX_EPERM, "result": "error", "syscall": "io_uring_setup"}])
     if identifier == "raw-and-packet-sockets":
-        return raw_cell(case, mechanism, syscall_attempts=[{"errno": errno.EPERM, "result": "error", "syscall": "socket(AF_INET,SOCK_RAW)"}, {"errno": errno.EPERM, "result": "error", "syscall": "socket(AF_PACKET,SOCK_DGRAM)"}])
+        return raw_cell(case, mechanism, syscall_attempts=[{"errno": LINUX_EPERM, "result": "error", "syscall": "socket(AF_INET,SOCK_RAW)"}, {"errno": LINUX_EPERM, "result": "error", "syscall": "socket(AF_PACKET,SOCK_DGRAM)"}])
     if identifier == "inherited-connected-internet-socket":
         return raw_cell(case, mechanism, prelaunch_rejection="foreign-descriptor-present")
     if identifier == "fork-exec-at-process-limit":
-        return raw_cell(case, mechanism, syscall_attempts=[{"errno": errno.EAGAIN, "result": "error", "syscall": "fork"}])
+        return raw_cell(case, mechanism, syscall_attempts=[{"errno": LINUX_EAGAIN, "result": "error", "syscall": "fork"}])
     if identifier == "concurrent-install-and-connect":
-        number = errno.EACCES if mechanism == "landlock-port" else errno.EPERM
+        number = LINUX_EACCES if mechanism == "landlock-port" else LINUX_EPERM
         return raw_cell(case, mechanism, events=["child-stopped", "boundary-acknowledged", "child-released", "connect-denied"], syscall_attempts=[{"errno": number, "result": "error", "syscall": "connect-after-acknowledgement"}])
     if identifier.startswith("mediator-"):
         if mechanism in {"landlock-port", "cgroup-endpoint"}:
