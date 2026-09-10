@@ -88,6 +88,11 @@ jobs:
             experiments.network_authority.test_record_bypass_lifecycle \
             experiments.network_authority.test_verify_bypass_lifecycle \
             experiments.network_authority.test_run_bypass_lifecycle
+          python3 -m unittest \
+            experiments.network_authority.test_measurement_domain \
+            experiments.network_authority.test_measurement_observation \
+            experiments.network_authority.test_run_network_measurement \
+            experiments.network_authority.test_record_network_measurement
 
       - name: Falsify the native routing boundaries
         run: |
@@ -95,6 +100,75 @@ jobs:
             experiments.network_authority.test_routing_child_control \
             experiments.network_authority.test_routing_landlock_control \
             experiments.network_authority.test_routing_endpoint_control
+
+  measurement-slice:
+    name: measurement (${{ matrix.mechanism }}, ${{ matrix.architecture }})
+    env:
+      EXPERIMENT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mechanism: landlock-port
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - mechanism: landlock-port
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+          - mechanism: cgroup-endpoint
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - mechanism: cgroup-endpoint
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+          - mechanism: explicit-broker
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - mechanism: explicit-broker
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+          - mechanism: preconnected-channel
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - mechanism: preconnected-channel
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    steps:
+      - name: Check out the exact experiment head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXPERIMENT_SHA }}
+
+      - name: Confirm the exact experiment head
+        run: test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+
+      - name: Run and independently verify the measurement slice
+        run: |
+          result_root="$RUNNER_TEMP/network-authority/measurement-${{ matrix.mechanism }}-${{ matrix.architecture }}"
+          mkdir -p "$result_root"
+          set +e
+          # The runner retains and verifies complete or incomplete result semantics.
+          # shellcheck disable=SC2024
+          sudo experiments/network_authority/run_network_measurement.sh \
+            "${{ matrix.mechanism }}" \
+            "$result_root/result" \
+            >"$result_root/runner.stdout" \
+            2>"$result_root/runner.stderr"
+          experiment_exit=$?
+          set -e
+          printf '%s\n' "$experiment_exit" >"$result_root/runner.exit"
+          exit "$experiment_exit"
+
+      - name: Retain the exact measurement or native failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: network-authority-measurement-${{ matrix.mechanism }}-${{ matrix.architecture }}-${{ env.EXPERIMENT_SHA }}
+          path: ${{ runner.temp }}/network-authority/measurement-${{ matrix.mechanism }}-${{ matrix.architecture }}
+          if-no-files-found: error
+          retention-days: 14
 
   routing-transport-slice:
     name: routing transport (${{ matrix.mechanism }}, ${{ matrix.architecture }})
