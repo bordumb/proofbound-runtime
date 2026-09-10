@@ -42,6 +42,7 @@ class BypassLifecycleOrchestrationTests(unittest.TestCase):
             evidence = (arguments.case_root / "lifecycle-evidence.json").read_text()
         self.assertEqual(raw["prelaunch_rejection"], "foreign-descriptor-present")
         self.assertIn('"family":"AF_INET"', evidence)
+        self.assertIn('"peer":["127.0.0.2",443]', evidence)
 
     def test_substitution_is_real_and_rejected_prelaunch(self) -> None:
         with tempfile.TemporaryDirectory() as temporary, mock.patch("os.geteuid", return_value=0):

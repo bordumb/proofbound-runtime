@@ -71,7 +71,7 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
     evidence: dict[str, object] | None = None
     if identifier == "inherited-connected-internet-socket":
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
-            listener.bind(("127.0.0.2", 0))
+            listener.bind(("127.0.0.2", 443))
             listener.listen(1)
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as inherited:
                 inherited.connect(listener.getsockname())
@@ -86,6 +86,8 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
                         "schema": "proofbound-runtime-inherited-socket-evidence/1",
                         "type": "SOCK_STREAM",
                     }
+                    if evidence["peer"] != ["127.0.0.2", 443]:
+                        raise BypassOrchestrationError("inherited socket peer changed")
         raw = raw_cell(case, arguments.mechanism, prelaunch_rejection="foreign-descriptor-present")
     elif identifier.startswith("mediator-"):
         if arguments.mechanism in {"landlock-port", "cgroup-endpoint"}:
