@@ -153,6 +153,8 @@ jobs:
           rustc --version --verbose >"$result_root/rustc-version.txt"
           uname -a >"$result_root/uname.txt"
           cp target/release/pbr-bench "$result_root/pbr-bench"
+          mkdir -m 0700 "$result_root/runtime-bin"
+          cp target/release/pbr target/release/pbr-native-launcher target/release/pbr-verify "$result_root/runtime-bin/"
           : >"$result_root/verifier.stderr"
           printf '%s\n' 'not-run' >"$result_root/verifier.exit"
           set +e
@@ -160,7 +162,7 @@ jobs:
             "$result_root" \
             "$PBR_PERFORMANCE_REVISION" \
             "${{ matrix.architecture }}" \
-            "$PWD/target/release" \
+            "$result_root/runtime-bin" \
             "${{ matrix.image }}" \
             "${{ matrix.workload }}" \
             >"$result_root/wrapper.stdout" \
@@ -175,9 +177,9 @@ jobs:
               --expected-architecture "${{ matrix.architecture }}" \
               --expected-workload "${{ matrix.workload_id }}" \
               --benchmark-executable "$result_root/pbr-bench" \
-              --pbr target/release/pbr \
-              --launcher target/release/pbr-native-launcher \
-              --verifier target/release/pbr-verify \
+              --pbr "$result_root/runtime-bin/pbr" \
+              --launcher "$result_root/runtime-bin/pbr-native-launcher" \
+              --verifier "$result_root/runtime-bin/pbr-verify" \
               --plan "$result_root/workload/plan.toml" \
               --workload-executable "$result_root/workload/hello-${{ matrix.workload }}" \
               --expected-output "$result_root/workload/expected-output.txt" \
