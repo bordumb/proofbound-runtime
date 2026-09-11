@@ -52,7 +52,7 @@ Verified against the branch head, the four reviews, and the roadmap's own exit c
 
 ## Network decision, Order 7
 
-- [ ] **Get ADR 0004 an independent review** and record acceptance or rejection. Order 8 stays closed until then.
+- [x] **Get ADR 0004 an independent review** and record acceptance or rejection. Claude independently reviewed the frozen comparison and registered attack domain on 2026-09-11; the accepted ADR records the four required changes and retains the implementation gates.
 
 ## Deferred by the roadmap's own rules, not incomplete
 

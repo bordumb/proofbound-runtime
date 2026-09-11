@@ -1,6 +1,6 @@
 # ADR 0004: Use one connector-owned authenticated service session
 
-- **Status:** proposed; independent review required
+- **Status:** accepted; production implementation remains gated
 - **Date:** 2026-09-10
 - **Decision owners:** Proofbound Runtime maintainers
 - **Applies to:** first version 2 network-enabled execution profile
@@ -98,12 +98,20 @@ connection pooling, proxy tunneling, QUIC, or cleartext fallback. If the
 connection is not authenticated before the registered answer expires, the
 operation fails before child release. Loss of the established session is
 terminal; the connector does not resolve or connect again under the same
-execution.
+execution. The first profile performs no certificate revocation check, accepts
+no TLS session resumption, and sends no 0-RTT early data.
 
 The connector may choose one address from the bounded A/AAAA answer set only by
-a deterministic, versioned rule. The normative specification must decide that
-rule and the IPv4/IPv6 attempt sequence before implementation. An address that
-was not present in the recorded answer set is never attempted.
+a deterministic, versioned rule. An address that was not present in the
+recorded answer set is never attempted.
+
+### Open obligations before implementation
+
+- Specify the deterministic address-selection rule for the bounded A/AAAA
+  answer set.
+- Specify the exact IPv4/IPv6 connection-attempt order and terminal behavior.
+- Add registered native cases for descendant inheritance of the child channel
+  and `SCM_RIGHTS` transfer or escape of that descriptor.
 
 ### Child boundary and launch acknowledgement
 
@@ -175,9 +183,8 @@ meaning and canonical JSON encoding. Version 2 plans, compiled policies, run
 results, execution receipts, and composed receipts follow
 [ADR 0003](0003-deterministic-cbor-wire-objects.md): deterministic CBOR with
 closed CDDL and golden vectors, separate producer and independent-verifier
-codecs, and JSON only as a decoded inspection projection. This ADR does not
-choose text or integer CBOR map keys. No version 2 CDDL, vector, or production
-codec work begins until that owner decision is recorded.
+codecs, text map keys, and JSON only as a decoded inspection projection. The
+map-key decision was recorded on 2026-09-11 and is no longer an open gate.
 
 ## Trusted computing base and assumptions
 
@@ -197,7 +204,11 @@ The claim assumes the host administrator, kernel, resolver behavior, DNS
 operator for the declared name, certificate authorities admitted by the trust
 policy, hardware, firmware, toolchain, and remote service are not malicious in
 ways outside the recorded model. A digest identifies bytes; it does not prove
-their behavior.
+their behavior. Certificate revocation is a recorded assumption because the
+first profile performs no revocation check. Descendant inheritance of the
+registered child channel and `SCM_RIGHTS` transfer of that descriptor remain
+untested until the native cases in the open-obligation list pass on both
+release architectures.
 
 ## Operational basis
 
@@ -275,11 +286,18 @@ Safe but insufficient for the first declared API workload. This remains the
 only production behavior unless and until this ADR is approved and the complete
 version 2 claim wave is independently reviewed and released.
 
-## Independent review gate
+## Independent review
 
-This file remains proposed. It must not be changed to accepted by the change
-author alone. An independent reviewer must inspect the exact comparison result
-and representative raw results, then confirm:
+Claude independently reviewed the authenticated service-session decision on
+2026-09-11 against Experiment 0001J, the retained result identities, and the
+registered network attack domain. The verdict was **approve with required
+changes**. This revision resolves all four required changes: it cites the
+decided text-key CBOR contract, closes the first TLS profile against revocation,
+resumption, and early data, makes the two untested descriptor-transfer paths
+explicit required native work, and promotes address selection and connection
+order from prose to open obligations.
+
+The independent review confirmed:
 
 1. the public claim is no broader than authenticated-session authority;
 2. the prelaunch resolver, TLS, connector, child boundary, and acknowledgement
@@ -295,10 +313,10 @@ and representative raw results, then confirm:
 
 Acceptance authorizes a normative version 2 specification and threat-model
 change, not production code by itself. Production implementation still waits
-for the ADR 0003 CBOR key decision, closed CDDL schemas and golden vectors,
-falsifiers, pure non-amplification and deterministic-compilation evidence, the
-full native attack corpus on both architectures, independent verifier
-agreement, release composition, and reviewed publication.
+for closed CDDL schemas and golden vectors, falsifiers, pure non-amplification
+and deterministic-compilation evidence, the full native attack corpus on both
+architectures, independent verifier agreement, release composition, and
+reviewed publication.
 
 ## Revisit conditions
 
