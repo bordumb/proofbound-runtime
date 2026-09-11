@@ -154,6 +154,28 @@ class WireTransitionTests(unittest.TestCase):
         self.assertIn("resources.swap_peak_bytes() > 0", native)
         self.assertIn("resources.memory_events().oom() > 0", native)
 
+    def test_public_docs_distinguish_v1_and_v2_resource_boundaries(self) -> None:
+        readme = (REPOSITORY_ROOT / "README.md").read_text(encoding="utf-8")
+        threat_model = (
+            REPOSITORY_ROOT / "docs/threat-model.md"
+        ).read_text(encoding="utf-8")
+        receipt_semantics = (
+            REPOSITORY_ROOT / "docs/receipt-semantics.md"
+        ).read_text(encoding="utf-8")
+
+        for document in (threat_model, receipt_semantics):
+            self.assertIn("Version 1", document)
+            self.assertIn("Version 2", document)
+        self.assertIn("process count, wall time, and captured stream bytes", threat_model)
+        self.assertIn("memory.max", threat_model)
+        self.assertIn("memory.swap.max", threat_model)
+        self.assertIn("## Version 2 wire contract", receipt_semantics)
+        self.assertIn("RFC 8949 section 4.2.1", receipt_semantics)
+        self.assertIn("never a verification input", receipt_semantics)
+        self.assertIn("tools/ci/encode_plan_v2.py", readme)
+        self.assertIn("--memory-bytes", readme)
+        self.assertIn("--swap-bytes", readme)
+
     def test_v2_receipt_resources_cross_the_proven_binding_boundary(self) -> None:
         binding = (
             REPOSITORY_ROOT / "crates/proofbound-runtime-binding/src/lib.rs"
