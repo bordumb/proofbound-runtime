@@ -52,6 +52,18 @@ class PerformanceWorkflowTests(unittest.TestCase):
             workflow,
         )
 
+    def test_workflow_retains_producer_and_verifier_failures(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        for retained in (
+            "producer.stderr",
+            "producer.exit",
+            "verifier.stderr",
+            "verifier.exit",
+        ):
+            self.assertIn(retained, workflow)
+        self.assertIn("if: ${{ always() }}", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
