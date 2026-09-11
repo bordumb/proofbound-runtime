@@ -343,24 +343,54 @@ run_native_service() {
     /usr/bin/env bash tools/ci/native-linux.sh
 }
 
-if [[ "$(wc -l </proc/swaps)" -ne 1 ]]; then
-  echo "native absent-swap phase requires a host with no configured swap" >&2
-  exit 1
-fi
-PROOFBOUND_NATIVE_SWAP_MODE=absent run_native_service 0
-
 swap_file="/mnt/proofbound-runtime-native-$unit_suffix.swap"
-cleanup_swap() {
+original_swap_paths=()
+original_swap_priorities=()
+while read -r path _ _ _ priority; do
+  original_swap_paths+=("$path")
+  original_swap_priorities+=("$priority")
+done < <(tail -n +2 /proc/swaps)
+
+restore_original_swap() {
+  local index path priority
+  for index in "${!original_swap_paths[@]}"; do
+    path="${original_swap_paths[$index]}"
+    priority="${original_swap_priorities[$index]}"
+    if ! awk -v candidate="$path" 'NR > 1 && $1 == candidate { found = 1 } END { exit !found }' /proc/swaps; then
+      sudo swapon --priority "$priority" "$path"
+    fi
+  done
+}
+
+cleanup_swap_state() {
   if awk -v path="$swap_file" 'NR > 1 && $1 == path { found = 1 } END { exit !found }' /proc/swaps; then
     sudo swapoff "$swap_file"
   fi
   sudo rm -f -- "$swap_file"
+  restore_original_swap
 }
-trap cleanup_swap EXIT
-sudo fallocate -l 256M "$swap_file"
-sudo chmod 0600 "$swap_file"
-sudo mkswap "$swap_file" >/dev/null
-sudo swapon "$swap_file"
+trap cleanup_swap_state EXIT
+
+if [[ "${#original_swap_paths[@]}" -gt 0 ]]; then
+  if [[ "${GITHUB_ACTIONS:-}" != "true" ]]; then
+    echo "native absent-swap phase will not alter swap outside a disposable GitHub runner" >&2
+    exit 1
+  fi
+  for path in "${original_swap_paths[@]}"; do
+    sudo swapoff "$path"
+  done
+fi
+test "$(wc -l </proc/swaps)" -eq 1
+PROOFBOUND_NATIVE_SWAP_MODE=absent run_native_service 0
+
+if [[ "${#original_swap_paths[@]}" -gt 0 ]]; then
+  restore_original_swap
+else
+  sudo fallocate -l 256M "$swap_file"
+  sudo chmod 0600 "$swap_file"
+  sudo mkswap "$swap_file" >/dev/null
+  sudo swapon "$swap_file"
+fi
 PROOFBOUND_NATIVE_SWAP_MODE=present run_native_service 1
-cleanup_swap
+cleanup_swap_state
 trap - EXIT
