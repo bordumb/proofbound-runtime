@@ -238,6 +238,21 @@ def wait_ready(path: Path, process: subprocess.Popen[bytes]) -> None:
     raise RoutingOrchestrationError("routing fixture did not become ready")
 
 
+def wait_contact_marker(
+    path: Path, process: subprocess.Popen[bytes], *, timeout: float = 0.25
+) -> bool:
+    """Wait briefly when a client observation proves fixture contact is in flight."""
+
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if path.is_file():
+            return True
+        if process.poll() is not None:
+            return path.is_file()
+        time.sleep(0.01)
+    return path.is_file()
+
+
 def validate_ready(value: dict[str, object], plan: FixturePlan) -> None:
     """Require a ready document to retain the frozen target exactly."""
 
@@ -372,9 +387,18 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
         except subprocess.TimeoutExpired:
             client_exit = 124
         if fixture is not None:
-            cleanup = reap_fixture(
-                fixture, (arguments.case_root / "fixture-contact.json").is_file()
-            )
+            contact_path = arguments.case_root / "fixture-contact.json"
+            contacted = contact_path.is_file()
+            client_observation = arguments.case_root / "child-output/observation.json"
+            if not contacted and client_observation.is_file():
+                client_event = read_document(client_observation).get("event")
+                if client_event in {
+                    "certificate-rejected",
+                    "exact-response",
+                    "routing-connected",
+                }:
+                    contacted = wait_contact_marker(contact_path, fixture)
+            cleanup = reap_fixture(fixture, contacted)
         if arguments.mechanism == "cgroup-endpoint":
             try:
                 arguments.cgroup_directory.rmdir()
