@@ -68,6 +68,22 @@ class ReleaseWorkflowTests(unittest.TestCase):
         )
         self.assertIn('sha256sum "$acceptor_name"', builder)
 
+    def test_sdk_packages_are_reproduced_at_the_exact_release_revision(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        sdk_job = workflow[
+            workflow.index("\n  sdk-release:\n") : workflow.index("\n  release:\n")
+        ]
+
+        self.assertIn("needs: validate-revision", sdk_job)
+        self.assertIn("ref: ${{ env.PBR_RELEASE_REVISION }}", sdk_job)
+        self.assertIn(
+            'test "$(git rev-parse HEAD)" = "$PBR_RELEASE_REVISION"', sdk_job
+        )
+        self.assertIn("python3 tools/release/build_sdks.py --output dist/sdk", sdk_job)
+        self.assertIn("sha256sum --check SHA256SUMS", sdk_job)
+        self.assertIn("name: proofbound-runtime-sdk-packages-", sdk_job)
+        self.assertIn("path: dist/sdk/", sdk_job)
+
     def test_version_two_release_chain_uses_cbor_and_a_decoded_projection(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
