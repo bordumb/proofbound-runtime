@@ -145,13 +145,13 @@ class PerformanceWorkflowTests(unittest.TestCase):
             workflow,
         )
 
-    def test_native_wrapper_uses_one_nonroot_delegated_pids_context(self) -> None:
+    def test_native_wrapper_uses_one_nonroot_delegated_resource_context(self) -> None:
         script = NATIVE_SCRIPT.read_text(encoding="utf-8")
 
         self.assertIn("PROOFBOUND_NATIVE_PERFORMANCE_INNER", script)
-        self.assertIn("--property=Delegate=pids", script)
+        self.assertIn("--property=Delegate=pids memory", script)
         self.assertIn("--property=DelegateSubgroup=proofbound-supervisor", script)
-        self.assertIn("echo +pids", script)
+        self.assertIn("echo +memory +pids", script)
         self.assertIn('"$result_root/pbr-bench" native', script)
         self.assertIn('--source-commit "$source_commit"', script)
         self.assertIn('--workload-id "$workload_id"', script)

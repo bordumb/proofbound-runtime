@@ -80,6 +80,16 @@ class WireTransitionTests(unittest.TestCase):
         self.assertIn("resources: resources?", supervisor)
         self.assertIn("pub const fn resources(&self) -> Option<TerminalResources>", supervisor)
 
+    def test_native_execution_recipe_delegates_memory_and_pids(self) -> None:
+        script = (REPOSITORY_ROOT / "tools/ci/native-linux.sh").read_text(encoding="utf-8")
+        doctor = (
+            REPOSITORY_ROOT / "crates/proofbound-runtime-cli/src/doctor.rs"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("--property=Delegate=pids memory", script)
+        self.assertIn("echo +memory +pids", script)
+        self.assertIn("Delegate=pids memory", doctor)
+
 
 if __name__ == "__main__":
     unittest.main()
