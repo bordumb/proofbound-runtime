@@ -15,6 +15,7 @@ python3 -m unittest tools.ci.test_release_workflow
 python3 -m unittest tools.release.test_validate_release_state
 python3 -m unittest tools.ci.test_timing
 python3 -m unittest tools.ci.test_tool_cache
+python3 -m unittest tools.ci.test_wire_transition
 python3 -m unittest experiments.network_authority.test_record_common
 python3 -m unittest experiments.network_authority.test_record_port_control
 python3 -m unittest experiments.network_authority.test_record_endpoint_control

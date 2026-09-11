@@ -52,6 +52,7 @@ if selected "preflight"; then
   timed_unit release-state-tests python3 -m unittest tools.release.test_validate_release_state
   timed_unit timing-tests python3 -m unittest tools.ci.test_timing
   timed_unit tool-cache-tests python3 -m unittest tools.ci.test_tool_cache
+  timed_unit wire-transition-tests python3 -m unittest tools.ci.test_wire_transition
   timed_unit performance-workflow-tests python3 -m unittest tools.ci.test_performance_workflow
   timed_unit performance-schema-tests python3 -m unittest experiments.performance.test_pure_result_schema experiments.performance.test_native_result_schema
   timed_unit performance-verifier-tests python3 -m unittest experiments.performance.test_discover_runtime_libraries experiments.performance.test_verify_pure experiments.performance.test_verify_native
