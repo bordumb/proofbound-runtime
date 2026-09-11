@@ -2,6 +2,7 @@
 
 use std::ffi::OsStr;
 use std::io::{self, Write};
+use std::path::PathBuf;
 use std::process::{Command, ExitCode};
 
 use proofbound_runtime_bench::{
@@ -17,8 +18,20 @@ const SAMPLE_COUNT: usize = 1_000;
 const TARGET_SAMPLE_NS: u64 = 10_000_000;
 
 #[derive(Debug, Eq, PartialEq)]
-struct Arguments {
-    source_commit: String,
+enum Arguments {
+    Pure {
+        source_commit: String,
+    },
+    Native {
+        source_commit: String,
+        result_root: PathBuf,
+        cgroup_root: PathBuf,
+        runtime_bin_directory: PathBuf,
+        plan: PathBuf,
+        workload_executable: PathBuf,
+        expected_output: PathBuf,
+        runner_image: String,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -79,7 +92,10 @@ fn run(
     arguments: impl IntoIterator<Item = String>,
     output: &mut impl Write,
 ) -> Result<(), CliError> {
-    let arguments = parse_arguments(arguments)?;
+    let arguments = match parse_arguments(arguments)? {
+        Arguments::Pure { source_commit } => source_commit,
+        Arguments::Native { .. } => return Err(CliError::Usage),
+    };
     if BUILD_PROFILE != "release" {
         return Err(BenchmarkError::InvalidBuildProfile.into());
     }
@@ -88,7 +104,7 @@ fn run(
     let porcelain_status =
         command_text("git", ["status", "--porcelain=v1", "--untracked-files=all"])?;
     let source = SourceRevision::new(
-        &arguments.source_commit,
+        &arguments,
         observed_commit.trim_end_matches(['\r', '\n']),
         &porcelain_status,
     )?;
@@ -133,21 +149,72 @@ where
 fn parse_arguments(arguments: impl IntoIterator<Item = String>) -> Result<Arguments, CliError> {
     let mut arguments = arguments.into_iter();
     let _program = arguments.next().ok_or(CliError::Usage)?;
-    if arguments.next().as_deref() != Some("pure")
-        || arguments.next().as_deref() != Some("--source-commit")
-    {
+    match arguments.next().as_deref() {
+        Some("pure") => {
+            let source_commit = exact_value(&mut arguments, "--source-commit")?;
+            if arguments.next().is_some() || !is_source_commit(&source_commit) {
+                return Err(CliError::Usage);
+            }
+            Ok(Arguments::Pure { source_commit })
+        }
+        Some("native") => {
+            let source_commit = exact_value(&mut arguments, "--source-commit")?;
+            let result_root = PathBuf::from(exact_value(&mut arguments, "--result-root")?);
+            let cgroup_root = PathBuf::from(exact_value(&mut arguments, "--cgroup-root")?);
+            let runtime_bin_directory =
+                PathBuf::from(exact_value(&mut arguments, "--runtime-bin-directory")?);
+            let plan = PathBuf::from(exact_value(&mut arguments, "--plan")?);
+            let workload_executable =
+                PathBuf::from(exact_value(&mut arguments, "--workload-executable")?);
+            let expected_output = PathBuf::from(exact_value(&mut arguments, "--expected-output")?);
+            let runner_image = exact_value(&mut arguments, "--runner-image")?;
+            if arguments.next().is_some()
+                || !is_source_commit(&source_commit)
+                || [
+                    &result_root,
+                    &cgroup_root,
+                    &runtime_bin_directory,
+                    &plan,
+                    &workload_executable,
+                    &expected_output,
+                ]
+                .into_iter()
+                .any(|path| !path.is_absolute())
+                || runner_image.is_empty()
+                || runner_image.len() > 512
+            {
+                return Err(CliError::Usage);
+            }
+            Ok(Arguments::Native {
+                source_commit,
+                result_root,
+                cgroup_root,
+                runtime_bin_directory,
+                plan,
+                workload_executable,
+                expected_output,
+                runner_image,
+            })
+        }
+        _ => Err(CliError::Usage),
+    }
+}
+
+fn exact_value(
+    arguments: &mut impl Iterator<Item = String>,
+    expected_flag: &str,
+) -> Result<String, CliError> {
+    if arguments.next().as_deref() != Some(expected_flag) {
         return Err(CliError::Usage);
     }
-    let source_commit = arguments.next().ok_or(CliError::Usage)?;
-    if arguments.next().is_some()
-        || source_commit.len() != 40
-        || !source_commit
+    arguments.next().ok_or(CliError::Usage)
+}
+
+fn is_source_commit(value: &str) -> bool {
+    value.len() == 40
+        && value
             .bytes()
             .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
-    {
-        return Err(CliError::Usage);
-    }
-    Ok(Arguments { source_commit })
 }
 
 #[cfg(test)]
