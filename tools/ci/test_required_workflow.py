@@ -11,6 +11,7 @@ MANUAL_EXPERIMENT_WORKFLOWS = (
     WORKFLOW_ROOT / "performance-baseline.yml",
 )
 CI_SCRIPT = REPOSITORY_ROOT / "tools" / "ci" / "ci.sh"
+PRE_COMMIT_SCRIPT = REPOSITORY_ROOT / "tools" / "ci" / "pre-commit.sh"
 LEGACY_NATIVE_WORKFLOW = (
     REPOSITORY_ROOT / ".github" / "workflows" / "linux-enforcement.yml"
 )
@@ -68,6 +69,18 @@ class RequiredWorkflowTests(unittest.TestCase):
             self.assertRegex(script, rf'(?m)^if selected "{stage}"; then$')
         self.assertIn('stage="${1:-all}"', script)
         self.assertIn('all|preflight|rust|formal', script)
+
+    def test_fast_hook_excludes_fresh_evidence(self) -> None:
+        hook = PRE_COMMIT_SCRIPT.read_text(encoding="utf-8")
+        full_gate = CI_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertNotIn("tools/ci/manifests.sh", hook)
+        self.assertNotIn("cargo kani", hook)
+        self.assertNotIn("lake build", hook)
+        self.assertIn(
+            "timed_unit fresh-evidence bash tools/ci/manifests.sh",
+            full_gate,
+        )
 
     def test_preflight_runs_independent_performance_verifier_falsifiers(self) -> None:
         script = CI_SCRIPT.read_text(encoding="utf-8")
