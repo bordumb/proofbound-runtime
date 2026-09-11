@@ -74,6 +74,8 @@ The JSON object is closed and contains:
 - `schema`, `safe_policy: false`, and the selected `host_profile`;
 - the requested executable and its resolved artifact identity;
 - the optional ELF interpreter and its artifact identity;
+- the exact loader cache or path file and identified host helper used during
+  resolution;
 - one ordered record per directly or transitively resolved dependency;
 - suggested runtime roots, each with the exact dependency paths and resolution
   facts that caused the suggestion; and
@@ -115,8 +117,8 @@ initial codes are:
 The registered attack corpus covers a static ELF, glibc closure, musl closure,
 missing library, conflicting search path, plugin/open-load warning, symlink
 cycle, unsupported dynamic token, and identity drift. Tests use synthetic ELF
-fixtures and an in-memory host boundary so they do not depend on the developer
-machine's loader cache or libraries.
+fixtures in isolated temporary trees; fixture `RPATH`/`RUNPATH` entries take
+precedence over unrelated developer-machine libraries.
 
 The claim is limited to bounded, deterministic static discovery under the
 selected host profile. Runtime completeness, target behavior, package-manager

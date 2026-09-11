@@ -283,6 +283,15 @@ mod tests {
             .collect()
     }
 
+    fn static_elf_bytes() -> Vec<u8> {
+        let mut bytes = vec![0_u8; 64];
+        bytes[..7].copy_from_slice(b"\x7fELF\x02\x01\x01");
+        bytes[18..20].copy_from_slice(&62_u16.to_le_bytes());
+        bytes[52..54].copy_from_slice(&64_u16.to_le_bytes());
+        bytes[54..56].copy_from_slice(&56_u16.to_le_bytes());
+        bytes
+    }
+
     #[test]
     fn doctor_reports_unsupported_hosts_with_exit_three() {
         let mut stdout = Vec::new();
@@ -445,6 +454,49 @@ mod tests {
         assert_eq!(code, INVALID_INPUT);
         assert!(stdout.is_empty());
         assert_eq!(stderr, b"pbr: plan.input.read-failed\n");
+    }
+
+    #[test]
+    fn plan_scaffold_is_a_non_policy_and_does_not_probe_or_use_plan_reader() {
+        use std::os::unix::fs::PermissionsExt as _;
+
+        let root = std::env::temp_dir().join(format!(
+            "proofbound-runtime-main-scaffold-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir(&root).expect("create scaffold fixture root");
+        let executable = root.join("program");
+        fs::write(&executable, static_elf_bytes()).expect("write static ELF");
+        fs::set_permissions(&executable, fs::Permissions::from_mode(0o755))
+            .expect("make fixture executable");
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+        let code = run_with(
+            vec![
+                OsString::from("pbr"),
+                OsString::from("plan"),
+                OsString::from("scaffold"),
+                OsString::from("--executable"),
+                executable.into_os_string(),
+                OsString::from("--host-profile"),
+                OsString::from("linux-glibc-x86-64-v1"),
+            ],
+            |_| unreachable!("scaffold does not probe execution capabilities"),
+            |_| -> io::Result<Vec<u8>> {
+                unreachable!("scaffold does not use the plan-input reader")
+            },
+            &mut stdout,
+            &mut stderr,
+        );
+        let report: serde_json::Value =
+            serde_json::from_slice(&stdout).expect("scaffold report is JSON");
+
+        assert_eq!(code, SUCCESS);
+        assert_eq!(report["schema"], "proofbound-runtime-plan-scaffold/1");
+        assert_eq!(report["safe_policy"], false);
+        assert!(stderr.is_empty());
+        fs::remove_dir_all(root).expect("remove scaffold fixture root");
     }
 
     #[test]

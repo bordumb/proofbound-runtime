@@ -172,6 +172,7 @@ struct ScaffoldReport {
     host_profile: &'static str,
     executable: Artifact,
     interpreter: Option<Artifact>,
+    resolution_inputs: Vec<Artifact>,
     dependencies: Vec<Dependency>,
     suggested_runtime_roots: Vec<RuntimeRootSuggestion>,
     open_items: Vec<OpenItem>,
@@ -245,18 +246,7 @@ pub(crate) fn execute(
             if dependencies.len() >= MAX_DEPENDENCIES {
                 return Err(ScaffoldError::BoundExceeded);
             }
-            let search = search_directories(&parent, soname, &profile, &cache, &mut open_items)?;
-            let mut candidates = Vec::new();
-            for (directory, rule) in search {
-                let path = directory.join(soname);
-                if fs::metadata(&path).is_ok() {
-                    candidates.push(Candidate {
-                        path: path_text(&path)?,
-                        search_rule: rule,
-                    });
-                }
-            }
-            candidates.dedup_by(|left, right| left.path == right.path);
+            let candidates = search_candidates(&parent, soname, &profile, &cache, &mut open_items)?;
             let Some(first) = candidates.first() else {
                 return Err(ScaffoldError::DependencyMissing);
             };
@@ -314,6 +304,7 @@ pub(crate) fn execute(
         host_profile: profile.name,
         executable,
         interpreter,
+        resolution_inputs: cache.inputs,
         dependencies,
         suggested_runtime_roots,
         open_items: open_items.into_iter().collect(),
@@ -326,17 +317,21 @@ pub(crate) fn execute(
 struct LoaderCache {
     entries: BTreeMap<String, Vec<PathBuf>>,
     extra_directories: Vec<PathBuf>,
+    inputs: Vec<Artifact>,
     unavailable: bool,
 }
 
 fn loader_cache(profile: &HostProfile, bytes_read: &mut u64) -> Result<LoaderCache, ScaffoldError> {
     match profile.loader {
-        LoaderFamily::Glibc => glibc_cache(),
+        LoaderFamily::Glibc => glibc_cache(profile.architecture, bytes_read),
         LoaderFamily::Musl => musl_paths(profile.architecture, bytes_read),
     }
 }
 
-fn glibc_cache() -> Result<LoaderCache, ScaffoldError> {
+fn glibc_cache(
+    architecture: Architecture,
+    bytes_read: &mut u64,
+) -> Result<LoaderCache, ScaffoldError> {
     let helper = ["/sbin/ldconfig", "/usr/sbin/ldconfig"]
         .iter()
         .map(Path::new)
@@ -347,7 +342,18 @@ fn glibc_cache() -> Result<LoaderCache, ScaffoldError> {
             ..LoaderCache::default()
         });
     };
-    let output = Command::new(helper)
+    let cache_path = Path::new("/etc/ld.so.cache");
+    if !cache_path.exists() {
+        return Ok(LoaderCache {
+            unavailable: true,
+            ..LoaderCache::default()
+        });
+    }
+    let (helper, _) =
+        inspect_artifact(helper, true, bytes_read).map_err(|_| ScaffoldError::LoaderDataInvalid)?;
+    let (cache, _) = inspect_artifact(cache_path, false, bytes_read)
+        .map_err(|_| ScaffoldError::LoaderDataInvalid)?;
+    let output = Command::new(&helper.resolved)
         .arg("-p")
         .env_clear()
         .output()
@@ -365,6 +371,14 @@ fn glibc_cache() -> Result<LoaderCache, ScaffoldError> {
         let Some(soname) = left.split_ascii_whitespace().next() else {
             continue;
         };
+        let qualifier = left.to_ascii_lowercase();
+        let architecture_matches = match architecture {
+            Architecture::X86_64 => qualifier.contains("x86-64") || qualifier.contains("x86_64"),
+            Architecture::Aarch64 => qualifier.contains("aarch64"),
+        };
+        if !architecture_matches {
+            continue;
+        }
         let path = PathBuf::from(path.trim());
         if !path.is_absolute() || soname.contains('/') {
             return Err(ScaffoldError::LoaderDataInvalid);
@@ -373,6 +387,7 @@ fn glibc_cache() -> Result<LoaderCache, ScaffoldError> {
     }
     Ok(LoaderCache {
         entries,
+        inputs: vec![helper, cache],
         ..LoaderCache::default()
     })
 }
@@ -392,7 +407,8 @@ fn musl_paths(
             ..LoaderCache::default()
         });
     }
-    let bytes = bounded_read(&path, bytes_read, false)?;
+    let (input, bytes) =
+        inspect_artifact(&path, false, bytes_read).map_err(|_| ScaffoldError::LoaderDataInvalid)?;
     let text = core::str::from_utf8(&bytes).map_err(|_| ScaffoldError::LoaderDataInvalid)?;
     let mut extra_directories = Vec::new();
     for entry in text.split([':', '\n']) {
@@ -408,17 +424,18 @@ fn musl_paths(
     }
     Ok(LoaderCache {
         extra_directories: deduplicate_paths(extra_directories),
+        inputs: vec![input],
         ..LoaderCache::default()
     })
 }
 
-fn search_directories(
+fn search_candidates(
     parent: &QueueEntry,
     soname: &str,
     profile: &HostProfile,
     cache: &LoaderCache,
     open_items: &mut BTreeSet<OpenItem>,
-) -> Result<Vec<(PathBuf, String)>, ScaffoldError> {
+) -> Result<Vec<Candidate>, ScaffoldError> {
     let object = Path::new(&parent.artifact.resolved);
     let mut search = Vec::new();
     let dynamic_paths = if parent.info.runpath.is_empty() {
@@ -439,9 +456,7 @@ fn search_directories(
     }
     if let Some(paths) = cache.entries.get(soname) {
         for path in paths {
-            if let Some(parent) = path.parent() {
-                search.push((parent.to_path_buf(), "glibc-loader-cache".to_owned()));
-            }
+            search.push((path.clone(), "glibc-loader-cache-exact".to_owned()));
         }
     }
     for path in &cache.extra_directories {
@@ -450,12 +465,25 @@ fn search_directories(
     for path in profile.default_directories {
         search.push((PathBuf::from(path), "profile-default".to_owned()));
     }
+    let mut candidates = Vec::new();
     let mut seen = BTreeSet::new();
-    search.retain(|(path, _)| seen.insert(path.clone()));
-    if search.len() > MAX_SEARCH_DIRECTORIES {
+    for (path, rule) in search {
+        let candidate = if rule == "glibc-loader-cache-exact" {
+            path
+        } else {
+            path.join(soname)
+        };
+        if seen.insert(candidate.clone()) && fs::metadata(&candidate).is_ok() {
+            candidates.push(Candidate {
+                path: path_text(&candidate)?,
+                search_rule: rule,
+            });
+        }
+    }
+    if candidates.len() > MAX_SEARCH_DIRECTORIES {
         return Err(ScaffoldError::BoundExceeded);
     }
-    Ok(search)
+    Ok(candidates)
 }
 
 fn expand_paths(
@@ -929,14 +957,6 @@ fn read_u64(bytes: &[u8], offset: usize) -> Result<u64, ScaffoldError> {
     ]))
 }
 
-fn bounded_read(
-    path: &Path,
-    bytes_read: &mut u64,
-    executable: bool,
-) -> Result<Vec<u8>, ScaffoldError> {
-    inspect_artifact(path, executable, bytes_read).map(|(_, bytes)| bytes)
-}
-
 fn deduplicate_paths(paths: Vec<PathBuf>) -> Vec<PathBuf> {
     let mut seen = BTreeSet::new();
     paths
@@ -958,6 +978,37 @@ fn hex(bytes: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    struct FixtureRoot(PathBuf);
+
+    impl FixtureRoot {
+        fn new(name: &str) -> Self {
+            let root = std::env::temp_dir().join(format!(
+                "pbr-scaffold-{name}-{}-{:?}",
+                std::process::id(),
+                std::thread::current().id()
+            ));
+            let _ = fs::remove_dir_all(&root);
+            fs::create_dir_all(&root).expect("create fixture root");
+            Self(root)
+        }
+
+        fn write(&self, relative: &str, bytes: &[u8], executable: bool) -> PathBuf {
+            let path = self.0.join(relative);
+            fs::create_dir_all(path.parent().expect("fixture has parent"))
+                .expect("create fixture parent");
+            fs::write(&path, bytes).expect("write fixture");
+            let mode = if executable { 0o755 } else { 0o644 };
+            fs::set_permissions(&path, fs::Permissions::from_mode(mode)).expect("set fixture mode");
+            path
+        }
+    }
+
+    impl Drop for FixtureRoot {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
 
     fn static_elf(machine: u16) -> Vec<u8> {
         let mut bytes = vec![0_u8; ELF_HEADER_BYTES];
@@ -1131,5 +1182,147 @@ mod tests {
             ScaffoldError::ExecutableIdentityDrift.code(),
             ScaffoldError::DependencyIdentityDrift.code()
         );
+    }
+
+    #[test]
+    fn full_glibc_closure_is_resolved_with_provenance() {
+        let root = FixtureRoot::new("glibc");
+        let interpreter = root.write("ld-linux-x86-64.so.2", &static_elf(62), true);
+        root.write("lib/libsecond.so", &static_elf(62), false);
+        root.write(
+            "lib/libfirst.so",
+            &dynamic_elf(
+                interpreter.to_str().expect("UTF-8 fixture"),
+                &["libsecond.so"],
+                Some("$ORIGIN"),
+                62,
+            ),
+            false,
+        );
+        let executable = root.write(
+            "program",
+            &dynamic_elf(
+                interpreter.to_str().expect("UTF-8 fixture"),
+                &["libfirst.so"],
+                Some("$ORIGIN/lib"),
+                62,
+            ),
+            true,
+        );
+        let mut output = Vec::new();
+        execute(&executable, "linux-glibc-x86-64-v1", &mut output)
+            .expect("glibc closure scaffolds");
+        let report: serde_json::Value = serde_json::from_slice(&output).expect("JSON report");
+        assert_eq!(report["safe_policy"], false);
+        assert_eq!(report["dependencies"].as_array().unwrap().len(), 2);
+        assert!(
+            report["suggested_runtime_roots"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .all(|root| !root["provenance"].as_array().unwrap().is_empty())
+        );
+    }
+
+    #[test]
+    fn full_musl_closure_is_resolved_with_provenance() {
+        let root = FixtureRoot::new("musl");
+        let interpreter = root.write("ld-musl-x86_64.so.1", &static_elf(62), true);
+        root.write("lib/libfixture-musl.so", &static_elf(62), false);
+        let executable = root.write(
+            "program",
+            &dynamic_elf(
+                interpreter.to_str().expect("UTF-8 fixture"),
+                &["libfixture-musl.so"],
+                Some("$ORIGIN/lib"),
+                62,
+            ),
+            true,
+        );
+        let mut output = Vec::new();
+        execute(&executable, "linux-musl-x86-64-v1", &mut output).expect("musl closure scaffolds");
+        let report: serde_json::Value = serde_json::from_slice(&output).expect("JSON report");
+        assert_eq!(report["dependencies"][0]["soname"], "libfixture-musl.so");
+        assert_eq!(report["dependencies"][0]["search_rule"], "elf-runpath");
+    }
+
+    #[test]
+    fn missing_library_fails_closed() {
+        let root = FixtureRoot::new("missing");
+        let interpreter = root.write("ld-linux-x86-64.so.2", &static_elf(62), true);
+        let executable = root.write(
+            "program",
+            &dynamic_elf(
+                interpreter.to_str().expect("UTF-8 fixture"),
+                &["lib-proofbound-definitely-missing.so"],
+                Some("$ORIGIN/lib"),
+                62,
+            ),
+            true,
+        );
+        assert_eq!(
+            execute(&executable, "linux-glibc-x86-64-v1", &mut Vec::new()),
+            Err(ScaffoldError::DependencyMissing)
+        );
+    }
+
+    #[test]
+    fn ordered_conflicts_are_reported_not_hidden() {
+        let root = FixtureRoot::new("conflict");
+        let interpreter = root.write("ld-linux-x86-64.so.2", &static_elf(62), true);
+        root.write("first/libconflict.so", &static_elf(62), false);
+        root.write("second/libconflict.so", &static_elf(62), false);
+        let executable = root.write(
+            "program",
+            &dynamic_elf(
+                interpreter.to_str().expect("UTF-8 fixture"),
+                &["libconflict.so"],
+                Some("$ORIGIN/first:$ORIGIN/second"),
+                62,
+            ),
+            true,
+        );
+        let mut output = Vec::new();
+        execute(&executable, "linux-glibc-x86-64-v1", &mut output)
+            .expect("ordered conflict remains reviewable");
+        let report: serde_json::Value = serde_json::from_slice(&output).expect("JSON report");
+        assert_eq!(
+            report["dependencies"][0]["candidates"]
+                .as_array()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert!(
+            report["open_items"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|item| item["code"] == "search-path-conflict")
+        );
+    }
+
+    #[test]
+    fn registered_attack_catalog_is_closed() {
+        let catalog = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../tests/attacks/scaffold/v1.toml"
+        ));
+        let expected = [
+            "static-elf",
+            "glibc-closure",
+            "musl-closure",
+            "missing-library",
+            "conflicting-search-path",
+            "plugin-load",
+            "symlink-cycle",
+            "identity-drift",
+            "unsupported-dynamic-token",
+        ];
+        assert!(catalog.starts_with("schema = \"proofbound-runtime-scaffold-attacks/1\""));
+        assert_eq!(catalog.matches("[[case]]").count(), expected.len());
+        for id in expected {
+            assert!(catalog.contains(&format!("id = \"{id}\"")));
+        }
     }
 }
