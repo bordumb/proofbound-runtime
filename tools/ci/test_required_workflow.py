@@ -157,16 +157,20 @@ class RequiredWorkflowTests(unittest.TestCase):
         workflow = WORKFLOW.read_text(encoding="utf-8")
         evidence = workflow[workflow.index("\n  fresh-evidence:\n") : workflow.index("\n  native:\n")]
 
-        self.assertEqual(evidence.count("if: ${{ matrix.selector != 'ledger' }}"), 7)
+        self.assertEqual(evidence.count("if: ${{ matrix.selector != 'ledger' }}"), 5)
         self.assertEqual(evidence.count("if: ${{ matrix.needs_kani }}"), 1)
         self.assertIn("- shard: authority\n            selector: PBR-AUTH-001\n", evidence)
         self.assertIn("needs_kani: true", evidence)
         self.assertIn("- shard: binding\n            selector: PBR-BINDING-005\n", evidence)
         self.assertIn("needs_kani: false", evidence)
+        lean_install = evidence[
+            evidence.index("- name: Install pinned Lean toolchain") :
+            evidence.index("- name: Install Nix for pinned translation tools")
+        ]
+        self.assertNotIn("if:", lean_install)
         self.assertIn("name: Fetch locked Rust dependencies\n        run: cargo fetch --locked", evidence)
         self.assertIn(
             "name: Fetch locked Lean dependencies\n"
-            "        if: ${{ matrix.selector != 'ledger' }}\n"
             "        run: lake update",
             evidence,
         )
