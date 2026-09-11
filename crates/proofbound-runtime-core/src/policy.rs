@@ -1,4 +1,32 @@
-use crate::{EnvironmentName, NormalizedAuthority, PathAuthority, ResourceLimits};
+use core::fmt;
+
+use crate::wire_v2::{self, Value};
+use crate::{
+    EnvironmentName, FileAccess, NormalizedAuthority, PathAuthority, PathRole, ResourceLimits,
+};
+
+const POLICY_MODEL_VERSION_V1: &str = "proofbound-runtime-linux-policy/1";
+const POLICY_MODEL_VERSION_V2: &str = "proofbound-runtime-linux-policy/2";
+
+/// Identifies a failure to encode the closed version 2 policy wire.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PolicyEncodingError {
+    /// Legacy policies do not have a version 2 CBOR representation.
+    UnsupportedVersion,
+    /// The deterministic encoder rejected an internally constructed value.
+    CanonicalEncoding,
+}
+
+impl fmt::Display for PolicyEncodingError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::UnsupportedVersion => "policy.schema.unsupported-version",
+            Self::CanonicalEncoding => "policy.encoding.canonical-failed",
+        })
+    }
+}
+
+impl std::error::Error for PolicyEncodingError {}
 
 /// Contains the complete Landlock input for a supported policy.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -83,6 +111,82 @@ impl CompiledPolicy {
         self.no_new_privileges
     }
 
+    /// Returns the policy model selected by the complete resource profile.
+    #[must_use]
+    pub fn model_version(&self) -> &'static str {
+        if self.cgroup.limits.is_version_two() {
+            POLICY_MODEL_VERSION_V2
+        } else {
+            POLICY_MODEL_VERSION_V1
+        }
+    }
+
+    /// Encodes one complete version 2 policy as deterministic CBOR.
+    pub fn canonical_bytes(&self) -> Result<Vec<u8>, PolicyEncodingError> {
+        if !self.cgroup.limits.is_version_two() {
+            return Err(PolicyEncodingError::UnsupportedVersion);
+        }
+        wire_v2::encode(&self.wire_value()).map_err(|_| PolicyEncodingError::CanonicalEncoding)
+    }
+
+    fn wire_value(&self) -> Value {
+        let limits = self.cgroup.limits;
+        map([
+            ("schema", text(POLICY_MODEL_VERSION_V2)),
+            (
+                "cgroup",
+                map([
+                    (
+                        "pids.max",
+                        Value::Unsigned(u64::from(limits.processes().get())),
+                    ),
+                    (
+                        "memory.max",
+                        Value::Unsigned(limits.memory().expect("v2 profile").get()),
+                    ),
+                    ("memory.oom.group", Value::Unsigned(1)),
+                    (
+                        "memory.swap.max",
+                        Value::Unsigned(limits.swap().expect("v2 profile").get()),
+                    ),
+                    ("stderr_bytes", Value::Unsigned(limits.stderr().get())),
+                    ("stdout_bytes", Value::Unsigned(limits.stdout().get())),
+                    (
+                        "wall_time_ms",
+                        Value::Unsigned(limits.wall_time().milliseconds()),
+                    ),
+                ]),
+            ),
+            ("network", text("deny-network-v1")),
+            (
+                "filesystem",
+                Value::Array(
+                    self.filesystem
+                        .rules
+                        .iter()
+                        .map(|rule| {
+                            map([
+                                ("path", text(rule.path().as_str())),
+                                ("role", text(path_role_name(rule.role()))),
+                                ("access", text(file_access_name(rule.access()))),
+                            ])
+                        })
+                        .collect(),
+                ),
+            ),
+            (
+                "environment",
+                Value::Array(
+                    self.environment
+                        .iter()
+                        .map(|name| text(name.as_str()))
+                        .collect(),
+                ),
+            ),
+            ("no_new_privileges", Value::Bool(true)),
+        ])
+    }
+
     /// Reports whether this policy adds no modeled authority.
     #[must_use]
     pub fn is_no_more_permissive_than(&self, authority: &NormalizedAuthority) -> bool {
@@ -100,6 +204,37 @@ impl CompiledPolicy {
                 .is_no_more_permissive_than(authority.limits())
             && self.network == SeccompPolicy::DenyNetworkV1
             && self.no_new_privileges == NoNewPrivileges::Required
+    }
+}
+
+fn map<const N: usize>(entries: [(&str, Value); N]) -> Value {
+    Value::Map(
+        entries
+            .into_iter()
+            .map(|(key, value)| (key.to_owned(), value))
+            .collect(),
+    )
+}
+
+fn text(value: &str) -> Value {
+    Value::Text(value.to_owned())
+}
+
+const fn file_access_name(access: FileAccess) -> &'static str {
+    match access {
+        FileAccess::Read => "read",
+        FileAccess::Write => "write",
+        FileAccess::Execute => "execute",
+    }
+}
+
+const fn path_role_name(role: PathRole) -> &'static str {
+    match role {
+        PathRole::ProjectInput => "project-input",
+        PathRole::OutputRoot => "output-root",
+        PathRole::RuntimeExecutable => "runtime-executable",
+        PathRole::RuntimeLoaderExecutable => "runtime-loader-executable",
+        PathRole::RuntimeLibrary => "runtime-library",
     }
 }
 

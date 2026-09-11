@@ -26,7 +26,8 @@ pub use plan::{
     parse_execution_plan_for_execution,
 };
 pub use policy::{
-    CgroupPolicy, CompiledPolicy, FilesystemPolicy, NoNewPrivileges, SeccompPolicy, compile_policy,
+    CgroupPolicy, CompiledPolicy, FilesystemPolicy, NoNewPrivileges, PolicyEncodingError,
+    SeccompPolicy, compile_policy,
 };
 pub use receipt::{
     Architecture, BoundaryInstallation, BoundaryRecord, CgroupIdentity, EXECUTION_RECEIPT_SCHEMA,

@@ -13,7 +13,7 @@ compiled-policy-v2 = {
 filesystem-rule = {
   "path": text .size (1..18446744073709551615),
   "role": "project-input" / "runtime-library" / "output-root" /
-    "runtime-executable",
+    "runtime-executable" / "runtime-loader-executable",
   "access": "read" / "write" / "execute"
 }
 

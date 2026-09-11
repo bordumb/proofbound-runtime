@@ -42,6 +42,83 @@ pub(crate) fn decode(input: &[u8]) -> Result<Value, Error> {
     Ok(value)
 }
 
+pub(crate) fn encode(value: &Value) -> Result<Vec<u8>, Error> {
+    let mut output = Vec::new();
+    encode_item(value, &mut output)?;
+    Ok(output)
+}
+
+fn encode_item(value: &Value, output: &mut Vec<u8>) -> Result<(), Error> {
+    match value {
+        Value::Unsigned(value) => encode_argument(0, *value, output),
+        Value::Negative(argument) => encode_argument(1, *argument, output),
+        Value::Bytes(value) => {
+            encode_length(2, value.len(), output)?;
+            output.extend_from_slice(value);
+        }
+        Value::Text(value) => {
+            encode_length(3, value.len(), output)?;
+            output.extend_from_slice(value.as_bytes());
+        }
+        Value::Array(values) => {
+            encode_length(4, values.len(), output)?;
+            for value in values {
+                encode_item(value, output)?;
+            }
+        }
+        Value::Map(values) => encode_map(values, output)?,
+        Value::Bool(value) => output.push(if *value { 0xf5 } else { 0xf4 }),
+        Value::Null => output.push(0xf6),
+    }
+    Ok(())
+}
+
+fn encode_map(values: &[(String, Value)], output: &mut Vec<u8>) -> Result<(), Error> {
+    let mut entries = Vec::new();
+    entries
+        .try_reserve(values.len())
+        .map_err(|_| Error::LimitExceeded)?;
+    for (key, value) in values {
+        let mut key_encoding = Vec::new();
+        encode_item(&Value::Text(key.clone()), &mut key_encoding)?;
+        entries.push((key_encoding, value));
+    }
+    entries.sort_by(|left, right| left.0.cmp(&right.0));
+    if entries.windows(2).any(|pair| pair[0].0 == pair[1].0) {
+        return Err(Error::Invalid);
+    }
+    encode_length(5, entries.len(), output)?;
+    for (key_encoding, value) in entries {
+        output.extend_from_slice(&key_encoding);
+        encode_item(value, output)?;
+    }
+    Ok(())
+}
+
+fn encode_length(major: u8, length: usize, output: &mut Vec<u8>) -> Result<(), Error> {
+    let length = u64::try_from(length).map_err(|_| Error::LimitExceeded)?;
+    encode_argument(major, length, output);
+    Ok(())
+}
+
+fn encode_argument(major: u8, argument: u64, output: &mut Vec<u8>) {
+    let prefix = major << 5;
+    if argument < 24 {
+        output.push(prefix | u8::try_from(argument).expect("argument is smaller than 24"));
+    } else if let Ok(value) = u8::try_from(argument) {
+        output.extend_from_slice(&[prefix | 24, value]);
+    } else if let Ok(value) = u16::try_from(argument) {
+        output.push(prefix | 25);
+        output.extend_from_slice(&value.to_be_bytes());
+    } else if let Ok(value) = u32::try_from(argument) {
+        output.push(prefix | 26);
+        output.extend_from_slice(&value.to_be_bytes());
+    } else {
+        output.push(prefix | 27);
+        output.extend_from_slice(&argument.to_be_bytes());
+    }
+}
+
 struct Decoder<'a> {
     input: &'a [u8],
     offset: usize,
@@ -183,5 +260,16 @@ mod tests {
         for attack in attacks {
             assert!(decode(attack).is_err());
         }
+    }
+
+    #[test]
+    fn encoder_uses_bytewise_text_key_order_and_shortest_arguments() {
+        let value = Value::Map(vec![
+            ("memory.max".to_owned(), Value::Unsigned(65_536)),
+            ("pids.max".to_owned(), Value::Unsigned(2)),
+        ]);
+        let encoded = encode(&value).expect("fixture encodes");
+        assert_eq!(decode(&encoded), Ok(value));
+        assert!(encoded.windows(9).any(|window| window == b"hpids.max"));
     }
 }
