@@ -4,11 +4,14 @@
 #include <fcntl.h>
 #include <linux/landlock.h>
 #include <signal.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/prctl.h>
+#include <sys/mman.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -74,6 +77,132 @@ static int emit(int descriptor, const char *text) {
         remaining -= (size_t)written;
     }
     return 0;
+}
+
+static int parse_size(const char *text, size_t *output) {
+    char *end = NULL;
+    errno = 0;
+    unsigned long long value = strtoull(text, &end, 10);
+    if (errno != 0 || end == text || *end != '\0' || value == 0 ||
+        value > (unsigned long long)SIZE_MAX) {
+        return -1;
+    }
+    *output = (size_t)value;
+    return 0;
+}
+
+static void touch_writable_pages(unsigned char *memory, size_t size) {
+    long page_size = sysconf(_SC_PAGESIZE);
+    if (page_size <= 0) {
+        _exit(88);
+    }
+    for (size_t offset = 0; offset < size; offset += (size_t)page_size) {
+        memory[offset] = (unsigned char)(offset / (size_t)page_size);
+    }
+    memory[size - 1] = 1;
+}
+
+static int allocate_anonymous(size_t size, int retain) {
+    unsigned char *memory = mmap(NULL, size, PROT_READ | PROT_WRITE,
+                                 MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (memory == MAP_FAILED) {
+        return errno == ENOMEM ? 0 : 81;
+    }
+    touch_writable_pages(memory, size);
+    if (retain) {
+        for (;;) {
+            pause();
+        }
+    }
+    return munmap(memory, size) == 0 ? 0 : 82;
+}
+
+static int allocate_until_denied(size_t chunk_size) {
+    for (;;) {
+        unsigned char *memory = mmap(NULL, chunk_size, PROT_READ | PROT_WRITE,
+                                     MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        if (memory == MAP_FAILED) {
+            return errno == ENOMEM
+                       ? emit(STDOUT_FILENO, "allocation-denied\n")
+                       : 83;
+        }
+        touch_writable_pages(memory, chunk_size);
+    }
+}
+
+static int mapped_file(const char *path) {
+    int descriptor = open(path, O_RDONLY | O_CLOEXEC);
+    if (descriptor < 0) {
+        return 84;
+    }
+    struct stat status;
+    if (fstat(descriptor, &status) != 0 || status.st_size <= 0) {
+        close(descriptor);
+        return 85;
+    }
+    size_t size = (size_t)status.st_size;
+    const unsigned char *memory = mmap(NULL, size, PROT_READ, MAP_PRIVATE,
+                                       descriptor, 0);
+    if (memory == MAP_FAILED) {
+        close(descriptor);
+        return 86;
+    }
+    long page_size = sysconf(_SC_PAGESIZE);
+    if (page_size <= 0) {
+        return 87;
+    }
+    volatile unsigned char checksum = 0;
+    for (size_t offset = 0; offset < size; offset += (size_t)page_size) {
+        checksum ^= memory[offset];
+    }
+    checksum ^= memory[size - 1];
+    int result = munmap((void *)memory, size) == 0 && close(descriptor) == 0
+                     ? 0
+                     : 89;
+    return checksum == 0xff ? 91 : result;
+}
+
+static int read_page_cache(const char *path) {
+    int descriptor = open(path, O_RDONLY | O_CLOEXEC);
+    if (descriptor < 0) {
+        return 92;
+    }
+    unsigned char buffer[65536];
+    volatile unsigned char checksum = 0;
+    for (;;) {
+        ssize_t received = read(descriptor, buffer, sizeof(buffer));
+        if (received < 0) {
+            close(descriptor);
+            return 93;
+        }
+        if (received == 0) {
+            break;
+        }
+        for (ssize_t index = 0; index < received; index += 4096) {
+            checksum ^= buffer[index];
+        }
+    }
+    int result = close(descriptor) == 0 ? 0 : 94;
+    return checksum == 0xff ? 95 : result;
+}
+
+static int allocate_shared(size_t size) {
+    int descriptor = memfd_create("proofbound-memory", MFD_CLOEXEC);
+    if (descriptor < 0 || ftruncate(descriptor, (off_t)size) != 0) {
+        if (descriptor >= 0) {
+            close(descriptor);
+        }
+        return 96;
+    }
+    unsigned char *memory = mmap(NULL, size, PROT_READ | PROT_WRITE,
+                                 MAP_SHARED, descriptor, 0);
+    if (memory == MAP_FAILED) {
+        close(descriptor);
+        return 97;
+    }
+    touch_writable_pages(memory, size);
+    int result = munmap(memory, size) == 0 && close(descriptor) == 0 ? 0 : 98;
+    return result;
 }
 
 int main(int argc, char **argv) {
@@ -170,6 +299,61 @@ int main(int argc, char **argv) {
             }
         }
         return 0;
+    }
+    if (strcmp(argv[1], "memory-anonymous") == 0 && argc == 3) {
+        size_t size = 0;
+        return parse_size(argv[2], &size) == 0 && allocate_anonymous(size, 0) == 0
+                   ? emit(STDOUT_FILENO, "anonymous-accounted\n")
+                   : 100;
+    }
+    if (strcmp(argv[1], "memory-over-limit") == 0 && argc == 3) {
+        size_t chunk_size = 0;
+        return parse_size(argv[2], &chunk_size) == 0
+                   ? allocate_until_denied(chunk_size)
+                   : 101;
+    }
+    if (strcmp(argv[1], "memory-process-tree-over-limit") == 0 && argc == 4) {
+        size_t chunk_size = 0;
+        size_t children = 0;
+        if (parse_size(argv[2], &chunk_size) != 0 ||
+            parse_size(argv[3], &children) != 0) {
+            return 102;
+        }
+        for (size_t index = 0; index < children; ++index) {
+            pid_t child = fork();
+            if (child < 0) {
+                return 103;
+            }
+            if (child == 0) {
+                _exit(allocate_until_denied(chunk_size));
+            }
+        }
+        return allocate_until_denied(chunk_size);
+    }
+    if (strcmp(argv[1], "memory-mapped-file") == 0 && argc == 3) {
+        return mapped_file(argv[2]) == 0
+                   ? emit(STDOUT_FILENO, "mapped-file-accounted\n")
+                   : 104;
+    }
+    if (strcmp(argv[1], "memory-page-cache") == 0 && argc == 3) {
+        return read_page_cache(argv[2]) == 0
+                   ? emit(STDOUT_FILENO, "page-cache-accounted\n")
+                   : 105;
+    }
+    if (strcmp(argv[1], "memory-shared") == 0 && argc == 3) {
+        size_t size = 0;
+        return parse_size(argv[2], &size) == 0 && allocate_shared(size) == 0
+                   ? emit(STDOUT_FILENO, "shared-memory-accounted\n")
+                   : 106;
+    }
+    if (strcmp(argv[1], "memory-pressure-timeout") == 0 && argc == 3) {
+        size_t size = 0;
+        if (parse_size(argv[2], &size) != 0 || allocate_anonymous(size, 0) != 0) {
+            return 107;
+        }
+        for (;;) {
+            pause();
+        }
     }
     return 65;
 }
