@@ -1,0 +1,53 @@
+schema = "proofbound-claim/1"
+id = "PBR-SDK-014"
+title = "Plan SDKs preserve the separate-process verification boundary"
+statement = "The registered Rust, Python, and TypeScript SDK sources construct only the closed deterministic-CBOR version 2 plan, strictly decode only the non-verifying run-result JSON projection, and, where invocation is provided, launch one explicitly selected pbr process without a shell, ambient environment inheritance, retry, or unbounded output capture."
+public_language = "The three source SDKs match the frozen plan bytes and reject registered construction, projection, process, and package attacks while leaving execution and verification in separate binaries. This is source and reproducible-package-check evidence, not registry authenticity or exact published-package evidence."
+subject = "sdk:proofbound-runtime-plan-v2"
+profile = "ledger"
+tier = 1
+evidence = [
+  "example-test:sdk-rust-contract",
+  "independent-check:sdk-cross-language-contract",
+]
+assumptions = [
+  "PBR-SDK-TOOLCHAINS-AX-010",
+  "PBR-TOOLCHAIN-AX-003",
+]
+open_obligations = [
+  "Bind and publish the exact Rust, Python, and npm package artifacts at an independently approved version 0.2 tag.",
+  "Dogfood each published SDK from a consumer repository without importing Runtime producer or verifier internals.",
+]
+out_of_scope = [
+  "Correctness of pbr execution, receipt production, receipt verification, composition, or acceptance.",
+  "Any claim that the run-result JSON projection establishes verified receipt facts.",
+  "Authenticity, availability, or immutability of an external package registry.",
+  "Correctness of the selected language runtimes, operating system process APIs, or package managers under the recorded assumptions.",
+]
+source_roots = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-sdk/Cargo.toml",
+  "crates/proofbound-runtime-sdk/src/lib.rs",
+  "docs/specs/0012_plan_sdks.md",
+  "proofbound/evidence/sdk-cross-language-contract.toml",
+  "proofbound/evidence/sdk-rust-contract.toml",
+  "schemas/run-result-v2.schema.json",
+  "schemas/vectors/v2/execution-plan.cbor.hex",
+  "sdk/python/README.md",
+  "sdk/python/proofbound_runtime/__init__.py",
+  "sdk/python/pyproject.toml",
+  "sdk/python/tests/test_sdk.py",
+  "sdk/typescript/README.md",
+  "sdk/typescript/package.json",
+  "sdk/typescript/src/index.d.ts",
+  "sdk/typescript/src/index.ts",
+  "sdk/typescript/tests/test.mjs",
+  "tests/attacks/sdk/v1.toml",
+  "tools/ci/ci.sh",
+  "tools/ci/pre-commit.sh",
+  "tools/ci/test_sdk_contract.py",
+  "tools/ci/test_sdk_packages.py",
+  "tools/sdk/build_python_wheel.py",
+  "tools/sdk/check_cross_language.py",
+]

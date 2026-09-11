@@ -3,6 +3,7 @@
 
 from pathlib import Path
 import json
+import re
 import unittest
 
 
@@ -52,6 +53,24 @@ class SdkContractTests(unittest.TestCase):
         ):
             self.assertIn(command, pre_commit)
             self.assertIn(command, ci)
+
+    def test_registered_attack_catalog_is_closed(self) -> None:
+        catalog = (ROOT / "tests/attacks/sdk/v1.toml").read_text()
+        self.assertIn('schema = "proofbound-runtime-sdk-attacks/1"', catalog)
+        self.assertEqual(
+            re.findall(r'^id = "([a-z0-9-]+)"$', catalog, re.MULTILINE),
+            [
+                "json-plan-substitution",
+                "duplicate-environment",
+                "unquantized-limit",
+                "verification-smuggling",
+                "shell-injection",
+                "ambient-environment",
+                "output-flood",
+                "package-file-injection",
+                "cross-codec-drift",
+            ],
+        )
 
 
 if __name__ == "__main__":

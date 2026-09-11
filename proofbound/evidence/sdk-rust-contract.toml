@@ -1,0 +1,36 @@
+schema = "proofbound-evidence-unit/1"
+id = "sdk-rust-contract"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-SDK-014"]
+tier = 0
+expected_inventory = [
+  "proofbound_runtime_sdk::tests::duplicate_or_mismatched_authority_is_rejected_before_encoding",
+  "proofbound_runtime_sdk::tests::run_result_projection_is_closed_and_validates_external_identities",
+  "proofbound_runtime_sdk::tests::rust_plan_matches_the_frozen_v2_golden",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/lib.rs",
+  "crates/proofbound-runtime-sdk/Cargo.toml",
+  "crates/proofbound-runtime-sdk/src/lib.rs",
+  "schemas/execution-plan-v2.cddl",
+  "schemas/vectors/v2/execution-plan.cbor.hex",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-sdk"
+manifest = "Cargo.toml"
+targets = ["--lib"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824
