@@ -1266,7 +1266,7 @@ mod tests {
     fn benchmark_consumes_the_runtime_owned_native_phase_domain() {
         use proofbound_runtime_cli::run::{RunBenchmarkPhase, RunTimings};
 
-        let intervals = [std::time::Duration::from_nanos(1); 12];
+        let intervals = [std::time::Duration::from_nanos(1); 13];
         let timings = RunTimings::from_intervals(intervals);
         assert_eq!(RunBenchmarkPhase::ALL.len(), intervals.len());
         assert_eq!(
@@ -1276,6 +1276,7 @@ mod tests {
                 "host-and-path-preflight-v1",
                 "executable-closure-inventory-v1",
                 "cgroup-creation-and-readback-v1",
+                "launcher-request-and-identity-revalidation-v1",
                 "stopped-launcher-creation-v1",
                 "boundary-installation-v1",
                 "child-execution-v1",
@@ -1286,6 +1287,6 @@ mod tests {
                 "run-result-projection-v1",
             ]
         );
-        assert_eq!(timings.total(), std::time::Duration::from_nanos(12));
+        assert_eq!(timings.total(), std::time::Duration::from_nanos(13));
     }
 }

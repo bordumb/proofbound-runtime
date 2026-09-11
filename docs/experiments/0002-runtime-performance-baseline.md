@@ -56,6 +56,7 @@ meaning:
 - capability and rooted-path preflight;
 - executable and runtime-closure inventory;
 - cgroup creation and controller readback;
+- launcher-request construction and final identity revalidation;
 - stopped launcher creation;
 - Landlock, seccomp, privilege, and cgroup boundary installation;
 - child release and process execution;

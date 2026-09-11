@@ -1403,10 +1403,14 @@ mod tests {
             std::time::Duration::from_nanos(1)
         );
         assert_eq!(
-            timings.phase(RunBenchmarkPhase::RunResultProjection),
-            std::time::Duration::from_nanos(12)
+            timings.phase(RunBenchmarkPhase::LauncherRequestAndIdentityRevalidation),
+            std::time::Duration::from_nanos(5)
         );
-        assert_eq!(timings.total(), std::time::Duration::from_nanos(78));
+        assert_eq!(
+            timings.phase(RunBenchmarkPhase::RunResultProjection),
+            std::time::Duration::from_nanos(13)
+        );
+        assert_eq!(timings.total(), std::time::Duration::from_nanos(91));
     }
 
     #[test]
