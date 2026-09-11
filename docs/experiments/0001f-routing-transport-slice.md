@@ -228,3 +228,21 @@ application-indirection behavior, close the bypass/lifecycle or measurement
 slices, authorize a production network profile, or replace the independent
 review required for the network decision ADR. Experiment 0001E now advances to its frozen
 resolution and application-indirection slice.
+
+### Later synchronization regression
+
+A later full-matrix repetition at exact source `ccfa7f3` in GitHub Actions run
+[`34551042530`](https://github.com/bordumb/proofbound-runtime/actions/runs/34551042530)
+retained one red x86_64 port-only Landlock envelope. Fifteen cells matched. In
+`undeclared-service-ipv6-443`, the child recorded `routing-connected`, but the
+fixture's atomic contact publication was interrupted between temporary-file
+write and rename because cleanup observed the final path too early. The raw
+cell therefore retained `fixture_contact=false` and correctly became
+`harness-failure`; the expected routing limitation was not silently admitted.
+
+Commit `4ea7e3c` freezes that delayed-publication race. Commit `6ace563` waits a
+bounded 250 milliseconds for the contact rename only when the already-published
+client event requires fixture contact, then applies the existing cleanup and
+closed observation rules. This is a harness synchronization repair, not a
+change to any expected mechanism outcome. A new complete native repetition is
+required before the failed run can be superseded.
