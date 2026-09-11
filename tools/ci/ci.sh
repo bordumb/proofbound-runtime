@@ -64,6 +64,7 @@ if selected "preflight"; then
   timed_unit wire-transition-tests python3 -m unittest tools.ci.test_wire_transition
   timed_unit wire-v2-vector-tests python3 -m unittest tools.ci.test_wire_v2_vectors
   timed_unit performance-workflow-tests python3 -m unittest tools.ci.test_performance_workflow
+  timed_unit resource-expansion-contract-tests python3 -m unittest tools.ci.test_resource_expansion_contract
   timed_unit performance-schema-tests python3 -m unittest experiments.performance.test_pure_result_schema experiments.performance.test_native_result_schema
   timed_unit performance-verifier-tests python3 -m unittest experiments.performance.test_discover_runtime_libraries experiments.performance.test_verify_pure experiments.performance.test_verify_native
   timed_unit network-record-port-tests python3 -m unittest experiments.network_authority.test_record_port_control
