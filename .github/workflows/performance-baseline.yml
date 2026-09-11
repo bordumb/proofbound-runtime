@@ -87,7 +87,7 @@ jobs:
             final_exit=$verifier_exit
           fi
           set -e
-          sha256sum "$result_root"/* >"$result_root/SHA256SUMS"
+          (cd "$result_root" && sha256sum ./* >SHA256SUMS)
           exit "$final_exit"
 
       - name: Retain the exact result and independent report
