@@ -24,6 +24,14 @@ pub enum BenchmarkError {
     ClockRegression,
     /// An input-preparation step returned the wrong number of inputs.
     PreparationCountMismatch,
+    /// A source revision is not one canonical full Git object identity.
+    InvalidSourceCommit,
+    /// A retained SHA-256 identity is not canonical lowercase hexadecimal.
+    InvalidDigest,
+    /// The pure result does not contain each closed subject exactly once.
+    SubjectDomainMismatch,
+    /// Operational JSON serialization failed.
+    Encoding,
 }
 
 impl fmt::Display for BenchmarkError {
@@ -36,6 +44,10 @@ impl fmt::Display for BenchmarkError {
             Self::InvalidWarmupCount => "benchmark.warmup.invalid",
             Self::ClockRegression => "benchmark.clock.regression",
             Self::PreparationCountMismatch => "benchmark.preparation.count-mismatch",
+            Self::InvalidSourceCommit => "benchmark.source-commit.invalid",
+            Self::InvalidDigest => "benchmark.digest.invalid",
+            Self::SubjectDomainMismatch => "benchmark.subject-domain.mismatch",
+            Self::Encoding => "benchmark.result.encoding-failed",
         })
     }
 }
@@ -98,6 +110,129 @@ pub struct Measurement {
     pub batch_count: usize,
     /// Per-invocation elapsed-time observations.
     pub summary: Summary,
+}
+
+/// Closed version 1 pure-operation benchmark domain.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub enum PureSubject {
+    /// Strict version 1 plan parsing and typed validation.
+    #[serde(rename = "plan-parse-v1")]
+    PlanParseV1,
+    /// Version 1 authority normalization.
+    #[serde(rename = "authority-normalization-v1")]
+    AuthorityNormalizationV1,
+    /// Version 1 policy compilation.
+    #[serde(rename = "policy-compilation-v1")]
+    PolicyCompilationV1,
+}
+
+const PURE_SUBJECT_DOMAIN: [PureSubject; 3] = [
+    PureSubject::PlanParseV1,
+    PureSubject::AuthorityNormalizationV1,
+    PureSubject::PolicyCompilationV1,
+];
+
+/// One pure subject, exact fixture identity, and calibrated measurement.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct PureSubjectResult {
+    subject: PureSubject,
+    fixture_sha256: String,
+    measurement: Measurement,
+}
+
+impl PureSubjectResult {
+    /// Validates one pure benchmark subject result.
+    pub fn new(
+        subject: PureSubject,
+        fixture_sha256: String,
+        measurement: Measurement,
+    ) -> Result<Self, BenchmarkError> {
+        if !is_lower_hex_exact(&fixture_sha256, 64) {
+            return Err(BenchmarkError::InvalidDigest);
+        }
+        Ok(Self {
+            subject,
+            fixture_sha256,
+            measurement,
+        })
+    }
+
+    /// Returns the closed subject identifier.
+    #[must_use]
+    pub const fn subject(&self) -> PureSubject {
+        self.subject
+    }
+}
+
+/// One complete operational result for the closed pure benchmark domain.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct PureBenchmarkResult {
+    schema: &'static str,
+    kind: &'static str,
+    complete: bool,
+    source_commit: String,
+    benchmark_executable_sha256: String,
+    rustc_version: String,
+    target: String,
+    architecture: String,
+    subjects: Vec<PureSubjectResult>,
+}
+
+impl PureBenchmarkResult {
+    /// Validates and canonicalizes one complete pure result.
+    pub fn new(
+        source_commit: String,
+        benchmark_executable_sha256: String,
+        rustc_version: String,
+        target: String,
+        architecture: String,
+        mut subjects: Vec<PureSubjectResult>,
+    ) -> Result<Self, BenchmarkError> {
+        if !is_lower_hex_exact(&source_commit, 40) {
+            return Err(BenchmarkError::InvalidSourceCommit);
+        }
+        if !is_lower_hex_exact(&benchmark_executable_sha256, 64) {
+            return Err(BenchmarkError::InvalidDigest);
+        }
+        subjects.sort_by_key(PureSubjectResult::subject);
+        if subjects.len() != PURE_SUBJECT_DOMAIN.len()
+            || !subjects
+                .iter()
+                .map(PureSubjectResult::subject)
+                .eq(PURE_SUBJECT_DOMAIN)
+        {
+            return Err(BenchmarkError::SubjectDomainMismatch);
+        }
+        Ok(Self {
+            schema: "proofbound-runtime-performance-result/1",
+            kind: "pure",
+            complete: true,
+            source_commit,
+            benchmark_executable_sha256,
+            rustc_version,
+            target,
+            architecture,
+            subjects,
+        })
+    }
+
+    /// Returns pure subjects in their canonical domain order.
+    #[must_use]
+    pub fn subjects(&self) -> &[PureSubjectResult] {
+        &self.subjects
+    }
+
+    /// Encodes stable compact operational JSON.
+    pub fn to_json(&self) -> Result<Vec<u8>, BenchmarkError> {
+        serde_json::to_vec(self).map_err(|_| BenchmarkError::Encoding)
+    }
+}
+
+fn is_lower_hex_exact(value: &str, length: usize) -> bool {
+    value.len() == length
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }
 
 /// Sorts and summarizes one nonempty elapsed-time series.
@@ -500,7 +635,11 @@ mod tests {
         .expect("complete result is valid");
 
         assert_eq!(
-            result.subjects().iter().map(PureSubjectResult::subject).collect::<Vec<_>>(),
+            result
+                .subjects()
+                .iter()
+                .map(PureSubjectResult::subject)
+                .collect::<Vec<_>>(),
             vec![
                 PureSubject::PlanParseV1,
                 PureSubject::AuthorityNormalizationV1,
@@ -510,8 +649,7 @@ mod tests {
         let first = result.to_json().expect("result encodes");
         let second = result.to_json().expect("result re-encodes");
         assert_eq!(first, second);
-        let value: serde_json::Value =
-            serde_json::from_slice(&first).expect("result is JSON");
+        let value: serde_json::Value = serde_json::from_slice(&first).expect("result is JSON");
         assert_eq!(value["schema"], "proofbound-runtime-performance-result/1");
         assert_eq!(value["kind"], "pure");
         assert_eq!(value["complete"], true);
