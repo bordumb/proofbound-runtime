@@ -199,6 +199,34 @@ pub fn derive_receipt_eligibility(facts: &ReceiptFacts) -> ReceiptEligibility {
 mod tests {
     use super::*;
 
+    #[test]
+    fn every_resource_limit_event_forces_nonreuse_in_canonical_order() {
+        let events = LimitEvents::new(&[
+            LimitEvent::SwapFail,
+            LimitEvent::MemoryOomKill,
+            LimitEvent::MemoryHigh,
+        ]);
+        let facts = ReceiptFacts::new_v2(
+            BoundaryInstallation::Installed,
+            ExecutionOutcome::Exited { code: 0 },
+            StreamCapture::Complete,
+            StreamCapture::Complete,
+            ReceiptStructure::Valid,
+            events,
+        );
+        let ReceiptEligibility::NonReusable(reasons) = derive_receipt_eligibility(&facts) else {
+            panic!("a resource limit event must make the receipt non-reusable");
+        };
+        assert_eq!(
+            reasons.as_slice(),
+            &[
+                NonReusableReason::MemoryHigh,
+                NonReusableReason::MemoryOomKill,
+                NonReusableReason::SwapFail,
+            ]
+        );
+    }
+
     const BOUNDARIES: [BoundaryInstallation; 2] = [
         BoundaryInstallation::Installed,
         BoundaryInstallation::Incomplete,
