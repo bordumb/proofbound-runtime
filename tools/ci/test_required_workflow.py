@@ -137,7 +137,9 @@ class RequiredWorkflowTests(unittest.TestCase):
             workflow,
         )
         self.assertIn("path: ${{ env.PROOFBOUND_EVIDENCE_DIRECTORY }}", workflow)
-        native_script = (ROOT / "tools/ci/native-linux.sh").read_text(encoding="utf-8")
+        native_script = (REPOSITORY_ROOT / "tools/ci/native-linux.sh").read_text(
+            encoding="utf-8"
+        )
         self.assertIn("tools/ci/native_context.py", native_script)
         self.assertIn("native-context.json", native_script)
         self.assertIn("native-swap-matrix.json", native_script)

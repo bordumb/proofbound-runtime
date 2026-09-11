@@ -292,6 +292,12 @@ import sys
 with open(sys.argv[1], encoding="utf-8") as source:
     print(json.load(source)["execution_id"])
 ' "$result" >"$evidence_directory/execution-id.txt"
+    python3 tools/ci/native_context.py \
+      --architecture "$expected_architecture" \
+      --cgroup-root "$PROOFBOUND_CGROUP_ROOT" \
+      --fixture "$PROOFBOUND_NATIVE_FIXTURE" \
+      --runtime-bin-directory "$runtime_bin_directory" \
+      --output "$evidence_directory/native-context.json"
   fi
   exit 0
 fi
@@ -392,5 +398,25 @@ else
   sudo swapon "$swap_file"
 fi
 PROOFBOUND_NATIVE_SWAP_MODE=present run_native_service 1
+if [[ -n "$evidence_directory" ]]; then
+  python3 -c '
+import json
+import os
+import sys
+
+output, architecture, revision = sys.argv[1:]
+record = {
+    "architecture": architecture,
+    "phases": {"absent": "passed", "present": "passed"},
+    "schema": "proofbound-runtime-native-swap-matrix/1",
+    "source_revision": revision,
+}
+descriptor = os.open(output, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+with os.fdopen(descriptor, "w", encoding="utf-8") as destination:
+    json.dump(record, destination, sort_keys=True, separators=(",", ":"))
+    destination.write("\n")
+' "$evidence_directory/native-swap-matrix.json" \
+    "$expected_architecture" "$(git rev-parse HEAD)"
+fi
 cleanup_swap_state
 trap - EXIT

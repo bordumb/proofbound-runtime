@@ -11,6 +11,7 @@ python3 tools/release/observation_inputs.py --check
 python3 -m unittest tools.ci.test_install_release
 python3 -m unittest tools.ci.test_build_example
 python3 -m unittest tools.ci.test_required_workflow
+python3 -m unittest tools.ci.test_native_context
 python3 -m unittest tools.ci.test_release_workflow
 python3 -m unittest tools.release.test_validate_release_state
 python3 -m unittest tools.ci.test_timing

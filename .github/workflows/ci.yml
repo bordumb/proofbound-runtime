@@ -250,6 +250,7 @@ jobs:
     timeout-minutes: 20
     env:
       PBR_CI_TIMING_FILE: /tmp/proofbound-runtime-ci-timing.jsonl
+      PROOFBOUND_EVIDENCE_DIRECTORY: ${{ github.workspace }}/target/native-evidence/${{ matrix.architecture }}
     steps:
       - name: Check out the exact event head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -288,6 +289,14 @@ jobs:
         with:
           name: proofbound-runtime-ci-timing-native-${{ matrix.architecture }}-${{ env.PBR_EXACT_SHA }}
           path: ${{ env.PBR_CI_TIMING_FILE }}
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload native assurance evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: proofbound-runtime-native-evidence-${{ matrix.architecture }}-${{ env.PBR_EXACT_SHA }}
+          path: ${{ env.PROOFBOUND_EVIDENCE_DIRECTORY }}
           if-no-files-found: error
           retention-days: 14
 

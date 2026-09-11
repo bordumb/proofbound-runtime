@@ -48,6 +48,7 @@ if selected "preflight"; then
   timed_unit install-release-tests python3 -m unittest tools.ci.test_install_release
   timed_unit build-example-tests python3 -m unittest tools.ci.test_build_example
   timed_unit workflow-tests python3 -m unittest tools.ci.test_required_workflow
+  timed_unit native-context-tests python3 -m unittest tools.ci.test_native_context
   timed_unit release-workflow-tests python3 -m unittest tools.ci.test_release_workflow
   timed_unit release-state-tests python3 -m unittest tools.release.test_validate_release_state
   timed_unit timing-tests python3 -m unittest tools.ci.test_timing
