@@ -7,7 +7,12 @@ use core::fmt;
 use std::time::Instant;
 
 use proofbound_runtime_core::{
-    Sha256Digest, compile_policy, normalize_authority, parse_execution_plan,
+    Architecture, ArtifactIdentity, ArtifactRole, BoundaryInstallation, BoundaryRecord,
+    CgroupIdentity, EnvironmentName, ExecutionId, ExecutionObservations, ExecutionOutcome,
+    ExecutionReceiptParts, FileMode, PlanId, PlatformIdentity, ReceiptCommand, ReceiptPlan,
+    ReceiptPolicy, ReceiptStreams, RuntimeIdentity, Sha256Digest, StreamCapture,
+    TrustedComputingBaseEntry, TrustedComputingBaseRole, compile_policy,
+    construct_execution_receipt, normalize_authority, parse_execution_plan,
 };
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -147,12 +152,20 @@ pub enum PureSubject {
     /// Version 1 policy compilation.
     #[serde(rename = "policy-compilation-v1")]
     PolicyCompilationV1,
+    /// Version 1 typed execution-receipt construction.
+    #[serde(rename = "receipt-construction-v1")]
+    ReceiptConstructionV1,
+    /// Version 1 canonical JSON receipt encoding.
+    #[serde(rename = "receipt-canonical-encoding-v1")]
+    ReceiptCanonicalEncodingV1,
 }
 
-const PURE_SUBJECT_DOMAIN: [PureSubject; 3] = [
+const PURE_SUBJECT_DOMAIN: [PureSubject; 5] = [
     PureSubject::PlanParseV1,
     PureSubject::AuthorityNormalizationV1,
     PureSubject::PolicyCompilationV1,
+    PureSubject::ReceiptConstructionV1,
+    PureSubject::ReceiptCanonicalEncodingV1,
 ];
 
 /// One pure subject, exact fixture identity, and calibrated measurement.
@@ -401,6 +414,14 @@ pub fn benchmark_core_v1(
         normalize_authority(plan.authority().clone()).map_err(|_| BenchmarkError::SubjectFailed)?;
     let fixture_digest: [u8; 32] = Sha256::digest(PLAN_FIXTURE.as_bytes()).into();
     let fixture_sha256 = Sha256Digest::from_bytes(fixture_digest).to_hex();
+    let receipt_parts = receipt_parts_v1()?;
+    let receipt = construct_execution_receipt(receipt_parts.clone())
+        .map_err(|_| BenchmarkError::SubjectFailed)?;
+    let receipt_bytes = receipt
+        .canonical_bytes()
+        .map_err(|_| BenchmarkError::SubjectFailed)?;
+    let receipt_fixture_digest: [u8; 32] = Sha256::digest(&receipt_bytes).into();
+    let receipt_fixture_sha256 = Sha256Digest::from_bytes(receipt_fixture_digest).to_hex();
 
     let plan_parse = measure(config, || {
         parse_execution_plan(std::hint::black_box(PLAN_FIXTURE))
@@ -418,20 +439,156 @@ pub fn benchmark_core_v1(
         |count| vec![normalized.clone(); count],
         compile_policy,
     )?;
+    let receipt_construction = measure_prepared(
+        config,
+        |count| vec![receipt_parts.clone(); count],
+        |parts| {
+            construct_execution_receipt(parts)
+                .expect("prevalidated receipt parts remain constructible")
+        },
+    )?;
+    let receipt_encoding = measure_prepared(
+        config,
+        |count| vec![receipt.clone(); count],
+        |receipt| {
+            receipt
+                .canonical_bytes()
+                .expect("prevalidated receipt remains encodable")
+        },
+    )?;
 
     [
-        (PureSubject::PlanParseV1, plan_parse),
+        (PureSubject::PlanParseV1, fixture_sha256.clone(), plan_parse),
         (
             PureSubject::AuthorityNormalizationV1,
+            fixture_sha256.clone(),
             authority_normalization,
         ),
-        (PureSubject::PolicyCompilationV1, policy_compilation),
+        (
+            PureSubject::PolicyCompilationV1,
+            fixture_sha256,
+            policy_compilation,
+        ),
+        (
+            PureSubject::ReceiptConstructionV1,
+            receipt_fixture_sha256.clone(),
+            receipt_construction,
+        ),
+        (
+            PureSubject::ReceiptCanonicalEncodingV1,
+            receipt_fixture_sha256,
+            receipt_encoding,
+        ),
     ]
     .into_iter()
-    .map(|(subject, measurement)| {
-        PureSubjectResult::new(subject, fixture_sha256.clone(), measurement)
-    })
+    .map(|(subject, fixture, measurement)| PureSubjectResult::new(subject, fixture, measurement))
     .collect()
+}
+
+fn artifact_v1(role: ArtifactRole, marker: u8) -> Result<ArtifactIdentity, BenchmarkError> {
+    let mode = FileMode::new(0o640).map_err(|_| BenchmarkError::SubjectFailed)?;
+    Ok(ArtifactIdentity::new(
+        role,
+        Sha256Digest::from_bytes([marker; 32]),
+        u64::from(marker),
+        mode,
+    ))
+}
+
+fn receipt_parts_v1() -> Result<ExecutionReceiptParts, BenchmarkError> {
+    let execution_id = ExecutionId::from_bytes([
+        0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x46, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee,
+        0xff,
+    ])
+    .map_err(|_| BenchmarkError::SubjectFailed)?;
+    let runtime = artifact_v1(ArtifactRole::RuntimeBinary, 4)?;
+    let policy = artifact_v1(ArtifactRole::CompiledPolicy, 3)?;
+    let trusted_computing_base = [
+        TrustedComputingBaseRole::HostHardwareFirmware,
+        TrustedComputingBaseRole::LinuxKernel,
+        TrustedComputingBaseRole::Landlock,
+        TrustedComputingBaseRole::Seccomp,
+        TrustedComputingBaseRole::CgroupV2,
+        TrustedComputingBaseRole::NoNewPrivileges,
+        TrustedComputingBaseRole::Filesystem,
+        TrustedComputingBaseRole::RuntimeBinary,
+        TrustedComputingBaseRole::LauncherBinary,
+        TrustedComputingBaseRole::RustToolchain,
+        TrustedComputingBaseRole::CryptographicDigest,
+        TrustedComputingBaseRole::RuntimeExecutable,
+        TrustedComputingBaseRole::RuntimeLoaderExecutable,
+        TrustedComputingBaseRole::RuntimeLibrary,
+    ]
+    .into_iter()
+    .map(|role| {
+        TrustedComputingBaseEntry::new(role, format!("{}:benchmark-fixture", role.as_str()))
+            .map_err(|_| BenchmarkError::SubjectFailed)
+    })
+    .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(ExecutionReceiptParts {
+        execution_id,
+        plan: ReceiptPlan::new(
+            PlanId::new("benchmark.plan").map_err(|_| BenchmarkError::SubjectFailed)?,
+            artifact_v1(ArtifactRole::ExecutionPlan, 1)?,
+            artifact_v1(ArtifactRole::NormalizedPlan, 2)?,
+        )
+        .map_err(|_| BenchmarkError::SubjectFailed)?,
+        policy: ReceiptPolicy::new(policy.clone()).map_err(|_| BenchmarkError::SubjectFailed)?,
+        platform: PlatformIdentity::new(
+            Architecture::X86_64,
+            "6.12.0-benchmark",
+            6,
+            vec!["log".to_owned(), "tsync".to_owned()],
+            vec!["memory".to_owned(), "pids".to_owned()],
+        )
+        .map_err(|_| BenchmarkError::SubjectFailed)?,
+        runtime: RuntimeIdentity::new(
+            runtime.clone(),
+            artifact_v1(ArtifactRole::LauncherBinary, 5)?,
+        )
+        .map_err(|_| BenchmarkError::SubjectFailed)?,
+        command: ReceiptCommand::new(
+            artifact_v1(ArtifactRole::RuntimeExecutable, 6)?,
+            Some(artifact_v1(ArtifactRole::RuntimeLoaderExecutable, 7)?),
+            artifact_v1(ArtifactRole::WorkingDirectory, 8)?,
+            Sha256Digest::from_bytes([9; 32]),
+        )
+        .map_err(|_| BenchmarkError::SubjectFailed)?,
+        inputs: vec![
+            artifact_v1(ArtifactRole::RuntimeLibrary, 10)?,
+            artifact_v1(ArtifactRole::ProjectInput, 11)?,
+        ],
+        environment: vec![
+            EnvironmentName::new("LANG").map_err(|_| BenchmarkError::SubjectFailed)?,
+            EnvironmentName::new("PATH").map_err(|_| BenchmarkError::SubjectFailed)?,
+        ],
+        output_root: artifact_v1(ArtifactRole::OutputRoot, 12)?,
+        boundary: BoundaryRecord::new(
+            BoundaryInstallation::Installed,
+            execution_id,
+            policy.digest(),
+            CgroupIdentity::new(13, 14),
+        ),
+        observations: ExecutionObservations::new(15, 16)
+            .map_err(|_| BenchmarkError::SubjectFailed)?,
+        streams: ReceiptStreams::new(
+            artifact_v1(ArtifactRole::StandardOutput, 17)?,
+            StreamCapture::Complete,
+            artifact_v1(ArtifactRole::StandardError, 18)?,
+            StreamCapture::Complete,
+        )
+        .map_err(|_| BenchmarkError::SubjectFailed)?,
+        outcome: ExecutionOutcome::Exited { code: 0 },
+        outputs: vec![artifact_v1(ArtifactRole::OutputArtifact, 19)?],
+        producer: runtime,
+        assumptions: proofbound_runtime_core::REQUIRED_RUNTIME_ASSUMPTIONS
+            .into_iter()
+            .rev()
+            .map(str::to_owned)
+            .collect(),
+        trusted_computing_base,
+    })
 }
 
 /// Sorts and summarizes one nonempty elapsed-time series.
@@ -834,7 +991,9 @@ mod tests {
             vec![
                 fixed_subject(PureSubject::PolicyCompilationV1, '3'),
                 fixed_subject(PureSubject::PlanParseV1, '1'),
+                fixed_subject(PureSubject::ReceiptCanonicalEncodingV1, '5'),
                 fixed_subject(PureSubject::AuthorityNormalizationV1, '2'),
+                fixed_subject(PureSubject::ReceiptConstructionV1, '4'),
             ],
         )
         .expect("complete result is valid");
@@ -849,6 +1008,8 @@ mod tests {
                 PureSubject::PlanParseV1,
                 PureSubject::AuthorityNormalizationV1,
                 PureSubject::PolicyCompilationV1,
+                PureSubject::ReceiptConstructionV1,
+                PureSubject::ReceiptCanonicalEncodingV1,
             ]
         );
         let first = result.to_json().expect("result encodes");
@@ -938,6 +1099,8 @@ mod tests {
             fixed_subject(PureSubject::PlanParseV1, '1'),
             fixed_subject(PureSubject::AuthorityNormalizationV1, '2'),
             fixed_subject(PureSubject::PolicyCompilationV1, '3'),
+            fixed_subject(PureSubject::ReceiptConstructionV1, '4'),
+            fixed_subject(PureSubject::ReceiptCanonicalEncodingV1, '5'),
         ];
         assert_eq!(
             make(
@@ -979,14 +1142,8 @@ mod tests {
             subject.fixture_sha256()
                 == "80194be084f9749fe47bc5feb1ac737d8e793b67230b0590abc2d2948881aa4a"
         }));
-        assert_eq!(
-            subjects[3].fixture_sha256(),
-            subjects[4].fixture_sha256()
-        );
-        assert_ne!(
-            subjects[3].fixture_sha256(),
-            subjects[0].fixture_sha256()
-        );
+        assert_eq!(subjects[3].fixture_sha256(), subjects[4].fixture_sha256());
+        assert_ne!(subjects[3].fixture_sha256(), subjects[0].fixture_sha256());
         assert!(subjects.iter().all(|subject| {
             subject.measurement().summary.count == 2 && subject.measurement().batch_count >= 1
         }));
