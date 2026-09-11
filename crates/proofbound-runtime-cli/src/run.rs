@@ -9,8 +9,8 @@ use proofbound_runtime_core::{
     Architecture as ReceiptArchitecture, ArtifactIdentity, ArtifactRole, BoundaryRecord,
     EnvironmentName, ExecutionObservations, ExecutionOutcome, ExecutionPlan, ExecutionReceipt,
     ExecutionReceiptParts, FileAccess, FileMode, PathRole, PlatformIdentity,
-    REQUIRED_RUNTIME_ASSUMPTIONS, ReceiptCommand, ReceiptPlan, ReceiptPolicy, ReceiptStreams,
-    ResourceLimits, RuntimeIdentity, Sha256Digest, TrustedComputingBaseEntry,
+    REQUIRED_RUNTIME_ASSUMPTIONS, ReceiptCommand, ReceiptError, ReceiptPlan, ReceiptPolicy,
+    ReceiptStreams, ResourceLimits, RuntimeIdentity, Sha256Digest, TrustedComputingBaseEntry,
     TrustedComputingBaseRole, compile_policy, normalize_authority, parse_execution_plan,
 };
 use proofbound_runtime_linux::{
@@ -23,11 +23,8 @@ use proofbound_runtime_linux::{
 use serde_json::{Value, json};
 use sha2::{Digest as _, Sha256};
 
-const INVALID_INPUT: u8 = 2;
-const UNSUPPORTED_BOUNDARY: u8 = 3;
-const IDENTITY_DRIFT: u8 = 4;
-const LAUNCHER_FAILURE: u8 = 5;
-const RECEIPT_FAILURE: u8 = 6;
+use crate::run_diagnostic::{RunError, RunPhase, RunRule};
+
 const RUN_RESULT_SCHEMA: &str = "proofbound-runtime-run-result/1";
 const NORMALIZED_PLAN_MODE: u16 = 0;
 const POLICY_MODE: u16 = 0;
@@ -35,64 +32,17 @@ const STREAM_MODE: u16 = 0;
 const ARGUMENT_DOMAIN: &[u8] = b"proofbound-runtime-arguments/1\n";
 const POLICY_DOMAIN: &[u8] = b"proofbound-runtime-installed-policy/1\n";
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) struct RunError {
-    exit_code: u8,
-    code: &'static str,
-}
-
-impl RunError {
-    pub(crate) const fn exit_code(self) -> u8 {
-        self.exit_code
-    }
-
-    pub(crate) const fn code(self) -> &'static str {
-        self.code
-    }
-
-    const fn invalid(code: &'static str) -> Self {
-        Self {
-            exit_code: INVALID_INPUT,
-            code,
-        }
-    }
-
-    const fn unsupported(code: &'static str) -> Self {
-        Self {
-            exit_code: UNSUPPORTED_BOUNDARY,
-            code,
-        }
-    }
-
-    const fn identity(code: &'static str) -> Self {
-        Self {
-            exit_code: IDENTITY_DRIFT,
-            code,
-        }
-    }
-
-    const fn launcher(code: &'static str) -> Self {
-        Self {
-            exit_code: LAUNCHER_FAILURE,
-            code,
-        }
-    }
-
-    const fn receipt(code: &'static str) -> Self {
-        Self {
-            exit_code: RECEIPT_FAILURE,
-            code,
-        }
-    }
-}
-
 #[cfg(not(target_os = "linux"))]
 pub(crate) fn execute(
     _plan_path: &Path,
     _receipt_path: &Path,
     _cgroup_root: &Path,
 ) -> Result<Value, RunError> {
-    Err(RunError::unsupported("execution.os.unsupported"))
+    Err(RunError::unsupported(
+        RunPhase::HostCapabilities,
+        RunRule::HostSupported,
+        "execution.os.unsupported",
+    ))
 }
 
 #[cfg(target_os = "linux")]
@@ -104,21 +54,45 @@ pub(crate) fn execute(
     use std::os::fd::AsRawFd as _;
 
     let receipt_path = prepare_receipt_path(receipt_path)?;
-    let canonical_plan =
-        fs::canonicalize(plan_path).map_err(|_| RunError::invalid("plan.input.read-failed"))?;
+    let canonical_plan = fs::canonicalize(plan_path).map_err(|_| {
+        RunError::invalid(
+            RunPhase::PlanInput,
+            RunRule::PlanSourceReadable,
+            "plan.input.read-failed",
+        )
+    })?;
     let plan_source = identify_external_artifact(&canonical_plan, ArtifactRole::ExecutionPlan)
-        .map_err(map_resolution)?;
-    let plan_bytes = plan_source.read_bytes().map_err(map_resolution)?;
-    let plan_text = core::str::from_utf8(&plan_bytes)
-        .map_err(|_| RunError::invalid("plan.input.utf8-invalid"))?;
-    let plan = parse_execution_plan(plan_text).map_err(|error| RunError::invalid(error.code()))?;
-    let normalized = normalize_authority(plan.authority().clone())
-        .map_err(|error| RunError::invalid(error.code()))?;
+        .map_err(|error| map_resolution(RunPhase::PlanInput, RunRule::PlanSourceReadable, error))?;
+    let plan_bytes = plan_source
+        .read_bytes()
+        .map_err(|error| map_resolution(RunPhase::PlanInput, RunRule::PlanSourceReadable, error))?;
+    let plan_text = core::str::from_utf8(&plan_bytes).map_err(|_| {
+        RunError::invalid(
+            RunPhase::PlanInput,
+            RunRule::PlanSourceReadable,
+            "plan.input.utf8-invalid",
+        )
+    })?;
+    let plan = parse_execution_plan(plan_text).map_err(|error| {
+        RunError::invalid(RunPhase::PlanValidation, RunRule::PlanValid, error.code())
+    })?;
+    let normalized = normalize_authority(plan.authority().clone()).map_err(|error| {
+        RunError::invalid(
+            RunPhase::AuthorityNormalization,
+            RunRule::AuthorityNormalized,
+            error.code(),
+        )
+    })?;
     let compiled = compile_policy(normalized.clone());
-    let plan_root = canonical_plan
-        .parent()
-        .ok_or_else(|| RunError::invalid("plan.input.parent-unavailable"))?;
-    let resolver = RootedPathResolver::open(plan_root).map_err(map_resolution)?;
+    let plan_root = canonical_plan.parent().ok_or_else(|| {
+        RunError::invalid(
+            RunPhase::PlanRoot,
+            RunRule::PlanRootConfined,
+            "plan.input.parent-unavailable",
+        )
+    })?;
+    let resolver = RootedPathResolver::open(plan_root)
+        .map_err(|error| map_resolution(RunPhase::PlanRoot, RunRule::PlanRootConfined, error))?;
 
     let supported = probe_capabilities(cgroup_root)
         .require_supported()
@@ -128,51 +102,127 @@ pub(crate) fn execute(
         .rules()
         .iter()
         .find(|rule| rule.access() == FileAccess::Write && rule.role() == PathRole::OutputRoot)
-        .ok_or_else(|| RunError::invalid("plan.authority.output-root.count"))?;
-    let output_root =
-        FreshOutputRoot::create(&resolver, output_authority.path()).map_err(map_output)?;
+        .ok_or_else(|| {
+            RunError::invalid(
+                RunPhase::PlanValidation,
+                RunRule::PlanValid,
+                "plan.authority.output-root.count",
+            )
+        })?;
+    let output_root = FreshOutputRoot::create(&resolver, output_authority.path())
+        .map_err(|error| map_output(RunPhase::OutputRoot, RunRule::OutputRootFresh, error))?;
     if receipt_path.starts_with(output_root.resolved_target()) {
-        return Err(RunError::invalid("receipt.path.child-writable"));
+        return Err(RunError::invalid(
+            RunPhase::ReceiptTarget,
+            RunRule::ReceiptTargetValid,
+            "receipt.path.child-writable",
+        ));
     }
     let working_directory = resolver
         .resolve_working_directory(plan.command().working_directory())
-        .map_err(map_resolution)?;
+        .map_err(|error| {
+            map_resolution(
+                RunPhase::WorkingDirectory,
+                RunRule::WorkingDirectoryResolved,
+                error,
+            )
+        })?;
     let executable = resolver
         .discover_executable(plan.command().executable(), supported.architecture())
-        .map_err(map_resolution)?;
+        .map_err(|error| {
+            map_resolution(
+                RunPhase::ExecutableClosure,
+                RunRule::ExecutableClosureResolved,
+                error,
+            )
+        })?;
     let readable = resolve_read_authority(&resolver, &compiled)?;
 
-    let current_executable = fs::canonicalize(
-        std::env::current_exe().map_err(|_| RunError::identity("runtime.path.unavailable"))?,
-    )
-    .map_err(|_| RunError::identity("runtime.path.unavailable"))?;
+    let current_executable = fs::canonicalize(std::env::current_exe().map_err(|_| {
+        RunError::identity(
+            RunPhase::RuntimeIdentity,
+            RunRule::RuntimeIdentityObserved,
+            "runtime.path.unavailable",
+        )
+    })?)
+    .map_err(|_| {
+        RunError::identity(
+            RunPhase::RuntimeIdentity,
+            RunRule::RuntimeIdentityObserved,
+            "runtime.path.unavailable",
+        )
+    })?;
     let launcher_path = current_executable
         .parent()
-        .ok_or_else(|| RunError::identity("launcher.path.unavailable"))?
+        .ok_or_else(|| {
+            RunError::identity(
+                RunPhase::LauncherIdentity,
+                RunRule::LauncherIdentityObserved,
+                "launcher.path.unavailable",
+            )
+        })?
         .join("pbr-native-launcher");
-    let launcher_path = fs::canonicalize(launcher_path)
-        .map_err(|_| RunError::identity("launcher.path.unavailable"))?;
+    let launcher_path = fs::canonicalize(launcher_path).map_err(|_| {
+        RunError::identity(
+            RunPhase::LauncherIdentity,
+            RunRule::LauncherIdentityObserved,
+            "launcher.path.unavailable",
+        )
+    })?;
     let runtime_artifact =
-        identify_external_artifact(&current_executable, ArtifactRole::RuntimeBinary)
-            .map_err(map_resolution)?;
+        identify_external_artifact(&current_executable, ArtifactRole::RuntimeBinary).map_err(
+            |error| {
+                map_resolution(
+                    RunPhase::RuntimeIdentity,
+                    RunRule::RuntimeIdentityObserved,
+                    error,
+                )
+            },
+        )?;
     let launcher_artifact =
-        identify_external_artifact(&launcher_path, ArtifactRole::LauncherBinary)
-            .map_err(map_resolution)?;
+        identify_external_artifact(&launcher_path, ArtifactRole::LauncherBinary).map_err(
+            |error| {
+                map_resolution(
+                    RunPhase::LauncherIdentity,
+                    RunRule::LauncherIdentityObserved,
+                    error,
+                )
+            },
+        )?;
 
     let receipt_environment = compiled.environment().to_vec();
     let environment = collect_environment(&receipt_environment)?;
     let arguments = execution_arguments(&plan);
     let argument_identity = arguments_identity(&arguments);
     let seccomp = compile_deny_network_program(compiled.network(), supported.architecture())
-        .map_err(|error| RunError::launcher(error.code()))?;
-    let normalized_bytes = serde_json::to_vec(
-        &crate::plan::checked_plan_json(&plan).map_err(|error| RunError::invalid(error.code()))?,
-    )
-    .map_err(|_| RunError::receipt("receipt.normalized-plan.encoding-failed"))?;
+        .map_err(|error| {
+            RunError::launcher(
+                RunPhase::PolicyCompilation,
+                RunRule::PolicyIdentityConstructed,
+                error.code(),
+            )
+        })?;
+    let normalized_bytes =
+        serde_json::to_vec(&crate::plan::checked_plan_json(&plan).map_err(|error| {
+            RunError::invalid(
+                RunPhase::PolicyCompilation,
+                RunRule::PolicyIdentityConstructed,
+                error.code(),
+            )
+        })?)
+        .map_err(|_| {
+            RunError::receipt(
+                RunPhase::PolicyCompilation,
+                RunRule::PolicyIdentityConstructed,
+                "receipt.normalized-plan.encoding-failed",
+            )
+        })?;
     let normalized_identity = bytes_identity(
         ArtifactRole::NormalizedPlan,
         &normalized_bytes,
         NORMALIZED_PLAN_MODE,
+        RunPhase::PolicyCompilation,
+        RunRule::PolicyIdentityConstructed,
     )?;
     let policy_identity = installed_policy_identity(
         &normalized_identity,
@@ -222,7 +272,13 @@ pub(crate) fn execute(
         ])
         .max()
         .and_then(|value| value.checked_add(1))
-        .ok_or_else(|| RunError::launcher("launcher.file-descriptor.invalid"))?;
+        .ok_or_else(|| {
+            RunError::launcher(
+                RunPhase::LauncherRequest,
+                RunRule::LauncherRequestConstructed,
+                "launcher.file-descriptor.invalid",
+            )
+        })?;
     let request = InstallRequest::new(
         launcher_identity,
         executable.executable().identity().clone(),
@@ -234,23 +290,59 @@ pub(crate) fn execute(
         seccomp,
         descriptor_upper_bound,
     )
-    .map_err(map_launcher)?;
+    .map_err(map_launcher_request)?;
 
-    plan_source.revalidate_identity().map_err(map_resolution)?;
-    runtime_artifact
-        .revalidate_identity()
-        .map_err(map_resolution)?;
-    launcher_artifact
-        .revalidate_identity()
-        .map_err(map_resolution)?;
-    executable.revalidate_identities().map_err(map_resolution)?;
-    working_directory
-        .revalidate_identity()
-        .map_err(map_resolution)?;
+    plan_source.revalidate_identity().map_err(|error| {
+        map_resolution(
+            RunPhase::IdentityRevalidation,
+            RunRule::ArtifactIdentitiesStable,
+            error,
+        )
+    })?;
+    runtime_artifact.revalidate_identity().map_err(|error| {
+        map_resolution(
+            RunPhase::IdentityRevalidation,
+            RunRule::ArtifactIdentitiesStable,
+            error,
+        )
+    })?;
+    launcher_artifact.revalidate_identity().map_err(|error| {
+        map_resolution(
+            RunPhase::IdentityRevalidation,
+            RunRule::ArtifactIdentitiesStable,
+            error,
+        )
+    })?;
+    executable.revalidate_identities().map_err(|error| {
+        map_resolution(
+            RunPhase::IdentityRevalidation,
+            RunRule::ArtifactIdentitiesStable,
+            error,
+        )
+    })?;
+    working_directory.revalidate_identity().map_err(|error| {
+        map_resolution(
+            RunPhase::IdentityRevalidation,
+            RunRule::ArtifactIdentitiesStable,
+            error,
+        )
+    })?;
     for path in &readable {
-        path.revalidate_identity().map_err(map_resolution)?;
+        path.revalidate_identity().map_err(|error| {
+            map_resolution(
+                RunPhase::IdentityRevalidation,
+                RunRule::ArtifactIdentitiesStable,
+                error,
+            )
+        })?;
     }
-    output_root.revalidate_empty().map_err(map_output)?;
+    output_root.revalidate_empty().map_err(|error| {
+        map_output(
+            RunPhase::IdentityRevalidation,
+            RunRule::ArtifactIdentitiesStable,
+            error,
+        )
+    })?;
 
     let mut inherited = vec![executable.executable().as_fd(), working_directory.as_fd()];
     if let Some(loader) = executable.loader() {
@@ -271,8 +363,20 @@ pub(crate) fn execute(
     )
     .map_err(map_supervisor)?;
 
-    let outputs = output_root.inventory().map_err(map_output)?;
-    outputs.revalidate_identities().map_err(map_output)?;
+    let outputs = output_root.inventory().map_err(|error| {
+        map_output(
+            RunPhase::OutputInventory,
+            RunRule::OutputInventoryStable,
+            error,
+        )
+    })?;
+    outputs.revalidate_identities().map_err(|error| {
+        map_output(
+            RunPhase::OutputInventory,
+            RunRule::OutputInventoryStable,
+            error,
+        )
+    })?;
     let receipt = build_receipt(ReceiptInputs {
         plan: &plan,
         plan_source: plan_source.identity().clone(),
@@ -292,9 +396,13 @@ pub(crate) fn execute(
         execution: &execution,
         outputs: outputs.receipt_identities(),
     })?;
-    let receipt_bytes = receipt
-        .canonical_bytes()
-        .map_err(|error| RunError::receipt(error.code()))?;
+    let receipt_bytes = receipt.canonical_bytes().map_err(|error| {
+        RunError::receipt(
+            RunPhase::ReceiptConstruction,
+            RunRule::ReceiptConstructed,
+            error.code(),
+        )
+    })?;
     let commitment = format!("sha256:{}", hex_digest(&receipt_bytes));
     persist_receipt(&receipt_path, execution_id.as_bytes(), &receipt_bytes)?;
 
@@ -320,11 +428,23 @@ fn resolve_read_authority(
             let role = match rule.role() {
                 PathRole::ProjectInput => ArtifactRole::ProjectInput,
                 PathRole::RuntimeLibrary => ArtifactRole::RuntimeLibrary,
-                _ => return Err(RunError::invalid("plan.authority.read.role-invalid")),
+                _ => {
+                    return Err(RunError::invalid(
+                        RunPhase::ReadAuthority,
+                        RunRule::ReadAuthorityResolved,
+                        "plan.authority.read.role-invalid",
+                    ));
+                }
             };
             resolver
                 .resolve_read_path(rule.path(), role)
-                .map_err(map_resolution)
+                .map_err(|error| {
+                    map_resolution(
+                        RunPhase::ReadAuthority,
+                        RunRule::ReadAuthorityResolved,
+                        error,
+                    )
+                })
         })
         .collect()
 }
@@ -336,9 +456,13 @@ fn collect_environment(names: &[EnvironmentName]) -> Result<BTreeMap<String, Str
         let Some(value) = std::env::var_os(name.as_str()) else {
             continue;
         };
-        let value = value
-            .into_string()
-            .map_err(|_| RunError::invalid("plan.environment.value.utf8-invalid"))?;
+        let value = value.into_string().map_err(|_| {
+            RunError::invalid(
+                RunPhase::Environment,
+                RunRule::EnvironmentRepresentable,
+                "plan.environment.value.utf8-invalid",
+            )
+        })?;
         environment.insert(name.as_str().to_owned(), value);
     }
     Ok(environment)
@@ -373,13 +497,15 @@ fn bytes_identity(
     role: ArtifactRole,
     bytes: &[u8],
     mode: u16,
+    phase: RunPhase,
+    rule: RunRule,
 ) -> Result<ArtifactIdentity, RunError> {
-    let mode = FileMode::new(mode).map_err(|error| RunError::receipt(error.code()))?;
+    let mode = FileMode::new(mode).map_err(|error| RunError::receipt(phase, rule, error.code()))?;
     Ok(ArtifactIdentity::new(
         role,
         Sha256Digest::from_bytes(Sha256::digest(bytes).into()),
         u64::try_from(bytes.len())
-            .map_err(|_| RunError::receipt("receipt.artifact.size-invalid"))?,
+            .map_err(|_| RunError::receipt(phase, rule, "receipt.artifact.size-invalid"))?,
         mode,
     ))
 }
@@ -410,18 +536,36 @@ fn installed_policy_identity(
     bytes.extend_from_slice(&limits.stderr().get().to_be_bytes());
     bytes.extend_from_slice(
         &u64::try_from(seccomp.len())
-            .map_err(|_| RunError::receipt("receipt.policy.size-invalid"))?
+            .map_err(|_| {
+                RunError::receipt(
+                    RunPhase::PolicyCompilation,
+                    RunRule::PolicyIdentityConstructed,
+                    "receipt.policy.size-invalid",
+                )
+            })?
             .to_be_bytes(),
     );
     bytes.extend_from_slice(seccomp);
-    bytes_identity(ArtifactRole::CompiledPolicy, &bytes, POLICY_MODE)
+    bytes_identity(
+        ArtifactRole::CompiledPolicy,
+        &bytes,
+        POLICY_MODE,
+        RunPhase::PolicyCompilation,
+        RunRule::PolicyIdentityConstructed,
+    )
 }
 
 fn encode_artifact(output: &mut Vec<u8>, identity: &ArtifactIdentity) -> Result<(), RunError> {
     let role = identity.role().as_str().as_bytes();
     output.extend_from_slice(
         &u64::try_from(role.len())
-            .map_err(|_| RunError::receipt("receipt.artifact.role-size-invalid"))?
+            .map_err(|_| {
+                RunError::receipt(
+                    RunPhase::PolicyCompilation,
+                    RunRule::PolicyIdentityConstructed,
+                    "receipt.artifact.role-size-invalid",
+                )
+            })?
             .to_be_bytes(),
     );
     output.extend_from_slice(role);
@@ -454,17 +598,26 @@ struct ReceiptInputs<'a> {
 
 #[cfg(target_os = "linux")]
 fn build_receipt(input: ReceiptInputs<'_>) -> Result<ExecutionReceipt, RunError> {
-    let elapsed = u64::try_from(input.execution.elapsed().as_nanos())
-        .map_err(|_| RunError::receipt("receipt.observation.range"))?;
+    let elapsed = u64::try_from(input.execution.elapsed().as_nanos()).map_err(|_| {
+        RunError::receipt(
+            RunPhase::ReceiptConstruction,
+            RunRule::ReceiptConstructed,
+            "receipt.observation.range",
+        )
+    })?;
     let stdout = bytes_identity(
         ArtifactRole::StandardOutput,
         input.execution.stdout().bytes(),
         STREAM_MODE,
+        RunPhase::ReceiptConstruction,
+        RunRule::ReceiptConstructed,
     )?;
     let stderr = bytes_identity(
         ArtifactRole::StandardError,
         input.execution.stderr().bytes(),
         STREAM_MODE,
+        RunPhase::ReceiptConstruction,
+        RunRule::ReceiptConstructed,
     )?;
     let trusted_computing_base = trusted_computing_base(&input)?;
     let receipt = proofbound_runtime_core::construct_execution_receipt(ExecutionReceiptParts {
@@ -474,9 +627,9 @@ fn build_receipt(input: ReceiptInputs<'_>) -> Result<ExecutionReceipt, RunError>
             input.plan_source,
             input.normalized_identity,
         )
-        .map_err(|error| RunError::receipt(error.code()))?,
+        .map_err(map_receipt_construction)?,
         policy: ReceiptPolicy::new(input.policy_identity.clone())
-            .map_err(|error| RunError::receipt(error.code()))?,
+            .map_err(map_receipt_construction)?,
         platform: PlatformIdentity::new(
             receipt_architecture(input.supported.architecture()),
             input.supported.kernel_release(),
@@ -484,12 +637,12 @@ fn build_receipt(input: ReceiptInputs<'_>) -> Result<ExecutionReceipt, RunError>
             input.supported.seccomp().available_actions().to_vec(),
             input.supported.cgroup_v2().controllers().to_vec(),
         )
-        .map_err(|error| RunError::receipt(error.code()))?,
+        .map_err(map_receipt_construction)?,
         runtime: RuntimeIdentity::new(
             input.runtime_identity.clone(),
             input.launcher_identity.clone(),
         )
-        .map_err(|error| RunError::receipt(error.code()))?,
+        .map_err(map_receipt_construction)?,
         command: ReceiptCommand::new(
             input.executable.executable().identity().clone(),
             input
@@ -499,7 +652,7 @@ fn build_receipt(input: ReceiptInputs<'_>) -> Result<ExecutionReceipt, RunError>
             input.working_directory,
             input.argument_identity,
         )
-        .map_err(|error| RunError::receipt(error.code()))?,
+        .map_err(map_receipt_construction)?,
         inputs: canonical_input_identities(input.readable),
         environment: input.environment,
         output_root: input.output_root,
@@ -509,15 +662,14 @@ fn build_receipt(input: ReceiptInputs<'_>) -> Result<ExecutionReceipt, RunError>
             input.policy_identity.digest(),
             input.cgroup_identity,
         ),
-        observations: ExecutionObservations::new(0, elapsed)
-            .map_err(|error| RunError::receipt(error.code()))?,
+        observations: ExecutionObservations::new(0, elapsed).map_err(map_receipt_construction)?,
         streams: ReceiptStreams::new(
             stdout,
             input.execution.stdout().capture(),
             stderr,
             input.execution.stderr().capture(),
         )
-        .map_err(|error| RunError::receipt(error.code()))?,
+        .map_err(map_receipt_construction)?,
         outcome: input.execution.outcome(),
         outputs: input.outputs,
         producer: input.runtime_identity,
@@ -527,7 +679,7 @@ fn build_receipt(input: ReceiptInputs<'_>) -> Result<ExecutionReceipt, RunError>
             .collect(),
         trusted_computing_base,
     })
-    .map_err(|error| RunError::receipt(error.code()))?;
+    .map_err(map_receipt_construction)?;
     Ok(receipt)
 }
 
@@ -619,7 +771,7 @@ fn tcb(
     role: TrustedComputingBaseRole,
     identity: impl Into<String>,
 ) -> Result<TrustedComputingBaseEntry, RunError> {
-    TrustedComputingBaseEntry::new(role, identity).map_err(|error| RunError::receipt(error.code()))
+    TrustedComputingBaseEntry::new(role, identity).map_err(map_receipt_construction)
 }
 
 const fn receipt_architecture(architecture: Architecture) -> ReceiptArchitecture {
@@ -634,12 +786,18 @@ fn launcher_rule(
     descriptor_value: i32,
     access: Vec<LandlockAccess>,
 ) -> Result<LauncherFilesystemRule, RunError> {
-    LauncherFilesystemRule::new(descriptor(descriptor_value)?, access).map_err(map_launcher)
+    LauncherFilesystemRule::new(descriptor(descriptor_value)?, access).map_err(map_launcher_request)
 }
 
 #[cfg(target_os = "linux")]
 fn descriptor(value: i32) -> Result<u32, RunError> {
-    u32::try_from(value).map_err(|_| RunError::launcher("launcher.file-descriptor.invalid"))
+    u32::try_from(value).map_err(|_| {
+        RunError::launcher(
+            RunPhase::LauncherRequest,
+            RunRule::LauncherRequestConstructed,
+            "launcher.file-descriptor.invalid",
+        )
+    })
 }
 
 pub(crate) fn prepare_receipt_path(path: &Path) -> Result<PathBuf, RunError> {
@@ -647,29 +805,60 @@ pub(crate) fn prepare_receipt_path(path: &Path) -> Result<PathBuf, RunError> {
         path.to_path_buf()
     } else {
         std::env::current_dir()
-            .map_err(|_| RunError::invalid("receipt.path.parent-unavailable"))?
+            .map_err(|_| {
+                RunError::invalid(
+                    RunPhase::ReceiptTarget,
+                    RunRule::ReceiptTargetValid,
+                    "receipt.path.parent-unavailable",
+                )
+            })?
             .join(path)
     };
-    let parent = absolute
-        .parent()
-        .ok_or_else(|| RunError::invalid("receipt.path.parent-unavailable"))?;
-    let parent = fs::canonicalize(parent)
-        .map_err(|_| RunError::invalid("receipt.path.parent-unavailable"))?;
-    let leaf = absolute
-        .file_name()
-        .ok_or_else(|| RunError::invalid("receipt.path.invalid"))?;
+    let parent = absolute.parent().ok_or_else(|| {
+        RunError::invalid(
+            RunPhase::ReceiptTarget,
+            RunRule::ReceiptTargetValid,
+            "receipt.path.parent-unavailable",
+        )
+    })?;
+    let parent = fs::canonicalize(parent).map_err(|_| {
+        RunError::invalid(
+            RunPhase::ReceiptTarget,
+            RunRule::ReceiptTargetValid,
+            "receipt.path.parent-unavailable",
+        )
+    })?;
+    let leaf = absolute.file_name().ok_or_else(|| {
+        RunError::invalid(
+            RunPhase::ReceiptTarget,
+            RunRule::ReceiptTargetValid,
+            "receipt.path.invalid",
+        )
+    })?;
     let target = parent.join(leaf);
     match fs::symlink_metadata(&target) {
-        Ok(_) => Err(RunError::invalid("receipt.path.exists")),
+        Ok(_) => Err(RunError::invalid(
+            RunPhase::ReceiptTarget,
+            RunRule::ReceiptTargetValid,
+            "receipt.path.exists",
+        )),
         Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(target),
-        Err(_) => Err(RunError::invalid("receipt.path.unavailable")),
+        Err(_) => Err(RunError::invalid(
+            RunPhase::ReceiptTarget,
+            RunRule::ReceiptTargetValid,
+            "receipt.path.unavailable",
+        )),
     }
 }
 
 fn persist_receipt(target: &Path, execution_id: &[u8; 16], bytes: &[u8]) -> Result<(), RunError> {
-    let parent = target
-        .parent()
-        .ok_or_else(|| RunError::receipt("receipt.output.parent-unavailable"))?;
+    let parent = target.parent().ok_or_else(|| {
+        RunError::receipt(
+            RunPhase::ReceiptPublication,
+            RunRule::ReceiptPublished,
+            "receipt.output.parent-unavailable",
+        )
+    })?;
     let temporary = parent.join(format!(".pbr-receipt-{}.tmp", encode_hex(execution_id)));
     let mut options = OpenOptions::new();
     options.write(true).create_new(true);
@@ -681,15 +870,36 @@ fn persist_receipt(target: &Path, execution_id: &[u8; 16], bytes: &[u8]) -> Resu
     let mut guard = TemporaryReceipt {
         path: temporary.clone(),
     };
-    let mut file = options
-        .open(&temporary)
-        .map_err(|_| RunError::receipt("receipt.output.create-failed"))?;
+    let mut file = options.open(&temporary).map_err(|_| {
+        RunError::receipt(
+            RunPhase::ReceiptPublication,
+            RunRule::ReceiptPublished,
+            "receipt.output.create-failed",
+        )
+    })?;
     file.write_all(bytes)
         .and_then(|()| file.sync_all())
-        .map_err(|_| RunError::receipt("receipt.output.write-failed"))?;
-    fs::hard_link(&temporary, target)
-        .map_err(|_| RunError::receipt("receipt.output.publish-failed"))?;
-    fs::remove_file(&temporary).map_err(|_| RunError::receipt("receipt.output.cleanup-failed"))?;
+        .map_err(|_| {
+            RunError::receipt(
+                RunPhase::ReceiptPublication,
+                RunRule::ReceiptPublished,
+                "receipt.output.write-failed",
+            )
+        })?;
+    fs::hard_link(&temporary, target).map_err(|_| {
+        RunError::receipt(
+            RunPhase::ReceiptPublication,
+            RunRule::ReceiptPublished,
+            "receipt.output.publish-failed",
+        )
+    })?;
+    fs::remove_file(&temporary).map_err(|_| {
+        RunError::receipt(
+            RunPhase::ReceiptPublication,
+            RunRule::ReceiptPublished,
+            "receipt.output.cleanup-failed",
+        )
+    })?;
     guard.path.clear();
     Ok(())
 }
@@ -729,7 +939,11 @@ fn run_result_json(
         "schema": RUN_RESULT_SCHEMA,
         "execution_id": execution_id.to_text(),
         "receipt": receipt_path.to_str()
-            .ok_or_else(|| RunError::invalid("receipt.path.utf8-invalid"))?,
+            .ok_or_else(|| RunError::invalid(
+                RunPhase::ResultProjection,
+                RunRule::RunResultRepresentable,
+                "receipt.path.utf8-invalid",
+            ))?,
         "commitment": commitment,
         "outcome": outcome_json(outcome),
     }))
@@ -750,55 +964,99 @@ fn encode_hex(bytes: &[u8]) -> String {
 }
 
 const fn map_probe(error: ProbeError) -> RunError {
-    RunError::unsupported(error.code())
+    RunError::unsupported(
+        RunPhase::HostCapabilities,
+        RunRule::HostSupported,
+        error.code(),
+    )
 }
 
 const fn map_execution_setup(error: ExecutionSetupError) -> RunError {
     match error {
-        ExecutionSetupError::UnsupportedOperatingSystem => RunError::unsupported(error.code()),
-        ExecutionSetupError::RandomUnavailable => RunError::launcher(error.code()),
+        ExecutionSetupError::UnsupportedOperatingSystem => RunError::unsupported(
+            RunPhase::ExecutionIdentity,
+            RunRule::ExecutionIdentityCreated,
+            error.code(),
+        ),
+        ExecutionSetupError::RandomUnavailable => RunError::launcher(
+            RunPhase::ExecutionIdentity,
+            RunRule::ExecutionIdentityCreated,
+            error.code(),
+        ),
     }
 }
 
-const fn map_resolution(error: ResolutionError) -> RunError {
+const fn map_resolution(phase: RunPhase, rule: RunRule, error: ResolutionError) -> RunError {
     match error {
         ResolutionError::UnsupportedOperatingSystem | ResolutionError::Openat2Unavailable => {
-            RunError::unsupported(error.code())
+            RunError::unsupported(phase, rule, error.code())
         }
         ResolutionError::IdentityMismatch | ResolutionError::IdentityDrift => {
-            RunError::identity(error.code())
+            RunError::identity(phase, rule, error.code())
         }
-        _ => RunError::invalid(error.code()),
+        _ => RunError::invalid(phase, rule, error.code()),
     }
 }
 
-const fn map_output(error: OutputRootError) -> RunError {
+const fn map_output(phase: RunPhase, rule: RunRule, error: OutputRootError) -> RunError {
     match error {
         OutputRootError::UnsupportedOperatingSystem | OutputRootError::Openat2Unavailable => {
-            RunError::unsupported(error.code())
+            RunError::unsupported(phase, rule, error.code())
         }
-        OutputRootError::IdentityDrift => RunError::identity(error.code()),
-        _ => RunError::invalid(error.code()),
+        OutputRootError::IdentityDrift => RunError::identity(phase, rule, error.code()),
+        _ => RunError::invalid(phase, rule, error.code()),
     }
 }
 
 const fn map_cgroup(error: CgroupError) -> RunError {
     match error {
-        CgroupError::UnsupportedOperatingSystem => RunError::unsupported(error.code()),
-        CgroupError::CapabilityMismatch => RunError::identity(error.code()),
-        _ => RunError::launcher(error.code()),
+        CgroupError::UnsupportedOperatingSystem => RunError::unsupported(
+            RunPhase::Cgroup,
+            RunRule::CgroupBoundaryPrepared,
+            error.code(),
+        ),
+        CgroupError::CapabilityMismatch => RunError::identity(
+            RunPhase::Cgroup,
+            RunRule::CgroupBoundaryPrepared,
+            error.code(),
+        ),
+        _ => RunError::launcher(
+            RunPhase::Cgroup,
+            RunRule::CgroupBoundaryPrepared,
+            error.code(),
+        ),
     }
 }
 
-const fn map_launcher(error: LauncherError) -> RunError {
-    RunError::launcher(error.code())
+const fn map_launcher_request(error: LauncherError) -> RunError {
+    RunError::launcher(
+        RunPhase::LauncherRequest,
+        RunRule::LauncherRequestConstructed,
+        error.code(),
+    )
 }
 
 const fn map_supervisor(error: SupervisorError) -> RunError {
     match error {
-        SupervisorError::UnsupportedOperatingSystem => RunError::unsupported(error.code()),
-        _ => RunError::launcher(error.code()),
+        SupervisorError::UnsupportedOperatingSystem => RunError::unsupported(
+            RunPhase::LauncherProtocol,
+            RunRule::LauncherBoundaryComplete,
+            error.code(),
+        ),
+        _ => RunError::launcher(
+            RunPhase::LauncherProtocol,
+            RunRule::LauncherBoundaryComplete,
+            error.code(),
+        ),
     }
+}
+
+fn map_receipt_construction(error: ReceiptError) -> RunError {
+    RunError::receipt(
+        RunPhase::ReceiptConstruction,
+        RunRule::ReceiptConstructed,
+        error.code(),
+    )
 }
 
 #[cfg(test)]
@@ -836,7 +1094,7 @@ mod tests {
     }
 
     #[test]
-    fn diagnostic_attack_catalog_is_closed_before_implementation() {
+    fn diagnostic_attack_catalog_is_closed() {
         let expected = [
             (
                 "capability-unavailable",
@@ -920,6 +1178,106 @@ mod tests {
     }
 
     #[test]
+    fn diagnostic_mappings_match_the_frozen_boundary() {
+        let cases = [
+            (
+                map_probe(ProbeError::CgroupV2ControllerMissing),
+                3,
+                RunPhase::HostCapabilities,
+                RunRule::HostSupported,
+                "platform.cgroup-v2.controller-missing",
+            ),
+            (
+                map_resolution(
+                    RunPhase::ExecutableClosure,
+                    RunRule::ExecutableClosureResolved,
+                    ResolutionError::ElfMalformed,
+                ),
+                2,
+                RunPhase::ExecutableClosure,
+                RunRule::ExecutableClosureResolved,
+                "resolve.elf.malformed",
+            ),
+            (
+                map_resolution(
+                    RunPhase::IdentityRevalidation,
+                    RunRule::ArtifactIdentitiesStable,
+                    ResolutionError::IdentityDrift,
+                ),
+                4,
+                RunPhase::IdentityRevalidation,
+                RunRule::ArtifactIdentitiesStable,
+                "resolve.identity.drift",
+            ),
+            (
+                map_output(
+                    RunPhase::OutputRoot,
+                    RunRule::OutputRootFresh,
+                    OutputRootError::AlreadyExists,
+                ),
+                2,
+                RunPhase::OutputRoot,
+                RunRule::OutputRootFresh,
+                "output.root.exists",
+            ),
+            (
+                map_supervisor(SupervisorError::ProtocolFailed),
+                5,
+                RunPhase::LauncherProtocol,
+                RunRule::LauncherBoundaryComplete,
+                "supervisor.protocol.failed",
+            ),
+            (
+                map_cgroup(CgroupError::LimitMismatch),
+                5,
+                RunPhase::Cgroup,
+                RunRule::CgroupBoundaryPrepared,
+                "cgroup.limit.mismatch",
+            ),
+            (
+                RunError::receipt(
+                    RunPhase::ReceiptConstruction,
+                    RunRule::ReceiptConstructed,
+                    "receipt.observation.range",
+                ),
+                6,
+                RunPhase::ReceiptConstruction,
+                RunRule::ReceiptConstructed,
+                "receipt.observation.range",
+            ),
+            (
+                RunError::receipt(
+                    RunPhase::ReceiptPublication,
+                    RunRule::ReceiptPublished,
+                    "receipt.output.publish-failed",
+                ),
+                6,
+                RunPhase::ReceiptPublication,
+                RunRule::ReceiptPublished,
+                "receipt.output.publish-failed",
+            ),
+            (
+                RunError::invalid(
+                    RunPhase::ResultProjection,
+                    RunRule::RunResultRepresentable,
+                    "receipt.path.utf8-invalid",
+                ),
+                2,
+                RunPhase::ResultProjection,
+                RunRule::RunResultRepresentable,
+                "receipt.path.utf8-invalid",
+            ),
+        ];
+
+        for (error, exit, phase, rule, code) in cases {
+            assert_eq!(error.exit_code(), exit);
+            assert_eq!(error.phase(), phase);
+            assert_eq!(error.rule(), rule);
+            assert_eq!(error.code(), code);
+        }
+    }
+
+    #[test]
     fn argument_identity_is_framed_and_ordered() {
         let first = arguments_identity(&["ab".to_owned(), "c".to_owned()]);
         let second = arguments_identity(&["a".to_owned(), "bc".to_owned()]);
@@ -997,7 +1355,7 @@ mod tests {
             Path::new("/unsupported"),
         )
         .expect_err("non-Linux host must not run");
-        assert_eq!(error.exit_code(), UNSUPPORTED_BOUNDARY);
+        assert_eq!(error.exit_code(), 3);
         assert_eq!(error.code(), "execution.os.unsupported");
     }
 }

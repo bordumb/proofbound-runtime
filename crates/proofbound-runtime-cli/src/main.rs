@@ -5,6 +5,7 @@ mod inspect;
 mod plan;
 mod preflight;
 mod run;
+mod run_diagnostic;
 
 use std::env;
 use std::ffi::{OsStr, OsString};
@@ -118,7 +119,7 @@ where
                 Ok(()) => SUCCESS,
                 Err(_) => fail(stderr, INVALID_INPUT, "cli.output.write-failed"),
             },
-            Err(error) => fail(stderr, error.exit_code(), error.code()),
+            Err(error) => fail_run(stderr, error),
         };
     }
     if command == "preflight" {
@@ -221,6 +222,17 @@ fn write_success(output: &mut impl io::Write, text: &str) -> u8 {
 fn fail(stderr: &mut impl io::Write, exit_code: u8, code: &str) -> u8 {
     let _ignored = writeln!(stderr, "pbr: {code}");
     exit_code
+}
+
+fn fail_run(stderr: &mut impl io::Write, error: run_diagnostic::RunError) -> u8 {
+    let _ignored = writeln!(
+        stderr,
+        "pbr: phase={} rule={} code={}",
+        error.phase().as_str(),
+        error.rule().as_str(),
+        error.code()
+    );
+    error.exit_code()
 }
 
 #[cfg(test)]
@@ -433,5 +445,23 @@ mod tests {
             })
         );
         assert_eq!(stderr, b"pbr: plan.input.read-failed\n");
+    }
+
+    #[test]
+    fn run_failure_renders_one_closed_bounded_diagnostic() {
+        let error = run_diagnostic::RunError::unsupported(
+            run_diagnostic::RunPhase::HostCapabilities,
+            run_diagnostic::RunRule::HostSupported,
+            "platform.cgroup-v2.controller-missing",
+        );
+        let mut stderr = Vec::new();
+
+        assert_eq!(fail_run(&mut stderr, error), UNSUPPORTED_BOUNDARY);
+        assert_eq!(
+            stderr,
+            b"pbr: phase=host-capabilities rule=host-supported code=platform.cgroup-v2.controller-missing\n"
+        );
+        assert_eq!(stderr.iter().filter(|byte| **byte == b'\n').count(), 1);
+        assert!(stderr.len() < 256);
     }
 }
