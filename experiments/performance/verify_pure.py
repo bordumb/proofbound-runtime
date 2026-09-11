@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
+import sys
 from pathlib import Path
 from typing import NoReturn
 
@@ -230,3 +232,38 @@ def verify_result(
         "source_commit": expected_source,
         "subjects": list(SUBJECTS),
     }
+
+
+def main(arguments: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Independently verify a pure Runtime benchmark result."
+    )
+    parser.add_argument("--result", type=Path, required=True)
+    parser.add_argument("--expected-source", required=True)
+    parser.add_argument("--benchmark-executable", type=Path, required=True)
+    parser.add_argument("--fixture", type=Path, required=True)
+    options = parser.parse_args(arguments)
+
+    try:
+        if options.result.stat().st_size > MAX_RESULT_BYTES:
+            fail("benchmark.verify.json-invalid")
+        raw = options.result.read_bytes()
+        report = verify_result(
+            raw,
+            options.expected_source,
+            options.benchmark_executable,
+            options.fixture,
+        )
+    except OSError:
+        print("benchmark.verify.result-read-failed", file=sys.stderr)
+        return 1
+    except VerificationFailure as error:
+        print(error.code, file=sys.stderr)
+        return 1
+
+    print(json.dumps(report, separators=(",", ":"), sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
