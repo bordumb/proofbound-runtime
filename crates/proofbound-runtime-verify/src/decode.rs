@@ -73,6 +73,7 @@ pub struct CompositionTcbEntry {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ReceiptCompositionFacts {
     pub assumptions: Vec<String>,
+    pub eligibility_reasons: Vec<&'static str>,
     pub execution_id: String,
     pub producer: CompositionArtifact,
     pub product_version: String,
@@ -147,8 +148,15 @@ impl DecodedReceipt {
     /// identities directly.
     #[must_use]
     pub fn composition_facts(&self) -> ReceiptCompositionFacts {
+        let eligibility_reasons = match &self.recorded_eligibility {
+            RecordedEligibility::Reusable => Vec::new(),
+            RecordedEligibility::NonReusable(reasons) => {
+                reasons.iter().map(|reason| reason.as_str()).collect()
+            }
+        };
         ReceiptCompositionFacts {
             assumptions: self.wire.assumptions.clone(),
+            eligibility_reasons,
             execution_id: self.wire.execution_id.clone(),
             producer: composition_artifact(&self.wire.producer),
             product_version: self.wire.product_version.clone(),
@@ -585,6 +593,32 @@ pub enum WireReason {
     SwapMax,
     /// A swap-fail event occurred.
     SwapFail,
+}
+
+impl WireReason {
+    /// Returns the stable wire spelling used in verification reports.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::BoundaryIncomplete => "boundary-incomplete",
+            Self::ExitCodeNonzero => "exit-code-nonzero",
+            Self::ProcessSignaled => "process-signaled",
+            Self::TimedOut => "timed-out",
+            Self::Denied => "denied",
+            Self::LauncherFailed => "launcher-failed",
+            Self::ExecutionIncomplete => "execution-incomplete",
+            Self::StdoutTruncated => "stdout-truncated",
+            Self::StderrTruncated => "stderr-truncated",
+            Self::ReceiptMalformed => "receipt-malformed",
+            Self::MemoryHigh => "memory-high",
+            Self::MemoryMax => "memory-max",
+            Self::MemoryOom => "memory-oom",
+            Self::MemoryOomKill => "memory-oom-kill",
+            Self::MemoryOomGroupKill => "memory-oom-group-kill",
+            Self::SwapMax => "swap-max",
+            Self::SwapFail => "swap-fail",
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]

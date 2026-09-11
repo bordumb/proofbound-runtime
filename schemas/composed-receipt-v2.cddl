@@ -33,7 +33,7 @@ execution = {
   "receipt": artifact,
   "verifier": artifact,
   "commitment": bstr .size 32,
-  "eligibility": "reusable",
+  "eligibility": "reusable" / "non-reusable",
   "execution_id": bstr .size 16,
   "verification_report": artifact
 }

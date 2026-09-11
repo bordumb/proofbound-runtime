@@ -18,7 +18,7 @@ Verified against the branch head, the four reviews, and the roadmap's own exit c
 
 ## Acceptance, Order 5
 
-- [ ] **Decouple acceptance from reuse eligibility.** `compose/src/lib.rs:832` refuses non-reusable receipts, so policy's `eligibility: non-reusable` option is unsatisfiable. Let a non-reusable receipt reach `evaluate` and be rejected by policy with `eligibility-mismatch`.
+- [x] **Decouple acceptance from reuse eligibility.** `compose/src/lib.rs:832` refuses non-reusable receipts, so policy's `eligibility: non-reusable` option is unsatisfiable. Let a non-reusable receipt reach `evaluate` and be rejected by policy with `eligibility-mismatch`.
 - [ ] **Derive rejection reasons instead of emitting both.** `accept/src/lib.rs:490` always pushes `input-verification-failed` and `composition-missing`. Route the three failure sources in `main.rs:166` to distinct reasons and add a replay reason.
 - [ ] **Make the assumption-loss attack real.** `lib.rs:957` calls the rejection helper directly and cannot fail. Mutate inherited assumptions and assert the derived reason.
 - [ ] **Let policy and the Action pin the Proofbound verifier and release directory by digest.** Today only the archive, acceptor, and policy are pinned.

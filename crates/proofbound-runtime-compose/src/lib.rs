@@ -459,6 +459,7 @@ pub fn compose(inputs: &CompositionInputs<'_>) -> Result<Vec<u8>, CompositionErr
         &bundle_artifacts,
         inputs,
     )?;
+    let execution_eligibility = execution.eligibility.status.clone();
 
     let assumptions = inherited_assumptions(&release_report.claims, &execution.assumptions);
     let trusted_computing_base = inherited_tcb(&release_tcb, &execution.trusted_computing_base)?;
@@ -471,7 +472,7 @@ pub fn compose(inputs: &CompositionInputs<'_>) -> Result<Vec<u8>, CompositionErr
         },
         execution: ExecutionIdentity {
             commitment: inputs.expected_execution_commitment.to_owned(),
-            eligibility: "reusable".to_owned(),
+            eligibility: execution_eligibility,
             execution_id: execution.execution_id,
             receipt: artifact_identity(inputs.execution_receipt),
             verification_report: artifact_identity(inputs.execution_verification),
@@ -534,7 +535,11 @@ fn parse_execution_facts(
     Ok(ExecutionFacts {
         assumptions: facts.assumptions,
         eligibility: WireEligibility {
-            reasons: Vec::new(),
+            reasons: facts
+                .eligibility_reasons
+                .into_iter()
+                .map(str::to_owned)
+                .collect(),
             status: if facts.reusable {
                 "reusable".to_owned()
             } else {
@@ -829,10 +834,9 @@ fn validate_execution(
     if receipt.schema != expected_schema
         || receipt.product_version.is_empty()
         || !verification.valid
-        || verification.eligibility.status != "reusable"
-        || !verification.eligibility.reasons.is_empty()
-        || receipt.eligibility.status != "reusable"
-        || !receipt.eligibility.reasons.is_empty()
+        || !valid_eligibility(&verification.eligibility)
+        || verification.eligibility.status != receipt.eligibility.status
+        || verification.eligibility.reasons != receipt.eligibility.reasons
         || verification.receipt_commitment != inputs.expected_execution_commitment
         || digest_text(inputs.execution_receipt.bytes) != inputs.expected_execution_commitment
     {
@@ -866,6 +870,14 @@ fn validate_execution(
         }
     }
     Ok(())
+}
+
+fn valid_eligibility(eligibility: &WireEligibility) -> bool {
+    match eligibility.status.as_str() {
+        "reusable" => eligibility.reasons.is_empty(),
+        "non-reusable" => !eligibility.reasons.is_empty(),
+        _ => false,
+    }
 }
 
 fn validate_wire_artifact(
@@ -1438,6 +1450,29 @@ mod tests {
         assert_eq!(value["execution"]["execution_id"], EXECUTION_ID);
         assert_eq!(serde_json::to_vec(&value).unwrap(), bytes);
         verify_composed_receipt(&bytes, &fixture.inputs()).expect("output independently agrees");
+    }
+
+    #[test]
+    fn verified_non_reusable_execution_reaches_acceptance_composition() {
+        let mut fixture = Fixture::new();
+        fixture.mutate_json(FixtureField::Execution, |receipt| {
+            receipt["eligibility"] =
+                json!({"reasons": ["exit-code-nonzero"], "status": "non-reusable"});
+        });
+        fixture.execution_verification = canonical_json(json!({
+            "eligibility": {
+                "reasons": ["exit-code-nonzero"],
+                "status": "non-reusable"
+            },
+            "receipt_commitment": fixture.commitment,
+            "valid": true
+        }));
+
+        let bytes = compose(&fixture.inputs()).expect("non-reusable execution still composes");
+        let value: Value = serde_json::from_slice(&bytes).expect("composition parses");
+        assert_eq!(value["execution"]["eligibility"], "non-reusable");
+        verify_composed_receipt(&bytes, &fixture.inputs())
+            .expect("non-reusable composition independently agrees");
     }
 
     #[test]

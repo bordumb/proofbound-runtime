@@ -954,6 +954,26 @@ mod tests {
     }
 
     #[test]
+    fn reusable_policy_rejects_verified_non_reusable_execution_by_policy() {
+        let policy_bytes = bytes_from_hex(include_str!(
+            "../../../schemas/vectors/v2/acceptance-policy.cbor.hex"
+        ));
+        let identity = domain_digest(POLICY_DOMAIN, &policy_bytes);
+        let policy = decode_policy(&policy_bytes, &identity).expect("policy decodes");
+        let mut execution = execution_facts();
+        execution.reusable = false;
+
+        assert_decision_reasons(
+            &policy,
+            &execution,
+            &release_facts(),
+            "00112233-4455-4677-8899-aabbccddeeff",
+            &policy_bytes,
+            &[RejectionReason::EligibilityMismatch],
+        );
+    }
+
+    #[test]
     fn assumption_loss_and_forged_acceptance_fail_closed() {
         let policy_bytes = bytes_from_hex(include_str!(
             "../../../schemas/vectors/v2/acceptance-policy.cbor.hex"
