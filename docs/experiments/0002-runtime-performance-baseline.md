@@ -1,6 +1,6 @@
 # Experiment 0002: Runtime performance baseline
 
-- **Status:** in progress; pure hosted baseline complete
+- **Status:** complete
 - **Date:** 2026-09-10
 - **Roadmap:** RT-6.3
 - **Production effect:** none
@@ -148,11 +148,15 @@ receipt. Composition uses separately identified checked-in typed constants.
 The standard-library-only verifier and closed operational schema reject
 subject omission or reordering, source, executable, or fixture substitution,
 unknown or duplicate fields, unsorted samples, and forged summaries. The
-manual hosted workflow added at `aae19a4` accepts one exact 40-character
-revision, runs the complete pure domain on x86_64 and aarch64, retains producer
-and verifier failures separately, and uploads the raw result and independent
-report. No hosted measurement is recorded here until that workflow completes
-and the downloaded artifacts verify again outside their producing jobs.
+manual hosted workflow accepts one exact 40-character revision, runs the
+complete pure and native domains on x86_64 and aarch64, retains producer and
+verifier failures separately, and uploads the raw results and independent
+reports. The native extension retains the benchmark and all three Runtime
+binaries, the exact workload and plan, 100 raw receipts, run-result
+projections, outputs, and a recursive checksum inventory. Separate
+architecture-matched jobs download each native artifact, verify its inventory,
+rerun the independent verifier over every receipt, and require the reproduced
+report to match byte for byte.
 
 This checkpoint adds no version 2 implementation. The ADR 0003 map-key gate
 continues to block version 2 CDDL, golden vectors, and both codecs.
@@ -209,6 +213,58 @@ This observation closes only the pure half of the experiment. Native phase
 and repeated-invocation measurements remain required before the completion
 condition or any architectural conclusion can be evaluated.
 
+### Complete observation 2
+
+At exact clean source
+`774df9813371ce6476dfa182d4526669daa3d64c`, GitHub Actions run
+[`34564688967`](https://github.com/bordumb/proofbound-runtime/actions/runs/34564688967)
+completed all six registered series: the seven-subject pure harness on both
+architectures and the static and dynamic native workloads on both
+architectures. Each native producer completed 10 warm-ups and 100 fresh
+measured executions. Four separate architecture-matched jobs then downloaded
+the retained native artifacts, verified their recursive checksum inventories,
+reran the independent verifier over all 400 raw receipts and projections, and
+reproduced each original verification report byte for byte.
+
+The downloaded pure artifacts also passed their checksum inventories. The
+standard-library-only verifier was rerun outside the producing jobs against
+the exact retained benchmark executable and source fixtures; both reports were
+reproduced byte for byte. The six primary result and checksum-inventory
+identities are:
+
+| Series | Result SHA-256 | `SHA256SUMS` SHA-256 |
+| --- | --- | --- |
+| Pure x86_64 | `c147accf29874f1b0b468bc0ac0b2225d8c5f826e0c67c187908f695a44a55b2` | `68dfcd56cb5bca0a7f60a23a67ef9b83eb5aedc97695e3ca208d6a5afe637fdd` |
+| Pure aarch64 | `03761f6cc570f0604ec91bdcfc8ef50076ce2674f558c9ada4b184d3b803c170` | `bac6dbf3676694b28946e6a1435d91749c4d5ee1d96b08e8e7f53066c01fef4b` |
+| Static x86_64 | `975adf4f1fbcceda6644e55b5ca1309034d4af61d5c3fb31fda5adedc4b23686` | `a7d92fab51e4a00b62b67ab24afa490888ba3bfc34946f694078c9100c6f9` |
+| Static aarch64 | `82f7f92d70d1fadd63e104eaf229e6b7391829e0014c9151641e70d49223339c` | `5ef7b22cdd3eb5dcf209813fdc8ef50076ce2674f558c9ada4b184d3b803c170` |
+| Dynamic x86_64 | `b845d9ec9bd592a9c232b95b392fe6d70f8956a8d5d834a4f137f71f37e0e2fb` | `484a7efe6905abe8dfb1ad4fbfc3492a2d48f0c72cc49145f7c139e57c534d5e` |
+| Dynamic aarch64 | `52bf59f8c615637a47c5cbef8851d5efea6a84ce44ab09c5931170e57ac3fb19` | `2163c2eeb6042b9033f1dd4223eacceb81b697d6da254bc94f37f1236abbe704` |
+
+The headline native measurements, computed from the retained correlated raw
+samples, are:
+
+| Workload / architecture | Total median / p95 (ms) | Setup-before-child median (ms) | Child median (ms) |
+| --- | ---: | ---: | ---: |
+| Static x86_64 | 14.726 / 17.142 | 12.641 | 1.122 |
+| Dynamic x86_64 | 14.927 / 17.964 | 11.897 | 1.102 |
+| Static aarch64 | 17.267 / 29.297 | 14.625 | 1.098 |
+| Dynamic aarch64 | 17.686 / 23.129 | 15.552 | 1.097 |
+
+Setup before child execution exceeded child execution by approximately 11 to
+14 times in every series. Boundary installation was the largest median phase:
+4.000–5.542 ms on x86_64 and 8.451–8.585 ms on aarch64. Executable closure
+inventory and launcher-request identity revalidation were the next material
+setup costs. Dynamic loading did not materially change total latency for this
+fixture.
+
+This satisfies the pre-registered threshold for architectural investigation,
+but it does not justify a daemon or shared execution boundary. The maintained
+hello workloads are deliberately short and are not evidence of adopted-use
+latency. The next performance input is a second real adopted workload; any
+daemon or batch proposal still requires its own ADR and threat model. No
+sample, tail, missing host fact, or failed execution was discarded.
+
 ## Decision criteria
 
 This baseline authorizes architectural investigation, not implementation:
@@ -227,9 +283,9 @@ This baseline authorizes architectural investigation, not implementation:
 
 ## Completion condition
 
-The experiment is complete only when both architectures publish all registered
-pure and native series from one exact clean source, every retained result passes
-the independent verifier, and this record cites the exact source, workflow run,
-artifact identities, and derived observations. Missing platform facts or a
-failed sample make the affected result incomplete; they are not silently
-discarded as outliers.
+The experiment completed at observation 2: both architectures published all
+registered pure and native series from one exact clean source, every retained
+result passed the independent verifier, and this record cites the exact source,
+workflow run, artifact identities, and derived observations. Future repetitions
+remain incomplete if a platform fact or sample is missing; such failures must
+not be silently discarded as outliers.

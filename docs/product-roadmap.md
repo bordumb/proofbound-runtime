@@ -159,6 +159,19 @@ The unchanged fresh evidence stage remained green. This is one operational
 observation, not the two-week RT-0.4 latency distribution or the independent
 approval required for proposed [ADR 0005](adr/0005-exact-tool-cache-boundary.md).
 
+RT-6.3 is complete at exact source
+`774df9813371ce6476dfa182d4526669daa3d64c`. Performance run
+[`34564688967`](https://github.com/bordumb/proofbound-runtime/actions/runs/34564688967)
+published the complete pure, static-native, and dynamic-native matrix on both
+architectures. Separate architecture-matched jobs downloaded and independently
+reverified every retained native artifact. The pre-registered comparison found
+that setup before child execution exceeds this maintained hello workload's
+child time by approximately 11 to 14 times, with boundary installation the
+largest median phase. This authorizes investigation with an adopted workload;
+it does not authorize a daemon or shared execution boundary. Exact result and
+inventory identities are recorded in
+[`Experiment 0002`](experiments/0002-runtime-performance-baseline.md).
+
 ## 1. Executive decision
 
 The next production capability should be a cgroup v2 memory boundary. The
@@ -957,7 +970,7 @@ exactly what the mechanism enforced—no more.
 - Do not rely only on post-run inventory: a hostile child can exhaust the host
   before post-run validation.
 
-### RT-6.3 Performance
+### RT-6.3 Performance — complete
 
 - Add criterion or a similarly stable benchmark harness for pure operations:
   plan parsing, normalization, policy compilation, receipt construction,
