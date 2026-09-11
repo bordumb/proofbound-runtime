@@ -31,6 +31,16 @@ The roadmap uses these sources:
 
 ### Execution checkpoint
 
+As of 2026-09-11, the roadmap branch has completed the version 2 memory/swap
+implementation and deterministic-CBOR claim wave, the independently verified
+receipt-composition and adopter-acceptance path, the reproducible standalone
+`pbr-accept` artifact, the first-party GitHub Action, and the RT-3.3 plan
+scaffold source boundary. `PBR-ACCEPT-012` and `PBR-SCAFFOLD-013` both admit
+their exact source-level attack evidence. They deliberately retain exact
+native-release observation and external Action dogfood as open obligations;
+those obligations cannot be converted into source claims or satisfied by an
+older release-candidate run.
+
 As of 2026-09-10, Order 0 is implemented on the roadmap branch, the version
 0.1 installation path and host-prerequisite explanations are implemented and
 locally verified, and the two measured upstream workflow observations are
@@ -54,9 +64,11 @@ profile. On 2026-09-11, the decision owner approved Specification 0007 as
 written and selected text map keys for every version 2 CBOR object under ADR
 0003. The accepted contract fixes the schema transition, cgroup controls,
 terminal observations, outcome separation, historical receipt behavior, and
-native falsifier inventory. Closed CDDL schemas and golden vectors still must
-land before their production codecs, and the upstream consolidation boundary
-remains an external release gate rather than an implementation shortcut.
+native falsifier inventory. The closed text-key CDDL schemas, golden vectors,
+separate producer and verifier codecs, and native release-observation wiring
+have since landed on this branch. The upstream consolidation boundary and
+exact merge-head observations remain external release gates rather than
+implementation shortcuts.
 
 RT-4.1 is pre-registered at `946c457`. Experiment 0001 freezes the first HTTPS
 workload, controlled DNS/TLS fixture, four candidate mechanisms, common attack
@@ -298,7 +310,9 @@ Orders express merge dependencies, not a ban on parallel investigation.
 RT-0.2 is Order 0 and should land immediately because it is already measured,
 does not change evidence meaning, and does not depend on upstream
 consolidation. RT-3.1 and RT-3.2 form the Order 3 installation and readiness
-slice; plan scaffolding, live denial diagnostics, and SDKs remain later work.
+slice. RT-3.3 now has an admitted source implementation and retains exact
+native release binding as an open obligation; live diagnostic observation and
+SDKs remain later work.
 Network experiments should start early. Network production code must wait for
 the decision gate.
 
@@ -797,6 +811,16 @@ without writing custom JSON logic.
   network mode. Generated output is not an inferred safe policy.
 - Add fixtures for static ELF, glibc, musl, missing library, conflicting search
   path, plugin load, and identity drift.
+
+**Checkpoint (2026-09-11):** source implementation complete at `2f2570d`.
+`pbr plan scaffold` emits the closed
+`proofbound-runtime-plan-scaffold/1` JSON review artifact with
+`safe_policy: false`, resolves the bounded static ELF closure under four
+explicit profiles, records exact loader inputs and resolution provenance, and
+keeps every human authority choice open. The closed fixture corpus is admitted
+by `PBR-SCAFFOLD-013`. Native execution of that corpus and binding the exact
+release artifacts remain release-head obligations, so this checkpoint does
+not describe the command as released.
 
 ### RT-3.4 Explain denials without changing receipt meaning
 
