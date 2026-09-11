@@ -58,6 +58,22 @@ class RequiredWorkflowTests(unittest.TestCase):
             line for line in workflow.splitlines() if "timing" in line.lower()
         ))
 
+    def test_each_lane_checks_out_and_confirms_the_exact_pr_head(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        exact_sha = "${{ github.event.pull_request.head.sha || github.sha }}"
+
+        self.assertIn(f"PBR_EXACT_SHA: {exact_sha}", workflow)
+        self.assertEqual(workflow.count("uses: actions/checkout@v4"), 4)
+        self.assertEqual(workflow.count("ref: ${{ env.PBR_EXACT_SHA }}"), 4)
+        self.assertEqual(
+            workflow.count(
+                'run: test "$(git rev-parse HEAD)" = "$PBR_EXACT_SHA"'
+            ),
+            4,
+        )
+        self.assertEqual(workflow.count("-${{ env.PBR_EXACT_SHA }}"), 4)
+        self.assertNotIn('= "$GITHUB_SHA"', workflow)
+
     def test_triggers_and_cancellation_remain_closed(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 

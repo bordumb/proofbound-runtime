@@ -18,7 +18,8 @@ class TimingMetadataTests(unittest.TestCase):
         environment = os.environ.copy()
         environment.update(
             {
-                "GITHUB_SHA": "0123456789abcdef0123456789abcdef01234567",
+                "PBR_EXACT_SHA": "0123456789abcdef0123456789abcdef01234567",
+                "GITHUB_SHA": "ffffffffffffffffffffffffffffffffffffffff",
                 "GITHUB_RUN_ID": "12345",
                 "GITHUB_RUN_ATTEMPT": "2",
                 "GITHUB_JOB": "formal",
