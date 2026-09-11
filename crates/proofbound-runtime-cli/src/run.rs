@@ -1545,18 +1545,18 @@ mod tests {
         let result = run_result_json(
             Path::new("receipt.json"),
             execution_id,
-            "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            Sha256Digest::from_bytes([0xaa; 32]),
             ExecutionOutcome::Exited { code: 0 },
         )
         .expect("run result is representable");
         assert_eq!(
             result,
             json!({
-                "commitment": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                "execution_id": "00112233-4455-4677-8899-aabbccddeeff",
+                "commitment": "hex:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "execution_id": "hex:00112233445546778899aabbccddeeff",
                 "outcome": {"kind": "exited", "code": 0},
                 "receipt": "receipt.json",
-                "schema": "proofbound-runtime-run-result/1",
+                "schema": "proofbound-runtime-run-result/2",
             })
         );
     }
