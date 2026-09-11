@@ -3,6 +3,22 @@ const MEMORY_ATTACK_CATALOG: &str =
     include_str!("../../../tests/attacks/native-linux/memory-v2.toml");
 const NATIVE_FIXTURE_SOURCE: &str = include_str!("fixtures/native-boundary-probe.c");
 
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct NativeMemoryCatalog {
+    schema: String,
+    #[serde(rename = "case")]
+    cases: Vec<NativeMemoryCase>,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct NativeMemoryCase {
+    id: String,
+    test: String,
+    expected: String,
+}
+
 #[test]
 fn native_boundary_catalog_is_closed() {
     let expected = [
@@ -28,35 +44,90 @@ fn native_boundary_catalog_is_closed() {
 #[test]
 fn native_memory_catalog_is_closed() {
     let expected = [
-        "anonymous-over-limit-single-process",
-        "anonymous-over-limit-max-process-tree",
-        "anonymous-memory-accounted",
-        "mapped-file-memory-accounted",
-        "page-cache-memory-accounted",
-        "shared-memory-accounted",
-        "socket-memory-accounted",
-        "zero-swap-enforced",
-        "swap-limit-reached",
-        "host-without-swap",
-        "pre-release-allocation-blocked",
-        "sibling-cgroup-immune",
-        "supervisor-cgroup-immune",
-        "memory-pressure-timeout-cleanup",
-        "memory-pressure-launcher-failure-cleanup",
-        "memory-pressure-supervisor-failure-cleanup",
-        "oom-cleanup-exact",
-        "receipt-resource-mutations-rejected",
+        (
+            "anonymous-over-limit-single-process",
+            "production_launcher_enforces_native_memory_corpus",
+        ),
+        (
+            "anonymous-over-limit-max-process-tree",
+            "production_launcher_enforces_native_memory_corpus",
+        ),
+        (
+            "anonymous-memory-accounted",
+            "production_launcher_enforces_native_memory_corpus",
+        ),
+        (
+            "mapped-file-memory-accounted",
+            "production_launcher_enforces_native_memory_corpus",
+        ),
+        (
+            "page-cache-memory-accounted",
+            "production_launcher_enforces_native_memory_corpus",
+        ),
+        (
+            "shared-memory-accounted",
+            "production_launcher_enforces_native_memory_corpus",
+        ),
+        (
+            "socket-memory-accounted",
+            "native_cgroup_accounts_socket_memory_outside_denied_network_profile",
+        ),
+        (
+            "zero-swap-enforced",
+            "production_launcher_enforces_native_swap_presence_matrix",
+        ),
+        (
+            "swap-limit-reached",
+            "production_launcher_enforces_native_swap_presence_matrix",
+        ),
+        (
+            "host-without-swap",
+            "production_launcher_enforces_native_swap_presence_matrix",
+        ),
+        (
+            "pre-release-allocation-blocked",
+            "production_launcher_enforces_native_memory_corpus",
+        ),
+        (
+            "sibling-cgroup-immune",
+            "production_launcher_enforces_native_memory_corpus",
+        ),
+        (
+            "supervisor-cgroup-immune",
+            "production_launcher_enforces_native_memory_corpus",
+        ),
+        (
+            "memory-pressure-timeout-cleanup",
+            "production_launcher_enforces_native_memory_corpus",
+        ),
+        (
+            "memory-pressure-launcher-failure-cleanup",
+            "native_failure_paths_remove_cgroup_under_memory_pressure",
+        ),
+        (
+            "memory-pressure-supervisor-failure-cleanup",
+            "native_failure_paths_remove_cgroup_under_memory_pressure",
+        ),
+        (
+            "oom-cleanup-exact",
+            "production_launcher_enforces_native_memory_corpus",
+        ),
+        (
+            "receipt-resource-mutations-rejected",
+            "proofbound_runtime_verify::attack_tests::verifier_rejects_every_v2_resource_mutation",
+        ),
     ];
-    assert!(
-        MEMORY_ATTACK_CATALOG
-            .starts_with("schema = \"proofbound-runtime-native-memory-attacks/2\"")
-    );
-    assert_eq!(
-        MEMORY_ATTACK_CATALOG.matches("[[case]]").count(),
-        expected.len()
-    );
-    for id in expected {
-        assert!(MEMORY_ATTACK_CATALOG.contains(&format!("id = \"{id}\"")));
+    let catalog: NativeMemoryCatalog =
+        toml::from_str(MEMORY_ATTACK_CATALOG).expect("native memory catalog is valid");
+    assert_eq!(catalog.schema, "proofbound-runtime-native-memory-attacks/2");
+    assert_eq!(catalog.cases.len(), expected.len());
+    for (case, (id, test)) in catalog.cases.iter().zip(expected) {
+        assert_eq!(case.id, id);
+        assert_eq!(case.test, test, "catalog case {id} must bind its executor");
+        assert!(
+            !case.expected.is_empty(),
+            "catalog case {id} needs an oracle"
+        );
     }
 }
 
@@ -391,7 +462,26 @@ mod linux {
         assert_eq!(single_oom.boundary(), BoundaryInstallation::Installed);
         assert_memory_denial(&single_oom);
 
-        let mut sibling = std::process::Command::new("sleep")
+        let sibling_limits = ResourceLimits::new_v2(
+            ProcessLimit::new(1).expect("one sibling process"),
+            WallTimeLimit::from_milliseconds(30_000).expect("bounded sibling lifetime"),
+            OutputByteLimit::new(1024),
+            OutputByteLimit::new(1024),
+            MemoryByteLimit::new(64 * 1024 * 1024).expect("valid sibling memory limit"),
+            SwapByteLimit::new(0).expect("zero sibling swap limit"),
+        );
+        let sibling_cgroup =
+            FreshCgroup::create_v2(supported.cgroup_v2(), execution_id(), sibling_limits)
+                .expect("create real sibling cgroup");
+        let sibling_cgroup_path = sibling_cgroup.path().to_owned();
+        let mut cgroup_sibling = std::process::Command::new("sleep")
+            .arg("30")
+            .spawn()
+            .expect("spawn sibling-cgroup process");
+        sibling_cgroup
+            .place_process(cgroup_sibling.id())
+            .expect("place process in real sibling cgroup");
+        let mut supervisor_sibling = std::process::Command::new("sleep")
             .arg("30")
             .spawn()
             .expect("spawn supervisor-cgroup sibling");
@@ -408,12 +498,41 @@ mod linux {
             10_000,
         );
         assert_memory_denial(&process_tree_oom);
+        let process_tree_resources = process_tree_oom
+            .resources()
+            .complete()
+            .expect("process-tree OOM resources");
         assert!(
-            sibling.try_wait().expect("inspect sibling").is_none(),
+            process_tree_resources.memory_events().oom_group_kill() > 0,
+            "memory.oom.group must produce an observed group kill: {process_tree_oom:#?}"
+        );
+        assert!(
+            supervisor_sibling
+                .try_wait()
+                .expect("inspect supervisor sibling")
+                .is_none(),
             "workload OOM selection must not kill a supervisor-cgroup sibling"
         );
-        sibling.kill().expect("stop sibling");
-        sibling.wait().expect("reap sibling");
+        assert!(
+            cgroup_sibling
+                .try_wait()
+                .expect("inspect cgroup sibling")
+                .is_none()
+                && sibling_cgroup
+                    .contains_process(cgroup_sibling.id())
+                    .expect("inspect real sibling membership"),
+            "workload OOM selection must not kill a process in a sibling cgroup"
+        );
+        sibling_cgroup
+            .finish()
+            .expect("drain and remove real sibling cgroup");
+        assert!(
+            !sibling_cgroup_path.exists(),
+            "real sibling cgroup is removed"
+        );
+        cgroup_sibling.wait().expect("reap sibling-cgroup process");
+        supervisor_sibling.kill().expect("stop supervisor sibling");
+        supervisor_sibling.wait().expect("reap supervisor sibling");
 
         let timeout = run_v2_case(
             &supported,
@@ -538,6 +657,13 @@ mod linux {
                     "{execution:#?}"
                 );
                 assert!(resources.memory_events().oom() > 0, "{execution:#?}");
+                assert!(resources.swap_events().max() > 0, "{execution:#?}");
+                assert!(resources.swap_events().fail() > 0, "{execution:#?}");
+                assert!(
+                    resources.limit_events().contains(LimitEvent::SwapMax)
+                        && resources.limit_events().contains(LimitEvent::SwapFail),
+                    "{execution:#?}"
+                );
             }
             other => panic!("unknown native swap mode: {other}"),
         }
