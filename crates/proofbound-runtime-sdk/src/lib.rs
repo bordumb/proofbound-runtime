@@ -7,12 +7,14 @@
 
 use std::collections::BTreeSet;
 use std::fmt;
+use std::path::Path;
 
-use proofbound_runtime_core::{ExecutionId, PlanError, parse_execution_plan_for_execution};
 use serde_json::{Map, Value};
 
 const PLAN_SCHEMA: &str = "proofbound-runtime-plan/2";
 const RESULT_SCHEMA: &str = "proofbound-runtime-run-result/2";
+const RESOURCE_QUANTUM: u64 = 65_536;
+const MAX_RESOURCE_BYTES: u64 = 1_099_511_627_776;
 
 /// Closed logical inputs for one version 2 execution plan.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -41,20 +43,9 @@ pub struct PlanV2 {
 }
 
 impl PlanV2 {
-    /// Encodes the closed input and reuses the production parser for semantic
-    /// validation before returning any bytes.
+    /// Validates the closed public input and encodes deterministic-CBOR bytes.
     pub fn new(input: PlanV2Input) -> Result<Self, SdkError> {
-        require_unique(&input.read)?;
-        require_unique(&input.runtime_read)?;
-        require_unique(&input.write)?;
-        require_unique(&input.execute)?;
-        require_unique(&input.environment)?;
-        if input.write.len() != 1
-            || input.execute.len() != 1
-            || input.execute[0] != input.executable
-        {
-            return Err(SdkError::PlanShape);
-        }
+        validate_plan_input(&input)?;
         let value = Cbor::Map(vec![
             ("id", Cbor::Text(input.id)),
             ("schema", Cbor::Text(PLAN_SCHEMA.to_owned())),
@@ -91,7 +82,6 @@ impl PlanV2 {
         ]);
         let mut bytes = Vec::new();
         encode(&value, &mut bytes)?;
-        parse_execution_plan_for_execution(&bytes).map_err(SdkError::Plan)?;
         Ok(Self { bytes })
     }
 
@@ -147,7 +137,9 @@ impl RunResultProjection {
         }
         let commitment = decode_prefixed::<32>(text(take(&mut root, "commitment")?)?)?;
         let execution_id = decode_prefixed::<16>(text(take(&mut root, "execution_id")?)?)?;
-        ExecutionId::from_bytes(execution_id).map_err(|_| SdkError::ResultField)?;
+        if execution_id[6] >> 4 != 4 || execution_id[8] >> 6 != 2 {
+            return Err(SdkError::ResultField);
+        }
         let outcome = decode_outcome(take(&mut root, "outcome")?)?;
         Ok(Self {
             receipt,
@@ -181,9 +173,13 @@ impl RunResultProjection {
 /// Stable SDK construction and projection errors.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SdkError {
+    PlanId,
     PlanShape,
     PlanDuplicate,
-    Plan(PlanError),
+    PlanField,
+    PlanRuntimeRead,
+    PlanLimit,
+    PlanLimitQuantum,
     CborBound,
     ResultMalformed,
     ResultSchema,
@@ -195,9 +191,13 @@ impl SdkError {
     #[must_use]
     pub fn code(self) -> &'static str {
         match self {
+            Self::PlanId => "sdk.plan.id-invalid",
             Self::PlanShape => "sdk.plan.shape-invalid",
             Self::PlanDuplicate => "sdk.plan.duplicate",
-            Self::Plan(error) => error.code(),
+            Self::PlanField => "sdk.plan.field-invalid",
+            Self::PlanRuntimeRead => "sdk.plan.runtime-read-not-absolute",
+            Self::PlanLimit => "sdk.plan.limit-invalid",
+            Self::PlanLimitQuantum => "sdk.plan.limit-not-quantized",
             Self::CborBound => "sdk.plan.cbor-bound",
             Self::ResultMalformed => "sdk.result.malformed-json",
             Self::ResultSchema => "sdk.result.schema-unsupported",
@@ -293,6 +293,77 @@ fn require_unique(values: &[String]) -> Result<(), SdkError> {
     } else {
         Err(SdkError::PlanDuplicate)
     }
+}
+
+fn validate_plan_input(input: &PlanV2Input) -> Result<(), SdkError> {
+    if !valid_plan_id(&input.id) {
+        return Err(SdkError::PlanId);
+    }
+    if !valid_required_text(&input.executable) || !valid_required_text(&input.working_directory) {
+        return Err(SdkError::PlanField);
+    }
+    if input.arguments.iter().any(|value| value.contains('\0')) {
+        return Err(SdkError::PlanField);
+    }
+    for values in [
+        &input.read,
+        &input.runtime_read,
+        &input.write,
+        &input.execute,
+        &input.environment,
+    ] {
+        if values.iter().any(|value| value.contains('\0')) {
+            return Err(SdkError::PlanField);
+        }
+        require_unique(values)?;
+    }
+    if input
+        .environment
+        .iter()
+        .any(|name| name.is_empty() || name.contains('='))
+    {
+        return Err(SdkError::PlanField);
+    }
+    if input
+        .runtime_read
+        .iter()
+        .any(|value| !Path::new(value).is_absolute())
+    {
+        return Err(SdkError::PlanRuntimeRead);
+    }
+    if input.write.len() != 1 || input.execute.len() != 1 || input.execute[0] != input.executable {
+        return Err(SdkError::PlanShape);
+    }
+    if input.processes == 0
+        || input.wall_time_ms == 0
+        || !(RESOURCE_QUANTUM..=MAX_RESOURCE_BYTES).contains(&input.memory_bytes)
+        || input.swap_bytes > MAX_RESOURCE_BYTES
+    {
+        return Err(SdkError::PlanLimit);
+    }
+    if !input.memory_bytes.is_multiple_of(RESOURCE_QUANTUM)
+        || !input.swap_bytes.is_multiple_of(RESOURCE_QUANTUM)
+    {
+        return Err(SdkError::PlanLimitQuantum);
+    }
+    Ok(())
+}
+
+fn valid_required_text(value: &str) -> bool {
+    !value.is_empty() && !value.contains('\0')
+}
+
+fn valid_plan_id(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    if bytes.is_empty() || bytes.len() > 128 {
+        return false;
+    }
+    let endpoint = |byte: u8| byte.is_ascii_lowercase() || byte.is_ascii_digit();
+    endpoint(bytes[0])
+        && endpoint(bytes[bytes.len() - 1])
+        && bytes.iter().all(|byte| {
+            byte.is_ascii_lowercase() || byte.is_ascii_digit() || matches!(byte, b'.' | b'_' | b'-')
+        })
 }
 
 fn object(value: Value) -> Result<Map<String, Value>, SdkError> {
@@ -427,6 +498,32 @@ mod tests {
         let mut mismatch = golden_input();
         mismatch.execute = vec!["bin/other".to_owned()];
         assert_eq!(PlanV2::new(mismatch), Err(SdkError::PlanShape));
+    }
+
+    #[test]
+    fn standalone_validator_rejects_every_bounded_input_class() {
+        let mut invalid_id = golden_input();
+        invalid_id.id = "Uppercase".to_owned();
+        assert_eq!(PlanV2::new(invalid_id), Err(SdkError::PlanId));
+
+        let mut invalid_text = golden_input();
+        invalid_text.arguments = vec!["nul\0argument".to_owned()];
+        assert_eq!(PlanV2::new(invalid_text), Err(SdkError::PlanField));
+
+        let mut relative_runtime = golden_input();
+        relative_runtime.runtime_read = vec!["relative".to_owned()];
+        assert_eq!(
+            PlanV2::new(relative_runtime),
+            Err(SdkError::PlanRuntimeRead)
+        );
+
+        let mut zero_processes = golden_input();
+        zero_processes.processes = 0;
+        assert_eq!(PlanV2::new(zero_processes), Err(SdkError::PlanLimit));
+
+        let mut unquantized = golden_input();
+        unquantized.memory_bytes += 1;
+        assert_eq!(PlanV2::new(unquantized), Err(SdkError::PlanLimitQuantum));
     }
 
     #[test]

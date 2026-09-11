@@ -37,10 +37,13 @@ different from the command executable, and limits outside the version 2
 quantization and size bounds.
 
 Successful construction returns the exact deterministic-CBOR bytes defined by
-`schemas/execution-plan-v2.cddl` and ADR 0003. Rust reuses the production core
-parser for semantic validation after encoding. Python and TypeScript use
-separate small encoders and must match the checked-in golden vector byte for
-byte. They do not accept or emit the JSON projection as plan input.
+`schemas/execution-plan-v2.cddl` and ADR 0003. Each package owns a bounded
+public-input validator and small encoder and must match the checked-in golden
+vector byte for byte. The Rust crate intentionally has no unpublished Runtime
+crate dependency, so its registry package is independently consumable. The
+production parser remains the execution authority; cross-language attacks
+detect drift between these convenience producers and that contract. The SDKs
+do not accept or emit the JSON projection as plan input.
 
 ## Run-result projection
 

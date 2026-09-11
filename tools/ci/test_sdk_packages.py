@@ -48,7 +48,6 @@ class SdkPackageTests(unittest.TestCase):
             result.stdout.splitlines(),
             [
                 ".cargo_vcs_info.json",
-                ".cargo_vcs_info.json.orig",
                 "Cargo.lock",
                 "Cargo.toml",
                 "Cargo.toml.orig",
