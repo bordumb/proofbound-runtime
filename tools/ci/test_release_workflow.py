@@ -68,6 +68,14 @@ class ReleaseWorkflowTests(unittest.TestCase):
         )
         self.assertIn('sha256sum "$acceptor_name"', builder)
 
+        release_evidence = (
+            REPOSITORY_ROOT / "tools/release/proofbound-release.sh"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            'check --root "$repository_root" --evidence-context "$evidence_context" --fresh --json',
+            release_evidence,
+        )
+
     def test_sdk_packages_are_reproduced_at_the_exact_release_revision(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
         sdk_job = workflow[
