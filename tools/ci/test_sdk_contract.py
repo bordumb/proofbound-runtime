@@ -42,6 +42,17 @@ class SdkContractTests(unittest.TestCase):
         self.assertEqual(typescript["name"], "@proofbound/runtime-sdk")
         self.assertEqual(typescript["version"], "0.2.0")
 
+    def test_required_checks_register_each_sdk_surface(self) -> None:
+        pre_commit = (ROOT / "tools/ci/pre-commit.sh").read_text()
+        ci = (ROOT / "tools/ci/ci.sh").read_text()
+        for command in (
+            "tools.ci.test_sdk_contract tools.ci.test_sdk_packages",
+            "discover -s sdk/python/tests",
+            "node --experimental-strip-types --test sdk/typescript/tests/test.mjs",
+        ):
+            self.assertIn(command, pre_commit)
+            self.assertIn(command, ci)
+
 
 if __name__ == "__main__":
     unittest.main()

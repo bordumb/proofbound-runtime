@@ -16,6 +16,9 @@ python3 -m unittest tools.ci.test_release_workflow
 python3 -m unittest tools.ci.test_acceptance_action
 python3 -m unittest tools.ci.test_acceptance_policy_compiler
 python3 -m unittest tools.ci.test_plan_scaffold_contract
+python3 -m unittest tools.ci.test_sdk_contract tools.ci.test_sdk_packages
+python3 -m unittest discover -s sdk/python/tests
+node --experimental-strip-types --test sdk/typescript/tests/test.mjs
 python3 -m unittest tools.release.test_validate_release_state
 python3 -m unittest tools.ci.test_timing
 python3 -m unittest tools.ci.test_summarize_timings
