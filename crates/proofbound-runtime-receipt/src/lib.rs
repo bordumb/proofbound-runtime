@@ -81,6 +81,60 @@ pub enum ReceiptStructure {
     Malformed,
 }
 
+/// Identifies one terminal cgroup resource event retained by version 2.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum LimitEvent {
+    MemoryHigh,
+    MemoryMax,
+    MemoryOom,
+    MemoryOomKill,
+    MemoryOomGroupKill,
+    SwapMax,
+    SwapFail,
+}
+
+impl LimitEvent {
+    const fn index(self) -> usize {
+        match self {
+            Self::MemoryHigh => 0,
+            Self::MemoryMax => 1,
+            Self::MemoryOom => 2,
+            Self::MemoryOomKill => 3,
+            Self::MemoryOomGroupKill => 4,
+            Self::SwapMax => 5,
+            Self::SwapFail => 6,
+        }
+    }
+}
+
+/// Contains the canonical set of terminal resource events.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct LimitEvents([bool; 7]);
+
+impl LimitEvents {
+    /// Canonicalizes an event collection and removes duplicates.
+    #[must_use]
+    pub fn new(events: &[LimitEvent]) -> Self {
+        let mut present = [false; 7];
+        for event in events {
+            present[event.index()] = true;
+        }
+        Self(present)
+    }
+
+    /// Reports whether the canonical set contains an event.
+    #[must_use]
+    pub const fn contains(self, event: LimitEvent) -> bool {
+        self.0[event.index()]
+    }
+
+    /// Reports whether no registered event occurred.
+    #[must_use]
+    pub fn is_empty(self) -> bool {
+        !self.0.into_iter().any(|present| present)
+    }
+}
+
 /// Contains the facts that determine reuse eligibility.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ReceiptFacts {
@@ -89,6 +143,7 @@ pub struct ReceiptFacts {
     stdout: StreamCapture,
     stderr: StreamCapture,
     structure: ReceiptStructure,
+    limit_events: LimitEvents,
 }
 
 impl ReceiptFacts {
@@ -107,6 +162,27 @@ impl ReceiptFacts {
             stdout,
             stderr,
             structure,
+            limit_events: LimitEvents::default(),
+        }
+    }
+
+    /// Creates one complete version 2 eligibility input.
+    #[must_use]
+    pub fn new_v2(
+        boundary: BoundaryInstallation,
+        outcome: ExecutionOutcome,
+        stdout: StreamCapture,
+        stderr: StreamCapture,
+        structure: ReceiptStructure,
+        limit_events: LimitEvents,
+    ) -> Self {
+        Self {
+            boundary,
+            outcome,
+            stdout,
+            stderr,
+            structure,
+            limit_events,
         }
     }
 }
@@ -134,6 +210,13 @@ pub enum NonReusableReason {
     StandardErrorTruncated,
     /// Receipt structure validation failed.
     ReceiptMalformed,
+    MemoryHigh,
+    MemoryMax,
+    MemoryOom,
+    MemoryOomKill,
+    MemoryOomGroupKill,
+    SwapMax,
+    SwapFail,
 }
 
 /// Contains one or more reasons in canonical order.
@@ -186,6 +269,22 @@ pub fn derive_receipt_eligibility(facts: &ReceiptFacts) -> ReceiptEligibility {
     }
     if facts.structure == ReceiptStructure::Malformed {
         reasons.push(NonReusableReason::ReceiptMalformed);
+    }
+    for (event, reason) in [
+        (LimitEvent::MemoryHigh, NonReusableReason::MemoryHigh),
+        (LimitEvent::MemoryMax, NonReusableReason::MemoryMax),
+        (LimitEvent::MemoryOom, NonReusableReason::MemoryOom),
+        (LimitEvent::MemoryOomKill, NonReusableReason::MemoryOomKill),
+        (
+            LimitEvent::MemoryOomGroupKill,
+            NonReusableReason::MemoryOomGroupKill,
+        ),
+        (LimitEvent::SwapMax, NonReusableReason::SwapMax),
+        (LimitEvent::SwapFail, NonReusableReason::SwapFail),
+    ] {
+        if facts.limit_events.contains(event) {
+            reasons.push(reason);
+        }
     }
 
     if reasons.is_empty() {
