@@ -83,6 +83,19 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn('execution-receipt.cbor', observation)
         self.assertNotIn('execution-receipt.json', observation)
 
+    def test_contextual_release_evidence_uses_the_v2_receipt_carrier(self) -> None:
+        evidence_root = REPOSITORY_ROOT / "proofbound" / "evidence"
+        manifests = sorted(evidence_root.glob("release-observe-*.toml"))
+        self.assertTrue(manifests)
+        receipt_consumers = 0
+        for manifest in manifests:
+            source = manifest.read_text(encoding="utf-8")
+            with self.subTest(manifest=manifest.name):
+                self.assertNotIn("execution-receipt.json", source)
+                if "execution-receipt.cbor" in source:
+                    receipt_consumers += 1
+        self.assertEqual(receipt_consumers, 6)
+
 
 if __name__ == "__main__":
     unittest.main()
