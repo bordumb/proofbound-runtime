@@ -1,14 +1,14 @@
 # PBF-0002: Lean theorem identity update
 
-- **Status:** `proposed`
+- **Status:** `upstream-review`
 - **Priority:** `near-term`
 - **Kind:** `workflow`
 - **Created:** 2026-09-04
-- **Last updated:** 2026-09-09
+- **Last updated:** 2026-09-11
 - **Runtime claim:** `PBR-AUTH-001`
 - **Runtime milestone:** Milestone 1
 - **Proofbound target:** CLI and Lean adapter
-- **Upstream record:** not upstreamed
+- **Upstream record:** [Proofbound PR 9](https://github.com/bordumb/proof-bound/pull/9), commit `d935913`
 - **Supersedes:** none
 - **Superseded by:** none
 
@@ -110,9 +110,11 @@ policy, or any attempted write outside the declared manifest.
 
 ## Compatibility and migration
 
-The behavior can be additive to the existing claim and evidence schemas. Older
-projects remain valid. Updating a pin must always produce a reviewable manifest
-diff and must never reinterpret an existing receipt.
+The claim and evidence schemas are unchanged. The internal Lean adapter request
+advances to version 2 so the orchestrator can bind its already observed Git
+revision and tree state without exposing repository metadata to the sealed
+update tree. Older projects remain valid. Updating a pin must always produce a
+reviewable manifest diff and must never reinterpret an existing receipt.
 
 ## Local treatment
 
@@ -123,18 +125,24 @@ identities for all four source-refined Runtime claims, including
 `PBR-AUTH-001`; their version 0.1 receipts record source refinement and
 contextual exact-artifact binding under visible toolchain assumptions.
 
-The workaround still requires a maintainer to construct the patch outside the
-sealed update operation. It does not make `proofbound update` capable of
-preparing those identities, and it does not admit a changed theorem until the
-subsequent verify-only run succeeds.
+Proofbound PR 9 replaces the manual workaround with the sealed update path. A
+disposable upstream acceptance run removed all four fields from
+`PBAC-SUM-001`, committed that state, ran `proofbound update
+pbac-sum-theorem`, and observed a diff containing only the four identity
+fields at the one reported manifest path. After committing that reviewed diff,
+a fresh full claim check returned `PROVED · ARTIFACT_BOUND · ADMITTED`, with
+all four units `verified-now`. Runtime must keep the local workaround until it
+can pin a reviewed upstream release containing this change.
 
 ## Upstream handoff
 
-- **Destination:** not upstreamed
+- **Destination:** [Proofbound PR 9](https://github.com/bordumb/proof-bound/pull/9)
 - **Issue:** none
-- **Specification or ADR:** none
-- **Commit or pull request:** none
+- **Specification or ADR:** upstream proposed ADR 0025
+- **Commit or pull request:** `d935913` / [PR 9](https://github.com/bordumb/proof-bound/pull/9)
 
 ## Resolution
 
-Unresolved.
+Implemented with focused attack tests and a real update-then-verify acceptance
+run. Pending independent upstream review and merge; this record must not be
+marked resolved before that gate.
