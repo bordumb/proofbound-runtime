@@ -9,10 +9,10 @@ use proofbound_runtime_core::{
     Architecture as ReceiptArchitecture, ArtifactIdentity, ArtifactRole, BoundaryRecord,
     EnvironmentName, ExecutionObservations, ExecutionOutcome, ExecutionPlan, ExecutionReceipt,
     ExecutionReceiptParts, FileAccess, FileMode, PathRole, PlatformIdentity,
-    REQUIRED_RUNTIME_ASSUMPTIONS, ReceiptCommand, ReceiptError, ReceiptPlan, ReceiptPolicy,
-    ReceiptStreams, ResourceLimits, RuntimeIdentity, Sha256Digest, TrustedComputingBaseEntry,
-    TrustedComputingBaseRole, compile_policy, normalize_authority,
-    parse_execution_plan_for_execution,
+    REQUIRED_RUNTIME_ASSUMPTIONS, ReceiptCommand, ReceiptError, ReceiptMemoryEvents, ReceiptPlan,
+    ReceiptPolicy, ReceiptResources, ReceiptStreams, ReceiptSwapEvents, ResourceLimits,
+    RuntimeIdentity, Sha256Digest, TrustedComputingBaseEntry, TrustedComputingBaseRole,
+    compile_policy, normalize_authority, parse_execution_plan_for_execution,
 };
 use proofbound_runtime_linux::{
     Architecture, CgroupError, ExecutionSetupError, FreshCgroup, FreshOutputRoot, InstallRequest,
@@ -821,6 +821,30 @@ fn build_receipt(input: ReceiptInputs<'_>) -> Result<ExecutionReceipt, RunError>
         RunRule::ReceiptConstructed,
     )?;
     let trusted_computing_base = trusted_computing_base(&input)?;
+    let terminal = input.execution.resources().ok_or_else(|| {
+        RunError::receipt(
+            RunPhase::ReceiptConstruction,
+            RunRule::ReceiptConstructed,
+            "receipt.resources.incomplete",
+        )
+    })?;
+    let memory = terminal.memory_events();
+    let swap = terminal.swap_events();
+    let resources = ReceiptResources::new(
+        input.plan.authority().limits(),
+        terminal.memory_peak_bytes(),
+        terminal.swap_peak_bytes(),
+        ReceiptMemoryEvents::new(
+            memory.low(),
+            memory.high(),
+            memory.max(),
+            memory.oom(),
+            memory.oom_kill(),
+            memory.oom_group_kill(),
+        ),
+        ReceiptSwapEvents::new(swap.max(), swap.fail()),
+    )
+    .map_err(map_receipt_construction)?;
     let receipt = proofbound_runtime_core::construct_execution_receipt(ExecutionReceiptParts {
         execution_id: input.execution_id,
         plan: ReceiptPlan::new(
@@ -872,6 +896,7 @@ fn build_receipt(input: ReceiptInputs<'_>) -> Result<ExecutionReceipt, RunError>
         )
         .map_err(map_receipt_construction)?,
         outcome: input.execution.outcome(),
+        resources: Some(resources),
         outputs: input.outputs,
         producer: input.runtime_identity,
         assumptions: REQUIRED_RUNTIME_ASSUMPTIONS

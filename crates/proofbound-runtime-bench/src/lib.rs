@@ -1049,6 +1049,7 @@ fn receipt_parts_v1() -> Result<ExecutionReceiptParts, BenchmarkError> {
         )
         .map_err(|_| BenchmarkError::SubjectFailed)?,
         outcome: ExecutionOutcome::Exited { code: 0 },
+        resources: None,
         outputs: vec![artifact_v1(ArtifactRole::OutputArtifact, 19)?],
         producer: runtime,
         assumptions: proofbound_runtime_core::REQUIRED_RUNTIME_ASSUMPTIONS

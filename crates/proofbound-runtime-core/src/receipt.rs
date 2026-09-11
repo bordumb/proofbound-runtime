@@ -13,7 +13,7 @@ pub use proofbound_runtime_receipt::{
 
 use crate::{
     ArtifactIdentity, ArtifactRole, EnvironmentName, ErrorClass, ExecutionOutcome, MachineError,
-    PlanId, Sha256Digest,
+    MemoryByteLimit, PlanId, ProcessLimit, ResourceLimits, Sha256Digest, SwapByteLimit,
 };
 
 /// The only execution-receipt schema emitted by version 1.
@@ -297,6 +297,178 @@ pub struct ExecutionObservations {
     finished_ns: u64,
 }
 
+/// Contains the checked terminal deltas from `memory.events.local`.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ReceiptMemoryEvents {
+    low: u64,
+    high: u64,
+    max: u64,
+    oom: u64,
+    oom_kill: u64,
+    oom_group_kill: u64,
+}
+
+impl ReceiptMemoryEvents {
+    /// Creates the complete closed memory-event counter set.
+    #[must_use]
+    pub const fn new(
+        low: u64,
+        high: u64,
+        max: u64,
+        oom: u64,
+        oom_kill: u64,
+        oom_group_kill: u64,
+    ) -> Self {
+        Self {
+            low,
+            high,
+            max,
+            oom,
+            oom_kill,
+            oom_group_kill,
+        }
+    }
+
+    #[must_use]
+    pub const fn low(self) -> u64 {
+        self.low
+    }
+    #[must_use]
+    pub const fn high(self) -> u64 {
+        self.high
+    }
+    #[must_use]
+    pub const fn max(self) -> u64 {
+        self.max
+    }
+    #[must_use]
+    pub const fn oom(self) -> u64 {
+        self.oom
+    }
+    #[must_use]
+    pub const fn oom_kill(self) -> u64 {
+        self.oom_kill
+    }
+    #[must_use]
+    pub const fn oom_group_kill(self) -> u64 {
+        self.oom_group_kill
+    }
+}
+
+/// Contains the checked terminal deltas from `memory.swap.events`.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ReceiptSwapEvents {
+    max: u64,
+    fail: u64,
+}
+
+impl ReceiptSwapEvents {
+    /// Creates the complete closed swap-event counter set.
+    #[must_use]
+    pub const fn new(max: u64, fail: u64) -> Self {
+        Self { max, fail }
+    }
+    #[must_use]
+    pub const fn max(self) -> u64 {
+        self.max
+    }
+    #[must_use]
+    pub const fn fail(self) -> u64 {
+        self.fail
+    }
+}
+
+/// Contains exact configured limits and terminal observations for version 2.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ReceiptResources {
+    processes: ProcessLimit,
+    memory: MemoryByteLimit,
+    swap: SwapByteLimit,
+    memory_peak_bytes: u64,
+    swap_peak_bytes: u64,
+    memory_events: ReceiptMemoryEvents,
+    swap_events: ReceiptSwapEvents,
+    limit_events: LimitEvents,
+}
+
+impl ReceiptResources {
+    /// Validates a complete v2 limit profile and derives its event set.
+    pub fn new(
+        limits: ResourceLimits,
+        memory_peak_bytes: u64,
+        swap_peak_bytes: u64,
+        memory_events: ReceiptMemoryEvents,
+        swap_events: ReceiptSwapEvents,
+    ) -> Result<Self, ReceiptError> {
+        let memory = limits
+            .memory()
+            .ok_or(ReceiptError::ResourceProfileIncomplete)?;
+        let swap = limits
+            .swap()
+            .ok_or(ReceiptError::ResourceProfileIncomplete)?;
+        let mut events = Vec::new();
+        for (present, event) in [
+            (memory_events.high != 0, LimitEvent::MemoryHigh),
+            (memory_events.max != 0, LimitEvent::MemoryMax),
+            (memory_events.oom != 0, LimitEvent::MemoryOom),
+            (memory_events.oom_kill != 0, LimitEvent::MemoryOomKill),
+            (
+                memory_events.oom_group_kill != 0,
+                LimitEvent::MemoryOomGroupKill,
+            ),
+            (swap_events.max != 0, LimitEvent::SwapMax),
+            (swap_events.fail != 0, LimitEvent::SwapFail),
+        ] {
+            if present {
+                events.push(event);
+            }
+        }
+        Ok(Self {
+            processes: limits.processes(),
+            memory,
+            swap,
+            memory_peak_bytes,
+            swap_peak_bytes,
+            memory_events,
+            swap_events,
+            limit_events: LimitEvents::new(&events),
+        })
+    }
+
+    #[must_use]
+    pub const fn processes(self) -> ProcessLimit {
+        self.processes
+    }
+    #[must_use]
+    pub const fn memory(self) -> MemoryByteLimit {
+        self.memory
+    }
+    #[must_use]
+    pub const fn swap(self) -> SwapByteLimit {
+        self.swap
+    }
+    #[must_use]
+    pub const fn memory_peak_bytes(self) -> u64 {
+        self.memory_peak_bytes
+    }
+    #[must_use]
+    pub const fn swap_peak_bytes(self) -> u64 {
+        self.swap_peak_bytes
+    }
+    #[must_use]
+    pub const fn memory_events(self) -> ReceiptMemoryEvents {
+        self.memory_events
+    }
+    #[must_use]
+    pub const fn swap_events(self) -> ReceiptSwapEvents {
+        self.swap_events
+    }
+    #[must_use]
+    pub const fn limit_events(self) -> LimitEvents {
+        self.limit_events
+    }
+}
+
 impl ExecutionObservations {
     /// Rejects a finish observation that precedes the start observation.
     pub const fn new(started_ns: u64, finished_ns: u64) -> Result<Self, ReceiptError> {
@@ -480,6 +652,8 @@ pub struct ExecutionReceiptParts {
     pub streams: ReceiptStreams,
     /// Observed execution outcome.
     pub outcome: ExecutionOutcome,
+    /// Exact version 2 configured and terminal resource facts; absent for v1.
+    pub resources: Option<ReceiptResources>,
     /// Produced output identities.
     pub outputs: Vec<ArtifactIdentity>,
     /// Identity of the receipt producer.
@@ -561,13 +735,23 @@ impl ExecutionReceipt {
             }
         }
         require_tcb_roles(&parts)?;
-        let facts = ReceiptFacts::new(
-            parts.boundary.state,
-            parts.outcome,
-            parts.streams.stdout.capture,
-            parts.streams.stderr.capture,
-            ReceiptStructure::Valid,
-        );
+        let facts = match parts.resources {
+            Some(resources) => ReceiptFacts::new_v2(
+                parts.boundary.state,
+                parts.outcome,
+                parts.streams.stdout.capture,
+                parts.streams.stderr.capture,
+                ReceiptStructure::Valid,
+                resources.limit_events,
+            ),
+            None => ReceiptFacts::new(
+                parts.boundary.state,
+                parts.outcome,
+                parts.streams.stdout.capture,
+                parts.streams.stderr.capture,
+                ReceiptStructure::Valid,
+            ),
+        };
         let eligibility = derive_receipt_eligibility(&facts);
 
         Ok(Self {
@@ -1038,6 +1222,8 @@ pub enum ReceiptError {
     TrustedComputingBaseEmpty,
     /// A registered runtime assumption is absent.
     AssumptionMissing,
+    /// Version 2 receipt resources were built from a legacy limit profile.
+    ResourceProfileIncomplete,
     /// A required trusted-computing-base role is absent.
     TrustedComputingBaseRoleMissing,
     /// Canonical JSON encoding failed.
@@ -1067,6 +1253,7 @@ impl ReceiptError {
             Self::ObservationOrder => "receipt.observation.order",
             Self::TrustedComputingBaseEmpty => "receipt.tcb.empty",
             Self::AssumptionMissing => "receipt.assumption.missing",
+            Self::ResourceProfileIncomplete => "receipt.resources.incomplete",
             Self::TrustedComputingBaseRoleMissing => "receipt.tcb.role.missing",
             Self::CanonicalEncoding => "receipt.canonical.encoding-failed",
         }
@@ -1203,7 +1390,7 @@ fn require_tcb_role(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::FileMode;
+    use crate::{FileMode, OutputByteLimit, WallTimeLimit};
 
     fn artifact(role: ArtifactRole, marker: u8) -> ArtifactIdentity {
         ArtifactIdentity::new(
@@ -1280,6 +1467,7 @@ mod tests {
             )
             .expect("fixture stream roles are valid"),
             outcome: ExecutionOutcome::Exited { code: 0 },
+            resources: None,
             outputs: vec![artifact(ArtifactRole::OutputArtifact, 19)],
             producer: runtime,
             assumptions: REQUIRED_RUNTIME_ASSUMPTIONS

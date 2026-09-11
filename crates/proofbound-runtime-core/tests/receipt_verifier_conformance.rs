@@ -103,6 +103,7 @@ fn parts(outcome: ExecutionOutcome) -> ExecutionReceiptParts {
         )
         .expect("fixture stream roles are valid"),
         outcome,
+        resources: None,
         outputs: vec![artifact(ArtifactRole::OutputArtifact, 19)],
         producer: runtime,
         assumptions: REQUIRED_RUNTIME_ASSUMPTIONS
