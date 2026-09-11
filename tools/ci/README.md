@@ -13,7 +13,7 @@ and hosted CI.
 | `policy-refinement.sh` | Compile the generated policy translation and handwritten refinement modules. |
 | `receipt-refinement.sh` | Compile the generated receipt translation and handwritten refinement modules. |
 | `manifests.sh` | Compile Proofbound manifests and derive current claim status. |
-| `pre-commit.sh` | Run the fast metadata, documentation, formatting, and manifest checks. |
+| `pre-commit.sh` | Run the fast metadata, documentation, fixture, formatting, lint, and workspace-test checks. |
 | `ci.sh` | Run the complete current repository gate in a fixed order. |
 | `../release/build-linux.sh` | Build a native Linux release bundle twice and require byte equality. |
 | `../release/observation_inputs.py` | Build the closed external byte-input manifest for one native release context. |
@@ -44,6 +44,10 @@ Install the optional local pre-commit hook with:
 ```console
 just hooks
 ```
+
+The fast hook deliberately excludes Lean refinement and fresh Proofbound/Kani
+evidence. Run `just ci` once at each completed claim-wave head; that complete
+gate retains every formal and fresh-evidence requirement.
 
 The scripts must not fetch dependencies or update committed files. Bootstrap
 and dependency installation are separate operations. CI installs exact tool

@@ -83,5 +83,4 @@ cargo metadata --locked --offline --format-version 1 >/dev/null
 cargo check --workspace --all-targets --locked --offline
 cargo clippy --workspace --all-targets --locked --offline -- -D warnings
 cargo test --workspace --locked --offline
-bash tools/ci/manifests.sh
 git diff --cached --check

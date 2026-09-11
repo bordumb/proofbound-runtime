@@ -613,7 +613,7 @@ directory, ambient credentials, user configuration, or network access.
 | `.github/workflows/release.yml` | Reproducible release build, Proofbound update, receipt verification, and publication. |
 | `tools/ci/README.md` | CI-tool ownership, local usage, and extension rules. |
 | `tools/ci/ci.sh` | Ordered coordinator for the complete current repository gate. |
-| `tools/ci/pre-commit.sh` | Fast local metadata, documentation, formatting, and manifest checks. |
+| `tools/ci/pre-commit.sh` | Fast local metadata, documentation, fixture, formatting, lint, and workspace-test checks; fresh formal evidence remains in `just ci`. |
 | `tools/ci/version.py` | Product and workspace version consistency check. |
 | `tools/ci/changelog.py` | Changelog structure and release-version check. |
 | `tools/ci/documentation.py` | Text hygiene, local-link, fence, and feedback-index checks. |
