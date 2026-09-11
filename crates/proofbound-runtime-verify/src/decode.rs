@@ -84,6 +84,29 @@ pub struct ReceiptCompositionFacts {
     pub version_two: bool,
 }
 
+/// Closed, verifier-decoded execution facts used by an adopter acceptance
+/// policy. These values come from the strict receipt codec, never from the
+/// JSON inspection projection.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ReceiptAcceptanceFacts {
+    pub schema: String,
+    pub runtime_version: String,
+    pub execution_id: String,
+    pub plan_id: String,
+    pub operating_system: String,
+    pub architecture: &'static str,
+    pub executable: CompositionArtifact,
+    pub policy_sha256: String,
+    pub policy_model_version: String,
+    pub pids_max: u32,
+    pub memory_max: u64,
+    pub memory_oom_group: u8,
+    pub memory_swap_max: u64,
+    pub reusable: bool,
+    pub assumptions: Vec<String>,
+    pub tcb_roles: Vec<String>,
+}
+
 /// Contains one independently decoded version 1 receipt.
 #[derive(Clone, Debug, PartialEq)]
 pub struct DecodedReceipt {
@@ -143,6 +166,39 @@ impl DecodedReceipt {
                 .collect(),
             version_two: self.version_two,
         }
+    }
+
+    /// Projects the closed version 2 fields required by acceptance policy.
+    /// Version 1 receipts predate the acceptance contract and return `None`.
+    #[must_use]
+    pub fn acceptance_facts(&self) -> Option<ReceiptAcceptanceFacts> {
+        let resources = self.resources.as_ref()?;
+        Some(ReceiptAcceptanceFacts {
+            schema: self.wire.schema.clone(),
+            runtime_version: self.wire.product_version.clone(),
+            execution_id: self.wire.execution_id.clone(),
+            plan_id: self.wire.plan.id.clone(),
+            operating_system: self.wire.platform.operating_system.clone(),
+            architecture: match self.wire.platform.architecture {
+                WireArchitecture::X86_64 => "x86_64",
+                WireArchitecture::Aarch64 => "aarch64",
+            },
+            executable: composition_artifact(&self.wire.command.executable),
+            policy_sha256: self.wire.boundary.policy_sha256.clone(),
+            policy_model_version: self.wire.policy.model_version.clone(),
+            pids_max: resources.processes,
+            memory_max: resources.memory,
+            memory_oom_group: 1,
+            memory_swap_max: resources.swap,
+            reusable: matches!(self.recorded_eligibility, RecordedEligibility::Reusable),
+            assumptions: self.wire.assumptions.clone(),
+            tcb_roles: self
+                .wire
+                .trusted_computing_base
+                .iter()
+                .map(|entry| entry.role.clone())
+                .collect(),
+        })
     }
 
     pub(crate) const fn is_version_two(&self) -> bool {

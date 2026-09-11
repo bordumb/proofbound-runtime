@@ -19,8 +19,8 @@ mod test_support;
 pub use canonical::{CanonicalError, validate_canonical_receipt};
 pub use commitment::{CommitmentError, ReceiptCommitment};
 pub use decode::{
-    CompositionArtifact, CompositionTcbEntry, DecodeError, DecodedReceipt, ReceiptCompositionFacts,
-    RecordedEligibility, decode_receipt,
+    CompositionArtifact, CompositionTcbEntry, DecodeError, DecodedReceipt, ReceiptAcceptanceFacts,
+    ReceiptCompositionFacts, RecordedEligibility, decode_receipt,
 };
 pub use derive::{
     BoundaryState, CaptureState, EligibilityDecision, EligibilityInput, FailureReason,

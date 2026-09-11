@@ -51,6 +51,35 @@ pub struct CompositionInputs<'a> {
     pub expected_execution_id: &'a str,
 }
 
+/// One exact Proofbound claim-facet tuple available to adopter policy.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct AcceptanceClaimFacts {
+    pub claim_id: String,
+    pub formal: String,
+    pub linkage: String,
+    pub assumption: String,
+    pub policy_admitted: bool,
+}
+
+/// Closed release and composition facts made available to adopter policy.
+/// These are decoded from canonical composed bytes, not from the JSON display
+/// projection.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ReleaseAcceptanceFacts {
+    pub composition_id: String,
+    pub project: String,
+    pub project_revision: String,
+    pub payload_sha256: String,
+    pub evidence_context: String,
+    pub runtime_bundle_version: String,
+    pub runtime_bundle_architecture: String,
+    pub claims: Vec<AcceptanceClaimFacts>,
+    pub assumptions: Vec<String>,
+    pub exclusions: Vec<String>,
+    pub open_obligations: Vec<String>,
+    pub tcb_roles: Vec<String>,
+}
+
 /// One fail-closed composition failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CompositionError {
@@ -590,6 +619,51 @@ pub fn project_composed_receipt(bytes: &[u8]) -> Result<Value, CompositionError>
         }
         Ok(value)
     }
+}
+
+/// Decodes the narrow typed facts needed by acceptance policy from canonical
+/// composed bytes. Callers must first create or independently verify the
+/// composition against its raw inputs; this function never accepts a JSON
+/// projection as evidence.
+pub fn decode_release_acceptance_facts(
+    bytes: &[u8],
+) -> Result<ReleaseAcceptanceFacts, CompositionError> {
+    let receipt = parse_composed_receipt(bytes)?;
+    if receipt.schema != COMPOSITION_SCHEMA_V2 {
+        return Err(CompositionError::SchemaInvalid);
+    }
+    Ok(ReleaseAcceptanceFacts {
+        composition_id: receipt.composition_id,
+        project: receipt.release.project,
+        project_revision: receipt.release.project_revision,
+        payload_sha256: receipt.release.payload_sha256,
+        evidence_context: receipt.release.evidence_context,
+        runtime_bundle_version: receipt.runtime_bundle.version,
+        runtime_bundle_architecture: receipt.runtime_bundle.architecture,
+        claims: receipt
+            .claims
+            .into_iter()
+            .map(|claim| AcceptanceClaimFacts {
+                claim_id: claim.claim_id,
+                formal: claim.formal,
+                linkage: claim.linkage,
+                assumption: claim.assumption,
+                policy_admitted: claim.policy_admitted,
+            })
+            .collect(),
+        assumptions: receipt
+            .assumptions
+            .into_iter()
+            .map(|entry| entry.id)
+            .collect(),
+        exclusions: receipt.not_proved_out_of_scope.exclusions,
+        open_obligations: receipt.not_proved_out_of_scope.open_obligations,
+        tcb_roles: receipt
+            .trusted_computing_base
+            .into_iter()
+            .map(|entry| entry.role)
+            .collect(),
+    })
 }
 
 fn parse_composed_receipt(bytes: &[u8]) -> Result<ComposedReceipt, CompositionError> {

@@ -104,6 +104,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "proofbound-runtime-accept"
+version = "0.2.0"
+dependencies = [
+ "proofbound-runtime-compose",
+ "proofbound-runtime-verify",
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "proofbound-runtime-bench"
 version = "0.2.0"
 dependencies = [

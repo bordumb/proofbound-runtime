@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+  "crates/proofbound-runtime-accept",
   "crates/proofbound-runtime-binding",
   "crates/proofbound-runtime-core",
   "crates/proofbound-runtime-cli",
@@ -24,6 +25,8 @@ publish = false
 [workspace.dependencies]
 libc = "=0.2.189"
 proofbound-runtime-binding = { path = "crates/proofbound-runtime-binding" }
+proofbound-runtime-accept = { path = "crates/proofbound-runtime-accept" }
+proofbound-runtime-compose = { path = "crates/proofbound-runtime-compose" }
 proofbound-runtime-core = { path = "crates/proofbound-runtime-core" }
 proofbound-runtime-linux = { path = "crates/proofbound-runtime-linux" }
 proofbound-runtime-verify = { path = "crates/proofbound-runtime-verify" }
