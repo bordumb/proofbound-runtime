@@ -107,6 +107,7 @@ class PureBenchmarkVerifierTests(unittest.TestCase):
         return verify_result(
             encode(self.value if value is None else value),
             SOURCE,
+            "x86_64",
             self.executable,
             self.plan_fixture,
             self.receipt_fixture,
@@ -118,6 +119,7 @@ class PureBenchmarkVerifierTests(unittest.TestCase):
         report = verify_result(
             raw,
             SOURCE,
+            "x86_64",
             self.executable,
             self.plan_fixture,
             self.receipt_fixture,
@@ -144,6 +146,7 @@ class PureBenchmarkVerifierTests(unittest.TestCase):
                 verify_result(
                     raw,
                     SOURCE,
+                    "x86_64",
                     self.executable,
                     self.plan_fixture,
                     self.receipt_fixture,
@@ -162,6 +165,10 @@ class PureBenchmarkVerifierTests(unittest.TestCase):
         fixture = copy.deepcopy(self.value)
         fixture["subjects"][0]["fixture_sha256"] = "b" * 64
         cases.append((fixture, "benchmark.verify.fixture-mismatch"))
+        architecture = copy.deepcopy(self.value)
+        architecture["architecture"] = "aarch64"
+        architecture["toolchain"]["target"] = "aarch64-unknown-linux-gnu"
+        cases.append((architecture, "benchmark.verify.architecture-mismatch"))
         for value, code in cases:
             with self.subTest(code=code), self.assertRaises(VerificationFailure) as caught:
                 self.verify(value)
@@ -192,6 +199,8 @@ class PureBenchmarkVerifierTests(unittest.TestCase):
                     str(result),
                     "--expected-source",
                     SOURCE,
+                    "--expected-architecture",
+                    "x86_64",
                     "--benchmark-executable",
                     str(self.executable),
                     "--plan-fixture",

@@ -38,6 +38,7 @@ class PerformanceWorkflowTests(unittest.TestCase):
             workflow,
         )
         self.assertIn("experiments/performance/verify_pure.py", workflow)
+        self.assertIn('--expected-architecture "${{ matrix.architecture }}"', workflow)
         self.assertIn("--plan-fixture tests/conformance/plan/positive/minimal-v1.toml", workflow)
         self.assertIn(
             "--receipt-fixture experiments/performance/fixtures/reusable-receipt-v1.json",
