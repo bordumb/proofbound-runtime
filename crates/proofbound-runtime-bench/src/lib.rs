@@ -3,9 +3,13 @@
 //! Produces operational Runtime performance metadata outside the assurance
 //! evidence boundary.
 
+mod composition_fixture;
+
 use core::fmt;
 use std::time::Instant;
 
+use composition_fixture::CompositionFixture;
+use proofbound_runtime_compose::compose;
 use proofbound_runtime_core::{
     Architecture, ArtifactIdentity, ArtifactRole, BoundaryInstallation, BoundaryRecord,
     CgroupIdentity, EnvironmentName, ExecutionId, ExecutionObservations, ExecutionOutcome,
@@ -162,15 +166,19 @@ pub enum PureSubject {
     /// Independent version 1 receipt verification from exact raw bytes.
     #[serde(rename = "receipt-independent-verification-v1")]
     ReceiptIndependentVerificationV1,
+    /// Version 1 release-and-execution receipt composition.
+    #[serde(rename = "release-execution-composition-v1")]
+    ReleaseExecutionCompositionV1,
 }
 
-const PURE_SUBJECT_DOMAIN: [PureSubject; 6] = [
+const PURE_SUBJECT_DOMAIN: [PureSubject; 7] = [
     PureSubject::PlanParseV1,
     PureSubject::AuthorityNormalizationV1,
     PureSubject::PolicyCompilationV1,
     PureSubject::ReceiptConstructionV1,
     PureSubject::ReceiptCanonicalEncodingV1,
     PureSubject::ReceiptIndependentVerificationV1,
+    PureSubject::ReleaseExecutionCompositionV1,
 ];
 
 /// One pure subject, exact fixture identity, and calibrated measurement.
@@ -433,6 +441,11 @@ pub fn benchmark_core_v1(
     let receipt_fixture_digest: [u8; 32] = Sha256::digest(RECEIPT_FIXTURE).into();
     let receipt_fixture_sha256 = Sha256Digest::from_bytes(receipt_fixture_digest).to_hex();
     let receipt_commitment = ReceiptCommitment::for_bytes(&receipt_bytes);
+    let composition_fixture = CompositionFixture::new();
+    compose(&composition_fixture.inputs()).map_err(|_| BenchmarkError::SubjectFailed)?;
+    let composition_fixture_digest: [u8; 32] =
+        Sha256::digest(include_bytes!("composition_fixture.rs")).into();
+    let composition_fixture_sha256 = Sha256Digest::from_bytes(composition_fixture_digest).to_hex();
 
     let plan_parse = measure(config, || {
         parse_execution_plan(std::hint::black_box(PLAN_FIXTURE))
@@ -474,6 +487,11 @@ pub fn benchmark_core_v1(
         )
         .expect("prevalidated receipt fixture remains independently verifiable")
     })?;
+    let composition = measure_prepared(
+        config,
+        |count| (0..count).map(|_| composition_fixture.inputs()).collect(),
+        |inputs| compose(&inputs).expect("prevalidated composition fixture remains valid"),
+    )?;
 
     [
         (PureSubject::PlanParseV1, fixture_sha256.clone(), plan_parse),
@@ -501,6 +519,11 @@ pub fn benchmark_core_v1(
             PureSubject::ReceiptIndependentVerificationV1,
             receipt_fixture_sha256,
             receipt_verification,
+        ),
+        (
+            PureSubject::ReleaseExecutionCompositionV1,
+            composition_fixture_sha256,
+            composition,
         ),
     ]
     .into_iter()
@@ -1018,6 +1041,7 @@ mod tests {
                 fixed_subject(PureSubject::AuthorityNormalizationV1, '2'),
                 fixed_subject(PureSubject::ReceiptConstructionV1, '4'),
                 fixed_subject(PureSubject::ReceiptIndependentVerificationV1, '6'),
+                fixed_subject(PureSubject::ReleaseExecutionCompositionV1, '7'),
             ],
         )
         .expect("complete result is valid");
@@ -1035,6 +1059,7 @@ mod tests {
                 PureSubject::ReceiptConstructionV1,
                 PureSubject::ReceiptCanonicalEncodingV1,
                 PureSubject::ReceiptIndependentVerificationV1,
+                PureSubject::ReleaseExecutionCompositionV1,
             ]
         );
         let first = result.to_json().expect("result encodes");
@@ -1127,6 +1152,7 @@ mod tests {
             fixed_subject(PureSubject::ReceiptConstructionV1, '4'),
             fixed_subject(PureSubject::ReceiptCanonicalEncodingV1, '5'),
             fixed_subject(PureSubject::ReceiptIndependentVerificationV1, '6'),
+            fixed_subject(PureSubject::ReleaseExecutionCompositionV1, '7'),
         ];
         assert_eq!(
             make(
@@ -1171,11 +1197,13 @@ mod tests {
                 == "80194be084f9749fe47bc5feb1ac737d8e793b67230b0590abc2d2948881aa4a"
         }));
         assert_eq!(subjects[3].fixture_sha256(), subjects[4].fixture_sha256());
+        assert_eq!(subjects[4].fixture_sha256(), subjects[5].fixture_sha256());
         assert_eq!(
             subjects[3].fixture_sha256(),
             "783e5cb442aa12eadccdccc2082ea3a389f55732092a5597c904fb4faba936de"
         );
         assert_ne!(subjects[3].fixture_sha256(), subjects[0].fixture_sha256());
+        assert_ne!(subjects[6].fixture_sha256(), subjects[3].fixture_sha256());
         assert!(subjects.iter().all(|subject| {
             subject.measurement().summary.count == 2 && subject.measurement().batch_count >= 1
         }));

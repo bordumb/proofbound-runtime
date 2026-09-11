@@ -8,6 +8,7 @@ rust-version.workspace = true
 publish.workspace = true
 
 [dependencies]
+proofbound-runtime-compose = { path = "../proofbound-runtime-compose" }
 proofbound-runtime-core.workspace = true
 proofbound-runtime-verify = { path = "../proofbound-runtime-verify" }
 serde.workspace = true

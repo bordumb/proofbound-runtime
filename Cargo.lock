@@ -107,6 +107,7 @@ dependencies = [
 name = "proofbound-runtime-bench"
 version = "0.1.0"
 dependencies = [
+ "proofbound-runtime-compose",
  "proofbound-runtime-core",
  "proofbound-runtime-verify",
  "serde",

@@ -18,9 +18,10 @@ SUBJECTS = (
     "receipt-construction-v1",
     "receipt-canonical-encoding-v1",
     "receipt-independent-verification-v1",
+    "release-execution-composition-v1",
 )
 PLAN_SUBJECTS = frozenset(SUBJECTS[:3])
-RECEIPT_SUBJECTS = frozenset(SUBJECTS[3:])
+RECEIPT_SUBJECTS = frozenset(SUBJECTS[3:6])
 TOP_LEVEL_KEYS = {
     "schema",
     "kind",
@@ -155,6 +156,7 @@ def verify_result(
     benchmark_executable: Path,
     plan_fixture: Path,
     receipt_fixture: Path,
+    composition_fixture: Path,
 ) -> dict[str, object]:
     """Verifies a raw result against separately supplied exact identities."""
 
@@ -214,6 +216,7 @@ def verify_result(
     try:
         plan_fixture_identity = digest_path(plan_fixture)
         receipt_fixture_identity = digest_path(receipt_fixture)
+        composition_fixture_identity = digest_path(composition_fixture)
     except OSError:
         fail("benchmark.verify.fixture-mismatch")
     for subject_value in subjects_value:
@@ -225,6 +228,8 @@ def verify_result(
             plan_fixture_identity
             if subject_name in PLAN_SUBJECTS
             else receipt_fixture_identity
+            if subject_name in RECEIPT_SUBJECTS
+            else composition_fixture_identity
         )
         if (
             not is_lower_hex(subject["fixture_sha256"], 64)
@@ -256,6 +261,7 @@ def main(arguments: list[str] | None = None) -> int:
     parser.add_argument("--benchmark-executable", type=Path, required=True)
     parser.add_argument("--plan-fixture", type=Path, required=True)
     parser.add_argument("--receipt-fixture", type=Path, required=True)
+    parser.add_argument("--composition-fixture", type=Path, required=True)
     options = parser.parse_args(arguments)
 
     try:
@@ -268,6 +274,7 @@ def main(arguments: list[str] | None = None) -> int:
             options.benchmark_executable,
             options.plan_fixture,
             options.receipt_fixture,
+            options.composition_fixture,
         )
     except OSError:
         print("benchmark.verify.result-read-failed", file=sys.stderr)

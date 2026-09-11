@@ -28,8 +28,8 @@
     "protocol": { "$ref": "#/$defs/protocol" },
     "subjects": {
       "type": "array",
-      "minItems": 6,
-      "maxItems": 6,
+      "minItems": 7,
+      "maxItems": 7,
       "prefixItems": [
         {
           "allOf": [
@@ -83,6 +83,16 @@
             {
               "properties": {
                 "subject": { "const": "receipt-independent-verification-v1" }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/subject" },
+            {
+              "properties": {
+                "subject": { "const": "release-execution-composition-v1" }
               }
             }
           ]
