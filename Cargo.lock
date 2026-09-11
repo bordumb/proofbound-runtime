@@ -136,6 +136,7 @@ dependencies = [
 name = "proofbound-runtime-compose"
 version = "0.1.0"
 dependencies = [
+ "proofbound-runtime-verify",
  "serde",
  "serde_json",
  "sha2",

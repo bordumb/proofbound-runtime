@@ -9,7 +9,9 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode, Output};
 
-use proofbound_runtime_compose::{ArtifactBytes, CompositionInputs, compose};
+use proofbound_runtime_compose::{
+    ArtifactBytes, CompositionInputs, compose, project_composed_receipt,
+};
 use serde_json::json;
 
 const SUCCESS: u8 = 0;
@@ -123,14 +125,21 @@ fn run_inner(args: Vec<OsString>) -> Result<Option<String>, CliError> {
         launcher: named("pbr-native-launcher", &launcher),
         execution_verifier: named("pbr-verify", &execution_verifier),
         composer: named("pbr-compose", &composer),
-        execution_receipt: named("execution-receipt.json", &execution_receipt),
+        execution_receipt: named(
+            if execution_receipt.first() == Some(&b'{') {
+                "execution-receipt.json"
+            } else {
+                "execution-receipt.cbor"
+            },
+            &execution_receipt,
+        ),
         execution_verification: named("execution-verification.json", &execution_verification),
         expected_execution_commitment: &args.execution_commitment,
         expected_execution_id: &args.expected_execution_id,
     };
     let composed = compose(&inputs).map_err(|error| CliError::verification(error.code()))?;
     publish_no_replace(&args.output, &composed)?;
-    let value: serde_json::Value = serde_json::from_slice(&composed)
+    let value = project_composed_receipt(&composed)
         .map_err(|_| CliError::verification("composition.schema.invalid"))?;
     let composition_id = value
         .get("composition_id")
