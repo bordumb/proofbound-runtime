@@ -111,7 +111,12 @@ pub fn next_batch_count(
 
 #[cfg(test)]
 mod tests {
-    use super::{BenchmarkError, Summary, next_batch_count, summarize};
+    use std::cell::Cell;
+
+    use super::{
+        BenchmarkError, Measurement, MeasurementConfig, Summary, measure_with_clock,
+        next_batch_count, summarize,
+    };
 
     #[test]
     fn summary_uses_frozen_integer_statistics() {
@@ -172,6 +177,68 @@ mod tests {
         assert_eq!(
             next_batch_count(usize::MAX, 0, 1),
             Err(BenchmarkError::BatchOverflow)
+        );
+    }
+
+    #[test]
+    fn measurement_excludes_warmup_and_calibration_from_samples() {
+        let config = MeasurementConfig::new(2, 3, 10).expect("config is valid");
+        let clock_values = [0, 2, 10, 20, 30, 45, 50, 70, 75, 100];
+        let clock_index = Cell::new(0);
+        let operation_count = Cell::new(0);
+        let measured = measure_with_clock(
+            config,
+            || operation_count.set(operation_count.get() + 1),
+            || {
+                let index = clock_index.get();
+                clock_index.set(index + 1);
+                clock_values[index]
+            },
+        )
+        .expect("fixed clock series measures");
+
+        assert_eq!(
+            measured,
+            Measurement {
+                batch_count: 5,
+                summary: Summary {
+                    samples_ns: vec![3, 4, 5],
+                    count: 3,
+                    minimum_ns: 3,
+                    median_ns: 4,
+                    p95_ns: 5,
+                    maximum_ns: 5,
+                },
+            }
+        );
+        assert_eq!(operation_count.get(), 23);
+        assert_eq!(clock_index.get(), clock_values.len());
+    }
+
+    #[test]
+    fn measurement_rejects_invalid_configuration_and_clock_regression() {
+        assert_eq!(
+            MeasurementConfig::new(0, 1, 1),
+            Err(BenchmarkError::InvalidWarmupCount)
+        );
+        assert_eq!(
+            MeasurementConfig::new(1, 0, 1),
+            Err(BenchmarkError::EmptySeries)
+        );
+        let config = MeasurementConfig::new(1, 1, 1).expect("config is valid");
+        let clock_values = [2, 1];
+        let clock_index = Cell::new(0);
+        assert_eq!(
+            measure_with_clock(
+                config,
+                || (),
+                || {
+                    let index = clock_index.get();
+                    clock_index.set(index + 1);
+                    clock_values[index]
+                },
+            ),
+            Err(BenchmarkError::ClockRegression)
         );
     }
 }
