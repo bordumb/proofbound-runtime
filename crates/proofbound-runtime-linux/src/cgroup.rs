@@ -1227,10 +1227,13 @@ mod tests {
     #[cfg(target_os = "linux")]
     #[test]
     fn supported_probe_can_create_limit_and_remove_empty_group() {
+        let required = std::env::var_os("PROOFBOUND_NATIVE_REQUIRED").is_some();
         let Some(root) = std::env::var_os("PROOFBOUND_CGROUP_ROOT") else {
+            assert!(!required, "native cgroup root is required");
             return;
         };
         let Ok(supported) = crate::probe_capabilities(Path::new(&root)).require_supported() else {
+            assert!(!required, "complete native cgroup capability is required");
             return;
         };
         let limit = ProcessLimit::new(1).expect("nonzero process limit");

@@ -536,29 +536,33 @@ mod tests {
     #[cfg(target_os = "linux")]
     #[test]
     fn supported_result_contains_every_required_capability() {
+        let required = std::env::var_os("PROOFBOUND_NATIVE_REQUIRED").is_some();
         let Some(root) = std::env::var_os("PROOFBOUND_CGROUP_ROOT") else {
+            assert!(!required, "native cgroup root is required");
             return;
         };
         let report = probe_capabilities(Path::new(&root));
-        if let Ok(supported) = report.require_supported() {
-            assert!(!supported.kernel_release().is_empty());
-            assert!(supported.landlock_abi().get() > 0);
-            assert!(supported.supports_no_new_privileges());
-            assert!(
-                supported
-                    .seccomp()
-                    .available_actions()
-                    .iter()
-                    .any(|action| action == "errno")
-            );
-            assert!(
-                supported
-                    .cgroup_v2()
-                    .controllers()
-                    .iter()
-                    .any(|controller| controller == "pids")
-            );
-        }
+        let Ok(supported) = report.require_supported() else {
+            assert!(!required, "complete native capability profile is required");
+            return;
+        };
+        assert!(!supported.kernel_release().is_empty());
+        assert!(supported.landlock_abi().get() > 0);
+        assert!(supported.supports_no_new_privileges());
+        assert!(
+            supported
+                .seccomp()
+                .available_actions()
+                .iter()
+                .any(|action| action == "errno")
+        );
+        assert!(
+            supported
+                .cgroup_v2()
+                .controllers()
+                .iter()
+                .any(|controller| controller == "pids")
+        );
     }
 
     #[test]
