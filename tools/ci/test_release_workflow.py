@@ -57,6 +57,16 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("Run the complete repository base gate", workflow)
         self.assertIn("Execute and verify the exact release binaries", workflow)
 
+        builder = (REPOSITORY_ROOT / "tools/release/build-linux.sh").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('release/pbr-accept" "$work_root/$build_name-$acceptor_name"', builder)
+        self.assertIn(
+            'cmp "$work_root/first-$acceptor_name" "$work_root/second-$acceptor_name"',
+            builder,
+        )
+        self.assertIn('sha256sum "$acceptor_name"', builder)
+
     def test_version_two_release_chain_uses_cbor_and_a_decoded_projection(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
