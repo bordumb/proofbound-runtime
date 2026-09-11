@@ -15,6 +15,8 @@ const POLICY_MODEL_VERSION: &str = "proofbound-runtime-linux-policy/1";
 pub enum DecodeError {
     /// The input is not one complete JSON value.
     MalformedJson,
+    /// The input is not one deterministic CBOR item.
+    MalformedCbor,
     /// The value does not have the closed version 1 structure.
     InvalidSchema,
     /// The receipt schema version is unsupported.
@@ -27,6 +29,7 @@ impl DecodeError {
     pub const fn code(self) -> &'static str {
         match self {
             Self::MalformedJson => "receipt.schema.malformed-json",
+            Self::MalformedCbor => "receipt.schema.malformed-cbor",
             Self::InvalidSchema => "receipt.schema.invalid",
             Self::UnsupportedVersion => "receipt.schema.unsupported-version",
         }
@@ -57,6 +60,8 @@ pub struct DecodedReceipt {
     wire: WireReceipt,
     eligibility_input: EligibilityInput,
     recorded_eligibility: RecordedEligibility,
+    version_two: bool,
+    resources: Option<WireResources>,
 }
 
 impl DecodedReceipt {
@@ -81,10 +86,42 @@ impl DecodedReceipt {
     pub const fn recorded_eligibility(&self) -> &RecordedEligibility {
         &self.recorded_eligibility
     }
+
+    pub(crate) const fn is_version_two(&self) -> bool {
+        self.version_two
+    }
+
+    pub(crate) fn from_v2(
+        value: serde_json::Value,
+        wire: WireReceipt,
+        eligibility_input: EligibilityInput,
+        recorded_eligibility: RecordedEligibility,
+        resources: WireResources,
+    ) -> Self {
+        Self {
+            value,
+            wire,
+            eligibility_input,
+            recorded_eligibility,
+            version_two: true,
+            resources: Some(resources),
+        }
+    }
+
+    pub(crate) const fn resources(&self) -> Option<&WireResources> {
+        self.resources.as_ref()
+    }
 }
 
 /// Decodes exactly one closed version 1 execution receipt.
 pub fn decode_receipt(input: &[u8]) -> Result<DecodedReceipt, DecodeError> {
+    if input.first() != Some(&b'{') {
+        return crate::decode_v2::decode_v2_receipt(input);
+    }
+    decode_v1_receipt(input)
+}
+
+fn decode_v1_receipt(input: &[u8]) -> Result<DecodedReceipt, DecodeError> {
     let value: serde_json::Value = serde_json::from_slice(input).map_err(classify_json_error)?;
     let wire: WireReceipt =
         serde_json::from_value(value.clone()).map_err(|_| DecodeError::InvalidSchema)?;
@@ -136,6 +173,8 @@ pub fn decode_receipt(input: &[u8]) -> Result<DecodedReceipt, DecodeError> {
             StructureState::Valid,
         ),
         recorded_eligibility,
+        version_two: false,
+        resources: None,
     })
 }
 
@@ -177,6 +216,18 @@ pub(crate) struct WireReceipt {
     pub(crate) producer: WireArtifact,
     pub(crate) assumptions: Vec<String>,
     pub(crate) trusted_computing_base: Vec<WireTcbEntry>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct WireResources {
+    pub(crate) processes: u32,
+    pub(crate) memory: u64,
+    pub(crate) swap: u64,
+    pub(crate) memory_peak: u64,
+    pub(crate) swap_peak: u64,
+    pub(crate) memory_events: [u64; 6],
+    pub(crate) swap_events: [u64; 2],
+    pub(crate) limit_events: Vec<WireReason>,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]
@@ -358,6 +409,20 @@ pub enum WireReason {
     StderrTruncated,
     /// Receipt structure is malformed.
     ReceiptMalformed,
+    /// A memory-high event occurred.
+    MemoryHigh,
+    /// A memory-max event occurred.
+    MemoryMax,
+    /// A memory OOM event occurred.
+    MemoryOom,
+    /// A memory OOM kill occurred.
+    MemoryOomKill,
+    /// A group OOM kill occurred.
+    MemoryOomGroupKill,
+    /// A swap-max event occurred.
+    SwapMax,
+    /// A swap-fail event occurred.
+    SwapFail,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]

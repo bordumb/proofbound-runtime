@@ -3,8 +3,10 @@
 //! Defines independent receipt verification decisions.
 
 mod canonical;
+mod cbor;
 mod commitment;
 mod decode;
+mod decode_v2;
 mod derive;
 mod error;
 mod identity;

@@ -94,6 +94,13 @@ fn reason_text(reason: &FailureReason) -> &'static str {
         FailureReason::StandardOutputTruncated => "stdout-truncated",
         FailureReason::StandardErrorTruncated => "stderr-truncated",
         FailureReason::ReceiptMalformed => "receipt-malformed",
+        FailureReason::MemoryHigh => "memory-high",
+        FailureReason::MemoryMax => "memory-max",
+        FailureReason::MemoryOom => "memory-oom",
+        FailureReason::MemoryOomKill => "memory-oom-kill",
+        FailureReason::MemoryOomGroupKill => "memory-oom-group-kill",
+        FailureReason::SwapMax => "swap-max",
+        FailureReason::SwapFail => "swap-fail",
     }
 }
 

@@ -58,6 +58,7 @@ pub struct EligibilityInput {
     stdout: CaptureState,
     stderr: CaptureState,
     structure: StructureState,
+    limit_events: [bool; 7],
 }
 
 impl EligibilityInput {
@@ -76,6 +77,27 @@ impl EligibilityInput {
             stdout,
             stderr,
             structure,
+            limit_events: [false; 7],
+        }
+    }
+
+    /// Creates one complete version 2 verifier input.
+    #[must_use]
+    pub fn new_v2(
+        boundary: BoundaryState,
+        outcome: OutcomeState,
+        stdout: CaptureState,
+        stderr: CaptureState,
+        structure: StructureState,
+        limit_events: [bool; 7],
+    ) -> Self {
+        Self {
+            boundary,
+            outcome,
+            stdout,
+            stderr,
+            structure,
+            limit_events,
         }
     }
 }
@@ -103,6 +125,20 @@ pub enum FailureReason {
     StandardErrorTruncated,
     /// Structural receipt validation failed.
     ReceiptMalformed,
+    /// `memory.events.local` reported `high` activity.
+    MemoryHigh,
+    /// `memory.events.local` reported `max` activity.
+    MemoryMax,
+    /// `memory.events.local` reported `oom` activity.
+    MemoryOom,
+    /// `memory.events.local` reported `oom_kill` activity.
+    MemoryOomKill,
+    /// `memory.events.local` reported `oom_group_kill` activity.
+    MemoryOomGroupKill,
+    /// `memory.swap.events` reported `max` activity.
+    SwapMax,
+    /// `memory.swap.events` reported `fail` activity.
+    SwapFail,
 }
 
 impl FailureReason {
@@ -120,6 +156,13 @@ impl FailureReason {
             Self::StandardOutputTruncated => "stdout-truncated",
             Self::StandardErrorTruncated => "stderr-truncated",
             Self::ReceiptMalformed => "receipt-malformed",
+            Self::MemoryHigh => "memory-high",
+            Self::MemoryMax => "memory-max",
+            Self::MemoryOom => "memory-oom",
+            Self::MemoryOomKill => "memory-oom-kill",
+            Self::MemoryOomGroupKill => "memory-oom-group-kill",
+            Self::SwapMax => "swap-max",
+            Self::SwapFail => "swap-fail",
         }
     }
 }
@@ -176,6 +219,19 @@ pub fn derive_eligibility(input: &EligibilityInput) -> EligibilityDecision {
     match input.structure {
         StructureState::Valid => {}
         StructureState::Malformed => failures.push(FailureReason::ReceiptMalformed),
+    }
+    for (present, reason) in input.limit_events.into_iter().zip([
+        FailureReason::MemoryHigh,
+        FailureReason::MemoryMax,
+        FailureReason::MemoryOom,
+        FailureReason::MemoryOomKill,
+        FailureReason::MemoryOomGroupKill,
+        FailureReason::SwapMax,
+        FailureReason::SwapFail,
+    ]) {
+        if present {
+            failures.push(reason);
+        }
     }
 
     if failures.is_empty() {
