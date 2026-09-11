@@ -457,6 +457,42 @@ mod tests {
     use super::*;
 
     #[test]
+    fn memory_and_swap_limits_enforce_the_accepted_domain() {
+        const QUANTUM: u64 = 65_536;
+        const MAXIMUM: u64 = 1_099_511_627_776;
+
+        assert_eq!(
+            MemoryByteLimit::new(0),
+            Err(AuthorityError::MemoryLimitBelowMinimum)
+        );
+        assert_eq!(
+            MemoryByteLimit::new(QUANTUM - 1),
+            Err(AuthorityError::MemoryLimitBelowMinimum)
+        );
+        assert_eq!(
+            MemoryByteLimit::new(QUANTUM + 1),
+            Err(AuthorityError::MemoryLimitNotQuantized)
+        );
+        assert_eq!(
+            MemoryByteLimit::new(MAXIMUM + QUANTUM),
+            Err(AuthorityError::MemoryLimitAboveMaximum)
+        );
+        assert_eq!(MemoryByteLimit::new(QUANTUM).map(MemoryByteLimit::get), Ok(QUANTUM));
+        assert_eq!(MemoryByteLimit::new(MAXIMUM).map(MemoryByteLimit::get), Ok(MAXIMUM));
+
+        assert_eq!(SwapByteLimit::new(0).map(SwapByteLimit::get), Ok(0));
+        assert_eq!(
+            SwapByteLimit::new(1),
+            Err(AuthorityError::SwapLimitNotQuantized)
+        );
+        assert_eq!(
+            SwapByteLimit::new(MAXIMUM + QUANTUM),
+            Err(AuthorityError::SwapLimitAboveMaximum)
+        );
+        assert_eq!(SwapByteLimit::new(MAXIMUM).map(SwapByteLimit::get), Ok(MAXIMUM));
+    }
+
+    #[test]
     fn rejects_invalid_security_strings() {
         assert_eq!(AuthorityPath::new(""), Err(AuthorityError::EmptyPath));
         assert_eq!(
