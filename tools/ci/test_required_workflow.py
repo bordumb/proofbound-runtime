@@ -178,6 +178,20 @@ class RequiredWorkflowTests(unittest.TestCase):
         self.assertIn('test ! -e "$diagnostic_child_marker"', native_script)
         self.assertIn("native-run-diagnostics.json", native_script)
 
+    def test_native_lane_retains_preflight_and_scaffold_release_inputs(self) -> None:
+        native_script = (REPOSITORY_ROOT / "tools/ci/native-linux.sh").read_text(
+            encoding="utf-8"
+        )
+        observation = (
+            REPOSITORY_ROOT
+            / "crates/proofbound-runtime-compose/tests/release_observation.rs"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn('"$runtime_bin_directory/pbr" plan scaffold', native_script)
+        self.assertIn("plan-scaffold.json", native_script)
+        self.assertIn("assert_native_preflight", observation)
+        self.assertIn("assert_native_scaffold", observation)
+
     def test_each_lane_publishes_its_validated_timing_summary(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
