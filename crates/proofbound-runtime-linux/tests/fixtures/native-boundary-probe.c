@@ -130,50 +130,60 @@ static int allocate_until_denied(size_t chunk_size) {
     }
 }
 
-static int mapped_file(const char *path) {
-    int descriptor = open(path, O_RDONLY | O_CLOEXEC);
+static int mapped_file(const char *path, size_t size) {
+    int descriptor = open(path, O_RDWR | O_CLOEXEC);
     if (descriptor < 0) {
         return 84;
     }
-    struct stat status;
-    if (fstat(descriptor, &status) != 0 || status.st_size <= 0) {
+    if (ftruncate(descriptor, 0) != 0 ||
+        ftruncate(descriptor, (off_t)size) != 0) {
         close(descriptor);
         return 85;
     }
-    size_t size = (size_t)status.st_size;
-    const unsigned char *memory = mmap(NULL, size, PROT_READ, MAP_PRIVATE,
-                                       descriptor, 0);
+    unsigned char *memory = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED,
+                                 descriptor, 0);
     if (memory == MAP_FAILED) {
         close(descriptor);
         return 86;
     }
-    long page_size = sysconf(_SC_PAGESIZE);
-    if (page_size <= 0) {
-        return 87;
-    }
-    volatile unsigned char checksum = 0;
-    for (size_t offset = 0; offset < size; offset += (size_t)page_size) {
-        checksum ^= memory[offset];
-    }
-    checksum ^= memory[size - 1];
-    int result = munmap((void *)memory, size) == 0 && close(descriptor) == 0
-                     ? 0
-                     : 89;
-    return checksum == 0xff ? 91 : result;
+    touch_writable_pages(memory, size);
+    return msync(memory, size, MS_SYNC) == 0 && munmap(memory, size) == 0 &&
+                   close(descriptor) == 0
+               ? 0
+               : 89;
 }
 
-static int read_page_cache(const char *path) {
-    int descriptor = open(path, O_RDONLY | O_CLOEXEC);
+static int read_page_cache(const char *path, size_t size) {
+    int descriptor = open(path, O_RDWR | O_CLOEXEC);
     if (descriptor < 0) {
         return 92;
     }
     unsigned char buffer[65536];
+    memset(buffer, 0x5a, sizeof(buffer));
+    if (ftruncate(descriptor, 0) != 0) {
+        close(descriptor);
+        return 93;
+    }
+    size_t remaining = size;
+    while (remaining > 0) {
+        size_t requested = remaining < sizeof(buffer) ? remaining : sizeof(buffer);
+        ssize_t written = write(descriptor, buffer, requested);
+        if (written <= 0) {
+            close(descriptor);
+            return 94;
+        }
+        remaining -= (size_t)written;
+    }
+    if (lseek(descriptor, 0, SEEK_SET) != 0) {
+        close(descriptor);
+        return 95;
+    }
     volatile unsigned char checksum = 0;
     for (;;) {
         ssize_t received = read(descriptor, buffer, sizeof(buffer));
         if (received < 0) {
             close(descriptor);
-            return 93;
+            return 96;
         }
         if (received == 0) {
             break;
@@ -182,8 +192,8 @@ static int read_page_cache(const char *path) {
             checksum ^= buffer[index];
         }
     }
-    int result = close(descriptor) == 0 ? 0 : 94;
-    return checksum == 0xff ? 95 : result;
+    int result = close(descriptor) == 0 ? 0 : 97;
+    return checksum == 0xff ? 98 : result;
 }
 
 static int allocate_shared(size_t size) {
@@ -330,13 +340,16 @@ int main(int argc, char **argv) {
         }
         return allocate_until_denied(chunk_size);
     }
-    if (strcmp(argv[1], "memory-mapped-file") == 0 && argc == 3) {
-        return mapped_file(argv[2]) == 0
+    if (strcmp(argv[1], "memory-mapped-file") == 0 && argc == 4) {
+        size_t size = 0;
+        return parse_size(argv[3], &size) == 0 && mapped_file(argv[2], size) == 0
                    ? emit(STDOUT_FILENO, "mapped-file-accounted\n")
                    : 104;
     }
-    if (strcmp(argv[1], "memory-page-cache") == 0 && argc == 3) {
-        return read_page_cache(argv[2]) == 0
+    if (strcmp(argv[1], "memory-page-cache") == 0 && argc == 4) {
+        size_t size = 0;
+        return parse_size(argv[3], &size) == 0 &&
+                       read_page_cache(argv[2], size) == 0
                    ? emit(STDOUT_FILENO, "page-cache-accounted\n")
                    : 105;
     }

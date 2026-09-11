@@ -85,8 +85,7 @@ fn native_memory_workload_modes_are_closed() {
 #[cfg(target_os = "linux")]
 mod linux {
     use std::collections::BTreeMap;
-    use std::fs::{File, OpenOptions};
-    use std::io::Write as _;
+    use std::fs::File;
     use std::os::fd::{AsFd as _, AsRawFd as _};
     use std::path::{Path, PathBuf};
     use std::sync::atomic::{AtomicU8, Ordering};
@@ -279,7 +278,7 @@ mod linux {
         let fixture = PathBuf::from(fixture);
         let workspace = create_fixture_directory();
         let memory_file = workspace.0.join("memory.bin");
-        write_memory_file(&memory_file, 16 * 1024 * 1024);
+        File::create(&memory_file).expect("create memory-accounting fixture");
 
         let anonymous = run_v2_case(
             &supported,
@@ -298,13 +297,12 @@ mod linux {
         assert_eq!(anonymous.stdout().bytes(), b"anonymous-accounted\n");
         assert_accounted_without_limit_event(&anonymous);
 
-        drop_file_cache(&memory_file);
         let mapped = run_v2_case(
             &supported,
             &fixture,
             &workspace.0,
             "memory-mapped-file",
-            &["memory.bin"],
+            &["memory.bin", "16777216"],
             Some("memory.bin"),
             1,
             128 * 1024 * 1024,
@@ -315,13 +313,12 @@ mod linux {
         assert_eq!(mapped.stdout().bytes(), b"mapped-file-accounted\n");
         assert_accounted_without_limit_event(&mapped);
 
-        drop_file_cache(&memory_file);
         let page_cache = run_v2_case(
             &supported,
             &fixture,
             &workspace.0,
             "memory-page-cache",
-            &["memory.bin"],
+            &["memory.bin", "16777216"],
             Some("memory.bin"),
             1,
             128 * 1024 * 1024,
@@ -624,12 +621,18 @@ mod linux {
         );
         let working_directory = File::open(workspace).expect("open working directory");
         let readable = readable_file.map(|path| {
-            resolver
+            let resolved = resolver
                 .resolve_rooted_file(
                     &AuthorityPath::new(path.to_owned()).expect("readable authority path"),
                     ArtifactRole::ProjectInput,
                 )
-                .expect("resolve readable fixture")
+                .expect("resolve readable fixture");
+            let access = if matches!(case, "memory-mapped-file" | "memory-page-cache") {
+                vec![LandlockAccess::Read, LandlockAccess::Write]
+            } else {
+                vec![LandlockAccess::Read]
+            };
+            (resolved, access)
         });
 
         let execution_id = execution_id();
@@ -659,12 +662,12 @@ mod linux {
             )
             .expect("executable rule"),
         ];
-        if let Some(readable) = &readable {
+        if let Some((readable, access)) = &readable {
             rules.push(
                 LauncherFilesystemRule::new(
                     u32::try_from(readable.as_fd().as_raw_fd())
                         .expect("positive readable descriptor"),
-                    vec![LandlockAccess::Read],
+                    access.clone(),
                 )
                 .expect("read rule"),
             );
@@ -695,7 +698,7 @@ mod linux {
         .expect("construct install request");
 
         let mut inherited = vec![executable.executable().as_fd(), working_directory.as_fd()];
-        if let Some(readable) = &readable {
+        if let Some((readable, _)) = &readable {
             inherited.push(readable.as_fd());
         }
         supervise_launcher(
@@ -725,28 +728,5 @@ mod linux {
             std::env::temp_dir().join(format!("proofbound-runtime-native-{}", std::process::id()));
         std::fs::create_dir(&path).expect("create unique native fixture directory");
         FixtureDirectory(path)
-    }
-
-    fn write_memory_file(path: &Path, size: usize) {
-        let mut file = OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .open(path)
-            .expect("create memory-accounting fixture");
-        let block = vec![0x5a; 64 * 1024];
-        for _ in 0..(size / block.len()) {
-            file.write_all(&block)
-                .expect("write memory-accounting fixture");
-        }
-        file.sync_all().expect("sync memory-accounting fixture");
-    }
-
-    fn drop_file_cache(path: &Path) {
-        let file = File::open(path).expect("open memory-accounting fixture");
-        // SAFETY: the descriptor is live and the offset/length request covers
-        // the file without exposing memory to libc.
-        let result =
-            unsafe { libc::posix_fadvise(file.as_raw_fd(), 0, 0, libc::POSIX_FADV_DONTNEED) };
-        assert_eq!(result, 0, "drop fixture pages before cgroup accounting");
     }
 }
