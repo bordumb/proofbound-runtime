@@ -452,6 +452,9 @@ fn map_control_open_error(error: std::io::Error) -> CgroupError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proofbound_runtime_core::{
+        MemoryByteLimit, OutputByteLimit, ResourceLimits, SwapByteLimit, WallTimeLimit,
+    };
 
     const ATTACK_CATALOG: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
@@ -468,6 +471,37 @@ mod tests {
         assert_eq!(
             cgroup_name(execution_id()),
             Path::new("proofbound-runtime-000102030405460788090a0b0c0d0e0f")
+        );
+    }
+
+    #[test]
+    fn version_two_controls_are_complete_and_canonical() {
+        let limits = ResourceLimits::new_v2(
+            ProcessLimit::new(2).expect("valid process limit"),
+            WallTimeLimit::from_milliseconds(1_000).expect("valid wall limit"),
+            OutputByteLimit::new(1_024),
+            OutputByteLimit::new(2_048),
+            MemoryByteLimit::new(65_536).expect("valid memory limit"),
+            SwapByteLimit::new(0).expect("valid swap limit"),
+        );
+        assert_eq!(
+            installed_control_values(limits).expect("v2 controls are complete"),
+            [
+                ("pids.max", "2".to_owned()),
+                ("memory.max", "65536".to_owned()),
+                ("memory.swap.max", "0".to_owned()),
+                ("memory.oom.group", "1".to_owned()),
+            ]
+        );
+        let legacy = ResourceLimits::new(
+            ProcessLimit::new(2).expect("valid process limit"),
+            WallTimeLimit::from_milliseconds(1_000).expect("valid wall limit"),
+            OutputByteLimit::new(1_024),
+            OutputByteLimit::new(2_048),
+        );
+        assert_eq!(
+            installed_control_values(legacy),
+            Err(CgroupError::ResourceProfileIncomplete)
         );
     }
 
