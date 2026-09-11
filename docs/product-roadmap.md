@@ -1,6 +1,7 @@
 # Proofbound Runtime product and delivery roadmap
 
-- **Status:** execution in progress
+- **Status:** branch implementation complete; external review, mainline release,
+  and adopter-dogfood gates remain
 - **Date:** 2026-09-09
 - **Runtime baseline:** `0b83bfe` (`v0.1.0` is `c78e189`)
 - **Proofbound baseline consumed by Runtime:** `70af5e6`
@@ -31,21 +32,22 @@ The roadmap uses these sources:
 
 ### Execution checkpoint
 
-As of 2026-09-11, the roadmap branch has completed the version 2 memory/swap
-implementation and deterministic-CBOR claim wave, the independently verified
-receipt-composition and adopter-acceptance path, the reproducible standalone
-`pbr-accept` artifact, the first-party GitHub Action, and the RT-3.3 plan
-scaffold source boundary. RT-3.4 now has a closed typed diagnostic vocabulary,
-exhaustive source mapping attacks, and a five-case pre-launch failure corpus
-wired into both native architectures and exact release observation. RT-3.5
-also has closed Rust, Python, and TypeScript SDK sources plus deterministic
-Python-wheel and closed npm-package checks. `PBR-ACCEPT-012`,
-`PBR-DIAGNOSTIC-011`, `PBR-SCAFFOLD-013`, and `PBR-SDK-014` admit their exact
-source-level evidence; the SDK claim was replayed fresh at `2298657`. They
-deliberately retain specification review, exact native or package-release
-observation, and external dogfood as open obligations; those obligations
-cannot be converted into source claims or satisfied by an older
-release-candidate run.
+As of 2026-09-11, every implementation task that the branch can honestly close
+without an independent reviewer, an exact protected-mainline release, or an
+external adopter is complete. The branch contains the version 2 memory/swap
+and deterministic-CBOR claim wave, independently verified receipt composition
+and adopter acceptance, the reproducible standalone `pbr-accept` artifact, the
+first-party GitHub Action, the plan scaffold, typed pre-launch diagnostics,
+and closed Rust, Python, and TypeScript SDKs. The scaffold, preflight, and
+five-case diagnostic corpus now execute on both native architectures and are
+bound into the exact-binary release-observation procedure. All three SDK
+packages are built twice, byte-compared, checksummed, and retained by an exact-
+revision release job. `PBR-ACCEPT-012`, `PBR-DIAGNOSTIC-011`,
+`PBR-PREFLIGHT-009`, `PBR-SCAFFOLD-013`, and `PBR-SDK-014` deliberately retain
+the applicable independent specification review, exact mainline release,
+registry publication, and external dogfood obligations. Those are release or
+adoption facts, not missing source code, and cannot be satisfied by a
+self-authored branch run or an older release candidate.
 
 As of 2026-09-10, Order 0 is implemented on the roadmap branch, the version
 0.1 installation path and host-prerequisite explanations are implemented and
@@ -600,6 +602,16 @@ all-required --> required
   it must not retroactively change the evidence or meaning of the tagged
   release.
 
+**2026-09-11 branch checkpoint:** implementation complete. The release
+workflow accepts only one exact protected-mainline revision, reproduces the
+SDK and both native release chains, and then joins every retained file into a
+closed `proofbound-runtime-release-provenance/2` deterministic-CBOR object.
+The producer and a separate strict decoder agree on the exact source revision,
+logical-name inventory, SHA-256 identity, and size of every asset; the JSON
+projection is descriptive output only. Running that workflow at the eventual
+merge revision and publishing its tag remain release events rather than branch
+implementation.
+
 ## 7. Epic RT-1: memory and swap limits
 
 ### Claim and scope
@@ -821,15 +833,17 @@ without writing custom JSON logic.
 - Add fixtures for static ELF, glibc, musl, missing library, conflicting search
   path, plugin load, and identity drift.
 
-**Checkpoint (2026-09-11):** source implementation complete at `2f2570d`.
+**Checkpoint (2026-09-11):** branch implementation complete.
 `pbr plan scaffold` emits the closed
 `proofbound-runtime-plan-scaffold/1` JSON review artifact with
 `safe_policy: false`, resolves the bounded static ELF closure under four
 explicit profiles, records exact loader inputs and resolution provenance, and
 keeps every human authority choice open. The closed fixture corpus is admitted
-by `PBR-SCAFFOLD-013`. Native execution of that corpus and binding the exact
-release artifacts remain release-head obligations, so this checkpoint does
-not describe the command as released.
+by `PBR-SCAFFOLD-013`; the maintained native lanes also run the exact released-
+binary scaffold and retain its review artifact for both architectures. An
+exact protected-mainline release observation and owner review remain external
+release-head obligations, so this checkpoint does not describe the command as
+released.
 
 ### RT-3.4 Explain denials without changing receipt meaning
 
@@ -868,17 +882,19 @@ contexts pass.
   code in an SDK.
 - Keep the independently implemented verifier independently distributable.
 
-**2026-09-11 source checkpoint:** complete on the roadmap branch. The Rust,
-Python, and TypeScript packages independently match the frozen deterministic-
-CBOR Version 2 plan vector, strictly decode the non-verifying JSON result
-projection, and contain no producer/verifier or Linux-boundary implementation.
-Python and TypeScript exercise an exact separate-process invocation with no
-shell, no ambient environment inheritance, and bounded output capture. Required
-CI closes the source, attack, and package inventories; the Python wheel is
-byte-reproducible without build-time dependencies. `PBR-SDK-014` records the
-language-runtime premise and the remaining external obligations: exact
-registry publication at an approved tag and consumer-repository dogfood for
-all three packages. Source completion is not registry publication.
+**2026-09-11 branch checkpoint:** complete. The Rust, Python, and TypeScript
+packages independently match the frozen deterministic-CBOR Version 2 plan
+vector, strictly decode the non-verifying JSON result projection, and contain
+no producer/verifier or Linux-boundary implementation. Python and TypeScript
+exercise an exact separate-process invocation with no shell, no ambient
+environment inheritance, and bounded output capture. Required CI closes the
+source, attack, and package inventories. The standalone Rust crate, Python
+wheel, and npm tarball are each byte-reproducible; an exact-revision release job
+rebuilds them twice, verifies their checksums, and retains a closed SDK
+manifest. `PBR-SDK-014` records the language-runtime premise and the remaining
+external obligations: exact registry publication at an approved tag and
+consumer-repository dogfood for all three packages. Branch completion is not
+registry publication.
 
 ## 10. Epic RT-4: network authority research and ADR
 
