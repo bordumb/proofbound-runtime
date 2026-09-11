@@ -72,7 +72,11 @@ class RoutingTransportRunnerTests(unittest.TestCase):
         self.assertIn("runs-on: ${{ matrix.runner }}", routing_job)
         self.assertIn("if: always()", routing_job)
         self.assertIn("run_routing_transport.sh", routing_job)
-        self.assertIn("actions/upload-artifact@v4", routing_job)
+        self.assertIn(
+            "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
+            " # v7.0.1",
+            routing_job,
+        )
 
 
 if __name__ == "__main__":
