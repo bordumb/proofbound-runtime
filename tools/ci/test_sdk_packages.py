@@ -21,6 +21,38 @@ DIST_INFO = "proofbound_runtime_sdk-0.2.0.dist-info"
 
 
 class SdkPackageTests(unittest.TestCase):
+    def test_release_sdk_bundle_is_reproducible_and_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            subprocess.run(
+                [
+                    "python3",
+                    "tools/release/build_sdks.py",
+                    "--output",
+                    directory,
+                ],
+                cwd=ROOT,
+                check=True,
+                stdout=subprocess.DEVNULL,
+            )
+            output = Path(directory)
+            expected = [
+                "SDK-MANIFEST.json",
+                "SHA256SUMS",
+                "proofbound-runtime-sdk-0.2.0.crate",
+                "proofbound-runtime-sdk-0.2.0.tgz",
+                "proofbound_runtime_sdk-0.2.0-py3-none-any.whl",
+            ]
+            self.assertEqual(sorted(path.name for path in output.iterdir()), expected)
+            manifest = json.loads((output / "SDK-MANIFEST.json").read_bytes())
+            self.assertEqual(manifest["schema"], "proofbound-runtime-sdk-manifest/1")
+            self.assertEqual(manifest["version"], "0.2.0")
+            self.assertEqual(
+                [artifact["name"] for artifact in manifest["artifacts"]],
+                expected[2:],
+            )
+            sums = (output / "SHA256SUMS").read_text(encoding="ascii").splitlines()
+            self.assertEqual([line.split("  ", 1)[1] for line in sums], expected[2:])
+
     def test_rust_sdk_is_independently_packageable(self) -> None:
         manifest = (
             ROOT / "crates/proofbound-runtime-sdk/Cargo.toml"
