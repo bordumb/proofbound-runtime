@@ -6,6 +6,10 @@ from pathlib import Path
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = REPOSITORY_ROOT / ".github" / "workflows" / "ci.yml"
 WORKFLOW_ROOT = REPOSITORY_ROOT / ".github" / "workflows"
+LONG_PR_WORKFLOWS = (
+    WORKFLOW_ROOT / "network-authority-experiment.yml",
+    WORKFLOW_ROOT / "performance-baseline.yml",
+)
 CI_SCRIPT = REPOSITORY_ROOT / "tools" / "ci" / "ci.sh"
 LEGACY_NATIVE_WORKFLOW = (
     REPOSITORY_ROOT / ".github" / "workflows" / "linux-enforcement.yml"
@@ -144,6 +148,20 @@ class RequiredWorkflowTests(unittest.TestCase):
             "cancel-in-progress: ${{ github.event_name == 'pull_request' }}", workflow
         )
         self.assertIsNone(re.search(r"(?m)^\s+continue-on-error:\s*true\s*$", workflow))
+
+    def test_long_optional_workflows_cancel_only_superseded_pr_heads(self) -> None:
+        for workflow_path in LONG_PR_WORKFLOWS:
+            with self.subTest(workflow=workflow_path.name):
+                workflow = workflow_path.read_text(encoding="utf-8")
+                self.assertIn(
+                    "group: ${{ github.workflow }}-"
+                    "${{ github.event.pull_request.number || github.run_id }}",
+                    workflow,
+                )
+                self.assertIn(
+                    "cancel-in-progress: ${{ github.event_name == 'pull_request' }}",
+                    workflow,
+                )
 
 
 if __name__ == "__main__":
