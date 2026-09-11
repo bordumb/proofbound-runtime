@@ -90,6 +90,17 @@ class WireTransitionTests(unittest.TestCase):
         self.assertIn("echo +memory +pids", script)
         self.assertIn("Delegate=pids memory", doctor)
 
+    def test_native_recipe_exercises_swap_absent_and_present(self) -> None:
+        script = (REPOSITORY_ROOT / "tools/ci/native-linux.sh").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("PROOFBOUND_NATIVE_SWAP_MODE=absent", script)
+        self.assertIn("PROOFBOUND_NATIVE_SWAP_MODE=present", script)
+        self.assertIn("mkswap", script)
+        self.assertIn("swapon", script)
+        self.assertIn("swapoff", script)
+
     def test_tier_three_policy_domain_carries_memory_and_swap(self) -> None:
         model = (
             REPOSITORY_ROOT / "formal/ProofboundRuntime/Policy.lean"
