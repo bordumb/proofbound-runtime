@@ -17,6 +17,7 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
+  PBR_EXACT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
   preflight:
@@ -28,6 +29,11 @@ jobs:
     steps:
       - name: Check out the exact event head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PBR_EXACT_SHA }}
+
+      - name: Confirm the exact event head
+        run: test "$(git rev-parse HEAD)" = "$PBR_EXACT_SHA"
 
       - name: Run metadata, documentation, and fixture preflight
         run: >-
@@ -42,7 +48,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: proofbound-runtime-ci-timing-preflight-${{ github.sha }}
+          name: proofbound-runtime-ci-timing-preflight-${{ env.PBR_EXACT_SHA }}
           path: ${{ env.PBR_CI_TIMING_FILE }}
           if-no-files-found: error
           retention-days: 14
@@ -57,6 +63,11 @@ jobs:
     steps:
       - name: Check out the exact event head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PBR_EXACT_SHA }}
+
+      - name: Confirm the exact event head
+        run: test "$(git rev-parse HEAD)" = "$PBR_EXACT_SHA"
 
       - name: Install pinned Rust toolchain
         uses: dtolnay/rust-toolchain@1.94.0
@@ -85,7 +96,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: proofbound-runtime-ci-timing-rust-${{ github.sha }}
+          name: proofbound-runtime-ci-timing-rust-${{ env.PBR_EXACT_SHA }}
           path: ${{ env.PBR_CI_TIMING_FILE }}
           if-no-files-found: error
           retention-days: 14
@@ -100,6 +111,11 @@ jobs:
     steps:
       - name: Check out the exact event head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PBR_EXACT_SHA }}
+
+      - name: Confirm the exact event head
+        run: test "$(git rev-parse HEAD)" = "$PBR_EXACT_SHA"
 
       - name: Install pinned Rust toolchain
         uses: dtolnay/rust-toolchain@1.94.0
@@ -182,7 +198,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: proofbound-runtime-ci-timing-formal-${{ github.sha }}
+          name: proofbound-runtime-ci-timing-formal-${{ env.PBR_EXACT_SHA }}
           path: ${{ env.PBR_CI_TIMING_FILE }}
           if-no-files-found: error
           retention-days: 14
@@ -205,9 +221,11 @@ jobs:
     steps:
       - name: Check out the exact event head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PBR_EXACT_SHA }}
 
       - name: Confirm the exact event head
-        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+        run: test "$(git rev-parse HEAD)" = "$PBR_EXACT_SHA"
 
       - name: Install pinned Rust toolchain
         uses: dtolnay/rust-toolchain@1.94.0
@@ -227,7 +245,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: proofbound-runtime-ci-timing-native-${{ matrix.architecture }}-${{ github.sha }}
+          name: proofbound-runtime-ci-timing-native-${{ matrix.architecture }}-${{ env.PBR_EXACT_SHA }}
           path: ${{ env.PBR_CI_TIMING_FILE }}
           if-no-files-found: error
           retention-days: 14

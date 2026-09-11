@@ -43,9 +43,9 @@ def validate_output(output: Path) -> None:
 
 
 def revision() -> str:
-    github_sha = os.environ.get("GITHUB_SHA")
-    if github_sha:
-        return github_sha
+    exact_sha = os.environ.get("PBR_EXACT_SHA") or os.environ.get("GITHUB_SHA")
+    if exact_sha:
+        return exact_sha
     result = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         cwd=REPOSITORY_ROOT,
