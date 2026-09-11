@@ -809,6 +809,10 @@ mod tests {
         env!("CARGO_MANIFEST_DIR"),
         "/../../tests/attacks/run/orchestration-v1.toml"
     ));
+    const DIAGNOSTIC_ATTACK_CATALOG: &str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tests/attacks/run/diagnostics-v1.toml"
+    ));
 
     #[test]
     fn orchestration_attack_catalog_is_closed() {
@@ -828,6 +832,90 @@ mod tests {
         assert_eq!(ATTACK_CATALOG.matches("[[case]]").count(), expected.len());
         for id in expected {
             assert!(ATTACK_CATALOG.contains(&format!("id = \"{id}\"")));
+        }
+    }
+
+    #[test]
+    fn diagnostic_attack_catalog_is_closed_before_implementation() {
+        let expected = [
+            (
+                "capability-unavailable",
+                3,
+                "host-capabilities",
+                "host-supported",
+                "platform.cgroup-v2.controller-missing",
+            ),
+            (
+                "resolution-failure",
+                2,
+                "executable-closure",
+                "executable-closure-resolved",
+                "resolve.elf.malformed",
+            ),
+            (
+                "identity-drift",
+                4,
+                "identity-revalidation",
+                "artifact-identities-stable",
+                "resolve.identity.drift",
+            ),
+            (
+                "output-root-failure",
+                2,
+                "output-root",
+                "output-root-fresh",
+                "output.root.exists",
+            ),
+            (
+                "launcher-protocol-failure",
+                5,
+                "launcher-protocol",
+                "launcher-boundary-complete",
+                "supervisor.protocol.failed",
+            ),
+            (
+                "cgroup-failure",
+                5,
+                "cgroup",
+                "cgroup-boundary-prepared",
+                "cgroup.limit.mismatch",
+            ),
+            (
+                "receipt-construction-failure",
+                6,
+                "receipt-construction",
+                "receipt-constructed",
+                "receipt.observation.range",
+            ),
+            (
+                "receipt-publication-failure",
+                6,
+                "receipt-publication",
+                "receipt-published",
+                "receipt.output.publish-failed",
+            ),
+            (
+                "result-projection-failure",
+                2,
+                "result-projection",
+                "run-result-representable",
+                "receipt.path.utf8-invalid",
+            ),
+        ];
+        assert!(
+            DIAGNOSTIC_ATTACK_CATALOG
+                .starts_with("schema = \"proofbound-runtime-run-diagnostic-attacks/1\"")
+        );
+        assert_eq!(
+            DIAGNOSTIC_ATTACK_CATALOG.matches("[[case]]").count(),
+            expected.len()
+        );
+        for (id, exit, phase, rule, code) in expected {
+            assert!(DIAGNOSTIC_ATTACK_CATALOG.contains(&format!("id = \"{id}\"")));
+            assert!(DIAGNOSTIC_ATTACK_CATALOG.contains(&format!("expected_exit = {exit}")));
+            assert!(DIAGNOSTIC_ATTACK_CATALOG.contains(&format!("expected_phase = \"{phase}\"")));
+            assert!(DIAGNOSTIC_ATTACK_CATALOG.contains(&format!("expected_rule = \"{rule}\"")));
+            assert!(DIAGNOSTIC_ATTACK_CATALOG.contains(&format!("expected_code = \"{code}\"")));
         }
     }
 
