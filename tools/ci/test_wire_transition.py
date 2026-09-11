@@ -90,6 +90,32 @@ class WireTransitionTests(unittest.TestCase):
         self.assertIn("echo +memory +pids", script)
         self.assertIn("Delegate=pids memory", doctor)
 
+    def test_tier_three_policy_domain_carries_memory_and_swap(self) -> None:
+        model = (
+            REPOSITORY_ROOT / "formal/ProofboundRuntime/Policy.lean"
+        ).read_text(encoding="utf-8")
+        generated = (
+            REPOSITORY_ROOT / "formal/generated/ProofboundRuntimePolicy/Types.lean"
+        ).read_text(encoding="utf-8")
+        refinement = (
+            REPOSITORY_ROOT
+            / "formal/ProofboundRuntime/Refinement/PolicyCompilation.lean"
+        ).read_text(encoding="utf-8")
+        harness = (
+            REPOSITORY_ROOT / "crates/proofbound-runtime-policy-kani/src/lib.rs"
+        ).read_text(encoding="utf-8")
+
+        for source in (model, refinement):
+            self.assertIn("memoryBytes", source)
+            self.assertIn("swapBytes", source)
+        for type_name in ("MemoryByteLimit", "SwapByteLimit"):
+            self.assertIn(f"authority.{type_name}", generated)
+        self.assertIn("memory : Option authority.MemoryByteLimit", generated)
+        self.assertIn("swap : Option authority.SwapByteLimit", generated)
+        self.assertIn("ResourceLimits::new_v2(", harness)
+        self.assertIn("MemoryByteLimit::new(", harness)
+        self.assertIn("SwapByteLimit::new(", harness)
+
 
 if __name__ == "__main__":
     unittest.main()
