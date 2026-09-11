@@ -11,6 +11,8 @@ SUBJECTS = [
     "plan-parse-v1",
     "authority-normalization-v1",
     "policy-compilation-v1",
+    "receipt-construction-v1",
+    "receipt-canonical-encoding-v1",
 ]
 
 
@@ -29,8 +31,8 @@ class PureResultSchemaTests(unittest.TestCase):
                 )
 
         subjects = schema["properties"]["subjects"]
-        self.assertEqual(subjects["minItems"], 3)
-        self.assertEqual(subjects["maxItems"], 3)
+        self.assertEqual(subjects["minItems"], len(SUBJECTS))
+        self.assertEqual(subjects["maxItems"], len(SUBJECTS))
         self.assertFalse(subjects["items"])
         self.assertEqual(
             [

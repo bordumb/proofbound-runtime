@@ -17,6 +17,8 @@ SUBJECTS = (
     "plan-parse-v1",
     "authority-normalization-v1",
     "policy-compilation-v1",
+    "receipt-construction-v1",
+    "receipt-canonical-encoding-v1",
 )
 
 
@@ -24,7 +26,9 @@ def digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def fixture_result(executable: bytes, fixture: bytes) -> dict[str, object]:
+def fixture_result(
+    executable: bytes, plan_fixture: bytes, receipt_fixture: bytes
+) -> dict[str, object]:
     samples = list(range(1_000))
     measurement = {
         "batch_count": 1,
@@ -57,7 +61,10 @@ def fixture_result(executable: bytes, fixture: bytes) -> dict[str, object]:
         "subjects": [
             {
                 "subject": subject,
-                "fixture_sha256": digest(fixture),
+                "fixture_sha256": digest(
+                    plan_fixture if subject.startswith(("plan-", "authority-", "policy-"))
+                    else receipt_fixture
+                ),
                 "measurement": copy.deepcopy(measurement),
             }
             for subject in SUBJECTS
@@ -75,11 +82,15 @@ class PureBenchmarkVerifierTests(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         root = Path(self.temporary.name)
         self.executable = root / "pbr-bench"
-        self.fixture = root / "minimal-v1.toml"
+        self.plan_fixture = root / "minimal-v1.toml"
+        self.receipt_fixture = root / "reusable-receipt-v1.json"
         self.executable.write_bytes(b"exact benchmark executable")
-        self.fixture.write_bytes(b"exact plan fixture")
+        self.plan_fixture.write_bytes(b"exact plan fixture")
+        self.receipt_fixture.write_bytes(b"exact receipt fixture")
         self.value = fixture_result(
-            self.executable.read_bytes(), self.fixture.read_bytes()
+            self.executable.read_bytes(),
+            self.plan_fixture.read_bytes(),
+            self.receipt_fixture.read_bytes(),
         )
 
     def verify(self, value: object | None = None) -> dict[str, object]:
@@ -87,12 +98,19 @@ class PureBenchmarkVerifierTests(unittest.TestCase):
             encode(self.value if value is None else value),
             SOURCE,
             self.executable,
-            self.fixture,
+            self.plan_fixture,
+            self.receipt_fixture,
         )
 
     def test_valid_result_is_rederived_from_raw_bytes(self) -> None:
         raw = encode(self.value)
-        report = verify_result(raw, SOURCE, self.executable, self.fixture)
+        report = verify_result(
+            raw,
+            SOURCE,
+            self.executable,
+            self.plan_fixture,
+            self.receipt_fixture,
+        )
         self.assertEqual(report["schema"], "proofbound-runtime-performance-verification/1")
         self.assertTrue(report["valid"])
         self.assertEqual(report["result_sha256"], digest(raw))
@@ -111,7 +129,13 @@ class PureBenchmarkVerifierTests(unittest.TestCase):
         )
         for raw, code in cases:
             with self.subTest(code=code), self.assertRaises(VerificationFailure) as caught:
-                verify_result(raw, SOURCE, self.executable, self.fixture)
+                verify_result(
+                    raw,
+                    SOURCE,
+                    self.executable,
+                    self.plan_fixture,
+                    self.receipt_fixture,
+                )
             self.assertEqual(caught.exception.code, code)
 
     def test_external_identity_substitutions_fail_closed(self) -> None:
@@ -157,8 +181,10 @@ class PureBenchmarkVerifierTests(unittest.TestCase):
                     SOURCE,
                     "--benchmark-executable",
                     str(self.executable),
-                    "--fixture",
-                    str(self.fixture),
+                    "--plan-fixture",
+                    str(self.plan_fixture),
+                    "--receipt-fixture",
+                    str(self.receipt_fixture),
                 ]
             )
         self.assertEqual(exit_code, 0)
