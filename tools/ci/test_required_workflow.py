@@ -22,6 +22,10 @@ UPLOAD_ARTIFACT_ACTION = (
     "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
     " # v7.0.1"
 )
+DOWNLOAD_ARTIFACT_ACTION = (
+    "actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3"
+    " # v8.0.0"
+)
 
 
 class RequiredWorkflowTests(unittest.TestCase):
@@ -119,7 +123,8 @@ class RequiredWorkflowTests(unittest.TestCase):
 
     def test_first_party_actions_are_exact_node24_releases(self) -> None:
         uses_pattern = re.compile(
-            r"(?m)^\s*uses:\s+(actions/(?:checkout|upload-artifact)@[^\n]+)$"
+            r"(?m)^\s*uses:\s+"
+            r"(actions/(?:checkout|upload-artifact|download-artifact)@[^\n]+)$"
         )
         observed: list[tuple[str, str]] = []
         for workflow_path in sorted(WORKFLOW_ROOT.glob("*.yml")):
@@ -129,7 +134,7 @@ class RequiredWorkflowTests(unittest.TestCase):
                 observed.append((workflow_path.name, action))
 
         self.assertTrue(observed)
-        allowed = {CHECKOUT_ACTION, UPLOAD_ARTIFACT_ACTION}
+        allowed = {CHECKOUT_ACTION, UPLOAD_ARTIFACT_ACTION, DOWNLOAD_ARTIFACT_ACTION}
         self.assertEqual(
             [(name, action) for name, action in observed if action not in allowed],
             [],
