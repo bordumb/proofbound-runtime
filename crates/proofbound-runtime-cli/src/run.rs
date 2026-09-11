@@ -846,10 +846,11 @@ fn build_receipt(input: ReceiptInputs<'_>) -> Result<ExecutionReceipt, RunError>
     .map_err(map_receipt_construction)?;
     let receipt = proofbound_runtime_core::construct_execution_receipt(ExecutionReceiptParts {
         execution_id: input.execution_id,
-        plan: ReceiptPlan::new(
+        plan: ReceiptPlan::new_v2(
             input.plan.id().clone(),
             input.plan_source,
             input.normalized_identity,
+            input.plan.authority().limits(),
         )
         .map_err(map_receipt_construction)?,
         policy: ReceiptPolicy::new(input.policy_identity.clone())

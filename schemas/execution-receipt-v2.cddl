@@ -42,7 +42,17 @@ artifact-role = "execution-plan" / "normalized-plan" / "compiled-policy" /
 receipt-plan = {
   "id": text .size (1..128),
   "source": artifact,
-  "normalized": artifact
+  "normalized": artifact,
+  "limits": plan-limits
+}
+
+plan-limits = {
+  "processes": uint32-nonzero,
+  "wall_time_ms": uint64,
+  "stdout_bytes": uint64,
+  "stderr_bytes": uint64,
+  "memory_bytes": memory-byte-limit,
+  "swap_bytes": swap-byte-limit
 }
 
 receipt-policy = {

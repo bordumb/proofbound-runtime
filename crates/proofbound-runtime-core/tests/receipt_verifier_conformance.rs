@@ -142,19 +142,27 @@ fn producer_and_verifier_agree_on_non_reuse() {
 #[test]
 fn independent_verifier_accepts_v2_cbor_and_recomputes_resource_nonreuse() {
     let mut input = parts(ExecutionOutcome::Exited { code: 0 });
+    let limits = ResourceLimits::new_v2(
+        ProcessLimit::new(2).expect("valid process limit"),
+        WallTimeLimit::from_milliseconds(1_000).expect("valid wall limit"),
+        OutputByteLimit::new(1_024),
+        OutputByteLimit::new(2_048),
+        MemoryByteLimit::new(65_536).expect("valid memory limit"),
+        SwapByteLimit::new(0).expect("valid swap limit"),
+    );
+    input.plan = ReceiptPlan::new_v2(
+        proofbound_runtime_core::PlanId::new("conformance.plan").expect("fixture plan ID is valid"),
+        artifact(ArtifactRole::ExecutionPlan, 1),
+        artifact(ArtifactRole::NormalizedPlan, 2),
+        limits,
+    )
+    .expect("fixture v2 plan roles are valid");
     input.resources = Some(
         ReceiptResources::new(
-            ResourceLimits::new_v2(
-                ProcessLimit::new(2).expect("valid process limit"),
-                WallTimeLimit::from_milliseconds(1_000).expect("valid wall limit"),
-                OutputByteLimit::new(1_024),
-                OutputByteLimit::new(2_048),
-                MemoryByteLimit::new(65_536).expect("valid memory limit"),
-                SwapByteLimit::new(0).expect("valid swap limit"),
-            ),
-            32_768,
+            limits,
+            65_537,
             0,
-            ReceiptMemoryEvents::new(0, 1, 0, 0, 0, 0),
+            ReceiptMemoryEvents::new(0, 0, 1, 0, 0, 0),
             ReceiptSwapEvents::new(0, 0),
         )
         .expect("complete v2 resources"),
@@ -166,7 +174,7 @@ fn independent_verifier_accepts_v2_cbor_and_recomputes_resource_nonreuse() {
     let report = verify_receipt(&bytes, ReceiptCommitment::for_bytes(&bytes))
         .expect("independent verifier accepts producer v2 bytes");
     let EligibilityDecision::NonReusable(reasons) = report.eligibility() else {
-        panic!("memory.high must force nonreuse");
+        panic!("memory.max must force nonreuse while permitting observed overshoot");
     };
-    assert_eq!(reasons.as_slice(), &[FailureReason::MemoryHigh]);
+    assert_eq!(reasons.as_slice(), &[FailureReason::MemoryMax]);
 }

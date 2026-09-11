@@ -63,6 +63,14 @@ def receipt() -> dict[str, object]:
         "outputs": [],
         "plan": {
             "id": "golden-v2",
+            "limits": {
+                "memory_bytes": 65_536,
+                "processes": 2,
+                "stderr_bytes": 2_048,
+                "stdout_bytes": 1_024,
+                "swap_bytes": 0,
+                "wall_time_ms": 1_000,
+            },
             "normalized": artifact("normalized-plan", b"golden normalized plan"),
             "source": artifact("execution-plan", b"golden source plan"),
         },

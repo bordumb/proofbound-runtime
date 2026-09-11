@@ -106,7 +106,12 @@ fn verifier_rejects_every_v2_resource_mutation() {
         mutate_cbor_path(&mut value, &case.path);
         let mutated = encode_cbor(&value);
         assert_ne!(mutated, original, "attack {} must alter bytes", case.id);
-        let error = verify_receipt(&mutated, original_commitment)
+        let commitment = if case.expected_error == "receipt.resources.plan-mismatch" {
+            ReceiptCommitment::for_bytes(&mutated)
+        } else {
+            original_commitment
+        };
+        let error = verify_receipt(&mutated, commitment)
             .expect_err("every committed resource mutation must fail");
         assert_eq!(error.code(), case.expected_error, "attack {}", case.id);
     }
@@ -300,6 +305,10 @@ fn mutate_cbor_components<'a>(
                 panic!("registered byte limit is not unsigned");
             };
             *number = number.checked_add(65_536).expect("golden limit increments");
+        } else if full_path == "/resources/terminal/memory_peak_bytes" {
+            *value = Cbor::Unsigned(65_537);
+        } else if full_path == "/resources/terminal/swap_peak_bytes" {
+            *value = Cbor::Unsigned(1);
         } else {
             mutate_cbor_value(value);
         }

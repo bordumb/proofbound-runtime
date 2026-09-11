@@ -8,9 +8,9 @@ use crate::cbor::Value;
 use crate::decode::{
     DecodeError, DecodedReceipt, RecordedEligibility, WireArchitecture, WireArtifact,
     WireArtifactRole, WireBoundary, WireBoundaryState, WireCapture, WireCgroup, WireCommand,
-    WireEligibility, WireEligibilityStatus, WireObservations, WireOutcome, WirePlan, WirePlatform,
-    WirePolicy, WireReason, WireReceipt, WireResources, WireRuntime, WireStream, WireStreams,
-    WireTcbEntry,
+    WireEligibility, WireEligibilityStatus, WireObservations, WireOutcome, WirePlan,
+    WirePlanLimits, WirePlatform, WirePolicy, WireReason, WireReceipt, WireResources, WireRuntime,
+    WireStream, WireStreams, WireTcbEntry,
 };
 use crate::{BoundaryState, CaptureState, EligibilityInput, OutcomeState, StructureState};
 
@@ -51,7 +51,7 @@ pub(crate) fn decode_v2_receipt(input: &[u8]) -> Result<DecodedReceipt, DecodeEr
         return Err(DecodeError::UnsupportedVersion);
     }
 
-    let plan = parse_plan(field(top, "plan")?)?;
+    let (plan, plan_limits) = parse_plan(field(top, "plan")?)?;
     let policy = parse_policy(field(top, "policy")?)?;
     let platform = parse_platform(field(top, "platform")?)?;
     let runtime = parse_runtime(field(top, "runtime")?)?;
@@ -131,16 +131,53 @@ pub(crate) fn decode_v2_receipt(input: &[u8]) -> Result<DecodedReceipt, DecodeEr
         eligibility_input,
         recorded_eligibility,
         resources,
+        plan_limits,
     ))
 }
 
-fn parse_plan(value: &Value) -> Result<WirePlan, DecodeError> {
-    let map = exact_map(value, &["id", "source", "normalized"])?;
-    Ok(WirePlan {
-        id: text(field(map, "id")?)?.to_owned(),
-        source: parse_artifact(field(map, "source")?)?,
-        normalized: parse_artifact(field(map, "normalized")?)?,
-    })
+fn parse_plan(value: &Value) -> Result<(WirePlan, WirePlanLimits), DecodeError> {
+    let map = exact_map(value, &["id", "source", "normalized", "limits"])?;
+    let limits = exact_map(
+        field(map, "limits")?,
+        &[
+            "processes",
+            "wall_time_ms",
+            "stdout_bytes",
+            "stderr_bytes",
+            "memory_bytes",
+            "swap_bytes",
+        ],
+    )?;
+    let processes = u32::try_from(unsigned(field(limits, "processes")?)?)
+        .ok()
+        .filter(|value| *value != 0)
+        .ok_or(DecodeError::InvalidSchema)?;
+    let wall_time_ms = unsigned(field(limits, "wall_time_ms")?)?;
+    let memory = unsigned(field(limits, "memory_bytes")?)?;
+    let swap = unsigned(field(limits, "swap_bytes")?)?;
+    if wall_time_ms == 0
+        || !(RESOURCE_QUANTUM..=MAX_RESOURCE_BYTES).contains(&memory)
+        || memory % RESOURCE_QUANTUM != 0
+        || swap > MAX_RESOURCE_BYTES
+        || swap % RESOURCE_QUANTUM != 0
+    {
+        return Err(DecodeError::InvalidSchema);
+    }
+    Ok((
+        WirePlan {
+            id: text(field(map, "id")?)?.to_owned(),
+            source: parse_artifact(field(map, "source")?)?,
+            normalized: parse_artifact(field(map, "normalized")?)?,
+        },
+        WirePlanLimits {
+            processes,
+            wall_time_ms,
+            stdout_bytes: unsigned(field(limits, "stdout_bytes")?)?,
+            stderr_bytes: unsigned(field(limits, "stderr_bytes")?)?,
+            memory,
+            swap,
+        },
+    ))
 }
 
 fn parse_policy(value: &Value) -> Result<WirePolicy, DecodeError> {

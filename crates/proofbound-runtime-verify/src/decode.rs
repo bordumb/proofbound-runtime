@@ -116,6 +116,7 @@ pub struct DecodedReceipt {
     recorded_eligibility: RecordedEligibility,
     version_two: bool,
     resources: Option<WireResources>,
+    plan_limits: Option<WirePlanLimits>,
 }
 
 impl DecodedReceipt {
@@ -211,6 +212,7 @@ impl DecodedReceipt {
         eligibility_input: EligibilityInput,
         recorded_eligibility: RecordedEligibility,
         resources: WireResources,
+        plan_limits: WirePlanLimits,
     ) -> Self {
         Self {
             value,
@@ -219,11 +221,16 @@ impl DecodedReceipt {
             recorded_eligibility,
             version_two: true,
             resources: Some(resources),
+            plan_limits: Some(plan_limits),
         }
     }
 
     pub(crate) const fn resources(&self) -> Option<&WireResources> {
         self.resources.as_ref()
+    }
+
+    pub(crate) const fn plan_limits(&self) -> Option<&WirePlanLimits> {
+        self.plan_limits.as_ref()
     }
 }
 
@@ -318,6 +325,7 @@ fn decode_v1_receipt(input: &[u8]) -> Result<DecodedReceipt, DecodeError> {
         recorded_eligibility,
         version_two: false,
         resources: None,
+        plan_limits: None,
     })
 }
 
@@ -371,6 +379,16 @@ pub(crate) struct WireResources {
     pub(crate) memory_events: [u64; 6],
     pub(crate) swap_events: [u64; 2],
     pub(crate) limit_events: Vec<WireReason>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct WirePlanLimits {
+    pub(crate) processes: u32,
+    pub(crate) wall_time_ms: u64,
+    pub(crate) stdout_bytes: u64,
+    pub(crate) stderr_bytes: u64,
+    pub(crate) memory: u64,
+    pub(crate) swap: u64,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]

@@ -94,6 +94,7 @@ pub struct ReceiptPlan {
     id: PlanId,
     source: ArtifactIdentity,
     normalized: ArtifactIdentity,
+    normalized_limits: Option<ResourceLimits>,
 }
 
 impl ReceiptPlan {
@@ -117,7 +118,23 @@ impl ReceiptPlan {
             id,
             source,
             normalized,
+            normalized_limits: None,
         })
+    }
+
+    /// Validates v2 plan roles and retains the exact normalized six-limit record.
+    pub fn new_v2(
+        id: PlanId,
+        source: ArtifactIdentity,
+        normalized: ArtifactIdentity,
+        normalized_limits: ResourceLimits,
+    ) -> Result<Self, ReceiptError> {
+        if !normalized_limits.is_version_two() {
+            return Err(ReceiptError::ResourceProfileIncomplete);
+        }
+        let mut plan = Self::new(id, source, normalized)?;
+        plan.normalized_limits = Some(normalized_limits);
+        Ok(plan)
     }
 }
 
@@ -773,8 +790,8 @@ impl ExecutionReceipt {
             }
         }
         require_tcb_roles(&parts)?;
-        let facts = match parts.resources {
-            Some(resources) => ReceiptFacts::new_v2(
+        let facts = match (parts.resources, parts.plan.normalized_limits) {
+            (Some(resources), Some(_)) => ReceiptFacts::new_v2(
                 parts.boundary.state,
                 parts.outcome,
                 parts.streams.stdout.capture,
@@ -782,13 +799,14 @@ impl ExecutionReceipt {
                 ReceiptStructure::Valid,
                 resources.limit_events,
             ),
-            None => ReceiptFacts::new(
+            (None, None) => ReceiptFacts::new(
                 parts.boundary.state,
                 parts.outcome,
                 parts.streams.stdout.capture,
                 parts.streams.stderr.capture,
                 ReceiptStructure::Valid,
             ),
+            _ => return Err(ReceiptError::ResourceProfileIncomplete),
         };
         let eligibility = derive_receipt_eligibility(&facts);
 
@@ -858,7 +876,7 @@ fn canonical_v2_binding_parts(
         .resources
         .ok_or(ReceiptError::ResourceProfileIncomplete)?;
     let value = Cbor::Map(vec![
-        ("plan".to_owned(), cbor_plan(&parts.plan)),
+        ("plan".to_owned(), cbor_plan(&parts.plan)?),
         (
             "schema".to_owned(),
             Cbor::Text(EXECUTION_RECEIPT_V2_SCHEMA.to_owned()),
@@ -1049,13 +1067,45 @@ fn cbor_artifact(identity: &ArtifactIdentity) -> crate::wire_v2::Value {
     ])
 }
 
-fn cbor_plan(plan: &ReceiptPlan) -> crate::wire_v2::Value {
+fn cbor_plan(plan: &ReceiptPlan) -> Result<crate::wire_v2::Value, ReceiptError> {
     use crate::wire_v2::Value as Cbor;
-    Cbor::Map(vec![
+    let limits = plan
+        .normalized_limits
+        .ok_or(ReceiptError::ResourceProfileIncomplete)?;
+    let memory = limits
+        .memory()
+        .ok_or(ReceiptError::ResourceProfileIncomplete)?;
+    let swap = limits
+        .swap()
+        .ok_or(ReceiptError::ResourceProfileIncomplete)?;
+    Ok(Cbor::Map(vec![
         ("id".to_owned(), Cbor::Text(plan.id.as_str().to_owned())),
         ("source".to_owned(), cbor_artifact(&plan.source)),
         ("normalized".to_owned(), cbor_artifact(&plan.normalized)),
-    ])
+        (
+            "limits".to_owned(),
+            Cbor::Map(vec![
+                (
+                    "processes".to_owned(),
+                    Cbor::Unsigned(u64::from(limits.processes().get())),
+                ),
+                (
+                    "wall_time_ms".to_owned(),
+                    Cbor::Unsigned(limits.wall_time().milliseconds()),
+                ),
+                (
+                    "stdout_bytes".to_owned(),
+                    Cbor::Unsigned(limits.stdout().get()),
+                ),
+                (
+                    "stderr_bytes".to_owned(),
+                    Cbor::Unsigned(limits.stderr().get()),
+                ),
+                ("memory_bytes".to_owned(), Cbor::Unsigned(memory.get())),
+                ("swap_bytes".to_owned(), Cbor::Unsigned(swap.get())),
+            ]),
+        ),
+    ]))
 }
 
 fn cbor_command(command: &ReceiptCommand) -> crate::wire_v2::Value {
@@ -2007,6 +2057,17 @@ mod tests {
         }
     }
 
+    fn version_two_limits() -> ResourceLimits {
+        ResourceLimits::new_v2(
+            ProcessLimit::new(2).expect("valid process limit"),
+            WallTimeLimit::from_milliseconds(1_000).expect("valid wall limit"),
+            OutputByteLimit::new(1_024),
+            OutputByteLimit::new(2_048),
+            MemoryByteLimit::new(65_536).expect("valid memory limit"),
+            SwapByteLimit::new(0).expect("valid swap limit"),
+        )
+    }
+
     #[test]
     fn constructor_derives_reuse_and_canonicalizes_sets() {
         let receipt = ExecutionReceipt::new(parts()).expect("fixture receipt is valid");
@@ -2019,16 +2080,11 @@ mod tests {
     #[test]
     fn version_two_resources_drive_receipt_eligibility() {
         let mut input = parts();
+        let limits = version_two_limits();
+        input.plan.normalized_limits = Some(limits);
         input.resources = Some(
             ReceiptResources::new(
-                ResourceLimits::new_v2(
-                    ProcessLimit::new(2).expect("valid process limit"),
-                    WallTimeLimit::from_milliseconds(1_000).expect("valid wall limit"),
-                    OutputByteLimit::new(1_024),
-                    OutputByteLimit::new(2_048),
-                    MemoryByteLimit::new(65_536).expect("valid memory limit"),
-                    SwapByteLimit::new(0).expect("valid swap limit"),
-                ),
+                limits,
                 32_768,
                 0,
                 ReceiptMemoryEvents::new(0, 1, 0, 0, 0, 0),
@@ -2046,16 +2102,11 @@ mod tests {
     #[test]
     fn version_two_receipt_is_deterministic_cbor_with_closed_resource_object() {
         let mut input = parts();
+        let limits = version_two_limits();
+        input.plan.normalized_limits = Some(limits);
         input.resources = Some(
             ReceiptResources::new(
-                ResourceLimits::new_v2(
-                    ProcessLimit::new(2).expect("valid process limit"),
-                    WallTimeLimit::from_milliseconds(1_000).expect("valid wall limit"),
-                    OutputByteLimit::new(1_024),
-                    OutputByteLimit::new(2_048),
-                    MemoryByteLimit::new(65_536).expect("valid memory limit"),
-                    SwapByteLimit::new(0).expect("valid swap limit"),
-                ),
+                limits,
                 32_768,
                 0,
                 ReceiptMemoryEvents::new(0, 0, 0, 0, 0, 0),

@@ -3,17 +3,17 @@ schema = "proofbound-runtime-receipt-resource-attacks/2"
 [[cases]]
 id = "configured-processes"
 path = "/resources/configured/pids.max"
-expected_error = "receipt.commitment.mismatch"
+expected_error = "receipt.resources.plan-mismatch"
 
 [[cases]]
 id = "configured-memory"
 path = "/resources/configured/memory.max"
-expected_error = "receipt.commitment.mismatch"
+expected_error = "receipt.resources.plan-mismatch"
 
 [[cases]]
 id = "configured-swap"
 path = "/resources/configured/memory.swap.max"
-expected_error = "receipt.commitment.mismatch"
+expected_error = "receipt.resources.plan-mismatch"
 
 [[cases]]
 id = "configured-oom-group"
@@ -23,12 +23,12 @@ expected_error = "receipt.schema.invalid"
 [[cases]]
 id = "terminal-memory-peak"
 path = "/resources/terminal/memory_peak_bytes"
-expected_error = "receipt.commitment.mismatch"
+expected_error = "receipt.resources.plan-mismatch"
 
 [[cases]]
 id = "terminal-swap-peak"
 path = "/resources/terminal/swap_peak_bytes"
-expected_error = "receipt.commitment.mismatch"
+expected_error = "receipt.resources.plan-mismatch"
 
 [[cases]]
 id = "terminal-memory-low"

@@ -74,6 +74,8 @@ pub enum ValidationError {
     EligibilityMismatch,
     /// The recorded version 2 limit-event set does not match terminal counters.
     ResourceEventsMismatch,
+    /// Configured values or terminal peaks contradict the normalized plan limits.
+    ResourcePlanMismatch,
 }
 
 impl ValidationError {
@@ -102,6 +104,7 @@ impl ValidationError {
             Self::TcbRoleMissing => "receipt.tcb.role.missing",
             Self::EligibilityMismatch => "receipt.eligibility.mismatch",
             Self::ResourceEventsMismatch => "receipt.resources.events-mismatch",
+            Self::ResourcePlanMismatch => "receipt.resources.plan-mismatch",
         }
     }
 }
@@ -219,8 +222,22 @@ fn validate_resources(receipt: &DecodedReceipt) -> Result<(), ValidationError> {
     if !receipt.is_version_two() {
         return Err(ValidationError::ResourceEventsMismatch);
     }
-    let _configured = (resources.processes, resources.memory, resources.swap);
-    let _peaks = (resources.memory_peak, resources.swap_peak);
+    let plan = receipt
+        .plan_limits()
+        .ok_or(ValidationError::ResourcePlanMismatch)?;
+    let _supervisor_limits = (plan.wall_time_ms, plan.stdout_bytes, plan.stderr_bytes);
+    if (resources.processes, resources.memory, resources.swap)
+        != (plan.processes, plan.memory, plan.swap)
+    {
+        return Err(ValidationError::ResourcePlanMismatch);
+    }
+    if (resources.memory_peak > plan.memory && resources.memory_events[2] == 0)
+        || (resources.swap_peak > plan.swap
+            && resources.swap_events[0] == 0
+            && resources.swap_events[1] == 0)
+    {
+        return Err(ValidationError::ResourcePlanMismatch);
+    }
     let expected = [
         (resources.memory_events[1] != 0, WireReason::MemoryHigh),
         (resources.memory_events[2] != 0, WireReason::MemoryMax),
