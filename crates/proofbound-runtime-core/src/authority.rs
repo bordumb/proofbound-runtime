@@ -348,10 +348,15 @@ pub struct ResourceLimits {
     wall_time: WallTimeLimit,
     stdout: OutputByteLimit,
     stderr: OutputByteLimit,
+    memory: Option<MemoryByteLimit>,
+    swap: Option<SwapByteLimit>,
 }
 
 impl ResourceLimits {
-    /// Creates one resource-limit set.
+    /// Creates one legacy version 1 resource-limit set.
+    ///
+    /// Absence of memory and swap bounds represents the frozen version 1
+    /// model. New executions must use [`Self::new_v2`].
     #[must_use]
     pub fn new(
         processes: ProcessLimit,
@@ -364,6 +369,28 @@ impl ResourceLimits {
             wall_time,
             stdout,
             stderr,
+            memory: None,
+            swap: None,
+        }
+    }
+
+    /// Creates one complete version 2 resource-limit set.
+    #[must_use]
+    pub fn new_v2(
+        processes: ProcessLimit,
+        wall_time: WallTimeLimit,
+        stdout: OutputByteLimit,
+        stderr: OutputByteLimit,
+        memory: MemoryByteLimit,
+        swap: SwapByteLimit,
+    ) -> Self {
+        Self {
+            processes,
+            wall_time,
+            stdout,
+            stderr,
+            memory: Some(memory),
+            swap: Some(swap),
         }
     }
 
@@ -391,6 +418,24 @@ impl ResourceLimits {
         self.stderr
     }
 
+    /// Returns the version 2 memory bound, or `None` for a legacy profile.
+    #[must_use]
+    pub const fn memory(self) -> Option<MemoryByteLimit> {
+        self.memory
+    }
+
+    /// Returns the version 2 swap bound, or `None` for a legacy profile.
+    #[must_use]
+    pub const fn swap(self) -> Option<SwapByteLimit> {
+        self.swap
+    }
+
+    /// Reports whether all six version 2 limits are present.
+    #[must_use]
+    pub const fn is_version_two(self) -> bool {
+        self.memory.is_some() && self.swap.is_some()
+    }
+
     /// Reports whether this limit set permits no more use than another set.
     #[must_use]
     pub fn is_no_more_permissive_than(self, other: Self) -> bool {
@@ -398,6 +443,16 @@ impl ResourceLimits {
             && self.wall_time <= other.wall_time
             && self.stdout <= other.stdout
             && self.stderr <= other.stderr
+            && optional_bound_is_no_more_permissive(self.memory, other.memory)
+            && optional_bound_is_no_more_permissive(self.swap, other.swap)
+    }
+}
+
+fn optional_bound_is_no_more_permissive<T: Ord>(left: Option<T>, right: Option<T>) -> bool {
+    match (left, right) {
+        (Some(left), Some(right)) => left <= right,
+        (Some(_), None) | (None, None) => true,
+        (None, Some(_)) => false,
     }
 }
 
@@ -632,7 +687,10 @@ mod tests {
             SwapByteLimit::new(65_536).expect("valid fixture"),
         );
 
-        assert_eq!(smaller.memory(), Some(MemoryByteLimit::new(65_536).unwrap()));
+        assert_eq!(
+            smaller.memory(),
+            Some(MemoryByteLimit::new(65_536).unwrap())
+        );
         assert_eq!(smaller.swap(), Some(SwapByteLimit::new(0).unwrap()));
         assert!(smaller.is_no_more_permissive_than(larger));
         assert!(!larger.is_no_more_permissive_than(smaller));
