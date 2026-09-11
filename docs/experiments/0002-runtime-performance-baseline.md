@@ -115,6 +115,27 @@ receives the raw result directory, recomputes file identities and statistics,
 and publishes only a verification report. It never rewrites the producer
 result.
 
+## Implementation checkpoint
+
+The version 1 pure harness is complete through `6f04b6f`. It measures all
+seven pre-registered entry points, retains 1,000 raw samples per subject, and
+binds the result to the exact clean source, release-profile benchmark binary,
+Rust toolchain, architecture, protocol, and input fixture identities. Receipt
+construction and canonical encoding use a checked-in canonical version 1
+receipt. Composition uses separately identified checked-in typed constants.
+
+The standard-library-only verifier and closed operational schema reject
+subject omission or reordering, source, executable, or fixture substitution,
+unknown or duplicate fields, unsorted samples, and forged summaries. The
+manual hosted workflow added at `aae19a4` accepts one exact 40-character
+revision, runs the complete pure domain on x86_64 and aarch64, retains producer
+and verifier failures separately, and uploads the raw result and independent
+report. No hosted measurement is recorded here until that workflow completes
+and the downloaded artifacts verify again outside their producing jobs.
+
+This checkpoint adds no version 2 implementation. The ADR 0003 map-key gate
+continues to block version 2 CDDL, golden vectors, and both codecs.
+
 ## Hosted matrix and retention
 
 The pure harness runs once on x86_64 and once on aarch64 Linux. Native phase
