@@ -174,7 +174,7 @@ impl RunRule {
 
 /// Contains one typed `pbr run` orchestration failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) struct RunError {
+pub struct RunError {
     exit_code: u8,
     phase: RunPhase,
     rule: RunRule,
@@ -211,7 +211,7 @@ impl RunError {
         }
     }
 
-    pub(crate) const fn exit_code(self) -> u8 {
+    pub const fn exit_code(self) -> u8 {
         self.exit_code
     }
 
@@ -223,7 +223,7 @@ impl RunError {
         self.rule
     }
 
-    pub(crate) const fn code(self) -> &'static str {
+    pub const fn code(self) -> &'static str {
         self.code
     }
 }

@@ -111,6 +111,31 @@ pub struct RunTimings {
     intervals: [std::time::Duration; RunBenchmarkPhase::ALL.len()],
 }
 
+/// One successful production orchestration result with out-of-band timings.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ObservedRun {
+    report: Value,
+    timings: RunTimings,
+}
+
+impl ObservedRun {
+    /// Returns the ordinary version 1 JSON run-result projection.
+    #[must_use]
+    pub const fn report(&self) -> &Value {
+        &self.report
+    }
+
+    /// Returns timings that are excluded from every Runtime wire object.
+    #[must_use]
+    pub const fn timings(&self) -> &RunTimings {
+        &self.timings
+    }
+
+    pub(crate) fn into_report(self) -> Value {
+        self.report
+    }
+}
+
 impl RunTimings {
     /// Constructs one complete interval set in the closed phase order.
     #[must_use]
@@ -155,13 +180,49 @@ pub(crate) fn execute(
     ))
 }
 
+/// Observes the production orchestration path without changing its wire output.
+#[cfg(not(target_os = "linux"))]
+pub fn execute_observed(
+    _plan_path: &Path,
+    _receipt_path: &Path,
+    _cgroup_root: &Path,
+    _runtime_executable: &Path,
+) -> Result<ObservedRun, RunError> {
+    Err(RunError::unsupported(
+        RunPhase::HostCapabilities,
+        RunRule::HostSupported,
+        "execution.os.unsupported",
+    ))
+}
+
 #[cfg(target_os = "linux")]
 pub(crate) fn execute(
     plan_path: &Path,
     receipt_path: &Path,
     cgroup_root: &Path,
 ) -> Result<Value, RunError> {
+    let runtime_executable = std::env::current_exe().map_err(|_| {
+        RunError::identity(
+            RunPhase::RuntimeIdentity,
+            RunRule::RuntimeIdentityObserved,
+            "runtime.path.unavailable",
+        )
+    })?;
+    execute_observed(plan_path, receipt_path, cgroup_root, &runtime_executable)
+        .map(ObservedRun::into_report)
+}
+
+/// Observes the production orchestration path without changing its wire output.
+#[cfg(target_os = "linux")]
+pub fn execute_observed(
+    plan_path: &Path,
+    receipt_path: &Path,
+    cgroup_root: &Path,
+    runtime_executable: &Path,
+) -> Result<ObservedRun, RunError> {
     use std::os::fd::AsRawFd as _;
+
+    let phase_start = std::time::Instant::now();
 
     let receipt_path = prepare_receipt_path(receipt_path)?;
     let canonical_plan = fs::canonicalize(plan_path).map_err(|_| {
@@ -203,7 +264,9 @@ pub(crate) fn execute(
     })?;
     let resolver = RootedPathResolver::open(plan_root)
         .map_err(|error| map_resolution(RunPhase::PlanRoot, RunRule::PlanRootConfined, error))?;
+    let plan_validation_and_normalization = phase_start.elapsed();
 
+    let phase_start = std::time::Instant::now();
     let supported = probe_capabilities(cgroup_root)
         .require_supported()
         .map_err(map_probe)?;
@@ -237,6 +300,9 @@ pub(crate) fn execute(
                 error,
             )
         })?;
+    let host_and_path_preflight = phase_start.elapsed();
+
+    let phase_start = std::time::Instant::now();
     let executable = resolver
         .discover_executable(plan.command().executable(), supported.architecture())
         .map_err(|error| {
@@ -248,14 +314,7 @@ pub(crate) fn execute(
         })?;
     let readable = resolve_read_authority(&resolver, &compiled)?;
 
-    let current_executable = fs::canonicalize(std::env::current_exe().map_err(|_| {
-        RunError::identity(
-            RunPhase::RuntimeIdentity,
-            RunRule::RuntimeIdentityObserved,
-            "runtime.path.unavailable",
-        )
-    })?)
-    .map_err(|_| {
+    let current_executable = fs::canonicalize(runtime_executable).map_err(|_| {
         RunError::identity(
             RunPhase::RuntimeIdentity,
             RunRule::RuntimeIdentityObserved,
@@ -342,7 +401,9 @@ pub(crate) fn execute(
         &output_root,
         compiled.cgroup().limits(),
     )?;
+    let executable_closure_inventory = phase_start.elapsed();
 
+    let phase_start = std::time::Instant::now();
     let execution_id = fresh_execution_id().map_err(map_execution_setup)?;
     let limits = compiled.cgroup().limits();
     let cgroup = FreshCgroup::create(supported.cgroup_v2(), execution_id, limits.processes())
@@ -350,7 +411,9 @@ pub(crate) fn execute(
     let cgroup_identity = cgroup.identity();
     let launcher_identity =
         LauncherIdentity::new(execution_id, policy_identity.digest(), cgroup_identity);
+    let cgroup_creation_and_readback = phase_start.elapsed();
 
+    let phase_start = std::time::Instant::now();
     let executable_fd = executable.executable().as_fd().as_raw_fd();
     let working_directory_fd = working_directory.as_fd().as_raw_fd();
     let mut rules = vec![launcher_rule(
@@ -462,6 +525,8 @@ pub(crate) fn execute(
         inherited.push(path.as_fd());
     }
     inherited.push(output_root.as_fd());
+    let launcher_request_and_identity_revalidation = phase_start.elapsed();
+
     let execution = supervise_launcher(
         &launcher_path,
         request,
@@ -472,7 +537,9 @@ pub(crate) fn execute(
         supported.landlock_abi(),
     )
     .map_err(map_supervisor)?;
+    let supervisor_timings = execution.timings();
 
+    let phase_start = std::time::Instant::now();
     let outputs = output_root.inventory().map_err(|error| {
         map_output(
             RunPhase::OutputInventory,
@@ -487,6 +554,9 @@ pub(crate) fn execute(
             error,
         )
     })?;
+    let output_inventory = phase_start.elapsed();
+
+    let phase_start = std::time::Instant::now();
     let receipt = build_receipt(ReceiptInputs {
         plan: &plan,
         plan_source: plan_source.identity().clone(),
@@ -515,13 +585,32 @@ pub(crate) fn execute(
     })?;
     let commitment = format!("sha256:{}", hex_digest(&receipt_bytes));
     persist_receipt(&receipt_path, execution_id.as_bytes(), &receipt_bytes)?;
+    let receipt_construction_and_publication = phase_start.elapsed();
 
-    run_result_json(
+    let phase_start = std::time::Instant::now();
+    let report = run_result_json(
         &receipt_path,
         execution_id,
         &commitment,
         execution.outcome(),
-    )
+    )?;
+    let run_result_projection = phase_start.elapsed();
+    let timings = RunTimings::from_intervals([
+        plan_validation_and_normalization,
+        host_and_path_preflight,
+        executable_closure_inventory,
+        cgroup_creation_and_readback,
+        launcher_request_and_identity_revalidation,
+        supervisor_timings.launcher_creation(),
+        supervisor_timings.boundary_installation(),
+        supervisor_timings.process_execution(),
+        supervisor_timings.cleanup(),
+        supervisor_timings.stream_collection(),
+        output_inventory,
+        receipt_construction_and_publication,
+        run_result_projection,
+    ]);
+    Ok(ObservedRun { report, timings })
 }
 
 #[cfg(target_os = "linux")]
