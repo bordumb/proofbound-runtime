@@ -13,7 +13,10 @@ evidence = [
   "example-test:release-composition-cli",
 ]
 assumptions = ["PBR-COMMITMENT-AX-007", "PBR-TOOLCHAIN-AX-003"]
-open_obligations = []
+open_obligations = [
+  "Execute the complete version 2 composition corpus on both supported native architectures at the next release head.",
+  "Bind exact native pbr-compose artifacts containing version 2 composition before describing it as released.",
+]
 out_of_scope = [
   "Promotion of model-only or tested claims to artifact-bound linkage merely because their receipts were composed.",
   "Correctness of the supplied Proofbound or Runtime verifier binaries beyond their separately admitted claims and visible identities.",

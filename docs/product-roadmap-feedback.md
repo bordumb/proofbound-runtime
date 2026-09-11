@@ -33,7 +33,7 @@ Verified against the branch head, the four reviews, and the roadmap's own exit c
 
 ## Claim ledger honesty
 
-- [ ] **Restore open obligations** on PBR-RUN-007, SEQUENCE-003, VERIFY-006, and COMPOSE-008. Their release-observation units run only in the manual release workflow, which has not run at any 0.2 head. Match the wording PBR-PREFLIGHT-009 uses.
+- [x] **Restore open obligations** on PBR-RUN-007, SEQUENCE-003, VERIFY-006, and COMPOSE-008. Their release-observation units run only in the manual release workflow, which has not run at any 0.2 head. Match the wording PBR-PREFLIGHT-009 uses.
 - [ ] **Add the four missing claims** to the summary table in `docs/assurance-plan.md`, and add a doc check that fails when a claim has no row.
 - [ ] **Run the 0.2.0 release workflow on the exact merge head** and only then close the observation obligations. RT-1.5 and the Order 3 exit condition both wait on this.
 

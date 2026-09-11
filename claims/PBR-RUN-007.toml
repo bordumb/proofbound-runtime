@@ -16,7 +16,10 @@ assumptions = [
   "PBR-HOST-AX-002",
   "PBR-TOOLCHAIN-AX-003",
 ]
-open_obligations = []
+open_obligations = [
+  "Execute the complete version 2 run, receipt, and resource-limit corpus on both supported native architectures at the next release head.",
+  "Bind exact native pbr artifacts containing the version 2 run path before describing that path as released.",
+]
 out_of_scope = [
   "Correctness of the Linux kernel or host platform under the recorded assumptions.",
   "Semantic correctness of the child program or its outputs.",

@@ -14,7 +14,10 @@ evidence = [
   "example-test:receipt-verifier-attacks",
 ]
 assumptions = ["PBR-COMMITMENT-AX-007", "PBR-TOOLCHAIN-AX-003"]
-open_obligations = []
+open_obligations = [
+  "Execute the complete version 2 receipt-verification and malicious-carrier corpus on both supported native architectures at the next release head.",
+  "Bind exact native pbr-verify artifacts containing the version 2 verifier before describing it as released.",
+]
 out_of_scope = [
   "Correctness of the receipt producer merely because the verifier accepts one bounded corpus.",
   "Receipt properties not represented by the versioned schema and derivation rules.",
