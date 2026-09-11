@@ -17,6 +17,11 @@ verifiable account of the execution boundary.
 > and its runtime and assurance bundles are published in the
 > [v0.1.0 release](https://github.com/bordumb/proofbound-runtime/releases/tag/v0.1.0).
 
+The current source branch is the version 0.2 candidate. It requires Version 2
+plans with explicit memory and swap limits and emits deterministic-CBOR Version
+2 wire objects. Those changes are not attributed to the `v0.1.0` release and
+remain unreleased until both native release contexts admit the exact head.
+
 ## What it is
 
 Proofbound Runtime is a Linux-first execution-assurance gateway for autonomous
@@ -151,56 +156,54 @@ target/release/pbr-verify --version
 target/release/pbr-compose --version
 ```
 
-The host must provide a delegated cgroup v2 directory with the `pids`
-controller enabled and no direct processes. See the
+The `v0.1.0` host must provide a delegated cgroup v2 directory with the `pids`
+controller enabled and no direct processes. The current Version 2 source also
+requires the `memory` controller and delegates both with
+`Delegate=pids memory`. See the
 [version 0.1 installation and host-readiness guide](docs/guides/install-v0.1.md)
-for the maintained systemd delegation recipe. Confirm all required mechanisms
-before running a workload:
+for the historical recipe and
+[Specification 0007](docs/specs/0007_memory_and_swap_profile.md) for the
+Version 2 profile. Confirm all required mechanisms before running a workload:
 
 ```console
 target/release/pbr doctor --cgroup-root /path/to/delegated/cgroup
 ```
 
-Create a plan beside an existing statically linked executable. Replace the
-absolute executable path below, and make sure `output/` and `receipt.json` do
+For the current Version 2 source, create a deterministic-CBOR plan beside an
+existing statically linked executable. The explicit values below grant one
+process, 256 MiB of cgroup-accounted memory, and no disk-backed swap. Replace
+the executable path and make sure `plan.cbor`, `output/`, and `receipt.cbor` do
 not already exist:
 
-```toml
-schema = "proofbound-runtime-plan/1"
-id = "example.hello"
-
-[command]
-executable = "/absolute/path/to/static-tool"
-arguments = []
-working_directory = "."
-
-[authority]
-network = "deny"
-environment = []
-read = []
-runtime_read = []
-write = ["output"]
-execute = ["/absolute/path/to/static-tool"]
-
-[limits]
-wall_time_ms = 5000
-stdout_bytes = 65536
-stderr_bytes = 65536
-processes = 1
+```console
+python3 tools/ci/encode_plan_v2.py \
+  --output plan.cbor \
+  --id example.hello \
+  --executable /absolute/path/to/static-tool \
+  --working-directory . \
+  --write output \
+  --execute /absolute/path/to/static-tool \
+  --processes 1 \
+  --wall-time-ms 5000 \
+  --stdout-bytes 65536 \
+  --stderr-bytes 65536 \
+  --memory-bytes 268435456 \
+  --swap-bytes 0
 ```
 
 Validate, execute, independently verify, and inspect it:
 
 ```console
-target/release/pbr plan check --plan plan.toml
-target/release/pbr run --plan plan.toml --receipt receipt.json \
+target/release/pbr plan check --plan plan.cbor
+target/release/pbr run --plan plan.cbor --receipt receipt.cbor \
   --cgroup-root /path/to/delegated/cgroup >run-result.json
 COMMITMENT=$(python3 -c \
-  'import json; print(json.load(open("run-result.json"))["commitment"])')
+  'import json; value=json.load(open("run-result.json"))["commitment"]; \
+print("sha256:" + value.removeprefix("hex:"))')
 EXECUTION_ID=$(python3 -c \
   'import json; print(json.load(open("run-result.json"))["execution_id"])')
-target/release/pbr-verify --expected-commitment "$COMMITMENT" receipt.json
-target/release/pbr inspect receipt.json
+target/release/pbr-verify --expected-commitment "$COMMITMENT" receipt.cbor
+target/release/pbr inspect receipt.cbor
 ```
 
 `runtime_read` must explicitly list canonical absolute library roots for a
@@ -264,14 +267,16 @@ verifier report beside it.
 
 ## Supported platforms
 
-Version 0.1 targets native Linux on `x86_64` and `aarch64`. A supported host is
+Version 0.1 targets native Linux on `x86_64` and `aarch64`. The Version 2
+candidate retains those architectures and additionally requires delegated
+`pids` and `memory` cgroup v2 controllers. A supported host is
 non-root, exposes the reviewed Landlock ABI range 3 through 11, supports
 `no_new_privs` and the registered seccomp actions, and supplies a delegated
-cgroup v2 root with the `pids` controller enabled. `pbr doctor` reports the
-observed capability identity. Any missing, older, newer, mismatched, or
-unreviewed mechanism fails closed; macOS and Windows can validate plans and
-inspect receipts but cannot execute them. A container or mock does not count as
-native enforcement evidence.
+cgroup v2 root with the profile's required controllers enabled. `pbr doctor`
+reports the observed capability identity. Any missing, older, newer,
+mismatched, or unreviewed mechanism fails closed; macOS and Windows can
+validate plans and inspect receipts but cannot execute them. A container or
+mock does not count as native enforcement evidence.
 
 ## License
 
