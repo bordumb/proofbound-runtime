@@ -14,6 +14,7 @@ python3 -m unittest tools.ci.test_required_workflow
 python3 -m unittest tools.ci.test_release_workflow
 python3 -m unittest tools.release.test_validate_release_state
 python3 -m unittest tools.ci.test_timing
+python3 -m unittest tools.ci.test_summarize_timings
 python3 -m unittest tools.ci.test_tool_cache
 python3 -m unittest tools.ci.test_lean_toolchain
 python3 -m unittest tools.ci.test_wire_transition
