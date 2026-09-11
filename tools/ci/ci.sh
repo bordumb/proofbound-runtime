@@ -50,6 +50,7 @@ if selected "preflight"; then
   timed_unit workflow-tests python3 -m unittest tools.ci.test_required_workflow
   timed_unit native-context-tests python3 -m unittest tools.ci.test_native_context
   timed_unit release-workflow-tests python3 -m unittest tools.ci.test_release_workflow
+  timed_unit release-provenance-tests python3 -m unittest tools.ci.test_release_provenance
   timed_unit acceptance-action-tests python3 -m unittest tools.ci.test_acceptance_action
   timed_unit acceptance-policy-compiler-tests python3 -m unittest tools.ci.test_acceptance_policy_compiler
   timed_unit plan-scaffold-contract-tests python3 -m unittest tools.ci.test_plan_scaffold_contract

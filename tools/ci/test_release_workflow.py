@@ -85,6 +85,21 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("name: proofbound-runtime-sdk-packages-", sdk_job)
         self.assertIn("path: dist/sdk/", sdk_job)
 
+    def test_release_provenance_joins_and_verifies_every_release_artifact(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn("\n  provenance:\n", workflow)
+        provenance = workflow[workflow.index("\n  provenance:\n") :]
+        self.assertIn("needs: [sdk-release, release]", provenance)
+        self.assertIn("proofbound-runtime-sdk-packages-", provenance)
+        self.assertIn("proofbound-runtime-x86_64", provenance)
+        self.assertIn("proofbound-runtime-aarch64", provenance)
+        self.assertIn("tools/release/build_provenance.py", provenance)
+        self.assertIn("tools/release/verify_provenance.py", provenance)
+        self.assertIn("release-provenance.cbor", provenance)
+        self.assertIn("release-provenance.projection.json", provenance)
+        self.assertIn("proofbound-runtime-release-provenance-", provenance)
+
     def test_version_two_release_chain_uses_cbor_and_a_decoded_projection(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
