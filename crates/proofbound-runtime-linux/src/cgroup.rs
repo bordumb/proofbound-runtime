@@ -610,6 +610,57 @@ mod tests {
     }
 
     #[test]
+    fn version_two_observations_are_strict_monotonic_and_derive_events() {
+        let initial = parse_resource_snapshot(
+            "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+            "max 0\nfail 0\n",
+            "0\n",
+            "0\n",
+        )
+        .expect("canonical zero snapshot");
+        assert!(initial.is_zero());
+
+        let terminal = parse_resource_snapshot(
+            "low 0\nhigh 2\nmax 3\noom 1\noom_kill 1\noom_group_kill 0\n",
+            "max 4\nfail 5\n",
+            "65536\n",
+            "32768\n",
+        )
+        .expect("canonical terminal snapshot");
+        let observed = terminal
+            .checked_delta(initial)
+            .expect("monotonic counters");
+        assert_eq!(observed.memory_peak_bytes(), 65_536);
+        assert_eq!(observed.swap_peak_bytes(), 32_768);
+        assert_eq!(observed.memory_events().high(), 2);
+        assert_eq!(observed.memory_events().max(), 3);
+        assert_eq!(observed.memory_events().oom(), 1);
+        assert_eq!(observed.memory_events().oom_kill(), 1);
+        assert_eq!(observed.swap_events().max(), 4);
+        assert_eq!(observed.swap_events().fail(), 5);
+        assert!(observed.limit_events().contains(LimitEvent::MemoryHigh));
+        assert!(observed.limit_events().contains(LimitEvent::MemoryMax));
+        assert!(observed.limit_events().contains(LimitEvent::MemoryOom));
+        assert!(observed.limit_events().contains(LimitEvent::MemoryOomKill));
+        assert!(observed.limit_events().contains(LimitEvent::SwapMax));
+        assert!(observed.limit_events().contains(LimitEvent::SwapFail));
+
+        assert_eq!(
+            initial.checked_delta(terminal),
+            Err(CgroupError::ObservationRegression)
+        );
+        assert_eq!(
+            parse_resource_snapshot(
+                "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\n",
+                "max 0\nfail 0\n",
+                "0\n",
+                "0\n",
+            ),
+            Err(CgroupError::ObservationInvalid)
+        );
+    }
+
+    #[test]
     fn parses_kernel_events_and_process_sets_strictly() {
         assert_eq!(parse_events("populated 0\nfrozen 0\n"), Ok(false));
         assert_eq!(parse_events("populated 1\n"), Ok(true));
