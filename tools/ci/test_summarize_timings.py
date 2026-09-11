@@ -82,9 +82,9 @@ class TimingSummaryTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(
                 result.stdout,
-                "kind\tstage\tname\tsamples\tsuccesses\tfailures\tmedian_ms\tp95_ms\n"
-                "stage\tformal\tformal\t4\t3\t1\t200\t300\n"
-                "unit\trust\trust-format\t1\t1\t0\t25\t25\n",
+                "runner_arch\tkind\tstage\tname\tsamples\tsuccesses\tfailures\tmedian_ms\tp95_ms\n"
+                "X64\tstage\tformal\tformal\t4\t3\t1\t200\t300\n"
+                "X64\tunit\trust\trust-format\t1\t1\t0\t25\t25\n",
             )
 
     def test_invalid_or_duplicate_records_fail_closed(self) -> None:
@@ -144,7 +144,12 @@ class TimingSummaryTests(unittest.TestCase):
             result = self.run_summary(artifact)
 
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertIn("stage\tnative\tnative-boundary\t2\t2\t0", result.stdout)
+            self.assertEqual(
+                result.stdout,
+                "runner_arch\tkind\tstage\tname\tsamples\tsuccesses\tfailures\tmedian_ms\tp95_ms\n"
+                "ARM64\tstage\tnative\tnative-boundary\t1\t1\t0\t17648\t17648\n"
+                "X64\tstage\tnative\tnative-boundary\t1\t1\t0\t17035\t17035\n",
+            )
 
 
 if __name__ == "__main__":
