@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import copy
+import contextlib
 import hashlib
+import io
 import json
 import tempfile
 import unittest
 from pathlib import Path
 
-from experiments.performance.verify_pure import VerificationFailure, verify_result
+from experiments.performance.verify_pure import VerificationFailure, main, verify_result
 
 
 SOURCE = "a" * 40
@@ -141,6 +143,28 @@ class PureBenchmarkVerifierTests(unittest.TestCase):
             self.assertEqual(
                 caught.exception.code, "benchmark.verify.statistics-mismatch"
             )
+
+    def test_standalone_command_emits_a_separate_verification_report(self) -> None:
+        result = Path(self.temporary.name) / "RESULT.json"
+        result.write_bytes(encode(self.value))
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            exit_code = main(
+                [
+                    "--result",
+                    str(result),
+                    "--expected-source",
+                    SOURCE,
+                    "--benchmark-executable",
+                    str(self.executable),
+                    "--fixture",
+                    str(self.fixture),
+                ]
+            )
+        self.assertEqual(exit_code, 0)
+        report = json.loads(output.getvalue())
+        self.assertTrue(report["valid"])
+        self.assertEqual(report["result_sha256"], digest(result.read_bytes()))
 
 
 if __name__ == "__main__":
