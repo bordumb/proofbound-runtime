@@ -346,16 +346,18 @@ pub struct NativeWorkloadIdentity {
 }
 
 impl NativeWorkloadIdentity {
-    /// Validates the first closed native workload identity.
+    /// Validates one of the two closed native workload identities.
     pub fn new(
         id: &str,
         plan_sha256: String,
         executable_sha256: String,
         expected_output_sha256: String,
     ) -> Result<Self, BenchmarkError> {
-        if id != "hello-static-v1" {
-            return Err(BenchmarkError::ConfigurationMismatch);
-        }
+        let id = match id {
+            "hello-static-v1" => "hello-static-v1",
+            "hello-dynamic-v1" => "hello-dynamic-v1",
+            _ => return Err(BenchmarkError::ConfigurationMismatch),
+        };
         if [&plan_sha256, &executable_sha256, &expected_output_sha256]
             .into_iter()
             .any(|digest| !is_lower_hex_exact(digest, 64))
@@ -363,7 +365,7 @@ impl NativeWorkloadIdentity {
             return Err(BenchmarkError::InvalidDigest);
         }
         Ok(Self {
-            id: "hello-static-v1",
+            id,
             plan_sha256,
             executable_sha256,
             expected_output_sha256,
@@ -423,7 +425,7 @@ struct NativePublishedMeasurements {
     phases: Vec<NativePhaseResult>,
 }
 
-/// One complete operational result for the first native benchmark workload.
+/// One complete operational result for a registered native benchmark workload.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct NativeBenchmarkResult {
     schema: &'static str,

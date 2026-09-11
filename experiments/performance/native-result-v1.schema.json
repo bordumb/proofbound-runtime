@@ -92,7 +92,7 @@
         "expected_output_sha256"
       ],
       "properties": {
-        "id": { "const": "hello-static-v1" },
+        "id": { "enum": ["hello-static-v1", "hello-dynamic-v1"] },
         "plan_sha256": { "$ref": "#/$defs/sha256" },
         "executable_sha256": { "$ref": "#/$defs/sha256" },
         "expected_output_sha256": { "$ref": "#/$defs/sha256" }
@@ -293,4 +293,3 @@
     }
   }
 }
-

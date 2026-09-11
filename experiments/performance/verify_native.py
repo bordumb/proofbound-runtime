@@ -204,6 +204,7 @@ def verify_result(
     raw: bytes,
     expected_source: str,
     expected_architecture: str,
+    expected_workload: str,
     benchmark_executable: Path,
     pbr: Path,
     launcher: Path,
@@ -300,7 +301,9 @@ def verify_result(
         value["workload"],
         {"id", "plan_sha256", "executable_sha256", "expected_output_sha256"},
     )
-    if workload["id"] != "hello-static-v1":
+    if expected_workload not in {"hello-static-v1", "hello-dynamic-v1"}:
+        fail("benchmark.verify.workload-mismatch")
+    if workload["id"] != expected_workload:
         fail("benchmark.verify.workload-mismatch")
     for field, path in (
         ("plan_sha256", plan),
@@ -383,7 +386,7 @@ def verify_result(
         "valid": True,
         "result_sha256": hashlib.sha256(raw).hexdigest(),
         "source_commit": expected_source,
-        "workload": "hello-static-v1",
+        "workload": expected_workload,
         "sample_count": 100,
     }
 
@@ -395,6 +398,11 @@ def main(arguments: list[str] | None = None) -> int:
     parser.add_argument("--result", type=Path, required=True)
     parser.add_argument("--expected-source", required=True)
     parser.add_argument("--expected-architecture", required=True)
+    parser.add_argument(
+        "--expected-workload",
+        choices=("hello-static-v1", "hello-dynamic-v1"),
+        required=True,
+    )
     parser.add_argument("--benchmark-executable", type=Path, required=True)
     parser.add_argument("--pbr", type=Path, required=True)
     parser.add_argument("--launcher", type=Path, required=True)
@@ -410,6 +418,7 @@ def main(arguments: list[str] | None = None) -> int:
             raw,
             options.expected_source,
             options.expected_architecture,
+            options.expected_workload,
             options.benchmark_executable,
             options.pbr,
             options.launcher,
