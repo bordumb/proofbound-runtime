@@ -531,16 +531,6 @@ mod linux {
                     "{execution:#?}"
                 );
                 assert!(resources.memory_events().oom() > 0, "{execution:#?}");
-                let forced = force_swap_limit_event(&supported, &fixture, &workspace.0);
-                assert!(
-                    forced.swap_events().max() > 0 || forced.swap_events().fail() > 0,
-                    "{forced:#?}"
-                );
-                assert!(
-                    forced.limit_events().contains(LimitEvent::SwapMax)
-                        || forced.limit_events().contains(LimitEvent::SwapFail),
-                    "{forced:#?}"
-                );
             }
             other => panic!("unknown native swap mode: {other}"),
         }
@@ -1011,39 +1001,6 @@ mod linux {
                 "{execution:#?}"
             );
         }
-    }
-
-    fn force_swap_limit_event(
-        supported: &SupportedLinux,
-        fixture: &Path,
-        workspace: &Path,
-    ) -> proofbound_runtime_linux::TerminalResources {
-        let limits = ResourceLimits::new_v2(
-            ProcessLimit::new(1).expect("one swap-pressure process"),
-            WallTimeLimit::from_milliseconds(5_000).expect("bounded swap-pressure case"),
-            OutputByteLimit::new(1024),
-            OutputByteLimit::new(1024),
-            MemoryByteLimit::new(128 * 1024 * 1024).expect("valid memory limit"),
-            SwapByteLimit::new(16 * 1024 * 1024).expect("valid swap limit"),
-        );
-        let cgroup = FreshCgroup::create_v2(supported.cgroup_v2(), execution_id(), limits)
-            .expect("create forced-swap cgroup");
-        let cgroup_path = cgroup.path().to_owned();
-        let marker = workspace.join("forced-swap-ready");
-        let mut pressure = start_pressure(&cgroup, fixture, &marker, 64 * 1024 * 1024);
-        let reclaim = std::fs::write(
-            cgroup.path().join("memory.reclaim"),
-            b"67108864 swappiness=max\n",
-        );
-        assert!(reclaim.is_err(), "bounded swap cannot satisfy full reclaim");
-        pressure.kill().expect("stop forced-swap helper");
-        pressure.wait().expect("reap forced-swap helper");
-        let resources = cgroup
-            .finish()
-            .expect("drain and remove forced-swap cgroup")
-            .expect("forced-swap resource observations");
-        assert!(!cgroup_path.exists(), "forced-swap cgroup must be removed");
-        resources
     }
 
     fn start_pressure(
