@@ -74,7 +74,8 @@ with:
 python3 tools/ci/summarize_timings.py /absolute/path/to/downloaded-artifacts
 ```
 
-The report groups successful durations by the closed stage and unit names,
+The report groups successful durations by runner architecture and the closed
+stage and unit names,
 prints integer median and nearest-rank p95 values, and retains the failure
 count. It rejects malformed, duplicate, substituted-revision, and
 outcome-inconsistent records. This remains operational metadata for evaluating
