@@ -976,7 +976,7 @@ mod linux {
     }
 
     fn start_pressure(cgroup: &FreshCgroup, fixture: &Path, marker: &Path) -> std::process::Child {
-        let child = std::process::Command::new(fixture)
+        let mut child = std::process::Command::new(fixture)
             .args([
                 "memory-pressure-stopped",
                 "16777216",
@@ -1000,6 +1000,8 @@ mod linux {
             }
             std::thread::sleep(std::time::Duration::from_millis(1));
         }
+        child.kill().expect("stop unresponsive pressure helper");
+        child.wait().expect("reap unresponsive pressure helper");
         panic!("pressure helper did not confirm allocation");
     }
 
