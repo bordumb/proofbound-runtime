@@ -10,6 +10,7 @@ import io
 import json
 from pathlib import Path
 import subprocess
+import tarfile
 import tempfile
 import unittest
 import zipfile
@@ -146,6 +147,36 @@ class SdkPackageTests(unittest.TestCase):
             [entry["path"] for entry in package["files"]],
             ["README.md", "package.json", "src/index.d.ts", "src/index.ts"],
         )
+
+    def test_typescript_tarball_is_reproducible_and_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as first, tempfile.TemporaryDirectory() as second:
+            artifacts = []
+            for directory in (first, second):
+                subprocess.run(
+                    [
+                        "python3",
+                        "tools/sdk/build_npm_package.py",
+                        "--output",
+                        directory,
+                    ],
+                    cwd=ROOT,
+                    check=True,
+                    stdout=subprocess.DEVNULL,
+                )
+                artifact = Path(directory) / "proofbound-runtime-sdk-0.2.0.tgz"
+                artifacts.append(artifact.read_bytes())
+                with tarfile.open(artifact, "r:gz") as archive:
+                    self.assertEqual(
+                        archive.getnames(),
+                        [
+                            "package/README.md",
+                            "package/package.json",
+                            "package/src/index.d.ts",
+                            "package/src/index.ts",
+                        ],
+                    )
+                    self.assertTrue(all(member.isfile() for member in archive))
+            self.assertEqual(artifacts[0], artifacts[1])
 
 
 if __name__ == "__main__":
