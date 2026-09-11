@@ -108,6 +108,7 @@ name = "proofbound-runtime-bench"
 version = "0.1.0"
 dependencies = [
  "proofbound-runtime-core",
+ "proofbound-runtime-verify",
  "serde",
  "serde_json",
  "sha2",

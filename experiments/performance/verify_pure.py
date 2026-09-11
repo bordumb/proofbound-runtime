@@ -17,6 +17,7 @@ SUBJECTS = (
     "policy-compilation-v1",
     "receipt-construction-v1",
     "receipt-canonical-encoding-v1",
+    "receipt-independent-verification-v1",
 )
 PLAN_SUBJECTS = frozenset(SUBJECTS[:3])
 RECEIPT_SUBJECTS = frozenset(SUBJECTS[3:])

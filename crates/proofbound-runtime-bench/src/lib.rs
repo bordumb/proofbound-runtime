@@ -14,6 +14,7 @@ use proofbound_runtime_core::{
     TrustedComputingBaseEntry, TrustedComputingBaseRole, compile_policy,
     construct_execution_receipt, normalize_authority, parse_execution_plan,
 };
+use proofbound_runtime_verify::{ReceiptCommitment, verify_receipt};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
@@ -158,14 +159,18 @@ pub enum PureSubject {
     /// Version 1 canonical JSON receipt encoding.
     #[serde(rename = "receipt-canonical-encoding-v1")]
     ReceiptCanonicalEncodingV1,
+    /// Independent version 1 receipt verification from exact raw bytes.
+    #[serde(rename = "receipt-independent-verification-v1")]
+    ReceiptIndependentVerificationV1,
 }
 
-const PURE_SUBJECT_DOMAIN: [PureSubject; 5] = [
+const PURE_SUBJECT_DOMAIN: [PureSubject; 6] = [
     PureSubject::PlanParseV1,
     PureSubject::AuthorityNormalizationV1,
     PureSubject::PolicyCompilationV1,
     PureSubject::ReceiptConstructionV1,
     PureSubject::ReceiptCanonicalEncodingV1,
+    PureSubject::ReceiptIndependentVerificationV1,
 ];
 
 /// One pure subject, exact fixture identity, and calibrated measurement.
@@ -427,6 +432,7 @@ pub fn benchmark_core_v1(
     }
     let receipt_fixture_digest: [u8; 32] = Sha256::digest(RECEIPT_FIXTURE).into();
     let receipt_fixture_sha256 = Sha256Digest::from_bytes(receipt_fixture_digest).to_hex();
+    let receipt_commitment = ReceiptCommitment::for_bytes(&receipt_bytes);
 
     let plan_parse = measure(config, || {
         parse_execution_plan(std::hint::black_box(PLAN_FIXTURE))
@@ -461,6 +467,13 @@ pub fn benchmark_core_v1(
                 .expect("prevalidated receipt remains encodable")
         },
     )?;
+    let receipt_verification = measure(config, || {
+        verify_receipt(
+            std::hint::black_box(&receipt_bytes),
+            std::hint::black_box(receipt_commitment),
+        )
+        .expect("prevalidated receipt fixture remains independently verifiable")
+    })?;
 
     [
         (PureSubject::PlanParseV1, fixture_sha256.clone(), plan_parse),
@@ -481,8 +494,13 @@ pub fn benchmark_core_v1(
         ),
         (
             PureSubject::ReceiptCanonicalEncodingV1,
-            receipt_fixture_sha256,
+            receipt_fixture_sha256.clone(),
             receipt_encoding,
+        ),
+        (
+            PureSubject::ReceiptIndependentVerificationV1,
+            receipt_fixture_sha256,
+            receipt_verification,
         ),
     ]
     .into_iter()
@@ -999,6 +1017,7 @@ mod tests {
                 fixed_subject(PureSubject::ReceiptCanonicalEncodingV1, '5'),
                 fixed_subject(PureSubject::AuthorityNormalizationV1, '2'),
                 fixed_subject(PureSubject::ReceiptConstructionV1, '4'),
+                fixed_subject(PureSubject::ReceiptIndependentVerificationV1, '6'),
             ],
         )
         .expect("complete result is valid");
@@ -1015,6 +1034,7 @@ mod tests {
                 PureSubject::PolicyCompilationV1,
                 PureSubject::ReceiptConstructionV1,
                 PureSubject::ReceiptCanonicalEncodingV1,
+                PureSubject::ReceiptIndependentVerificationV1,
             ]
         );
         let first = result.to_json().expect("result encodes");
@@ -1106,6 +1126,7 @@ mod tests {
             fixed_subject(PureSubject::PolicyCompilationV1, '3'),
             fixed_subject(PureSubject::ReceiptConstructionV1, '4'),
             fixed_subject(PureSubject::ReceiptCanonicalEncodingV1, '5'),
+            fixed_subject(PureSubject::ReceiptIndependentVerificationV1, '6'),
         ];
         assert_eq!(
             make(

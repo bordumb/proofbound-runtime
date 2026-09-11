@@ -28,8 +28,8 @@
     "protocol": { "$ref": "#/$defs/protocol" },
     "subjects": {
       "type": "array",
-      "minItems": 5,
-      "maxItems": 5,
+      "minItems": 6,
+      "maxItems": 6,
       "prefixItems": [
         {
           "allOf": [
@@ -73,6 +73,16 @@
             {
               "properties": {
                 "subject": { "const": "receipt-canonical-encoding-v1" }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/subject" },
+            {
+              "properties": {
+                "subject": { "const": "receipt-independent-verification-v1" }
               }
             }
           ]
