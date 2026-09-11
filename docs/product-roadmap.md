@@ -156,9 +156,15 @@ with three bounded functional slices, one measurement slice, a machine-checked
 expectation domain, immutable per-mechanism results, and a deterministic
 comparison boundary.
 
-Upstream promotion is intentionally paused at its review boundary. Proofbound
-PR 2 is green but still needs an independent approving review. A dry run of
-the later integration promotion correctly failed because its head retained an
+Upstream promotion is intentionally paused at its review boundary. Claude's
+independent model review of Proofbound PR 2 requested changes on five blocking
+items. The first is a cross-project status weakening in mutation-witness
+validation: the core and independent verifier lost the universal two-shadow
+rule and selected the pytest command branch from an unvalidated argument
+prefix. PR 2 remains open until all five items land and are re-reviewed; the
+maintainer's endorsement of the completed review, not the model review by
+itself, is the promotion decision. A dry run of the later integration
+promotion correctly failed because its head retained an
 older approval envelope followed by newer changes. The obsolete envelope has
 been retired in a local subject commit. An independent review of PR 6 at head
 `a6964f6` confirmed that PR 2's six commits are embedded in the promotion and
@@ -171,6 +177,14 @@ recomputed against the new exact `main`, each remaining regression adjudicated,
 and the result sealed by a new approval-only envelope with no later byte
 changes. No Runtime claim wave depends on treating that pending stack as
 released.
+
+The stacked upstream reviews impose the exact repair order after PR 2: PR 7's
+required compiled-release/7 transition and same-wave Runtime composer change;
+PR 8's two requested changes; PR 9's three requested changes; then the fresh
+PR 6 diff and regression adjudication. PBF-0001 remains last. Branch
+protection, the review-count policy, the Proofbound release tag, and Runtime
+0.2.0 dispatch remain maintainer actions and stay open in the completion
+ledger.
 
 On 2026-09-10, [ADR 0003](adr/0003-deterministic-cbor-wire-objects.md) accepted
 deterministic CBOR for every committed version 2 or later wire object. The

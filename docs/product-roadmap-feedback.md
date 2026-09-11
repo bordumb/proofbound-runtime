@@ -35,19 +35,19 @@ Verified against the branch head, the four reviews, and the roadmap's own exit c
 
 - [x] **Restore open obligations** on PBR-RUN-007, SEQUENCE-003, VERIFY-006, and COMPOSE-008. Their release-observation units run only in the manual release workflow, which has not run at any 0.2 head. Match the wording PBR-PREFLIGHT-009 uses.
 - [x] **Add the four missing claims** to the summary table in `docs/assurance-plan.md`, and add a doc check that fails when a claim has no row.
-- [ ] **Run the 0.2.0 release workflow on the exact merge head** and only then close the observation obligations. RT-1.5 and the Order 3 exit condition both wait on this.
+- [ ] **Run the 0.2.0 release workflow on the exact merge head** and only then close the observation obligations. RT-1.5 and the Order 3 exit condition both wait on this. This is a maintainer action.
 
 ## Upstream, Order 1
 
-- [ ] **Get Proofbound PR 2 an independent approving review,** then recompute the promotion diff against upstream main and seal it with a new approval envelope. Runtime is still pinned to `70af5e6`, which is not on upstream main. The 2026-09-11 independent review of PR 6 confirmed that PR 2 is embedded and found 43 regressions; those must be recomputed and adjudicated only after PR 2 merges.
-- [ ] **Protect upstream main and tag a Proofbound release,** then move `ci.yml:235` and `release.yml:147` to that identity.
-- [ ] **Upstream PBF-0007, then PBF-0003, then PBF-0002 and PBF-0001.** All four are still "not upstreamed." PBF-0007 gates any new bounded resource claim beyond the local guard.
+- [ ] **Resolve Proofbound PR 2's independent review,** then obtain the maintainer-endorsed non-author envelope, merge, recompute the promotion diff against upstream main, and seal it with a new approval envelope. Claude's 2026-09-11 model review requested changes on five blockers; item 1 identifies a cross-project mutation-witness status weakening caused by lost two-shadow validation and argument-prefix language dispatch. Runtime is still pinned to `70af5e6`, which is not on upstream main. The separate PR 6 review confirmed that PR 2 is embedded and found 43 regressions; those must be recomputed and adjudicated only after PR 2 merges.
+- [ ] **Protect upstream main and tag a Proofbound release,** then move `ci.yml:235` and `release.yml:147` to that identity. Protection and tagging are maintainer actions.
+- [ ] **Upstream PBF-0007, then PBF-0003, then PBF-0002 and PBF-0001.** PR 7 is approved with required changes, led by a compiled-release/7 transition that must move Runtime's composer in the same wave. PRs 8 and 9 requested changes (two and three items respectively). PBF-0001 remains last. PBF-0007 gates any new bounded resource claim beyond the local guard.
 - [ ] **Decide the Proofbound envelope encoding upstream** per UP-0.8 and make the composer accept exactly what the pinned release declares.
 
 ## Review process, RT-0.1
 
 - [ ] **Add `CODEOWNERS`** for specs, ADRs, schemas, claims, formal bridges, `sys.rs`, launcher and supervisor code, the verifier, and release workflows. Name a real reviewer per entry.
-- [ ] **Require one approving review on main.** Branch protection currently requires zero. If no independent reviewer exists yet, leave PRs visibly unapproved rather than self-approving.
+- [ ] **Require one approving review on main.** Branch protection currently requires zero. This review-count decision is a maintainer action; until it changes, leave PRs visibly unapproved rather than self-approving.
 - [ ] **Split future work into claim-wave PRs** under ten hand-written commits. PR 3 is 372 commits and cannot be reviewed as a unit.
 
 ## Network decision, Order 7
