@@ -62,7 +62,8 @@ class RequiredWorkflowTests(unittest.TestCase):
 
         self.assertIn(
             "timed_unit performance-verifier-tests python3 -m unittest "
-            "experiments.performance.test_verify_pure",
+            "experiments.performance.test_verify_pure "
+            "experiments.performance.test_verify_native",
             script,
         )
 
@@ -71,7 +72,8 @@ class RequiredWorkflowTests(unittest.TestCase):
 
         self.assertIn(
             "timed_unit performance-schema-tests python3 -m unittest "
-            "experiments.performance.test_pure_result_schema",
+            "experiments.performance.test_pure_result_schema "
+            "experiments.performance.test_native_result_schema",
             script,
         )
 
