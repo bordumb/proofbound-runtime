@@ -115,12 +115,32 @@ class RequiredWorkflowTests(unittest.TestCase):
     def test_each_lane_uploads_timing_outside_assurance_evidence(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
-        self.assertEqual(workflow.count("actions/upload-artifact@"), 4)
+        self.assertEqual(workflow.count("actions/upload-artifact@"), 5)
         self.assertEqual(workflow.count("if: ${{ always() }}"), 9)
         self.assertEqual(workflow.count("proofbound-runtime-ci-timing-"), 4)
         self.assertNotIn(".proofbound", "\n".join(
             line for line in workflow.splitlines() if "timing" in line.lower()
         ))
+
+    def test_native_lane_retains_the_exact_assurance_evidence(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "PROOFBOUND_EVIDENCE_DIRECTORY: "
+            "${{ github.workspace }}/target/native-evidence/${{ matrix.architecture }}",
+            workflow,
+        )
+        self.assertIn("name: Upload native assurance evidence", workflow)
+        self.assertIn(
+            "name: proofbound-runtime-native-evidence-"
+            "${{ matrix.architecture }}-${{ env.PBR_EXACT_SHA }}",
+            workflow,
+        )
+        self.assertIn("path: ${{ env.PROOFBOUND_EVIDENCE_DIRECTORY }}", workflow)
+        native_script = (ROOT / "tools/ci/native-linux.sh").read_text(encoding="utf-8")
+        self.assertIn("tools/ci/native_context.py", native_script)
+        self.assertIn("native-context.json", native_script)
+        self.assertIn("native-swap-matrix.json", native_script)
 
     def test_each_lane_publishes_its_validated_timing_summary(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
@@ -146,7 +166,7 @@ class RequiredWorkflowTests(unittest.TestCase):
             ),
             4,
         )
-        self.assertEqual(workflow.count("-${{ env.PBR_EXACT_SHA }}"), 4)
+        self.assertEqual(workflow.count("-${{ env.PBR_EXACT_SHA }}"), 5)
         self.assertNotIn('= "$GITHUB_SHA"', workflow)
 
     def test_first_party_actions_are_exact_node24_releases(self) -> None:
