@@ -18,11 +18,10 @@ PYTHON_NAME = "proofbound_runtime_sdk-{version}-py3-none-any.whl"
 NPM_NAME = "proofbound-runtime-sdk-{version}.tgz"
 
 
-def run(arguments: list[str], *, cwd: Path, environment: dict[str, str] | None = None) -> None:
+def run(arguments: list[str], *, cwd: Path) -> None:
     subprocess.run(
         arguments,
         cwd=cwd,
-        env=environment,
         check=True,
         stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL,
@@ -60,26 +59,14 @@ def build_once(repository: Path, work: Path, version: str) -> dict[str, bytes]:
         ],
         cwd=repository,
     )
-    npm_environment = os.environ.copy()
-    npm_environment.update(
-        {
-            "npm_config_audit": "false",
-            "npm_config_cache": str(work / "npm-cache"),
-            "npm_config_fund": "false",
-            "npm_config_update_notifier": "false",
-        }
-    )
     run(
         [
-            "npm",
-            "pack",
-            "--ignore-scripts",
-            "--loglevel=error",
-            "--pack-destination",
+            sys.executable,
+            "tools/sdk/build_npm_package.py",
+            "--output",
             str(npm_output),
         ],
-        cwd=repository / "sdk/typescript",
-        environment=npm_environment,
+        cwd=repository,
     )
 
     paths = {

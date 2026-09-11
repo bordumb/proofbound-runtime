@@ -87,7 +87,10 @@ internals, and a release-package smoke check.
 
 Cross-language golden tests, malformed-plan cases, closed result-projection
 tests, shell-bypass invocation tests, oversized-output tests, and package-file
-inventories form the initial evidence. Publication to an external registry is
-a distribution event and remains gated on exact tag/release approval; the
-repository claim covers the package sources and reproducible package checks,
-not registry authenticity.
+inventories form the initial evidence. The Python wheel and npm tarball use
+dependency-free deterministic builders; the pinned Cargo packager produces the
+standalone Rust crate. The release workflow builds all three twice, compares
+their bytes, and retains a closed digest manifest at the exact requested
+revision. Publication to an external registry is a distribution event and
+remains gated on exact tag/release approval; the repository claim covers the
+package sources and reproducible package checks, not registry authenticity.

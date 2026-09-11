@@ -49,5 +49,7 @@ source_roots = [
   "tools/ci/test_sdk_contract.py",
   "tools/ci/test_sdk_packages.py",
   "tools/sdk/build_python_wheel.py",
+  "tools/sdk/build_npm_package.py",
+  "tools/release/build_sdks.py",
   "tools/sdk/check_cross_language.py",
 ]
