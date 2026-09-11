@@ -1,0 +1,73 @@
+schema = "proofbound-runtime-native-memory-attacks/2"
+
+[[case]]
+id = "anonymous-over-limit-single-process"
+expected = "memory-max-event-and-nonreuse"
+
+[[case]]
+id = "anonymous-over-limit-max-process-tree"
+expected = "group-oom-event-and-nonreuse"
+
+[[case]]
+id = "anonymous-memory-accounted"
+expected = "peak-increases-without-limit-event"
+
+[[case]]
+id = "mapped-file-memory-accounted"
+expected = "peak-increases-without-limit-event"
+
+[[case]]
+id = "page-cache-memory-accounted"
+expected = "peak-increases-without-limit-event"
+
+[[case]]
+id = "shared-memory-accounted"
+expected = "peak-increases-without-limit-event"
+
+[[case]]
+id = "socket-memory-accounted"
+expected = "peak-increases-without-limit-event"
+
+[[case]]
+id = "zero-swap-enforced"
+expected = "installed-zero-and-zero-swap-peak"
+
+[[case]]
+id = "swap-limit-reached"
+expected = "swap-max-or-fail-event-and-nonreuse"
+
+[[case]]
+id = "host-without-swap"
+expected = "zero-swap-profile-remains-enforced"
+
+[[case]]
+id = "pre-release-allocation-blocked"
+expected = "no-workload-byte-before-launcher-ack"
+
+[[case]]
+id = "sibling-cgroup-immune"
+expected = "sibling-liveness-retained"
+
+[[case]]
+id = "supervisor-cgroup-immune"
+expected = "supervisor-liveness-retained"
+
+[[case]]
+id = "memory-pressure-timeout-cleanup"
+expected = "timed-out-and-exact-cgroup-removed"
+
+[[case]]
+id = "memory-pressure-launcher-failure-cleanup"
+expected = "launcher-failure-and-exact-cgroup-removed"
+
+[[case]]
+id = "memory-pressure-supervisor-failure-cleanup"
+expected = "supervisor-failure-and-exact-cgroup-removed"
+
+[[case]]
+id = "oom-cleanup-exact"
+expected = "group-drained-and-exact-cgroup-removed"
+
+[[case]]
+id = "receipt-resource-mutations-rejected"
+expected = "independent-verifier-rejects-every-resource-field"
