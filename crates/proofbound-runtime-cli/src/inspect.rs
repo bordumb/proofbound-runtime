@@ -164,4 +164,29 @@ mod tests {
             Err(InspectError::TooLarge)
         );
     }
+
+    #[test]
+    fn inspection_projects_a_decoded_v2_cbor_receipt_as_json() {
+        let hex = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../schemas/vectors/v2/execution-receipt.cbor.hex"
+        ));
+        let compact = hex.split_whitespace().collect::<String>();
+        let input = compact
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| {
+                u8::from_str_radix(core::str::from_utf8(pair).expect("hex is UTF-8"), 16)
+                    .expect("golden vector is hex")
+            })
+            .collect::<Vec<_>>();
+        let mut output = Vec::new();
+        write_inspection(&input, &mut output).expect("v2 receipt is inspectable");
+        let projection: Value = serde_json::from_slice(&output).expect("projection is JSON");
+        assert_eq!(
+            projection["schema"],
+            "proofbound-runtime-execution-receipt/2"
+        );
+        assert!(projection.get("resources").is_some());
+    }
 }
