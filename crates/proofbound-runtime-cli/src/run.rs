@@ -1287,6 +1287,25 @@ mod tests {
     }
 
     #[test]
+    fn run_timings_preserve_the_closed_production_phase_order() {
+        let intervals = core::array::from_fn(|index| {
+            std::time::Duration::from_nanos(u64::try_from(index + 1).expect("index fits u64"))
+        });
+        let timings = RunTimings::from_intervals(intervals);
+
+        assert_eq!(timings.intervals(), &intervals);
+        assert_eq!(
+            timings.phase(RunBenchmarkPhase::PlanValidationAndNormalization),
+            std::time::Duration::from_nanos(1)
+        );
+        assert_eq!(
+            timings.phase(RunBenchmarkPhase::RunResultProjection),
+            std::time::Duration::from_nanos(12)
+        );
+        assert_eq!(timings.total(), std::time::Duration::from_nanos(78));
+    }
+
+    #[test]
     fn run_result_transports_execution_identity_outside_receipt() {
         let execution_id = proofbound_runtime_core::ExecutionId::from_bytes([
             0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x46, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd,
