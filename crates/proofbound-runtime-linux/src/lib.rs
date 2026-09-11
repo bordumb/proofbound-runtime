@@ -47,6 +47,6 @@ pub use seccomp::{
     SeccompBoundary, SeccompError, compile_deny_network_program, install_deny_network,
 };
 pub use supervisor::{
-    CapturedStream, LauncherBootstrap, SupervisedExecution, SupervisorError,
+    CapturedStream, LauncherBootstrap, SupervisedExecution, SupervisorError, SupervisorTimings,
     parse_launcher_bootstrap, supervise_launcher,
 };
