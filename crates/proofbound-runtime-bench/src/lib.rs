@@ -68,7 +68,7 @@ pub fn summarize(mut samples_ns: Vec<u64>) -> Result<Summary, BenchmarkError> {
 
 #[cfg(test)]
 mod tests {
-    use super::{BenchmarkError, Summary, summarize};
+    use super::{BenchmarkError, Summary, next_batch_count, summarize};
 
     #[test]
     fn summary_uses_frozen_integer_statistics() {
@@ -103,5 +103,33 @@ mod tests {
     #[test]
     fn empty_series_fails_closed() {
         assert_eq!(summarize(Vec::new()), Err(BenchmarkError::EmptySeries));
+    }
+
+    #[test]
+    fn calibration_uses_exact_ceiling_ratio() {
+        assert_eq!(next_batch_count(3, 2, 11), Ok(Some(18)));
+        assert_eq!(next_batch_count(18, 11, 11), Ok(None));
+    }
+
+    #[test]
+    fn zero_elapsed_calibration_grows_by_ten() {
+        assert_eq!(next_batch_count(7, 0, 10), Ok(Some(70)));
+    }
+
+
+    #[test]
+    fn invalid_or_overflowing_calibration_fails_closed() {
+        assert_eq!(
+            next_batch_count(0, 1, 10),
+            Err(BenchmarkError::InvalidBatchCount)
+        );
+        assert_eq!(
+            next_batch_count(1, 1, 0),
+            Err(BenchmarkError::InvalidTarget)
+        );
+        assert_eq!(
+            next_batch_count(usize::MAX, 0, 1),
+            Err(BenchmarkError::BatchOverflow)
+        );
     }
 }
