@@ -144,6 +144,30 @@ class RequiredWorkflowTests(unittest.TestCase):
         self.assertIn("native-context.json", native_script)
         self.assertIn("native-swap-matrix.json", native_script)
 
+    def test_native_lane_falsifies_prelaunch_run_diagnostics(self) -> None:
+        native_script = (REPOSITORY_ROOT / "tools/ci/native-linux.sh").read_text(
+            encoding="utf-8"
+        )
+
+        for case in (
+            "receipt-target-preexists",
+            "plan-input-missing",
+            "host-capability-unavailable",
+            "output-root-preexists",
+            "executable-resolution-failure",
+        ):
+            self.assertIn(f'assert_prelaunch_failure "{case}"', native_script)
+        self.assertIn("pbr: phase=receipt-target rule=receipt-target-valid", native_script)
+        self.assertIn("pbr: phase=plan-input rule=plan-source-readable", native_script)
+        self.assertIn("pbr: phase=host-capabilities rule=host-supported", native_script)
+        self.assertIn("pbr: phase=output-root rule=output-root-fresh", native_script)
+        self.assertIn(
+            "pbr: phase=executable-closure rule=executable-closure-resolved",
+            native_script,
+        )
+        self.assertIn('test ! -e "$diagnostic_child_marker"', native_script)
+        self.assertIn("native-run-diagnostics.json", native_script)
+
     def test_each_lane_publishes_its_validated_timing_summary(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
