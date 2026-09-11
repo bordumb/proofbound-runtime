@@ -10,6 +10,7 @@ mod outcome;
 mod plan;
 mod policy;
 mod receipt;
+mod wire_v2;
 
 pub use authority::{
     AuthorityError, AuthorityPath, AuthorityPlan, EnvironmentName, FileAccess, MemoryByteLimit,
@@ -22,6 +23,7 @@ pub use normalize::{NormalizedAuthority, normalize_authority};
 pub use outcome::{ExecutionOutcome, ExecutionOutcomeKind, SignalNumber, execution_outcome_kind};
 pub use plan::{
     CommandArgument, ExecutionCommand, ExecutionPlan, PlanError, PlanId, parse_execution_plan,
+    parse_execution_plan_for_execution,
 };
 pub use policy::{
     CgroupPolicy, CompiledPolicy, FilesystemPolicy, NoNewPrivileges, SeccompPolicy, compile_policy,

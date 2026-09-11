@@ -4,12 +4,15 @@ use std::path::{Component, Path};
 use serde::Deserialize;
 use toml::{Table, Value};
 
+use crate::wire_v2::{self, Value as CborValue};
 use crate::{
-    AuthorityError, AuthorityPath, AuthorityPlan, EnvironmentName, FileAccess, OutputByteLimit,
-    PathAuthority, PathRole, ProcessLimit, ResourceLimits, WallTimeLimit,
+    AuthorityError, AuthorityPath, AuthorityPlan, EnvironmentName, FileAccess, MemoryByteLimit,
+    OutputByteLimit, PathAuthority, PathRole, ProcessLimit, ResourceLimits, SwapByteLimit,
+    WallTimeLimit,
 };
 
 const PLAN_SCHEMA: &str = "proofbound-runtime-plan/1";
+const PLAN_SCHEMA_V2: &str = "proofbound-runtime-plan/2";
 
 /// Contains a validated execution-plan identifier.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -138,6 +141,10 @@ pub enum PlanError {
     InvalidSchema,
     /// The plan schema version is unsupported.
     UnsupportedVersion,
+    /// A valid version 1 plan cannot be used for a new execution.
+    ExecutionObsolete,
+    /// Version 2 bytes are not one admitted deterministic-CBOR item.
+    MalformedCbor,
     /// The plan identifier is invalid.
     InvalidPlanId,
     /// A command argument contains a null byte.
@@ -165,6 +172,8 @@ impl PlanError {
             Self::UnknownField => "plan.schema.unknown-field",
             Self::InvalidSchema => "plan.schema.invalid",
             Self::UnsupportedVersion => "plan.schema.unsupported-version",
+            Self::ExecutionObsolete => "plan.schema.execution-obsolete",
+            Self::MalformedCbor => "plan.schema.malformed-cbor",
             Self::InvalidPlanId => "plan.id.invalid",
             Self::ArgumentContainsNull => "plan.command.argument.null",
             Self::UnsupportedNetwork => "plan.authority.network.unsupported",
@@ -272,6 +281,147 @@ pub fn parse_execution_plan(input: &str) -> Result<ExecutionPlan, PlanError> {
         },
         authority: AuthorityPlan::new(paths, environment, limits),
     })
+}
+
+/// Parses the only plan format accepted for a new version 2 execution.
+///
+/// A valid legacy TOML plan receives its migration-specific diagnostic. Every
+/// accepted v2 value is one complete deterministic-CBOR item with closed
+/// text-key maps; JSON and TOML projections are never accepted as v2 wire.
+pub fn parse_execution_plan_for_execution(input: &[u8]) -> Result<ExecutionPlan, PlanError> {
+    if let Ok(text) = core::str::from_utf8(input)
+        && parse_execution_plan(text).is_ok()
+    {
+        return Err(PlanError::ExecutionObsolete);
+    }
+    parse_execution_plan_v2(input)
+}
+
+fn parse_execution_plan_v2(input: &[u8]) -> Result<ExecutionPlan, PlanError> {
+    let mut root = cbor_map(wire_v2::decode(input).map_err(|_| PlanError::MalformedCbor)?)?;
+    let schema = cbor_text(take(&mut root, "schema")?)?;
+    if schema != PLAN_SCHEMA_V2 {
+        return Err(PlanError::UnsupportedVersion);
+    }
+    let id = PlanId::new(cbor_text(take(&mut root, "id")?)?)?;
+    let mut command = cbor_map(take(&mut root, "command")?)?;
+    let executable = AuthorityPath::new(cbor_text(take(&mut command, "executable")?)?)?;
+    let working_directory =
+        AuthorityPath::new(cbor_text(take(&mut command, "working_directory")?)?)?;
+    let arguments = cbor_text_array(take(&mut command, "arguments")?)?
+        .into_iter()
+        .map(CommandArgument::new)
+        .collect::<Result<Vec<_>, _>>()?;
+    require_empty(command)?;
+
+    let mut authority = cbor_map(take(&mut root, "authority")?)?;
+    if cbor_text(take(&mut authority, "network")?)? != "deny" {
+        return Err(PlanError::UnsupportedNetwork);
+    }
+    let environment = cbor_text_array(take(&mut authority, "environment")?)?
+        .into_iter()
+        .map(EnvironmentName::new)
+        .collect::<Result<Vec<_>, _>>()?;
+    let read = cbor_text_array(take(&mut authority, "read")?)?;
+    let runtime_read = cbor_text_array(take(&mut authority, "runtime_read")?)?;
+    let write = cbor_text_array(take(&mut authority, "write")?)?;
+    let execute = cbor_text_array(take(&mut authority, "execute")?)?;
+    require_empty(authority)?;
+    if execute.len() != 1 {
+        return Err(PlanError::ExecutableAuthorityCount);
+    }
+    if write.len() != 1 {
+        return Err(PlanError::OutputRootAuthorityCount);
+    }
+
+    let mut limits = cbor_map(take(&mut root, "limits")?)?;
+    let resource_limits = ResourceLimits::new_v2(
+        ProcessLimit::new(cbor_u32(take(&mut limits, "processes")?)?)?,
+        WallTimeLimit::from_milliseconds(cbor_u64(take(&mut limits, "wall_time_ms")?)?)?,
+        OutputByteLimit::new(cbor_u64(take(&mut limits, "stdout_bytes")?)?),
+        OutputByteLimit::new(cbor_u64(take(&mut limits, "stderr_bytes")?)?),
+        MemoryByteLimit::new(cbor_u64(take(&mut limits, "memory_bytes")?)?)?,
+        SwapByteLimit::new(cbor_u64(take(&mut limits, "swap_bytes")?)?)?,
+    );
+    require_empty(limits)?;
+    require_empty(root)?;
+
+    let mut paths = Vec::new();
+    append_paths(&mut paths, read, FileAccess::Read, PathRole::ProjectInput)?;
+    append_runtime_library_paths(&mut paths, runtime_read)?;
+    append_paths(&mut paths, write, FileAccess::Write, PathRole::OutputRoot)?;
+    append_paths(
+        &mut paths,
+        execute,
+        FileAccess::Execute,
+        PathRole::RuntimeExecutable,
+    )?;
+    if !paths
+        .iter()
+        .any(|entry| entry.access() == FileAccess::Execute && entry.path() == &executable)
+    {
+        return Err(PlanError::ExecutableAuthorityMissing);
+    }
+
+    Ok(ExecutionPlan {
+        id,
+        command: ExecutionCommand {
+            executable,
+            arguments,
+            working_directory,
+        },
+        authority: AuthorityPlan::new(paths, environment, resource_limits),
+    })
+}
+
+type CborMap = Vec<(String, CborValue)>;
+
+fn cbor_map(value: CborValue) -> Result<CborMap, PlanError> {
+    match value {
+        CborValue::Map(value) => Ok(value),
+        _ => Err(PlanError::InvalidSchema),
+    }
+}
+
+fn take(map: &mut CborMap, key: &str) -> Result<CborValue, PlanError> {
+    let index = map
+        .iter()
+        .position(|(candidate, _)| candidate == key)
+        .ok_or(PlanError::InvalidSchema)?;
+    Ok(map.remove(index).1)
+}
+
+fn require_empty(map: CborMap) -> Result<(), PlanError> {
+    if map.is_empty() {
+        Ok(())
+    } else {
+        Err(PlanError::UnknownField)
+    }
+}
+
+fn cbor_text(value: CborValue) -> Result<String, PlanError> {
+    match value {
+        CborValue::Text(value) => Ok(value),
+        _ => Err(PlanError::InvalidSchema),
+    }
+}
+
+fn cbor_text_array(value: CborValue) -> Result<Vec<String>, PlanError> {
+    match value {
+        CborValue::Array(values) => values.into_iter().map(cbor_text).collect(),
+        _ => Err(PlanError::InvalidSchema),
+    }
+}
+
+fn cbor_u64(value: CborValue) -> Result<u64, PlanError> {
+    match value {
+        CborValue::Unsigned(value) => Ok(value),
+        _ => Err(PlanError::InvalidSchema),
+    }
+}
+
+fn cbor_u32(value: CborValue) -> Result<u32, PlanError> {
+    u32::try_from(cbor_u64(value)?).map_err(|_| PlanError::InvalidSchema)
 }
 
 fn append_paths(
