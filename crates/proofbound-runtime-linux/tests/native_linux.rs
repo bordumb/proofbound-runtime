@@ -1,6 +1,7 @@
 const ATTACK_CATALOG: &str = include_str!("../../../tests/attacks/native-linux/boundary-v1.toml");
 const MEMORY_ATTACK_CATALOG: &str =
     include_str!("../../../tests/attacks/native-linux/memory-v2.toml");
+const NATIVE_FIXTURE_SOURCE: &str = include_str!("fixtures/native-boundary-probe.c");
 
 #[test]
 fn native_boundary_catalog_is_closed() {
@@ -55,6 +56,28 @@ fn native_memory_catalog_is_closed() {
     );
     for id in expected {
         assert!(MEMORY_ATTACK_CATALOG.contains(&format!("id = \"{id}\"")));
+    }
+}
+
+#[test]
+fn native_memory_workload_modes_are_closed() {
+    let expected = [
+        "memory-anonymous",
+        "memory-over-limit",
+        "memory-process-tree-over-limit",
+        "memory-mapped-file",
+        "memory-page-cache",
+        "memory-shared",
+        "memory-pressure-timeout",
+    ];
+    for mode in expected {
+        assert_eq!(
+            NATIVE_FIXTURE_SOURCE
+                .matches(&format!("strcmp(argv[1], \"{mode}\")"))
+                .count(),
+            1,
+            "fixture mode {mode} must have one implementation"
+        );
     }
 }
 
