@@ -38,6 +38,7 @@ source_roots = [
   "crates/proofbound-runtime-core/src/lib.rs",
   "crates/proofbound-runtime-core/src/outcome.rs",
   "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-core/src/wire_v2.rs",
   "crates/proofbound-runtime-core/tests/receipt_binding_attacks.rs",
   "docs/specs/0001_initial_spec.md",
   "docs/specs/0007_memory_and_swap_profile.md",

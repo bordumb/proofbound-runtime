@@ -29,7 +29,9 @@ they intentionally contain overlapping translated Rust declarations.
 
 `PBR-BINDING-005` routes the production canonical receipt encoder through the
 pure `proofbound-runtime-binding` crate. Its closed Rust input structure carries
-the canonical value bytes of all 20 top-level version 1 fields, making omission,
+the canonical value bytes of all 20 version 1 fields or all 21 version 2 fields,
+including the required version 2 resource record. This makes omission,
 duplication, reordering, and unknown fields unrepresentable at the translated
 boundary. The registered theorem proves that construction and projection retain
-every byte vector exactly before the production encoder emits the object.
+every byte vector exactly before the production encoder emits canonical JSON for
+version 1 or deterministic CBOR for version 2.
