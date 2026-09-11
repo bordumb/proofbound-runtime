@@ -1322,6 +1322,33 @@ mod tests {
     }
 
     #[test]
+    fn version_two_resources_drive_receipt_eligibility() {
+        let mut input = parts();
+        input.resources = Some(
+            ReceiptResources::new(
+                ResourceLimits::new_v2(
+                    ProcessLimit::new(2).expect("valid process limit"),
+                    WallTimeLimit::from_milliseconds(1_000).expect("valid wall limit"),
+                    OutputByteLimit::new(1_024),
+                    OutputByteLimit::new(2_048),
+                    MemoryByteLimit::new(65_536).expect("valid memory limit"),
+                    SwapByteLimit::new(0).expect("valid swap limit"),
+                ),
+                32_768,
+                0,
+                ReceiptMemoryEvents::new(0, 1, 0, 0, 0, 0),
+                ReceiptSwapEvents::new(0, 0),
+            )
+            .expect("complete v2 resources"),
+        );
+        let receipt = ExecutionReceipt::new(input).expect("v2 receipt is valid");
+        let ReceiptEligibility::NonReusable(reasons) = receipt.eligibility() else {
+            panic!("memory.high must force nonreuse");
+        };
+        assert_eq!(reasons.as_slice(), &[NonReusableReason::MemoryHigh]);
+    }
+
+    #[test]
     fn constructor_rejects_identity_substitution() {
         let mut input = parts();
         input.boundary.execution_id = ExecutionId::from_bytes([
