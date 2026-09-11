@@ -9,10 +9,10 @@ use proofbound_runtime_core::{
     Architecture as ReceiptArchitecture, ArtifactIdentity, ArtifactRole, BoundaryRecord,
     EnvironmentName, ExecutionObservations, ExecutionOutcome, ExecutionPlan, ExecutionReceipt,
     ExecutionReceiptParts, FileAccess, FileMode, PathRole, PlatformIdentity,
-    REQUIRED_RUNTIME_ASSUMPTIONS, ReceiptCommand, ReceiptError, ReceiptMemoryEvents, ReceiptPlan,
-    ReceiptPolicy, ReceiptResources, ReceiptStreams, ReceiptSwapEvents, ResourceLimits,
-    RunResultV2, RuntimeIdentity, Sha256Digest, TrustedComputingBaseEntry,
-    TrustedComputingBaseRole, compile_policy, normalize_authority,
+    REQUIRED_RUNTIME_ASSUMPTIONS, ReceiptCommand, ReceiptConfiguredResources, ReceiptError,
+    ReceiptMemoryEvents, ReceiptPlan, ReceiptPolicy, ReceiptResources, ReceiptStreams,
+    ReceiptSwapEvents, ResourceLimits, RunResultV2, RuntimeIdentity, Sha256Digest,
+    TrustedComputingBaseEntry, TrustedComputingBaseRole, compile_policy, normalize_authority,
     parse_execution_plan_for_execution,
 };
 use proofbound_runtime_linux::{
@@ -821,11 +821,15 @@ fn build_receipt(input: ReceiptInputs<'_>) -> Result<ExecutionReceipt, RunError>
             let memory = terminal.memory_events();
             let swap = terminal.swap_events();
             let configured = terminal.configured();
-            ReceiptResources::from_configured(
+            let configured = ReceiptConfiguredResources::new(
                 configured.processes(),
                 configured.memory(),
                 configured.swap(),
                 configured.memory_oom_group(),
+            )
+            .map_err(map_receipt_construction)?;
+            ReceiptResources::from_configured(
+                configured,
                 terminal.memory_peak_bytes(),
                 terminal.swap_peak_bytes(),
                 ReceiptMemoryEvents::new(

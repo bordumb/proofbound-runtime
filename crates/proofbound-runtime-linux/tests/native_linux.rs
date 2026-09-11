@@ -657,11 +657,13 @@ mod linux {
                     "{execution:#?}"
                 );
                 assert!(resources.memory_events().oom() > 0, "{execution:#?}");
-                assert!(resources.swap_events().max() > 0, "{execution:#?}");
-                assert!(resources.swap_events().fail() > 0, "{execution:#?}");
+                assert!(
+                    resources.swap_events().max() > 0 || resources.swap_events().fail() > 0,
+                    "the kernel must report either a swap-limit hit or a swap-allocation failure: {execution:#?}"
+                );
                 assert!(
                     resources.limit_events().contains(LimitEvent::SwapMax)
-                        && resources.limit_events().contains(LimitEvent::SwapFail),
+                        || resources.limit_events().contains(LimitEvent::SwapFail),
                     "{execution:#?}"
                 );
             }

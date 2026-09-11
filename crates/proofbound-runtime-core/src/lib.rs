@@ -34,10 +34,10 @@ pub use receipt::{
     Architecture, BoundaryInstallation, BoundaryRecord, CgroupIdentity, EXECUTION_RECEIPT_SCHEMA,
     ExecutionId, ExecutionObservations, ExecutionReceipt, ExecutionReceiptParts, LimitEvent,
     LimitEvents, NonReusableReason, NonReusableReasons, POLICY_MODEL_VERSION, PlatformIdentity,
-    REQUIRED_RUNTIME_ASSUMPTIONS, ReceiptArtifactField, ReceiptCommand, ReceiptEligibility,
-    ReceiptError, ReceiptFacts, ReceiptIdentityField, ReceiptMemoryEvents, ReceiptPlan,
-    ReceiptPolicy, ReceiptResources, ReceiptStreams, ReceiptStructure, ReceiptSwapEvents,
-    RuntimeIdentity, StreamCapture, TrustedComputingBaseEntry, TrustedComputingBaseRole,
-    construct_execution_receipt, derive_receipt_eligibility,
+    REQUIRED_RUNTIME_ASSUMPTIONS, ReceiptArtifactField, ReceiptCommand, ReceiptConfiguredResources,
+    ReceiptEligibility, ReceiptError, ReceiptFacts, ReceiptIdentityField, ReceiptMemoryEvents,
+    ReceiptPlan, ReceiptPolicy, ReceiptResources, ReceiptStreams, ReceiptStructure,
+    ReceiptSwapEvents, RuntimeIdentity, StreamCapture, TrustedComputingBaseEntry,
+    TrustedComputingBaseRole, construct_execution_receipt, derive_receipt_eligibility,
 };
 pub use run_result::{RunResultError, RunResultV2};

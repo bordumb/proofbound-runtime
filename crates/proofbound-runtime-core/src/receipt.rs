@@ -401,6 +401,35 @@ impl ReceiptSwapEvents {
     }
 }
 
+/// Contains the exact resource-control values read back from the installed cgroup.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ReceiptConfiguredResources {
+    processes: ProcessLimit,
+    memory: MemoryByteLimit,
+    swap: SwapByteLimit,
+    memory_oom_group: u64,
+}
+
+impl ReceiptConfiguredResources {
+    /// Creates a closed configured-resource observation.
+    pub fn new(
+        processes: ProcessLimit,
+        memory: MemoryByteLimit,
+        swap: SwapByteLimit,
+        memory_oom_group: u64,
+    ) -> Result<Self, ReceiptError> {
+        if memory_oom_group != 1 {
+            return Err(ReceiptError::ConfiguredResourcesInvalid);
+        }
+        Ok(Self {
+            processes,
+            memory,
+            swap,
+            memory_oom_group,
+        })
+    }
+}
+
 /// Contains exact configured limits and terminal observations for version 2.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ReceiptResources {
@@ -432,10 +461,7 @@ impl ReceiptResources {
             .swap()
             .ok_or(ReceiptError::ResourceProfileIncomplete)?;
         Self::from_configured(
-            limits.processes(),
-            memory,
-            swap,
-            1,
+            ReceiptConfiguredResources::new(limits.processes(), memory, swap, 1)?,
             memory_peak_bytes,
             swap_peak_bytes,
             memory_events,
@@ -445,18 +471,12 @@ impl ReceiptResources {
 
     /// Builds version 2 resources from the exact installed-control readbacks.
     pub fn from_configured(
-        processes: ProcessLimit,
-        memory: MemoryByteLimit,
-        swap: SwapByteLimit,
-        memory_oom_group: u64,
+        configured: ReceiptConfiguredResources,
         memory_peak_bytes: u64,
         swap_peak_bytes: u64,
         memory_events: ReceiptMemoryEvents,
         swap_events: ReceiptSwapEvents,
     ) -> Result<Self, ReceiptError> {
-        if memory_oom_group != 1 {
-            return Err(ReceiptError::ConfiguredResourcesInvalid);
-        }
         let mut events = Vec::new();
         for (present, event) in [
             (memory_events.high != 0, LimitEvent::MemoryHigh),
@@ -475,10 +495,10 @@ impl ReceiptResources {
             }
         }
         Ok(Self {
-            processes,
-            memory,
-            swap,
-            memory_oom_group,
+            processes: configured.processes,
+            memory: configured.memory,
+            swap: configured.swap,
+            memory_oom_group: configured.memory_oom_group,
             memory_peak_bytes,
             swap_peak_bytes,
             memory_events,
