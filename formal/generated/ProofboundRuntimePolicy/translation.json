@@ -28,8 +28,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/policy.rs",
-        "begin_line": 112,
-        "end_line": 121
+        "begin_line": 247,
+        "end_line": 256
       },
       "is_opaque": false,
       "can_fail": true,
@@ -148,6 +148,30 @@
       }
     },
     {
+      "def_id": 20,
+      "lean_name": "proofbound_runtime_core.authority.MemoryByteLimit",
+      "lean_file": "Types.lean",
+      "rust_name": "proofbound_runtime_core::authority::MemoryByteLimit",
+      "is_local": true,
+      "source": {
+        "file": "crates/proofbound-runtime-core/src/authority.rs",
+        "begin_line": 285,
+        "end_line": 285
+      }
+    },
+    {
+      "def_id": 21,
+      "lean_name": "proofbound_runtime_core.authority.SwapByteLimit",
+      "lean_file": "Types.lean",
+      "rust_name": "proofbound_runtime_core::authority::SwapByteLimit",
+      "is_local": true,
+      "source": {
+        "file": "crates/proofbound-runtime-core/src/authority.rs",
+        "begin_line": 318,
+        "end_line": 318
+      }
+    },
+    {
       "def_id": 6,
       "lean_name": "proofbound_runtime_core.authority.ResourceLimits",
       "lean_file": "Types.lean",
@@ -155,8 +179,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/authority.rs",
-        "begin_line": 285,
-        "end_line": 290
+        "begin_line": 346,
+        "end_line": 353
       }
     },
     {
@@ -167,8 +191,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/authority.rs",
-        "begin_line": 345,
-        "end_line": 348
+        "begin_line": 461,
+        "end_line": 464
       }
     },
     {
@@ -191,8 +215,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/policy.rs",
-        "begin_line": 5,
-        "end_line": 7
+        "begin_line": 33,
+        "end_line": 35
       }
     },
     {
@@ -203,8 +227,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/policy.rs",
-        "begin_line": 19,
-        "end_line": 22
+        "begin_line": 47,
+        "end_line": 50
       }
     },
     {
@@ -215,8 +239,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/policy.rs",
-        "begin_line": 26,
-        "end_line": 28
+        "begin_line": 54,
+        "end_line": 56
       }
     },
     {
@@ -227,8 +251,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/policy.rs",
-        "begin_line": 40,
-        "end_line": 43
+        "begin_line": 68,
+        "end_line": 71
       }
     },
     {
@@ -239,8 +263,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-core/src/policy.rs",
-        "begin_line": 47,
-        "end_line": 53
+        "begin_line": 75,
+        "end_line": 81
       }
     }
   ],
