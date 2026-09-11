@@ -12,11 +12,22 @@ use serde::Serialize;
 pub enum BenchmarkError {
     /// A measured series contained no samples.
     EmptySeries,
+    /// Batch calibration started from zero invocations.
+    InvalidBatchCount,
+    /// Batch calibration selected a zero-duration target.
+    InvalidTarget,
+    /// The next calibrated batch cannot fit in the platform counter.
+    BatchOverflow,
 }
 
 impl fmt::Display for BenchmarkError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str("benchmark.series.empty")
+        formatter.write_str(match self {
+            Self::EmptySeries => "benchmark.series.empty",
+            Self::InvalidBatchCount => "benchmark.batch.invalid",
+            Self::InvalidTarget => "benchmark.target.invalid",
+            Self::BatchOverflow => "benchmark.batch.overflow",
+        })
     }
 }
 
@@ -64,6 +75,38 @@ pub fn summarize(mut samples_ns: Vec<u64>) -> Result<Summary, BenchmarkError> {
         samples_ns,
         count,
     })
+}
+
+/// Derives the next deterministic batch count from one calibration sample.
+///
+/// `Ok(None)` means the current batch reached the target. A zero elapsed value
+/// grows the batch by exactly ten so timer resolution cannot create division
+/// by zero or an unbounded inferred factor.
+pub fn next_batch_count(
+    current: usize,
+    elapsed_ns: u64,
+    target_ns: u64,
+) -> Result<Option<usize>, BenchmarkError> {
+    if current == 0 {
+        return Err(BenchmarkError::InvalidBatchCount);
+    }
+    if target_ns == 0 {
+        return Err(BenchmarkError::InvalidTarget);
+    }
+    if elapsed_ns >= target_ns {
+        return Ok(None);
+    }
+
+    let factor = if elapsed_ns == 0 {
+        10
+    } else {
+        usize::try_from(target_ns.div_ceil(elapsed_ns))
+            .map_err(|_| BenchmarkError::BatchOverflow)?
+    };
+    current
+        .checked_mul(factor)
+        .map(Some)
+        .ok_or(BenchmarkError::BatchOverflow)
 }
 
 #[cfg(test)]
@@ -115,7 +158,6 @@ mod tests {
     fn zero_elapsed_calibration_grows_by_ten() {
         assert_eq!(next_batch_count(7, 0, 10), Ok(Some(70)));
     }
-
 
     #[test]
     fn invalid_or_overflowing_calibration_fails_closed() {
