@@ -157,12 +157,19 @@ def nearest_rank_p95(values: list[int]) -> int:
 
 
 def render(records: list[dict[str, object]]) -> str:
-    groups: dict[tuple[str, str, str], list[dict[str, object]]] = defaultdict(list)
+    groups: dict[tuple[str, str, str, str], list[dict[str, object]]] = defaultdict(list)
     for record in records:
-        key = (str(record["kind"]), str(record["stage"]), str(record["name"]))
+        key = (
+            str(record["runner_arch"]),
+            str(record["kind"]),
+            str(record["stage"]),
+            str(record["name"]),
+        )
         groups[key].append(record)
 
-    lines = ["kind\tstage\tname\tsamples\tsuccesses\tfailures\tmedian_ms\tp95_ms"]
+    lines = [
+        "runner_arch\tkind\tstage\tname\tsamples\tsuccesses\tfailures\tmedian_ms\tp95_ms"
+    ]
     for key in sorted(groups):
         group = groups[key]
         successes = sorted(
