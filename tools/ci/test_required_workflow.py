@@ -5,9 +5,18 @@ from pathlib import Path
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = REPOSITORY_ROOT / ".github" / "workflows" / "ci.yml"
+WORKFLOW_ROOT = REPOSITORY_ROOT / ".github" / "workflows"
 CI_SCRIPT = REPOSITORY_ROOT / "tools" / "ci" / "ci.sh"
 LEGACY_NATIVE_WORKFLOW = (
     REPOSITORY_ROOT / ".github" / "workflows" / "linux-enforcement.yml"
+)
+CHECKOUT_ACTION = (
+    "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
+    " # v7.0.1"
+)
+UPLOAD_ARTIFACT_ACTION = (
+    "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
+    " # v7.0.1"
 )
 
 
@@ -63,7 +72,7 @@ class RequiredWorkflowTests(unittest.TestCase):
         exact_sha = "${{ github.event.pull_request.head.sha || github.sha }}"
 
         self.assertIn(f"PBR_EXACT_SHA: {exact_sha}", workflow)
-        self.assertEqual(workflow.count("uses: actions/checkout@v4"), 4)
+        self.assertEqual(workflow.count(f"uses: {CHECKOUT_ACTION}"), 4)
         self.assertEqual(workflow.count("ref: ${{ env.PBR_EXACT_SHA }}"), 4)
         self.assertEqual(
             workflow.count(
@@ -73,6 +82,24 @@ class RequiredWorkflowTests(unittest.TestCase):
         )
         self.assertEqual(workflow.count("-${{ env.PBR_EXACT_SHA }}"), 4)
         self.assertNotIn('= "$GITHUB_SHA"', workflow)
+
+    def test_first_party_actions_are_exact_node24_releases(self) -> None:
+        uses_pattern = re.compile(
+            r"(?m)^\s*uses:\s+(actions/(?:checkout|upload-artifact)@[^\n]+)$"
+        )
+        observed: list[tuple[str, str]] = []
+        for workflow_path in sorted(WORKFLOW_ROOT.glob("*.yml")):
+            for action in uses_pattern.findall(
+                workflow_path.read_text(encoding="utf-8")
+            ):
+                observed.append((workflow_path.name, action))
+
+        self.assertTrue(observed)
+        allowed = {CHECKOUT_ACTION, UPLOAD_ARTIFACT_ACTION}
+        self.assertEqual(
+            [(name, action) for name, action in observed if action not in allowed],
+            [],
+        )
 
     def test_triggers_and_cancellation_remain_closed(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
