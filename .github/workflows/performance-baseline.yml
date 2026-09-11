@@ -61,10 +61,11 @@ jobs:
           mkdir -p "$result_root"
           rustc --version --verbose >"$result_root/rustc-version.txt"
           uname -a >"$result_root/uname.txt"
+          cp target/release/pbr-bench "$result_root/pbr-bench"
           : >"$result_root/verifier.stderr"
           printf '%s\n' 'not-run' >"$result_root/verifier.exit"
           set +e
-          target/release/pbr-bench pure --source-commit "$PBR_PERFORMANCE_REVISION" \
+          "$result_root/pbr-bench" pure --source-commit "$PBR_PERFORMANCE_REVISION" \
             >"$result_root/result.json" \
             2>"$result_root/producer.stderr"
           producer_exit=$?
@@ -75,7 +76,7 @@ jobs:
               --result "$result_root/result.json" \
               --expected-source "$PBR_PERFORMANCE_REVISION" \
               --expected-architecture "${{ matrix.architecture }}" \
-              --benchmark-executable target/release/pbr-bench \
+              --benchmark-executable "$result_root/pbr-bench" \
               --plan-fixture tests/conformance/plan/positive/minimal-v1.toml \
               --receipt-fixture experiments/performance/fixtures/reusable-receipt-v1.json \
               --composition-fixture crates/proofbound-runtime-bench/src/composition_fixture.rs \
