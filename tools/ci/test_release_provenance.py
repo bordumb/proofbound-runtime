@@ -110,7 +110,8 @@ class ReleaseProvenanceTests(unittest.TestCase):
     def test_verifier_does_not_import_the_producer_codec(self) -> None:
         verifier = VERIFIER.read_text(encoding="utf-8")
         self.assertNotIn("build_provenance", verifier)
-        self.assertIn("deterministic_cbor import", verifier)
+        self.assertIn("class _Decoder:", verifier)
+        self.assertIn("def decode_strict(", verifier)
 
 
 if __name__ == "__main__":

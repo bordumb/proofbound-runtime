@@ -343,3 +343,59 @@ jobs:
             dist/release-observation/${{ matrix.architecture }}/
             dist/runtime/
           if-no-files-found: error
+
+  provenance:
+    name: Seal aggregate release provenance
+    needs: [sdk-release, release]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out the exact requested head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.PBR_RELEASE_REVISION }}
+
+      - name: Confirm the exact requested head
+        run: test "$(git rev-parse HEAD)" = "$PBR_RELEASE_REVISION"
+
+      - name: Download the reproduced SDK packages
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: proofbound-runtime-sdk-packages-${{ env.PBR_RELEASE_REVISION }}
+          path: dist/provenance-inputs/sdk
+
+      - name: Download the x86-64 release chain
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: proofbound-runtime-x86_64
+          path: dist/provenance-inputs/x86_64
+
+      - name: Download the AArch64 release chain
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: proofbound-runtime-aarch64
+          path: dist/provenance-inputs/aarch64
+
+      - name: Build and independently verify the closed provenance object
+        run: |
+          mkdir -p dist/provenance
+          python3 tools/release/build_provenance.py \
+            --revision "$PBR_RELEASE_REVISION" \
+            --artifact-root sdk=dist/provenance-inputs/sdk \
+            --artifact-root x86_64=dist/provenance-inputs/x86_64 \
+            --artifact-root aarch64=dist/provenance-inputs/aarch64 \
+            --output dist/provenance/release-provenance.cbor
+          python3 tools/release/verify_provenance.py \
+            --provenance dist/provenance/release-provenance.cbor \
+            --expected-revision "$PBR_RELEASE_REVISION" \
+            --artifact-root sdk=dist/provenance-inputs/sdk \
+            --artifact-root x86_64=dist/provenance-inputs/x86_64 \
+            --artifact-root aarch64=dist/provenance-inputs/aarch64 \
+            --projection dist/provenance/release-provenance.projection.json
+
+      - name: Upload the aggregate release provenance
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: proofbound-runtime-release-provenance-${{ env.PBR_RELEASE_REVISION }}
+          path: dist/provenance/
+          if-no-files-found: error
