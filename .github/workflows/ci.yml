@@ -312,6 +312,10 @@ jobs:
       - name: Reject bootstrap lockfile drift
         run: git diff --exit-code -- Cargo.lock lake-manifest.json
 
+      - name: Build pinned Lean project for theorem audit
+        if: ${{ matrix.selector != 'ledger' }}
+        run: lake build
+
       - name: Run fresh evidence gate
         run: >-
           python3 tools/ci/timing.py run
