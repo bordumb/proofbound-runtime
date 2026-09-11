@@ -1,4 +1,6 @@
 const ATTACK_CATALOG: &str = include_str!("../../../tests/attacks/native-linux/boundary-v1.toml");
+const MEMORY_ATTACK_CATALOG: &str =
+    include_str!("../../../tests/attacks/native-linux/memory-v2.toml");
 
 #[test]
 fn native_boundary_catalog_is_closed() {
@@ -19,6 +21,40 @@ fn native_boundary_catalog_is_closed() {
     assert_eq!(ATTACK_CATALOG.matches("[[case]]").count(), expected.len());
     for id in expected {
         assert!(ATTACK_CATALOG.contains(&format!("id = \"{id}\"")));
+    }
+}
+
+#[test]
+fn native_memory_catalog_is_closed() {
+    let expected = [
+        "anonymous-over-limit-single-process",
+        "anonymous-over-limit-max-process-tree",
+        "anonymous-memory-accounted",
+        "mapped-file-memory-accounted",
+        "page-cache-memory-accounted",
+        "shared-memory-accounted",
+        "socket-memory-accounted",
+        "zero-swap-enforced",
+        "swap-limit-reached",
+        "host-without-swap",
+        "pre-release-allocation-blocked",
+        "sibling-cgroup-immune",
+        "supervisor-cgroup-immune",
+        "memory-pressure-timeout-cleanup",
+        "memory-pressure-launcher-failure-cleanup",
+        "memory-pressure-supervisor-failure-cleanup",
+        "oom-cleanup-exact",
+        "receipt-resource-mutations-rejected",
+    ];
+    assert!(MEMORY_ATTACK_CATALOG.starts_with(
+        "schema = \"proofbound-runtime-native-memory-attacks/2\""
+    ));
+    assert_eq!(
+        MEMORY_ATTACK_CATALOG.matches("[[case]]").count(),
+        expected.len()
+    );
+    for id in expected {
+        assert!(MEMORY_ATTACK_CATALOG.contains(&format!("id = \"{id}\"")));
     }
 }
 
