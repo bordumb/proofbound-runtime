@@ -7,13 +7,23 @@ on:
         description: Exact 40-character commit to measure
         required: true
         type: string
+  pull_request:
+    paths:
+      - ".github/workflows/performance-baseline.yml"
+      - "Cargo.lock"
+      - "Cargo.toml"
+      - "crates/proofbound-runtime-bench/**"
+      - "crates/proofbound-runtime-compose/**"
+      - "crates/proofbound-runtime-core/**"
+      - "crates/proofbound-runtime-verify/**"
+      - "experiments/performance/**"
 
 permissions:
   contents: read
 
 env:
   CARGO_TERM_COLOR: always
-  PBR_PERFORMANCE_REVISION: ${{ inputs.revision }}
+  PBR_PERFORMANCE_REVISION: ${{ inputs.revision || github.event.pull_request.head.sha }}
 
 jobs:
   pure:
