@@ -13,8 +13,10 @@ on:
       - "Cargo.lock"
       - "Cargo.toml"
       - "crates/proofbound-runtime-bench/**"
+      - "crates/proofbound-runtime-cli/**"
       - "crates/proofbound-runtime-compose/**"
       - "crates/proofbound-runtime-core/**"
+      - "crates/proofbound-runtime-linux/**"
       - "crates/proofbound-runtime-verify/**"
       - "experiments/performance/**"
 
