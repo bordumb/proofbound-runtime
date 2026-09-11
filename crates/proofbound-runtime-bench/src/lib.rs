@@ -1407,6 +1407,22 @@ mod tests {
         );
         assert_eq!(measurements.phases()[0].summary().samples_ns, vec![1, 2]);
         assert_eq!(measurements.phases()[12].summary().samples_ns, vec![13, 14]);
+        assert_eq!(measurements.runs().len(), 2);
+        assert_eq!(measurements.runs()[0].total_ns(), 91);
+        assert_eq!(measurements.runs()[1].total_ns(), 104);
+        assert_eq!(
+            RunBenchmarkPhase::ALL.map(|phase| measurements.runs()[0].phase_ns(phase)),
+            core::array::from_fn(|index| {
+                u64::try_from(index + 1).expect("index fits u64")
+            })
+        );
+        assert_eq!(
+            measurements.runs()[0]
+                .phase_samples_ns()
+                .iter()
+                .try_fold(0_u64, |sum, sample| sum.checked_add(*sample)),
+            Some(measurements.runs()[0].total_ns())
+        );
         assert_eq!(summarize_native_runs(&[]), Err(BenchmarkError::EmptySeries));
     }
 }
