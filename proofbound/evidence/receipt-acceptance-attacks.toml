@@ -5,9 +5,9 @@ kind = "example-test"
 claims = ["PBR-ACCEPT-012"]
 tier = 0
 expected_inventory = [
-  "proofbound_runtime_accept::tests::assumption_loss_and_forged_acceptance_fail_closed",
   "proofbound_runtime_accept::tests::decision_golden_round_trips_through_the_strict_codec",
   "proofbound_runtime_accept::tests::exact_verified_facts_are_accepted_and_bound",
+  "proofbound_runtime_accept::tests::forged_acceptance_fails_closed",
   "proofbound_runtime_accept::tests::omission_substitution_and_replay_are_independent_rejections",
   "proofbound_runtime_accept::tests::policy_decoder_rejects_json_and_noncanonical_cbor",
   "proofbound_runtime_accept::tests::policy_golden_decodes_with_exact_identity",
