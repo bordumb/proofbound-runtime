@@ -1,6 +1,7 @@
 # ADR 0004: Use one connector-owned authenticated service session
 
-- **Status:** accepted; production implementation remains gated
+- **Status:** accepted by the maintainer on Claude's independent model review;
+  production implementation remains gated
 - **Date:** 2026-09-10
 - **Decision owners:** Proofbound Runtime maintainers
 - **Applies to:** first version 2 network-enabled execution profile
