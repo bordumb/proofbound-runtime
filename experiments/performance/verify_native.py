@@ -344,18 +344,26 @@ def verify_result(
         try:
             if output.read_bytes() != expected_output_bytes:
                 fail("benchmark.verify.run-artifact-mismatch")
-            projection = require_object(
-                decode(run_result.read_bytes()),
-                {"schema", "commitment", "execution_id", "outcome"},
-            )
+            projection = decode(run_result.read_bytes())
         except OSError:
             fail("benchmark.verify.run-artifact-mismatch")
+        if set(projection) != {
+            "schema",
+            "commitment",
+            "execution_id",
+            "outcome",
+            "receipt",
+        }:
+            fail("benchmark.verify.run-artifact-mismatch")
         commitment = f"sha256:{run['receipt_sha256']}"
+        receipt_projection = require_nonempty_text(projection["receipt"])
         if (
             projection["schema"] != "proofbound-runtime-run-result/1"
             or projection["commitment"] != commitment
             or not require_nonempty_text(projection["execution_id"])
             or projection["outcome"] != {"kind": "exited", "code": 0}
+            or Path(receipt_projection).parts[-3:]
+            != ("runs", f"{expected_index:03d}", "receipt.json")
         ):
             fail("benchmark.verify.run-artifact-mismatch")
         verify_receipt(verifier, receipt, commitment)
