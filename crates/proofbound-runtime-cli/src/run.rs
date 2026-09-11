@@ -84,6 +84,7 @@ impl RunBenchmarkPhase {
 
     /// Returns the stable operational subject name.
     #[must_use]
+    #[allow(dead_code)]
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::PlanValidationAndNormalization => "plan-validation-and-normalization-v1",
@@ -121,16 +122,19 @@ pub struct ObservedRun {
 impl ObservedRun {
     /// Returns the ordinary version 1 JSON run-result projection.
     #[must_use]
+    #[allow(dead_code)]
     pub const fn report(&self) -> &Value {
         &self.report
     }
 
     /// Returns timings that are excluded from every Runtime wire object.
     #[must_use]
+    #[allow(dead_code)]
     pub const fn timings(&self) -> &RunTimings {
         &self.timings
     }
 
+    #[allow(dead_code)]
     pub(crate) fn into_report(self) -> Value {
         self.report
     }
@@ -147,18 +151,21 @@ impl RunTimings {
 
     /// Returns every interval in the closed phase order.
     #[must_use]
+    #[allow(dead_code)]
     pub const fn intervals(&self) -> &[std::time::Duration; RunBenchmarkPhase::ALL.len()] {
         &self.intervals
     }
 
     /// Returns the interval for one closed phase.
     #[must_use]
+    #[allow(dead_code)]
     pub const fn phase(&self, phase: RunBenchmarkPhase) -> std::time::Duration {
         self.intervals[phase as usize]
     }
 
     /// Returns the sum of all non-overlapping intervals.
     #[must_use]
+    #[allow(dead_code)]
     pub fn total(&self) -> std::time::Duration {
         self.intervals.iter().copied().fold(
             std::time::Duration::ZERO,
@@ -196,6 +203,7 @@ pub fn execute_observed(
 }
 
 #[cfg(target_os = "linux")]
+#[allow(dead_code)]
 pub(crate) fn execute(
     plan_path: &Path,
     receipt_path: &Path,

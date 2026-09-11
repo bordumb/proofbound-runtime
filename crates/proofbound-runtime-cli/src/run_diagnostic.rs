@@ -58,6 +58,7 @@ impl RunPhase {
         Self::ResultProjection,
     ];
 
+    #[allow(dead_code)]
     pub(crate) const fn as_str(self) -> &'static str {
         match self {
             Self::ReceiptTarget => "receipt-target",
@@ -143,6 +144,7 @@ impl RunRule {
         Self::RunResultRepresentable,
     ];
 
+    #[allow(dead_code)]
     pub(crate) const fn as_str(self) -> &'static str {
         match self {
             Self::ReceiptTargetValid => "receipt-target-valid",
@@ -215,10 +217,12 @@ impl RunError {
         self.exit_code
     }
 
+    #[allow(dead_code)]
     pub(crate) const fn phase(self) -> RunPhase {
         self.phase
     }
 
+    #[allow(dead_code)]
     pub(crate) const fn rule(self) -> RunRule {
         self.rule
     }
