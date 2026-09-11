@@ -21,13 +21,13 @@ separate and are never reimplemented by an SDK.
 
 ## Plan construction
 
-All three SDKs accept the same closed logical fields:
+All three SDKs fix network authority to deny and accept the same remaining
+closed logical fields:
 
 - plan identifier;
 - executable, arguments, and working directory;
 - read, runtime-read, write, and execute path arrays;
 - inherited environment-name array;
-- deny-network mode; and
 - process, wall-time, stdout, stderr, memory, and swap limits.
 
 They reject unknown fields, non-integer or out-of-range integers, invalid plan
