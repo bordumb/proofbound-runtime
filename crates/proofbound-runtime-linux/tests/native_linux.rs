@@ -433,6 +433,85 @@ mod linux {
     }
 
     #[test]
+    fn production_launcher_enforces_native_swap_presence_matrix() {
+        let required = std::env::var_os("PROOFBOUND_NATIVE_REQUIRED").is_some();
+        let Ok(swap_mode) = std::env::var("PROOFBOUND_NATIVE_SWAP_MODE") else {
+            assert!(!required, "native swap mode is required");
+            return;
+        };
+        let (Some(cgroup_root), Some(fixture)) = (
+            std::env::var_os("PROOFBOUND_CGROUP_ROOT"),
+            std::env::var_os("PROOFBOUND_NATIVE_FIXTURE"),
+        ) else {
+            assert!(!required, "native corpus configuration is required");
+            return;
+        };
+        let supported = probe_capabilities(Path::new(&cgroup_root))
+            .require_supported()
+            .expect("identified native host must satisfy the complete capability profile");
+        let fixture = PathBuf::from(fixture);
+        let workspace = create_fixture_directory();
+        let swap_devices = std::fs::read_to_string("/proc/swaps")
+            .expect("kernel swap inventory is readable")
+            .lines()
+            .skip(1)
+            .count();
+
+        match swap_mode.as_str() {
+            "absent" => {
+                assert_eq!(swap_devices, 0, "absent phase must have no host swap");
+                let execution = run_v2_case(
+                    &supported,
+                    &fixture,
+                    &workspace.0,
+                    "memory-anonymous",
+                    &["16777216"],
+                    None,
+                    1,
+                    128 * 1024 * 1024,
+                    0,
+                    5_000,
+                );
+                assert_outcome(&execution, ExecutionOutcome::Exited { code: 0 });
+                let resources = execution.resources().expect("absent-swap observations");
+                assert_eq!(resources.swap_peak_bytes(), 0, "{execution:#?}");
+                assert_eq!(resources.swap_events().max(), 0, "{execution:#?}");
+                assert_eq!(resources.swap_events().fail(), 0, "{execution:#?}");
+            }
+            "present" => {
+                assert!(
+                    swap_devices > 0,
+                    "present phase must have a host swap device"
+                );
+                let execution = run_v2_case(
+                    &supported,
+                    &fixture,
+                    &workspace.0,
+                    "memory-over-limit",
+                    &["8388608"],
+                    None,
+                    1,
+                    64 * 1024 * 1024,
+                    64 * 1024 * 1024,
+                    15_000,
+                );
+                let resources = execution.resources().expect("present-swap observations");
+                assert!(resources.swap_peak_bytes() > 0, "{execution:#?}");
+                assert!(
+                    resources.swap_events().max() > 0 || resources.swap_events().fail() > 0,
+                    "{execution:#?}"
+                );
+                assert!(
+                    resources.limit_events().contains(LimitEvent::SwapMax)
+                        || resources.limit_events().contains(LimitEvent::SwapFail),
+                    "{execution:#?}"
+                );
+            }
+            other => panic!("unknown native swap mode: {other}"),
+        }
+    }
+
+    #[test]
     fn discovers_and_retains_the_native_shell_executable_closure() {
         let architecture = if cfg!(target_arch = "x86_64") {
             proofbound_runtime_linux::Architecture::X86_64

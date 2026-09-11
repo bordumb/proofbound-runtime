@@ -56,6 +56,12 @@ if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
   "$PROOFBOUND_NATIVE_FIXTURE" landlock-fd-exec-preflight "$PROOFBOUND_NATIVE_FIXTURE"
   uname -a
   systemd --version | head -n 1
+  if [[ "${PROOFBOUND_NATIVE_SWAP_ONLY:-0}" == "1" ]]; then
+    cargo test --locked -p proofbound-runtime-linux --test native_linux \
+      production_launcher_enforces_native_swap_presence_matrix -- \
+      --test-threads=1 --nocapture
+    exit 0
+  fi
   cargo test --locked -p proofbound-runtime-linux --test native_linux -- --test-threads=1 --nocapture
 
   if [[ "$runtime_bins_prebuilt" != "1" ]]; then
@@ -310,23 +316,51 @@ if file "$fixture" | grep -q "dynamically linked"; then
 fi
 
 unit_suffix="${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-0}-$(uname -m)"
-exec sudo systemd-run \
-  --quiet \
-  --wait \
-  --collect \
-  --pipe \
-  --service-type=exec \
-  --unit="proofbound-runtime-native-$unit_suffix" \
-  --property="User=$(id -un)" \
-  --property="Group=$(id -gn)" \
-  --property="Delegate=pids memory" \
-  --property="DelegateSubgroup=$supervisor_leaf" \
-  --working-directory="$repository_root" \
-  --setenv=PROOFBOUND_NATIVE_INNER=1 \
-  --setenv="PROOFBOUND_NATIVE_FIXTURE=$fixture" \
-  --setenv="PROOFBOUND_EXPECTED_ARCH=$expected_architecture" \
-  --setenv="PROOFBOUND_RUNTIME_BINS_PREBUILT=$runtime_bins_prebuilt" \
-  --setenv="PROOFBOUND_RUNTIME_BIN_DIR=$runtime_bin_directory" \
-  --setenv="PROOFBOUND_EVIDENCE_DIRECTORY=$evidence_directory" \
-  --setenv="PATH=$PATH" \
-  /usr/bin/env bash tools/ci/native-linux.sh
+
+run_native_service() {
+  local swap_only="$1"
+  sudo systemd-run \
+    --quiet \
+    --wait \
+    --collect \
+    --pipe \
+    --service-type=exec \
+    --unit="proofbound-runtime-native-$unit_suffix-$PROOFBOUND_NATIVE_SWAP_MODE" \
+    --property="User=$(id -un)" \
+    --property="Group=$(id -gn)" \
+    --property="Delegate=pids memory" \
+    --property="DelegateSubgroup=$supervisor_leaf" \
+    --working-directory="$repository_root" \
+    --setenv=PROOFBOUND_NATIVE_INNER=1 \
+    --setenv="PROOFBOUND_NATIVE_FIXTURE=$fixture" \
+    --setenv="PROOFBOUND_NATIVE_SWAP_MODE=$PROOFBOUND_NATIVE_SWAP_MODE" \
+    --setenv="PROOFBOUND_NATIVE_SWAP_ONLY=$swap_only" \
+    --setenv="PROOFBOUND_EXPECTED_ARCH=$expected_architecture" \
+    --setenv="PROOFBOUND_RUNTIME_BINS_PREBUILT=$runtime_bins_prebuilt" \
+    --setenv="PROOFBOUND_RUNTIME_BIN_DIR=$runtime_bin_directory" \
+    --setenv="PROOFBOUND_EVIDENCE_DIRECTORY=$evidence_directory" \
+    --setenv="PATH=$PATH" \
+    /usr/bin/env bash tools/ci/native-linux.sh
+}
+
+if [[ "$(wc -l </proc/swaps)" -ne 1 ]]; then
+  echo "native absent-swap phase requires a host with no configured swap" >&2
+  exit 1
+fi
+PROOFBOUND_NATIVE_SWAP_MODE=absent run_native_service 0
+
+swap_file="/mnt/proofbound-runtime-native-$unit_suffix.swap"
+cleanup_swap() {
+  if awk -v path="$swap_file" 'NR > 1 && $1 == path { found = 1 } END { exit !found }' /proc/swaps; then
+    sudo swapoff "$swap_file"
+  fi
+  sudo rm -f -- "$swap_file"
+}
+trap cleanup_swap EXIT
+sudo fallocate -l 256M "$swap_file"
+sudo chmod 0600 "$swap_file"
+sudo mkswap "$swap_file" >/dev/null
+sudo swapon "$swap_file"
+PROOFBOUND_NATIVE_SWAP_MODE=present run_native_service 1
+cleanup_swap
+trap - EXIT
