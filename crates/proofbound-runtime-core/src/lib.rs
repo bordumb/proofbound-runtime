@@ -40,3 +40,4 @@ pub use receipt::{
     RuntimeIdentity, StreamCapture, TrustedComputingBaseEntry, TrustedComputingBaseRole,
     construct_execution_receipt, derive_receipt_eligibility,
 };
+pub use run_result::{RunResultError, RunResultV2};
