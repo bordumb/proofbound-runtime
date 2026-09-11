@@ -35,11 +35,13 @@ As of 2026-09-11, the roadmap branch has completed the version 2 memory/swap
 implementation and deterministic-CBOR claim wave, the independently verified
 receipt-composition and adopter-acceptance path, the reproducible standalone
 `pbr-accept` artifact, the first-party GitHub Action, and the RT-3.3 plan
-scaffold source boundary. `PBR-ACCEPT-012` and `PBR-SCAFFOLD-013` both admit
-their exact source-level attack evidence. They deliberately retain exact
-native-release observation and external Action dogfood as open obligations;
-those obligations cannot be converted into source claims or satisfied by an
-older release-candidate run.
+scaffold source boundary. RT-3.5 now also has closed Rust, Python, and
+TypeScript SDK sources plus deterministic Python-wheel and closed npm-package
+checks. `PBR-ACCEPT-012`, `PBR-SCAFFOLD-013`, and `PBR-SDK-014` admit their
+exact source-level evidence; the SDK claim was replayed fresh at `2298657`.
+They deliberately retain exact native or package-release observation and
+external dogfood as open obligations; those obligations cannot be converted
+into source claims or satisfied by an older release-candidate run.
 
 As of 2026-09-10, Order 0 is implemented on the roadmap branch, the version
 0.1 installation path and host-prerequisite explanations are implemented and
@@ -844,6 +846,18 @@ not describe the command as released.
 - Do not embed raw syscalls, launcher sequencing, or producer/verifier semantic
   code in an SDK.
 - Keep the independently implemented verifier independently distributable.
+
+**2026-09-11 source checkpoint:** complete on the roadmap branch. The Rust,
+Python, and TypeScript packages independently match the frozen deterministic-
+CBOR Version 2 plan vector, strictly decode the non-verifying JSON result
+projection, and contain no producer/verifier or Linux-boundary implementation.
+Python and TypeScript exercise an exact separate-process invocation with no
+shell, no ambient environment inheritance, and bounded output capture. Required
+CI closes the source, attack, and package inventories; the Python wheel is
+byte-reproducible without build-time dependencies. `PBR-SDK-014` records the
+language-runtime premise and the remaining external obligations: exact
+registry publication at an approved tag and consumer-repository dogfood for
+all three packages. Source completion is not registry publication.
 
 ## 10. Epic RT-4: network authority research and ADR
 

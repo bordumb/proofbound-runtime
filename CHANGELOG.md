@@ -42,6 +42,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   interpreter and transitive dependency metadata under explicit glibc or musl
   host profiles, records resolution provenance, and emits only an explicitly
   unsafe JSON review aid with all human policy choices left open.
+- Rust, Python, and TypeScript plan SDKs that match the deterministic-CBOR
+  Version 2 golden vector, strictly decode non-verifying run results, preserve
+  the separate-process boundary, and carry closed reproducible-package checks.
 
 ### Changed
 

@@ -187,6 +187,16 @@ environment names, limits, and network mode when constructing the real plan.
 See [Specification 0011](docs/specs/0011_plan_scaffold.md) for its bounded
 static-discovery meaning.
 
+The Version 2 candidate also includes small plan-construction SDKs for Rust,
+Python, and TypeScript. They produce the same deterministic-CBOR plan bytes;
+the Python and TypeScript helpers can invoke an explicitly selected `pbr`
+binary as a separate process. They do not embed execution or verification, and
+their decoded JSON run result is never verification input. Package-specific
+examples and compatibility details are in
+[`sdk/python/README.md`](sdk/python/README.md) and
+[`sdk/typescript/README.md`](sdk/typescript/README.md); the Rust API is in the
+`proofbound-runtime-sdk` workspace crate.
+
 For the current Version 2 source, create a deterministic-CBOR plan beside an
 existing statically linked executable. The explicit values below grant one
 process, 256 MiB of cgroup-accounted memory, and no disk-backed swap. Replace
