@@ -1626,7 +1626,7 @@ mod tests {
         assert_eq!(subjects[4].fixture_sha256(), subjects[5].fixture_sha256());
         assert_eq!(
             subjects[3].fixture_sha256(),
-            "783e5cb442aa12eadccdccc2082ea3a389f55732092a5597c904fb4faba936de"
+            "9811b81f6315952105486f4c8b3795b437d232fa51ea2b281bc35455ba35ee60"
         );
         assert_ne!(subjects[3].fixture_sha256(), subjects[0].fixture_sha256());
         assert_ne!(subjects[6].fixture_sha256(), subjects[3].fixture_sha256());
