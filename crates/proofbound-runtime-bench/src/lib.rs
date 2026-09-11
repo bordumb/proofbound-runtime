@@ -817,6 +817,7 @@ mod tests {
             toolchain,
             "release",
             "x86_64".to_owned(),
+            MeasurementConfig::new(1, 2, 1).expect("config is valid"),
             vec![
                 fixed_subject(PureSubject::PolicyCompilationV1, '3'),
                 fixed_subject(PureSubject::PlanParseV1, '1'),
@@ -849,6 +850,9 @@ mod tests {
         assert_eq!(value["toolchain"]["release"], "1.93.0");
         assert_eq!(value["toolchain"]["target"], "x86_64-unknown-linux-gnu");
         assert_eq!(value["build_profile"], "release");
+        assert_eq!(value["protocol"]["warmup_count"], 1);
+        assert_eq!(value["protocol"]["sample_count"], 2);
+        assert_eq!(value["protocol"]["target_sample_ns"], 1);
         assert_eq!(value["subjects"][0]["subject"], "plan-parse-v1");
     }
 
@@ -863,6 +867,7 @@ mod tests {
         let make = |source: SourceRevision,
                     executable: String,
                     profile: &'static str,
+                    config: MeasurementConfig,
                     subjects: Vec<PureSubjectResult>| {
             PureBenchmarkResult::new(
                 source,
@@ -870,17 +875,30 @@ mod tests {
                 toolchain.clone(),
                 profile,
                 "x86_64".to_owned(),
+                config,
                 subjects,
             )
         };
         let mismatched_source =
             SourceRevision::new(&"c".repeat(40), &"c".repeat(40), "").expect("source is valid");
         assert_eq!(
-            make(mismatched_source, "B".repeat(64), "release", Vec::new()),
+            make(
+                mismatched_source,
+                "B".repeat(64),
+                "release",
+                MeasurementConfig::new(1, 2, 1).expect("config is valid"),
+                Vec::new(),
+            ),
             Err(BenchmarkError::InvalidDigest)
         );
         assert_eq!(
-            make(source.clone(), "b".repeat(64), "debug", Vec::new()),
+            make(
+                source.clone(),
+                "b".repeat(64),
+                "debug",
+                MeasurementConfig::new(1, 2, 1).expect("config is valid"),
+                Vec::new(),
+            ),
             Err(BenchmarkError::InvalidBuildProfile)
         );
         assert_eq!(
@@ -888,6 +906,7 @@ mod tests {
                 source.clone(),
                 "b".repeat(64),
                 "release",
+                MeasurementConfig::new(1, 2, 1).expect("config is valid"),
                 vec![subject.clone()],
             ),
             Err(BenchmarkError::SubjectDomainMismatch)
@@ -897,9 +916,26 @@ mod tests {
                 source,
                 "b".repeat(64),
                 "release",
+                MeasurementConfig::new(1, 2, 1).expect("config is valid"),
                 vec![subject.clone(), subject],
             ),
             Err(BenchmarkError::SubjectDomainMismatch)
+        );
+        let complete_subjects = vec![
+            fixed_subject(PureSubject::PlanParseV1, '1'),
+            fixed_subject(PureSubject::AuthorityNormalizationV1, '2'),
+            fixed_subject(PureSubject::PolicyCompilationV1, '3'),
+        ];
+        assert_eq!(
+            make(
+                SourceRevision::new(&revision, &revision, "")
+                    .expect("source is valid"),
+                "b".repeat(64),
+                "release",
+                MeasurementConfig::new(1, 3, 1).expect("config is valid"),
+                complete_subjects,
+            ),
+            Err(BenchmarkError::ConfigurationMismatch)
         );
     }
 
