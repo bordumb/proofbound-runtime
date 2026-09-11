@@ -158,6 +158,23 @@ class PerformanceWorkflowTests(unittest.TestCase):
         self.assertIn("cc -O2 -Wall -Wextra -Werror", script)
         self.assertIn("experiments/performance/discover_runtime_libraries.py", script)
 
+    def test_retained_native_artifacts_are_reverified_in_separate_jobs(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn("verify-native-artifacts:\n    needs: native", workflow)
+        self.assertIn(
+            "actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3",
+            workflow,
+        )
+        self.assertIn("sha256sum --check SHA256SUMS", workflow)
+        self.assertIn("Independently reverify the downloaded artifact", workflow)
+        self.assertIn(
+            "name: reverify native artifact (${{ matrix.workload }}, "
+            "${{ matrix.architecture }})",
+            workflow,
+        )
+        self.assertIn('--verifier "$result_root/runtime-bin/pbr-verify"', workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
