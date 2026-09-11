@@ -86,7 +86,11 @@ class WireTransitionTests(unittest.TestCase):
         self.assertNotIn("FreshCgroup::create(supported.cgroup_v2()", run)
         self.assertIn("let resources = cgroup.finish();", supervisor)
         self.assertIn("resources: resources?", supervisor)
-        self.assertIn("pub const fn resources(&self) -> Option<TerminalResources>", supervisor)
+        self.assertIn("pub const fn resources(&self) -> ResourceObservation", supervisor)
+        self.assertIn(
+            "ResourceObservation::Incomplete(configured) => ReceiptResources::incomplete(",
+            run,
+        )
 
     def test_native_execution_recipe_delegates_memory_and_pids(self) -> None:
         script = (REPOSITORY_ROOT / "tools/ci/native-linux.sh").read_text(encoding="utf-8")
