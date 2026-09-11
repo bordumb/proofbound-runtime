@@ -4,12 +4,13 @@ statement = "The identified Linux kernel enforces the registered Landlock, secco
 category = "runtime-environment"
 owner = "Proofbound Runtime platform maintainer"
 rationale = "A policy compiler theorem can prove a relation to a formal platform model, but it cannot prove that the host kernel implements that model correctly."
-scope = "Only the real Linux enforcement interpretation of PBR-SEQUENCE-003, PBR-BINDING-005, PBR-RUN-007, PBR-PREFLIGHT-009, and PBR-DIAGNOSTIC-011 on an identified supported host. PBR-POLICY-002 currently states only a relation to the registered model."
+scope = "Only the real Linux enforcement interpretation of PBR-SEQUENCE-003, PBR-BINDING-005, PBR-RUN-007, PBR-PREFLIGHT-009, PBR-RESOURCE-010, and PBR-DIAGNOSTIC-011 on an identified supported host. PBR-POLICY-002 currently states only a relation to the registered model."
 affected_claims = [
   "PBR-SEQUENCE-003",
   "PBR-BINDING-005",
   "PBR-RUN-007",
   "PBR-PREFLIGHT-009",
+  "PBR-RESOURCE-010",
   "PBR-DIAGNOSTIC-011",
 ]
 review_evidence = [

@@ -206,6 +206,15 @@ class WireTransitionTests(unittest.TestCase):
         self.assertIn(
             '("PBR-RESOURCE-010", "runtime-release", "pbr")', observations
         )
+        for assumption in (
+            "PBR-HOST-AX-002",
+            "PBR-LINUX-AX-001",
+            "PBR-TOOLCHAIN-AX-003",
+        ):
+            source = (
+                REPOSITORY_ROOT / f"assumptions/{assumption}.toml"
+            ).read_text(encoding="utf-8")
+            self.assertIn('"PBR-RESOURCE-010"', source)
 
     def test_v2_receipt_resources_cross_the_proven_binding_boundary(self) -> None:
         binding = (
