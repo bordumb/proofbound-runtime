@@ -116,6 +116,27 @@ class WireTransitionTests(unittest.TestCase):
         self.assertIn("MemoryByteLimit::new(", harness)
         self.assertIn("SwapByteLimit::new(", harness)
 
+    def test_v2_receipt_resources_cross_the_proven_binding_boundary(self) -> None:
+        binding = (
+            REPOSITORY_ROOT / "crates/proofbound-runtime-binding/src/lib.rs"
+        ).read_text(encoding="utf-8")
+        receipt = (
+            REPOSITORY_ROOT / "crates/proofbound-runtime-core/src/receipt.rs"
+        ).read_text(encoding="utf-8")
+        model = (
+            REPOSITORY_ROOT / "formal/ProofboundRuntime/Binding.lean"
+        ).read_text(encoding="utf-8")
+        claim = (REPOSITORY_ROOT / "claims/PBR-BINDING-005.toml").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("pub resources: Option<Vec<u8>>", binding)
+        self.assertIn("def requiredFieldsV1", model)
+        self.assertIn("def requiredFieldsV2", model)
+        self.assertIn("canonical_v2_binding_parts(receipt)?", receipt)
+        self.assertIn("construct_and_project_receipt_binding(parts)", receipt)
+        self.assertNotIn("all 20 version 1 top-level fields", claim)
+
 
 if __name__ == "__main__":
     unittest.main()
