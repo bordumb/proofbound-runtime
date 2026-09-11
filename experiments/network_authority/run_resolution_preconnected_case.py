@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import errno
 import hashlib
 import os
 import socket
@@ -117,7 +118,11 @@ def _relay_http(
     raw = protected.unwrap()
     raw.close()
     local.sendall(response)
-    local.shutdown(socket.SHUT_WR)
+    try:
+        local.shutdown(socket.SHUT_WR)
+    except OSError as error:
+        if error.errno != errno.ENOTCONN:
+            raise
 
 
 def _relay_proxy(
