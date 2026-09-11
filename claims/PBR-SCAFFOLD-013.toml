@@ -1,0 +1,36 @@
+schema = "proofbound-claim/1"
+id = "PBR-SCAFFOLD-013"
+title = "Plan scaffolding inventories a bounded static ELF closure"
+statement = "For a supported explicit Linux ELF64 host profile, pbr plan scaffold reads but never executes one exact target, strictly parses its interpreter and transitive DT_NEEDED metadata, records deterministic ordered resolution provenance and artifact identities, and emits a non-policy diagnostic with every mandatory human choice and unresolved dynamic-load class open."
+public_language = "The development scaffold inventories the registered bounded static ELF cases without executing target code and labels its JSON output as unsafe and incomplete. This is source-level test evidence, not a safe policy, a complete account of runtime loads, or exact released-artifact evidence."
+subject = "rust:proofbound_runtime_cli::scaffold::execute"
+profile = "ledger"
+tier = 0
+evidence = ["example-test:plan-scaffold-attacks"]
+assumptions = [
+  "PBR-HOST-AX-002",
+  "PBR-TOOLCHAIN-AX-003",
+]
+open_obligations = [
+  "Execute the scaffold corpus on both supported native architectures at the next release head.",
+  "Bind exact native pbr artifacts containing plan scaffold before describing the command as released.",
+  "Retain human review of write roots, environment names, limits, network mode, plugins, configuration, and other dynamic loads for every derived plan.",
+]
+out_of_scope = [
+  "Proof that the scaffold is a safe or complete execution policy.",
+  "Discovery of arbitrary plugin, dynamic-language, configuration, environment-dependent, or target-computed loads.",
+  "Proof that an observed path or artifact identity remains unchanged after scaffolding returns.",
+  "Correctness or authenticity of host loader data, filesystem metadata, or the selected host profile under the recorded assumptions.",
+  "Acceptance of the JSON scaffold by plan check, execution, receipt production, or independent verification.",
+]
+source_roots = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-cli/Cargo.toml",
+  "crates/proofbound-runtime-cli/src/main.rs",
+  "crates/proofbound-runtime-cli/src/scaffold.rs",
+  "docs/specs/0011_plan_scaffold.md",
+  "proofbound/evidence/plan-scaffold-attacks.toml",
+  "tests/attacks/scaffold/v1.toml",
+  "tools/ci/test_plan_scaffold_contract.py",
+]
