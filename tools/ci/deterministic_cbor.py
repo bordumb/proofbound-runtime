@@ -121,13 +121,41 @@ def decode_strict(
     return value
 
 
-def json_projection(value: Any) -> Any:
+def json_projection(value: Any, path: tuple[str, ...] = ()) -> Any:
     """Return the golden-vector JSON projection; never committed or verified."""
 
     if isinstance(value, bytes):
         return f"hex:{value.hex()}"
+    if type(value) is int and decimal_projection_path(path):
+        return str(value)
     if isinstance(value, list):
-        return [json_projection(entry) for entry in value]
+        return [json_projection(entry, path) for entry in value]
     if isinstance(value, dict):
-        return {key: json_projection(entry) for key, entry in value.items()}
+        return {
+            key: json_projection(entry, (*path, key)) for key, entry in value.items()
+        }
     return value
+
+
+def decimal_projection_path(path: tuple[str, ...]) -> bool:
+    """Identify CBOR integers rendered as exact decimal strings in JSON views."""
+
+    if not path:
+        return False
+    field = path[-1]
+    return field in {
+        "size",
+        "size_bytes",
+        "inode",
+        "mount_id",
+        "started_ns",
+        "finished_ns",
+        "memory_bytes",
+        "swap_bytes",
+        "stdout_bytes",
+        "stderr_bytes",
+        "memory.max",
+        "memory.swap.max",
+        "memory_peak_bytes",
+        "swap_peak_bytes",
+    } or any(parent in {"memory_events", "swap_events"} for parent in path)

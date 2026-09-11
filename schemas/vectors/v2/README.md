@@ -4,6 +4,9 @@ Each `*.cbor.hex` file contains one complete deterministic-CBOR item as
 lowercase hexadecimal. The same basename's `*.projection.json` file is the
 human-readable projection of that decoded item. In these vector projections,
 CBOR byte strings are rendered as lowercase hexadecimal prefixed by `hex:`.
+Byte counts, artifact sizes, resource counters, cgroup identifiers, and
+monotonic timestamps are rendered as canonical unsigned decimal strings so
+JSON consumers can display the full CBOR `uint64` range exactly.
 The projection is descriptive test output; it is never a verification input.
 
 The bytes were initially generated with `cbor2` 5.9.0 in canonical mode and

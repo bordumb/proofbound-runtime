@@ -124,7 +124,7 @@ pub(crate) fn decode_v2_receipt(input: &[u8]) -> Result<DecodedReceipt, DecodeEr
         assumptions,
         trusted_computing_base,
     };
-    let projection = project(&root)?;
+    let projection = project(&root, &mut Vec::new())?;
     Ok(DecodedReceipt::from_v2(
         projection,
         wire,
@@ -586,8 +586,11 @@ fn hex(bytes: &[u8]) -> String {
     output
 }
 
-fn project(value: &Value) -> Result<Json, DecodeError> {
+fn project(value: &Value, path: &mut Vec<String>) -> Result<Json, DecodeError> {
     Ok(match value {
+        Value::Unsigned(value) if decimal_projection_path(path) => {
+            Json::String(value.to_string())
+        }
         Value::Unsigned(value) => Json::from(*value),
         Value::Negative(argument) => {
             let value = -1_i128
@@ -598,14 +601,42 @@ fn project(value: &Value) -> Result<Json, DecodeError> {
         }
         Value::Bytes(bytes) => Json::String(format!("hex:{}", hex(bytes))),
         Value::Text(value) => Json::String(value.clone()),
-        Value::Array(values) => Json::Array(values.iter().map(project).collect::<Result<_, _>>()?),
-        Value::Map(values) => Json::Object(
+        Value::Array(values) => Json::Array(
             values
                 .iter()
-                .map(|(key, value)| Ok((key.clone(), project(value)?)))
-                .collect::<Result<_, DecodeError>>()?,
+                .map(|value| project(value, path))
+                .collect::<Result<_, _>>()?,
         ),
+        Value::Map(values) => {
+            let mut object = serde_json::Map::with_capacity(values.len());
+            for (key, value) in values {
+                path.push(key.clone());
+                object.insert(key.clone(), project(value, path)?);
+                path.pop();
+            }
+            Json::Object(object)
+        }
         Value::Bool(value) => Json::Bool(*value),
         Value::Null => Json::Null,
     })
+}
+
+fn decimal_projection_path(path: &[String]) -> bool {
+    let Some(field) = path.last().map(String::as_str) else {
+        return false;
+    };
+    matches!(
+        field,
+        "size"
+            | "inode"
+            | "mount_id"
+            | "started_ns"
+            | "finished_ns"
+            | "memory.max"
+            | "memory.swap.max"
+            | "memory_peak_bytes"
+            | "swap_peak_bytes"
+    ) || path
+        .iter()
+        .any(|parent| matches!(parent.as_str(), "memory_events" | "swap_events"))
 }
