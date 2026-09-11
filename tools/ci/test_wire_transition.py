@@ -17,20 +17,15 @@ VERSION_TWO_IDENTITIES = (
 
 
 class WireTransitionTests(unittest.TestCase):
-    def test_open_map_key_gate_blocks_version_two_wire_implementation(self) -> None:
+    def test_version_two_wire_contract_selects_text_map_keys(self) -> None:
         adr = ADR.read_text(encoding="utf-8")
+        specification = MEMORY_SPEC.read_text(encoding="utf-8")
 
         self.assertIn("The deterministic-CBOR decision is accepted.", adr)
-        self.assertRegex(adr, r"The map-key representation is\s+not yet selected\.")
-        self.assertIn("No implementation may infer this choice", adr)
-        self.assertEqual(sorted(SCHEMA_ROOT.glob("*v2*.cddl")), [])
-        rust_sources = "\n".join(
-            path.read_text(encoding="utf-8")
-            for path in sorted(SOURCE_ROOT.glob("**/*.rs"))
-        )
-        for identity in VERSION_TWO_IDENTITIES:
-            with self.subTest(identity=identity):
-                self.assertNotIn(identity, rust_sources)
+        self.assertIn("Version 2 schemas use text map keys.", adr)
+        self.assertNotIn("The map-key representation is not yet selected", adr)
+        self.assertIn("**Status:** Accepted implementation specification", specification)
+        self.assertIn("Version 2 maps use text keys", specification)
 
     def test_memory_receipt_uses_cbor_integers_not_json_workarounds(self) -> None:
         specification = MEMORY_SPEC.read_text(encoding="utf-8")
