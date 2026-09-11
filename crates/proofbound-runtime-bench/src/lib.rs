@@ -39,6 +39,12 @@ pub enum BenchmarkError {
     Encoding,
     /// A prevalidated production subject could not be evaluated.
     SubjectFailed,
+    /// The observed repository head differs from the requested source.
+    SourceMismatch,
+    /// The repository contained tracked or untracked changes.
+    DirtyTree,
+    /// Rust compiler verbose output omitted or duplicated a required identity.
+    InvalidToolchain,
 }
 
 impl fmt::Display for BenchmarkError {
@@ -56,6 +62,9 @@ impl fmt::Display for BenchmarkError {
             Self::SubjectDomainMismatch => "benchmark.subject-domain.mismatch",
             Self::Encoding => "benchmark.result.encoding-failed",
             Self::SubjectFailed => "benchmark.subject.failed",
+            Self::SourceMismatch => "benchmark.source-commit.mismatch",
+            Self::DirtyTree => "benchmark.tree.dirty",
+            Self::InvalidToolchain => "benchmark.toolchain.invalid",
         })
     }
 }
@@ -246,6 +255,85 @@ impl PureBenchmarkResult {
     pub fn to_json(&self) -> Result<Vec<u8>, BenchmarkError> {
         serde_json::to_vec(self).map_err(|_| BenchmarkError::Encoding)
     }
+}
+
+/// One exact clean repository source observed before measurement.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SourceRevision {
+    commit: String,
+    tree_state: &'static str,
+}
+
+impl SourceRevision {
+    /// Validates an expected source against the observed repository state.
+    pub fn new(
+        expected_commit: &str,
+        observed_commit: &str,
+        porcelain_status: &str,
+    ) -> Result<Self, BenchmarkError> {
+        if !is_lower_hex_exact(expected_commit, 40) || !is_lower_hex_exact(observed_commit, 40) {
+            return Err(BenchmarkError::InvalidSourceCommit);
+        }
+        if expected_commit != observed_commit {
+            return Err(BenchmarkError::SourceMismatch);
+        }
+        if !porcelain_status.is_empty() {
+            return Err(BenchmarkError::DirtyTree);
+        }
+        Ok(Self {
+            commit: expected_commit.to_owned(),
+            tree_state: "clean",
+        })
+    }
+
+    /// Returns the exact full source commit.
+    #[must_use]
+    pub fn commit(&self) -> &str {
+        &self.commit
+    }
+
+    /// Returns the observed closed tree state.
+    #[must_use]
+    pub const fn tree_state(&self) -> &'static str {
+        self.tree_state
+    }
+}
+
+/// Required fields from one exact `rustc --version --verbose` observation.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ToolchainIdentity {
+    release: String,
+    target: String,
+}
+
+impl ToolchainIdentity {
+    /// Parses exactly one nonempty `release` and `host` field.
+    pub fn parse(verbose: &str) -> Result<Self, BenchmarkError> {
+        let release = unique_verbose_field(verbose, "release: ")?;
+        let target = unique_verbose_field(verbose, "host: ")?;
+        Ok(Self { release, target })
+    }
+
+    /// Returns the exact Rust release string.
+    #[must_use]
+    pub fn release(&self) -> &str {
+        &self.release
+    }
+
+    /// Returns the compiler host target.
+    #[must_use]
+    pub fn target(&self) -> &str {
+        &self.target
+    }
+}
+
+fn unique_verbose_field(verbose: &str, prefix: &str) -> Result<String, BenchmarkError> {
+    let mut values = verbose.lines().filter_map(|line| line.strip_prefix(prefix));
+    let value = values.next().filter(|value| !value.is_empty());
+    if value.is_none() || values.next().is_some() {
+        return Err(BenchmarkError::InvalidToolchain);
+    }
+    Ok(value.expect("nonempty unique value was checked").to_owned())
 }
 
 fn is_lower_hex_exact(value: &str, length: usize) -> bool {
@@ -814,8 +902,8 @@ mod tests {
     #[test]
     fn source_revision_requires_exact_clean_head() {
         let revision = "a".repeat(40);
-        let source = SourceRevision::new(&revision, &revision, "")
-            .expect("exact clean head is valid");
+        let source =
+            SourceRevision::new(&revision, &revision, "").expect("exact clean head is valid");
         assert_eq!(source.commit(), revision);
         assert_eq!(source.tree_state(), "clean");
         assert_eq!(
