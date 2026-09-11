@@ -1,4 +1,7 @@
 import json
+import subprocess
+import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -55,6 +58,33 @@ class WireV2GoldenVectorTests(unittest.TestCase):
                 cddl = (SCHEMA_ROOT / f"{name}-v2.cddl").read_text(encoding="utf-8")
                 self.assertIn(f"{name}-v2 = {{", cddl)
                 self.assertNotRegex(cddl, r"(?m)^\s*[0-9]+\s*:")
+
+    def test_maintained_plan_encoder_reproduces_the_golden_vector(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "plan.cbor"
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPOSITORY_ROOT / "tools/ci/encode_plan_v2.py"),
+                    "--output", str(output),
+                    "--id", "golden-v2",
+                    "--executable", "bin/hello",
+                    "--working-directory", ".",
+                    "--write", "out",
+                    "--execute", "bin/hello",
+                    "--processes", "2",
+                    "--wall-time-ms", "1000",
+                    "--stdout-bytes", "1024",
+                    "--stderr-bytes", "1024",
+                    "--memory-bytes", "65536",
+                    "--swap-bytes", "0",
+                ],
+                check=True,
+            )
+            expected = bytes.fromhex(
+                (VECTOR_ROOT / "execution-plan.cbor.hex").read_text(encoding="ascii")
+            )
+            self.assertEqual(output.read_bytes(), expected)
 
 
 if __name__ == "__main__":
