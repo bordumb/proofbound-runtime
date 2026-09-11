@@ -26,6 +26,18 @@ def sources() -> dict[str, bytes]:
 
 
 class BuildExampleTests(unittest.TestCase):
+    def test_native_gate_executes_the_packaged_example_inventory(self) -> None:
+        repository = Path(__file__).resolve().parents[2]
+        native_gate = (repository / "tools/ci/native-linux.sh").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("tools/release/build_example.py", native_gate)
+        self.assertIn("--strip-components=1", native_gate)
+        self.assertNotIn(
+            '"$repository_root/examples/hello-static/run-example.sh"', native_gate
+        )
+
     def test_bundle_is_deterministic_closed_and_self_describing(self) -> None:
         first = bundle_bytes(VERSION, sources())
         second = bundle_bytes(VERSION, sources())
