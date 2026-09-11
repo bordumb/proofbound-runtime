@@ -1,6 +1,6 @@
 # ADR 0005: Cache exact formal tools without caching assurance conclusions
 
-- **Status:** proposed
+- **Status:** accepted; retention measurement open
 - **Date:** 2026-09-10
 - **Decision owners:** Proofbound Runtime maintainers
 - **Applies to:** required pull-request and mainline verification workflows
@@ -115,13 +115,16 @@ the final exact artifacts.
 Deferred. Broad Rust, Lean, Kani, or project-target caches enlarge the mutable
 input surface before timing demonstrates that they are needed.
 
-## Review gate
+## Independent review and open obligation
 
-This ADR remains proposed until an independent reviewer confirms that the cache
-key is closed over the selected toolchain, restored paths exclude assurance and
-release outputs, post-restore checks run before evidence, and the added TCB
-premise appears in every affected claim through the registered toolchain
-assumption.
+Claude independently reviewed this decision on 2026-09-11 against the workflow,
+registered toolchain assumption, threat model, and runs `34551042525` and
+`34554553968`. The review confirmed that the key is closed over the selected
+toolchain, restored paths exclude assurance and release outputs, post-restore
+checks run before evidence, and the added trusted-computing-base premise remains
+registered. The verdict was **approve** with no required change.
 
-After two weeks of timing records, retain this mechanism only if formal-lane
-latency improves without changing any evidence outcome or freshness label.
+The mechanism decision is accepted. The retention decision remains open until
+2026-09-25 02:25 UTC, two weeks after the first green cache hit began. At that
+gate, retain the cache only if the timing records show lower formal-lane latency
+without any changed evidence outcome or freshness label.

@@ -21,6 +21,6 @@ inevitable. Add a new ADR and mark the earlier record as superseded.
 | [0002](0002-external-receipt-commitment.md) | Require an external receipt commitment | accepted |
 | [0003](0003-deterministic-cbor-wire-objects.md) | Encode committed version 2 wire objects as deterministic CBOR | accepted |
 | [0004](0004-authenticated-service-session.md) | Select an authenticated service-session boundary | accepted |
-| [0005](0005-exact-tool-cache-boundary.md) | Cache exact formal tools without caching assurance conclusions | proposed |
+| [0005](0005-exact-tool-cache-boundary.md) | Cache exact formal tools without caching assurance conclusions | accepted |
 | [0006](0006-cpu-bandwidth-boundary.md) | Keep CPU bandwidth separate from consumed CPU time | accepted |
 | [0007](0007-output-capacity-boundary.md) | Require a host-managed project quota for output capacity | accepted |
