@@ -94,20 +94,27 @@ mod linux {
     use std::sync::atomic::{AtomicU8, Ordering};
 
     use proofbound_runtime_core::{
-        ArtifactRole, AuthorityPath, BoundaryInstallation, ExecutionId, ExecutionOutcome,
-        LimitEvent, MemoryByteLimit, OutputByteLimit, ProcessLimit, ResourceLimits, Sha256Digest,
-        StreamCapture, SwapByteLimit, WallTimeLimit,
+        ArtifactIdentity, ArtifactRole, AuthorityPath, BoundaryInstallation, ExecutionId,
+        ExecutionOutcome, LimitEvent, MemoryByteLimit, OutputByteLimit, ProcessLimit,
+        ResourceLimits, Sha256Digest, StreamCapture, SwapByteLimit, WallTimeLimit,
     };
     use proofbound_runtime_linux::{
-        FreshCgroup, InstallRequest, LandlockAccess, LauncherFilesystemRule, LauncherIdentity,
-        RootedPathResolver, SupportedLinux, compile_deny_network_program, probe_capabilities,
-        supervise_launcher,
+        ExecutableClosure, FreshCgroup, InstallRequest, LandlockAccess, LauncherFilesystemRule,
+        LauncherIdentity, ResolvedFile, RootedPathResolver, SupervisorError, SupportedLinux,
+        compile_deny_network_program, probe_capabilities, supervise_launcher,
     };
     use sha2::{Digest as _, Sha256};
 
     static CASE_NUMBER: AtomicU8 = AtomicU8::new(1);
 
     struct FixtureDirectory(PathBuf);
+
+    struct PreparedCase {
+        executable: ExecutableClosure,
+        working_directory: File,
+        readable: Option<ResolvedFile>,
+        request: InstallRequest,
+    }
 
     impl Drop for FixtureDirectory {
         fn drop(&mut self) {
@@ -513,6 +520,26 @@ mod linux {
     }
 
     #[test]
+    fn native_failure_paths_remove_cgroup_under_memory_pressure() {
+        let required = std::env::var_os("PROOFBOUND_NATIVE_REQUIRED").is_some();
+        let (Some(cgroup_root), Some(fixture)) = (
+            std::env::var_os("PROOFBOUND_CGROUP_ROOT"),
+            std::env::var_os("PROOFBOUND_NATIVE_FIXTURE"),
+        ) else {
+            assert!(!required, "native corpus configuration is required");
+            return;
+        };
+        let supported = probe_capabilities(Path::new(&cgroup_root))
+            .require_supported()
+            .expect("identified native host must satisfy the complete capability profile");
+        let fixture = PathBuf::from(fixture);
+        let workspace = create_fixture_directory();
+
+        run_failure_under_pressure(&supported, &fixture, &workspace.0, false);
+        run_failure_under_pressure(&supported, &fixture, &workspace.0, true);
+    }
+
+    #[test]
     fn discovers_and_retains_the_native_shell_executable_closure() {
         let architecture = if cfg!(target_arch = "x86_64") {
             proofbound_runtime_linux::Architecture::X86_64
@@ -700,6 +727,57 @@ mod linux {
         readable_file: Option<&str>,
         limits: ResourceLimits,
     ) -> proofbound_runtime_linux::SupervisedExecution {
+        let execution_id = execution_id();
+        let cgroup = if limits.memory().is_some() {
+            FreshCgroup::create_v2(supported.cgroup_v2(), execution_id, limits)
+        } else {
+            FreshCgroup::create(supported.cgroup_v2(), execution_id, limits.processes())
+        }
+        .expect("create fresh execution cgroup");
+        let PreparedCase {
+            executable,
+            working_directory,
+            readable,
+            request,
+        } = prepare_case(
+            supported,
+            fixture,
+            workspace,
+            case,
+            case_arguments,
+            readable_file,
+            execution_id,
+            cgroup.identity(),
+            false,
+        );
+        let mut inherited = vec![executable.executable().as_fd(), working_directory.as_fd()];
+        if let Some(readable) = &readable {
+            inherited.push(readable.as_fd());
+        }
+        supervise_launcher(
+            Path::new(env!("CARGO_BIN_EXE_pbr-native-launcher")),
+            request,
+            cgroup,
+            limits,
+            &inherited,
+            supported.architecture(),
+            supported.landlock_abi(),
+        )
+        .expect("supervise native launcher")
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn prepare_case(
+        supported: &SupportedLinux,
+        fixture: &Path,
+        workspace: &Path,
+        case: &str,
+        case_arguments: &[&str],
+        readable_file: Option<&str>,
+        execution_id: ExecutionId,
+        cgroup_identity: proofbound_runtime_core::CgroupIdentity,
+        corrupt_executable_identity: bool,
+    ) -> PreparedCase {
         let resolver = RootedPathResolver::open(workspace).expect("open fixture root");
         let fixture_authority = AuthorityPath::new(
             fixture
@@ -711,12 +789,12 @@ mod linux {
         let observed = resolver
             .resolve_external_file(&fixture_authority, ArtifactRole::RuntimeExecutable)
             .expect("identify static fixture");
-        let expected_executable = observed.identity().clone();
+        let observed_executable = observed.identity().clone();
         drop(observed);
         let executable = resolver
             .resolve_executable(
                 &fixture_authority,
-                &expected_executable,
+                &observed_executable,
                 None,
                 supported.architecture(),
             )
@@ -741,13 +819,16 @@ mod linux {
             (resolved, access)
         });
 
-        let execution_id = execution_id();
-        let cgroup = if limits.memory().is_some() {
-            FreshCgroup::create_v2(supported.cgroup_v2(), execution_id, limits)
+        let expected_executable = if corrupt_executable_identity {
+            ArtifactIdentity::new(
+                observed_executable.role(),
+                Sha256Digest::from_bytes([0xff; 32]),
+                observed_executable.size(),
+                observed_executable.mode(),
+            )
         } else {
-            FreshCgroup::create(supported.cgroup_v2(), execution_id, limits.processes())
-        }
-        .expect("create fresh execution cgroup");
+            observed_executable
+        };
         let seccomp = compile_deny_network_program(
             proofbound_runtime_core::SeccompPolicy::DenyNetworkV1,
             supported.architecture(),
@@ -757,7 +838,7 @@ mod linux {
         hasher.update(case.as_bytes());
         hasher.update(&seccomp);
         let policy_id = Sha256Digest::from_bytes(hasher.finalize().into());
-        let identity = LauncherIdentity::new(execution_id, policy_id, cgroup.identity());
+        let identity = LauncherIdentity::new(execution_id, policy_id, cgroup_identity);
 
         let executable_fd = executable.executable().as_fd().as_raw_fd();
         let working_directory_fd = working_directory.as_raw_fd();
@@ -803,11 +884,60 @@ mod linux {
         )
         .expect("construct install request");
 
-        let mut inherited = vec![executable.executable().as_fd(), working_directory.as_fd()];
-        if let Some((readable, _)) = &readable {
-            inherited.push(readable.as_fd());
+        PreparedCase {
+            executable,
+            working_directory,
+            readable: readable.map(|(resolved, _)| resolved),
+            request,
         }
-        supervise_launcher(
+    }
+
+    fn run_failure_under_pressure(
+        supported: &SupportedLinux,
+        fixture: &Path,
+        workspace: &Path,
+        supervisor_failure: bool,
+    ) {
+        let limits = ResourceLimits::new_v2(
+            ProcessLimit::new(2).expect("pressure helper and launcher"),
+            WallTimeLimit::from_milliseconds(5_000).expect("bounded failure case"),
+            OutputByteLimit::new(1024),
+            OutputByteLimit::new(1024),
+            MemoryByteLimit::new(128 * 1024 * 1024).expect("valid memory limit"),
+            SwapByteLimit::new(0).expect("zero swap limit"),
+        );
+        let execution_id = execution_id();
+        let cgroup = FreshCgroup::create_v2(supported.cgroup_v2(), execution_id, limits)
+            .expect("create failure-path cgroup");
+        let cgroup_path = cgroup.path().to_owned();
+        let marker = workspace.join(if supervisor_failure {
+            "supervisor-pressure-ready"
+        } else {
+            "launcher-pressure-ready"
+        });
+        let mut pressure = start_pressure(&cgroup, fixture, &marker);
+        let PreparedCase {
+            executable,
+            working_directory,
+            readable,
+            request,
+        } = prepare_case(
+            supported,
+            fixture,
+            workspace,
+            "positive",
+            &[],
+            None,
+            execution_id,
+            cgroup.identity(),
+            !supervisor_failure,
+        );
+        assert!(readable.is_none());
+        let mut inherited = vec![executable.executable().as_fd(), working_directory.as_fd()];
+        if supervisor_failure {
+            inherited.pop();
+        }
+        let result = supervise_launcher(
             Path::new(env!("CARGO_BIN_EXE_pbr-native-launcher")),
             request,
             cgroup,
@@ -815,8 +945,62 @@ mod linux {
             &inherited,
             supported.architecture(),
             supported.landlock_abi(),
-        )
-        .expect("supervise native launcher")
+        );
+        let removed = !cgroup_path.exists();
+        if pressure
+            .try_wait()
+            .expect("inspect pressure helper")
+            .is_none()
+        {
+            pressure.kill().expect("stop residual pressure helper");
+        }
+        pressure.wait().expect("reap pressure helper");
+        assert!(removed, "failure path must remove the exact cgroup");
+
+        if supervisor_failure {
+            assert_eq!(result, Err(SupervisorError::DescriptorSetInvalid));
+        } else {
+            let execution = result.expect("launcher failure remains an observed execution");
+            assert_eq!(execution.boundary(), BoundaryInstallation::Incomplete);
+            assert_outcome(&execution, ExecutionOutcome::LauncherFailed);
+            assert!(execution.launcher_failure().is_some(), "{execution:#?}");
+            assert!(
+                execution
+                    .resources()
+                    .expect("launcher-failure resource observations")
+                    .memory_peak_bytes()
+                    >= 1024 * 1024,
+                "{execution:#?}"
+            );
+        }
+    }
+
+    fn start_pressure(cgroup: &FreshCgroup, fixture: &Path, marker: &Path) -> std::process::Child {
+        let child = std::process::Command::new(fixture)
+            .args([
+                "memory-pressure-stopped",
+                "16777216",
+                marker.to_str().expect("pressure marker path is UTF-8"),
+            ])
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn()
+            .expect("spawn stopped pressure helper");
+        wait_until_stopped(child.id());
+        cgroup
+            .place_process(child.id())
+            .expect("move pressure helper into exact cgroup");
+        let process_id = i32::try_from(child.id()).expect("Linux process IDs fit i32");
+        // SAFETY: `process_id` names the live stopped child owned above.
+        assert_eq!(unsafe { libc::kill(process_id, libc::SIGCONT) }, 0);
+        for _ in 0..5_000 {
+            if std::fs::read(marker).is_ok_and(|bytes| bytes == b"ready\n") {
+                return child;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        }
+        panic!("pressure helper did not confirm allocation");
     }
 
     fn run_raw_cgroup_case(

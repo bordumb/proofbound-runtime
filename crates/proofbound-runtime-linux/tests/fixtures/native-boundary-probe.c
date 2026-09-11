@@ -250,6 +250,23 @@ static int allocate_socket_memory(void) {
     return result;
 }
 
+static int hold_anonymous_pressure(size_t size, const char *marker_path) {
+    unsigned char *memory = mmap(NULL, size, PROT_READ | PROT_WRITE,
+                                 MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (memory == MAP_FAILED) {
+        return 114;
+    }
+    touch_writable_pages(memory, size);
+    int marker = open(marker_path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC,
+                      0600);
+    if (marker < 0 || emit(marker, "ready\n") != 0 || close(marker) != 0) {
+        return 115;
+    }
+    for (;;) {
+        pause();
+    }
+}
+
 int main(int argc, char **argv) {
     if (argc < 2) {
         return 64;
@@ -412,6 +429,14 @@ int main(int argc, char **argv) {
         for (;;) {
             pause();
         }
+    }
+    if (strcmp(argv[1], "memory-pressure-stopped") == 0 && argc == 4) {
+        size_t size = 0;
+        if (parse_size(argv[2], &size) != 0) {
+            return 116;
+        }
+        raise(SIGSTOP);
+        return hold_anonymous_pressure(size, argv[3]);
     }
     return 65;
 }
