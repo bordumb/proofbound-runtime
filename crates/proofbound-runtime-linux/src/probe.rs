@@ -9,6 +9,25 @@ const MIN_LANDLOCK_ABI: u32 = 3;
 #[cfg(target_os = "linux")]
 const MAX_REVIEWED_LANDLOCK_ABI: u32 = 11;
 
+#[cfg(any(test, target_os = "linux"))]
+const fn required_cgroup_controllers() -> [&'static str; 2] {
+    ["memory", "pids"]
+}
+
+#[cfg(any(test, target_os = "linux"))]
+const fn required_cgroup_files() -> [&'static str; 8] {
+    [
+        "memory.events.local",
+        "memory.max",
+        "memory.oom.group",
+        "memory.peak",
+        "memory.swap.events",
+        "memory.swap.max",
+        "memory.swap.peak",
+        "pids.max",
+    ]
+}
+
 /// Identifies one supported native Linux architecture.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Architecture {
@@ -209,7 +228,7 @@ pub enum ProbeError {
     CgroupV2Unavailable,
     /// The configured root is not an empty delegated parent of the supervisor.
     CgroupV2DelegationUnavailable,
-    /// The pids controller required by version 1 is unavailable.
+    /// A controller or control file required by version 2 is unavailable.
     CgroupV2ControllerMissing,
 }
 
@@ -372,20 +391,28 @@ fn probe_cgroup_v2(configured_root: &Path) -> Capability<CgroupV2Capability> {
     let Capability::Available(controllers) = read_set(directory.join("cgroup.controllers")) else {
         return Capability::Unavailable(ProbeError::CgroupV2Unavailable);
     };
-    if controllers
-        .binary_search_by(|item| item.as_str().cmp("pids"))
-        .is_err()
-    {
+    if !required_cgroup_controllers().iter().all(|required| {
+        controllers
+            .binary_search_by(|item| item.as_str().cmp(required))
+            .is_ok()
+    }) {
         return Capability::Unavailable(ProbeError::CgroupV2ControllerMissing);
     }
     let Capability::Available(enabled) = read_set(directory.join("cgroup.subtree_control")) else {
         return Capability::Unavailable(ProbeError::CgroupV2DelegationUnavailable);
     };
-    if enabled
-        .binary_search_by(|item| item.as_str().cmp("pids"))
-        .is_err()
-    {
+    if !required_cgroup_controllers().iter().all(|required| {
+        enabled
+            .binary_search_by(|item| item.as_str().cmp(required))
+            .is_ok()
+    }) {
         return Capability::Unavailable(ProbeError::CgroupV2DelegationUnavailable);
+    }
+    if !required_cgroup_files()
+        .iter()
+        .all(|name| directory.join(name).is_file())
+    {
+        return Capability::Unavailable(ProbeError::CgroupV2ControllerMissing);
     }
     if !crate::sys::path_is_writable(&directory)
         || std::fs::OpenOptions::new()
