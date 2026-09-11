@@ -1,0 +1,34 @@
+; Proofbound Runtime compiled Linux policy version 2.
+; The policy is a closed text-key map encoded under RFC 8949 section 4.2.1.
+
+compiled-policy-v2 = {
+  "schema": "proofbound-runtime-linux-policy/2",
+  "cgroup": cgroup-policy,
+  "network": "deny-network-v1",
+  "filesystem": [* filesystem-rule],
+  "environment": [* text],
+  "no_new_privileges": true
+}
+
+filesystem-rule = {
+  "path": text .size (1..18446744073709551615),
+  "role": "project-input" / "runtime-library" / "output-root" /
+    "runtime-executable",
+  "access": "read" / "write" / "execute"
+}
+
+cgroup-policy = {
+  "pids.max": uint32-nonzero,
+  "memory.max": memory-byte-limit,
+  "memory.oom.group": 1,
+  "memory.swap.max": swap-byte-limit,
+  "stderr_bytes": uint64,
+  "stdout_bytes": uint64,
+  "wall_time_ms": uint64-nonzero
+}
+
+uint32-nonzero = 1..4294967295
+uint64 = 0..18446744073709551615
+uint64-nonzero = 1..18446744073709551615
+memory-byte-limit = 65536..1099511627776
+swap-byte-limit = 0..1099511627776

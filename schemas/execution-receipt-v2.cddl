@@ -1,0 +1,171 @@
+; Proofbound Runtime execution receipt version 2.
+; This is a closed text-key CBOR contract. The order written here is for
+; readers; encoded maps use RFC 8949 section 4.2.1 bytewise key ordering.
+
+execution-receipt-v2 = {
+  "plan": receipt-plan,
+  "schema": "proofbound-runtime-execution-receipt/2",
+  "inputs": [* artifact],
+  "policy": receipt-policy,
+  "runtime": runtime-identity,
+  "streams": streams,
+  "command": receipt-command,
+  "outcome": outcome,
+  "outputs": [* artifact],
+  "boundary": boundary,
+  "producer": artifact,
+  "platform": platform,
+  "resources": resources,
+  "eligibility": eligibility,
+  "environment": [* text],
+  "execution_id": bstr .size 16,
+  "observations": observations,
+  "product_version": text,
+  "assumptions": [* text],
+  "output_root": artifact,
+  "trusted_computing_base": [+ tcb-entry]
+}
+
+artifact = {
+  "mode": 0..4095,
+  "role": artifact-role,
+  "size": uint64,
+  "sha256": bstr .size 32
+}
+
+artifact-role = "execution-plan" / "normalized-plan" / "compiled-policy" /
+  "runtime-binary" / "launcher-binary" / "verifier-binary" /
+  "runtime-executable" / "runtime-loader-executable" / "runtime-library" /
+  "working-directory" / "project-input" / "output-root" /
+  "standard-output" / "standard-error" / "output-artifact"
+
+receipt-plan = {
+  "id": text .size (1..128),
+  "source": artifact,
+  "normalized": artifact
+}
+
+receipt-policy = {
+  "identity": artifact,
+  "model_version": "proofbound-runtime-linux-policy/2"
+}
+
+platform = {
+  "architecture": "x86_64" / "aarch64",
+  "landlock_abi": uint32-nonzero,
+  "kernel_release": text .size (1..18446744073709551615),
+  "operating_system": "linux",
+  "seccomp_features": [* text],
+  "cgroup_controllers": [* text]
+}
+
+runtime-identity = {
+  "runtime": artifact,
+  "launcher": artifact
+}
+
+receipt-command = {
+  "loader": artifact / null,
+  "executable": artifact,
+  "arguments_sha256": bstr .size 32,
+  "working_directory": artifact
+}
+
+boundary = {
+  "state": "installed" / "incomplete",
+  "cgroup": cgroup-identity,
+  "execution_id": bstr .size 16,
+  "policy_sha256": bstr .size 32
+}
+
+cgroup-identity = {
+  "inode": uint64,
+  "mount_id": uint64
+}
+
+observations = {
+  "clock": "linux-monotonic",
+  "started_ns": uint64,
+  "finished_ns": uint64
+}
+
+streams = {
+  "stderr": stream,
+  "stdout": stream
+}
+
+stream = {
+  "capture": "complete" / "truncated",
+  "artifact": artifact
+}
+
+outcome = exited / signaled / terminal-kind
+exited = {
+  "code": -2147483648..2147483647,
+  "kind": "exited"
+}
+signaled = {
+  "kind": "signaled",
+  "signal": uint32-nonzero
+}
+terminal-kind = {
+  "kind": "timed-out" / "denied" / "launcher-failed" / "incomplete"
+}
+
+resources = {
+  "terminal": terminal-resources,
+  "configured": configured-resources,
+  "limit_events": [* limit-event]
+}
+
+configured-resources = {
+  "pids.max": uint32-nonzero,
+  "memory.max": memory-byte-limit,
+  "memory.oom.group": 1,
+  "memory.swap.max": swap-byte-limit
+}
+
+terminal-resources = {
+  "swap_events": swap-events,
+  "memory_events": memory-events,
+  "swap_peak_bytes": uint64,
+  "memory_peak_bytes": uint64
+}
+
+memory-events = {
+  "low": uint64,
+  "oom": uint64,
+  "high": uint64,
+  "max": uint64,
+  "oom_kill": uint64,
+  "oom_group_kill": uint64
+}
+
+swap-events = {
+  "max": uint64,
+  "fail": uint64
+}
+
+limit-event = "memory-high" / "memory-max" / "memory-oom" /
+  "memory-oom-kill" / "memory-oom-group-kill" / "swap-max" / "swap-fail"
+
+eligibility = {
+  "status": "reusable" / "non-reusable",
+  "reasons": [* eligibility-reason]
+}
+
+eligibility-reason = "boundary-incomplete" / "exit-code-nonzero" /
+  "process-signaled" / "timed-out" / "denied" / "launcher-failed" /
+  "execution-incomplete" / "stdout-truncated" / "stderr-truncated" /
+  "receipt-malformed" / "memory-high" / "memory-max" / "memory-oom" /
+  "memory-oom-kill" / "memory-oom-group-kill" / "swap-max" / "swap-fail"
+
+tcb-entry = {
+  "role": text .size (1..18446744073709551615),
+  "identity": text .size (1..18446744073709551615)
+}
+
+uint32-nonzero = 1..4294967295
+uint64 = 0..18446744073709551615
+memory-byte-limit = 65536..1099511627776
+swap-byte-limit = 0..1099511627776
