@@ -2,14 +2,11 @@ name: Network authority experiment
 
 on:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - ".github/workflows/network-authority-experiment.yml"
-      - "experiments/network_authority/**"
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+    inputs:
+      revision:
+        description: Exact 40-character commit to measure
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -18,7 +15,7 @@ jobs:
   decision-fixtures:
     name: decision fixtures (${{ matrix.architecture }})
     env:
-      EXPERIMENT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      EXPERIMENT_SHA: ${{ inputs.revision }}
     strategy:
       fail-fast: false
       matrix:
@@ -36,7 +33,9 @@ jobs:
           ref: ${{ env.EXPERIMENT_SHA }}
 
       - name: Confirm the exact experiment head
-        run: test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+        run: |
+          [[ "$EXPERIMENT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
 
       - name: Validate the decision fixtures
         run: |
@@ -108,7 +107,7 @@ jobs:
   measurement-slice:
     name: measurement (${{ matrix.mechanism }}, ${{ matrix.architecture }})
     env:
-      EXPERIMENT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      EXPERIMENT_SHA: ${{ inputs.revision }}
     strategy:
       fail-fast: false
       matrix:
@@ -146,7 +145,9 @@ jobs:
           ref: ${{ env.EXPERIMENT_SHA }}
 
       - name: Confirm the exact experiment head
-        run: test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+        run: |
+          [[ "$EXPERIMENT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
 
       - name: Run and independently verify the measurement slice
         run: |
@@ -177,7 +178,7 @@ jobs:
   routing-transport-slice:
     name: routing transport (${{ matrix.mechanism }}, ${{ matrix.architecture }})
     env:
-      EXPERIMENT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      EXPERIMENT_SHA: ${{ inputs.revision }}
     strategy:
       fail-fast: false
       matrix:
@@ -215,7 +216,9 @@ jobs:
           ref: ${{ env.EXPERIMENT_SHA }}
 
       - name: Confirm the exact experiment head
-        run: test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+        run: |
+          [[ "$EXPERIMENT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
 
       - name: Run and independently verify the routing transport slice
         run: |
@@ -246,7 +249,7 @@ jobs:
   resolution-indirection-slice:
     name: resolution indirection (${{ matrix.mechanism }}, ${{ matrix.architecture }})
     env:
-      EXPERIMENT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      EXPERIMENT_SHA: ${{ inputs.revision }}
     strategy:
       fail-fast: false
       matrix:
@@ -284,7 +287,9 @@ jobs:
           ref: ${{ env.EXPERIMENT_SHA }}
 
       - name: Confirm the exact experiment head
-        run: test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+        run: |
+          [[ "$EXPERIMENT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
 
       - name: Run and independently verify the resolution indirection slice
         run: |
@@ -315,7 +320,7 @@ jobs:
   bypass-lifecycle-slice:
     name: bypass lifecycle (${{ matrix.mechanism }}, ${{ matrix.architecture }})
     env:
-      EXPERIMENT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      EXPERIMENT_SHA: ${{ inputs.revision }}
     strategy:
       fail-fast: false
       matrix:
@@ -353,7 +358,9 @@ jobs:
           ref: ${{ env.EXPERIMENT_SHA }}
 
       - name: Confirm the exact experiment head
-        run: test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+        run: |
+          [[ "$EXPERIMENT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
 
       - name: Run and independently verify the bypass lifecycle slice
         run: |
@@ -384,7 +391,7 @@ jobs:
   landlock-port-control:
     name: Landlock port control (${{ matrix.architecture }})
     env:
-      EXPERIMENT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      EXPERIMENT_SHA: ${{ inputs.revision }}
     strategy:
       fail-fast: false
       matrix:
@@ -402,7 +409,9 @@ jobs:
           ref: ${{ env.EXPERIMENT_SHA }}
 
       - name: Confirm the exact experiment head
-        run: test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+        run: |
+          [[ "$EXPERIMENT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
 
       - name: Falsify result publication
         run: python3 -m unittest experiments.network_authority.test_record_port_control
@@ -435,7 +444,7 @@ jobs:
   cgroup-bpf-endpoint-control:
     name: cgroup-BPF endpoint control (${{ matrix.architecture }})
     env:
-      EXPERIMENT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      EXPERIMENT_SHA: ${{ inputs.revision }}
     strategy:
       fail-fast: false
       matrix:
@@ -453,7 +462,9 @@ jobs:
           ref: ${{ env.EXPERIMENT_SHA }}
 
       - name: Confirm the exact experiment head
-        run: test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+        run: |
+          [[ "$EXPERIMENT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
 
       - name: Falsify result publication
         run: |
@@ -488,7 +499,7 @@ jobs:
   explicit-broker-control:
     name: explicit broker control (${{ matrix.architecture }})
     env:
-      EXPERIMENT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      EXPERIMENT_SHA: ${{ inputs.revision }}
     strategy:
       fail-fast: false
       matrix:
@@ -506,7 +517,9 @@ jobs:
           ref: ${{ env.EXPERIMENT_SHA }}
 
       - name: Confirm the exact experiment head
-        run: test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+        run: |
+          [[ "$EXPERIMENT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
 
       - name: Falsify broker and result boundaries
         run: |
@@ -543,7 +556,7 @@ jobs:
   preconnected-channel-control:
     name: preconnected channel control (${{ matrix.architecture }})
     env:
-      EXPERIMENT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      EXPERIMENT_SHA: ${{ inputs.revision }}
     strategy:
       fail-fast: false
       matrix:
@@ -561,7 +574,9 @@ jobs:
           ref: ${{ env.EXPERIMENT_SHA }}
 
       - name: Confirm the exact experiment head
-        run: test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+        run: |
+          [[ "$EXPERIMENT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
 
       - name: Falsify channel and result boundaries
         run: |
