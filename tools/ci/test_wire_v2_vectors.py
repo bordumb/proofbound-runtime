@@ -19,6 +19,7 @@ WIRE_OBJECTS = {
     "composed-receipt": ("proofbound-runtime-composed-receipt/2", 2),
     "acceptance-policy": ("proofbound-runtime-acceptance-policy/1", 1),
     "acceptance-decision": ("proofbound-runtime-acceptance-decision/1", 1),
+    "release-provenance": ("proofbound-runtime-release-provenance/2", 2),
 }
 
 
