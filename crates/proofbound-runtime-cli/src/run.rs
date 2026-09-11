@@ -11,7 +11,8 @@ use proofbound_runtime_core::{
     ExecutionReceiptParts, FileAccess, FileMode, PathRole, PlatformIdentity,
     REQUIRED_RUNTIME_ASSUMPTIONS, ReceiptCommand, ReceiptError, ReceiptPlan, ReceiptPolicy,
     ReceiptStreams, ResourceLimits, RuntimeIdentity, Sha256Digest, TrustedComputingBaseEntry,
-    TrustedComputingBaseRole, compile_policy, normalize_authority, parse_execution_plan,
+    TrustedComputingBaseRole, compile_policy, normalize_authority,
+    parse_execution_plan_for_execution,
 };
 use proofbound_runtime_linux::{
     Architecture, CgroupError, ExecutionSetupError, FreshCgroup, FreshOutputRoot, InstallRequest,
@@ -245,14 +246,7 @@ pub fn execute_observed(
     let plan_bytes = plan_source
         .read_bytes()
         .map_err(|error| map_resolution(RunPhase::PlanInput, RunRule::PlanSourceReadable, error))?;
-    let plan_text = core::str::from_utf8(&plan_bytes).map_err(|_| {
-        RunError::invalid(
-            RunPhase::PlanInput,
-            RunRule::PlanSourceReadable,
-            "plan.input.utf8-invalid",
-        )
-    })?;
-    let plan = parse_execution_plan(plan_text).map_err(|error| {
+    let plan = parse_execution_plan_for_execution(&plan_bytes).map_err(|error| {
         RunError::invalid(RunPhase::PlanValidation, RunRule::PlanValid, error.code())
     })?;
     let normalized = normalize_authority(plan.authority().clone()).map_err(|error| {

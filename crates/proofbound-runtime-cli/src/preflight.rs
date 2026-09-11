@@ -3,7 +3,7 @@ use std::path::Path;
 
 use proofbound_runtime_core::{
     ArtifactIdentity, ArtifactRole, ExecutionPlan, FileAccess, PathRole, compile_policy,
-    normalize_authority, parse_execution_plan,
+    normalize_authority, parse_execution_plan_for_execution,
 };
 use proofbound_runtime_linux::{
     CapabilityReport, OutputRootError, OutputRootPreflight, ProbeError, ResolutionError,
@@ -82,9 +82,7 @@ where
     let plan_bytes = plan_source
         .read_bytes()
         .map_err(|error| map_resolution("plan-input", error))?;
-    let plan_text = core::str::from_utf8(&plan_bytes)
-        .map_err(|_| PreflightError::invalid("plan-input", "plan.input.utf8-invalid"))?;
-    let plan = parse_execution_plan(plan_text)
+    let plan = parse_execution_plan_for_execution(&plan_bytes)
         .map_err(|error| PreflightError::invalid("plan-validation", error.code()))?;
     let normalized = normalize_authority(plan.authority().clone())
         .map_err(|error| PreflightError::invalid("authority-normalization", error.code()))?;
