@@ -105,6 +105,18 @@ class PerformanceWorkflowTests(unittest.TestCase):
         )
         self.assertIn("bash tools/ci/native-performance.sh", workflow)
         self.assertIn("experiments/performance/verify_native.py", workflow)
+        self.assertIn('mkdir -m 0700 "$result_root/runtime-bin"', workflow)
+        self.assertIn(
+            'cp target/release/pbr target/release/pbr-native-launcher '
+            'target/release/pbr-verify "$result_root/runtime-bin/"',
+            workflow,
+        )
+        self.assertIn('"$result_root/runtime-bin"', workflow)
+        self.assertIn('--pbr "$result_root/runtime-bin/pbr"', workflow)
+        self.assertIn(
+            '--launcher "$result_root/runtime-bin/pbr-native-launcher"', workflow
+        )
+        self.assertIn('--verifier "$result_root/runtime-bin/pbr-verify"', workflow)
         for argument in (
             "--benchmark-executable",
             "--pbr",
