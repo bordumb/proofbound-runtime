@@ -409,6 +409,30 @@ mod linux {
     }
 
     #[test]
+    fn native_cgroup_accounts_socket_memory_outside_denied_network_profile() {
+        let required = std::env::var_os("PROOFBOUND_NATIVE_REQUIRED").is_some();
+        let (Some(cgroup_root), Some(fixture)) = (
+            std::env::var_os("PROOFBOUND_CGROUP_ROOT"),
+            std::env::var_os("PROOFBOUND_NATIVE_FIXTURE"),
+        ) else {
+            assert!(!required, "native corpus configuration is required");
+            return;
+        };
+        let supported = probe_capabilities(Path::new(&cgroup_root))
+            .require_supported()
+            .expect("identified native host must satisfy the complete capability profile");
+        let fixture = PathBuf::from(fixture);
+
+        let baseline = run_raw_cgroup_case(&supported, &fixture, "memory-baseline");
+        let socket = run_raw_cgroup_case(&supported, &fixture, "memory-socket");
+        assert!(
+            socket.memory_peak_bytes() >= baseline.memory_peak_bytes().saturating_add(64 * 1024),
+            "socket peak {socket:#?} must exceed baseline {baseline:#?}"
+        );
+        assert!(socket.limit_events().is_empty(), "{socket:#?}");
+    }
+
+    #[test]
     fn discovers_and_retains_the_native_shell_executable_closure() {
         let architecture = if cfg!(target_arch = "x86_64") {
             proofbound_runtime_linux::Architecture::X86_64
@@ -713,6 +737,69 @@ mod linux {
             supported.landlock_abi(),
         )
         .expect("supervise native launcher")
+    }
+
+    fn run_raw_cgroup_case(
+        supported: &SupportedLinux,
+        fixture: &Path,
+        case: &str,
+    ) -> proofbound_runtime_linux::TerminalResources {
+        let limits = ResourceLimits::new_v2(
+            ProcessLimit::new(1).expect("one raw fixture process"),
+            WallTimeLimit::from_milliseconds(5_000).expect("bounded raw fixture"),
+            OutputByteLimit::new(1024),
+            OutputByteLimit::new(1024),
+            MemoryByteLimit::new(128 * 1024 * 1024).expect("valid memory limit"),
+            SwapByteLimit::new(0).expect("zero swap limit"),
+        );
+        let cgroup = FreshCgroup::create_v2(supported.cgroup_v2(), execution_id(), limits)
+            .expect("create raw accounting cgroup");
+        let cgroup_path = cgroup.path().to_owned();
+        let child = std::process::Command::new(fixture)
+            .arg(case)
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .expect("spawn stopped raw accounting fixture");
+        wait_until_stopped(child.id());
+        cgroup
+            .place_process(child.id())
+            .expect("move stopped fixture into exact cgroup");
+        assert!(
+            cgroup
+                .contains_process(child.id())
+                .expect("read exact cgroup membership")
+        );
+        // SAFETY: `child.id()` is the live stopped child owned above, and
+        // SIGCONT cannot access the parent's memory.
+        let process_id = i32::try_from(child.id()).expect("Linux process IDs fit i32");
+        assert_eq!(unsafe { libc::kill(process_id, libc::SIGCONT) }, 0);
+        let output = child
+            .wait_with_output()
+            .expect("collect raw accounting fixture");
+        assert!(output.status.success(), "{case}: {output:#?}");
+        if case == "memory-socket" {
+            assert_eq!(output.stdout, b"socket-memory-accounted\n");
+        }
+        let resources = cgroup
+            .finish()
+            .expect("drain and remove raw accounting cgroup")
+            .expect("v2 raw accounting observation");
+        assert!(!cgroup_path.exists(), "exact raw cgroup must be removed");
+        resources
+    }
+
+    fn wait_until_stopped(process_id: u32) {
+        let status_path = PathBuf::from(format!("/proc/{process_id}/status"));
+        for _ in 0..5_000 {
+            let status = std::fs::read_to_string(&status_path)
+                .expect("stopped raw fixture remains observable");
+            if status.lines().any(|line| line.starts_with("State:\tT")) {
+                return;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        }
+        panic!("raw accounting fixture did not stop before cgroup placement");
     }
 
     fn execution_id() -> ExecutionId {

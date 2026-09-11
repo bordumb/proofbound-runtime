@@ -215,6 +215,41 @@ static int allocate_shared(size_t size) {
     return result;
 }
 
+static int allocate_socket_memory(void) {
+    int descriptors[2];
+    if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, descriptors) != 0) {
+        return 108;
+    }
+    int flags = fcntl(descriptors[0], F_GETFL, 0);
+    if (flags < 0 || fcntl(descriptors[0], F_SETFL, flags | O_NONBLOCK) != 0) {
+        return 109;
+    }
+    int buffer_size = 1024 * 1024;
+    if (setsockopt(descriptors[0], SOL_SOCKET, SO_SNDBUF, &buffer_size,
+                   sizeof(buffer_size)) != 0) {
+        return 110;
+    }
+    unsigned char buffer[65536];
+    memset(buffer, 0x5a, sizeof(buffer));
+    size_t written_total = 0;
+    for (;;) {
+        ssize_t written = write(descriptors[0], buffer, sizeof(buffer));
+        if (written > 0) {
+            written_total += (size_t)written;
+            continue;
+        }
+        if (written < 0 && errno == EAGAIN) {
+            break;
+        }
+        return 111;
+    }
+    int result = close(descriptors[0]) == 0 && close(descriptors[1]) == 0 &&
+                         written_total >= 65536
+                     ? 0
+                     : 112;
+    return result;
+}
+
 int main(int argc, char **argv) {
     if (argc < 2) {
         return 64;
@@ -358,6 +393,16 @@ int main(int argc, char **argv) {
         return parse_size(argv[2], &size) == 0 && allocate_shared(size) == 0
                    ? emit(STDOUT_FILENO, "shared-memory-accounted\n")
                    : 106;
+    }
+    if (strcmp(argv[1], "memory-baseline") == 0) {
+        raise(SIGSTOP);
+        return 0;
+    }
+    if (strcmp(argv[1], "memory-socket") == 0) {
+        raise(SIGSTOP);
+        return allocate_socket_memory() == 0
+                   ? emit(STDOUT_FILENO, "socket-memory-accounted\n")
+                   : 113;
     }
     if (strcmp(argv[1], "memory-pressure-timeout") == 0 && argc == 3) {
         size_t size = 0;
