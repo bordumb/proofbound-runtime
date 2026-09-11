@@ -9,6 +9,7 @@ import hashlib
 import io
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import tarfile
 import tempfile
@@ -62,6 +63,44 @@ class SdkPackageTests(unittest.TestCase):
             sums = (output / "SHA256SUMS").read_text(encoding="ascii").splitlines()
             self.assertEqual([line.split("  ", 1)[1] for line in sums], expected[2:])
 
+    def test_release_builder_supports_a_gitless_evidence_copy(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            repository = temporary / "repository"
+            shutil.copytree(
+                ROOT,
+                repository,
+                ignore=shutil.ignore_patterns(
+                    ".git",
+                    ".lake",
+                    ".proofbound",
+                    "__pycache__",
+                    "*.pyc",
+                    "output",
+                    "target",
+                ),
+            )
+            output = temporary / "artifacts"
+            subprocess.run(
+                [
+                    "python3",
+                    "tools/release/build_sdks.py",
+                    "--output",
+                    str(output),
+                ],
+                cwd=repository,
+                check=True,
+                stdout=subprocess.DEVNULL,
+            )
+            manifest = json.loads((output / "SDK-MANIFEST.json").read_bytes())
+            self.assertRegex(manifest["source_revision"], r"^tree-sha256:[0-9a-f]{64}$")
+            crate = output / "proofbound-runtime-sdk-0.2.0.crate"
+            with tarfile.open(crate, "r:gz") as archive:
+                self.assertEqual(
+                    [name.split("/", 1)[1] for name in archive.getnames()],
+                    ["Cargo.lock", "Cargo.toml", "Cargo.toml.orig", "src/lib.rs"],
+                )
+
     def test_rust_sdk_is_independently_packageable(self) -> None:
         manifest = (
             ROOT / "crates/proofbound-runtime-sdk/Cargo.toml"
@@ -85,16 +124,10 @@ class SdkPackageTests(unittest.TestCase):
             capture_output=True,
             text=True,
         )
-        self.assertEqual(
-            result.stdout.splitlines(),
-            [
-                ".cargo_vcs_info.json",
-                "Cargo.lock",
-                "Cargo.toml",
-                "Cargo.toml.orig",
-                "src/lib.rs",
-            ],
-        )
+        expected = ["Cargo.lock", "Cargo.toml", "Cargo.toml.orig", "src/lib.rs"]
+        if (ROOT / ".git").exists():
+            expected.insert(0, ".cargo_vcs_info.json")
+        self.assertEqual(result.stdout.splitlines(), expected)
 
     def test_python_wheel_is_reproducible_and_closed(self) -> None:
         with tempfile.TemporaryDirectory() as first, tempfile.TemporaryDirectory() as second:
