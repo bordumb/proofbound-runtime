@@ -149,6 +149,16 @@ migration, so the binding-projection refinement and independent verifier are
 redone once. Version 1 contracts are unchanged. Memory implementation now
 also waits for the version 2 CDDL schemas and golden vectors.
 
+The first exact formal-tool cache hit is green. Run
+[`34554553968`](https://github.com/bordumb/proofbound-runtime/actions/runs/34554553968)
+at exact source `2232851973b8fabc873a056b87d25442b4d2ddc4` restored the registered
+Nix closure in 2 minutes 7 seconds and installed the pinned Charon and Aeneas
+outputs in 15 seconds, compared with a 20 minute 22 second build in seed run
+[`34551042525`](https://github.com/bordumb/proofbound-runtime/actions/runs/34551042525).
+The unchanged fresh evidence stage remained green. This is one operational
+observation, not the two-week RT-0.4 latency distribution or the independent
+approval required for proposed [ADR 0005](adr/0005-exact-tool-cache-boundary.md).
+
 ## 1. Executive decision
 
 The next production capability should be a cgroup v2 memory boundary. The
