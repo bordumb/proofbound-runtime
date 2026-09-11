@@ -37,6 +37,12 @@ jobs:
       - name: Confirm the exact event head
         run: test "$(git rev-parse HEAD)" = "$PBR_EXACT_SHA"
 
+      - name: Install pinned independent CBOR encoder
+        run: >-
+          python3 -m pip install
+          --require-hashes
+          --requirement tools/ci/requirements-wire-vectors.txt
+
       - name: Run metadata, documentation, and fixture preflight
         run: >-
           python3 tools/ci/timing.py run

@@ -9,8 +9,10 @@ monotonic timestamps are rendered as canonical unsigned decimal strings so
 JSON consumers can display the full CBOR `uint64` range exactly.
 The projection is descriptive test output; it is never a verification input.
 
-The bytes were initially generated with `cbor2` 5.9.0 in canonical mode and
-are accepted only after the repository's separate strict decoder confirms
+The bytes are independently regenerated with pinned `cbor2` 5.9.0 in
+canonical mode on every preflight run; the wheel hashes are recorded in
+`tools/ci/requirements-wire-vectors.txt`. They are accepted only after that
+byte-for-byte comparison and the repository's separate strict decoder confirms
 shortest forms, definite lengths, text-only map keys, bytewise key ordering,
 no duplicate keys, one complete item, and equality with the checked-in
 projection.
