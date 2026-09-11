@@ -153,6 +153,7 @@ def verify_summary(value: object, sample_count: int) -> None:
 def verify_result(
     raw: bytes,
     expected_source: str,
+    expected_architecture: str,
     benchmark_executable: Path,
     plan_fixture: Path,
     receipt_fixture: Path,
@@ -193,9 +194,11 @@ def verify_result(
     target = require_nonempty_text(toolchain["target"])
     architecture = require_nonempty_text(value["architecture"])
     expected_prefix = {"x86_64": "x86_64-", "aarch64": "aarch64-"}.get(
-        architecture
+        expected_architecture
     )
-    if expected_prefix is None or not target.startswith(expected_prefix):
+    if expected_prefix is None or architecture != expected_architecture:
+        fail("benchmark.verify.architecture-mismatch")
+    if not target.startswith(expected_prefix):
         fail("benchmark.verify.schema-invalid")
 
     protocol = require_object(
@@ -258,6 +261,7 @@ def main(arguments: list[str] | None = None) -> int:
     )
     parser.add_argument("--result", type=Path, required=True)
     parser.add_argument("--expected-source", required=True)
+    parser.add_argument("--expected-architecture", required=True)
     parser.add_argument("--benchmark-executable", type=Path, required=True)
     parser.add_argument("--plan-fixture", type=Path, required=True)
     parser.add_argument("--receipt-fixture", type=Path, required=True)
@@ -271,6 +275,7 @@ def main(arguments: list[str] | None = None) -> int:
         report = verify_result(
             raw,
             options.expected_source,
+            options.expected_architecture,
             options.benchmark_executable,
             options.plan_fixture,
             options.receipt_fixture,

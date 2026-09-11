@@ -64,6 +64,7 @@ jobs:
             python3 experiments/performance/verify_pure.py \
               --result "$result_root/result.json" \
               --expected-source "$PBR_PERFORMANCE_REVISION" \
+              --expected-architecture "${{ matrix.architecture }}" \
               --benchmark-executable target/release/pbr-bench \
               --plan-fixture tests/conformance/plan/positive/minimal-v1.toml \
               --receipt-fixture experiments/performance/fixtures/reusable-receipt-v1.json \
