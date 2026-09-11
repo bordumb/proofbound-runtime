@@ -347,6 +347,7 @@ fn validate_native_run(
     Ok(receipt_sha256)
 }
 
+#[cfg(any(target_os = "linux", test))]
 fn validate_run_projection(
     projection: &serde_json::Value,
     receipt: &Path,
