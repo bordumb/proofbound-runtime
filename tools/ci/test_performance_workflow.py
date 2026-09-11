@@ -75,6 +75,15 @@ class PerformanceWorkflowTests(unittest.TestCase):
             self.assertIn(retained, workflow)
         self.assertIn("if: ${{ always() }}", workflow)
 
+    def test_retained_checksum_inventory_is_portable_after_download(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn(
+            '(cd "$result_root" && sha256sum ./* >SHA256SUMS)',
+            workflow,
+        )
+        self.assertNotIn('sha256sum "$result_root"/*', workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
