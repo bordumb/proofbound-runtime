@@ -18,6 +18,7 @@ def record(
     stage: str,
     exit_code: int = 0,
     job: str = "formal",
+    runner_arch: str = "X64",
     run_id: str = "100",
 ) -> dict[str, object]:
     return {
@@ -30,7 +31,7 @@ def record(
         "revision": "0123456789abcdef0123456789abcdef01234567",
         "run_attempt": "1",
         "run_id": run_id,
-        "runner_arch": "X64",
+        "runner_arch": runner_arch,
         "schema": "proofbound-runtime-ci-timing/1",
         "stage": stage,
     }
@@ -112,6 +113,38 @@ class TimingSummaryTests(unittest.TestCase):
             result = self.run_summary(duplicate)
             self.assertEqual(result.returncode, 2)
             self.assertIn("duplicate timing record", result.stderr)
+
+    def test_same_native_stage_on_two_runner_architectures_is_not_duplicate(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            records = [
+                record(
+                    duration_ms=17_035,
+                    kind="stage",
+                    name="native-boundary",
+                    stage="native",
+                    job="native",
+                    runner_arch="X64",
+                ),
+                record(
+                    duration_ms=17_648,
+                    kind="stage",
+                    name="native-boundary",
+                    stage="native",
+                    job="native",
+                    runner_arch="ARM64",
+                ),
+            ]
+            artifact = root / "timing.jsonl"
+            artifact.write_text(
+                "".join(json.dumps(item) + "\n" for item in records),
+                encoding="utf-8",
+            )
+
+            result = self.run_summary(artifact)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("stage\tnative\tnative-boundary\t2\t2\t0", result.stdout)
 
 
 if __name__ == "__main__":
