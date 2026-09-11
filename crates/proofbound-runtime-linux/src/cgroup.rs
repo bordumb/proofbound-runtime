@@ -3,7 +3,7 @@
 use core::fmt;
 use std::path::{Path, PathBuf};
 
-use proofbound_runtime_core::{CgroupIdentity, ExecutionId, ProcessLimit};
+use proofbound_runtime_core::{CgroupIdentity, ExecutionId, ProcessLimit, ResourceLimits};
 
 use crate::CgroupV2Capability;
 
@@ -11,6 +11,24 @@ use crate::CgroupV2Capability;
 const CONTROL_READ_LIMIT: u64 = 64 * 1024;
 #[cfg(target_os = "linux")]
 const CLEANUP_POLLS: usize = 5_000;
+
+#[cfg(any(test, target_os = "linux"))]
+fn installed_control_values(
+    limits: ResourceLimits,
+) -> Result<[(&'static str, String); 4], CgroupError> {
+    let memory = limits
+        .memory()
+        .ok_or(CgroupError::ResourceProfileIncomplete)?;
+    let swap = limits
+        .swap()
+        .ok_or(CgroupError::ResourceProfileIncomplete)?;
+    Ok([
+        ("pids.max", limits.processes().get().to_string()),
+        ("memory.max", memory.get().to_string()),
+        ("memory.swap.max", swap.get().to_string()),
+        ("memory.oom.group", "1".to_owned()),
+    ])
+}
 
 /// Owns one fresh cgroup v2 boundary for an execution attempt.
 #[derive(Debug)]
@@ -102,6 +120,89 @@ impl FreshCgroup {
         #[cfg(not(target_os = "linux"))]
         {
             let _ = (capability, execution_id, process_limit);
+            Err(CgroupError::UnsupportedOperatingSystem)
+        }
+    }
+
+    /// Exclusively creates a child cgroup and installs all version 2 controls.
+    pub fn create_v2(
+        capability: &CgroupV2Capability,
+        execution_id: ExecutionId,
+        limits: ResourceLimits,
+    ) -> Result<Self, CgroupError> {
+        #[cfg(target_os = "linux")]
+        {
+            use std::os::fd::AsRawFd as _;
+
+            if capability.mount_id() == 0
+                || !["memory", "pids"]
+                    .iter()
+                    .all(|required| capability.controllers().iter().any(|item| item == required))
+            {
+                return Err(CgroupError::CapabilityMismatch);
+            }
+            let controls = installed_control_values(limits)?;
+            let parent = crate::sys::open_directory(capability.directory())
+                .map_err(|_| CgroupError::ParentUnavailable)?;
+            if directory_inode(&parent)? != capability.directory_inode() {
+                return Err(CgroupError::CapabilityMismatch);
+            }
+            let enabled = read_word_set(&parent, "cgroup.subtree_control")?;
+            if !["memory", "pids"]
+                .iter()
+                .all(|required| enabled.binary_search(&(*required).to_owned()).is_ok())
+            {
+                return Err(CgroupError::ControllerUnavailable);
+            }
+
+            let name = cgroup_name(execution_id);
+            crate::sys::create_directory_at(parent.as_raw_fd(), &name, 0o755)
+                .map_err(map_creation_error)?;
+            let descriptor = match crate::sys::openat2_directory(
+                parent.as_raw_fd(),
+                &name,
+                crate::sys::RESOLVE_NO_MAGICLINKS | crate::sys::RESOLVE_NO_SYMLINKS,
+            ) {
+                Ok(descriptor) => descriptor,
+                Err(_) => {
+                    let _ = crate::sys::remove_directory_at(parent.as_raw_fd(), &name);
+                    return Err(CgroupError::OpenFailed);
+                }
+            };
+
+            let setup = (|| {
+                for (name, value) in &controls {
+                    write_control(&descriptor, name, value.as_bytes())?;
+                    if read_control(&descriptor, name)?.trim() != value {
+                        return Err(CgroupError::LimitMismatch);
+                    }
+                }
+                if populated(&descriptor)? || !processes(&descriptor)?.is_empty() {
+                    return Err(CgroupError::NotFresh);
+                }
+                Ok(())
+            })();
+            if let Err(error) = setup {
+                drop(descriptor);
+                let _ = crate::sys::remove_directory_at(parent.as_raw_fd(), &name);
+                return Err(error);
+            }
+
+            let inode = directory_inode(&descriptor)?;
+            let identity = CgroupIdentity::new(capability.mount_id(), inode);
+            Ok(Self {
+                path: capability.directory().join(&name),
+                identity,
+                process_limit: limits.processes(),
+                removed: false,
+                name,
+                parent,
+                descriptor,
+            })
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            let _ = (capability, execution_id, limits);
             Err(CgroupError::UnsupportedOperatingSystem)
         }
     }
@@ -231,6 +332,8 @@ pub enum CgroupError {
     UnsupportedOperatingSystem,
     /// The probed capability did not contain the required mount/controller.
     CapabilityMismatch,
+    /// The execution limits omit the version 2 memory or swap bound.
+    ResourceProfileIncomplete,
     /// The delegated parent could not be opened by descriptor.
     ParentUnavailable,
     /// The pids controller could not be enabled for child cgroups.
@@ -270,6 +373,7 @@ impl CgroupError {
         match self {
             Self::UnsupportedOperatingSystem => "cgroup.os.unsupported",
             Self::CapabilityMismatch => "cgroup.capability.mismatch",
+            Self::ResourceProfileIncomplete => "cgroup.resource-profile.incomplete",
             Self::ParentUnavailable => "cgroup.parent.unavailable",
             Self::ControllerUnavailable => "cgroup.controller.unavailable",
             Self::AlreadyExists => "cgroup.exists",
@@ -543,6 +647,7 @@ mod tests {
         let errors = [
             CgroupError::UnsupportedOperatingSystem,
             CgroupError::CapabilityMismatch,
+            CgroupError::ResourceProfileIncomplete,
             CgroupError::ParentUnavailable,
             CgroupError::ControllerUnavailable,
             CgroupError::AlreadyExists,
