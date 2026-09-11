@@ -18,7 +18,13 @@ from tools.ci.encode_plan_v2 import encode
 
 SCHEMA = "proofbound-runtime-acceptance-policy/1"
 DOMAIN = SCHEMA.encode("ascii") + b"\0"
-DIGEST_FIELDS = {"sha256", "policy_sha256", "payload_sha256"}
+DIGEST_FIELDS = {
+    "sha256",
+    "policy_sha256",
+    "payload_sha256",
+    "directory_sha256",
+    "verifier_sha256",
+}
 EXPECTED_KEYS = {
     (): {"schema", "execution", "release", "reject_if_present"},
     ("execution",): {
@@ -34,6 +40,7 @@ EXPECTED_KEYS = {
     ("execution", "freshness"): {"mode"},
     ("release",): {
         "project", "project_revision", "payload_sha256", "evidence_context", "claims",
+        "directory_sha256", "verifier_sha256",
     },
     ("release", "claims", "*"): {
         "claim_id", "formal", "linkage", "assumption", "policy_admitted",

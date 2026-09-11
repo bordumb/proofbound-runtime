@@ -35,6 +35,7 @@ rejection-reason = "policy-identity-mismatch" /
   "eligibility-mismatch" / "freshness-policy-unsupported" /
   "release-project-mismatch" / "release-revision-mismatch" /
   "release-payload-mismatch" / "release-context-mismatch" /
+  "release-directory-mismatch" / "release-verifier-mismatch" /
   "claim-missing" / "claim-formal-mismatch" / "claim-linkage-mismatch" /
   "claim-assumption-mismatch" / "claim-policy-mismatch" /
   "forbidden-assumption" / "forbidden-exclusion" /

@@ -3,6 +3,7 @@
 use std::collections::BTreeSet;
 use std::env;
 use std::ffi::{OsStr, OsString};
+use std::fmt::Write as FmtWrite;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
 use std::os::unix::fs::PermissionsExt;
@@ -18,12 +19,16 @@ use proofbound_runtime_compose::{
 };
 use proofbound_runtime_verify::{ReceiptCommitment, decode_receipt, verify_receipt};
 use serde_json::json;
+use sha2::{Digest, Sha256};
 
 const SUCCESS: u8 = 0;
 const INVALID_INPUT: u8 = 2;
 const REJECTED: u8 = 7;
 const MAX_INPUT_BYTES: u64 = 64 * 1024 * 1024;
+const MAX_RELEASE_MEMBER_BYTES: u64 = 16 * 1024 * 1024;
 const MAX_VERIFIER_OUTPUT_BYTES: usize = 16 * 1024 * 1024;
+const MAX_RELEASE_FILES: usize = 4_096;
+const RELEASE_DIRECTORY_DOMAIN: &[u8] = b"proofbound-release-directory/1\0";
 const HELP: &str = "usage: pbr-accept --policy <policy.cbor> --expected-policy-identity sha256:<digest> --release <directory> --proofbound-verifier <path> --proofbound-observation-inputs <path> --runtime-bundle <directory> --execution-receipt <path> --execution-commitment sha256:<digest> --expected-execution-id <uuid> --output <absent-path>\n       pbr-accept inspect <acceptance-decision.cbor>";
 
 fn main() -> ExitCode {
@@ -112,6 +117,8 @@ fn run_inner(args: Vec<OsString>) -> Result<Outcome, CliError> {
     let compiled_release = read_regular(&args.release.join("compiled-receipt.json"))?;
     let release_tcb = read_regular(&args.release.join("tcb-ledger.json"))?;
     let proofbound_verifier = read_executable(&args.proofbound_verifier)?;
+    let proofbound_verifier_sha256 = sha256_text(&proofbound_verifier);
+    let proofbound_release_sha256 = release_directory_digest(&args.release)?;
     let proofbound_observation_inputs = read_regular(&args.proofbound_observation_inputs)?;
     let runtime_manifest = read_regular(&args.runtime_bundle.join("RELEASE-MANIFEST.json"))?;
     let runtime = read_executable(&args.runtime_bundle.join("pbr"))?;
@@ -178,7 +185,14 @@ fn run_inner(args: Vec<OsString>) -> Result<Outcome, CliError> {
     } else {
         let composition_inputs = composition_inputs(&raw, &args);
         match compose(&composition_inputs) {
-            Ok(composed) => match verified_decision(&policy, &raw, &args, &composed) {
+            Ok(composed) => match verified_decision(
+                &policy,
+                &raw,
+                &args,
+                &composed,
+                &proofbound_release_sha256,
+                &proofbound_verifier_sha256,
+            ) {
                 Ok(decision) => decision,
                 Err(()) => reject(
                     &policy,
@@ -277,6 +291,8 @@ fn verified_decision(
     raw: &RawInputs<'_>,
     args: &Args,
     composed: &[u8],
+    proofbound_release_sha256: &str,
+    proofbound_verifier_sha256: &str,
 ) -> Result<AcceptanceDecision, ()> {
     let commitment = ReceiptCommitment::parse(&args.execution_commitment).map_err(|_| ())?;
     verify_receipt(raw.execution_receipt, commitment).map_err(|_| ())?;
@@ -293,6 +309,8 @@ fn verified_decision(
             expected_execution_commitment: &args.execution_commitment,
             expected_execution_id: &args.expected_execution_id,
             composition_id: &release.composition_id,
+            proofbound_release_sha256,
+            proofbound_verifier_sha256,
             artifacts: raw.decision_inputs(),
         },
     )
@@ -447,6 +465,74 @@ fn read_executable(path: &Path) -> Result<Vec<u8>, CliError> {
     Ok(bytes)
 }
 
+fn sha256_text(bytes: &[u8]) -> String {
+    digest_text(&Sha256::digest(bytes))
+}
+
+fn digest_text(bytes: &[u8]) -> String {
+    let mut text = String::with_capacity(71);
+    text.push_str("sha256:");
+    for byte in bytes {
+        write!(&mut text, "{byte:02x}").expect("writing to a String cannot fail");
+    }
+    text
+}
+
+fn release_directory_digest(root: &Path) -> Result<String, CliError> {
+    let mut pending = vec![root.to_path_buf()];
+    let mut files = Vec::new();
+    while let Some(directory) = pending.pop() {
+        for entry in
+            fs::read_dir(&directory).map_err(|_| CliError::new("acceptance.input.read-failed"))?
+        {
+            let entry = entry.map_err(|_| CliError::new("acceptance.input.read-failed"))?;
+            let path = entry.path();
+            let metadata = fs::symlink_metadata(&path)
+                .map_err(|_| CliError::new("acceptance.input.read-failed"))?;
+            if metadata.file_type().is_symlink() {
+                return Err(CliError::new("acceptance.input.type-invalid"));
+            }
+            if metadata.is_dir() {
+                pending.push(path);
+            } else if metadata.is_file() && metadata.len() <= MAX_RELEASE_MEMBER_BYTES {
+                let relative = path
+                    .strip_prefix(root)
+                    .ok()
+                    .and_then(Path::to_str)
+                    .ok_or_else(|| CliError::new("acceptance.input.type-invalid"))?
+                    .to_owned();
+                files.push((
+                    relative,
+                    fs::read(path).map_err(|_| CliError::new("acceptance.input.read-failed"))?,
+                ));
+                if files.len() > MAX_RELEASE_FILES {
+                    return Err(CliError::new("acceptance.input.type-invalid"));
+                }
+            } else {
+                return Err(CliError::new("acceptance.input.type-invalid"));
+            }
+        }
+    }
+    files.sort_by(|left, right| left.0.as_bytes().cmp(right.0.as_bytes()));
+    let mut digest = Sha256::new();
+    digest.update(RELEASE_DIRECTORY_DOMAIN);
+    for (path, bytes) in files {
+        digest.update(
+            u64::try_from(path.len())
+                .map_err(|_| CliError::new("acceptance.input.type-invalid"))?
+                .to_be_bytes(),
+        );
+        digest.update(path.as_bytes());
+        digest.update(
+            u64::try_from(bytes.len())
+                .map_err(|_| CliError::new("acceptance.input.type-invalid"))?
+                .to_be_bytes(),
+        );
+        digest.update(Sha256::digest(bytes));
+    }
+    Ok(digest_text(&digest.finalize()))
+}
+
 fn require_absent(path: &Path) -> Result<(), CliError> {
     match fs::symlink_metadata(path) {
         Ok(_) => Err(CliError::new("acceptance.output.exists")),
@@ -599,6 +685,27 @@ mod tests {
             composition_rejection(CompositionError::ReleaseSubstituted),
             RejectionReason::CompositionMissing
         );
+    }
+
+    #[test]
+    fn release_directory_identity_binds_relative_paths_and_contents() {
+        let root = std::env::temp_dir().join(format!(
+            "pbr-accept-release-identity-{}",
+            std::process::id()
+        ));
+        fs::create_dir(&root).unwrap();
+        fs::write(root.join("release.json"), b"release").unwrap();
+        let first = release_directory_digest(&root).unwrap();
+        assert_eq!(
+            first,
+            "sha256:5819a8862375bd1e15d67503a8a79c2cf9c97c6bdf509fc2953f9a35af3c0562"
+        );
+        fs::write(root.join("release.json"), b"substituted").unwrap();
+        assert_ne!(first, release_directory_digest(&root).unwrap());
+        fs::create_dir(root.join("nested")).unwrap();
+        fs::write(root.join("nested/release.json"), b"release").unwrap();
+        assert_ne!(first, release_directory_digest(&root).unwrap());
+        fs::remove_dir_all(root).unwrap();
     }
 
     fn bytes_from_hex(text: &str) -> Vec<u8> {

@@ -34,13 +34,16 @@ jobs:
           plan: policy/execution-plan.cbor
           cgroup-root: /run/user/1001/proofbound-delegated
           proofbound-release: inputs/proofbound-release
+          proofbound-release-sha256: 64-lowercase-framed-directory-digest
           proofbound-verifier: inputs/proofbound-release/bin/proofbound-verify
+          proofbound-verifier-sha256: 64-lowercase-hex-digest
           proofbound-observation-inputs: inputs/proofbound-observation-inputs.json
           upload-exact-artifacts: "false"
 ```
 
 Replace every placeholder before use. An exact commit pins the Action source;
-the archive, acceptor, and policy digests pin its executable inputs. A digest
+the archive, acceptor, policy, Proofbound verifier, and Proofbound
+release-directory digests pin its executable and release inputs. A digest
 read beside an untrusted download proves byte agreement, not publisher identity.
 
 The Action outputs `decision-id`, `status`, and a compact JSON `reasons` array.

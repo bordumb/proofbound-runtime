@@ -21,7 +21,7 @@ Verified against the branch head, the four reviews, and the roadmap's own exit c
 - [x] **Decouple acceptance from reuse eligibility.** `compose/src/lib.rs:832` refuses non-reusable receipts, so policy's `eligibility: non-reusable` option is unsatisfiable. Let a non-reusable receipt reach `evaluate` and be rejected by policy with `eligibility-mismatch`.
 - [x] **Derive rejection reasons instead of emitting both.** `accept/src/lib.rs:490` always pushes `input-verification-failed` and `composition-missing`. Route the three failure sources in `main.rs:166` to distinct reasons and add a replay reason.
 - [x] **Make the assumption-loss attack real.** `lib.rs:957` calls the rejection helper directly and cannot fail. Mutate inherited assumptions and assert the derived reason.
-- [ ] **Let policy and the Action pin the Proofbound verifier and release directory by digest.** Today only the archive, acceptor, and policy are pinned.
+- [x] **Let policy and the Action pin the Proofbound verifier and release directory by digest.** Today only the archive, acceptor, and policy are pinned.
 - [ ] **Bound CBOR pre-allocation** in `accept/src/cbor.rs:112` and `compose/src/cbor_decode.rs:108`. Do not call `with_capacity` from a header count before reading elements.
 
 ## CBOR wire contract, cross-cutting

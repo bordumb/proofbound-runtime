@@ -22,7 +22,9 @@ class AcceptanceActionTests(unittest.TestCase):
             "plan",
             "cgroup-root",
             "proofbound-release",
+            "proofbound-release-sha256",
             "proofbound-verifier",
+            "proofbound-verifier-sha256",
             "proofbound-observation-inputs",
         ):
             self.assertIn(f"  {name}:\n", action)
@@ -52,6 +54,25 @@ class AcceptanceActionTests(unittest.TestCase):
             output.mkdir()
             with self.assertRaises(module.ActionError):
                 module.require_absent(output)
+
+    def test_release_directory_digest_binds_paths_and_bytes(self) -> None:
+        spec = importlib.util.spec_from_file_location("acceptance_action", RUNNER)
+        module = importlib.util.module_from_spec(spec)
+        assert spec.loader is not None
+        spec.loader.exec_module(module)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "release.json").write_bytes(b"release")
+            first = module.release_directory_digest(root)
+            self.assertEqual(
+                first,
+                "5819a8862375bd1e15d67503a8a79c2cf9c97c6bdf509fc2953f9a35af3c0562",
+            )
+            (root / "release.json").write_bytes(b"substituted")
+            self.assertNotEqual(first, module.release_directory_digest(root))
+            (root / "nested").mkdir()
+            (root / "nested" / "release.json").write_bytes(b"release")
+            self.assertNotEqual(first, module.release_directory_digest(root))
 
 
 if __name__ == "__main__":

@@ -29,8 +29,14 @@ inputs:
   proofbound-release:
     description: Path to the exact Proofbound release directory.
     required: true
+  proofbound-release-sha256:
+    description: Trusted digest of the framed Proofbound release directory inventory.
+    required: true
   proofbound-verifier:
     description: Path to the exact Proofbound independent verifier.
+    required: true
+  proofbound-verifier-sha256:
+    description: Trusted lowercase SHA-256 of the Proofbound verifier.
     required: true
   proofbound-observation-inputs:
     description: Path to the exact Proofbound observation-input manifest.
@@ -78,7 +84,9 @@ runs:
         --plan "${{ inputs.plan }}"
         --cgroup-root "${{ inputs.cgroup-root }}"
         --proofbound-release "${{ inputs.proofbound-release }}"
+        --proofbound-release-sha256 "${{ inputs.proofbound-release-sha256 }}"
         --proofbound-verifier "${{ inputs.proofbound-verifier }}"
+        --proofbound-verifier-sha256 "${{ inputs.proofbound-verifier-sha256 }}"
         --proofbound-observation-inputs "${{ inputs.proofbound-observation-inputs }}"
         --output "$PBR_ACTION_OUTPUT"
 

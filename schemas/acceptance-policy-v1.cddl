@@ -42,10 +42,12 @@ executable-policy = {
 
 release-policy = {
   "claims": [+ claim-policy],
+  "directory_sha256": bstr .size 32,
   "project": text .size (1..18446744073709551615),
   "payload_sha256": bstr .size 32,
   "evidence_context": text .size (1..128),
-  "project_revision": bstr .size 20
+  "project_revision": bstr .size 20,
+  "verifier_sha256": bstr .size 32
 }
 
 claim-policy = {

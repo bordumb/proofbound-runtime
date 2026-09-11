@@ -68,10 +68,12 @@ def policy() -> dict[str, object]:
                     "policy_admitted": True,
                 },
             ],
+            "directory_sha256": digest(b"golden Proofbound release directory"),
             "evidence_context": "release-linux-x86-64-runtime",
             "payload_sha256": digest(b"golden release payload"),
             "project": "proofbound-runtime",
             "project_revision": bytes.fromhex("11" * 20),
+            "verifier_sha256": digest(b"golden Proofbound verifier"),
         },
         "schema": POLICY_SCHEMA,
     }

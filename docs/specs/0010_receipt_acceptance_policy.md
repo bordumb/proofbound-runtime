@@ -45,8 +45,8 @@ Version 1 requires exact equality for:
   configured `pids.max`, `memory.max`, `memory.swap.max`,
   `memory.oom.group`, and independently derived eligibility;
 - Proofbound project, project revision, release payload identity, evidence
-  context, and each named claim's formal, linkage, assumption, and policy
-  facets; and
+  context, verifier SHA-256, complete release-directory SHA-256, and each named
+  claim's formal, linkage, assumption, and policy facets; and
 - every forbidden assumption, release exclusion, open obligation, or TCB role.
 
 Claim requirements are keyed by exact claim ID. There is no aggregate tier
@@ -60,6 +60,14 @@ timestamp cannot prove its own freshness.
 Lists of claim requirements and rejection values are strict ascending UTF-8
 byte order with no duplicates. Receipt and release sets are compared as sets
 only after their closed inputs pass validation.
+
+The Proofbound release-directory identity is SHA-256 over the ASCII domain
+`proofbound-release-directory/1`, a zero byte, and every regular file in
+ascending UTF-8 relative-path order. Each file contributes its path length as
+an unsigned 64-bit big-endian integer, the path bytes, its byte length in the
+same framing, and the 32 raw bytes of its content SHA-256. Symlinks,
+non-regular entries, non-UTF-8 paths, oversized members, and more than 4,096
+files fail closed.
 
 ## Trust inputs and verification order
 

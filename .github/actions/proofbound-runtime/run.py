@@ -25,6 +25,8 @@ MAX_ARCHIVE_BYTES = 32 * 1024 * 1024
 MAX_MEMBER_BYTES = 16 * 1024 * 1024
 MAX_OUTPUT_BYTES = 16 * 1024 * 1024
 POLICY_DOMAIN = b"proofbound-runtime-acceptance-policy/1\0"
+RELEASE_DIRECTORY_DOMAIN = b"proofbound-release-directory/1\0"
+MAX_RELEASE_FILES = 4_096
 
 
 class ActionError(Exception):
@@ -62,6 +64,34 @@ def require_digest(path: Path, expected: str, label: str) -> bytes:
             f"{label} digest mismatch: expected sha256:{expected}, actual sha256:{actual}"
         )
     return data
+
+
+def release_directory_digest(root: Path) -> str:
+    if root.is_symlink() or not root.is_dir():
+        raise ActionError("Proofbound release is not one directory")
+    files: list[tuple[bytes, bytes]] = []
+    for path in root.rglob("*"):
+        if path.is_symlink():
+            raise ActionError("Proofbound release contains a symlink")
+        if path.is_dir():
+            continue
+        if not path.is_file() or path.stat().st_size > MAX_MEMBER_BYTES:
+            raise ActionError("Proofbound release contains an invalid file")
+        try:
+            relative = path.relative_to(root).as_posix().encode("utf-8")
+        except UnicodeEncodeError as error:
+            raise ActionError("Proofbound release contains a non-UTF-8 path") from error
+        files.append((relative, path.read_bytes()))
+        if len(files) > MAX_RELEASE_FILES:
+            raise ActionError("Proofbound release contains too many files")
+    framed = hashlib.sha256()
+    framed.update(RELEASE_DIRECTORY_DOMAIN)
+    for relative, data in sorted(files):
+        framed.update(len(relative).to_bytes(8, "big"))
+        framed.update(relative)
+        framed.update(len(data).to_bytes(8, "big"))
+        framed.update(hashlib.sha256(data).digest())
+    return framed.hexdigest()
 
 
 def require_absent(path: Path) -> None:
@@ -194,7 +224,9 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--plan", required=True, type=Path)
     result.add_argument("--cgroup-root", required=True, type=Path)
     result.add_argument("--proofbound-release", required=True, type=Path)
+    result.add_argument("--proofbound-release-sha256", required=True)
     result.add_argument("--proofbound-verifier", required=True, type=Path)
+    result.add_argument("--proofbound-verifier-sha256", required=True)
     result.add_argument("--proofbound-observation-inputs", required=True, type=Path)
     result.add_argument("--output", required=True, type=Path)
     return result
@@ -207,10 +239,17 @@ def run(args: argparse.Namespace) -> int:
     if policy_identity(policy) != args.policy_identity:
         raise ActionError("acceptance policy identity mismatch")
     require_regular(args.plan, "execution plan")
-    require_regular(args.proofbound_verifier, "Proofbound verifier")
+    require_digest(
+        args.proofbound_verifier,
+        args.proofbound_verifier_sha256,
+        "Proofbound verifier",
+    )
     require_regular(args.proofbound_observation_inputs, "Proofbound observation inputs")
-    if args.proofbound_release.is_symlink() or not args.proofbound_release.is_dir():
-        raise ActionError("Proofbound release is not one directory")
+    expected_release = require_hex_digest(
+        args.proofbound_release_sha256, "Proofbound release"
+    )
+    if release_directory_digest(args.proofbound_release) != expected_release:
+        raise ActionError("Proofbound release digest mismatch")
     if args.cgroup_root.is_symlink() or not args.cgroup_root.is_dir():
         raise ActionError("cgroup root is not one directory")
     require_absent(args.output)

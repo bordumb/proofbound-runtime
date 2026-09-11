@@ -102,10 +102,12 @@ struct FreshnessPolicy {
 #[serde(deny_unknown_fields)]
 struct ReleasePolicy {
     claims: Vec<ClaimPolicy>,
+    directory_sha256: String,
     project: String,
     payload_sha256: String,
     evidence_context: String,
     project_revision: String,
+    verifier_sha256: String,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -193,6 +195,8 @@ fn validate_policy(policy: &AcceptancePolicy) -> Result<(), AcceptanceError> {
         || release.evidence_context.is_empty()
         || release.evidence_context.len() > 128
         || !is_digest(&release.payload_sha256)
+        || !is_digest(&release.directory_sha256)
+        || !is_digest(&release.verifier_sha256)
         || !is_hex_exact(&release.project_revision, 20)
         || release.claims.is_empty()
         || !strict_by(&release.claims, |claim| claim.claim_id.as_str())
@@ -257,6 +261,8 @@ pub enum RejectionReason {
     ReleaseRevisionMismatch,
     ReleasePayloadMismatch,
     ReleaseContextMismatch,
+    ReleaseDirectoryMismatch,
+    ReleaseVerifierMismatch,
     ClaimMissing,
     ClaimFormalMismatch,
     ClaimLinkageMismatch,
@@ -293,6 +299,8 @@ impl RejectionReason {
             "release-revision-mismatch",
             "release-payload-mismatch",
             "release-context-mismatch",
+            "release-directory-mismatch",
+            "release-verifier-mismatch",
             "claim-missing",
             "claim-formal-mismatch",
             "claim-linkage-mismatch",
@@ -328,6 +336,8 @@ impl RejectionReason {
             Self::ReleaseRevisionMismatch => "release-revision-mismatch",
             Self::ReleasePayloadMismatch => "release-payload-mismatch",
             Self::ReleaseContextMismatch => "release-context-mismatch",
+            Self::ReleaseDirectoryMismatch => "release-directory-mismatch",
+            Self::ReleaseVerifierMismatch => "release-verifier-mismatch",
             Self::ClaimMissing => "claim-missing",
             Self::ClaimFormalMismatch => "claim-formal-mismatch",
             Self::ClaimLinkageMismatch => "claim-linkage-mismatch",
@@ -368,6 +378,8 @@ pub struct EvaluationInputs<'a> {
     pub expected_execution_commitment: &'a str,
     pub expected_execution_id: &'a str,
     pub composition_id: &'a str,
+    pub proofbound_release_sha256: &'a str,
+    pub proofbound_verifier_sha256: &'a str,
     pub artifacts: Vec<DecisionInput>,
 }
 
@@ -473,6 +485,8 @@ pub fn evaluate(
         &policy.policy.release,
         &policy.policy.reject_if_present,
         inputs.release,
+        inputs.proofbound_release_sha256,
+        inputs.proofbound_verifier_sha256,
         &mut reasons,
     );
     if inputs.execution.execution_id != inputs.expected_execution_id {
@@ -617,6 +631,8 @@ fn evaluate_release(
     policy: &ReleasePolicy,
     reject: &RejectPolicy,
     actual: &ReleaseAcceptanceFacts,
+    proofbound_release_sha256: &str,
+    proofbound_verifier_sha256: &str,
     reasons: &mut BTreeSet<RejectionReason>,
 ) {
     if actual.project != policy.project {
@@ -630,6 +646,12 @@ fn evaluate_release(
     }
     if actual.evidence_context != policy.evidence_context {
         reasons.insert(RejectionReason::ReleaseContextMismatch);
+    }
+    if !same_digest(proofbound_release_sha256, &policy.directory_sha256) {
+        reasons.insert(RejectionReason::ReleaseDirectoryMismatch);
+    }
+    if !same_digest(proofbound_verifier_sha256, &policy.verifier_sha256) {
+        reasons.insert(RejectionReason::ReleaseVerifierMismatch);
     }
     for required in &policy.claims {
         let Some(claim) = actual
@@ -842,6 +864,8 @@ mod tests {
                 expected_execution_commitment: &commitment,
                 expected_execution_id: "00112233-4455-4677-8899-aabbccddeeff",
                 composition_id: &composition,
+                proofbound_release_sha256: &digest(b"golden Proofbound release directory"),
+                proofbound_verifier_sha256: &digest(b"golden Proofbound verifier"),
                 artifacts: input_artifacts(&policy_bytes),
             },
         )
@@ -872,6 +896,8 @@ mod tests {
                 expected_execution_commitment: &digest(b"receipt"),
                 expected_execution_id: "00112233-4455-4677-8899-aabbccddeeff",
                 composition_id: &digest(b"composition"),
+                proofbound_release_sha256: &digest(b"substituted Proofbound release directory"),
+                proofbound_verifier_sha256: &digest(b"substituted Proofbound verifier"),
                 artifacts: input_artifacts(&policy_bytes),
             },
         )
@@ -883,6 +909,8 @@ mod tests {
                 RejectionReason::PolicyIdentityMismatch,
                 RejectionReason::PlanIdMismatch,
                 RejectionReason::ResourceMismatch,
+                RejectionReason::ReleaseDirectoryMismatch,
+                RejectionReason::ReleaseVerifierMismatch,
                 RejectionReason::ClaimFormalMismatch,
                 RejectionReason::ForbiddenAssumption,
             ]
@@ -1012,6 +1040,8 @@ mod tests {
                 expected_execution_commitment: &digest(b"receipt"),
                 expected_execution_id,
                 composition_id: &digest(b"composition"),
+                proofbound_release_sha256: &digest(b"golden Proofbound release directory"),
+                proofbound_verifier_sha256: &digest(b"golden Proofbound verifier"),
                 artifacts: input_artifacts(policy_bytes),
             },
         )

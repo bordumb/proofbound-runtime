@@ -27,10 +27,12 @@
     }
   },
   "release": {
+    "directory_sha256": "sha256:156159337c6b6d99b318599e4852664a48e4cb2fecff733917877f291e3f5cbf",
     "project": "proofbound-runtime",
     "project_revision": "1111111111111111111111111111111111111111",
     "payload_sha256": "sha256:251a4c587ca4d69aebbb0a679954edae44b9de659001ff3eab1f8ceec4056182",
     "evidence_context": "release-linux-x86-64-runtime",
+    "verifier_sha256": "sha256:60e85a52804353b4d27d228fa12b4e4f469f2dc0538e0ba26af31f1b7a5652e0",
     "claims": [
       {
         "claim_id": "PBR-AUTH-001",
