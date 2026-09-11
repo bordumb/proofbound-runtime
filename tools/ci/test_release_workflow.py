@@ -60,7 +60,8 @@ class ReleaseWorkflowTests(unittest.TestCase):
         builder = (REPOSITORY_ROOT / "tools/release/build-linux.sh").read_text(
             encoding="utf-8"
         )
-        self.assertIn('release/pbr-accept" "$work_root/$build_name-$acceptor_name"', builder)
+        self.assertIn('"$target_directory/$target/release/pbr-accept"', builder)
+        self.assertIn('"$work_root/$build_name-$acceptor_name"', builder)
         self.assertIn(
             'cmp "$work_root/first-$acceptor_name" "$work_root/second-$acceptor_name"',
             builder,

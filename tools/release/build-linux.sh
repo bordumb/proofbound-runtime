@@ -32,6 +32,7 @@ version="$(tr -d '\n' <"$repository_root/VERSION")"
 source_date_epoch="946684800"
 toolchain="$(rustc --version)"
 bundle_name="proofbound-runtime-v${version}-${target}.tar.gz"
+acceptor_name="pbr-accept-v${version}-${target}"
 mkdir -p "$repository_root/target"
 work_root="$(mktemp -d "$repository_root/target/proofbound-release.XXXXXX")"
 trap 'rm -rf -- "$work_root"' EXIT
@@ -59,6 +60,9 @@ build_bundle() {
     "$stage/pbr-native-launcher"
   install -m 0755 "$target_directory/$target/release/pbr-verify" "$stage/pbr-verify"
   install -m 0755 "$target_directory/$target/release/pbr-compose" "$stage/pbr-compose"
+  install -m 0755 \
+    "$target_directory/$target/release/pbr-accept" \
+    "$work_root/$build_name-$acceptor_name"
   python3 - "$stage" "$architecture" "$target" "$version" "$toolchain" <<'PY'
 import hashlib
 import json
@@ -105,9 +109,12 @@ mkdir -p "$output_directory"
 build_bundle first
 build_bundle second
 cmp "$work_root/first-$bundle_name" "$work_root/second-$bundle_name"
+cmp "$work_root/first-$acceptor_name" "$work_root/second-$acceptor_name"
 install -m 0644 "$work_root/first-$bundle_name" "$output_directory/$bundle_name"
+install -m 0755 "$work_root/first-$acceptor_name" "$output_directory/$acceptor_name"
 (
   cd "$output_directory"
   sha256sum "$bundle_name" >"$bundle_name.sha256"
+  sha256sum "$acceptor_name" >"$acceptor_name.sha256"
 )
-printf '%s\n' "$output_directory/$bundle_name"
+printf '%s\n' "$output_directory/$bundle_name" "$output_directory/$acceptor_name"
