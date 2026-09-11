@@ -45,6 +45,8 @@ pub enum BenchmarkError {
     DirtyTree,
     /// Rust compiler verbose output omitted or duplicated a required identity.
     InvalidToolchain,
+    /// The benchmark binary was not built with the frozen release profile.
+    InvalidBuildProfile,
 }
 
 impl fmt::Display for BenchmarkError {
@@ -65,6 +67,7 @@ impl fmt::Display for BenchmarkError {
             Self::SourceMismatch => "benchmark.source-commit.mismatch",
             Self::DirtyTree => "benchmark.tree.dirty",
             Self::InvalidToolchain => "benchmark.toolchain.invalid",
+            Self::InvalidBuildProfile => "benchmark.build-profile.invalid",
         })
     }
 }
@@ -199,10 +202,10 @@ pub struct PureBenchmarkResult {
     schema: &'static str,
     kind: &'static str,
     complete: bool,
-    source_commit: String,
+    source: SourceRevision,
     benchmark_executable_sha256: String,
-    rustc_version: String,
-    target: String,
+    toolchain: ToolchainIdentity,
+    build_profile: &'static str,
     architecture: String,
     subjects: Vec<PureSubjectResult>,
 }
@@ -210,18 +213,18 @@ pub struct PureBenchmarkResult {
 impl PureBenchmarkResult {
     /// Validates and canonicalizes one complete pure result.
     pub fn new(
-        source_commit: String,
+        source: SourceRevision,
         benchmark_executable_sha256: String,
-        rustc_version: String,
-        target: String,
+        toolchain: ToolchainIdentity,
+        build_profile: &'static str,
         architecture: String,
         mut subjects: Vec<PureSubjectResult>,
     ) -> Result<Self, BenchmarkError> {
-        if !is_lower_hex_exact(&source_commit, 40) {
-            return Err(BenchmarkError::InvalidSourceCommit);
-        }
         if !is_lower_hex_exact(&benchmark_executable_sha256, 64) {
             return Err(BenchmarkError::InvalidDigest);
+        }
+        if build_profile != "release" {
+            return Err(BenchmarkError::InvalidBuildProfile);
         }
         subjects.sort_by_key(PureSubjectResult::subject);
         if subjects.len() != PURE_SUBJECT_DOMAIN.len()
@@ -236,10 +239,10 @@ impl PureBenchmarkResult {
             schema: "proofbound-runtime-performance-result/1",
             kind: "pure",
             complete: true,
-            source_commit,
+            source,
             benchmark_executable_sha256,
-            rustc_version,
-            target,
+            toolchain,
+            build_profile,
             architecture,
             subjects,
         })
@@ -258,7 +261,7 @@ impl PureBenchmarkResult {
 }
 
 /// One exact clean repository source observed before measurement.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct SourceRevision {
     commit: String,
     tree_state: &'static str,
@@ -300,7 +303,7 @@ impl SourceRevision {
 }
 
 /// Required fields from one exact `rustc --version --verbose` observation.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct ToolchainIdentity {
     release: String,
     target: String,
@@ -804,12 +807,10 @@ mod tests {
     #[test]
     fn pure_result_closes_and_sorts_the_subject_domain() {
         let revision = "a".repeat(40);
-        let source = SourceRevision::new(&revision, &revision, "")
-            .expect("source is valid");
-        let toolchain = ToolchainIdentity::parse(
-            "host: x86_64-unknown-linux-gnu\nrelease: 1.93.0\n",
-        )
-        .expect("toolchain is valid");
+        let source = SourceRevision::new(&revision, &revision, "").expect("source is valid");
+        let toolchain =
+            ToolchainIdentity::parse("host: x86_64-unknown-linux-gnu\nrelease: 1.93.0\n")
+                .expect("toolchain is valid");
         let result = PureBenchmarkResult::new(
             source,
             "b".repeat(64),
@@ -846,10 +847,7 @@ mod tests {
         assert_eq!(value["source"]["commit"], "a".repeat(40));
         assert_eq!(value["source"]["tree_state"], "clean");
         assert_eq!(value["toolchain"]["release"], "1.93.0");
-        assert_eq!(
-            value["toolchain"]["target"],
-            "x86_64-unknown-linux-gnu"
-        );
+        assert_eq!(value["toolchain"]["target"], "x86_64-unknown-linux-gnu");
         assert_eq!(value["build_profile"], "release");
         assert_eq!(value["subjects"][0]["subject"], "plan-parse-v1");
     }
@@ -858,12 +856,10 @@ mod tests {
     fn pure_result_rejects_missing_duplicate_and_invalid_identities() {
         let subject = fixed_subject(PureSubject::PlanParseV1, '1');
         let revision = "a".repeat(40);
-        let source = SourceRevision::new(&revision, &revision, "")
-            .expect("source is valid");
-        let toolchain = ToolchainIdentity::parse(
-            "host: x86_64-unknown-linux-gnu\nrelease: 1.93.0\n",
-        )
-        .expect("toolchain is valid");
+        let source = SourceRevision::new(&revision, &revision, "").expect("source is valid");
+        let toolchain =
+            ToolchainIdentity::parse("host: x86_64-unknown-linux-gnu\nrelease: 1.93.0\n")
+                .expect("toolchain is valid");
         let make = |source: SourceRevision,
                     executable: String,
                     profile: &'static str,
@@ -877,12 +873,8 @@ mod tests {
                 subjects,
             )
         };
-        let mismatched_source = SourceRevision::new(
-            &"c".repeat(40),
-            &"c".repeat(40),
-            "",
-        )
-        .expect("source is valid");
+        let mismatched_source =
+            SourceRevision::new(&"c".repeat(40), &"c".repeat(40), "").expect("source is valid");
         assert_eq!(
             make(mismatched_source, "B".repeat(64), "release", Vec::new()),
             Err(BenchmarkError::InvalidDigest)
