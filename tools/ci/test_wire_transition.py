@@ -176,6 +176,37 @@ class WireTransitionTests(unittest.TestCase):
         self.assertIn("--memory-bytes", readme)
         self.assertIn("--swap-bytes", readme)
 
+    def test_resource_boundary_has_an_honest_registered_claim(self) -> None:
+        claim_path = REPOSITORY_ROOT / "claims/PBR-RESOURCE-010.toml"
+        evidence_path = (
+            REPOSITORY_ROOT / "proofbound/evidence/resource-boundary-attacks.toml"
+        )
+        self.assertTrue(claim_path.is_file())
+        self.assertTrue(evidence_path.is_file())
+
+        claim = claim_path.read_text(encoding="utf-8")
+        evidence = evidence_path.read_text(encoding="utf-8")
+        self.assertIn('tier = 0', claim)
+        self.assertIn('not theorem-derived artifact soundness', claim)
+        self.assertIn('"docs/specs/0007_memory_and_swap_profile.md"', claim)
+        self.assertIn('"tests/attacks/native-linux/memory-v2.toml"', claim)
+        self.assertIn('claims = ["PBR-RESOURCE-010"]', evidence)
+
+        expected_claims = 'claims = ["PBR-RESOURCE-010", "PBR-RUN-007"]'
+        for architecture in ("aarch64", "x86-64"):
+            manifest = (
+                REPOSITORY_ROOT
+                / f"proofbound/evidence/release-observe-runtime-linux-{architecture}.toml"
+            ).read_text(encoding="utf-8")
+            self.assertIn(expected_claims, manifest)
+
+        observations = (
+            REPOSITORY_ROOT / "tools/release/observation_inputs.py"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            '("PBR-RESOURCE-010", "runtime-release", "pbr")', observations
+        )
+
     def test_v2_receipt_resources_cross_the_proven_binding_boundary(self) -> None:
         binding = (
             REPOSITORY_ROOT / "crates/proofbound-runtime-binding/src/lib.rs"
