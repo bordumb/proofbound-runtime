@@ -13,6 +13,7 @@ VERSION_TWO_OBJECTS = (
     "run-result",
     "execution-receipt",
     "composed-receipt",
+    "release-provenance",
 )
 NEW_CBOR_OBJECTS = {
     "acceptance-policy": 1,
