@@ -609,6 +609,38 @@ mod tests {
     }
 
     #[test]
+    fn resource_limit_subset_compares_memory_and_swap_without_legacy_amplification() {
+        let processes = ProcessLimit::new(2).expect("valid fixture");
+        let wall_time = WallTimeLimit::from_milliseconds(20).expect("valid fixture");
+        let stdout = OutputByteLimit::new(4);
+        let stderr = OutputByteLimit::new(6);
+        let legacy = ResourceLimits::new(processes, wall_time, stdout, stderr);
+        let smaller = ResourceLimits::new_v2(
+            processes,
+            wall_time,
+            stdout,
+            stderr,
+            MemoryByteLimit::new(65_536).expect("valid fixture"),
+            SwapByteLimit::new(0).expect("valid fixture"),
+        );
+        let larger = ResourceLimits::new_v2(
+            processes,
+            wall_time,
+            stdout,
+            stderr,
+            MemoryByteLimit::new(131_072).expect("valid fixture"),
+            SwapByteLimit::new(65_536).expect("valid fixture"),
+        );
+
+        assert_eq!(smaller.memory(), Some(MemoryByteLimit::new(65_536).unwrap()));
+        assert_eq!(smaller.swap(), Some(SwapByteLimit::new(0).unwrap()));
+        assert!(smaller.is_no_more_permissive_than(larger));
+        assert!(!larger.is_no_more_permissive_than(smaller));
+        assert!(smaller.is_no_more_permissive_than(legacy));
+        assert!(!legacy.is_no_more_permissive_than(smaller));
+    }
+
+    #[test]
     fn concrete_comparison_matches_domain_order() {
         let text_values = ["A", "PATH", "é", "𐀀"];
         for left in text_values {
