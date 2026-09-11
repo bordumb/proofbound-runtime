@@ -82,6 +82,16 @@ class RequiredWorkflowTests(unittest.TestCase):
             full_gate,
         )
 
+    def test_fresh_evidence_is_observable_while_it_runs(self) -> None:
+        manifests = (REPOSITORY_ROOT / "tools/ci/manifests.sh").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertNotIn('check_output="$("$proofbound_bin" check', manifests)
+        self.assertIn("Proofbound fresh check still running", manifests)
+        self.assertIn('kill "$heartbeat_pid"', manifests)
+        self.assertIn('check_output="$(<"$check_output_file")"', manifests)
+
     def test_preflight_runs_independent_performance_verifier_falsifiers(self) -> None:
         script = CI_SCRIPT.read_text(encoding="utf-8")
 
