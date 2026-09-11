@@ -102,6 +102,22 @@ static void touch_writable_pages(unsigned char *memory, size_t size) {
     memory[size - 1] = 1;
 }
 
+static unsigned char *pre_main_memory = NULL;
+
+__attribute__((constructor)) static void allocate_before_main(void) {
+    const char *enabled = getenv("PROOFBOUND_PRE_MAIN_ALLOCATION");
+    if (enabled == NULL || strcmp(enabled, "1") != 0) {
+        return;
+    }
+    const size_t size = 4 * 1024 * 1024;
+    pre_main_memory = mmap(NULL, size, PROT_READ | PROT_WRITE,
+                           MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (pre_main_memory == MAP_FAILED) {
+        _exit(116);
+    }
+    touch_writable_pages(pre_main_memory, size);
+}
+
 static int allocate_anonymous(size_t size, int retain) {
     unsigned char *memory = mmap(NULL, size, PROT_READ | PROT_WRITE,
                                  MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
@@ -367,6 +383,11 @@ int main(int argc, char **argv) {
         return parse_size(argv[2], &size) == 0 && allocate_anonymous(size, 0) == 0
                    ? emit(STDOUT_FILENO, "anonymous-accounted\n")
                    : 100;
+    }
+    if (strcmp(argv[1], "memory-pre-main") == 0) {
+        return pre_main_memory != NULL
+                   ? emit(STDOUT_FILENO, "pre-main-allocation-accounted\n")
+                   : 117;
     }
     if (strcmp(argv[1], "memory-over-limit") == 0 && argc == 3) {
         size_t chunk_size = 0;

@@ -308,6 +308,26 @@ mod linux {
         assert_eq!(anonymous.stdout().bytes(), b"anonymous-accounted\n");
         assert_accounted_without_limit_event(&anonymous);
 
+        let pre_main = run_v2_case(
+            &supported,
+            &fixture,
+            &workspace.0,
+            "memory-pre-main",
+            &[],
+            None,
+            1,
+            128 * 1024 * 1024,
+            0,
+            5_000,
+        );
+        assert_eq!(pre_main.boundary(), BoundaryInstallation::Installed);
+        assert_outcome(&pre_main, ExecutionOutcome::Exited { code: 0 });
+        assert_eq!(
+            pre_main.stdout().bytes(),
+            b"pre-main-allocation-accounted\n"
+        );
+        assert_accounted_without_limit_event(&pre_main);
+
         let mapped = run_v2_case(
             &supported,
             &fixture,
@@ -882,13 +902,18 @@ mod linux {
             .max()
             .and_then(|descriptor| descriptor.checked_add(1))
             .expect("descriptor upper bound");
+        let environment = if case == "memory-pre-main" {
+            BTreeMap::from([("PROOFBOUND_PRE_MAIN_ALLOCATION".to_owned(), "1".to_owned())])
+        } else {
+            BTreeMap::new()
+        };
         let request = InstallRequest::new(
             identity,
             expected_executable,
             u32::try_from(executable_fd).expect("positive executable descriptor"),
             u32::try_from(working_directory_fd).expect("positive directory descriptor"),
             arguments,
-            BTreeMap::new(),
+            environment,
             rules,
             seccomp,
             declared_upper_bound,
