@@ -379,6 +379,7 @@ pub(crate) struct WireResources {
     pub(crate) memory_events: [u64; 6],
     pub(crate) swap_events: [u64; 2],
     pub(crate) limit_events: Vec<WireReason>,
+    pub(crate) observations_complete: bool,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

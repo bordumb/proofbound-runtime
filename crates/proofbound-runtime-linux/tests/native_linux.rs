@@ -431,6 +431,7 @@ mod linux {
         assert!(
             timeout
                 .resources()
+                .complete()
                 .expect("v2 timeout observations")
                 .memory_peak_bytes()
                 > 0
@@ -502,7 +503,10 @@ mod linux {
                     5_000,
                 );
                 assert_outcome(&execution, ExecutionOutcome::Exited { code: 0 });
-                let resources = execution.resources().expect("absent-swap observations");
+                let resources = execution
+                    .resources()
+                    .complete()
+                    .expect("absent-swap observations");
                 assert_eq!(resources.swap_peak_bytes(), 0, "{execution:#?}");
                 assert_eq!(resources.swap_events().max(), 0, "{execution:#?}");
                 assert_eq!(resources.swap_events().fail(), 0, "{execution:#?}");
@@ -524,7 +528,10 @@ mod linux {
                     16 * 1024 * 1024,
                     15_000,
                 );
-                let resources = execution.resources().expect("present-swap observations");
+                let resources = execution
+                    .resources()
+                    .complete()
+                    .expect("present-swap observations");
                 assert!(resources.swap_peak_bytes() > 0, "{execution:#?}");
                 assert!(
                     resources.swap_peak_bytes() <= 16 * 1024 * 1024,
@@ -651,7 +658,10 @@ mod linux {
     fn assert_accounted_without_limit_event(
         execution: &proofbound_runtime_linux::SupervisedExecution,
     ) {
-        let resources = execution.resources().expect("v2 resource observations");
+        let resources = execution
+            .resources()
+            .complete()
+            .expect("v2 resource observations");
         assert!(
             resources.memory_peak_bytes() >= 1024 * 1024,
             "{execution:#?}"
@@ -661,7 +671,10 @@ mod linux {
     }
 
     fn assert_memory_denial(execution: &proofbound_runtime_linux::SupervisedExecution) {
-        let resources = execution.resources().expect("v2 resource observations");
+        let resources = execution
+            .resources()
+            .complete()
+            .expect("v2 resource observations");
         assert!(
             resources.limit_events().contains(LimitEvent::MemoryMax),
             "{execution:#?}"
@@ -995,6 +1008,7 @@ mod linux {
             assert!(
                 execution
                     .resources()
+                    .complete()
                     .expect("launcher-failure resource observations")
                     .memory_peak_bytes()
                     >= 1024 * 1024,
@@ -1084,6 +1098,7 @@ mod linux {
         let resources = cgroup
             .finish()
             .expect("drain and remove raw accounting cgroup")
+            .complete()
             .expect("v2 raw accounting observation");
         assert!(!cgroup_path.exists(), "exact raw cgroup must be removed");
         resources

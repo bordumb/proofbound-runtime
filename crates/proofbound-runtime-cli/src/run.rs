@@ -18,8 +18,8 @@ use proofbound_runtime_core::{
 use proofbound_runtime_linux::{
     Architecture, CgroupError, ExecutionSetupError, FreshCgroup, FreshOutputRoot, InstallRequest,
     LandlockAccess, LauncherError, LauncherFilesystemRule, LauncherIdentity, OutputRootError,
-    ProbeError, ResolutionError, ResolvedReadPath, RootedPathResolver, SupervisorError,
-    compile_deny_network_program, fresh_execution_id, identify_external_artifact,
+    ProbeError, ResolutionError, ResolvedReadPath, ResourceObservation, RootedPathResolver,
+    SupervisorError, compile_deny_network_program, fresh_execution_id, identify_external_artifact,
     probe_capabilities, supervise_launcher,
 };
 use serde_json::Value;
@@ -816,33 +816,37 @@ fn build_receipt(input: ReceiptInputs<'_>) -> Result<ExecutionReceipt, RunError>
         RunRule::ReceiptConstructed,
     )?;
     let trusted_computing_base = trusted_computing_base(&input)?;
-    let terminal = input.execution.resources().ok_or_else(|| {
-        RunError::receipt(
-            RunPhase::ReceiptConstruction,
-            RunRule::ReceiptConstructed,
-            "receipt.resources.incomplete",
-        )
-    })?;
-    let memory = terminal.memory_events();
-    let swap = terminal.swap_events();
-    let configured = terminal.configured();
-    let resources = ReceiptResources::from_configured(
-        configured.processes(),
-        configured.memory(),
-        configured.swap(),
-        configured.memory_oom_group(),
-        terminal.memory_peak_bytes(),
-        terminal.swap_peak_bytes(),
-        ReceiptMemoryEvents::new(
-            memory.low(),
-            memory.high(),
-            memory.max(),
-            memory.oom(),
-            memory.oom_kill(),
-            memory.oom_group_kill(),
+    let resources = match input.execution.resources() {
+        ResourceObservation::Complete(terminal) => {
+            let memory = terminal.memory_events();
+            let swap = terminal.swap_events();
+            let configured = terminal.configured();
+            ReceiptResources::from_configured(
+                configured.processes(),
+                configured.memory(),
+                configured.swap(),
+                configured.memory_oom_group(),
+                terminal.memory_peak_bytes(),
+                terminal.swap_peak_bytes(),
+                ReceiptMemoryEvents::new(
+                    memory.low(),
+                    memory.high(),
+                    memory.max(),
+                    memory.oom(),
+                    memory.oom_kill(),
+                    memory.oom_group_kill(),
+                ),
+                ReceiptSwapEvents::new(swap.max(), swap.fail()),
+            )
+        }
+        ResourceObservation::Incomplete(configured) => ReceiptResources::incomplete(
+            configured.processes(),
+            configured.memory(),
+            configured.swap(),
+            configured.memory_oom_group(),
         ),
-        ReceiptSwapEvents::new(swap.max(), swap.fail()),
-    )
+        ResourceObservation::Legacy => Err(ReceiptError::ResourceProfileIncomplete),
+    }
     .map_err(map_receipt_construction)?;
     let receipt = proofbound_runtime_core::construct_execution_receipt(ExecutionReceiptParts {
         execution_id: input.execution_id,

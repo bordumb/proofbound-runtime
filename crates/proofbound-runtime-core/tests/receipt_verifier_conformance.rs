@@ -178,3 +178,42 @@ fn independent_verifier_accepts_v2_cbor_and_recomputes_resource_nonreuse() {
     };
     assert_eq!(reasons.as_slice(), &[FailureReason::MemoryMax]);
 }
+
+#[test]
+fn observation_failure_produces_a_verified_non_reusable_receipt() {
+    let mut input = parts(ExecutionOutcome::Exited { code: 0 });
+    let limits = ResourceLimits::new_v2(
+        ProcessLimit::new(2).expect("valid process limit"),
+        WallTimeLimit::from_milliseconds(1_000).expect("valid wall limit"),
+        OutputByteLimit::new(1_024),
+        OutputByteLimit::new(2_048),
+        MemoryByteLimit::new(65_536).expect("valid memory limit"),
+        SwapByteLimit::new(0).expect("valid swap limit"),
+    );
+    input.plan = ReceiptPlan::new_v2(
+        proofbound_runtime_core::PlanId::new("conformance.plan").expect("fixture plan ID is valid"),
+        artifact(ArtifactRole::ExecutionPlan, 1),
+        artifact(ArtifactRole::NormalizedPlan, 2),
+        limits,
+    )
+    .expect("fixture v2 plan roles are valid");
+    input.resources = Some(
+        ReceiptResources::incomplete(
+            limits.processes(),
+            limits.memory().expect("v2 memory limit"),
+            limits.swap().expect("v2 swap limit"),
+            1,
+        )
+        .expect("configured readbacks remain complete"),
+    );
+    let receipt = ExecutionReceipt::new(input).expect("producer retains incomplete observation");
+    let bytes = receipt
+        .canonical_bytes()
+        .expect("producer encodes incomplete observation");
+    let report = verify_receipt(&bytes, ReceiptCommitment::for_bytes(&bytes))
+        .expect("independent verifier accepts the non-reusable receipt");
+    let EligibilityDecision::NonReusable(reasons) = report.eligibility() else {
+        panic!("incomplete resource observation must force nonreuse");
+    };
+    assert_eq!(reasons.as_slice(), &[FailureReason::ReceiptMalformed]);
+}

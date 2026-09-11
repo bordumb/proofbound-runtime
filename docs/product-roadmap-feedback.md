@@ -12,7 +12,7 @@ Verified against the branch head, the four reviews, and the roadmap's own exit c
 
 - [x] **Retain cgroup readback values and put them in the receipt.** `crates/proofbound-runtime-linux/src/cgroup.rs:459` compares and discards; `crates/proofbound-runtime-cli/src/run.rs:828` fills the receipt from the plan. Spec 0007 line 177 requires exact readback values.
 - [x] **Make the verifier compare configured and peak values** to the normalized plan limits. `crates/proofbound-runtime-verify/src/identity.rs:222` currently discards them. Add attack cases that expect a semantic reason, not a commitment mismatch. The verifier preserves Specification 0007's overshoot semantics: a peak beyond a configured limit is valid when the corresponding terminal max event is present.
-- [ ] **Turn observation failure into a non-reusable receipt, not an aborted run.** `supervisor.rs:314` maps any `cgroup.finish()` error to a hard error. Spec 0007 line 169.
+- [x] **Turn observation failure into a non-reusable receipt, not an aborted run.** `supervisor.rs:314` maps any `cgroup.finish()` error to a hard error. Spec 0007 line 169. Drain or removal failure still aborts; a terminal counter/read failure retains configured readbacks and emits a verified non-reusable receipt with a null terminal observation.
 - [ ] **Add the missing native assertions:** group-OOM kill count in the max-process-tree case, `swap.events` max and fail in the swap-limit case, and a real sibling-cgroup case. Bind each catalog id in `memory-v2.toml` to an executed case instead of substring matching.
 - [ ] **Guard the two silent-skip sites** in `cgroup.rs:1093` and `probe.rs:539` with the `PROOFBOUND_NATIVE_REQUIRED` check the rest of the native suite uses.
 

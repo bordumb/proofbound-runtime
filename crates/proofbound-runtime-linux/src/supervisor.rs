@@ -14,7 +14,7 @@ use proofbound_runtime_core::{OutputByteLimit, SignalNumber};
 
 use crate::{
     FreshCgroup, InstallRequest, LauncherError, LauncherFailure, LauncherIdentity,
-    TerminalResources,
+    ResourceObservation,
 };
 #[cfg(target_os = "linux")]
 use crate::{LauncherChannel, LauncherMessage};
@@ -53,7 +53,7 @@ pub struct SupervisedExecution {
     stdout: CapturedStream,
     stderr: CapturedStream,
     launcher_failure: Option<LauncherFailure>,
-    resources: Option<TerminalResources>,
+    resources: ResourceObservation,
     elapsed: Duration,
     timings: SupervisorTimings,
 }
@@ -91,7 +91,7 @@ impl SupervisedExecution {
 
     /// Returns terminal resources for a version 2 cgroup lifecycle.
     #[must_use]
-    pub const fn resources(&self) -> Option<TerminalResources> {
+    pub const fn resources(&self) -> ResourceObservation {
         self.resources
     }
 

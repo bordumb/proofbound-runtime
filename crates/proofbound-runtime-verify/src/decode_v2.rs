@@ -98,7 +98,11 @@ pub(crate) fn decode_v2_receipt(input: &[u8]) -> Result<DecodedReceipt, DecodeEr
         outcome_state,
         capture_state(streams.stdout.capture),
         capture_state(streams.stderr.capture),
-        StructureState::Valid,
+        if resources.observations_complete {
+            StructureState::Valid
+        } else {
+            StructureState::Malformed
+        },
         limit_events,
     );
     let execution_id = uuid_text(bytes_exact::<16>(field(top, "execution_id")?)?);
@@ -375,8 +379,23 @@ fn parse_resources(value: &Value) -> Result<WireResources, DecodeError> {
         return Err(DecodeError::InvalidSchema);
     }
 
+    let terminal_value = field(map, "terminal")?;
+    let limit_events = parse_reason_array(field(map, "limit_events")?)?;
+    if matches!(terminal_value, Value::Null) {
+        return Ok(WireResources {
+            processes,
+            memory,
+            swap,
+            memory_peak: 0,
+            swap_peak: 0,
+            memory_events: [0; 6],
+            swap_events: [0; 2],
+            limit_events,
+            observations_complete: false,
+        });
+    }
     let terminal = exact_map(
-        field(map, "terminal")?,
+        terminal_value,
         &[
             "swap_events",
             "memory_events",
@@ -407,7 +426,8 @@ fn parse_resources(value: &Value) -> Result<WireResources, DecodeError> {
             unsigned(field(swap_map, "max")?)?,
             unsigned(field(swap_map, "fail")?)?,
         ],
-        limit_events: parse_reason_array(field(map, "limit_events")?)?,
+        limit_events,
+        observations_complete: true,
     })
 }
 

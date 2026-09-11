@@ -19,7 +19,8 @@ pub mod supervisor;
 mod sys;
 
 pub use cgroup::{
-    CgroupError, ConfiguredResources, FreshCgroup, MemoryEvents, SwapEvents, TerminalResources,
+    CgroupError, ConfiguredResources, FreshCgroup, MemoryEvents, ResourceObservation, SwapEvents,
+    TerminalResources,
 };
 pub use execution::{ExecutionSetupError, fresh_execution_id};
 pub use inventory::{ResolvedDirectory, ResolvedReadPath};

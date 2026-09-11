@@ -228,6 +228,39 @@ impl ConfiguredResources {
     }
 }
 
+/// Reports whether terminal cgroup observations completed after exact cleanup.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ResourceObservation {
+    /// Legacy process-only execution has no version 2 resource observation.
+    Legacy,
+    /// Every version 2 terminal counter and peak was read and checked.
+    Complete(TerminalResources),
+    /// Configured readbacks are retained, but terminal observation failed.
+    Incomplete(ConfiguredResources),
+}
+
+impl ResourceObservation {
+    /// Returns complete terminal resources, if observation succeeded.
+    #[must_use]
+    pub const fn complete(self) -> Option<TerminalResources> {
+        match self {
+            Self::Complete(resources) => Some(resources),
+            Self::Legacy | Self::Incomplete(_) => None,
+        }
+    }
+}
+
+#[cfg(any(test, target_os = "linux"))]
+fn retain_resource_observation(
+    configured: ConfiguredResources,
+    observation: Result<TerminalResources, CgroupError>,
+) -> ResourceObservation {
+    match observation {
+        Ok(terminal) => ResourceObservation::Complete(terminal),
+        Err(_) => ResourceObservation::Incomplete(configured),
+    }
+}
+
 #[cfg(any(test, target_os = "linux"))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct ResourceSnapshot {
@@ -677,27 +710,22 @@ impl FreshCgroup {
     }
 
     /// Drains the exact group, captures version 2 observations, then removes it.
-    pub fn finish(self) -> Result<Option<TerminalResources>, CgroupError> {
+    pub fn finish(self) -> Result<ResourceObservation, CgroupError> {
         #[cfg(target_os = "linux")]
         {
             let mut group = self;
             group.drain_in_place()?;
-            let observation = match group.initial_resources {
-                Some(initial) => group
-                    .configured_resources
-                    .ok_or(CgroupError::ObservationInvalid)
-                    .and_then(|configured| {
-                        read_resource_snapshot(&group.descriptor)
-                            .and_then(|terminal| terminal.checked_delta(initial, configured))
-                    })
-                    .map(Some),
-                None => Ok(None),
+            let observation = match (group.initial_resources, group.configured_resources) {
+                (Some(initial), Some(configured)) => retain_resource_observation(
+                    configured,
+                    read_resource_snapshot(&group.descriptor)
+                        .and_then(|terminal| terminal.checked_delta(initial, configured)),
+                ),
+                (None, None) => ResourceObservation::Legacy,
+                _ => return Err(CgroupError::ObservationInvalid),
             };
-            let removal = group.remove_in_place();
-            match (observation, removal) {
-                (Ok(value), Ok(())) => Ok(value),
-                (Err(error), _) | (Ok(_), Err(error)) => Err(error),
-            }
+            group.remove_in_place()?;
+            Ok(observation)
         }
         #[cfg(not(target_os = "linux"))]
         {
@@ -1098,6 +1126,11 @@ mod tests {
         assert!(observed.limit_events().contains(LimitEvent::MemoryOomKill));
         assert!(observed.limit_events().contains(LimitEvent::SwapMax));
         assert!(observed.limit_events().contains(LimitEvent::SwapFail));
+
+        assert_eq!(
+            retain_resource_observation(configured, Err(CgroupError::ObservationInvalid)),
+            ResourceObservation::Incomplete(configured)
+        );
 
         assert_eq!(
             initial.checked_delta(terminal, configured),

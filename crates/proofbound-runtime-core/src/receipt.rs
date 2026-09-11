@@ -413,6 +413,7 @@ pub struct ReceiptResources {
     memory_events: ReceiptMemoryEvents,
     swap_events: ReceiptSwapEvents,
     limit_events: LimitEvents,
+    observations_complete: bool,
 }
 
 impl ReceiptResources {
@@ -483,6 +484,31 @@ impl ReceiptResources {
             memory_events,
             swap_events,
             limit_events: LimitEvents::new(&events),
+            observations_complete: true,
+        })
+    }
+
+    /// Builds a non-reusable v2 resource record when terminal observation failed.
+    pub fn incomplete(
+        processes: ProcessLimit,
+        memory: MemoryByteLimit,
+        swap: SwapByteLimit,
+        memory_oom_group: u64,
+    ) -> Result<Self, ReceiptError> {
+        if memory_oom_group != 1 {
+            return Err(ReceiptError::ConfiguredResourcesInvalid);
+        }
+        Ok(Self {
+            processes,
+            memory,
+            swap,
+            memory_oom_group,
+            memory_peak_bytes: 0,
+            swap_peak_bytes: 0,
+            memory_events: ReceiptMemoryEvents::new(0, 0, 0, 0, 0, 0),
+            swap_events: ReceiptSwapEvents::new(0, 0),
+            limit_events: LimitEvents::new(&[]),
+            observations_complete: false,
         })
     }
 
@@ -521,6 +547,10 @@ impl ReceiptResources {
     #[must_use]
     pub const fn limit_events(self) -> LimitEvents {
         self.limit_events
+    }
+    #[must_use]
+    pub const fn observations_complete(self) -> bool {
+        self.observations_complete
     }
 }
 
@@ -796,7 +826,11 @@ impl ExecutionReceipt {
                 parts.outcome,
                 parts.streams.stdout.capture,
                 parts.streams.stderr.capture,
-                ReceiptStructure::Valid,
+                if resources.observations_complete {
+                    ReceiptStructure::Valid
+                } else {
+                    ReceiptStructure::Malformed
+                },
                 resources.limit_events,
             ),
             (None, None) => ReceiptFacts::new(
@@ -1239,41 +1273,43 @@ fn cbor_resources(resources: ReceiptResources) -> crate::wire_v2::Value {
     use crate::wire_v2::Value as Cbor;
     let memory = resources.memory_events;
     let swap = resources.swap_events;
+    let terminal = if resources.observations_complete {
+        Cbor::Map(vec![
+            (
+                "swap_events".to_owned(),
+                Cbor::Map(vec![
+                    ("max".to_owned(), Cbor::Unsigned(swap.max)),
+                    ("fail".to_owned(), Cbor::Unsigned(swap.fail)),
+                ]),
+            ),
+            (
+                "memory_events".to_owned(),
+                Cbor::Map(vec![
+                    ("low".to_owned(), Cbor::Unsigned(memory.low)),
+                    ("oom".to_owned(), Cbor::Unsigned(memory.oom)),
+                    ("high".to_owned(), Cbor::Unsigned(memory.high)),
+                    ("max".to_owned(), Cbor::Unsigned(memory.max)),
+                    ("oom_kill".to_owned(), Cbor::Unsigned(memory.oom_kill)),
+                    (
+                        "oom_group_kill".to_owned(),
+                        Cbor::Unsigned(memory.oom_group_kill),
+                    ),
+                ]),
+            ),
+            (
+                "swap_peak_bytes".to_owned(),
+                Cbor::Unsigned(resources.swap_peak_bytes),
+            ),
+            (
+                "memory_peak_bytes".to_owned(),
+                Cbor::Unsigned(resources.memory_peak_bytes),
+            ),
+        ])
+    } else {
+        Cbor::Null
+    };
     Cbor::Map(vec![
-        (
-            "terminal".to_owned(),
-            Cbor::Map(vec![
-                (
-                    "swap_events".to_owned(),
-                    Cbor::Map(vec![
-                        ("max".to_owned(), Cbor::Unsigned(swap.max)),
-                        ("fail".to_owned(), Cbor::Unsigned(swap.fail)),
-                    ]),
-                ),
-                (
-                    "memory_events".to_owned(),
-                    Cbor::Map(vec![
-                        ("low".to_owned(), Cbor::Unsigned(memory.low)),
-                        ("oom".to_owned(), Cbor::Unsigned(memory.oom)),
-                        ("high".to_owned(), Cbor::Unsigned(memory.high)),
-                        ("max".to_owned(), Cbor::Unsigned(memory.max)),
-                        ("oom_kill".to_owned(), Cbor::Unsigned(memory.oom_kill)),
-                        (
-                            "oom_group_kill".to_owned(),
-                            Cbor::Unsigned(memory.oom_group_kill),
-                        ),
-                    ]),
-                ),
-                (
-                    "swap_peak_bytes".to_owned(),
-                    Cbor::Unsigned(resources.swap_peak_bytes),
-                ),
-                (
-                    "memory_peak_bytes".to_owned(),
-                    Cbor::Unsigned(resources.memory_peak_bytes),
-                ),
-            ]),
-        ),
+        ("terminal".to_owned(), terminal),
         (
             "configured".to_owned(),
             Cbor::Map(vec![

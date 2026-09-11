@@ -231,6 +231,13 @@ fn validate_resources(receipt: &DecodedReceipt) -> Result<(), ValidationError> {
     {
         return Err(ValidationError::ResourcePlanMismatch);
     }
+    if !resources.observations_complete {
+        return if resources.limit_events.is_empty() {
+            Ok(())
+        } else {
+            Err(ValidationError::ResourceEventsMismatch)
+        };
+    }
     if (resources.memory_peak > plan.memory && resources.memory_events[2] == 0)
         || (resources.swap_peak > plan.swap
             && resources.swap_events[0] == 0
