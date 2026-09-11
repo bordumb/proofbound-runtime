@@ -66,6 +66,15 @@ class RequiredWorkflowTests(unittest.TestCase):
             script,
         )
 
+    def test_preflight_validates_closed_performance_result_schema(self) -> None:
+        script = CI_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "timed_unit performance-schema-tests python3 -m unittest "
+            "experiments.performance.test_pure_result_schema",
+            script,
+        )
+
     def test_each_lane_uploads_timing_outside_assurance_evidence(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
