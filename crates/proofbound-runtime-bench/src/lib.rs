@@ -170,14 +170,48 @@ impl NativePhaseResult {
     }
 }
 
+/// One execution's phase durations before cross-run sorting.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NativeRunSample {
+    total_ns: u64,
+    phase_samples_ns: [u64; RunBenchmarkPhase::ALL.len()],
+}
+
+impl NativeRunSample {
+    /// Returns the checked sum of every non-overlapping phase.
+    #[must_use]
+    pub const fn total_ns(&self) -> u64 {
+        self.total_ns
+    }
+
+    /// Returns the duration for one Runtime-owned phase.
+    #[must_use]
+    pub const fn phase_ns(&self, phase: RunBenchmarkPhase) -> u64 {
+        self.phase_samples_ns[phase as usize]
+    }
+
+    /// Returns all phase durations in production dependency order.
+    #[must_use]
+    pub const fn phase_samples_ns(&self) -> &[u64; RunBenchmarkPhase::ALL.len()] {
+        &self.phase_samples_ns
+    }
+}
+
 /// Complete total and per-phase observations for fresh native executions.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NativeMeasurements {
+    runs: Vec<NativeRunSample>,
     total: Summary,
     phases: Vec<NativePhaseResult>,
 }
 
 impl NativeMeasurements {
+    /// Returns run-correlated observations in execution order.
+    #[must_use]
+    pub fn runs(&self) -> &[NativeRunSample] {
+        &self.runs
+    }
+
     /// Returns whole-run elapsed observations derived from phase sums.
     #[must_use]
     pub const fn total(&self) -> &Summary {
@@ -196,25 +230,39 @@ pub fn summarize_native_runs(runs: &[RunTimings]) -> Result<NativeMeasurements, 
     if runs.is_empty() {
         return Err(BenchmarkError::EmptySeries);
     }
-    let total = summarize(
-        runs.iter()
-            .map(|timings| duration_ns(timings.total()))
-            .collect::<Result<Vec<_>, _>>()?,
-    )?;
+    let runs = runs
+        .iter()
+        .map(|timings| {
+            let mut phase_samples_ns = [0_u64; RunBenchmarkPhase::ALL.len()];
+            for (sample, interval) in phase_samples_ns.iter_mut().zip(timings.intervals()) {
+                *sample = duration_ns(*interval)?;
+            }
+            let total_ns = phase_samples_ns.iter().try_fold(0_u64, |sum, sample| {
+                sum.checked_add(*sample)
+                    .ok_or(BenchmarkError::DurationOverflow)
+            })?;
+            Ok(NativeRunSample {
+                total_ns,
+                phase_samples_ns,
+            })
+        })
+        .collect::<Result<Vec<_>, BenchmarkError>>()?;
+    let total = summarize(runs.iter().map(NativeRunSample::total_ns).collect())?;
     let phases = RunBenchmarkPhase::ALL
         .into_iter()
         .map(|phase| {
-            let samples = runs
-                .iter()
-                .map(|timings| duration_ns(timings.phase(phase)))
-                .collect::<Result<Vec<_>, _>>()?;
+            let samples = runs.iter().map(|run| run.phase_ns(phase)).collect();
             Ok(NativePhaseResult {
                 phase,
                 summary: summarize(samples)?,
             })
         })
         .collect::<Result<Vec<_>, BenchmarkError>>()?;
-    Ok(NativeMeasurements { total, phases })
+    Ok(NativeMeasurements {
+        runs,
+        total,
+        phases,
+    })
 }
 
 fn duration_ns(duration: std::time::Duration) -> Result<u64, BenchmarkError> {
@@ -1412,9 +1460,7 @@ mod tests {
         assert_eq!(measurements.runs()[1].total_ns(), 104);
         assert_eq!(
             RunBenchmarkPhase::ALL.map(|phase| measurements.runs()[0].phase_ns(phase)),
-            core::array::from_fn(|index| {
-                u64::try_from(index + 1).expect("index fits u64")
-            })
+            core::array::from_fn(|index| { u64::try_from(index + 1).expect("index fits u64") })
         );
         assert_eq!(
             measurements.runs()[0]
