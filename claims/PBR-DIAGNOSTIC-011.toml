@@ -18,7 +18,7 @@ assumptions = [
 ]
 open_obligations = [
   "Obtain explicit review of Specification 0009 before publishing the diagnostic vocabulary as the version 0.2 CLI contract.",
-  "Execute the complete native run failure corpus on both supported architectures at the next release head.",
+  "Execute the registered five-case pre-launch run failure corpus on both supported architectures at the next release head.",
   "Bind exact native pbr artifacts containing the diagnostic boundary before describing it as released.",
 ]
 out_of_scope = [
@@ -42,6 +42,8 @@ source_roots = [
   "crates/proofbound-runtime-linux/src/probe.rs",
   "crates/proofbound-runtime-linux/src/resolve.rs",
   "crates/proofbound-runtime-linux/src/supervisor.rs",
+  "crates/proofbound-runtime-linux/tests/fixtures/native-boundary-probe.c",
+  "crates/proofbound-runtime-compose/tests/release_observation.rs",
   "docs/specs/0002_cli_surface.md",
   "docs/specs/0009_run_denial_diagnostics.md",
   "proofbound/evidence/run-diagnostic-attacks.toml",
@@ -49,5 +51,6 @@ source_roots = [
   "proofbound/evidence/release-observe-runtime-linux-x86-64.toml",
   "tests/attacks/run/diagnostics-v1.toml",
   "tools/ci/native-linux.sh",
-  "crates/proofbound-runtime-compose/tests/release_observation.rs",
+  "tools/ci/test_required_workflow.py",
+  "tools/release/observation_inputs.py",
 ]

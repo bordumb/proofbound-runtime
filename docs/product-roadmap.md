@@ -35,13 +35,17 @@ As of 2026-09-11, the roadmap branch has completed the version 2 memory/swap
 implementation and deterministic-CBOR claim wave, the independently verified
 receipt-composition and adopter-acceptance path, the reproducible standalone
 `pbr-accept` artifact, the first-party GitHub Action, and the RT-3.3 plan
-scaffold source boundary. RT-3.5 now also has closed Rust, Python, and
-TypeScript SDK sources plus deterministic Python-wheel and closed npm-package
-checks. `PBR-ACCEPT-012`, `PBR-SCAFFOLD-013`, and `PBR-SDK-014` admit their
-exact source-level evidence; the SDK claim was replayed fresh at `2298657`.
-They deliberately retain exact native or package-release observation and
-external dogfood as open obligations; those obligations cannot be converted
-into source claims or satisfied by an older release-candidate run.
+scaffold source boundary. RT-3.4 now has a closed typed diagnostic vocabulary,
+exhaustive source mapping attacks, and a five-case pre-launch failure corpus
+wired into both native architectures and exact release observation. RT-3.5
+also has closed Rust, Python, and TypeScript SDK sources plus deterministic
+Python-wheel and closed npm-package checks. `PBR-ACCEPT-012`,
+`PBR-DIAGNOSTIC-011`, `PBR-SCAFFOLD-013`, and `PBR-SDK-014` admit their exact
+source-level evidence; the SDK claim was replayed fresh at `2298657`. They
+deliberately retain specification review, exact native or package-release
+observation, and external dogfood as open obligations; those obligations
+cannot be converted into source claims or satisfied by an older
+release-candidate run.
 
 As of 2026-09-10, Order 0 is implemented on the roadmap branch, the version
 0.1 installation path and host-prerequisite explanations are implemented and
@@ -163,9 +167,10 @@ deterministic CBOR for every committed version 2 or later wire object. The
 change lands inside the RT-1 version 2 cut rather than as a separate
 migration, so the binding-projection refinement and independent verifier are
 redone once. Version 1 contracts are unchanged. On 2026-09-11, the decision
-owner selected text map keys; no open wire-format parameter remains. Memory
-implementation now waits only for the version 2 CDDL schemas and golden
-vectors that must precede codec code.
+owner selected text map keys; no open wire-format parameter remains. The
+version 2 CDDL schemas, golden vectors, separate producer and independent
+verifier codecs, and cross-object transition checks have all landed on this
+branch.
 
 The first exact formal-tool cache hit is green. Run
 [`34554553968`](https://github.com/bordumb/proofbound-runtime/actions/runs/34554553968)
@@ -312,9 +317,11 @@ Orders express merge dependencies, not a ban on parallel investigation.
 RT-0.2 is Order 0 and should land immediately because it is already measured,
 does not change evidence meaning, and does not depend on upstream
 consolidation. RT-3.1 and RT-3.2 form the Order 3 installation and readiness
-slice. RT-3.3 now has an admitted source implementation and retains exact
-native release binding as an open obligation; live diagnostic observation and
-SDKs remain later work.
+slice. RT-3.3, RT-3.4, and RT-3.5 now have admitted source implementations and
+retain their explicit review, exact release binding, publication, or external
+dogfood obligations. Live diagnostic observation remains deliberately
+unimplemented because it would expand permissions and the trusted computing
+base.
 Network experiments should start early. Network production code must wait for
 the decision gate.
 
@@ -836,6 +843,20 @@ not describe the command as released.
   receipts non-reusable until the diagnostic observer's security meaning is
   specified and evidenced.
 - Never infer a denial cause solely from an arbitrary child exit code.
+
+**2026-09-11 source checkpoint:** complete on the roadmap branch. The closed
+`RunError` boundary assigns one of 23 phases, 23 invariant rules, an existing
+machine code, and the unchanged exit class at each Runtime-owned failure site.
+The source attack corpus covers capability, resolution, identity drift,
+output-root, launcher protocol, cgroup, receipt construction and publication,
+and result projection. The exact native binary additionally executes five
+deterministic pre-launch failures on both supported architectures and retains
+a closed result inventory proving empty stdout, no child marker, and no new
+receipt. Release observation binds that inventory to the exact `pbr` artifact.
+`PBR-DIAGNOSTIC-011` remains explicit that this is not a kernel-denial
+explanation or live trace. Specification 0009 still requires owner review, and
+the feature is not described as released until both exact mainline release
+contexts pass.
 
 ### RT-3.5 Add SDKs after wire stability
 

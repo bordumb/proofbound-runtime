@@ -149,3 +149,22 @@ Even after implementation, diagnostics retain the assumptions of the
 underlying capability probes, resolution boundary, launcher protocol, cgroup
 lifecycle, and receipt producer. Stable identifiers improve explanation; they
 do not strengthen those underlying claims.
+
+## Implementation checkpoint
+
+As of 2026-09-11, the source implementation is complete on the roadmap branch.
+The production error type closes over all 23 phases and 23 rules, each
+registered diagnostic case asserts its exact exit class and machine code, and
+the CLI emits the bounded one-line form without changing child outcomes or
+receipt meaning. The exact native `pbr` corpus additionally runs five
+deterministic failures before launcher release on both supported
+architectures: occupied receipt target, missing plan input, unavailable host
+capability, occupied output root, and executable-resolution failure. Every
+case asserts empty stdout, the exact diagnostic, no child marker, and no new
+receipt; the resulting closed inventory is retained for release observation.
+
+This checkpoint does not approve this specification. The vocabulary and
+compatibility change remain draft until explicit owner review. It also does
+not describe diagnostics as released: that statement requires both exact
+native release contexts to reproduce and observe the `pbr` artifact at the
+approved mainline release revision.

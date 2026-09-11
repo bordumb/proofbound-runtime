@@ -197,6 +197,14 @@ examples and compatibility details are in
 [`sdk/typescript/README.md`](sdk/typescript/README.md); the Rust API is in the
 `proofbound-runtime-sdk` workspace crate.
 
+Failures owned by `pbr run` use a closed one-line diagnostic with stable phase,
+rule, and existing machine code, for example
+`pbr: phase=output-root rule=output-root-fresh code=output.root.exists`.
+These diagnostics explain where Runtime stopped; they never reinterpret an
+arbitrary child exit or kernel denial, and they do not change receipt meaning.
+The vocabulary remains a reviewed-release gate under
+[Specification 0009](docs/specs/0009_run_denial_diagnostics.md).
+
 For the current Version 2 source, create a deterministic-CBOR plan beside an
 existing statically linked executable. The explicit values below grant one
 process, 256 MiB of cgroup-accounted memory, and no disk-backed swap. Replace

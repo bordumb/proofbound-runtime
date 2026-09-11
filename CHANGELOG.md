@@ -45,6 +45,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Rust, Python, and TypeScript plan SDKs that match the deterministic-CBOR
   Version 2 golden vector, strictly decode non-verifying run results, preserve
   the separate-process boundary, and carry closed reproducible-package checks.
+- Stable phase, invariant-rule, and machine-code diagnostics for every
+  registered Runtime-owned `pbr run` failure, with a two-architecture native
+  pre-launch corpus that proves no child marker and no new receipt.
 
 ### Changed
 
