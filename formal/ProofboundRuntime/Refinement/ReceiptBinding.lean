@@ -79,12 +79,19 @@ theorem construct_and_project_receipt_binding_refines
         (toModelCandidate parts) (toModelReceipt output) := by
   refine ⟨parts, ?_, ?_, ?_⟩
   · rfl
-  · cases parts.resources <;> simp [
-      toModelCandidate,
-      ProofboundRuntime.Binding.Complete,
-      ProofboundRuntime.Binding.requiredFieldsV1,
-      ProofboundRuntime.Binding.requiredFieldsV2
-    ]
+  · cases resources : parts.resources with
+    | none => simp [
+        toModelCandidate,
+        resources,
+        ProofboundRuntime.Binding.Complete,
+        ProofboundRuntime.Binding.requiredFieldsV1
+      ]
+    | some value => simp [
+        toModelCandidate,
+        resources,
+        ProofboundRuntime.Binding.Complete,
+        ProofboundRuntime.Binding.requiredFieldsV2
+      ]
   · rfl
 
 end ProofboundRuntime.Refinement.ReceiptBinding
