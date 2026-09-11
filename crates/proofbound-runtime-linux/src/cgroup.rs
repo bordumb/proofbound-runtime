@@ -235,8 +235,9 @@ fn parse_resource_snapshot(
     let memory = parse_named_counters(
         memory_events,
         ["low", "high", "max", "oom", "oom_kill", "oom_group_kill"],
+        [],
     )?;
-    let swap = parse_named_counters(swap_events, ["max", "fail"])?;
+    let swap = parse_named_counters(swap_events, ["max", "fail"], ["high"])?;
     Ok(ResourceSnapshot {
         memory_peak_bytes: parse_u64_line(memory_peak)?,
         swap_peak_bytes: parse_u64_line(swap_peak)?,
@@ -256,11 +257,13 @@ fn parse_resource_snapshot(
 }
 
 #[cfg(any(test, target_os = "linux"))]
-fn parse_named_counters<const N: usize>(
+fn parse_named_counters<const N: usize, const I: usize>(
     input: &str,
     names: [&str; N],
+    ignored_names: [&str; I],
 ) -> Result<[u64; N], CgroupError> {
     let mut values = [None; N];
+    let mut ignored = [false; I];
     for line in input.lines() {
         let mut fields = line.split_whitespace();
         let name = fields.next().ok_or(CgroupError::ObservationInvalid)?;
@@ -268,14 +271,23 @@ fn parse_named_counters<const N: usize>(
         if fields.next().is_some() {
             return Err(CgroupError::ObservationInvalid);
         }
-        let index = names
+        if let Some(index) = names.iter().position(|required| *required == name) {
+            if values[index].is_some() {
+                return Err(CgroupError::ObservationInvalid);
+            }
+            values[index] = Some(parse_canonical_u64(value)?);
+        } else if let Some(index) = ignored_names
             .iter()
-            .position(|required| *required == name)
-            .ok_or(CgroupError::ObservationInvalid)?;
-        if values[index].is_some() {
+            .position(|ignored| *ignored == name)
+        {
+            if ignored[index] {
+                return Err(CgroupError::ObservationInvalid);
+            }
+            parse_canonical_u64(value)?;
+            ignored[index] = true;
+        } else {
             return Err(CgroupError::ObservationInvalid);
         }
-        values[index] = Some(parse_canonical_u64(value)?);
     }
     if values.iter().any(Option::is_none) {
         return Err(CgroupError::ObservationInvalid);
