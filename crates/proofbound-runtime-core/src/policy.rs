@@ -126,7 +126,40 @@ mod tests {
     use crate::{
         AuthorityPath, AuthorityPlan, EnvironmentName, FileAccess, OutputByteLimit, PathAuthority,
         PathRole, ProcessLimit, WallTimeLimit, normalize_authority,
+        parse_execution_plan_for_execution,
     };
+
+    fn decode_hex(input: &str) -> Vec<u8> {
+        input
+            .trim()
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| {
+                let text = core::str::from_utf8(pair).expect("fixture is ASCII");
+                u8::from_str_radix(text, 16).expect("fixture is hexadecimal")
+            })
+            .collect()
+    }
+
+    #[test]
+    fn version_two_policy_matches_the_registered_cbor_vector() {
+        let plan_bytes = decode_hex(include_str!(
+            "../../../schemas/vectors/v2/execution-plan.cbor.hex"
+        ));
+        let plan = parse_execution_plan_for_execution(&plan_bytes).expect("golden plan is valid");
+        let authority = normalize_authority(plan.authority().clone()).expect("plan normalizes");
+        let policy = compile_policy(authority);
+
+        assert_eq!(policy.model_version(), "proofbound-runtime-linux-policy/2");
+        assert_eq!(policy.cgroup().limits().memory().unwrap().get(), 65_536);
+        assert_eq!(policy.cgroup().limits().swap().unwrap().get(), 0);
+        assert_eq!(
+            policy.canonical_bytes().expect("policy encodes"),
+            decode_hex(include_str!(
+                "../../../schemas/vectors/v2/compiled-policy.cbor.hex"
+            ))
+        );
+    }
 
     #[test]
     fn compilation_preserves_exact_normalized_authority() {
