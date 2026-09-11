@@ -66,6 +66,9 @@ workflow dispatch against one exact 40-character commit creates a network
 namespace, applies an experiment rule, publishes a network result, or runs the
 hosted performance matrix.
 
+Every required lane also renders its validated timing table in the GitHub job
+summary so an actionable regression does not require downloading artifacts.
+
 After downloading one or more `proofbound-runtime-ci-timing-*` artifacts from
 successful and failed required runs, summarize their stage and unit records
 with:
@@ -75,11 +78,11 @@ python3 tools/ci/summarize_timings.py /absolute/path/to/downloaded-artifacts
 ```
 
 The report groups successful durations by runner architecture and the closed
-stage and unit names,
-prints integer median and nearest-rank p95 values, and retains the failure
-count. It rejects malformed, duplicate, substituted-revision, and
-outcome-inconsistent records. This remains operational metadata for evaluating
-RT-0.4; it is not Proofbound evidence or a verification input.
+stage and unit names, prints integer median and nearest-rank p95 values, and
+retains the failure count. It rejects malformed, duplicate,
+substituted-revision, and outcome-inconsistent records. This remains
+operational metadata for evaluating RT-0.4; it is not Proofbound evidence or a
+verification input.
 
 As the implementation grows, add a named script for each distinct evidence
 family. Keep `ci.sh` as an ordered coordinator. Do not hide theorem, bounded,
