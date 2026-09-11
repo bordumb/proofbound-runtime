@@ -12,8 +12,9 @@ mod policy;
 mod receipt;
 
 pub use authority::{
-    AuthorityError, AuthorityPath, AuthorityPlan, EnvironmentName, FileAccess, NetworkMode,
-    OutputByteLimit, PathAuthority, PathRole, ProcessLimit, ResourceLimits, WallTimeLimit,
+    AuthorityError, AuthorityPath, AuthorityPlan, EnvironmentName, FileAccess, MemoryByteLimit,
+    NetworkMode, OutputByteLimit, PathAuthority, PathRole, ProcessLimit, ResourceLimits,
+    SwapByteLimit, WallTimeLimit,
 };
 pub use error::{CoreError, ErrorClass, MachineError};
 pub use identity::{ArtifactIdentity, ArtifactRole, FileMode, IdentityError, Sha256Digest};
