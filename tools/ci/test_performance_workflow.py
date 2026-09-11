@@ -90,7 +90,13 @@ class PerformanceWorkflowTests(unittest.TestCase):
     def test_native_job_runs_the_exact_fresh_execution_protocol(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
-        self.assertIn("name: native execution (${{ matrix.architecture }})", workflow)
+        self.assertIn(
+            "name: native execution (${{ matrix.workload }}, "
+            "${{ matrix.architecture }})",
+            workflow,
+        )
+        self.assertEqual(workflow.count("workload: static"), 2)
+        self.assertEqual(workflow.count("workload: dynamic"), 2)
         self.assertIn(
             "cargo build --release --locked "
             "-p proofbound-runtime-bench -p proofbound-runtime-cli "
@@ -107,11 +113,13 @@ class PerformanceWorkflowTests(unittest.TestCase):
             "--plan",
             "--workload-executable",
             "--expected-output",
+            "--expected-workload",
             "--runs-root",
         ):
             self.assertIn(argument, workflow)
         self.assertIn(
-            "proofbound-runtime-performance-native-${{ matrix.architecture }}-"
+            "proofbound-runtime-performance-native-${{ matrix.workload }}-"
+            "${{ matrix.architecture }}-"
             "${{ env.PBR_PERFORMANCE_REVISION }}",
             workflow,
         )
@@ -125,7 +133,18 @@ class PerformanceWorkflowTests(unittest.TestCase):
         self.assertIn("echo +pids", script)
         self.assertIn('"$result_root/pbr-bench" native', script)
         self.assertIn('--source-commit "$source_commit"', script)
+        self.assertIn('--workload-id "$workload_id"', script)
         self.assertIn('--runner-image "$runner_image"', script)
+
+    def test_native_wrapper_builds_only_the_two_frozen_workloads(self) -> None:
+        script = NATIVE_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn('case "$workload_kind" in', script)
+        self.assertIn('workload_id="hello-static-v1"', script)
+        self.assertIn('workload_id="hello-dynamic-v1"', script)
+        self.assertIn("cc -O2 -static -Wall -Wextra -Werror", script)
+        self.assertIn("cc -O2 -Wall -Wextra -Werror", script)
+        self.assertIn("experiments/performance/discover_runtime_libraries.py", script)
 
 
 if __name__ == "__main__":
