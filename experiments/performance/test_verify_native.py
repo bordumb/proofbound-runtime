@@ -101,6 +101,7 @@ class NativeBenchmarkVerifierTests(unittest.TestCase):
                     "commitment": f"sha256:{receipt_digest}",
                     "execution_id": f"execution-{index:03d}",
                     "outcome": {"code": 0, "kind": "exited"},
+                    "receipt": str(run_root / "receipt.json"),
                     "schema": "proofbound-runtime-run-result/1",
                 }
             )
@@ -229,6 +230,17 @@ class NativeBenchmarkVerifierTests(unittest.TestCase):
         receipt = copy.deepcopy(self.value)
         receipt["measurements"]["runs"][0]["receipt_sha256"] = "b" * 64
         cases.append((receipt, "benchmark.verify.run-artifact-mismatch"))
+        projection = self.root / "runs/000/run-result.json"
+        projection_value = json.loads(projection.read_bytes())
+        del projection_value["receipt"]
+        projection.write_bytes(encode(projection_value))
+        projection_missing_receipt = copy.deepcopy(self.value)
+        projection_missing_receipt["measurements"]["runs"][0]["run_result_sha256"] = digest(
+            projection.read_bytes()
+        )
+        cases.append(
+            (projection_missing_receipt, "benchmark.verify.run-artifact-mismatch")
+        )
         for value, code in cases:
             with self.subTest(code=code), self.assertRaises(VerificationFailure) as caught:
                 self.verify(value)
