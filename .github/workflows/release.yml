@@ -63,7 +63,7 @@ jobs:
         run: test "$(git rev-parse HEAD)" = "$PBR_RELEASE_REVISION"
 
       - name: Install pinned Rust toolchain
-        uses: dtolnay/rust-toolchain@1.94.0
+        uses: dtolnay/rust-toolchain@fef00d40025f7fd8f1ec759cbbb0f577ddfc3133 # 1.94.0
         with:
           components: clippy,rustfmt
 

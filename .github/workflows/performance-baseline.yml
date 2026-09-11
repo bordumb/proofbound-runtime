@@ -40,7 +40,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "$PBR_PERFORMANCE_REVISION"
 
       - name: Install pinned Rust toolchain
-        uses: dtolnay/rust-toolchain@1.94.0
+        uses: dtolnay/rust-toolchain@fef00d40025f7fd8f1ec759cbbb0f577ddfc3133 # 1.94.0
 
       - name: Build the frozen release-profile harness
         run: cargo build --release --locked -p proofbound-runtime-bench --bin pbr-bench
@@ -129,7 +129,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "$PBR_PERFORMANCE_REVISION"
 
       - name: Install pinned Rust toolchain
-        uses: dtolnay/rust-toolchain@1.94.0
+        uses: dtolnay/rust-toolchain@fef00d40025f7fd8f1ec759cbbb0f577ddfc3133 # 1.94.0
 
       - name: Build the native release-profile harness and Runtime
         run: cargo build --release --locked -p proofbound-runtime-bench -p proofbound-runtime-cli -p proofbound-runtime-linux -p proofbound-runtime-verify --bins
