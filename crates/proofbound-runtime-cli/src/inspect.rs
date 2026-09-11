@@ -40,14 +40,21 @@ fn write_inspection(input: &[u8], output: &mut impl io::Write) -> Result<(), Ins
     if input.len() > MAX_RECEIPT_BYTES {
         return Err(InspectError::TooLarge);
     }
-    let mut deserializer = serde_json::Deserializer::from_slice(input);
-    let value = UniqueValue
-        .deserialize(&mut deserializer)
-        .and_then(|value| {
-            deserializer.end()?;
-            Ok(value)
-        })
-        .map_err(|_| InspectError::AmbiguousJson)?;
+    let value = if input.first() == Some(&b'{') {
+        let mut deserializer = serde_json::Deserializer::from_slice(input);
+        UniqueValue
+            .deserialize(&mut deserializer)
+            .and_then(|value| {
+                deserializer.end()?;
+                Ok(value)
+            })
+            .map_err(|_| InspectError::AmbiguousJson)?
+    } else {
+        proofbound_runtime_verify::decode_receipt(input)
+            .map_err(|_| InspectError::AmbiguousJson)?
+            .value()
+            .clone()
+    };
     serde_json::to_writer_pretty(&mut *output, &value).map_err(|_| InspectError::Output)?;
     writeln!(output).map_err(|_| InspectError::Output)
 }
