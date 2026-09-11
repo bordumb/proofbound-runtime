@@ -27,7 +27,7 @@ Verified against the branch head, the four reviews, and the roadmap's own exit c
 ## CBOR wire contract, cross-cutting
 
 - [x] **Anchor the golden vectors independently.** The README credits cbor2 but it is not in the repo. Either add cbor2 as a pinned dev dependency that regenerates and compares, or remove the claim and add a second independent encoder.
-- [ ] **Pin the execution receipt producer to its golden.** `core/src/receipt.rs:814` has no byte-level test; policy, run result, composed receipt, and SDK all do.
+- [x] **Pin the execution receipt producer to its golden.** `core/src/receipt.rs:814` has no byte-level test; policy, run result, composed receipt, and SDK all do.
 - [ ] **Add v2 carrier attacks through the public entry point:** duplicate key, reordered key, trailing bytes, and invalid UTF-8 fed to `verify_receipt`, plus a test that each JSON projection is rejected by `pbr-verify`, `pbr-compose`, and `pbr-accept`.
 - [ ] **Decide what "separate codec" means.** The verifier's decoder is a verbatim copy of the producer's. Either accept that with a divergence-guard test or write the verifier's from the CDDL without reference to the producer. Align `MAX_BYTES`, which is 16 MiB in two decoders and 64 MiB in the composer.
 

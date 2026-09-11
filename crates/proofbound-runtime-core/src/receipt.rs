@@ -1984,6 +1984,7 @@ fn require_tcb_role(
 mod tests {
     use super::*;
     use crate::{FileMode, OutputByteLimit, WallTimeLimit};
+    use sha2::{Digest, Sha256};
 
     fn artifact(role: ArtifactRole, marker: u8) -> ArtifactIdentity {
         ArtifactIdentity::new(
@@ -1992,6 +1993,147 @@ mod tests {
             u64::from(marker),
             FileMode::new(0o640).expect("fixture mode is valid"),
         )
+    }
+
+    fn golden_artifact(role: ArtifactRole, bytes: &[u8], mode: u16) -> ArtifactIdentity {
+        ArtifactIdentity::new(
+            role,
+            Sha256Digest::from_bytes(Sha256::digest(bytes).into()),
+            u64::try_from(bytes.len()).expect("golden artifact size fits u64"),
+            FileMode::new(mode).expect("golden artifact mode is valid"),
+        )
+    }
+
+    fn golden_v2_parts() -> ExecutionReceiptParts {
+        let execution_id = execution_id();
+        let runtime = golden_artifact(ArtifactRole::RuntimeBinary, b"exact-pbr", 0o755);
+        let launcher = golden_artifact(ArtifactRole::LauncherBinary, b"exact-launcher", 0o755);
+        let executable =
+            golden_artifact(ArtifactRole::RuntimeExecutable, b"golden executable", 0o755);
+        let policy = golden_artifact(ArtifactRole::CompiledPolicy, b"golden policy", 0o755);
+        let limits = version_two_limits();
+        ExecutionReceiptParts {
+            execution_id,
+            plan: ReceiptPlan::new_v2(
+                PlanId::new("golden-v2").expect("golden plan id is valid"),
+                golden_artifact(ArtifactRole::ExecutionPlan, b"golden source plan", 0o755),
+                golden_artifact(
+                    ArtifactRole::NormalizedPlan,
+                    b"golden normalized plan",
+                    0o755,
+                ),
+                limits,
+            )
+            .expect("golden plan roles are valid"),
+            policy: ReceiptPolicy::new(policy.clone()).expect("golden policy role is valid"),
+            platform: PlatformIdentity::new(
+                Architecture::X86_64,
+                "6.8.0",
+                4,
+                vec!["deny-network-v1".to_owned()],
+                vec!["memory".to_owned(), "pids".to_owned()],
+            )
+            .expect("golden platform is valid"),
+            runtime: RuntimeIdentity::new(runtime.clone(), launcher.clone())
+                .expect("golden runtime roles are valid"),
+            command: ReceiptCommand::new(
+                executable.clone(),
+                None,
+                golden_artifact(ArtifactRole::WorkingDirectory, b"golden cwd", 0o755),
+                Sha256Digest::from_bytes(Sha256::digest(b"golden arguments").into()),
+            )
+            .expect("golden command roles are valid"),
+            inputs: Vec::new(),
+            environment: Vec::new(),
+            output_root: golden_artifact(ArtifactRole::OutputRoot, b"golden output", 0o700),
+            boundary: BoundaryRecord::new(
+                BoundaryInstallation::Installed,
+                execution_id,
+                policy.digest(),
+                CgroupIdentity::new(34, 12),
+            ),
+            observations: ExecutionObservations::new(100, 200)
+                .expect("golden observations are ordered"),
+            streams: ReceiptStreams::new(
+                golden_artifact(ArtifactRole::StandardOutput, b"golden stdout", 0o600),
+                StreamCapture::Complete,
+                golden_artifact(ArtifactRole::StandardError, b"golden stderr", 0o600),
+                StreamCapture::Complete,
+            )
+            .expect("golden stream roles are valid"),
+            outcome: ExecutionOutcome::Exited { code: 0 },
+            resources: Some(
+                ReceiptResources::new(
+                    limits,
+                    32_768,
+                    0,
+                    ReceiptMemoryEvents::new(0, 0, 0, 0, 0, 0),
+                    ReceiptSwapEvents::new(0, 0),
+                )
+                .expect("golden resources are complete"),
+            ),
+            outputs: Vec::new(),
+            producer: runtime.clone(),
+            assumptions: REQUIRED_RUNTIME_ASSUMPTIONS
+                .into_iter()
+                .map(str::to_owned)
+                .collect(),
+            trusted_computing_base: [
+                (
+                    TrustedComputingBaseRole::HostHardwareFirmware,
+                    "golden-host".to_owned(),
+                ),
+                (
+                    TrustedComputingBaseRole::LinuxKernel,
+                    "golden-linux".to_owned(),
+                ),
+                (
+                    TrustedComputingBaseRole::Landlock,
+                    "golden-landlock".to_owned(),
+                ),
+                (
+                    TrustedComputingBaseRole::Seccomp,
+                    "golden-seccomp".to_owned(),
+                ),
+                (
+                    TrustedComputingBaseRole::CgroupV2,
+                    "golden-cgroup".to_owned(),
+                ),
+                (
+                    TrustedComputingBaseRole::NoNewPrivileges,
+                    "golden-nnp".to_owned(),
+                ),
+                (
+                    TrustedComputingBaseRole::Filesystem,
+                    "golden-filesystem".to_owned(),
+                ),
+                (
+                    TrustedComputingBaseRole::RuntimeBinary,
+                    runtime.digest().to_hex(),
+                ),
+                (
+                    TrustedComputingBaseRole::LauncherBinary,
+                    launcher.digest().to_hex(),
+                ),
+                (
+                    TrustedComputingBaseRole::RustToolchain,
+                    "golden-rust".to_owned(),
+                ),
+                (
+                    TrustedComputingBaseRole::CryptographicDigest,
+                    "sha256".to_owned(),
+                ),
+                (
+                    TrustedComputingBaseRole::RuntimeExecutable,
+                    executable.digest().to_hex(),
+                ),
+            ]
+            .into_iter()
+            .map(|(role, identity)| {
+                TrustedComputingBaseEntry::new(role, identity).expect("golden TCB entry is valid")
+            })
+            .collect(),
+        }
     }
 
     fn execution_id() -> ExecutionId {
@@ -2168,6 +2310,21 @@ mod tests {
             ))
         );
         assert!(fields.iter().any(|(key, _)| key == "resources"));
+    }
+
+    #[test]
+    fn version_two_receipt_producer_matches_the_frozen_golden_bytes() {
+        let receipt = ExecutionReceipt::new(golden_v2_parts()).expect("golden receipt is valid");
+        let expected = include_str!("../../../schemas/vectors/v2/execution-receipt.cbor.hex")
+            .trim()
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| {
+                u8::from_str_radix(core::str::from_utf8(pair).expect("golden hex is UTF-8"), 16)
+                    .expect("golden hex is valid")
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(receipt.canonical_bytes(), Ok(expected));
     }
 
     #[test]

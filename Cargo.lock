@@ -164,6 +164,7 @@ dependencies = [
  "proofbound-runtime-verify",
  "serde",
  "serde_json",
+ "sha2",
  "toml",
 ]
 

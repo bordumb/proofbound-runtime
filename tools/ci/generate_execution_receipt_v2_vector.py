@@ -87,7 +87,7 @@ def receipt() -> dict[str, object]:
             "model_version": "proofbound-runtime-linux-policy/2",
         },
         "producer": runtime,
-        "product_version": "0.1.0",
+        "product_version": "0.2.0",
         "resources": {
             "configured": {
                 "memory.max": 65_536,
