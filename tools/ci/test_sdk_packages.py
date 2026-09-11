@@ -56,6 +56,19 @@ class SdkPackageTests(unittest.TestCase):
             manifest = json.loads((output / "SDK-MANIFEST.json").read_bytes())
             self.assertEqual(manifest["schema"], "proofbound-runtime-sdk-manifest/1")
             self.assertEqual(manifest["version"], "0.2.0")
+            revision = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=ROOT,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            if revision.returncode == 0:
+                self.assertEqual(manifest["source_revision"], revision.stdout.strip())
+            else:
+                self.assertRegex(
+                    manifest["source_revision"], r"^tree-sha256:[0-9a-f]{64}$"
+                )
             self.assertEqual(
                 [artifact["name"] for artifact in manifest["artifacts"]],
                 expected[2:],

@@ -11,6 +11,11 @@ expected_inventory = [
   "typescript-sdk-contract",
 ]
 inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "VERSION",
+  "crates/proofbound-runtime-sdk/Cargo.toml",
+  "crates/proofbound-runtime-sdk/src/lib.rs",
   "docs/specs/0012_plan_sdks.md",
   "schemas/run-result-v2.schema.json",
   "schemas/vectors/v2/execution-plan.cbor.hex",
@@ -28,6 +33,8 @@ inputs = [
   "tools/ci/pre-commit.sh",
   "tools/ci/test_sdk_contract.py",
   "tools/ci/test_sdk_packages.py",
+  "tools/release/build_sdks.py",
+  "tools/sdk/build_npm_package.py",
   "tools/sdk/build_python_wheel.py",
   "tools/sdk/check_cross_language.py",
 ]

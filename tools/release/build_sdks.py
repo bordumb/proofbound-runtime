@@ -16,6 +16,23 @@ import tempfile
 RUST_NAME = "proofbound-runtime-sdk-{version}.crate"
 PYTHON_NAME = "proofbound_runtime_sdk-{version}-py3-none-any.whl"
 NPM_NAME = "proofbound-runtime-sdk-{version}.tgz"
+SDK_SOURCE_FILES = (
+    "Cargo.lock",
+    "Cargo.toml",
+    "VERSION",
+    "crates/proofbound-runtime-sdk/Cargo.toml",
+    "crates/proofbound-runtime-sdk/src/lib.rs",
+    "sdk/python/README.md",
+    "sdk/python/proofbound_runtime/__init__.py",
+    "sdk/python/pyproject.toml",
+    "sdk/typescript/README.md",
+    "sdk/typescript/package.json",
+    "sdk/typescript/src/index.d.ts",
+    "sdk/typescript/src/index.ts",
+    "tools/release/build_sdks.py",
+    "tools/sdk/build_npm_package.py",
+    "tools/sdk/build_python_wheel.py",
+)
 
 
 def run(arguments: list[str], *, cwd: Path) -> None:
@@ -86,6 +103,31 @@ def write_exclusive(path: Path, data: bytes, mode: int = 0o644) -> None:
         destination.write(data)
 
 
+def source_revision(repository: Path) -> str:
+    revision = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repository,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if revision.returncode == 0:
+        value = revision.stdout.strip()
+        if len(value) != 40 or any(character not in "0123456789abcdef" for character in value):
+            raise ValueError(f"invalid Git source revision: {value!r}")
+        return value
+
+    digest = hashlib.sha256(b"proofbound-runtime-sdk-source-tree/1\0")
+    for relative_name in SDK_SOURCE_FILES:
+        relative = relative_name.encode("utf-8")
+        content = (repository / relative_name).read_bytes()
+        digest.update(len(relative).to_bytes(8, "big"))
+        digest.update(relative)
+        digest.update(len(content).to_bytes(8, "big"))
+        digest.update(content)
+    return f"tree-sha256:{digest.hexdigest()}"
+
+
 def build(repository: Path, output: Path) -> None:
     version = (repository / "VERSION").read_text(encoding="ascii").strip()
     output.mkdir(parents=True, exist_ok=True)
@@ -108,17 +150,10 @@ def build(repository: Path, output: Path) -> None:
         write_exclusive(output / name, data)
         artifacts.append({"name": name, "sha256": digest, "size": len(data)})
         sums.append(f"{digest}  {name}\n")
-    revision = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=repository,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
     manifest = {
         "artifacts": artifacts,
         "schema": "proofbound-runtime-sdk-manifest/1",
-        "source_revision": revision,
+        "source_revision": source_revision(repository),
         "version": version,
     }
     write_exclusive(
