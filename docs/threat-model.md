@@ -236,6 +236,15 @@ The supervisor classifies `SIGSYS` as a denied outcome. It does not infer a
 denial from a child exit code. A child that observes and handles `EACCES` or
 `EPERM` retains its actual exit or signal outcome in the receipt.
 
+Versions 1 and 2 do not limit CPU bandwidth, aggregate consumed CPU time, or
+output-root storage capacity. Wall time remains distinct from CPU consumption,
+and post-run output inventory cannot prevent block or inode exhaustion during
+execution. ADR 0006 freezes a possible later `cpu.max` bandwidth profile; ADR
+0007 requires a host-managed project-quota boundary before any adversarial
+output-capacity claim. Until those separately versioned profiles exist, a
+malicious child can consume CPU within its wall-time window and storage within
+the host-provided write root.
+
 ## Required attack corpus
 
 Before a platform profile can be described as supported, native Linux evidence

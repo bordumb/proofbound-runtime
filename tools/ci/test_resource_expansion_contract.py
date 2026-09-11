@@ -14,7 +14,7 @@ class ResourceExpansionContractTests(unittest.TestCase):
         self.assertIn("**Status:** accepted", decision)
         self.assertIn("`cpu.max`", decision)
         self.assertIn("fixed 100,000 microsecond period", decision)
-        self.assertIn("not a total CPU-time budget", decision)
+        self.assertRegex(decision, r"not a total CPU-time\s+budget")
         self.assertIn("Version 3", decision)
         for case in (
             "single busy loop",

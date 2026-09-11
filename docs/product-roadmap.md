@@ -1021,6 +1021,14 @@ exactly what the mechanism enforced—no more.
 - Version plans and receipts, require the `cpu` controller where applicable,
   and add busy-loop, multi-process, timeout-interaction, and counter-race cases.
 
+**Decision complete (2026-09-11):** [ADR 0006](adr/0006-cpu-bandwidth-boundary.md)
+keeps Version 2 unchanged and rejects a total-CPU-time claim. No adopted
+workload currently justifies another wire and assurance transition. If that
+evidence appears, Version 3 will use `cpu.max` only as bandwidth with a fixed
+100 ms period, exact readback, terminal `cpu.stat` observations, and the frozen
+two-architecture corpus. Aggregate usage may be observed but is not a hard
+budget. This closes the roadmap decision without inventing an unused feature.
+
 ### RT-6.2 Output-root capacity
 
 - Treat disk capacity as a separate architecture problem. `io.max` throttles
@@ -1032,6 +1040,15 @@ exactly what the mechanism enforced—no more.
   mounts.
 - Do not rely only on post-run inventory: a hostile child can exhaust the host
   before post-run validation.
+
+**Decision complete (2026-09-11):**
+[ADR 0007](adr/0007-output-capacity-boundary.md) rejects `io.max`, post-run
+inventory, and `RLIMIT_FSIZE` as capacity enforcement and selects a fresh XFS
+project-quota root prepared by a privileged host storage manager for any
+future adversarial capacity profile. The contract covers allocated blocks and
+inodes and explicitly treats sparse files, deleted-open files, mapped writes,
+metadata, and nested mounts. Version 2 remains honest about having no output-
+capacity claim; production work waits for a reviewed manager/TCB claim wave.
 
 ### RT-6.3 Performance — complete
 
