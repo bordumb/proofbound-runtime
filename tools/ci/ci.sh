@@ -41,6 +41,7 @@ if selected "preflight"; then
 
   printf '%s\n' '[3/9] documentation and feedback records'
   timed_unit documentation python3 tools/ci/documentation.py
+  timed_unit documentation-tests python3 -m unittest tools.ci.test_documentation
 
   printf '%s\n' '[4/9] closed release observation inputs and installer'
   timed_unit observation-inputs python3 tools/release/observation_inputs.py --check

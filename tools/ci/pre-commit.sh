@@ -7,6 +7,7 @@ cd "$repo_root"
 python3 tools/ci/version.py --check
 python3 tools/ci/changelog.py --staged
 python3 tools/ci/documentation.py
+python3 -m unittest tools.ci.test_documentation
 python3 tools/release/observation_inputs.py --check
 python3 -m unittest tools.ci.test_install_release
 python3 -m unittest tools.ci.test_build_example

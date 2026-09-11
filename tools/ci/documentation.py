@@ -13,6 +13,7 @@ TEXT_SUFFIXES = {".json", ".md", ".py", ".rs", ".sh", ".toml", ".yaml", ".yml"}
 SKIPPED_PARTS = {".git", ".lake", ".proofbound", "dist", "target"}
 LOCAL_LINK = re.compile(r"\[[^]]*]\(([^)]+)\)")
 FEEDBACK_FILE = re.compile(r"pbf-([0-9]{4})-[a-z0-9]+(?:-[a-z0-9]+)*\.md")
+ASSURANCE_ROW = re.compile(r"^\| `(?P<claim>PBR-[A-Z]+-[0-9]{3})` \|", re.MULTILINE)
 
 
 def text_files(root: Path) -> list[Path]:
@@ -86,6 +87,28 @@ def refinement_inventory_errors(root: Path) -> list[str]:
     return errors
 
 
+def assurance_summary_errors(root: Path) -> list[str]:
+    """Return errors when the assurance summary and claim inventory diverge."""
+
+    claims = {path.stem for path in (root / "claims").glob("PBR-*.toml")}
+    summary = (root / "docs" / "assurance-plan.md").read_text(encoding="utf-8")
+    rows = ASSURANCE_ROW.findall(summary)
+    row_set = set(rows)
+    errors = [
+        f"docs/assurance-plan.md: assurance summary omits claim {claim}"
+        for claim in sorted(claims - row_set)
+    ]
+    errors.extend(
+        f"docs/assurance-plan.md: assurance summary names unknown claim {claim}"
+        for claim in sorted(row_set - claims)
+    )
+    errors.extend(
+        f"docs/assurance-plan.md: assurance summary repeats claim {claim}"
+        for claim in sorted({claim for claim in rows if rows.count(claim) > 1})
+    )
+    return errors
+
+
 def validate(root: Path) -> list[str]:
     """Return all detected documentation errors."""
 
@@ -110,6 +133,7 @@ def validate(root: Path) -> list[str]:
             errors.extend(local_link_errors(path, text))
     errors.extend(feedback_errors(root))
     errors.extend(refinement_inventory_errors(root))
+    errors.extend(assurance_summary_errors(root))
     return errors
 
 

@@ -1,7 +1,7 @@
 # Assurance plan
 
 This document records the completed evidence path for each load-bearing version
-0.1 claim. Claim manifests remain the source of truth for current admitted
+0.2 claim. Claim manifests remain the source of truth for current admitted
 status, assumptions, exclusions, and exact evidence identities.
 
 ## Assurance summary
@@ -17,7 +17,11 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-RUN-007` | Tested/model-only with exact native artifact observation | Each native release executes the exact `pbr` bundle role end to end without turning that observation into a theorem. |
 | `PBR-COMPOSE-008` | Tested/model-only with exact native artifact observation | Each exact native composer joins verified receipts without upgrading any inherited facet. |
 | `PBR-PREFLIGHT-009` | Tested/model-only on the development branch | The point-in-time preflight projection and registered failure surface are tested; exact native release observation remains an explicit obligation. |
+| `PBR-RESOURCE-010` | Tested/model-only pending exact 0.2 release observation | The version 2 memory and swap controls, observations, and attack corpus are tested without claiming theorem-derived kernel or artifact soundness. |
 | `PBR-DIAGNOSTIC-011` | Tested/model-only on the development branch | The closed run phase and rule mapping is tested without inferring a kernel denial or changing receipt meaning. |
+| `PBR-ACCEPT-012` | Tested/model-only on the development branch | Adopter policy decisions bind independently verified inputs; exact released acceptor observation and external Action dogfood remain open. |
+| `PBR-SCAFFOLD-013` | Tested/model-only on the development branch | Static ELF scaffolding is bounded diagnostic evidence, not a safe policy or a complete dynamic-load inventory. |
+| `PBR-SDK-014` | Tier 1, independently checked source and package contract | Rust, Python, and TypeScript SDKs preserve the separate-process boundary; registry publication and consumer dogfood remain open. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
