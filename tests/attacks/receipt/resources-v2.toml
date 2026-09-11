@@ -3,67 +3,84 @@ schema = "proofbound-runtime-receipt-resource-attacks/2"
 [[cases]]
 id = "configured-processes"
 path = "/resources/configured/pids.max"
+expected_error = "receipt.commitment.mismatch"
 
 [[cases]]
 id = "configured-memory"
 path = "/resources/configured/memory.max"
+expected_error = "receipt.commitment.mismatch"
 
 [[cases]]
 id = "configured-swap"
 path = "/resources/configured/memory.swap.max"
+expected_error = "receipt.commitment.mismatch"
 
 [[cases]]
 id = "configured-oom-group"
 path = "/resources/configured/memory.oom.group"
+expected_error = "receipt.schema.invalid"
 
 [[cases]]
 id = "terminal-memory-peak"
 path = "/resources/terminal/memory_peak_bytes"
+expected_error = "receipt.commitment.mismatch"
 
 [[cases]]
 id = "terminal-swap-peak"
 path = "/resources/terminal/swap_peak_bytes"
+expected_error = "receipt.commitment.mismatch"
 
 [[cases]]
 id = "terminal-memory-low"
 path = "/resources/terminal/memory_events/low"
+expected_error = "receipt.commitment.mismatch"
 
 [[cases]]
 id = "terminal-memory-high"
 path = "/resources/terminal/memory_events/high"
+expected_error = "receipt.commitment.mismatch"
 
 [[cases]]
 id = "terminal-memory-max"
 path = "/resources/terminal/memory_events/max"
+expected_error = "receipt.commitment.mismatch"
 
 [[cases]]
 id = "terminal-memory-oom"
 path = "/resources/terminal/memory_events/oom"
+expected_error = "receipt.commitment.mismatch"
 
 [[cases]]
 id = "terminal-memory-oom-kill"
 path = "/resources/terminal/memory_events/oom_kill"
+expected_error = "receipt.commitment.mismatch"
 
 [[cases]]
 id = "terminal-memory-oom-group-kill"
 path = "/resources/terminal/memory_events/oom_group_kill"
+expected_error = "receipt.commitment.mismatch"
 
 [[cases]]
 id = "terminal-swap-max"
 path = "/resources/terminal/swap_events/max"
+expected_error = "receipt.commitment.mismatch"
 
 [[cases]]
 id = "terminal-swap-fail"
 path = "/resources/terminal/swap_events/fail"
+expected_error = "receipt.commitment.mismatch"
 
 [[cases]]
 id = "derived-limit-events"
 path = "/resources/limit_events"
+expected_error = "receipt.commitment.mismatch"
 
 [[cases]]
 id = "derived-outcome"
 path = "/outcome"
+expected_error = "receipt.commitment.mismatch"
 
 [[cases]]
 id = "derived-nonreuse-reason"
 path = "/eligibility/reasons"
+expected_error = "receipt.schema.invalid"

@@ -3,6 +3,7 @@
 use serde::Deserialize;
 use serde_json::Value;
 
+use crate::cbor::Value as Cbor;
 use crate::test_support::{bytes, receipt};
 use crate::{ReceiptCommitment, verify_receipt};
 
@@ -34,6 +35,7 @@ struct ResourceAttackCatalog {
 struct ResourceAttackCase {
     id: String,
     path: String,
+    expected_error: String,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
@@ -88,6 +90,25 @@ fn frozen_v2_resource_attack_catalog_is_closed() {
     for (case, expected_id) in catalog.cases.iter().zip(expected) {
         assert_eq!(case.id, expected_id);
         assert!(!case.path.is_empty());
+        assert!(!case.expected_error.is_empty());
+    }
+}
+
+#[test]
+fn verifier_rejects_every_v2_resource_mutation() {
+    let original = v2_golden_bytes();
+    verify_receipt(&original, ReceiptCommitment::for_bytes(&original))
+        .expect("the independently decoded version 2 golden verifies");
+    let original_commitment = ReceiptCommitment::for_bytes(&original);
+
+    for case in resource_catalog().cases {
+        let mut value = crate::cbor::decode(&original).expect("golden CBOR decodes");
+        mutate_cbor_path(&mut value, &case.path);
+        let mutated = encode_cbor(&value);
+        assert_ne!(mutated, original, "attack {} must alter bytes", case.id);
+        let error = verify_receipt(&mutated, original_commitment)
+            .expect_err("every committed resource mutation must fail");
+        assert_eq!(error.code(), case.expected_error, "attack {}", case.id);
     }
 }
 
@@ -238,4 +259,130 @@ fn reorder_schema_first(original: &[u8]) -> Vec<u8> {
     let schema = "\"schema\":\"proofbound-runtime-receipt/1\"";
     let without_schema = canonical.replacen(&format!(",{schema}"), "", 1);
     format!("{{{schema},{}", &without_schema[1..]).into_bytes()
+}
+
+fn v2_golden_bytes() -> Vec<u8> {
+    let encoded = include_str!("../../../schemas/vectors/v2/execution-receipt.cbor.hex");
+    let digits = encoded
+        .bytes()
+        .filter(|byte| byte.is_ascii_hexdigit())
+        .collect::<Vec<_>>();
+    assert_eq!(digits.len() % 2, 0, "golden hex must contain byte pairs");
+    digits
+        .chunks_exact(2)
+        .map(|pair| {
+            let text = core::str::from_utf8(pair).expect("hex digits are UTF-8");
+            u8::from_str_radix(text, 16).expect("golden contains hexadecimal digits")
+        })
+        .collect()
+}
+
+fn mutate_cbor_path(value: &mut Cbor, path: &str) {
+    let mut components = path
+        .strip_prefix('/')
+        .expect("registered path begins with slash")
+        .split('/');
+    mutate_cbor_components(value, &mut components, path, path);
+}
+
+fn mutate_cbor_components<'a>(
+    value: &mut Cbor,
+    components: &mut impl Iterator<Item = &'a str>,
+    path: &str,
+    full_path: &str,
+) {
+    let Some(component) = components.next() else {
+        if matches!(
+            full_path,
+            "/resources/configured/memory.max" | "/resources/configured/memory.swap.max"
+        ) {
+            let Cbor::Unsigned(number) = value else {
+                panic!("registered byte limit is not unsigned");
+            };
+            *number = number.checked_add(65_536).expect("golden limit increments");
+        } else {
+            mutate_cbor_value(value);
+        }
+        return;
+    };
+    let Cbor::Map(fields) = value else {
+        panic!("registered path {path} traverses a non-map value");
+    };
+    let field = fields
+        .iter_mut()
+        .find(|(name, _)| name == component)
+        .unwrap_or_else(|| panic!("registered path {path} names a missing field"));
+    mutate_cbor_components(&mut field.1, components, path, full_path);
+}
+
+fn mutate_cbor_value(value: &mut Cbor) {
+    match value {
+        Cbor::Unsigned(number) => *number = number.checked_add(1).expect("golden value increments"),
+        Cbor::Negative(number) => *number = number.checked_add(1).expect("golden value increments"),
+        Cbor::Bytes(bytes) => bytes.push(0),
+        Cbor::Text(text) => text.push_str("-mutated"),
+        Cbor::Array(values) => values.push(Cbor::Text("memory-max".to_owned())),
+        Cbor::Map(fields) => mutate_cbor_value(
+            &mut fields
+                .first_mut()
+                .expect("registered map mutation is nonempty")
+                .1,
+        ),
+        Cbor::Bool(value) => *value = !*value,
+        Cbor::Null => *value = Cbor::Bool(false),
+    }
+}
+
+fn encode_cbor(value: &Cbor) -> Vec<u8> {
+    let mut output = Vec::new();
+    encode_cbor_item(value, &mut output);
+    output
+}
+
+fn encode_cbor_item(value: &Cbor, output: &mut Vec<u8>) {
+    match value {
+        Cbor::Unsigned(value) => encode_cbor_argument(0, *value, output),
+        Cbor::Negative(value) => encode_cbor_argument(1, *value, output),
+        Cbor::Bytes(value) => {
+            encode_cbor_argument(2, value.len() as u64, output);
+            output.extend_from_slice(value);
+        }
+        Cbor::Text(value) => {
+            encode_cbor_argument(3, value.len() as u64, output);
+            output.extend_from_slice(value.as_bytes());
+        }
+        Cbor::Array(values) => {
+            encode_cbor_argument(4, values.len() as u64, output);
+            for value in values {
+                encode_cbor_item(value, output);
+            }
+        }
+        Cbor::Map(fields) => {
+            encode_cbor_argument(5, fields.len() as u64, output);
+            for (name, value) in fields {
+                encode_cbor_item(&Cbor::Text(name.clone()), output);
+                encode_cbor_item(value, output);
+            }
+        }
+        Cbor::Bool(false) => output.push(0xf4),
+        Cbor::Bool(true) => output.push(0xf5),
+        Cbor::Null => output.push(0xf6),
+    }
+}
+
+fn encode_cbor_argument(major: u8, value: u64, output: &mut Vec<u8>) {
+    if value < 24 {
+        output.push((major << 5) | value as u8);
+    } else if let Ok(value) = u8::try_from(value) {
+        output.extend_from_slice(&[(major << 5) | 24, value]);
+    } else if let Ok(value) = u16::try_from(value) {
+        output.push((major << 5) | 25);
+        output.extend_from_slice(&value.to_be_bytes());
+    } else if let Ok(value) = u32::try_from(value) {
+        output.push((major << 5) | 26);
+        output.extend_from_slice(&value.to_be_bytes());
+    } else {
+        output.push((major << 5) | 27);
+        output.extend_from_slice(&value.to_be_bytes());
+    }
 }
