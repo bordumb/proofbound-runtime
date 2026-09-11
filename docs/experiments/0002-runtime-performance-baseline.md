@@ -48,9 +48,16 @@ and validates the final result after each measured series.
 
 ### Native execution phases
 
-The native harness uses the maintained static example and the existing
-supported-host recipe. It records these phases without changing their order or
-meaning:
+The native harness uses the maintained hello example in two frozen forms and
+the existing supported-host recipe. The static workload is compiled with
+`cc -O2 -static -Wall -Wextra -Werror`; the dynamic workload is compiled with
+`cc -O2 -Wall -Wextra -Werror`. The harness rejects a static artifact in the
+dynamic series and a dynamic artifact in the static series. For the dynamic
+plan, every absolute shared-library dependency reported by the host linker
+inspection is canonicalized, deduplicated, sorted, and admitted as an exact
+`runtime_read` file. The ELF interpreter remains part of Runtime's independently
+discovered executable closure. Both workloads record these phases without
+changing their order or meaning:
 
 - strict plan validation and normalization;
 - capability and rooted-path preflight;
@@ -75,11 +82,12 @@ timings are returned only to the benchmark harness: they do not enter an
 execution receipt, run-result projection, launcher message, policy identity,
 or any assurance input.
 
-The first workload exits successfully after writing the fixed maintained
-example output. A second repeated-invocation series runs the same exact plan
-and executable 100 times through separate fresh executions. No daemon, shared
-execution boundary, reused receipt, or reused cgroup is introduced by the
-measurement.
+Both workloads exit successfully after writing the fixed maintained example
+output. Each repeated-invocation series runs its same exact plan and executable
+100 times through separate fresh executions after 10 untimed warm-ups. The
+operational workload identities are exactly `hello-static-v1` and
+`hello-dynamic-v1`. No daemon, shared execution boundary, reused receipt, or
+reused cgroup is introduced by either measurement.
 
 ## Measurement protocol
 
@@ -91,9 +99,10 @@ the recorded value is elapsed nanoseconds divided by the batch count. The
 calibrated batch count is retained with the result.
 
 Native observations use 10 warm-up executions followed by 100 measured
-executions per supported architecture. Each phase uses monotonic elapsed time.
-Process-level maximum resident set size is recorded when the host exposes it;
-absence is explicit rather than represented as zero.
+executions for each of the static and dynamic workloads on each supported
+architecture. Each phase uses monotonic elapsed time. Process-level maximum
+resident set size is recorded when the host exposes it; absence is explicit
+rather than represented as zero.
 
 For every series the result retains:
 
@@ -150,11 +159,11 @@ continues to block version 2 CDDL, golden vectors, and both codecs.
 
 ## Hosted matrix and retention
 
-The pure harness runs once on x86_64 and once on aarch64 Linux. Native phase
-measurements run on the same two supported architectures through an explicitly
-dispatched workflow at one exact source commit. All four result directories
-are retained and downloaded for independent verification before this record is
-marked complete.
+The pure harness runs once on x86_64 and once on aarch64 Linux. Static and
+dynamic native phase measurements run on the same two supported architectures
+through an explicitly dispatched workflow at one exact source commit. All six
+result directories are retained and downloaded for independent verification
+before this record is marked complete.
 
 Hosted scheduling delay, tool installation, compilation, and assurance-gate
 duration remain separate CI timing metadata. They are not folded into Runtime
