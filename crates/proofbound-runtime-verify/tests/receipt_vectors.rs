@@ -2,11 +2,30 @@ use std::{fs, num::NonZeroU32, path::Path};
 
 use proofbound_runtime_verify::{
     BoundaryState, CaptureState, EligibilityDecision, EligibilityInput, FailureReason,
-    OutcomeState, StructureState, derive_eligibility,
+    OutcomeState, ReceiptCommitment, StructureState, derive_eligibility, verify_receipt,
 };
 use serde_json::{Value, json};
 
 const SCHEMA: &str = "proofbound-runtime-receipt-eligibility-vectors/1";
+
+#[test]
+fn version_two_wire_golden_is_a_semantically_valid_reusable_receipt() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let text = fs::read_to_string(root.join("schemas/vectors/v2/execution-receipt.cbor.hex"))
+        .expect("v2 receipt golden reads");
+    let bytes = text
+        .trim()
+        .as_bytes()
+        .chunks_exact(2)
+        .map(|pair| {
+            u8::from_str_radix(core::str::from_utf8(pair).expect("hex pair"), 16)
+                .expect("golden is hex")
+        })
+        .collect::<Vec<_>>();
+
+    verify_receipt(&bytes, ReceiptCommitment::for_bytes(&bytes))
+        .expect("v2 receipt golden verifies independently");
+}
 
 #[test]
 fn independent_verifier_accepts_registered_receipt_eligibility_vectors() {
