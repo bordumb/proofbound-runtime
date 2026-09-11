@@ -239,7 +239,7 @@ class RequiredWorkflowTests(unittest.TestCase):
             with self.subTest(workflow=workflow_name, action=action):
                 self.assertRegex(action, r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}$")
         rust_action = RUST_TOOLCHAIN_ACTION.split()[0]
-        self.assertEqual(sum(action == rust_action for _, action in observed), 6)
+        self.assertEqual(sum(action == rust_action for _, action in observed), 7)
 
     def test_triggers_and_cancellation_remain_closed(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")

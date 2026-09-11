@@ -37,6 +37,38 @@ jobs:
       - name: Require prepared version and changelog state
         run: python3 tools/release/validate_release_state.py
 
+  sdk-release:
+    name: Reproduce SDK release packages
+    needs: validate-revision
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out the exact requested head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.PBR_RELEASE_REVISION }}
+          fetch-depth: 0
+
+      - name: Confirm the exact requested head
+        run: test "$(git rev-parse HEAD)" = "$PBR_RELEASE_REVISION"
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@fef00d40025f7fd8f1ec759cbbb0f577ddfc3133 # 1.94.0
+
+      - name: Build and byte-compare all SDK packages
+        run: python3 tools/release/build_sdks.py --output dist/sdk
+
+      - name: Verify the SDK package checksums
+        working-directory: dist/sdk
+        run: sha256sum --check SHA256SUMS
+
+      - name: Upload the reproduced SDK packages
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: proofbound-runtime-sdk-packages-${{ env.PBR_RELEASE_REVISION }}
+          path: dist/sdk/
+          if-no-files-found: error
+
   release:
     name: Reproduce and seal release (${{ matrix.architecture }})
     needs: validate-revision
