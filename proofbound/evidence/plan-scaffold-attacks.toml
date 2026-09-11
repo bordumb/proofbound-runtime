@@ -24,6 +24,7 @@ inputs = [
   "crates/proofbound-runtime-cli/src/main.rs",
   "crates/proofbound-runtime-cli/src/scaffold.rs",
   "docs/specs/0011_plan_scaffold.md",
+  "schemas/plan-scaffold-v1.schema.json",
   "tests/attacks/scaffold/v1.toml",
 ]
 outputs = []

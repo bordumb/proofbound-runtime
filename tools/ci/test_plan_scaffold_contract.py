@@ -2,6 +2,7 @@
 """Freeze the review and non-policy boundary for RT-3.3."""
 
 from pathlib import Path
+import json
 import unittest
 
 
@@ -38,6 +39,18 @@ class PlanScaffoldContractTests(unittest.TestCase):
         self.assertIn('subcommand == "scaffold"', main)
         self.assertIn('OsStr::new("--executable")', main)
         self.assertIn('OsStr::new("--host-profile")', main)
+
+    def test_json_projection_schema_is_closed_and_cannot_be_a_policy(self) -> None:
+        schema = json.loads((ROOT / "schemas/plan-scaffold-v1.schema.json").read_text())
+        self.assertFalse(schema["additionalProperties"])
+        self.assertEqual(schema["properties"]["safe_policy"], {"const": False})
+        self.assertEqual(
+            schema["properties"]["schema"],
+            {"const": "proofbound-runtime-plan-scaffold/1"},
+        )
+        for definition in schema["$defs"].values():
+            if definition.get("type") == "object":
+                self.assertFalse(definition["additionalProperties"])
 
 
 if __name__ == "__main__":

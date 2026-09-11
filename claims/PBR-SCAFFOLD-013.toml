@@ -31,6 +31,7 @@ source_roots = [
   "crates/proofbound-runtime-cli/src/scaffold.rs",
   "docs/specs/0011_plan_scaffold.md",
   "proofbound/evidence/plan-scaffold-attacks.toml",
+  "schemas/plan-scaffold-v1.schema.json",
   "tests/attacks/scaffold/v1.toml",
   "tools/ci/test_plan_scaffold_contract.py",
 ]

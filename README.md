@@ -171,6 +171,22 @@ Version 2 profile. Confirm all required mechanisms before running a workload:
 target/release/pbr doctor --cgroup-root /path/to/delegated/cgroup
 ```
 
+For a dynamic Linux ELF, inventory its interpreter and transitive static
+library closure before authoring the plan:
+
+```console
+target/release/pbr plan scaffold \
+  --executable /absolute/path/to/tool \
+  --host-profile linux-glibc-x86-64-v1 >plan-scaffold.json
+```
+
+The scaffold is deliberately JSON with `safe_policy: false`. It is a review
+aid, not a plan: Runtime will not execute or verify it. Review every recorded
+conflict and open item, then explicitly choose write roots, inherited
+environment names, limits, and network mode when constructing the real plan.
+See [Specification 0011](docs/specs/0011_plan_scaffold.md) for its bounded
+static-discovery meaning.
+
 For the current Version 2 source, create a deterministic-CBOR plan beside an
 existing statically linked executable. The explicit values below grant one
 process, 256 MiB of cgroup-accounted memory, and no disk-backed swap. Replace

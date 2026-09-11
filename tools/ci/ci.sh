@@ -52,6 +52,7 @@ if selected "preflight"; then
   timed_unit release-workflow-tests python3 -m unittest tools.ci.test_release_workflow
   timed_unit acceptance-action-tests python3 -m unittest tools.ci.test_acceptance_action
   timed_unit acceptance-policy-compiler-tests python3 -m unittest tools.ci.test_acceptance_policy_compiler
+  timed_unit plan-scaffold-contract-tests python3 -m unittest tools.ci.test_plan_scaffold_contract
   timed_unit release-state-tests python3 -m unittest tools.release.test_validate_release_state
   timed_unit timing-tests python3 -m unittest tools.ci.test_timing
   timed_unit timing-summary-tests python3 -m unittest tools.ci.test_summarize_timings

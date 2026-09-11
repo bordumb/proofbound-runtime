@@ -34,6 +34,14 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   with stable missing requirements and non-mutating remediation.
 - A complete two-architecture native memory workload and attack catalog,
   retained native context, and a measured Runtime performance baseline.
+- A deterministic-CBOR adopter acceptance policy and decision format,
+  independently reverified `pbr-accept` CLI, closed acceptance attack corpus,
+  reproducible standalone acceptor artifact, and pinned first-party GitHub
+  Action with opt-in exact-artifact retention.
+- A read-only `pbr plan scaffold` command that inventories bounded static ELF
+  interpreter and transitive dependency metadata under explicit glibc or musl
+  host profiles, records resolution provenance, and emits only an explicitly
+  unsafe JSON review aid with all human policy choices left open.
 
 ### Changed
 
