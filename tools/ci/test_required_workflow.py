@@ -103,11 +103,22 @@ class RequiredWorkflowTests(unittest.TestCase):
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
         self.assertEqual(workflow.count("actions/upload-artifact@"), 4)
-        self.assertEqual(workflow.count("if: ${{ always() }}"), 5)
+        self.assertEqual(workflow.count("if: ${{ always() }}"), 9)
         self.assertEqual(workflow.count("proofbound-runtime-ci-timing-"), 4)
         self.assertNotIn(".proofbound", "\n".join(
             line for line in workflow.splitlines() if "timing" in line.lower()
         ))
+
+    def test_each_lane_publishes_its_validated_timing_summary(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        for lane in ("preflight", "Rust", "formal", "native"):
+            self.assertEqual(workflow.count(f"name: Publish {lane} timing summary"), 1)
+        self.assertEqual(
+            workflow.count("python3 tools/ci/summarize_timings.py"),
+            4,
+        )
+        self.assertEqual(workflow.count('>> "$GITHUB_STEP_SUMMARY"'), 12)
 
     def test_each_lane_checks_out_and_confirms_the_exact_pr_head(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
