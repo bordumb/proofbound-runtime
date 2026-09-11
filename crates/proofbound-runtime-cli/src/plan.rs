@@ -116,6 +116,32 @@ const fn network_name(network: NetworkMode) -> &'static str {
 mod tests {
     use super::*;
 
+    fn decode_hex(input: &str) -> Vec<u8> {
+        input
+            .trim()
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| {
+                let text = core::str::from_utf8(pair).expect("fixture is ASCII");
+                u8::from_str_radix(text, 16).expect("fixture is hexadecimal")
+            })
+            .collect()
+    }
+
+    #[test]
+    fn version_two_check_projects_decoded_cbor_without_reusing_json_as_input() {
+        let input = decode_hex(include_str!(
+            "../../../schemas/vectors/v2/execution-plan.cbor.hex"
+        ));
+        let mut output = Vec::new();
+        write_check_bytes(&input, &mut output).expect("valid v2 plan checks");
+        let report: Value = serde_json::from_slice(&output).expect("report is JSON");
+
+        assert_eq!(report["schema"], "proofbound-runtime-plan-check/2");
+        assert_eq!(report["authority"]["limits"]["memory_bytes"], "65536");
+        assert_eq!(report["authority"]["limits"]["swap_bytes"], "0");
+    }
+
     #[test]
     fn check_explains_the_canonical_normalized_plan() {
         let mut output = Vec::new();
