@@ -195,6 +195,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "proofbound-runtime-sdk"
+version = "0.2.0"
+dependencies = [
+ "proofbound-runtime-core",
+ "serde_json",
+]
+
+[[package]]
 name = "proofbound-runtime-verify"
 version = "0.2.0"
 dependencies = [

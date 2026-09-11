@@ -1,0 +1,13 @@
+[package]
+name = "proofbound-runtime-sdk"
+description = "Validated plan construction and run-result decoding for Proofbound Runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+proofbound-runtime-core.workspace = true
+serde_json.workspace = true
