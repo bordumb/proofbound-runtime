@@ -11,30 +11,57 @@ def toModelBytes (bytes : alloc.vec.Vec U8) :
 
 def toModelCandidate
     (parts : proofbound_runtime_binding.ReceiptBindingParts) :
-    ProofboundRuntime.Binding.Candidate := {
-  bindings := [
-    (.assumptions, toModelBytes parts.assumptions),
-    (.boundary, toModelBytes parts.boundary),
-    (.command, toModelBytes parts.command),
-    (.eligibility, toModelBytes parts.eligibility),
-    (.environment, toModelBytes parts.environment),
-    (.executionId, toModelBytes parts.execution_id),
-    (.inputs, toModelBytes parts.inputs),
-    (.observations, toModelBytes parts.observations),
-    (.outcome, toModelBytes parts.outcome),
-    (.outputRoot, toModelBytes parts.output_root),
-    (.outputs, toModelBytes parts.outputs),
-    (.plan, toModelBytes parts.plan),
-    (.platform, toModelBytes parts.platform),
-    (.policy, toModelBytes parts.policy),
-    (.producer, toModelBytes parts.producer),
-    (.productVersion, toModelBytes parts.product_version),
-    (.runtime, toModelBytes parts.runtime),
-    (.schema, toModelBytes parts.schema),
-    (.streams, toModelBytes parts.streams),
-    (.trustedComputingBase, toModelBytes parts.trusted_computing_base)
-  ]
-}
+    ProofboundRuntime.Binding.Candidate :=
+  match parts.resources with
+  | none => {
+      bindings := [
+        (.assumptions, toModelBytes parts.assumptions),
+        (.boundary, toModelBytes parts.boundary),
+        (.command, toModelBytes parts.command),
+        (.eligibility, toModelBytes parts.eligibility),
+        (.environment, toModelBytes parts.environment),
+        (.executionId, toModelBytes parts.execution_id),
+        (.inputs, toModelBytes parts.inputs),
+        (.observations, toModelBytes parts.observations),
+        (.outcome, toModelBytes parts.outcome),
+        (.outputRoot, toModelBytes parts.output_root),
+        (.outputs, toModelBytes parts.outputs),
+        (.plan, toModelBytes parts.plan),
+        (.platform, toModelBytes parts.platform),
+        (.policy, toModelBytes parts.policy),
+        (.producer, toModelBytes parts.producer),
+        (.productVersion, toModelBytes parts.product_version),
+        (.runtime, toModelBytes parts.runtime),
+        (.schema, toModelBytes parts.schema),
+        (.streams, toModelBytes parts.streams),
+        (.trustedComputingBase, toModelBytes parts.trusted_computing_base)
+      ]
+    }
+  | some resources => {
+      bindings := [
+        (.assumptions, toModelBytes parts.assumptions),
+        (.boundary, toModelBytes parts.boundary),
+        (.command, toModelBytes parts.command),
+        (.eligibility, toModelBytes parts.eligibility),
+        (.environment, toModelBytes parts.environment),
+        (.executionId, toModelBytes parts.execution_id),
+        (.inputs, toModelBytes parts.inputs),
+        (.observations, toModelBytes parts.observations),
+        (.outcome, toModelBytes parts.outcome),
+        (.outputRoot, toModelBytes parts.output_root),
+        (.outputs, toModelBytes parts.outputs),
+        (.plan, toModelBytes parts.plan),
+        (.platform, toModelBytes parts.platform),
+        (.policy, toModelBytes parts.policy),
+        (.producer, toModelBytes parts.producer),
+        (.productVersion, toModelBytes parts.product_version),
+        (.resources, toModelBytes resources),
+        (.runtime, toModelBytes parts.runtime),
+        (.schema, toModelBytes parts.schema),
+        (.streams, toModelBytes parts.streams),
+        (.trustedComputingBase, toModelBytes parts.trusted_computing_base)
+      ]
+    }
 
 def toModelReceipt
     (parts : proofbound_runtime_binding.ReceiptBindingParts) :
@@ -52,7 +79,12 @@ theorem construct_and_project_receipt_binding_refines
         (toModelCandidate parts) (toModelReceipt output) := by
   refine ⟨parts, ?_, ?_, ?_⟩
   · rfl
-  · rfl
+  · cases parts.resources <;> simp [
+      toModelCandidate,
+      ProofboundRuntime.Binding.Complete,
+      ProofboundRuntime.Binding.requiredFieldsV1,
+      ProofboundRuntime.Binding.requiredFieldsV2
+    ]
   · rfl
 
 end ProofboundRuntime.Refinement.ReceiptBinding

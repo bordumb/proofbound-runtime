@@ -48,6 +48,36 @@ pub(crate) fn encode(value: &Value) -> Result<Vec<u8>, Error> {
     Ok(output)
 }
 
+/// Assembles one deterministic text-keyed map from separately encoded,
+/// canonical field values. The receipt binding boundary works over these exact
+/// value bytes, so this operation must not decode and reconstruct them.
+pub(crate) fn encode_bound_map(values: Vec<(String, Vec<u8>)>) -> Result<Vec<u8>, Error> {
+    let mut entries = Vec::new();
+    entries
+        .try_reserve(values.len())
+        .map_err(|_| Error::LimitExceeded)?;
+    for (key, value) in values {
+        let mut key_encoding = Vec::new();
+        encode_item(&Value::Text(key), &mut key_encoding)?;
+        let decoded = decode(&value)?;
+        if encode(&decoded)? != value {
+            return Err(Error::NonDeterministic);
+        }
+        entries.push((key_encoding, value));
+    }
+    entries.sort_by(|left, right| left.0.cmp(&right.0));
+    if entries.windows(2).any(|pair| pair[0].0 == pair[1].0) {
+        return Err(Error::Invalid);
+    }
+    let mut output = Vec::new();
+    encode_length(5, entries.len(), &mut output)?;
+    for (key, value) in entries {
+        output.extend_from_slice(&key);
+        output.extend_from_slice(&value);
+    }
+    Ok(output)
+}
+
 fn encode_item(value: &Value, output: &mut Vec<u8>) -> Result<(), Error> {
     match value {
         Value::Unsigned(value) => encode_argument(0, *value, output),
@@ -277,5 +307,20 @@ mod tests {
             ]))
         );
         assert!(encoded.windows(9).any(|window| window == b"hpids.max"));
+    }
+
+    #[test]
+    fn bound_map_preserves_canonical_field_value_bytes() {
+        let first = encode(&Value::Unsigned(65_536)).expect("field encodes");
+        let second = encode(&Value::Text("value".to_owned())).expect("field encodes");
+        let encoded = encode_bound_map(vec![
+            ("longer".to_owned(), first.clone()),
+            ("a".to_owned(), second.clone()),
+        ])
+        .expect("map encodes");
+
+        assert!(encoded.windows(first.len()).any(|window| window == first));
+        assert!(encoded.windows(second.len()).any(|window| window == second));
+        assert_eq!(encode(&decode(&encoded).expect("map decodes")), Ok(encoded));
     }
 }

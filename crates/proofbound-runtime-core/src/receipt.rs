@@ -801,6 +801,7 @@ impl ExecutionReceipt {
             policy: canonical_field_bytes(&wire.policy)?,
             producer: canonical_field_bytes(&wire.producer)?,
             product_version: canonical_field_bytes(&wire.product_version)?,
+            resources: None,
             runtime: canonical_field_bytes(&wire.runtime)?,
             schema: canonical_field_bytes(&wire.schema)?,
             streams: canonical_field_bytes(&wire.streams)?,
@@ -811,6 +812,13 @@ impl ExecutionReceipt {
 }
 
 fn canonical_v2_bytes(receipt: &ExecutionReceipt) -> Result<Vec<u8>, ReceiptError> {
+    let parts = canonical_v2_binding_parts(receipt)?;
+    encode_v2_binding(construct_and_project_receipt_binding(parts))
+}
+
+fn canonical_v2_binding_parts(
+    receipt: &ExecutionReceipt,
+) -> Result<ReceiptBindingParts, ReceiptError> {
     use crate::wire_v2::Value as Cbor;
 
     let parts = &receipt.parts;
@@ -912,7 +920,82 @@ fn canonical_v2_bytes(receipt: &ExecutionReceipt) -> Result<Vec<u8>, ReceiptErro
             ),
         ),
     ]);
+    let Cbor::Map(mut fields) = value else {
+        return Err(ReceiptError::CanonicalEncoding);
+    };
+    let parts = ReceiptBindingParts {
+        assumptions: take_cbor_field(&mut fields, "assumptions")?,
+        boundary: take_cbor_field(&mut fields, "boundary")?,
+        command: take_cbor_field(&mut fields, "command")?,
+        eligibility: take_cbor_field(&mut fields, "eligibility")?,
+        environment: take_cbor_field(&mut fields, "environment")?,
+        execution_id: take_cbor_field(&mut fields, "execution_id")?,
+        inputs: take_cbor_field(&mut fields, "inputs")?,
+        observations: take_cbor_field(&mut fields, "observations")?,
+        outcome: take_cbor_field(&mut fields, "outcome")?,
+        output_root: take_cbor_field(&mut fields, "output_root")?,
+        outputs: take_cbor_field(&mut fields, "outputs")?,
+        plan: take_cbor_field(&mut fields, "plan")?,
+        platform: take_cbor_field(&mut fields, "platform")?,
+        policy: take_cbor_field(&mut fields, "policy")?,
+        producer: take_cbor_field(&mut fields, "producer")?,
+        product_version: take_cbor_field(&mut fields, "product_version")?,
+        resources: Some(take_cbor_field(&mut fields, "resources")?),
+        runtime: take_cbor_field(&mut fields, "runtime")?,
+        schema: take_cbor_field(&mut fields, "schema")?,
+        streams: take_cbor_field(&mut fields, "streams")?,
+        trusted_computing_base: take_cbor_field(&mut fields, "trusted_computing_base")?,
+    };
+    if fields.is_empty() {
+        Ok(parts)
+    } else {
+        Err(ReceiptError::CanonicalEncoding)
+    }
+}
+
+fn take_cbor_field(
+    fields: &mut Vec<(String, crate::wire_v2::Value)>,
+    name: &str,
+) -> Result<Vec<u8>, ReceiptError> {
+    let index = fields
+        .iter()
+        .position(|(field, _)| field == name)
+        .ok_or(ReceiptError::CanonicalEncoding)?;
+    let (_, value) = fields.remove(index);
     crate::wire_v2::encode(&value).map_err(|_| ReceiptError::CanonicalEncoding)
+}
+
+fn encode_v2_binding(parts: ReceiptBindingParts) -> Result<Vec<u8>, ReceiptError> {
+    let resources = parts
+        .resources
+        .ok_or(ReceiptError::ResourceProfileIncomplete)?;
+    crate::wire_v2::encode_bound_map(vec![
+        ("assumptions".to_owned(), parts.assumptions),
+        ("boundary".to_owned(), parts.boundary),
+        ("command".to_owned(), parts.command),
+        ("eligibility".to_owned(), parts.eligibility),
+        ("environment".to_owned(), parts.environment),
+        ("execution_id".to_owned(), parts.execution_id),
+        ("inputs".to_owned(), parts.inputs),
+        ("observations".to_owned(), parts.observations),
+        ("outcome".to_owned(), parts.outcome),
+        ("output_root".to_owned(), parts.output_root),
+        ("outputs".to_owned(), parts.outputs),
+        ("plan".to_owned(), parts.plan),
+        ("platform".to_owned(), parts.platform),
+        ("policy".to_owned(), parts.policy),
+        ("producer".to_owned(), parts.producer),
+        ("product_version".to_owned(), parts.product_version),
+        ("resources".to_owned(), resources),
+        ("runtime".to_owned(), parts.runtime),
+        ("schema".to_owned(), parts.schema),
+        ("streams".to_owned(), parts.streams),
+        (
+            "trusted_computing_base".to_owned(),
+            parts.trusted_computing_base,
+        ),
+    ])
+    .map_err(|_| ReceiptError::CanonicalEncoding)
 }
 
 fn cbor_artifact(identity: &ArtifactIdentity) -> crate::wire_v2::Value {
