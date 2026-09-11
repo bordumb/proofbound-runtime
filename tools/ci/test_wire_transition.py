@@ -148,6 +148,31 @@ class WireTransitionTests(unittest.TestCase):
         self.assertIn("construct_and_project_receipt_binding(parts)", receipt)
         self.assertNotIn("all 20 version 1 top-level fields", claim)
 
+    def test_v2_limit_events_cross_the_receipt_eligibility_proof_boundary(self) -> None:
+        model = (
+            REPOSITORY_ROOT / "formal/ProofboundRuntime/Receipt.lean"
+        ).read_text(encoding="utf-8")
+        generated = (
+            REPOSITORY_ROOT / "formal/generated/ProofboundRuntimeReceipt/Types.lean"
+        ).read_text(encoding="utf-8")
+        refinement = (
+            REPOSITORY_ROOT
+            / "formal/ProofboundRuntime/Refinement/ReceiptEligibility.lean"
+        ).read_text(encoding="utf-8")
+        harness = (
+            REPOSITORY_ROOT / "crates/proofbound-runtime-receipt-kani/src/lib.rs"
+        ).read_text(encoding="utf-8")
+        claim = (REPOSITORY_ROOT / "claims/PBR-RECEIPT-004.toml").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("limitEvents", model)
+        self.assertIn("structure LimitEvents", generated)
+        self.assertIn("limit_events : LimitEvents", generated)
+        self.assertIn("toModelLimitEvents", refinement)
+        self.assertIn("LimitEvents::new", harness)
+        self.assertNotIn("exact version 1 model", claim)
+
     def test_binding_refinement_rebuilds_the_changed_model(self) -> None:
         script = (
             REPOSITORY_ROOT / "tools/ci/binding-refinement.sh"
