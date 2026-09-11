@@ -69,6 +69,8 @@ fn native_memory_workload_modes_are_closed() {
         "memory-mapped-file",
         "memory-page-cache",
         "memory-shared",
+        "memory-socket",
+        "memory-baseline",
         "memory-pressure-timeout",
     ];
     for mode in expected {
