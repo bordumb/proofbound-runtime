@@ -31,11 +31,11 @@ include = []
 
 [[invocations.translated_closure]]
 kind = "function"
-rust_name = "proofbound_runtime_receipt::derive_receipt_eligibility"
+rust_name = "proofbound_runtime_receipt::append_limit_event_reasons"
 
 [[invocations.translated_closure]]
 kind = "function"
-rust_name = "proofbound_runtime_receipt::append_limit_event_reasons"
+rust_name = "proofbound_runtime_receipt::append_outcome_reason"
 
 [[invocations.translated_closure]]
 kind = "function"
@@ -43,7 +43,7 @@ rust_name = "proofbound_runtime_receipt::append_reason"
 
 [[invocations.translated_closure]]
 kind = "function"
-rust_name = "proofbound_runtime_receipt::append_outcome_reason"
+rust_name = "proofbound_runtime_receipt::derive_receipt_eligibility"
 
 [[invocations.translated_closure]]
 kind = "function"
