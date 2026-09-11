@@ -640,7 +640,7 @@ mod linux {
                     &fixture,
                     &workspace.0,
                     "memory-over-limit",
-                    &["8388608"],
+                    &["65536"],
                     None,
                     1,
                     64 * 1024 * 1024,
