@@ -37,6 +37,7 @@ enum Arguments {
     },
     Native {
         source_commit: String,
+        workload_id: String,
         result_root: PathBuf,
         cgroup_root: PathBuf,
         runtime_bin_directory: PathBuf,
@@ -113,6 +114,7 @@ fn run(
         Arguments::Pure { source_commit } => run_pure(&source_commit, output),
         Arguments::Native {
             source_commit,
+            workload_id,
             result_root,
             cgroup_root,
             runtime_bin_directory,
@@ -122,6 +124,7 @@ fn run(
             runner_image,
         } => run_native(
             &source_commit,
+            &workload_id,
             &result_root,
             &cgroup_root,
             &runtime_bin_directory,
@@ -182,6 +185,7 @@ fn write_result(output: &mut impl Write, result: &[u8]) -> Result<(), CliError> 
 #[allow(clippy::too_many_arguments)]
 fn run_native(
     _source_commit: &str,
+    _workload_id: &str,
     _result_root: &Path,
     _cgroup_root: &Path,
     _runtime_bin_directory: &Path,
@@ -198,6 +202,7 @@ fn run_native(
 #[allow(clippy::too_many_arguments)]
 fn run_native(
     source_commit: &str,
+    workload_id: &str,
     result_root: &Path,
     cgroup_root: &Path,
     runtime_bin_directory: &Path,
@@ -243,7 +248,7 @@ fn run_native(
     let expected_output_bytes =
         std::fs::read(&expected_output).map_err(|_| BenchmarkError::InvalidNativeInput)?;
     let workload = NativeWorkloadIdentity::new(
-        "hello-static-v1",
+        workload_id,
         sha256_path(&plan, BenchmarkError::InvalidNativeInput)?,
         sha256_path(&workload_executable, BenchmarkError::InvalidNativeInput)?,
         sha256_path(&expected_output, BenchmarkError::InvalidNativeInput)?,
@@ -503,6 +508,7 @@ fn parse_arguments(arguments: impl IntoIterator<Item = String>) -> Result<Argume
         }
         Some("native") => {
             let source_commit = exact_value(&mut arguments, "--source-commit")?;
+            let workload_id = exact_value(&mut arguments, "--workload-id")?;
             let result_root = PathBuf::from(exact_value(&mut arguments, "--result-root")?);
             let cgroup_root = PathBuf::from(exact_value(&mut arguments, "--cgroup-root")?);
             let runtime_bin_directory =
@@ -514,6 +520,10 @@ fn parse_arguments(arguments: impl IntoIterator<Item = String>) -> Result<Argume
             let runner_image = exact_value(&mut arguments, "--runner-image")?;
             if arguments.next().is_some()
                 || !is_source_commit(&source_commit)
+                || !matches!(
+                    workload_id.as_str(),
+                    "hello-static-v1" | "hello-dynamic-v1"
+                )
                 || [
                     &result_root,
                     &cgroup_root,
@@ -531,6 +541,7 @@ fn parse_arguments(arguments: impl IntoIterator<Item = String>) -> Result<Argume
             }
             Ok(Arguments::Native {
                 source_commit,
+                workload_id,
                 result_root,
                 cgroup_root,
                 runtime_bin_directory,
