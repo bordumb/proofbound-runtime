@@ -133,12 +133,43 @@ class RequiredWorkflowTests(unittest.TestCase):
         workflow = WORKFLOW.read_text(encoding="utf-8")
         evidence = workflow[workflow.index("\n  fresh-evidence:\n") : workflow.index("\n  native:\n")]
 
+        expected_targets = {
+            "authority": "ProofboundRuntime.ReleaseArtifacts.Authority",
+            "binding": "ProofboundRuntime.ReleaseArtifacts.ReceiptBinding",
+            "policy": "ProofboundRuntime.ReleaseArtifacts.Policy",
+            "receipt": "ProofboundRuntime.ReleaseArtifacts.ReceiptEligibility",
+        }
+        for shard, target in expected_targets.items():
+            self.assertRegex(
+                evidence,
+                rf"- shard: {shard}\n"
+                rf"            selector: [^\n]+\n"
+                rf"            lean_target: {re.escape(target)}\n",
+            )
         build_step = "Build pinned Lean project for theorem audit"
         self.assertIn(build_step, evidence)
         self.assertIn("if: ${{ matrix.selector != 'ledger' }}", evidence)
-        self.assertIn("run: lake build", evidence)
+        self.assertIn("run: lake build ${{ matrix.lean_target }}", evidence)
         self.assertLess(evidence.index("Reject bootstrap lockfile drift"), evidence.index(build_step))
         self.assertLess(evidence.index(build_step), evidence.index("Run fresh evidence gate"))
+
+    def test_fresh_evidence_installs_only_each_shards_required_toolchains(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        evidence = workflow[workflow.index("\n  fresh-evidence:\n") : workflow.index("\n  native:\n")]
+
+        self.assertEqual(evidence.count("if: ${{ matrix.selector != 'ledger' }}"), 7)
+        self.assertEqual(evidence.count("if: ${{ matrix.needs_kani }}"), 1)
+        self.assertIn("- shard: authority\n            selector: PBR-AUTH-001\n", evidence)
+        self.assertIn("needs_kani: true", evidence)
+        self.assertIn("- shard: binding\n            selector: PBR-BINDING-005\n", evidence)
+        self.assertIn("needs_kani: false", evidence)
+        self.assertIn("name: Fetch locked Rust dependencies\n        run: cargo fetch --locked", evidence)
+        self.assertIn(
+            "name: Fetch locked Lean dependencies\n"
+            "        if: ${{ matrix.selector != 'ledger' }}\n"
+            "        run: lake update",
+            evidence,
+        )
 
     def test_fast_hook_excludes_fresh_evidence(self) -> None:
         hook = PRE_COMMIT_SCRIPT.read_text(encoding="utf-8")
