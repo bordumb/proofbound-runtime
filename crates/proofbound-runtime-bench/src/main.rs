@@ -520,10 +520,7 @@ fn parse_arguments(arguments: impl IntoIterator<Item = String>) -> Result<Argume
             let runner_image = exact_value(&mut arguments, "--runner-image")?;
             if arguments.next().is_some()
                 || !is_source_commit(&source_commit)
-                || !matches!(
-                    workload_id.as_str(),
-                    "hello-static-v1" | "hello-dynamic-v1"
-                )
+                || !matches!(workload_id.as_str(), "hello-static-v1" | "hello-dynamic-v1")
                 || [
                     &result_root,
                     &cgroup_root,

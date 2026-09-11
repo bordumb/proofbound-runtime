@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -ne 5 ]]; then
-  echo "usage: native-performance.sh <result-root> <source-commit> <architecture> <runtime-bin-directory> <runner-image>" >&2
+if [[ $# -ne 6 ]]; then
+  echo "usage: native-performance.sh <result-root> <source-commit> <architecture> <runtime-bin-directory> <runner-image> <static|dynamic>" >&2
   exit 2
 fi
 
@@ -11,6 +11,7 @@ source_commit="$2"
 expected_architecture="$3"
 runtime_bin_directory="$4"
 runner_image="$5"
+workload_kind="$6"
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 supervisor_leaf="proofbound-supervisor"
 
@@ -30,7 +31,19 @@ if [[ -z "$runner_image" ]]; then
 fi
 
 work_root="$result_root/workload"
-workload_executable="$work_root/hello-static"
+case "$workload_kind" in
+  static)
+    workload_id="hello-static-v1"
+    ;;
+  dynamic)
+    workload_id="hello-dynamic-v1"
+    ;;
+  *)
+    echo "native benchmark workload must be static or dynamic" >&2
+    exit 2
+    ;;
+esac
+workload_executable="$work_root/hello-$workload_kind"
 plan="$work_root/plan.toml"
 expected_output="$work_root/expected-output.txt"
 
@@ -64,6 +77,7 @@ if [[ "${PROOFBOUND_NATIVE_PERFORMANCE_INNER:-}" == "1" ]]; then
   fi
   exec "$result_root/pbr-bench" native \
     --source-commit "$source_commit" \
+    --workload-id "$workload_id" \
     --result-root "$result_root" \
     --cgroup-root "$delegation_root" \
     --runtime-bin-directory "$runtime_bin_directory" \
@@ -95,18 +109,30 @@ if [[ ! -x "$result_root/pbr-bench" || -e "$work_root" ]]; then
 fi
 
 mkdir -m 0700 "$work_root"
-cc -O2 -static -Wall -Wextra -Werror \
-  "$repository_root/examples/hello-static/hello.c" \
-  -o "$workload_executable"
-if file "$workload_executable" | grep -q 'dynamically linked'; then
-  echo "native benchmark workload must be statically linked" >&2
-  exit 2
+if [[ "$workload_kind" == "static" ]]; then
+  cc -O2 -static -Wall -Wextra -Werror \
+    "$repository_root/examples/hello-static/hello.c" \
+    -o "$workload_executable"
+  if file "$workload_executable" | grep -q 'dynamically linked'; then
+    echo "native benchmark static workload is dynamically linked" >&2
+    exit 2
+  fi
+  runtime_read_toml='[]'
+else
+  cc -O2 -Wall -Wextra -Werror \
+    "$repository_root/examples/hello-static/hello.c" \
+    -o "$workload_executable"
+  if ! file "$workload_executable" | grep -q 'dynamically linked'; then
+    echo "native benchmark dynamic workload is not dynamically linked" >&2
+    exit 2
+  fi
+  runtime_read_toml="$(python3 experiments/performance/discover_runtime_libraries.py "$workload_executable")"
 fi
 printf '%s\n' 'hello from a bounded Proofbound Runtime execution' >"$expected_output"
 workload_toml="$(python3 -c 'import json, sys; print(json.dumps(sys.argv[1]))' "$workload_executable")"
 printf '%s\n' \
   'schema = "proofbound-runtime-plan/1"' \
-  'id = "benchmark.hello-static"' \
+  "id = \"benchmark.hello-$workload_kind\"" \
   '' \
   '[command]' \
   "executable = $workload_toml" \
@@ -117,7 +143,7 @@ printf '%s\n' \
   'network = "deny"' \
   'environment = []' \
   'read = []' \
-  'runtime_read = []' \
+  "runtime_read = $runtime_read_toml" \
   'write = ["output"]' \
   "execute = [$workload_toml]" \
   '' \
@@ -127,7 +153,7 @@ printf '%s\n' \
   'stderr_bytes = 4096' \
   'processes = 1' >"$plan"
 
-unit_suffix="${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-0}-$(uname -m)"
+unit_suffix="${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-0}-$workload_kind-$(uname -m)"
 exec sudo systemd-run \
   --quiet \
   --wait \
@@ -147,4 +173,5 @@ exec sudo systemd-run \
     "$source_commit" \
     "$expected_architecture" \
     "$runtime_bin_directory" \
-    "$runner_image"
+    "$runner_image" \
+    "$workload_kind"

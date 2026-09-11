@@ -1910,13 +1910,9 @@ mod tests {
     #[test]
     fn native_workload_identity_accepts_only_registered_series() {
         for id in ["hello-static-v1", "hello-dynamic-v1"] {
-            let identity = NativeWorkloadIdentity::new(
-                id,
-                "1".repeat(64),
-                "2".repeat(64),
-                "3".repeat(64),
-            )
-            .expect("registered workload identity is valid");
+            let identity =
+                NativeWorkloadIdentity::new(id, "1".repeat(64), "2".repeat(64), "3".repeat(64))
+                    .expect("registered workload identity is valid");
             let encoded = serde_json::to_value(identity).expect("identity encodes");
             assert_eq!(encoded["id"], id);
         }
