@@ -179,7 +179,9 @@ jobs:
             final_exit=$verifier_exit
           fi
           set -e
-          (cd "$result_root" && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum >SHA256SUMS)
+          inventory_path="$RUNNER_TEMP/proofbound-runtime-performance/native-${{ matrix.workload }}-${{ matrix.architecture }}.SHA256SUMS"
+          (cd "$result_root" && find . -type f -print0 | sort -z | xargs -0 sha256sum >"$inventory_path")
+          mv "$inventory_path" "$result_root/SHA256SUMS"
           exit "$final_exit"
 
       - name: Retain the exact native result and run artifacts
