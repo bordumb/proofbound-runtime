@@ -155,6 +155,23 @@ class WireTransitionTests(unittest.TestCase):
         self.assertIn("project_composed_receipt", library)
         self.assertIn("project_composed_receipt(&composed)", binary)
 
+    def test_v2_composition_retains_structured_residual_obligations(self) -> None:
+        schema = (SCHEMA_ROOT / "composed-receipt-v2.cddl").read_text(
+            encoding="utf-8"
+        )
+        projection = __import__("json").loads(
+            (VECTOR_ROOT / "composed-receipt.projection.json").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        self.assertIn('"not_proved_out_of_scope": residual-obligations', schema)
+        self.assertIn("residual-obligations = {", schema)
+        self.assertEqual(
+            set(projection["not_proved_out_of_scope"]),
+            {"assumptions", "exclusions", "open_obligations", "undischarged_premises"},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
