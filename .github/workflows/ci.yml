@@ -252,7 +252,7 @@ jobs:
             cp "$(command -v "$executable")" "$RUNNER_TEMP/proofbound-tools/$executable"
           done
           cd "$RUNNER_TEMP/proofbound-tools"
-          sha256sum proofbound* > SHA256SUMS
+          sha256sum --check "$GITHUB_WORKSPACE/proofbound/toolchains/proofbound-tools-linux-x86_64.sha256"
 
       - name: Upload pinned Proofbound tools
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -355,7 +355,7 @@ jobs:
       - name: Verify pinned Proofbound tool bundle
         run: |
           cd "$RUNNER_TEMP/proofbound-tools"
-          sha256sum --check SHA256SUMS
+          sha256sum --check "$GITHUB_WORKSPACE/proofbound/toolchains/proofbound-tools-linux-x86_64.sha256"
           chmod +x proofbound*
           echo "$RUNNER_TEMP/proofbound-tools" >> "$GITHUB_PATH"
 

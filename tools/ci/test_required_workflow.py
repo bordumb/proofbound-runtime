@@ -13,6 +13,12 @@ MANUAL_EXPERIMENT_WORKFLOWS = (
 CI_SCRIPT = REPOSITORY_ROOT / "tools" / "ci" / "ci.sh"
 PRE_COMMIT_SCRIPT = REPOSITORY_ROOT / "tools" / "ci" / "pre-commit.sh"
 CLAIMS_ROOT = REPOSITORY_ROOT / "claims"
+PROOFBOUND_TOOL_DIGESTS = (
+    REPOSITORY_ROOT
+    / "proofbound"
+    / "toolchains"
+    / "proofbound-tools-linux-x86_64.sha256"
+)
 LEGACY_NATIVE_WORKFLOW = (
     REPOSITORY_ROOT / ".github" / "workflows" / "linux-enforcement.yml"
 )
@@ -96,7 +102,32 @@ class RequiredWorkflowTests(unittest.TestCase):
         self.assertIn("name: Pinned Proofbound tools", tools)
         self.assertIn("needs: preflight", tools)
         self.assertEqual(workflow.count("Install pinned Proofbound tools"), 1)
-        self.assertIn("sha256sum proofbound* > SHA256SUMS", tools)
+        digest_check = (
+            'sha256sum --check "$GITHUB_WORKSPACE/proofbound/toolchains/'
+            'proofbound-tools-linux-x86_64.sha256"'
+        )
+        self.assertEqual(workflow.count(digest_check), 2)
+        self.assertNotIn("> SHA256SUMS", tools)
+        digest_lines = PROOFBOUND_TOOL_DIGESTS.read_text(encoding="ascii").splitlines()
+        self.assertEqual(len(digest_lines), 5)
+        self.assertEqual(
+            {line.split("  ", 1)[1] for line in digest_lines},
+            {
+                "proofbound",
+                "proofbound-adapter-aeneas",
+                "proofbound-adapter-kani",
+                "proofbound-adapter-lean",
+                "proofbound-adapter-test",
+            },
+        )
+        self.assertTrue(
+            all(
+                re.fullmatch(
+                    r"[0-9a-f]{64}  proofbound(?:-adapter-[a-z]+)?", line
+                )
+                for line in digest_lines
+            )
+        )
         self.assertIn(
             "name: proofbound-tools-${{ env.PBR_EXACT_SHA }}",
             tools,
@@ -106,7 +137,7 @@ class RequiredWorkflowTests(unittest.TestCase):
             evidence,
         )
         self.assertIn(f"uses: {DOWNLOAD_ARTIFACT_ACTION}", evidence)
-        self.assertIn("sha256sum --check SHA256SUMS", evidence)
+        self.assertIn(digest_check, evidence)
         self.assertIn('echo "$RUNNER_TEMP/proofbound-tools" >> "$GITHUB_PATH"', evidence)
 
     def test_fresh_evidence_matrix_is_a_closed_claim_partition(self) -> None:
