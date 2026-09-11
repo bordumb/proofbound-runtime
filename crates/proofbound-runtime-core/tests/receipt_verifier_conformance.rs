@@ -1,11 +1,11 @@
 use proofbound_runtime_core::{
     Architecture, ArtifactIdentity, ArtifactRole, BoundaryInstallation, BoundaryRecord,
     CgroupIdentity, EnvironmentName, ExecutionId, ExecutionObservations, ExecutionOutcome,
-    ExecutionReceipt, ExecutionReceiptParts, FileMode, REQUIRED_RUNTIME_ASSUMPTIONS,
-    ReceiptCommand, ReceiptPlan, ReceiptPolicy, ReceiptStreams, RuntimeIdentity, Sha256Digest,
-    StreamCapture, TrustedComputingBaseEntry, TrustedComputingBaseRole, MemoryByteLimit,
-    OutputByteLimit, ProcessLimit, ReceiptMemoryEvents, ReceiptResources, ReceiptSwapEvents,
-    ResourceLimits, SwapByteLimit, WallTimeLimit,
+    ExecutionReceipt, ExecutionReceiptParts, FileMode, MemoryByteLimit, OutputByteLimit,
+    ProcessLimit, REQUIRED_RUNTIME_ASSUMPTIONS, ReceiptCommand, ReceiptMemoryEvents, ReceiptPlan,
+    ReceiptPolicy, ReceiptResources, ReceiptStreams, ReceiptSwapEvents, ResourceLimits,
+    RuntimeIdentity, Sha256Digest, StreamCapture, SwapByteLimit, TrustedComputingBaseEntry,
+    TrustedComputingBaseRole, WallTimeLimit,
 };
 use proofbound_runtime_verify::{
     EligibilityDecision, FailureReason, ReceiptCommitment, verify_receipt,
@@ -160,7 +160,9 @@ fn independent_verifier_accepts_v2_cbor_and_recomputes_resource_nonreuse() {
         .expect("complete v2 resources"),
     );
     let receipt = ExecutionReceipt::new(input).expect("producer accepts v2 fixture");
-    let bytes = receipt.canonical_bytes().expect("producer encodes v2 fixture");
+    let bytes = receipt
+        .canonical_bytes()
+        .expect("producer encodes v2 fixture");
     let report = verify_receipt(&bytes, ReceiptCommitment::for_bytes(&bytes))
         .expect("independent verifier accepts producer v2 bytes");
     let EligibilityDecision::NonReusable(reasons) = report.eligibility() else {

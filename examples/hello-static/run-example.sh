@@ -37,8 +37,8 @@ done
 
 mkdir -m 0700 "$work_directory"
 executable="$work_directory/hello-static"
-plan="$work_directory/plan.toml"
-receipt="$work_directory/receipt.json"
+plan="$work_directory/plan.cbor"
+receipt="$work_directory/receipt.cbor"
 run_result="$work_directory/run-result.json"
 verification="$work_directory/verification.json"
 doctor="$work_directory/doctor.json"
@@ -48,29 +48,19 @@ if file "$executable" | grep -q 'dynamically linked'; then
   echo "the example compiler did not produce a static executable" >&2
   exit 2
 fi
-executable_toml="$(python3 -c 'import json, sys; print(json.dumps(sys.argv[1]))' "$executable")"
-printf '%s\n' \
-  'schema = "proofbound-runtime-plan/1"' \
-  'id = "example.hello-static"' \
-  '' \
-  '[command]' \
-  "executable = $executable_toml" \
-  'arguments = []' \
-  'working_directory = "."' \
-  '' \
-  '[authority]' \
-  'network = "deny"' \
-  'environment = []' \
-  'read = []' \
-  'runtime_read = []' \
-  'write = ["output"]' \
-  "execute = [$executable_toml]" \
-  '' \
-  '[limits]' \
-  'wall_time_ms = 5000' \
-  'stdout_bytes = 4096' \
-  'stderr_bytes = 4096' \
-  'processes = 1' >"$plan"
+python3 "$bundle_root/encode-plan-v2.py" \
+  --output "$plan" \
+  --id example.hello-static \
+  --executable "$executable" \
+  --working-directory . \
+  --write output \
+  --execute "$executable" \
+  --processes 1 \
+  --wall-time-ms 5000 \
+  --stdout-bytes 4096 \
+  --stderr-bytes 4096 \
+  --memory-bytes 268435456 \
+  --swap-bytes 0
 
 "$runtime_directory/pbr" doctor --cgroup-root "$cgroup_root" >"$doctor"
 "$runtime_directory/pbr" plan check --plan "$plan" >/dev/null
@@ -83,9 +73,10 @@ import json
 import sys
 with open(sys.argv[1], encoding="utf-8") as source:
     result = json.load(source)
-assert result["schema"] == "proofbound-runtime-run-result/1"
+assert result["schema"] == "proofbound-runtime-run-result/2"
 assert result["outcome"] == {"kind": "exited", "code": 0}
-print(result["commitment"])
+assert result["commitment"].startswith("hex:")
+print("sha256:" + result["commitment"].removeprefix("hex:"))
 ' "$run_result")"
 "$runtime_directory/pbr-verify" \
   --expected-commitment "$commitment" \

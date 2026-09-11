@@ -254,7 +254,7 @@ fn run_native(
         sha256_path(&expected_output, BenchmarkError::InvalidNativeInput)?,
     )?;
 
-    let warmup_receipt = plan_parent.join("warmup-receipt.json");
+    let warmup_receipt = plan_parent.join("warmup-receipt.cbor");
     if warmup_receipt.exists() {
         return Err(BenchmarkError::InvalidNativeInput.into());
     }
@@ -275,7 +275,7 @@ fn run_native(
     for index in 0..NATIVE_SAMPLE_COUNT {
         let run_root = runs_root.join(format!("{index:03}"));
         std::fs::create_dir(&run_root).map_err(|_| BenchmarkError::NativeArtifactFailed)?;
-        let receipt = run_root.join("receipt.json");
+        let receipt = run_root.join("receipt.cbor");
         let observed = execute_observed(&plan, &receipt, &cgroup_root, &pbr)
             .map_err(|_| BenchmarkError::NativeExecutionFailed)?;
         let receipt_sha256 = validate_native_run(
@@ -358,9 +358,9 @@ fn validate_run_projection(
         .ok_or(BenchmarkError::NativeArtifactFailed)?;
     if report.len() != 5
         || report.get("schema").and_then(serde_json::Value::as_str)
-            != Some("proofbound-runtime-run-result/1")
+            != Some("proofbound-runtime-run-result/2")
         || report.get("commitment").and_then(serde_json::Value::as_str)
-            != Some(format!("sha256:{receipt_sha256}").as_str())
+            != Some(format!("hex:{receipt_sha256}").as_str())
         || report.get("receipt").and_then(serde_json::Value::as_str)
             != Some(receipt.to_string_lossy().as_ref())
         || report
@@ -610,7 +610,7 @@ mod tests {
                 "--runtime-bin-directory".to_owned(),
                 "/runtime".to_owned(),
                 "--plan".to_owned(),
-                "/work/plan.toml".to_owned(),
+                "/work/plan.cbor".to_owned(),
                 "--workload-executable".to_owned(),
                 "/work/hello-static".to_owned(),
                 "--expected-output".to_owned(),
@@ -624,7 +624,7 @@ mod tests {
                 result_root: "/results".into(),
                 cgroup_root: "/sys/fs/cgroup/delegated".into(),
                 runtime_bin_directory: "/runtime".into(),
-                plan: "/work/plan.toml".into(),
+                plan: "/work/plan.cbor".into(),
                 workload_executable: "/work/hello-static".into(),
                 expected_output: "/work/expected-output.txt".into(),
                 runner_image: "ubuntu-24.04".to_owned(),
@@ -714,7 +714,7 @@ mod tests {
                 "--runtime-bin-directory".to_owned(),
                 "/runtime".to_owned(),
                 "--plan".to_owned(),
-                "/work/plan.toml".to_owned(),
+                "/work/plan.cbor".to_owned(),
                 "--workload-executable".to_owned(),
                 "/work/hello-static".to_owned(),
                 "--expected-output".to_owned(),
@@ -731,14 +731,14 @@ mod tests {
 
     #[test]
     fn native_validator_accepts_only_the_real_run_projection() {
-        let receipt = std::path::Path::new("/results/runs/000/receipt.json");
+        let receipt = std::path::Path::new("/results/runs/000/receipt.cbor");
         let digest = "a".repeat(64);
         let projection = serde_json::json!({
-            "commitment": format!("sha256:{digest}"),
+            "commitment": format!("hex:{digest}"),
             "execution_id": "00112233-4455-4677-8899-aabbccddeeff",
             "outcome": {"kind": "exited", "code": 0},
             "receipt": receipt,
-            "schema": "proofbound-runtime-run-result/1",
+            "schema": "proofbound-runtime-run-result/2",
         });
         assert_eq!(
             validate_run_projection(&projection, receipt, &digest),

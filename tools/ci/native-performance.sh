@@ -44,7 +44,7 @@ case "$workload_kind" in
     ;;
 esac
 workload_executable="$work_root/hello-$workload_kind"
-plan="$work_root/plan.toml"
+plan="$work_root/plan.cbor"
 expected_output="$work_root/expected-output.txt"
 
 if [[ "${PROOFBOUND_NATIVE_PERFORMANCE_INNER:-}" == "1" ]]; then
@@ -131,29 +131,20 @@ else
   runtime_read_toml="$(python3 experiments/performance/discover_runtime_libraries.py "$workload_executable")"
 fi
 printf '%s\n' 'hello from a bounded Proofbound Runtime execution' >"$expected_output"
-workload_toml="$(python3 -c 'import json, sys; print(json.dumps(sys.argv[1]))' "$workload_executable")"
-printf '%s\n' \
-  'schema = "proofbound-runtime-plan/1"' \
-  "id = \"benchmark.hello-$workload_kind\"" \
-  '' \
-  '[command]' \
-  "executable = $workload_toml" \
-  'arguments = []' \
-  'working_directory = "."' \
-  '' \
-  '[authority]' \
-  'network = "deny"' \
-  'environment = []' \
-  'read = []' \
-  "runtime_read = $runtime_read_toml" \
-  'write = ["output"]' \
-  "execute = [$workload_toml]" \
-  '' \
-  '[limits]' \
-  'wall_time_ms = 5000' \
-  'stdout_bytes = 4096' \
-  'stderr_bytes = 4096' \
-  'processes = 1' >"$plan"
+python3 tools/ci/encode_plan_v2.py \
+  --output "$plan" \
+  --id "benchmark.hello-$workload_kind" \
+  --executable "$workload_executable" \
+  --working-directory . \
+  --runtime-read-json "$runtime_read_toml" \
+  --write output \
+  --execute "$workload_executable" \
+  --processes 1 \
+  --wall-time-ms 5000 \
+  --stdout-bytes 4096 \
+  --stderr-bytes 4096 \
+  --memory-bytes 268435456 \
+  --swap-bytes 0
 
 unit_suffix="${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-0}-$workload_kind-$(uname -m)"
 exec sudo systemd-run \

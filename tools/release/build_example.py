@@ -18,7 +18,7 @@ from pathlib import Path
 MANIFEST_SCHEMA = "proofbound-runtime-example-manifest/1"
 RESULT_SCHEMA = "proofbound-runtime-example-bundle-result/1"
 SOURCE_DATE_EPOCH = 946684800
-SOURCE_FILES = ("README.md", "hello.c", "run-example.sh")
+SOURCE_FILES = ("README.md", "hello.c", "run-example.sh", "encode-plan-v2.py")
 VERSION_PATTERN = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 
 
@@ -41,9 +41,15 @@ def load_sources(repository: Path) -> tuple[str, dict[str, bytes]]:
     if VERSION_PATTERN.fullmatch(version) is None:
         raise BundleError(f"version is not an exact semantic version: {version!r}")
     source_root = repository / "examples" / "hello-static"
+    source_paths = {
+        "README.md": source_root / "README.md",
+        "hello.c": source_root / "hello.c",
+        "run-example.sh": source_root / "run-example.sh",
+        "encode-plan-v2.py": repository / "tools" / "ci" / "encode_plan_v2.py",
+    }
     files: dict[str, bytes] = {}
     for name in SOURCE_FILES:
-        path = source_root / name
+        path = source_paths[name]
         try:
             data = path.read_bytes()
         except OSError as error:
@@ -81,7 +87,9 @@ def bundle_bytes(version: str, sources: dict[str, bytes]) -> bytes:
             for name, data in files.items():
                 entry = tarfile.TarInfo(f"{prefix}/{name}")
                 entry.size = len(data)
-                entry.mode = 0o755 if name == "run-example.sh" else 0o644
+                entry.mode = (
+                    0o755 if name in {"run-example.sh", "encode-plan-v2.py"} else 0o644
+                )
                 entry.mtime = SOURCE_DATE_EPOCH
                 entry.uid = 0
                 entry.gid = 0

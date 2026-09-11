@@ -63,7 +63,7 @@ class NativeBenchmarkVerifierTests(unittest.TestCase):
         self.executable = self.write("pbr-bench", b"benchmark")
         self.pbr = self.write("pbr", b"runtime")
         self.launcher = self.write("pbr-native-launcher", b"launcher")
-        self.plan = self.write("plan.toml", b"exact plan")
+        self.plan = self.write("plan.cbor", b"exact plan")
         self.workload = self.write("hello-static", b"exact workload")
         self.expected_output = self.write(
             "expected-output.txt", b"hello from a bounded execution\n"
@@ -98,14 +98,14 @@ class NativeBenchmarkVerifierTests(unittest.TestCase):
             output = self.expected_output.read_bytes()
             result = encode(
                 {
-                    "commitment": f"sha256:{receipt_digest}",
+                    "commitment": f"hex:{receipt_digest}",
                     "execution_id": f"execution-{index:03d}",
                     "outcome": {"code": 0, "kind": "exited"},
-                    "receipt": str(run_root / "receipt.json"),
-                    "schema": "proofbound-runtime-run-result/1",
+                    "receipt": str(run_root / "receipt.cbor"),
+                    "schema": "proofbound-runtime-run-result/2",
                 }
             )
-            (run_root / "receipt.json").write_bytes(receipt)
+            (run_root / "receipt.cbor").write_bytes(receipt)
             (run_root / "run-result.json").write_bytes(result)
             (run_root / "hello.txt").write_bytes(output)
             phase_samples = [index + phase + 1 for phase in range(len(PHASES))]

@@ -47,7 +47,11 @@ class BuildExampleTests(unittest.TestCase):
                 self.assertEqual(member.uid, 0)
                 self.assertEqual(member.gid, 0)
                 expected_mode = (
-                    0o755 if member.name.endswith("/run-example.sh") else 0o644
+                    0o755
+                    if member.name.endswith(
+                        ("/run-example.sh", "/encode-plan-v2.py")
+                    )
+                    else 0o644
                 )
                 self.assertEqual(member.mode, expected_mode)
             manifest_member = archive.extractfile(members[0])

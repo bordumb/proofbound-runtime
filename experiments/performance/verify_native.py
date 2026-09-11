@@ -335,7 +335,7 @@ def verify_result(
             column.append(sample)
 
         run_root = runs_root / f"{expected_index:03d}"
-        receipt = run_root / "receipt.json"
+        receipt = run_root / "receipt.cbor"
         run_result = run_root / "run-result.json"
         output = run_root / "hello.txt"
         for field, path in (
@@ -358,18 +358,19 @@ def verify_result(
             "receipt",
         }:
             fail("benchmark.verify.run-artifact-mismatch")
-        commitment = f"sha256:{run['receipt_sha256']}"
+        verifier_commitment = f"sha256:{run['receipt_sha256']}"
+        projected_commitment = f"hex:{run['receipt_sha256']}"
         receipt_projection = require_nonempty_text(projection["receipt"])
         if (
-            projection["schema"] != "proofbound-runtime-run-result/1"
-            or projection["commitment"] != commitment
+            projection["schema"] != "proofbound-runtime-run-result/2"
+            or projection["commitment"] != projected_commitment
             or not require_nonempty_text(projection["execution_id"])
             or projection["outcome"] != {"kind": "exited", "code": 0}
             or Path(receipt_projection).parts[-3:]
-            != ("runs", f"{expected_index:03d}", "receipt.json")
+            != ("runs", f"{expected_index:03d}", "receipt.cbor")
         ):
             fail("benchmark.verify.run-artifact-mismatch")
-        verify_receipt(verifier, receipt, commitment)
+        verify_receipt(verifier, receipt, verifier_commitment)
 
     verify_summary(measurements["total"], totals)
     phases_value = measurements["phases"]

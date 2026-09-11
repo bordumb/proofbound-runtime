@@ -66,33 +66,25 @@ if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
   done
   e2e_root="$(mktemp -d "$PWD/target/native-cli-e2e.XXXXXX")"
   trap 'rm -rf -- "$e2e_root"' EXIT
-  plan="$e2e_root/plan.toml"
-  receipt="$e2e_root/receipt.json"
+  plan="$e2e_root/plan.cbor"
+  receipt="$e2e_root/receipt.cbor"
   result="$e2e_root/run-result.json"
   verification="$e2e_root/verification.json"
   preflight="$e2e_root/preflight.json"
-  printf '%s\n' \
-    'schema = "proofbound-runtime-plan/1"' \
-    'id = "ci.native-cli-e2e"' \
-    '' \
-    '[command]' \
-    "executable = \"$PROOFBOUND_NATIVE_FIXTURE\"" \
-    'arguments = ["positive"]' \
-    'working_directory = "."' \
-    '' \
-    '[authority]' \
-    'network = "deny"' \
-    'environment = []' \
-    'read = []' \
-    'runtime_read = []' \
-    'write = ["output"]' \
-    "execute = [\"$PROOFBOUND_NATIVE_FIXTURE\"]" \
-    '' \
-    '[limits]' \
-    'wall_time_ms = 5000' \
-    'stdout_bytes = 4096' \
-    'stderr_bytes = 4096' \
-    'processes = 1' >"$plan"
+  python3 tools/ci/encode_plan_v2.py \
+    --output "$plan" \
+    --id ci.native-cli-e2e \
+    --executable "$PROOFBOUND_NATIVE_FIXTURE" \
+    --argument positive \
+    --working-directory . \
+    --write output \
+    --execute "$PROOFBOUND_NATIVE_FIXTURE" \
+    --processes 1 \
+    --wall-time-ms 5000 \
+    --stdout-bytes 4096 \
+    --stderr-bytes 4096 \
+    --memory-bytes 268435456 \
+    --swap-bytes 0
 
   "$runtime_bin_directory/pbr" plan check --plan "$plan"
   cgroup_before="$(
@@ -165,7 +157,7 @@ assert report["command"]["executable"]["artifact"] == expected_artifact(
 ' "$preflight" "$plan" "$PROOFBOUND_NATIVE_FIXTURE" \
     "$PROOFBOUND_CGROUP_ROOT" "$receipt" "$expected_architecture"
 
-  occupied_receipt="$e2e_root/occupied-receipt.json"
+  occupied_receipt="$e2e_root/occupied-receipt.cbor"
   printf '%s\n' 'preserve-me' >"$occupied_receipt"
   set +e
   "$runtime_bin_directory/pbr" preflight \
@@ -227,10 +219,11 @@ import sys
 
 with open(sys.argv[1], encoding="utf-8") as source:
     result = json.load(source)
-assert result["schema"] == "proofbound-runtime-run-result/1"
+assert result["schema"] == "proofbound-runtime-run-result/2"
 assert result["outcome"] == {"kind": "exited", "code": 0}
 assert result["execution_id"]
-print(result["commitment"])
+assert result["commitment"].startswith("hex:")
+print("sha256:" + result["commitment"].removeprefix("hex:"))
 ' "$result")"
   "$runtime_bin_directory/pbr-verify" \
     --expected-commitment "$commitment" \
@@ -268,9 +261,9 @@ assert result["commitment"].startswith("sha256:")
 ' "$example_result"
   if [[ -n "$evidence_directory" ]]; then
     mkdir -p "$evidence_directory"
-    install -m 0644 "$plan" "$evidence_directory/plan.toml"
+    install -m 0644 "$plan" "$evidence_directory/plan.cbor"
     install -m 0644 "$preflight" "$evidence_directory/preflight.json"
-    install -m 0644 "$receipt" "$evidence_directory/execution-receipt.json"
+    install -m 0644 "$receipt" "$evidence_directory/execution-receipt.cbor"
     install -m 0644 "$example_result" "$evidence_directory/example-result.json"
     install -m 0644 "$verification" "$evidence_directory/verification.json"
     printf '%s\n' "$commitment" >"$evidence_directory/receipt-commitment.txt"

@@ -13,7 +13,7 @@ directory supplied by the user.
 
 ```console
 ./run-example.sh \
-  /absolute/path/to/proofbound-runtime-v0.1.0 \
+  /absolute/path/to/proofbound-runtime-v0.2.0 \
   /path/to/delegated/cgroup \
   /absolute/new/proofbound-hello-run
 ```
