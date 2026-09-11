@@ -40,7 +40,6 @@ def build_once(repository: Path, work: Path, version: str) -> dict[str, bytes]:
             "cargo",
             "package",
             "--locked",
-            "--offline",
             "--allow-dirty",
             "--no-verify",
             "-p",

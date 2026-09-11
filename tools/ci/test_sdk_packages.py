@@ -22,6 +22,14 @@ DIST_INFO = "proofbound_runtime_sdk-0.2.0.dist-info"
 
 
 class SdkPackageTests(unittest.TestCase):
+    def test_release_builder_supports_an_empty_cargo_cache(self) -> None:
+        builder = (ROOT / "tools/release/build_sdks.py").read_text(encoding="utf-8")
+        cargo_package = builder[builder.index('            "cargo",') :]
+        cargo_package = cargo_package[: cargo_package.index("        ],")]
+
+        self.assertIn('            "--locked",', cargo_package)
+        self.assertNotIn('            "--offline",', cargo_package)
+
     def test_release_sdk_bundle_is_reproducible_and_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             subprocess.run(
