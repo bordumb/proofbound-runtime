@@ -1304,4 +1304,35 @@ mod tests {
         assert_eq!(error.exit_code(), 3);
         assert_eq!(error.code(), "execution.os.unsupported");
     }
+
+    #[test]
+    fn native_runs_are_summarized_by_the_runtime_owned_phase_domain() {
+        use proofbound_runtime_cli::run::{RunBenchmarkPhase, RunTimings};
+
+        let first = RunTimings::from_intervals(core::array::from_fn(|index| {
+            std::time::Duration::from_nanos(u64::try_from(index + 1).expect("index fits u64"))
+        }));
+        let second = RunTimings::from_intervals(core::array::from_fn(|index| {
+            std::time::Duration::from_nanos(u64::try_from(index + 2).expect("index fits u64"))
+        }));
+        let measurements = summarize_native_runs(&[first, second])
+            .expect("complete native runs must summarize");
+
+        assert_eq!(measurements.total().samples_ns, vec![91, 104]);
+        assert_eq!(measurements.phases().len(), RunBenchmarkPhase::ALL.len());
+        assert_eq!(
+            measurements
+                .phases()
+                .iter()
+                .map(NativePhaseResult::phase)
+                .collect::<Vec<_>>(),
+            RunBenchmarkPhase::ALL
+        );
+        assert_eq!(measurements.phases()[0].summary().samples_ns, vec![1, 2]);
+        assert_eq!(measurements.phases()[12].summary().samples_ns, vec![13, 14]);
+        assert_eq!(
+            summarize_native_runs(&[]),
+            Err(BenchmarkError::EmptySeries)
+        );
+    }
 }
