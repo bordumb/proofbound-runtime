@@ -122,7 +122,96 @@ jobs:
           retention-days: 14
 
   formal:
-    name: Formal and fresh evidence
+    name: Formal model and refinements
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      PBR_CI_TIMING_FILE: /tmp/proofbound-runtime-ci-timing.jsonl
+    steps:
+      - name: Check out the exact event head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.PBR_EXACT_SHA }}
+
+      - name: Confirm the exact event head
+        run: test "$(git rev-parse HEAD)" = "$PBR_EXACT_SHA"
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@fef00d40025f7fd8f1ec759cbbb0f577ddfc3133 # 1.94.0
+
+      - name: Install pinned Lean toolchain
+        uses: leanprover/lean-action@38fbc41a8c28c4cbaec22d7f7de508ec2e7c0dd9 # v1.5.0
+        with:
+          auto-config: false
+          build: false
+          test: false
+          lint: false
+          mk_all-check: false
+          check-reservoir-eligibility: false
+          leanchecker: false
+          nanoda: false
+
+      - name: Install Nix for pinned translation tools
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31
+
+      - name: Restore the exact Nix tool closure
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+        with:
+          primary-key: formal-nix-v1-${{ runner.os }}-${{ runner.arch }}-${{ env.AENEAS_SOURCE_REVISION }}-${{ hashFiles('proofbound/toolchains/translation.lock') }}
+          gc-max-store-size-linux: 4G
+
+      - name: Install pinned Charon and Aeneas tools
+        run: |
+          tools_path="$(AENEAS_RELEASE_VERSION="$AENEAS_VERSION" nix build \
+            --impure \
+            --no-link \
+            --print-out-paths \
+            "github:AeneasVerif/aeneas/$AENEAS_SOURCE_REVISION#aeneas")"
+          echo "$tools_path/bin" >> "$GITHUB_PATH"
+
+      - name: Verify pinned translation tools
+        run: |
+          test "$(charon version)" = "0.1.225"
+          test "$(aeneas -version)" = "aeneas 3a8586fa"
+
+      - name: Fetch locked project dependencies
+        run: |
+          cargo fetch --locked
+          lake update
+
+      - name: Reject bootstrap lockfile drift
+        run: git diff --exit-code -- Cargo.lock lake-manifest.json
+
+      - name: Run formal model and refinement gates
+        run: >-
+          python3 tools/ci/timing.py run
+          --output "$PBR_CI_TIMING_FILE"
+          --stage formal
+          --kind stage
+          --name formal
+          -- bash tools/ci/ci.sh formal
+
+      - name: Publish formal timing summary
+        if: ${{ always() }}
+        run: |
+          {
+            printf '%s\n' '### Formal timing' '```text'
+            python3 tools/ci/summarize_timings.py "$PBR_CI_TIMING_FILE"
+            printf '%s\n' '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload formal timing metadata
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: proofbound-runtime-ci-timing-formal-${{ env.PBR_EXACT_SHA }}
+          path: ${{ env.PBR_CI_TIMING_FILE }}
+          if-no-files-found: error
+          retention-days: 14
+
+  fresh-evidence:
+    name: Fresh Proofbound evidence
     needs: preflight
     runs-on: ubuntu-24.04
     timeout-minutes: 90
@@ -208,29 +297,29 @@ jobs:
       - name: Reject bootstrap lockfile drift
         run: git diff --exit-code -- Cargo.lock lake-manifest.json
 
-      - name: Run formal and fresh evidence gates
+      - name: Run fresh evidence gate
         run: >-
           python3 tools/ci/timing.py run
           --output "$PBR_CI_TIMING_FILE"
-          --stage formal
+          --stage evidence
           --kind stage
-          --name formal
-          -- bash tools/ci/ci.sh formal
+          --name fresh-evidence
+          -- bash tools/ci/ci.sh evidence
 
-      - name: Publish formal timing summary
+      - name: Publish fresh evidence timing summary
         if: ${{ always() }}
         run: |
           {
-            printf '%s\n' '### Formal timing' '```text'
+            printf '%s\n' '### Fresh evidence timing' '```text'
             python3 tools/ci/summarize_timings.py "$PBR_CI_TIMING_FILE"
             printf '%s\n' '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload formal timing metadata
+      - name: Upload fresh evidence timing metadata
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: proofbound-runtime-ci-timing-formal-${{ env.PBR_EXACT_SHA }}
+          name: proofbound-runtime-ci-timing-fresh-evidence-${{ env.PBR_EXACT_SHA }}
           path: ${{ env.PBR_CI_TIMING_FILE }}
           if-no-files-found: error
           retention-days: 14
@@ -307,14 +396,15 @@ jobs:
       - preflight
       - rust
       - formal
+      - fresh-evidence
       - native
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Reject any incomplete or failed required lane
-        if: ${{ needs.preflight.result != 'success' || needs.rust.result != 'success' || needs.formal.result != 'success' || needs.native.result != 'success' }}
+        if: ${{ needs.preflight.result != 'success' || needs.rust.result != 'success' || needs.formal.result != 'success' || needs.fresh-evidence.result != 'success' || needs.native.result != 'success' }}
         run: exit 1
 
       - name: Admit the exact successful partition
-        if: ${{ needs.preflight.result == 'success' && needs.rust.result == 'success' && needs.formal.result == 'success' && needs.native.result == 'success' }}
+        if: ${{ needs.preflight.result == 'success' && needs.rust.result == 'success' && needs.formal.result == 'success' && needs.fresh-evidence.result == 'success' && needs.native.result == 'success' }}
         run: 'true'

@@ -6,7 +6,7 @@ cd "$repo_root"
 
 stage="${1:-all}"
 case "$stage" in
-  all|preflight|rust|formal) ;;
+  all|preflight|rust|formal|evidence) ;;
   *)
     printf '%s\n' "unknown CI stage: $stage" >&2
     exit 2
@@ -122,7 +122,7 @@ if selected "rust"; then
   timed_unit dependency-policy cargo deny --locked check bans licenses sources
 fi
 
-if selected "formal"; then
+if selected "evidence"; then
   printf '%s\n' '[9/9] Proofbound evidence and status derivation'
   timed_unit fresh-evidence bash tools/ci/manifests.sh
 fi
