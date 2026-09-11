@@ -44,31 +44,34 @@ pub enum RunBenchmarkPhase {
     ExecutableClosureInventory = 2,
     /// Fresh cgroup creation and configured-limit readback.
     CgroupCreationAndReadback = 3,
+    /// Launcher request construction and final identity revalidation.
+    LauncherRequestAndIdentityRevalidation = 4,
     /// Launcher creation through observation of its stopped state.
-    StoppedLauncherCreation = 4,
+    StoppedLauncherCreation = 5,
     /// Cgroup placement and launcher boundary installation acknowledgement.
-    BoundaryInstallation = 5,
+    BoundaryInstallation = 6,
     /// Child release through terminal child status.
-    ChildExecution = 6,
+    ChildExecution = 7,
     /// Exact process-tree drain and cgroup cleanup.
-    ProcessTreeCleanup = 7,
+    ProcessTreeCleanup = 8,
     /// Joining the already-running bounded stream drains.
-    StreamCollection = 8,
+    StreamCollection = 9,
     /// Output inventory and identity revalidation.
-    OutputInventory = 9,
+    OutputInventory = 10,
     /// Receipt construction, canonical encoding, and no-replace publication.
-    ReceiptConstructionAndPublication = 10,
+    ReceiptConstructionAndPublication = 11,
     /// JSON projection of the completed run result.
-    RunResultProjection = 11,
+    RunResultProjection = 12,
 }
 
 impl RunBenchmarkPhase {
     /// All phases in their production dependency order.
-    pub const ALL: [Self; 12] = [
+    pub const ALL: [Self; 13] = [
         Self::PlanValidationAndNormalization,
         Self::HostAndPathPreflight,
         Self::ExecutableClosureInventory,
         Self::CgroupCreationAndReadback,
+        Self::LauncherRequestAndIdentityRevalidation,
         Self::StoppedLauncherCreation,
         Self::BoundaryInstallation,
         Self::ChildExecution,
@@ -87,6 +90,9 @@ impl RunBenchmarkPhase {
             Self::HostAndPathPreflight => "host-and-path-preflight-v1",
             Self::ExecutableClosureInventory => "executable-closure-inventory-v1",
             Self::CgroupCreationAndReadback => "cgroup-creation-and-readback-v1",
+            Self::LauncherRequestAndIdentityRevalidation => {
+                "launcher-request-and-identity-revalidation-v1"
+            }
             Self::StoppedLauncherCreation => "stopped-launcher-creation-v1",
             Self::BoundaryInstallation => "boundary-installation-v1",
             Self::ChildExecution => "child-execution-v1",
