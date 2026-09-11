@@ -6,6 +6,7 @@ members = [
   "crates/proofbound-runtime-cli",
   "crates/proofbound-runtime-compose",
   "crates/proofbound-runtime-linux",
+  "crates/proofbound-runtime-bench",
   "crates/proofbound-runtime-policy-kani",
   "crates/proofbound-runtime-receipt",
   "crates/proofbound-runtime-receipt-kani",
