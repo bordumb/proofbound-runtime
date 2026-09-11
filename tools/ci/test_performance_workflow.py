@@ -9,12 +9,17 @@ WORKFLOW = REPOSITORY_ROOT / ".github/workflows/performance-baseline.yml"
 
 
 class PerformanceWorkflowTests(unittest.TestCase):
-    def test_workflow_is_exact_revision_manual_matrix(self) -> None:
+    def test_workflow_is_exact_revision_manual_or_scoped_pr_matrix(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
         self.assertIn("workflow_dispatch:", workflow)
         self.assertIn("revision:", workflow)
-        self.assertNotIn("pull_request:", workflow)
+        self.assertIn("pull_request:\n    paths:", workflow)
+        self.assertIn(
+            "PBR_PERFORMANCE_REVISION: "
+            "${{ inputs.revision || github.event.pull_request.head.sha }}",
+            workflow,
+        )
         self.assertIn("runner: ubuntu-24.04\n", workflow)
         self.assertIn("runner: ubuntu-24.04-arm\n", workflow)
         self.assertIn(
