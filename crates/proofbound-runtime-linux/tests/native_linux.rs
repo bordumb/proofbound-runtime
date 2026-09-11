@@ -500,11 +500,15 @@ mod linux {
                     None,
                     1,
                     64 * 1024 * 1024,
-                    64 * 1024 * 1024,
+                    16 * 1024 * 1024,
                     15_000,
                 );
                 let resources = execution.resources().expect("present-swap observations");
                 assert!(resources.swap_peak_bytes() > 0, "{execution:#?}");
+                assert!(
+                    resources.swap_peak_bytes() <= 16 * 1024 * 1024,
+                    "{execution:#?}"
+                );
                 assert!(
                     resources.swap_events().max() > 0 || resources.swap_events().fail() > 0,
                     "{execution:#?}"
