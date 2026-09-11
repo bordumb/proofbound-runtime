@@ -474,6 +474,24 @@ fn read_set(path: impl AsRef<Path>) -> Capability<Vec<String>> {
 mod tests {
     use super::*;
 
+    #[test]
+    fn version_two_probe_requires_memory_and_pids_with_all_observation_files() {
+        assert_eq!(required_cgroup_controllers(), ["memory", "pids"]);
+        assert_eq!(
+            required_cgroup_files(),
+            [
+                "memory.events.local",
+                "memory.max",
+                "memory.oom.group",
+                "memory.peak",
+                "memory.swap.events",
+                "memory.swap.max",
+                "memory.swap.peak",
+                "pids.max",
+            ]
+        );
+    }
+
     #[cfg(not(target_os = "linux"))]
     #[test]
     fn unsupported_hosts_never_produce_supported_linux() {
