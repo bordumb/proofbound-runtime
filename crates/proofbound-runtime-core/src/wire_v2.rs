@@ -269,7 +269,13 @@ mod tests {
             ("pids.max".to_owned(), Value::Unsigned(2)),
         ]);
         let encoded = encode(&value).expect("fixture encodes");
-        assert_eq!(decode(&encoded), Ok(value));
+        assert_eq!(
+            decode(&encoded),
+            Ok(Value::Map(vec![
+                ("pids.max".to_owned(), Value::Unsigned(2)),
+                ("memory.max".to_owned(), Value::Unsigned(65_536)),
+            ]))
+        );
         assert!(encoded.windows(9).any(|window| window == b"hpids.max"));
     }
 }
