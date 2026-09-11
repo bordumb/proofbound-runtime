@@ -1,0 +1,42 @@
+; Proofbound Runtime acceptance decision version 1.
+; This is a closed text-key deterministic-CBOR contract under RFC 8949
+; section 4.2.1. A JSON rendering is descriptive and never verification input.
+
+acceptance-decision-v1 = {
+  "schema": "proofbound-runtime-acceptance-decision/1",
+  "status": "accepted" / "rejected",
+  "inputs": [+ input-artifact],
+  "reasons": [* rejection-reason],
+  "decision_id": bstr .size 32,
+  "execution_id": bstr .size 16,
+  "composition_id": bstr .size 32 / null,
+  "policy_identity": bstr .size 32,
+  "execution_commitment": bstr .size 32
+}
+
+input-artifact = {
+  "role": input-role,
+  "size": uint64,
+  "sha256": bstr .size 32
+}
+
+input-role = "acceptance-policy" / "release-envelope" / "compiled-release" /
+  "release-verification" / "release-verifier" / "release-observation-inputs" /
+  "release-tcb-ledger" / "runtime-manifest" / "runtime" / "launcher" /
+  "execution-verifier" / "composer" / "execution-receipt" /
+  "execution-verification"
+
+rejection-reason = "policy-identity-mismatch" /
+  "input-verification-failed" / "composition-missing" /
+  "execution-schema-mismatch" / "runtime-version-mismatch" /
+  "platform-mismatch" / "architecture-mismatch" / "plan-id-mismatch" /
+  "executable-mismatch" / "authority-mismatch" / "resource-mismatch" /
+  "eligibility-mismatch" / "freshness-policy-unsupported" /
+  "release-project-mismatch" / "release-revision-mismatch" /
+  "release-payload-mismatch" / "release-context-mismatch" /
+  "claim-missing" / "claim-formal-mismatch" / "claim-linkage-mismatch" /
+  "claim-assumption-mismatch" / "claim-policy-mismatch" /
+  "forbidden-assumption" / "forbidden-exclusion" /
+  "forbidden-open-obligation" / "forbidden-tcb-role"
+
+uint64 = 0..18446744073709551615

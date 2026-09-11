@@ -14,6 +14,10 @@ VERSION_TWO_OBJECTS = (
     "execution-receipt",
     "composed-receipt",
 )
+NEW_CBOR_OBJECTS = {
+    "acceptance-policy": 1,
+    "acceptance-decision": 1,
+}
 
 
 class WireTransitionTests(unittest.TestCase):
@@ -47,13 +51,16 @@ class WireTransitionTests(unittest.TestCase):
             {path.stem.removesuffix("-v2") for path in SCHEMA_ROOT.glob("*-v2.cddl")},
             set(VERSION_TWO_OBJECTS),
         )
+        all_objects = set(VERSION_TWO_OBJECTS) | set(NEW_CBOR_OBJECTS)
+        for name, version in NEW_CBOR_OBJECTS.items():
+            self.assertTrue((SCHEMA_ROOT / f"{name}-v{version}.cddl").is_file())
         self.assertEqual(
             {path.name.removesuffix(".cbor.hex") for path in VECTOR_ROOT.glob("*.cbor.hex")},
-            set(VERSION_TWO_OBJECTS),
+            all_objects,
         )
         self.assertEqual(
             {path.name.removesuffix(".projection.json") for path in VECTOR_ROOT.glob("*.projection.json")},
-            set(VERSION_TWO_OBJECTS),
+            all_objects,
         )
 
     def test_every_execution_entry_point_uses_the_v2_plan_decoder(self) -> None:
