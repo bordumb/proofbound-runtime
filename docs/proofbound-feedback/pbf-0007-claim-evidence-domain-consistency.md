@@ -1,6 +1,6 @@
 # PBF-0007: Claim/evidence bounded-domain consistency
 
-- **Status:** `upstream-ready`
+- **Status:** `upstream-review`
 - **Priority:** `near-term`
 - **Kind:** `verifier`
 - **Created:** 2026-09-06
@@ -8,7 +8,7 @@
 - **Runtime claim:** `PBR-POLICY-002`
 - **Runtime milestone:** Policy compilation
 - **Proofbound target:** compiler, status engine, and independent verifier
-- **Upstream record:** not upstreamed
+- **Upstream record:** Proofbound PR 7, commit `ae46c64`
 - **Supersedes:** none
 - **Superseded by:** none
 
@@ -102,9 +102,15 @@ existing evidence facet.
 
 - **Destination:** `proof-bound` compiler, verifier, and conformance tests
 - **Issue:** none
-- **Specification or ADR:** not yet upstreamed
-- **Commit or pull request:** none
+- **Specification or ADR:** Proofbound ADR 0023 (proposed)
+- **Commit or pull request:**
+  [Proofbound PR 7](https://github.com/bordumb/proof-bound/pull/7), exact commit
+  `ae46c64bea2ef3274a4272d2e018c0f7155bd814`
 
 ## Resolution
 
-Open. Record the exact upstream decision and Runtime migration here.
+The producer/status engine and independent verifier implementation is open for
+independent review in Proofbound PR 7. It carries the claim-owned exact domain,
+rejects field and registration-digest drift, and rejects a passing bounded
+receipt substituted from another domain. The record remains open until that
+claim wave is independently approved and merged.
