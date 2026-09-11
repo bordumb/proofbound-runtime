@@ -3,7 +3,9 @@ use proofbound_runtime_core::{
     CgroupIdentity, EnvironmentName, ExecutionId, ExecutionObservations, ExecutionOutcome,
     ExecutionReceipt, ExecutionReceiptParts, FileMode, REQUIRED_RUNTIME_ASSUMPTIONS,
     ReceiptCommand, ReceiptPlan, ReceiptPolicy, ReceiptStreams, RuntimeIdentity, Sha256Digest,
-    StreamCapture, TrustedComputingBaseEntry, TrustedComputingBaseRole,
+    StreamCapture, TrustedComputingBaseEntry, TrustedComputingBaseRole, MemoryByteLimit,
+    OutputByteLimit, ProcessLimit, ReceiptMemoryEvents, ReceiptResources, ReceiptSwapEvents,
+    ResourceLimits, SwapByteLimit, WallTimeLimit,
 };
 use proofbound_runtime_verify::{
     EligibilityDecision, FailureReason, ReceiptCommitment, verify_receipt,
@@ -135,4 +137,34 @@ fn producer_and_verifier_agree_on_non_reuse() {
         panic!("denied execution must not be reusable");
     };
     assert_eq!(reasons.as_slice(), &[FailureReason::Denied]);
+}
+
+#[test]
+fn independent_verifier_accepts_v2_cbor_and_recomputes_resource_nonreuse() {
+    let mut input = parts(ExecutionOutcome::Exited { code: 0 });
+    input.resources = Some(
+        ReceiptResources::new(
+            ResourceLimits::new_v2(
+                ProcessLimit::new(2).expect("valid process limit"),
+                WallTimeLimit::from_milliseconds(1_000).expect("valid wall limit"),
+                OutputByteLimit::new(1_024),
+                OutputByteLimit::new(2_048),
+                MemoryByteLimit::new(65_536).expect("valid memory limit"),
+                SwapByteLimit::new(0).expect("valid swap limit"),
+            ),
+            32_768,
+            0,
+            ReceiptMemoryEvents::new(0, 1, 0, 0, 0, 0),
+            ReceiptSwapEvents::new(0, 0),
+        )
+        .expect("complete v2 resources"),
+    );
+    let receipt = ExecutionReceipt::new(input).expect("producer accepts v2 fixture");
+    let bytes = receipt.canonical_bytes().expect("producer encodes v2 fixture");
+    let report = verify_receipt(&bytes, ReceiptCommitment::for_bytes(&bytes))
+        .expect("independent verifier accepts producer v2 bytes");
+    let EligibilityDecision::NonReusable(reasons) = report.eligibility() else {
+        panic!("memory.high must force nonreuse");
+    };
+    assert_eq!(reasons.as_slice(), &[FailureReason::MemoryHigh]);
 }
