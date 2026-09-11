@@ -294,8 +294,9 @@ mod tests {
     use std::cell::Cell;
 
     use super::{
-        BenchmarkError, Measurement, MeasurementConfig, Summary, measure_prepared_with_clock,
-        measure_with_clock, next_batch_count, summarize,
+        BenchmarkError, Measurement, MeasurementConfig, PureBenchmarkResult, PureSubject,
+        PureSubjectResult, Summary, measure_prepared_with_clock, measure_with_clock,
+        next_batch_count, summarize,
     };
 
     #[test]
@@ -456,6 +457,99 @@ mod tests {
         assert_eq!(
             measure_prepared_with_clock(config, |_| Vec::<u8>::new(), |_| (), || 0),
             Err(BenchmarkError::PreparationCountMismatch)
+        );
+    }
+
+    fn fixed_measurement(marker: u64) -> Measurement {
+        Measurement {
+            batch_count: 2,
+            summary: Summary {
+                samples_ns: vec![marker, marker + 1],
+                count: 2,
+                minimum_ns: marker,
+                median_ns: marker,
+                p95_ns: marker + 1,
+                maximum_ns: marker + 1,
+            },
+        }
+    }
+
+    fn fixed_subject(subject: PureSubject, marker: char) -> PureSubjectResult {
+        PureSubjectResult::new(
+            subject,
+            marker.to_string().repeat(64),
+            fixed_measurement(u64::from(u32::from(marker))),
+        )
+        .expect("fixture subject is valid")
+    }
+
+    #[test]
+    fn pure_result_closes_and_sorts_the_subject_domain() {
+        let result = PureBenchmarkResult::new(
+            "a".repeat(40),
+            "b".repeat(64),
+            "rustc fixture".to_owned(),
+            "x86_64-unknown-linux-gnu".to_owned(),
+            "x86_64".to_owned(),
+            vec![
+                fixed_subject(PureSubject::PolicyCompilationV1, '3'),
+                fixed_subject(PureSubject::PlanParseV1, '1'),
+                fixed_subject(PureSubject::AuthorityNormalizationV1, '2'),
+            ],
+        )
+        .expect("complete result is valid");
+
+        assert_eq!(
+            result.subjects().iter().map(PureSubjectResult::subject).collect::<Vec<_>>(),
+            vec![
+                PureSubject::PlanParseV1,
+                PureSubject::AuthorityNormalizationV1,
+                PureSubject::PolicyCompilationV1,
+            ]
+        );
+        let first = result.to_json().expect("result encodes");
+        let second = result.to_json().expect("result re-encodes");
+        assert_eq!(first, second);
+        let value: serde_json::Value =
+            serde_json::from_slice(&first).expect("result is JSON");
+        assert_eq!(value["schema"], "proofbound-runtime-performance-result/1");
+        assert_eq!(value["kind"], "pure");
+        assert_eq!(value["complete"], true);
+        assert_eq!(value["subjects"][0]["subject"], "plan-parse-v1");
+    }
+
+    #[test]
+    fn pure_result_rejects_missing_duplicate_and_invalid_identities() {
+        let subject = fixed_subject(PureSubject::PlanParseV1, '1');
+        let make = |source: String, executable: String, subjects: Vec<PureSubjectResult>| {
+            PureBenchmarkResult::new(
+                source,
+                executable,
+                "rustc fixture".to_owned(),
+                "x86_64-unknown-linux-gnu".to_owned(),
+                "x86_64".to_owned(),
+                subjects,
+            )
+        };
+        assert_eq!(
+            make("A".repeat(40), "b".repeat(64), Vec::new()),
+            Err(BenchmarkError::InvalidSourceCommit)
+        );
+        assert_eq!(
+            make("a".repeat(40), "B".repeat(64), Vec::new()),
+            Err(BenchmarkError::InvalidDigest)
+        );
+        assert_eq!(
+            make("a".repeat(40), "b".repeat(64), vec![subject.clone()]),
+            Err(BenchmarkError::SubjectDomainMismatch)
+        );
+        assert_eq!(
+            make(
+                "a".repeat(40),
+                "b".repeat(64),
+                vec![subject.clone(), subject],
+            ),
+            Err(BenchmarkError::SubjectDomainMismatch)
         );
     }
 }
