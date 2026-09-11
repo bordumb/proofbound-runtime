@@ -77,7 +77,7 @@ fn native_memory_catalog_is_closed() {
             "production_launcher_enforces_native_swap_presence_matrix",
         ),
         (
-            "swap-limit-reached",
+            "bounded-swap-pressure",
             "production_launcher_enforces_native_swap_presence_matrix",
         ),
         (
@@ -657,14 +657,19 @@ mod linux {
                     "{execution:#?}"
                 );
                 assert!(resources.memory_events().oom() > 0, "{execution:#?}");
-                assert!(
-                    resources.swap_events().max() > 0 || resources.swap_events().fail() > 0,
-                    "the kernel must report either a swap-limit hit or a swap-allocation failure: {execution:#?}"
+                assert_eq!(
+                    resources.limit_events().contains(LimitEvent::SwapMax),
+                    resources.swap_events().max() > 0,
+                    "{execution:#?}"
+                );
+                assert_eq!(
+                    resources.limit_events().contains(LimitEvent::SwapFail),
+                    resources.swap_events().fail() > 0,
+                    "{execution:#?}"
                 );
                 assert!(
-                    resources.limit_events().contains(LimitEvent::SwapMax)
-                        || resources.limit_events().contains(LimitEvent::SwapFail),
-                    "{execution:#?}"
+                    resources.limit_events().contains(LimitEvent::MemoryOom),
+                    "memory OOM must make this pressure observation non-reusable: {execution:#?}"
                 );
             }
             other => panic!("unknown native swap mode: {other}"),

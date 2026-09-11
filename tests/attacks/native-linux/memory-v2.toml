@@ -41,9 +41,9 @@ test = "production_launcher_enforces_native_swap_presence_matrix"
 expected = "installed-zero-and-zero-swap-peak"
 
 [[case]]
-id = "swap-limit-reached"
+id = "bounded-swap-pressure"
 test = "production_launcher_enforces_native_swap_presence_matrix"
-expected = "swap-max-or-fail-event-and-nonreuse"
+expected = "bounded-nonzero-swap-peak-and-exact-event-projection"
 
 [[case]]
 id = "host-without-swap"
