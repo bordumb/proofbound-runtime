@@ -385,6 +385,66 @@ struct WireLimits {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{MemoryByteLimit, SwapByteLimit};
+
+    fn decode_hex(input: &str) -> Vec<u8> {
+        input
+            .trim()
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| {
+                let text = core::str::from_utf8(pair).expect("fixture is ASCII");
+                u8::from_str_radix(text, 16).expect("fixture is hexadecimal")
+            })
+            .collect()
+    }
+
+    #[test]
+    fn parses_the_registered_version_two_cbor_plan() {
+        let encoded = decode_hex(include_str!(
+            "../../../schemas/vectors/v2/execution-plan.cbor.hex"
+        ));
+        let plan = parse_execution_plan_for_execution(&encoded).expect("golden plan is valid");
+
+        assert_eq!(plan.id().as_str(), "golden-v2");
+        assert_eq!(plan.command().executable().as_str(), "bin/hello");
+        assert_eq!(
+            plan.authority().limits().memory().map(MemoryByteLimit::get),
+            Some(65_536)
+        );
+        assert_eq!(
+            plan.authority().limits().swap().map(SwapByteLimit::get),
+            Some(0)
+        );
+    }
+
+    #[test]
+    fn execution_rejects_legacy_plan_with_the_migration_code() {
+        let legacy = r#"
+schema = "proofbound-runtime-plan/1"
+id = "legacy"
+[command]
+executable = "/bin/tool"
+arguments = []
+working_directory = "."
+[authority]
+network = "deny"
+environment = []
+read = []
+runtime_read = []
+write = ["out"]
+execute = ["/bin/tool"]
+[limits]
+wall_time_ms = 1
+stdout_bytes = 0
+stderr_bytes = 0
+processes = 1
+"#;
+        let error = parse_execution_plan_for_execution(legacy.as_bytes())
+            .expect_err("version 1 execution is obsolete");
+        assert_eq!(error, PlanError::ExecutionObsolete);
+        assert_eq!(error.code(), "plan.schema.execution-obsolete");
+    }
 
     #[test]
     fn rejects_missing_executable_authority() {
