@@ -6,6 +6,7 @@ from pathlib import Path
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = REPOSITORY_ROOT / ".github/workflows/performance-baseline.yml"
+NATIVE_SCRIPT = REPOSITORY_ROOT / "tools/ci/native-performance.sh"
 
 
 class PerformanceWorkflowTests(unittest.TestCase):
@@ -85,6 +86,46 @@ class PerformanceWorkflowTests(unittest.TestCase):
             workflow,
         )
         self.assertNotIn('sha256sum "$result_root"/*', workflow)
+
+    def test_native_job_runs_the_exact_fresh_execution_protocol(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn("name: native execution (${{ matrix.architecture }})", workflow)
+        self.assertIn(
+            "cargo build --release --locked "
+            "-p proofbound-runtime-bench -p proofbound-runtime-cli "
+            "-p proofbound-runtime-linux -p proofbound-runtime-verify --bins",
+            workflow,
+        )
+        self.assertIn("bash tools/ci/native-performance.sh", workflow)
+        self.assertIn("experiments/performance/verify_native.py", workflow)
+        for argument in (
+            "--benchmark-executable",
+            "--pbr",
+            "--launcher",
+            "--verifier",
+            "--plan",
+            "--workload-executable",
+            "--expected-output",
+            "--runs-root",
+        ):
+            self.assertIn(argument, workflow)
+        self.assertIn(
+            "proofbound-runtime-performance-native-${{ matrix.architecture }}-"
+            "${{ env.PBR_PERFORMANCE_REVISION }}",
+            workflow,
+        )
+
+    def test_native_wrapper_uses_one_nonroot_delegated_pids_context(self) -> None:
+        script = NATIVE_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("PROOFBOUND_NATIVE_PERFORMANCE_INNER", script)
+        self.assertIn("--property=Delegate=pids", script)
+        self.assertIn("--property=DelegateSubgroup=proofbound-supervisor", script)
+        self.assertIn("echo +pids", script)
+        self.assertIn('"$result_root/pbr-bench" native', script)
+        self.assertIn('--source-commit "$source_commit"', script)
+        self.assertIn('--runner-image "$runner_image"', script)
 
 
 if __name__ == "__main__":
