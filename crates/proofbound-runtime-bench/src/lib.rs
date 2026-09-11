@@ -1163,6 +1163,7 @@ mod tests {
                 "receipt-construction-v1",
                 "receipt-canonical-encoding-v1",
                 "receipt-independent-verification-v1",
+                "release-execution-composition-v1",
             ]
         );
         assert!(subjects[..3].iter().all(|subject| {
