@@ -86,7 +86,7 @@ class WireTransitionTests(unittest.TestCase):
             REPOSITORY_ROOT / "crates/proofbound-runtime-cli/src/doctor.rs"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("--property=Delegate=pids memory", script)
+        self.assertIn("Delegate=pids memory", script)
         self.assertIn("echo +memory +pids", script)
         self.assertIn("Delegate=pids memory", doctor)
 

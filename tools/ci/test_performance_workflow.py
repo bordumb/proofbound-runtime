@@ -149,7 +149,7 @@ class PerformanceWorkflowTests(unittest.TestCase):
         script = NATIVE_SCRIPT.read_text(encoding="utf-8")
 
         self.assertIn("PROOFBOUND_NATIVE_PERFORMANCE_INNER", script)
-        self.assertIn("--property=Delegate=pids memory", script)
+        self.assertIn("Delegate=pids memory", script)
         self.assertIn("--property=DelegateSubgroup=proofbound-supervisor", script)
         self.assertIn("echo +memory +pids", script)
         self.assertIn('"$result_root/pbr-bench" native', script)

@@ -39,11 +39,13 @@ if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
     echo "delegation root contains direct processes" >&2
     exit 1
   fi
-  echo +pids >"$delegation_root/cgroup.subtree_control"
-  if ! grep -qw pids "$delegation_root/cgroup.subtree_control"; then
-    echo "pids controller was not enabled below the delegation root" >&2
-    exit 1
-  fi
+  echo +memory +pids >"$delegation_root/cgroup.subtree_control"
+  for controller in memory pids; do
+    if ! grep -qw "$controller" "$delegation_root/cgroup.subtree_control"; then
+      echo "$controller controller was not enabled below the delegation root" >&2
+      exit 1
+    fi
+  done
 
   export PROOFBOUND_CGROUP_ROOT="$delegation_root"
   export PROOFBOUND_NATIVE_REQUIRED=1
@@ -312,7 +314,7 @@ exec sudo systemd-run \
   --unit="proofbound-runtime-native-$unit_suffix" \
   --property="User=$(id -un)" \
   --property="Group=$(id -gn)" \
-  --property=Delegate=pids \
+  --property="Delegate=pids memory" \
   --property="DelegateSubgroup=$supervisor_leaf" \
   --working-directory="$repository_root" \
   --setenv=PROOFBOUND_NATIVE_INNER=1 \

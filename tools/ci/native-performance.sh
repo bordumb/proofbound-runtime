@@ -70,11 +70,13 @@ if [[ "${PROOFBOUND_NATIVE_PERFORMANCE_INNER:-}" == "1" ]]; then
     echo "native benchmark delegation root contains direct processes" >&2
     exit 1
   fi
-  echo +pids >"$delegation_root/cgroup.subtree_control"
-  if ! grep -qw pids "$delegation_root/cgroup.subtree_control"; then
-    echo "pids controller was not enabled below the delegation root" >&2
-    exit 1
-  fi
+  echo +memory +pids >"$delegation_root/cgroup.subtree_control"
+  for controller in memory pids; do
+    if ! grep -qw "$controller" "$delegation_root/cgroup.subtree_control"; then
+      echo "$controller controller was not enabled below the delegation root" >&2
+      exit 1
+    fi
+  done
   exec "$result_root/pbr-bench" native \
     --source-commit "$source_commit" \
     --workload-id "$workload_id" \
@@ -163,7 +165,7 @@ exec sudo systemd-run \
   --unit="proofbound-runtime-performance-$unit_suffix" \
   --property="User=$(id -un)" \
   --property="Group=$(id -gn)" \
-  --property=Delegate=pids \
+  --property="Delegate=pids memory" \
   --property=DelegateSubgroup=proofbound-supervisor \
   --working-directory="$repository_root" \
   --setenv=PROOFBOUND_NATIVE_PERFORMANCE_INNER=1 \

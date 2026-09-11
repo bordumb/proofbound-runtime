@@ -147,7 +147,7 @@ const fn explanation(error: ProbeError) -> Explanation {
         },
         ProbeError::CgroupV2ControllerMissing => Explanation {
             requirement: "pids controller delegated to the configured cgroup root",
-            remediation: "start the service with Delegate=pids and verify pids is available below the delegated root",
+            remediation: "start the service with Delegate=pids memory and verify both controllers are available below the delegated root",
         },
     }
 }
