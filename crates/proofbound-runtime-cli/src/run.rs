@@ -22,7 +22,7 @@ use proofbound_runtime_linux::{
     compile_deny_network_program, fresh_execution_id, identify_external_artifact,
     probe_capabilities, supervise_launcher,
 };
-use serde_json::{Value, json};
+use serde_json::Value;
 use sha2::{Digest as _, Sha256};
 
 use crate::run_diagnostic::{RunError, RunPhase, RunRule};
@@ -1264,6 +1264,7 @@ fn map_receipt_construction(error: ReceiptError) -> RunError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     const ATTACK_CATALOG: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
