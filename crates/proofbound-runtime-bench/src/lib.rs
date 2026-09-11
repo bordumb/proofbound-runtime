@@ -4,8 +4,13 @@
 //! evidence boundary.
 
 use core::fmt;
+use std::time::Instant;
 
+use proofbound_runtime_core::{
+    Sha256Digest, compile_policy, normalize_authority, parse_execution_plan,
+};
 use serde::Serialize;
+use sha2::{Digest, Sha256};
 
 /// One closed benchmark-harness failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -32,6 +37,8 @@ pub enum BenchmarkError {
     SubjectDomainMismatch,
     /// Operational JSON serialization failed.
     Encoding,
+    /// A prevalidated production subject could not be evaluated.
+    SubjectFailed,
 }
 
 impl fmt::Display for BenchmarkError {
@@ -48,6 +55,7 @@ impl fmt::Display for BenchmarkError {
             Self::InvalidDigest => "benchmark.digest.invalid",
             Self::SubjectDomainMismatch => "benchmark.subject-domain.mismatch",
             Self::Encoding => "benchmark.result.encoding-failed",
+            Self::SubjectFailed => "benchmark.subject.failed",
         })
     }
 }
@@ -162,6 +170,18 @@ impl PureSubjectResult {
     pub const fn subject(&self) -> PureSubject {
         self.subject
     }
+
+    /// Returns the exact input-fixture identity.
+    #[must_use]
+    pub fn fixture_sha256(&self) -> &str {
+        &self.fixture_sha256
+    }
+
+    /// Returns the calibrated measurement.
+    #[must_use]
+    pub const fn measurement(&self) -> &Measurement {
+        &self.measurement
+    }
 }
 
 /// One complete operational result for the closed pure benchmark domain.
@@ -233,6 +253,81 @@ fn is_lower_hex_exact(value: &str, length: usize) -> bool {
         && value
             .bytes()
             .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+}
+
+/// Measures a reusable-input operation with a monotonic clock.
+pub fn measure<T, Operation>(
+    config: MeasurementConfig,
+    operation: Operation,
+) -> Result<Measurement, BenchmarkError>
+where
+    Operation: FnMut() -> T,
+{
+    let origin = Instant::now();
+    measure_with_clock(config, operation, || elapsed_ns(origin))
+}
+
+/// Measures a consuming operation without timing input preparation.
+pub fn measure_prepared<Input, Output, Prepare, Operation>(
+    config: MeasurementConfig,
+    prepare: Prepare,
+    operation: Operation,
+) -> Result<Measurement, BenchmarkError>
+where
+    Prepare: FnMut(usize) -> Vec<Input>,
+    Operation: FnMut(Input) -> Output,
+{
+    let origin = Instant::now();
+    measure_prepared_with_clock(config, prepare, operation, || elapsed_ns(origin))
+}
+
+fn elapsed_ns(origin: Instant) -> u64 {
+    u64::try_from(origin.elapsed().as_nanos()).unwrap_or(u64::MAX)
+}
+
+/// Measures the closed first set of existing version 1 pure operations.
+pub fn benchmark_core_v1(
+    config: MeasurementConfig,
+) -> Result<Vec<PureSubjectResult>, BenchmarkError> {
+    const PLAN_FIXTURE: &str =
+        include_str!("../../../tests/conformance/plan/positive/minimal-v1.toml");
+
+    let plan = parse_execution_plan(PLAN_FIXTURE).map_err(|_| BenchmarkError::SubjectFailed)?;
+    let normalized =
+        normalize_authority(plan.authority().clone()).map_err(|_| BenchmarkError::SubjectFailed)?;
+    let fixture_digest: [u8; 32] = Sha256::digest(PLAN_FIXTURE.as_bytes()).into();
+    let fixture_sha256 = Sha256Digest::from_bytes(fixture_digest).to_hex();
+
+    let plan_parse = measure(config, || {
+        parse_execution_plan(std::hint::black_box(PLAN_FIXTURE))
+            .expect("prevalidated plan fixture remains valid")
+    })?;
+    let authority_normalization = measure_prepared(
+        config,
+        |count| vec![plan.authority().clone(); count],
+        |authority| {
+            normalize_authority(authority).expect("prevalidated authority fixture remains valid")
+        },
+    )?;
+    let policy_compilation = measure_prepared(
+        config,
+        |count| vec![normalized.clone(); count],
+        compile_policy,
+    )?;
+
+    [
+        (PureSubject::PlanParseV1, plan_parse),
+        (
+            PureSubject::AuthorityNormalizationV1,
+            authority_normalization,
+        ),
+        (PureSubject::PolicyCompilationV1, policy_compilation),
+    ]
+    .into_iter()
+    .map(|(subject, measurement)| {
+        PureSubjectResult::new(subject, fixture_sha256.clone(), measurement)
+    })
+    .collect()
 }
 
 /// Sorts and summarizes one nonempty elapsed-time series.
@@ -712,8 +807,7 @@ mod tests {
                 == "80194be084f9749fe47bc5feb1ac737d8e793b67230b0590abc2d2948881aa4a"
         }));
         assert!(subjects.iter().all(|subject| {
-            subject.measurement().summary.count == 2
-                && subject.measurement().batch_count >= 1
+            subject.measurement().summary.count == 2 && subject.measurement().batch_count >= 1
         }));
     }
 }
