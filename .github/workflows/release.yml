@@ -34,6 +34,9 @@ jobs:
           git fetch --no-tags origin main:refs/remotes/origin/main
           git merge-base --is-ancestor "$PBR_RELEASE_REVISION" origin/main
 
+      - name: Require prepared version and changelog state
+        run: python3 tools/release/validate_release_state.py
+
   release:
     name: Reproduce and seal release (${{ matrix.architecture }})
     needs: validate-revision
