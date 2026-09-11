@@ -30,7 +30,7 @@ jobs:
       PBR_CI_TIMING_FILE: /tmp/proofbound-runtime-ci-timing.jsonl
     steps:
       - name: Check out the exact event head
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.PBR_EXACT_SHA }}
 
@@ -48,7 +48,7 @@ jobs:
 
       - name: Upload preflight timing metadata
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: proofbound-runtime-ci-timing-preflight-${{ env.PBR_EXACT_SHA }}
           path: ${{ env.PBR_CI_TIMING_FILE }}
@@ -64,7 +64,7 @@ jobs:
       PBR_CI_TIMING_FILE: /tmp/proofbound-runtime-ci-timing.jsonl
     steps:
       - name: Check out the exact event head
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.PBR_EXACT_SHA }}
 
@@ -96,7 +96,7 @@ jobs:
 
       - name: Upload Rust timing metadata
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: proofbound-runtime-ci-timing-rust-${{ env.PBR_EXACT_SHA }}
           path: ${{ env.PBR_CI_TIMING_FILE }}
@@ -112,7 +112,7 @@ jobs:
       PBR_CI_TIMING_FILE: /tmp/proofbound-runtime-ci-timing.jsonl
     steps:
       - name: Check out the exact event head
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.PBR_EXACT_SHA }}
 
@@ -201,7 +201,7 @@ jobs:
 
       - name: Upload formal timing metadata
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: proofbound-runtime-ci-timing-formal-${{ env.PBR_EXACT_SHA }}
           path: ${{ env.PBR_CI_TIMING_FILE }}
@@ -225,7 +225,7 @@ jobs:
       PBR_CI_TIMING_FILE: /tmp/proofbound-runtime-ci-timing.jsonl
     steps:
       - name: Check out the exact event head
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.PBR_EXACT_SHA }}
 
@@ -248,7 +248,7 @@ jobs:
 
       - name: Upload native timing metadata
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: proofbound-runtime-ci-timing-native-${{ matrix.architecture }}-${{ env.PBR_EXACT_SHA }}
           path: ${{ env.PBR_CI_TIMING_FILE }}
