@@ -12,7 +12,10 @@ use proofbound_runtime_core::{
 #[cfg(any(test, target_os = "linux"))]
 use proofbound_runtime_core::{OutputByteLimit, SignalNumber};
 
-use crate::{FreshCgroup, InstallRequest, LauncherError, LauncherFailure, LauncherIdentity};
+use crate::{
+    FreshCgroup, InstallRequest, LauncherError, LauncherFailure, LauncherIdentity,
+    TerminalResources,
+};
 #[cfg(target_os = "linux")]
 use crate::{LauncherChannel, LauncherMessage};
 
@@ -50,6 +53,7 @@ pub struct SupervisedExecution {
     stdout: CapturedStream,
     stderr: CapturedStream,
     launcher_failure: Option<LauncherFailure>,
+    resources: Option<TerminalResources>,
     elapsed: Duration,
     timings: SupervisorTimings,
 }
@@ -83,6 +87,12 @@ impl SupervisedExecution {
     #[must_use]
     pub const fn launcher_failure(&self) -> Option<&LauncherFailure> {
         self.launcher_failure.as_ref()
+    }
+
+    /// Returns terminal resources for a version 2 cgroup lifecycle.
+    #[must_use]
+    pub const fn resources(&self) -> Option<TerminalResources> {
+        self.resources
     }
 
     /// Returns elapsed monotonic supervisor time.
@@ -301,16 +311,14 @@ pub fn supervise_launcher(
             let _ = child.0.kill();
         }
         let cleanup_start = std::time::Instant::now();
-        let cleanup = cgroup.cleanup();
+        let resources = cgroup.finish();
         let _ = child.0.wait();
         let cleanup_elapsed = cleanup_start.elapsed();
         let stream_start = std::time::Instant::now();
         let stdout = join_capture(stdout_reader)?;
         let stderr = join_capture(stderr_reader)?;
         let stream_collection_elapsed = stream_start.elapsed();
-        if cleanup.is_err() {
-            return Err(SupervisorError::CleanupFailed);
-        }
+        let resources = resources.map_err(|_| SupervisorError::CleanupFailed);
         let lifecycle = lifecycle?;
         Ok(SupervisedExecution {
             boundary: lifecycle.boundary,
@@ -318,6 +326,7 @@ pub fn supervise_launcher(
             stdout,
             stderr,
             launcher_failure: lifecycle.launcher_failure,
+            resources: resources?,
             elapsed: start.elapsed(),
             timings: SupervisorTimings::new(
                 lifecycle.launcher_creation,

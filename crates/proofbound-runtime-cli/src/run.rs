@@ -408,8 +408,8 @@ pub fn execute_observed(
     let phase_start = std::time::Instant::now();
     let execution_id = fresh_execution_id().map_err(map_execution_setup)?;
     let limits = compiled.cgroup().limits();
-    let cgroup = FreshCgroup::create(supported.cgroup_v2(), execution_id, limits.processes())
-        .map_err(map_cgroup)?;
+    let cgroup =
+        FreshCgroup::create_v2(supported.cgroup_v2(), execution_id, limits).map_err(map_cgroup)?;
     let cgroup_identity = cgroup.identity();
     let launcher_identity =
         LauncherIdentity::new(execution_id, policy_identity.digest(), cgroup_identity);
