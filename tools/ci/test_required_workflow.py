@@ -42,6 +42,7 @@ class RequiredWorkflowTests(unittest.TestCase):
         self.assertRegex(workflow, r"(?m)^  preflight:\n")
         self.assertRegex(workflow, r"(?m)^  rust:\n")
         self.assertRegex(workflow, r"(?m)^  formal:\n")
+        self.assertRegex(workflow, r"(?m)^  proofbound-tools:\n")
         self.assertRegex(workflow, r"(?m)^  fresh-evidence:\n")
         self.assertRegex(workflow, r"(?m)^  native:\n")
         self.assertRegex(workflow, r"(?m)^  required:\n")
@@ -74,15 +75,39 @@ class RequiredWorkflowTests(unittest.TestCase):
 
     def test_formal_and_fresh_evidence_have_independent_runtime_budgets(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        formal = workflow[workflow.index("\n  formal:\n") : workflow.index("\n  fresh-evidence:\n")]
+        formal = workflow[workflow.index("\n  formal:\n") : workflow.index("\n  proofbound-tools:\n")]
+        tools = workflow[workflow.index("\n  proofbound-tools:\n") : workflow.index("\n  fresh-evidence:\n")]
         evidence = workflow[workflow.index("\n  fresh-evidence:\n") : workflow.index("\n  native:\n")]
 
         self.assertIn("bash tools/ci/ci.sh formal", formal)
         self.assertNotIn("Install pinned Proofbound tools", formal)
         self.assertNotIn("Install pinned Kani verifier", formal)
+        self.assertIn("Install pinned Proofbound tools", tools)
         self.assertIn("bash tools/ci/ci.sh evidence", evidence)
-        self.assertIn("Install pinned Proofbound tools", evidence)
+        self.assertNotIn("Install pinned Proofbound tools", evidence)
+        self.assertIn("Download pinned Proofbound tools", evidence)
         self.assertIn("Install pinned Kani verifier", evidence)
+
+    def test_fresh_evidence_reuses_one_integrity_checked_proofbound_tool_bundle(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        tools = workflow[workflow.index("\n  proofbound-tools:\n") : workflow.index("\n  fresh-evidence:\n")]
+        evidence = workflow[workflow.index("\n  fresh-evidence:\n") : workflow.index("\n  native:\n")]
+
+        self.assertIn("name: Pinned Proofbound tools", tools)
+        self.assertIn("needs: preflight", tools)
+        self.assertEqual(workflow.count("Install pinned Proofbound tools"), 1)
+        self.assertIn("sha256sum proofbound* > SHA256SUMS", tools)
+        self.assertIn(
+            "name: proofbound-tools-${{ env.PBR_EXACT_SHA }}",
+            tools,
+        )
+        self.assertIn(
+            "needs:\n      - preflight\n      - proofbound-tools",
+            evidence,
+        )
+        self.assertIn(f"uses: {DOWNLOAD_ARTIFACT_ACTION}", evidence)
+        self.assertIn("sha256sum --check SHA256SUMS", evidence)
+        self.assertIn('echo "$RUNNER_TEMP/proofbound-tools" >> "$GITHUB_PATH"', evidence)
 
     def test_fresh_evidence_matrix_is_a_closed_claim_partition(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
@@ -230,7 +255,7 @@ class RequiredWorkflowTests(unittest.TestCase):
     def test_each_lane_uploads_timing_outside_assurance_evidence(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
-        self.assertEqual(workflow.count("actions/upload-artifact@"), 6)
+        self.assertEqual(workflow.count("actions/upload-artifact@"), 7)
         self.assertEqual(workflow.count("if: ${{ always() }}"), 11)
         self.assertEqual(workflow.count("proofbound-runtime-ci-timing-"), 5)
         self.assertNotIn(".proofbound", "\n".join(
@@ -315,15 +340,15 @@ class RequiredWorkflowTests(unittest.TestCase):
         exact_sha = "${{ github.event.pull_request.head.sha || github.sha }}"
 
         self.assertIn(f"PBR_EXACT_SHA: {exact_sha}", workflow)
-        self.assertEqual(workflow.count(f"uses: {CHECKOUT_ACTION}"), 5)
-        self.assertEqual(workflow.count("ref: ${{ env.PBR_EXACT_SHA }}"), 5)
+        self.assertEqual(workflow.count(f"uses: {CHECKOUT_ACTION}"), 6)
+        self.assertEqual(workflow.count("ref: ${{ env.PBR_EXACT_SHA }}"), 6)
         self.assertEqual(
             workflow.count(
                 'run: test "$(git rev-parse HEAD)" = "$PBR_EXACT_SHA"'
             ),
-            5,
+            6,
         )
-        self.assertEqual(workflow.count("-${{ env.PBR_EXACT_SHA }}"), 6)
+        self.assertEqual(workflow.count("-${{ env.PBR_EXACT_SHA }}"), 7)
         self.assertNotIn('= "$GITHUB_SHA"', workflow)
 
     def test_first_party_actions_are_exact_node24_releases(self) -> None:
@@ -360,7 +385,7 @@ class RequiredWorkflowTests(unittest.TestCase):
             with self.subTest(workflow=workflow_name, action=action):
                 self.assertRegex(action, r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}$")
         rust_action = RUST_TOOLCHAIN_ACTION.split()[0]
-        self.assertEqual(sum(action == rust_action for _, action in observed), 8)
+        self.assertEqual(sum(action == rust_action for _, action in observed), 9)
 
     def test_triggers_and_cancellation_remain_closed(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")

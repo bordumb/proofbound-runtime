@@ -28,10 +28,11 @@ class ExactToolCacheTests(unittest.TestCase):
         workflow = VERIFY_WORKFLOW.read_text(encoding="utf-8")
 
         formal_start = workflow.index("\n  formal:\n")
+        formal_end = workflow.index("\n  proofbound-tools:\n")
         evidence_start = workflow.index("\n  fresh-evidence:\n")
         native_start = workflow.index("\n  native:\n")
         jobs = (
-            (workflow[formal_start:evidence_start], "Run formal model and refinement gates"),
+            (workflow[formal_start:formal_end], "Run formal model and refinement gates"),
             (workflow[evidence_start:native_start], "Run fresh evidence gate"),
         )
         for job, gate_name in jobs:
