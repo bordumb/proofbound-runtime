@@ -46,7 +46,10 @@ class ExactToolCacheTests(unittest.TestCase):
         manifests = (REPOSITORY_ROOT / "tools" / "ci" / "manifests.sh").read_text(
             encoding="utf-8"
         )
-        self.assertIn('check --root "$check_root" --fresh --json', manifests)
+        self.assertIn(
+            'check --root "$check_root" "${check_args[@]}" --fresh --json',
+            manifests,
+        )
 
     def test_cache_paths_exclude_assurance_build_and_release_outputs(self) -> None:
         workflow = VERIFY_WORKFLOW.read_text(encoding="utf-8")

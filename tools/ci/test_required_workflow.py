@@ -114,15 +114,18 @@ class RequiredWorkflowTests(unittest.TestCase):
         )
         self.assertIn("fail-fast: false", evidence)
         for shard, selector in (*expected_kernel_shards.items(), ("ledger", "ledger")):
-            self.assertIn(f"- shard: {shard}\n              selector: {selector}", evidence)
+            self.assertIn(f"- shard: {shard}\n            selector: {selector}", evidence)
         self.assertIn("PBR_EVIDENCE_SELECTOR: ${{ matrix.selector }}", evidence)
         self.assertIn(
             "proofbound-runtime-ci-timing-fresh-evidence-"
             "${{ matrix.shard }}-${{ env.PBR_EXACT_SHA }}",
             evidence,
         )
-        for selector in (*expected_kernel_shards.values(), "ledger"):
-            self.assertIn(f"{selector})", manifests)
+        self.assertIn("ledger)", manifests)
+        self.assertIn(
+            "PBR-AUTH-001|PBR-BINDING-005|PBR-POLICY-002|PBR-RECEIPT-004)",
+            manifests,
+        )
         self.assertIn('check_args=(--profile ledger)', manifests)
         self.assertIn('check_args=(--claim "$selector")', manifests)
 

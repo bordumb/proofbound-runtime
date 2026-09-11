@@ -15,6 +15,23 @@ else
   exit 2
 fi
 
+selector="${PBR_EVIDENCE_SELECTOR:-all}"
+case "$selector" in
+  all)
+    check_args=()
+    ;;
+  ledger)
+    check_args=(--profile ledger)
+    ;;
+  PBR-AUTH-001|PBR-BINDING-005|PBR-POLICY-002|PBR-RECEIPT-004)
+    check_args=(--claim "$selector")
+    ;;
+  *)
+    printf '%s\n' "manifest check failed: unknown evidence selector: $selector" >&2
+    exit 2
+    ;;
+esac
+
 check_root="$repo_root"
 temporary_root=""
 check_output_file=""
@@ -64,7 +81,7 @@ if ! git rev-parse --verify HEAD^{commit} >/dev/null 2>&1; then
 fi
 
 check_output_file="$(mktemp)"
-"$proofbound_bin" check --root "$check_root" --fresh --json \
+"$proofbound_bin" check --root "$check_root" "${check_args[@]}" --fresh --json \
   >"$check_output_file" 2>&1 &
 check_pid=$!
 (
