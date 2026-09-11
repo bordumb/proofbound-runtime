@@ -218,8 +218,8 @@ mod tests {
     use std::cell::Cell;
 
     use super::{
-        BenchmarkError, Measurement, MeasurementConfig, Summary, measure_with_clock,
-        next_batch_count, summarize,
+        BenchmarkError, Measurement, MeasurementConfig, Summary, measure_prepared_with_clock,
+        measure_with_clock, next_batch_count, summarize,
     };
 
     #[test]
@@ -343,6 +343,43 @@ mod tests {
                 },
             ),
             Err(BenchmarkError::ClockRegression)
+        );
+    }
+
+    #[test]
+    fn prepared_measurement_excludes_input_construction() {
+        let config = MeasurementConfig::new(1, 2, 10).expect("config is valid");
+        let clock_values = [0, 10, 20, 23, 30, 35];
+        let clock_index = Cell::new(0);
+        let prepared_batches = Cell::new(Vec::new());
+        let measured = measure_prepared_with_clock(
+            config,
+            |count| {
+                let mut batches = prepared_batches.take();
+                batches.push(count);
+                prepared_batches.set(batches);
+                vec![7_u8; count]
+            },
+            |value| u16::from(value) + 1,
+            || {
+                let index = clock_index.get();
+                clock_index.set(index + 1);
+                clock_values[index]
+            },
+        )
+        .expect("prepared series measures");
+
+        assert_eq!(measured.batch_count, 1);
+        assert_eq!(measured.summary.samples_ns, vec![3, 5]);
+        assert_eq!(prepared_batches.take(), vec![1, 1, 1, 1]);
+    }
+
+    #[test]
+    fn prepared_measurement_rejects_incomplete_batch() {
+        let config = MeasurementConfig::new(1, 1, 10).expect("config is valid");
+        assert_eq!(
+            measure_prepared_with_clock(config, |_| Vec::<u8>::new(), |_| (), || 0),
+            Err(BenchmarkError::PreparationCountMismatch)
         );
     }
 }
