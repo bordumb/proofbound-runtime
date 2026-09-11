@@ -137,6 +137,24 @@ class WireTransitionTests(unittest.TestCase):
         self.assertIn("construct_and_project_receipt_binding(parts)", receipt)
         self.assertNotIn("all 20 version 1 top-level fields", claim)
 
+    def test_composer_has_separate_historical_and_v2_wire_paths(self) -> None:
+        manifest = (
+            REPOSITORY_ROOT / "crates/proofbound-runtime-compose/Cargo.toml"
+        ).read_text(encoding="utf-8")
+        library = (
+            REPOSITORY_ROOT / "crates/proofbound-runtime-compose/src/lib.rs"
+        ).read_text(encoding="utf-8")
+        binary = (
+            REPOSITORY_ROOT / "crates/proofbound-runtime-compose/src/main.rs"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("proofbound-runtime-verify", manifest)
+        self.assertIn("COMPOSITION_SCHEMA_V2", library)
+        self.assertIn("decode_receipt(inputs.execution_receipt.bytes)", library)
+        self.assertIn("encode_composed_v2", library)
+        self.assertIn("project_composed_receipt", library)
+        self.assertIn("project_composed_receipt(&composed)", binary)
+
 
 if __name__ == "__main__":
     unittest.main()
