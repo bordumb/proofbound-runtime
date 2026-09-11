@@ -20,7 +20,7 @@ open_obligations = []
 out_of_scope = [
   "Correctness of the Linux kernel or host platform under the recorded assumptions.",
   "Semantic correctness of the child program or its outputs.",
-  "Receipt properties not represented by the version 1 schema.",
+  "Receipt properties not represented by the applicable closed versioned schema.",
 ]
 source_roots = [
   "Cargo.lock",
@@ -38,6 +38,8 @@ source_roots = [
   "crates/proofbound-runtime-linux/src/",
   "docs/specs/0001_initial_spec.md",
   "docs/specs/0002_cli_surface.md",
+  "docs/specs/0007_memory_and_swap_profile.md",
+  "docs/adr/0003-deterministic-cbor-wire-objects.md",
   "docs/threat-model.md",
   "docs/receipt-semantics.md",
   "proofbound/evidence/runtime-orchestration-attacks.toml",
@@ -45,5 +47,14 @@ source_roots = [
   "proofbound/evidence/release-observe-runtime-linux-x86-64.toml",
   "crates/proofbound-runtime-compose/tests/release_observation.rs",
   "schemas/run-result-v1.schema.json",
+  "schemas/execution-plan-v2.cddl",
+  "schemas/execution-receipt-v2.cddl",
+  "schemas/run-result-v2.cddl",
+  "schemas/vectors/v2/execution-plan.cbor.hex",
+  "schemas/vectors/v2/execution-plan.projection.json",
+  "schemas/vectors/v2/execution-receipt.cbor.hex",
+  "schemas/vectors/v2/execution-receipt.projection.json",
+  "schemas/vectors/v2/run-result.cbor.hex",
+  "schemas/vectors/v2/run-result.projection.json",
   "tests/attacks/run/",
 ]
