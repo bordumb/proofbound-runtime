@@ -803,11 +803,18 @@ mod tests {
 
     #[test]
     fn pure_result_closes_and_sorts_the_subject_domain() {
+        let revision = "a".repeat(40);
+        let source = SourceRevision::new(&revision, &revision, "")
+            .expect("source is valid");
+        let toolchain = ToolchainIdentity::parse(
+            "host: x86_64-unknown-linux-gnu\nrelease: 1.93.0\n",
+        )
+        .expect("toolchain is valid");
         let result = PureBenchmarkResult::new(
-            "a".repeat(40),
+            source,
             "b".repeat(64),
-            "rustc fixture".to_owned(),
-            "x86_64-unknown-linux-gnu".to_owned(),
+            toolchain,
+            "release",
             "x86_64".to_owned(),
             vec![
                 fixed_subject(PureSubject::PolicyCompilationV1, '3'),
@@ -836,38 +843,68 @@ mod tests {
         assert_eq!(value["schema"], "proofbound-runtime-performance-result/1");
         assert_eq!(value["kind"], "pure");
         assert_eq!(value["complete"], true);
+        assert_eq!(value["source"]["commit"], "a".repeat(40));
+        assert_eq!(value["source"]["tree_state"], "clean");
+        assert_eq!(value["toolchain"]["release"], "1.93.0");
+        assert_eq!(
+            value["toolchain"]["target"],
+            "x86_64-unknown-linux-gnu"
+        );
+        assert_eq!(value["build_profile"], "release");
         assert_eq!(value["subjects"][0]["subject"], "plan-parse-v1");
     }
 
     #[test]
     fn pure_result_rejects_missing_duplicate_and_invalid_identities() {
         let subject = fixed_subject(PureSubject::PlanParseV1, '1');
-        let make = |source: String, executable: String, subjects: Vec<PureSubjectResult>| {
+        let revision = "a".repeat(40);
+        let source = SourceRevision::new(&revision, &revision, "")
+            .expect("source is valid");
+        let toolchain = ToolchainIdentity::parse(
+            "host: x86_64-unknown-linux-gnu\nrelease: 1.93.0\n",
+        )
+        .expect("toolchain is valid");
+        let make = |source: SourceRevision,
+                    executable: String,
+                    profile: &'static str,
+                    subjects: Vec<PureSubjectResult>| {
             PureBenchmarkResult::new(
                 source,
                 executable,
-                "rustc fixture".to_owned(),
-                "x86_64-unknown-linux-gnu".to_owned(),
+                toolchain.clone(),
+                profile,
                 "x86_64".to_owned(),
                 subjects,
             )
         };
+        let mismatched_source = SourceRevision::new(
+            &"c".repeat(40),
+            &"c".repeat(40),
+            "",
+        )
+        .expect("source is valid");
         assert_eq!(
-            make("A".repeat(40), "b".repeat(64), Vec::new()),
-            Err(BenchmarkError::InvalidSourceCommit)
-        );
-        assert_eq!(
-            make("a".repeat(40), "B".repeat(64), Vec::new()),
+            make(mismatched_source, "B".repeat(64), "release", Vec::new()),
             Err(BenchmarkError::InvalidDigest)
         );
         assert_eq!(
-            make("a".repeat(40), "b".repeat(64), vec![subject.clone()]),
+            make(source.clone(), "b".repeat(64), "debug", Vec::new()),
+            Err(BenchmarkError::InvalidBuildProfile)
+        );
+        assert_eq!(
+            make(
+                source.clone(),
+                "b".repeat(64),
+                "release",
+                vec![subject.clone()],
+            ),
             Err(BenchmarkError::SubjectDomainMismatch)
         );
         assert_eq!(
             make(
-                "a".repeat(40),
+                source,
                 "b".repeat(64),
+                "release",
                 vec![subject.clone(), subject],
             ),
             Err(BenchmarkError::SubjectDomainMismatch)
