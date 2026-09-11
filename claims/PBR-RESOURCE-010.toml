@@ -1,0 +1,58 @@
+schema = "proofbound-claim/1"
+id = "PBR-RESOURCE-010"
+title = "Version two execution installs and observes memory and swap bounds"
+statement = "For every supported version 2 execution, the Runtime installs and reads back the registered process, memory, swap, and OOM-group controls in the same fresh cgroup before child code starts, then records checked terminal observations from that cgroup without granting a larger modeled resource bound."
+public_language = "The production version 2 path has closed control, observation, receipt-mutation, and native attack corpora. Required native workflows exercise the exact Runtime artifact on x86_64 and aarch64 and retain its kernel, cgroup, source, and binary context. This is bounded native exact-artifact observation, not theorem-derived artifact soundness or proof of the Linux kernel."
+subject = "rust:proofbound_runtime_linux::FreshCgroup::create_v2"
+profile = "ledger"
+tier = 0
+evidence = [
+  "example-test:release-observe-runtime-linux-aarch64",
+  "example-test:release-observe-runtime-linux-x86-64",
+  "example-test:resource-boundary-attacks",
+]
+assumptions = [
+  "PBR-LINUX-AX-001",
+  "PBR-HOST-AX-002",
+  "PBR-TOOLCHAIN-AX-003",
+]
+open_obligations = [
+  "Publish version 0.2 only after both exact native release contexts reproduce, verify, and compose the version 2 artifacts at the mainline release revision.",
+]
+out_of_scope = [
+  "Correctness of the Linux kernel, cgroup accounting, host administrator, hardware, firmware, compiler, or linker.",
+  "A guarantee that memory.max never temporarily overshoots or that every failed allocation raises a registered event.",
+  "Treating zero memory.swap.max as disabling zswap or treating a nonzero swap peak as a swap limit event.",
+  "Memory classes and host resources outside the documented cgroup v2 accounting boundary.",
+]
+source_roots = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-cli/src/plan.rs",
+  "crates/proofbound-runtime-cli/src/preflight.rs",
+  "crates/proofbound-runtime-cli/src/run.rs",
+  "crates/proofbound-runtime-core/src/authority.rs",
+  "crates/proofbound-runtime-core/src/normalize.rs",
+  "crates/proofbound-runtime-core/src/plan.rs",
+  "crates/proofbound-runtime-core/src/policy.rs",
+  "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-linux/src/cgroup.rs",
+  "crates/proofbound-runtime-linux/src/probe.rs",
+  "crates/proofbound-runtime-linux/src/supervisor.rs",
+  "crates/proofbound-runtime-linux/tests/fixtures/native-boundary-probe.c",
+  "crates/proofbound-runtime-linux/tests/native_linux.rs",
+  "crates/proofbound-runtime-verify/src/decode_v2.rs",
+  "docs/adr/0003-deterministic-cbor-wire-objects.md",
+  "docs/specs/0007_memory_and_swap_profile.md",
+  "docs/threat-model.md",
+  "proofbound/evidence/resource-boundary-attacks.toml",
+  "schemas/execution-plan-v2.cddl",
+  "schemas/execution-receipt-v2.cddl",
+  "schemas/vectors/v2/execution-plan.cbor.hex",
+  "schemas/vectors/v2/execution-receipt.cbor.hex",
+  "tests/attacks/cgroup/",
+  "tests/attacks/native-linux/memory-v2.toml",
+  "tests/attacks/receipt/resources-v2.toml",
+  "tools/ci/native-linux.sh",
+  "tools/ci/native_context.py",
+]

@@ -123,12 +123,77 @@ fn assert_version(binary: &Path, name: &str) {
     );
 }
 
+fn assert_native_resource_context(
+    evidence: &Path,
+    architecture: &str,
+    runtime_digest: &str,
+    runtime_size: u64,
+) {
+    let context = read_json(&evidence.join("native-context.json"));
+    assert_eq!(context["schema"], "proofbound-runtime-native-context/1");
+    assert_eq!(context["architecture"], architecture);
+    assert_eq!(
+        context["source_revision"],
+        std::env::var("PBR_RELEASE_REVISION")
+            .expect("release observation requires the exact source revision")
+    );
+    let controllers = context["cgroup_v2"]["controllers"]
+        .as_array()
+        .expect("native cgroup controller inventory is an array");
+    for required in ["memory", "pids"] {
+        assert!(controllers.iter().any(|controller| controller == required));
+    }
+    let runtime = context["artifacts"]
+        .as_array()
+        .expect("native artifact inventory is an array")
+        .iter()
+        .find(|artifact| artifact["role"] == "runtime")
+        .expect("native context identifies the Runtime artifact");
+    assert_eq!(runtime["name"], "pbr");
+    assert_eq!(runtime["sha256"], runtime_digest);
+    assert_eq!(runtime["size"], runtime_size);
+}
+
+fn assert_version_two_resources(receipt: &Value) {
+    assert_eq!(receipt["schema"], "proofbound-runtime-execution-receipt/2");
+    let resources = &receipt["resources"];
+    assert_eq!(resources["configured"]["pids.max"], 1);
+    assert_eq!(resources["configured"]["memory.max"], "268435456");
+    assert_eq!(resources["configured"]["memory.swap.max"], "0");
+    assert_eq!(resources["configured"]["memory.oom.group"], 1);
+    assert_eq!(resources["limit_events"], serde_json::json!([]));
+    assert!(
+        resources["terminal"]["memory_peak_bytes"]
+            .as_str()
+            .expect("memory peak is an exact decimal string")
+            .parse::<u64>()
+            .expect("memory peak fits u64")
+            > 0
+    );
+    assert_eq!(resources["terminal"]["swap_peak_bytes"], "0");
+    for group in ["memory_events", "swap_events"] {
+        for counter in resources["terminal"][group]
+            .as_object()
+            .expect("resource event group is an object")
+            .values()
+        {
+            counter
+                .as_str()
+                .expect("resource event is an exact decimal string")
+                .parse::<u64>()
+                .expect("resource event fits u64");
+        }
+    }
+}
+
 #[test]
 fn observes_runtime_release() {
     let (architecture, bundle, evidence) = release_paths();
     let (digest, size) = assert_manifest_artifact(&bundle, "pbr");
     let receipt = inspect_execution_receipt(&bundle, &evidence);
     assert_eq!(receipt["platform"]["architecture"], architecture);
+    assert_version_two_resources(&receipt);
+    assert_native_resource_context(&evidence, &architecture, &digest, size);
     assert_receipt_artifact(
         &receipt["runtime"]["runtime"],
         "runtime-binary",

@@ -3,7 +3,7 @@ id = "release-observe-runtime-linux-x86-64"
 context = "release-linux-x86-64"
 adapter = "rust-test"
 kind = "example-test"
-claims = ["PBR-RUN-007"]
+claims = ["PBR-RESOURCE-010", "PBR-RUN-007"]
 tier = 0
 expected_inventory = ["release_observation::observes_runtime_release"]
 inputs = [
@@ -13,6 +13,7 @@ inputs = [
   "crates/proofbound-runtime-compose/Cargo.toml",
   "crates/proofbound-runtime-compose/tests/release_observation.rs",
   "dist/native-evidence/x86_64/execution-receipt.cbor",
+  "dist/native-evidence/x86_64/native-context.json",
   "dist/release-observation/x86_64/RELEASE-MANIFEST.json",
   "dist/release-observation/x86_64/pbr",
   "rust-toolchain.toml",
@@ -36,7 +37,10 @@ procedure = "crates/proofbound-runtime-compose/tests/release_observation.rs"
 operating_system = "linux"
 architecture = "x86_64"
 toolchain_inputs = ["Cargo.lock", "rust-toolchain.toml"]
-dependencies = ["example-test:runtime-orchestration-attacks"]
+dependencies = [
+  "example-test:resource-boundary-attacks",
+  "example-test:runtime-orchestration-attacks",
+]
 
 [resource_budget]
 time_seconds = 120
