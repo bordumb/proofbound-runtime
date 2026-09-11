@@ -26,7 +26,7 @@ fn main() -> ExitCode {
     ExitCode::from(run_with(
         env::args_os(),
         probe_capabilities,
-        |path| fs::read_to_string(path),
+        |path| fs::read(path),
         &mut stdout,
         &mut stderr,
     ))
@@ -36,7 +36,7 @@ fn run_with<I, P, R, W, E>(args: I, probe: P, mut read: R, stdout: &mut W, stder
 where
     I: IntoIterator<Item = OsString>,
     P: FnOnce(&Path) -> CapabilityReport,
-    R: FnMut(&Path) -> io::Result<String>,
+    R: FnMut(&Path) -> io::Result<Vec<u8>>,
     W: io::Write,
     E: io::Write,
 {
@@ -77,7 +77,7 @@ where
             Ok(input) => input,
             Err(_) => return fail(stderr, INVALID_INPUT, "plan.input.read-failed"),
         };
-        return match plan::write_check(&input, stdout) {
+        return match plan::write_check_bytes(&input, stdout) {
             Ok(()) => SUCCESS,
             Err(error) => fail(stderr, INVALID_INPUT, error.code()),
         };
@@ -243,6 +243,18 @@ mod tests {
         values.iter().map(OsString::from).collect()
     }
 
+    fn v2_plan_bytes() -> Vec<u8> {
+        include_str!("../../../schemas/vectors/v2/execution-plan.cbor.hex")
+            .trim()
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| {
+                let text = core::str::from_utf8(pair).expect("fixture is ASCII");
+                u8::from_str_radix(text, 16).expect("fixture is hexadecimal")
+            })
+            .collect()
+    }
+
     #[test]
     fn doctor_reports_unsupported_hosts_with_exit_three() {
         let mut stdout = Vec::new();
@@ -250,7 +262,7 @@ mod tests {
         let code = run_with(
             args(&["pbr", "doctor", "--cgroup-root", "/unsupported"]),
             probe_capabilities,
-            |_| unreachable!("doctor does not read a plan"),
+            |_| -> io::Result<Vec<u8>> { unreachable!("doctor does not read a plan") },
             &mut stdout,
             &mut stderr,
         );
@@ -274,7 +286,7 @@ mod tests {
                 "--explain",
             ]),
             probe_capabilities,
-            |_| unreachable!("doctor does not read a plan"),
+            |_| -> io::Result<Vec<u8>> { unreachable!("doctor does not read a plan") },
             &mut stdout,
             &mut stderr,
         );
@@ -340,7 +352,7 @@ mod tests {
             let code = run_with(
                 args(values),
                 |_| unreachable!("invalid usage does not probe"),
-                |_| unreachable!("invalid usage does not read"),
+                |_| -> io::Result<Vec<u8>> { unreachable!("invalid usage does not read") },
                 &mut stdout,
                 &mut stderr,
             );
@@ -358,7 +370,7 @@ mod tests {
             let code = run_with(
                 args(&["pbr", option]),
                 |_| unreachable!("informational option does not probe"),
-                |_| unreachable!("informational option does not read"),
+                |_| -> io::Result<Vec<u8>> { unreachable!("informational option does not read") },
                 &mut stdout,
                 &mut stderr,
             );
@@ -377,7 +389,7 @@ mod tests {
             |_| unreachable!("plan check does not probe"),
             |path| {
                 assert_eq!(path, Path::new("plan.toml"));
-                Ok(crate::plan::TEST_PLAN.to_owned())
+                Ok(v2_plan_bytes())
             },
             &mut stdout,
             &mut stderr,
@@ -386,7 +398,7 @@ mod tests {
             serde_json::from_slice(&stdout).expect("check report is JSON");
 
         assert_eq!(code, SUCCESS);
-        assert_eq!(report["id"], "cli.plan-check");
+        assert_eq!(report["id"], "golden-v2");
         assert!(stderr.is_empty());
     }
 
@@ -397,7 +409,7 @@ mod tests {
         let code = run_with(
             args(&["pbr", "plan", "check", "--plan", "missing.toml"]),
             |_| unreachable!("plan check does not probe"),
-            |_| Err(io::Error::from(io::ErrorKind::NotFound)),
+            |_| Err::<Vec<u8>, _>(io::Error::from(io::ErrorKind::NotFound)),
             &mut stdout,
             &mut stderr,
         );
@@ -427,7 +439,7 @@ mod tests {
                 OsString::from("/cgroup"),
             ],
             |_| unreachable!("missing plan fails before capability probing"),
-            |_| unreachable!("preflight uses identified plan input"),
+            |_| -> io::Result<Vec<u8>> { unreachable!("preflight uses identified plan input") },
             &mut stdout,
             &mut stderr,
         );
