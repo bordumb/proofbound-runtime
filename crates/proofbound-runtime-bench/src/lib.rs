@@ -18,6 +18,10 @@ pub enum BenchmarkError {
     InvalidTarget,
     /// The next calibrated batch cannot fit in the platform counter.
     BatchOverflow,
+    /// A measurement selected zero warm-up iterations.
+    InvalidWarmupCount,
+    /// The supplied monotonic clock moved backwards.
+    ClockRegression,
 }
 
 impl fmt::Display for BenchmarkError {
@@ -27,6 +31,8 @@ impl fmt::Display for BenchmarkError {
             Self::InvalidBatchCount => "benchmark.batch.invalid",
             Self::InvalidTarget => "benchmark.target.invalid",
             Self::BatchOverflow => "benchmark.batch.overflow",
+            Self::InvalidWarmupCount => "benchmark.warmup.invalid",
+            Self::ClockRegression => "benchmark.clock.regression",
         })
     }
 }
@@ -48,6 +54,47 @@ pub struct Summary {
     pub p95_ns: u64,
     /// Largest observed duration.
     pub maximum_ns: u64,
+}
+
+/// Frozen controls for one measured operation.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct MeasurementConfig {
+    warmup_count: usize,
+    sample_count: usize,
+    target_sample_ns: u64,
+}
+
+impl MeasurementConfig {
+    /// Validates one nonempty measurement configuration.
+    pub const fn new(
+        warmup_count: usize,
+        sample_count: usize,
+        target_sample_ns: u64,
+    ) -> Result<Self, BenchmarkError> {
+        if warmup_count == 0 {
+            return Err(BenchmarkError::InvalidWarmupCount);
+        }
+        if sample_count == 0 {
+            return Err(BenchmarkError::EmptySeries);
+        }
+        if target_sample_ns == 0 {
+            return Err(BenchmarkError::InvalidTarget);
+        }
+        Ok(Self {
+            warmup_count,
+            sample_count,
+            target_sample_ns,
+        })
+    }
+}
+
+/// One calibrated benchmark measurement.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct Measurement {
+    /// Number of operation invocations in each measured sample.
+    pub batch_count: usize,
+    /// Per-invocation elapsed-time observations.
+    pub summary: Summary,
 }
 
 /// Sorts and summarizes one nonempty elapsed-time series.
@@ -107,6 +154,63 @@ pub fn next_batch_count(
         .checked_mul(factor)
         .map(Some)
         .ok_or(BenchmarkError::BatchOverflow)
+}
+
+/// Measures an operation against a caller-supplied monotonic nanosecond clock.
+///
+/// Supplying the clock keeps the loop exactly testable. Production callers
+/// adapt `Instant` to this boundary.
+pub fn measure_with_clock<T, Operation, Clock>(
+    config: MeasurementConfig,
+    mut operation: Operation,
+    mut clock: Clock,
+) -> Result<Measurement, BenchmarkError>
+where
+    Operation: FnMut() -> T,
+    Clock: FnMut() -> u64,
+{
+    for _ in 0..config.warmup_count {
+        std::hint::black_box(operation());
+    }
+
+    let mut batch_count = 1;
+    loop {
+        let elapsed_ns = time_batch(batch_count, &mut operation, &mut clock)?;
+        match next_batch_count(batch_count, elapsed_ns, config.target_sample_ns)? {
+            Some(next) => batch_count = next,
+            None => break,
+        }
+    }
+
+    let divisor = u64::try_from(batch_count).map_err(|_| BenchmarkError::BatchOverflow)?;
+    let mut samples_ns = Vec::with_capacity(config.sample_count);
+    for _ in 0..config.sample_count {
+        let elapsed_ns = time_batch(batch_count, &mut operation, &mut clock)?;
+        samples_ns.push(elapsed_ns / divisor);
+    }
+
+    Ok(Measurement {
+        batch_count,
+        summary: summarize(samples_ns)?,
+    })
+}
+
+fn time_batch<T, Operation, Clock>(
+    batch_count: usize,
+    operation: &mut Operation,
+    clock: &mut Clock,
+) -> Result<u64, BenchmarkError>
+where
+    Operation: FnMut() -> T,
+    Clock: FnMut() -> u64,
+{
+    let started_ns = clock();
+    for _ in 0..batch_count {
+        std::hint::black_box(operation());
+    }
+    clock()
+        .checked_sub(started_ns)
+        .ok_or(BenchmarkError::ClockRegression)
 }
 
 #[cfg(test)]
