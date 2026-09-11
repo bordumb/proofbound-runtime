@@ -112,6 +112,7 @@ pub struct SupervisorTimings {
 }
 
 impl SupervisorTimings {
+    #[cfg(any(test, target_os = "linux"))]
     const fn new(
         launcher_creation: Duration,
         boundary_installation: Duration,

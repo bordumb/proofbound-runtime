@@ -32,6 +32,110 @@ const STREAM_MODE: u16 = 0;
 const ARGUMENT_DOMAIN: &[u8] = b"proofbound-runtime-arguments/1\n";
 const POLICY_DOMAIN: &[u8] = b"proofbound-runtime-installed-policy/1\n";
 
+/// Closed operational timing domain for one successful native run.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[repr(usize)]
+pub enum RunBenchmarkPhase {
+    /// Receipt target preparation, strict plan parsing, and normalization.
+    PlanValidationAndNormalization = 0,
+    /// Capability probing and rooted output/working-directory preparation.
+    HostAndPathPreflight = 1,
+    /// Executable, runtime closure, policy, and identity inventory.
+    ExecutableClosureInventory = 2,
+    /// Fresh cgroup creation and configured-limit readback.
+    CgroupCreationAndReadback = 3,
+    /// Launcher creation through observation of its stopped state.
+    StoppedLauncherCreation = 4,
+    /// Cgroup placement and launcher boundary installation acknowledgement.
+    BoundaryInstallation = 5,
+    /// Child release through terminal child status.
+    ChildExecution = 6,
+    /// Exact process-tree drain and cgroup cleanup.
+    ProcessTreeCleanup = 7,
+    /// Joining the already-running bounded stream drains.
+    StreamCollection = 8,
+    /// Output inventory and identity revalidation.
+    OutputInventory = 9,
+    /// Receipt construction, canonical encoding, and no-replace publication.
+    ReceiptConstructionAndPublication = 10,
+    /// JSON projection of the completed run result.
+    RunResultProjection = 11,
+}
+
+impl RunBenchmarkPhase {
+    /// All phases in their production dependency order.
+    pub const ALL: [Self; 12] = [
+        Self::PlanValidationAndNormalization,
+        Self::HostAndPathPreflight,
+        Self::ExecutableClosureInventory,
+        Self::CgroupCreationAndReadback,
+        Self::StoppedLauncherCreation,
+        Self::BoundaryInstallation,
+        Self::ChildExecution,
+        Self::ProcessTreeCleanup,
+        Self::StreamCollection,
+        Self::OutputInventory,
+        Self::ReceiptConstructionAndPublication,
+        Self::RunResultProjection,
+    ];
+
+    /// Returns the stable operational subject name.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::PlanValidationAndNormalization => "plan-validation-and-normalization-v1",
+            Self::HostAndPathPreflight => "host-and-path-preflight-v1",
+            Self::ExecutableClosureInventory => "executable-closure-inventory-v1",
+            Self::CgroupCreationAndReadback => "cgroup-creation-and-readback-v1",
+            Self::StoppedLauncherCreation => "stopped-launcher-creation-v1",
+            Self::BoundaryInstallation => "boundary-installation-v1",
+            Self::ChildExecution => "child-execution-v1",
+            Self::ProcessTreeCleanup => "process-tree-cleanup-v1",
+            Self::StreamCollection => "stream-collection-v1",
+            Self::OutputInventory => "output-inventory-v1",
+            Self::ReceiptConstructionAndPublication => "receipt-construction-and-publication-v1",
+            Self::RunResultProjection => "run-result-projection-v1",
+        }
+    }
+}
+
+/// Non-overlapping monotonic intervals for the closed native run phases.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct RunTimings {
+    intervals: [std::time::Duration; RunBenchmarkPhase::ALL.len()],
+}
+
+impl RunTimings {
+    /// Constructs one complete interval set in the closed phase order.
+    #[must_use]
+    pub const fn from_intervals(
+        intervals: [std::time::Duration; RunBenchmarkPhase::ALL.len()],
+    ) -> Self {
+        Self { intervals }
+    }
+
+    /// Returns every interval in the closed phase order.
+    #[must_use]
+    pub const fn intervals(&self) -> &[std::time::Duration; RunBenchmarkPhase::ALL.len()] {
+        &self.intervals
+    }
+
+    /// Returns the interval for one closed phase.
+    #[must_use]
+    pub const fn phase(&self, phase: RunBenchmarkPhase) -> std::time::Duration {
+        self.intervals[phase as usize]
+    }
+
+    /// Returns the sum of all non-overlapping intervals.
+    #[must_use]
+    pub fn total(&self) -> std::time::Duration {
+        self.intervals.iter().copied().fold(
+            std::time::Duration::ZERO,
+            std::time::Duration::saturating_add,
+        )
+    }
+}
+
 #[cfg(not(target_os = "linux"))]
 pub(crate) fn execute(
     _plan_path: &Path,
