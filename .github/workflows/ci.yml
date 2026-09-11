@@ -46,6 +46,15 @@ jobs:
           --name preflight
           -- bash tools/ci/ci.sh preflight
 
+      - name: Publish preflight timing summary
+        if: ${{ always() }}
+        run: |
+          {
+            printf '%s\n' '### Preflight timing' '```text'
+            python3 tools/ci/summarize_timings.py "$PBR_CI_TIMING_FILE"
+            printf '%s\n' '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload preflight timing metadata
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -93,6 +102,15 @@ jobs:
           --kind stage
           --name rust
           -- bash tools/ci/ci.sh rust
+
+      - name: Publish Rust timing summary
+        if: ${{ always() }}
+        run: |
+          {
+            printf '%s\n' '### Rust timing' '```text'
+            python3 tools/ci/summarize_timings.py "$PBR_CI_TIMING_FILE"
+            printf '%s\n' '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload Rust timing metadata
         if: ${{ always() }}
@@ -199,6 +217,15 @@ jobs:
           --name formal
           -- bash tools/ci/ci.sh formal
 
+      - name: Publish formal timing summary
+        if: ${{ always() }}
+        run: |
+          {
+            printf '%s\n' '### Formal timing' '```text'
+            python3 tools/ci/summarize_timings.py "$PBR_CI_TIMING_FILE"
+            printf '%s\n' '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload formal timing metadata
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -245,6 +272,15 @@ jobs:
           --kind stage
           --name native-boundary
           -- bash tools/ci/native-linux.sh
+
+      - name: Publish native timing summary
+        if: ${{ always() }}
+        run: |
+          {
+            printf '%s\n' '### Native timing' '```text'
+            python3 tools/ci/summarize_timings.py "$PBR_CI_TIMING_FILE"
+            printf '%s\n' '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload native timing metadata
         if: ${{ always() }}

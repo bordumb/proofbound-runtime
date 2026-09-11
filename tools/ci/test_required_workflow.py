@@ -118,7 +118,7 @@ class RequiredWorkflowTests(unittest.TestCase):
             workflow.count("python3 tools/ci/summarize_timings.py"),
             4,
         )
-        self.assertEqual(workflow.count('>> "$GITHUB_STEP_SUMMARY"'), 12)
+        self.assertEqual(workflow.count('} >> "$GITHUB_STEP_SUMMARY"'), 4)
 
     def test_each_lane_checks_out_and_confirms_the_exact_pr_head(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
