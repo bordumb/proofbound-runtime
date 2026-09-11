@@ -1,6 +1,6 @@
 # Experiment 0002: Runtime performance baseline
 
-- **Status:** pre-registered; implementation not started
+- **Status:** in progress; pure hosted baseline complete
 - **Date:** 2026-09-10
 - **Roadmap:** RT-6.3
 - **Production effect:** none
@@ -147,6 +147,46 @@ marked complete.
 Hosted scheduling delay, tool installation, compilation, and assurance-gate
 duration remain separate CI timing metadata. They are not folded into Runtime
 operation latency.
+
+### Pure observation 1
+
+At exact clean source
+`2a715de2433f93b2fbe4b97be136c06118565482`, GitHub Actions run
+[`34559609273`](https://github.com/bordumb/proofbound-runtime/actions/runs/34559609273)
+completed the closed seven-subject pure matrix on x86_64 and aarch64 Linux
+with Rust 1.94.0. Each subject retained 1,000 sorted raw samples after 100
+warm-ups and deterministic calibration to a 10 millisecond target sample.
+
+| Subject | x86_64 median / p95 (ns) | aarch64 median / p95 (ns) |
+| --- | ---: | ---: |
+| Plan parse | 7,625 / 7,712 | 6,430 / 6,444 |
+| Authority normalization | 129 / 146 | 115 / 120 |
+| Policy compilation | 107 / 109 | 122 / 128 |
+| Receipt construction | 1,042 / 1,086 | 993 / 1,094 |
+| Version 1 canonical JSON receipt encoding | 43,461 / 44,105 | 37,687 / 38,052 |
+| Independent receipt verification | 59,525 / 60,225 | 49,543 / 49,695 |
+| Release/execution composition | 58,395 / 58,989 | 47,664 / 47,842 |
+
+The x86_64 result SHA-256 is
+`d34fe97fd37fd9dce0314b263d02cceadc222b717073297a84773dbd98ea8fca`;
+the retained benchmark executable SHA-256 is
+`012ce60efc54fe3cd9200c7571b1c5b5c812a671b52d75698b8f02eec8cc70cc`.
+The aarch64 result SHA-256 is
+`b25c1e06fa6a6d51eb176f358bc76ad96a640f3cec5452bbf4d0aa3d10f4a752`;
+the retained benchmark executable SHA-256 is
+`9291727513b4aa8e83a9b14b615958942f7c3839e02e5874f9d5cbf99aefd84d`.
+
+After download, both portable `SHA256SUMS` inventories verified every retained
+file. The independent verifier was then rerun outside the producing jobs
+against each retained executable and the exact source fixtures; it reproduced
+the result identities above and accepted the complete subject domain. The
+x86_64 host reported Linux `6.17.0-1022-azure` and target
+`x86_64-unknown-linux-gnu`; the aarch64 host reported the same kernel build and
+target `aarch64-unknown-linux-gnu`.
+
+This observation closes only the pure half of the experiment. Native phase
+and repeated-invocation measurements remain required before the completion
+condition or any architectural conclusion can be evaluated.
 
 ## Decision criteria
 
