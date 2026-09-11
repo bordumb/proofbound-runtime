@@ -219,7 +219,7 @@ fn is_source_commit(value: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{Arguments, CliError, parse_arguments};
+    use super::{Arguments, BenchmarkError, CliError, parse_arguments, run};
 
     #[test]
     fn arguments_accept_one_exact_pure_source() {
@@ -313,5 +313,37 @@ mod tests {
                 Err(CliError::Usage)
             );
         }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    #[test]
+    fn native_command_remains_fail_closed_off_linux() {
+        let revision = "a".repeat(40);
+        let error = run(
+            [
+                "pbr-bench".to_owned(),
+                "native".to_owned(),
+                "--source-commit".to_owned(),
+                revision,
+                "--result-root".to_owned(),
+                "/results".to_owned(),
+                "--cgroup-root".to_owned(),
+                "/sys/fs/cgroup/delegated".to_owned(),
+                "--runtime-bin-directory".to_owned(),
+                "/runtime".to_owned(),
+                "--plan".to_owned(),
+                "/work/plan.toml".to_owned(),
+                "--workload-executable".to_owned(),
+                "/work/hello-static".to_owned(),
+                "--expected-output".to_owned(),
+                "/work/expected-output.txt".to_owned(),
+                "--runner-image".to_owned(),
+                "ubuntu-24.04".to_owned(),
+            ],
+            &mut Vec::new(),
+        )
+        .expect_err("native benchmarking cannot run on an unsupported host");
+
+        assert_eq!(error, CliError::Benchmark(BenchmarkError::UnsupportedHost));
     }
 }
