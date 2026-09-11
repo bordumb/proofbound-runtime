@@ -1289,4 +1289,19 @@ mod tests {
         );
         assert_eq!(timings.total(), std::time::Duration::from_nanos(13));
     }
+
+    #[cfg(not(target_os = "linux"))]
+    #[test]
+    fn observed_native_entry_point_remains_fail_closed_off_linux() {
+        let error = proofbound_runtime_cli::run::execute_observed(
+            std::path::Path::new("plan.toml"),
+            std::path::Path::new("receipt.json"),
+            std::path::Path::new("/unsupported"),
+            std::path::Path::new("pbr"),
+        )
+        .expect_err("native observation cannot make an unsupported host runnable");
+
+        assert_eq!(error.exit_code(), 3);
+        assert_eq!(error.code(), "execution.os.unsupported");
+    }
 }
