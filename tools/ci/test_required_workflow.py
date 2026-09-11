@@ -41,14 +41,15 @@ class RequiredWorkflowTests(unittest.TestCase):
         self.assertRegex(workflow, r"(?m)^  preflight:\n")
         self.assertRegex(workflow, r"(?m)^  rust:\n")
         self.assertRegex(workflow, r"(?m)^  formal:\n")
+        self.assertRegex(workflow, r"(?m)^  fresh-evidence:\n")
         self.assertRegex(workflow, r"(?m)^  native:\n")
         self.assertRegex(workflow, r"(?m)^  required:\n")
         self.assertGreaterEqual(workflow.count("needs: preflight"), 3)
         self.assertIn(
-            "needs:\n      - preflight\n      - rust\n      - formal\n      - native", workflow
+            "needs:\n      - preflight\n      - rust\n      - formal\n      - fresh-evidence\n      - native", workflow
         )
         self.assertIn("if: ${{ always() }}", workflow)
-        for result in ("preflight", "rust", "formal", "native"):
+        for result in ("preflight", "rust", "formal", "fresh-evidence", "native"):
             self.assertIn(f'needs.{result}.result == \'success\'', workflow)
 
     def test_native_matrix_is_part_of_the_partition(self) -> None:
@@ -64,11 +65,23 @@ class RequiredWorkflowTests(unittest.TestCase):
         workflow = WORKFLOW.read_text(encoding="utf-8")
         script = CI_SCRIPT.read_text(encoding="utf-8")
 
-        for stage in ("preflight", "rust", "formal"):
+        for stage in ("preflight", "rust", "formal", "evidence"):
             self.assertEqual(workflow.count(f"bash tools/ci/ci.sh {stage}"), 1)
             self.assertRegex(script, rf'(?m)^if selected "{stage}"; then$')
         self.assertIn('stage="${1:-all}"', script)
-        self.assertIn('all|preflight|rust|formal', script)
+        self.assertIn('all|preflight|rust|formal|evidence', script)
+
+    def test_formal_and_fresh_evidence_have_independent_runtime_budgets(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        formal = workflow[workflow.index("\n  formal:\n") : workflow.index("\n  fresh-evidence:\n")]
+        evidence = workflow[workflow.index("\n  fresh-evidence:\n") : workflow.index("\n  native:\n")]
+
+        self.assertIn("bash tools/ci/ci.sh formal", formal)
+        self.assertNotIn("Install pinned Proofbound tools", formal)
+        self.assertNotIn("Install pinned Kani verifier", formal)
+        self.assertIn("bash tools/ci/ci.sh evidence", evidence)
+        self.assertIn("Install pinned Proofbound tools", evidence)
+        self.assertIn("Install pinned Kani verifier", evidence)
 
     def test_fast_hook_excludes_fresh_evidence(self) -> None:
         hook = PRE_COMMIT_SCRIPT.read_text(encoding="utf-8")
@@ -125,9 +138,9 @@ class RequiredWorkflowTests(unittest.TestCase):
     def test_each_lane_uploads_timing_outside_assurance_evidence(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
-        self.assertEqual(workflow.count("actions/upload-artifact@"), 5)
-        self.assertEqual(workflow.count("if: ${{ always() }}"), 9)
-        self.assertEqual(workflow.count("proofbound-runtime-ci-timing-"), 4)
+        self.assertEqual(workflow.count("actions/upload-artifact@"), 6)
+        self.assertEqual(workflow.count("if: ${{ always() }}"), 11)
+        self.assertEqual(workflow.count("proofbound-runtime-ci-timing-"), 5)
         self.assertNotIn(".proofbound", "\n".join(
             line for line in workflow.splitlines() if "timing" in line.lower()
         ))
@@ -197,28 +210,28 @@ class RequiredWorkflowTests(unittest.TestCase):
     def test_each_lane_publishes_its_validated_timing_summary(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
-        for lane in ("preflight", "Rust", "formal", "native"):
+        for lane in ("preflight", "Rust", "formal", "fresh evidence", "native"):
             self.assertEqual(workflow.count(f"name: Publish {lane} timing summary"), 1)
         self.assertEqual(
             workflow.count("python3 tools/ci/summarize_timings.py"),
-            4,
+            5,
         )
-        self.assertEqual(workflow.count('} >> "$GITHUB_STEP_SUMMARY"'), 4)
+        self.assertEqual(workflow.count('} >> "$GITHUB_STEP_SUMMARY"'), 5)
 
     def test_each_lane_checks_out_and_confirms_the_exact_pr_head(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
         exact_sha = "${{ github.event.pull_request.head.sha || github.sha }}"
 
         self.assertIn(f"PBR_EXACT_SHA: {exact_sha}", workflow)
-        self.assertEqual(workflow.count(f"uses: {CHECKOUT_ACTION}"), 4)
-        self.assertEqual(workflow.count("ref: ${{ env.PBR_EXACT_SHA }}"), 4)
+        self.assertEqual(workflow.count(f"uses: {CHECKOUT_ACTION}"), 5)
+        self.assertEqual(workflow.count("ref: ${{ env.PBR_EXACT_SHA }}"), 5)
         self.assertEqual(
             workflow.count(
                 'run: test "$(git rev-parse HEAD)" = "$PBR_EXACT_SHA"'
             ),
-            4,
+            5,
         )
-        self.assertEqual(workflow.count("-${{ env.PBR_EXACT_SHA }}"), 5)
+        self.assertEqual(workflow.count("-${{ env.PBR_EXACT_SHA }}"), 6)
         self.assertNotIn('= "$GITHUB_SHA"', workflow)
 
     def test_first_party_actions_are_exact_node24_releases(self) -> None:
@@ -255,7 +268,7 @@ class RequiredWorkflowTests(unittest.TestCase):
             with self.subTest(workflow=workflow_name, action=action):
                 self.assertRegex(action, r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}$")
         rust_action = RUST_TOOLCHAIN_ACTION.split()[0]
-        self.assertEqual(sum(action == rust_action for _, action in observed), 7)
+        self.assertEqual(sum(action == rust_action for _, action in observed), 8)
 
     def test_triggers_and_cancellation_remain_closed(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
