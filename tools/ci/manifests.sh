@@ -17,10 +17,28 @@ fi
 
 check_root="$repo_root"
 temporary_root=""
+check_output_file=""
+check_pid=""
+heartbeat_pid=""
+
+cleanup() {
+  if [[ -n "$check_pid" ]]; then
+    kill "$check_pid" 2>/dev/null || true
+  fi
+  if [[ -n "$heartbeat_pid" ]]; then
+    kill "$heartbeat_pid" 2>/dev/null || true
+  fi
+  if [[ -n "$check_output_file" ]]; then
+    rm -f -- "$check_output_file"
+  fi
+  if [[ -n "$temporary_root" ]]; then
+    rm -rf -- "$temporary_root"
+  fi
+}
+trap cleanup EXIT
 
 if ! git rev-parse --verify HEAD^{commit} >/dev/null 2>&1; then
   temporary_root="$(mktemp -d)"
-  trap 'rm -rf -- "$temporary_root"' EXIT
   check_root="$temporary_root/repository"
   mkdir -p "$check_root"
   rsync -a \
@@ -45,10 +63,33 @@ if ! git rev-parse --verify HEAD^{commit} >/dev/null 2>&1; then
   printf '%s\n' 'manifest check: using a disposable bootstrap commit'
 fi
 
+check_output_file="$(mktemp)"
+"$proofbound_bin" check --root "$check_root" --fresh --json \
+  >"$check_output_file" 2>&1 &
+check_pid=$!
+(
+  elapsed_seconds=0
+  while kill -0 "$check_pid" 2>/dev/null; do
+    sleep 60
+    elapsed_seconds=$((elapsed_seconds + 60))
+    if kill -0 "$check_pid" 2>/dev/null; then
+      printf '%s\n' \
+        "Proofbound fresh check still running (${elapsed_seconds}s)" >&2
+    fi
+  done
+) &
+heartbeat_pid=$!
 set +e
-check_output="$("$proofbound_bin" check --root "$check_root" --fresh --json 2>&1)"
+wait "$check_pid"
 check_status=$?
+check_pid=""
+kill "$heartbeat_pid" 2>/dev/null
+wait "$heartbeat_pid" 2>/dev/null
+heartbeat_pid=""
 set -e
+check_output="$(<"$check_output_file")"
+rm -f -- "$check_output_file"
+check_output_file=""
 if [[ $check_status -ne 0 || "$check_output" == *'"schema":"proofbound-error/1"'* ]]; then
   printf '%s\n' "$check_output" >&2
   compiled_project="$check_root/.proofbound/compiled/project.json"
