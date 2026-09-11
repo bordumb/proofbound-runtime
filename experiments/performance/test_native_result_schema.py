@@ -57,6 +57,10 @@ class NativeResultSchemaTests(unittest.TestCase):
             ],
             PHASES,
         )
+        self.assertEqual(
+            schema["properties"]["workload"]["properties"]["id"]["enum"],
+            ["hello-static-v1", "hello-dynamic-v1"],
+        )
 
 
 if __name__ == "__main__":

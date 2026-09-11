@@ -167,11 +167,16 @@ class NativeBenchmarkVerifierTests(unittest.TestCase):
             },
         }
 
-    def verify(self, value: object | None = None) -> dict[str, object]:
+    def verify(
+        self,
+        value: object | None = None,
+        expected_workload: str = "hello-static-v1",
+    ) -> dict[str, object]:
         return verify_result(
             encode(self.value if value is None else value),
             SOURCE,
             "x86_64",
+            expected_workload,
             self.executable,
             self.pbr,
             self.launcher,
@@ -192,6 +197,15 @@ class NativeBenchmarkVerifierTests(unittest.TestCase):
         self.assertEqual(report["workload"], "hello-static-v1")
         self.assertEqual(report["sample_count"], 100)
 
+    def test_dynamic_result_requires_the_dynamic_expected_identity(self) -> None:
+        dynamic = copy.deepcopy(self.value)
+        dynamic["workload"]["id"] = "hello-dynamic-v1"
+        report = self.verify(dynamic, "hello-dynamic-v1")
+        self.assertEqual(report["workload"], "hello-dynamic-v1")
+        with self.assertRaises(VerificationFailure) as caught:
+            self.verify(dynamic)
+        self.assertEqual(caught.exception.code, "benchmark.verify.workload-mismatch")
+
     def test_unknown_duplicate_and_incomplete_shapes_fail_closed(self) -> None:
         unknown = copy.deepcopy(self.value)
         unknown["unexpected"] = True
@@ -208,6 +222,7 @@ class NativeBenchmarkVerifierTests(unittest.TestCase):
                     raw,
                     SOURCE,
                     "x86_64",
+                    "hello-static-v1",
                     self.executable,
                     self.pbr,
                     self.launcher,
