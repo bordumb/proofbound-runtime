@@ -3,7 +3,9 @@
 use core::fmt;
 use std::path::{Path, PathBuf};
 
-use proofbound_runtime_core::{CgroupIdentity, ExecutionId, ProcessLimit, ResourceLimits};
+use proofbound_runtime_core::{
+    CgroupIdentity, ExecutionId, LimitEvent, LimitEvents, ProcessLimit, ResourceLimits,
+};
 
 use crate::CgroupV2Capability;
 
@@ -30,12 +32,285 @@ fn installed_control_values(
     ])
 }
 
+/// Contains the checked terminal deltas from `memory.events.local`.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct MemoryEvents {
+    low: u64,
+    high: u64,
+    max: u64,
+    oom: u64,
+    oom_kill: u64,
+    oom_group_kill: u64,
+}
+
+impl MemoryEvents {
+    /// Returns the `low` counter delta.
+    #[must_use]
+    pub const fn low(self) -> u64 {
+        self.low
+    }
+    /// Returns the `high` counter delta.
+    #[must_use]
+    pub const fn high(self) -> u64 {
+        self.high
+    }
+    /// Returns the `max` counter delta.
+    #[must_use]
+    pub const fn max(self) -> u64 {
+        self.max
+    }
+    /// Returns the `oom` counter delta.
+    #[must_use]
+    pub const fn oom(self) -> u64 {
+        self.oom
+    }
+    /// Returns the `oom_kill` counter delta.
+    #[must_use]
+    pub const fn oom_kill(self) -> u64 {
+        self.oom_kill
+    }
+    /// Returns the `oom_group_kill` counter delta.
+    #[must_use]
+    pub const fn oom_group_kill(self) -> u64 {
+        self.oom_group_kill
+    }
+
+    #[cfg(any(test, target_os = "linux"))]
+    fn checked_sub(self, initial: Self) -> Option<Self> {
+        Some(Self {
+            low: self.low.checked_sub(initial.low)?,
+            high: self.high.checked_sub(initial.high)?,
+            max: self.max.checked_sub(initial.max)?,
+            oom: self.oom.checked_sub(initial.oom)?,
+            oom_kill: self.oom_kill.checked_sub(initial.oom_kill)?,
+            oom_group_kill: self.oom_group_kill.checked_sub(initial.oom_group_kill)?,
+        })
+    }
+
+    #[cfg(any(test, target_os = "linux"))]
+    const fn is_zero(self) -> bool {
+        self.low == 0
+            && self.high == 0
+            && self.max == 0
+            && self.oom == 0
+            && self.oom_kill == 0
+            && self.oom_group_kill == 0
+    }
+}
+
+/// Contains the checked terminal deltas from `memory.swap.events`.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct SwapEvents {
+    max: u64,
+    fail: u64,
+}
+
+impl SwapEvents {
+    /// Returns the `max` counter delta.
+    #[must_use]
+    pub const fn max(self) -> u64 {
+        self.max
+    }
+    /// Returns the `fail` counter delta.
+    #[must_use]
+    pub const fn fail(self) -> u64 {
+        self.fail
+    }
+
+    #[cfg(any(test, target_os = "linux"))]
+    fn checked_sub(self, initial: Self) -> Option<Self> {
+        Some(Self {
+            max: self.max.checked_sub(initial.max)?,
+            fail: self.fail.checked_sub(initial.fail)?,
+        })
+    }
+
+    #[cfg(any(test, target_os = "linux"))]
+    const fn is_zero(self) -> bool {
+        self.max == 0 && self.fail == 0
+    }
+}
+
+/// Contains terminal version 2 observations from one exact fresh cgroup.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TerminalResources {
+    memory_peak_bytes: u64,
+    swap_peak_bytes: u64,
+    memory_events: MemoryEvents,
+    swap_events: SwapEvents,
+}
+
+impl TerminalResources {
+    /// Returns the terminal `memory.peak` value.
+    #[must_use]
+    pub const fn memory_peak_bytes(self) -> u64 {
+        self.memory_peak_bytes
+    }
+    /// Returns the terminal `memory.swap.peak` value.
+    #[must_use]
+    pub const fn swap_peak_bytes(self) -> u64 {
+        self.swap_peak_bytes
+    }
+    /// Returns checked memory-event deltas.
+    #[must_use]
+    pub const fn memory_events(self) -> MemoryEvents {
+        self.memory_events
+    }
+    /// Returns checked swap-event deltas.
+    #[must_use]
+    pub const fn swap_events(self) -> SwapEvents {
+        self.swap_events
+    }
+
+    /// Derives the canonical limit-event set from nonzero counters only.
+    #[must_use]
+    pub fn limit_events(self) -> LimitEvents {
+        let mut events = Vec::new();
+        for (present, event) in [
+            (self.memory_events.high != 0, LimitEvent::MemoryHigh),
+            (self.memory_events.max != 0, LimitEvent::MemoryMax),
+            (self.memory_events.oom != 0, LimitEvent::MemoryOom),
+            (self.memory_events.oom_kill != 0, LimitEvent::MemoryOomKill),
+            (
+                self.memory_events.oom_group_kill != 0,
+                LimitEvent::MemoryOomGroupKill,
+            ),
+            (self.swap_events.max != 0, LimitEvent::SwapMax),
+            (self.swap_events.fail != 0, LimitEvent::SwapFail),
+        ] {
+            if present {
+                events.push(event);
+            }
+        }
+        LimitEvents::new(&events)
+    }
+}
+
+#[cfg(any(test, target_os = "linux"))]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct ResourceSnapshot {
+    memory_peak_bytes: u64,
+    swap_peak_bytes: u64,
+    memory_events: MemoryEvents,
+    swap_events: SwapEvents,
+}
+
+#[cfg(any(test, target_os = "linux"))]
+impl ResourceSnapshot {
+    const fn is_zero(self) -> bool {
+        self.memory_peak_bytes == 0
+            && self.swap_peak_bytes == 0
+            && self.memory_events.is_zero()
+            && self.swap_events.is_zero()
+    }
+
+    fn checked_delta(self, initial: Self) -> Result<TerminalResources, CgroupError> {
+        if self.memory_peak_bytes < initial.memory_peak_bytes
+            || self.swap_peak_bytes < initial.swap_peak_bytes
+        {
+            return Err(CgroupError::ObservationRegression);
+        }
+        Ok(TerminalResources {
+            memory_peak_bytes: self.memory_peak_bytes,
+            swap_peak_bytes: self.swap_peak_bytes,
+            memory_events: self
+                .memory_events
+                .checked_sub(initial.memory_events)
+                .ok_or(CgroupError::ObservationRegression)?,
+            swap_events: self
+                .swap_events
+                .checked_sub(initial.swap_events)
+                .ok_or(CgroupError::ObservationRegression)?,
+        })
+    }
+}
+
+#[cfg(any(test, target_os = "linux"))]
+fn parse_resource_snapshot(
+    memory_events: &str,
+    swap_events: &str,
+    memory_peak: &str,
+    swap_peak: &str,
+) -> Result<ResourceSnapshot, CgroupError> {
+    let memory = parse_named_counters(
+        memory_events,
+        ["low", "high", "max", "oom", "oom_kill", "oom_group_kill"],
+    )?;
+    let swap = parse_named_counters(swap_events, ["max", "fail"])?;
+    Ok(ResourceSnapshot {
+        memory_peak_bytes: parse_u64_line(memory_peak)?,
+        swap_peak_bytes: parse_u64_line(swap_peak)?,
+        memory_events: MemoryEvents {
+            low: memory[0],
+            high: memory[1],
+            max: memory[2],
+            oom: memory[3],
+            oom_kill: memory[4],
+            oom_group_kill: memory[5],
+        },
+        swap_events: SwapEvents {
+            max: swap[0],
+            fail: swap[1],
+        },
+    })
+}
+
+#[cfg(any(test, target_os = "linux"))]
+fn parse_named_counters<const N: usize>(
+    input: &str,
+    names: [&str; N],
+) -> Result<[u64; N], CgroupError> {
+    let mut values = [None; N];
+    for line in input.lines() {
+        let mut fields = line.split_whitespace();
+        let name = fields.next().ok_or(CgroupError::ObservationInvalid)?;
+        let value = fields.next().ok_or(CgroupError::ObservationInvalid)?;
+        if fields.next().is_some() {
+            return Err(CgroupError::ObservationInvalid);
+        }
+        let index = names
+            .iter()
+            .position(|required| *required == name)
+            .ok_or(CgroupError::ObservationInvalid)?;
+        if values[index].is_some() {
+            return Err(CgroupError::ObservationInvalid);
+        }
+        values[index] = Some(parse_canonical_u64(value)?);
+    }
+    if values.iter().any(Option::is_none) {
+        return Err(CgroupError::ObservationInvalid);
+    }
+    Ok(values.map(|value| value.expect("all counters were checked")))
+}
+
+#[cfg(any(test, target_os = "linux"))]
+fn parse_u64_line(input: &str) -> Result<u64, CgroupError> {
+    let value = input.strip_suffix('\n').unwrap_or(input);
+    if value.contains('\n') || value.contains('\r') {
+        return Err(CgroupError::ObservationInvalid);
+    }
+    parse_canonical_u64(value)
+}
+
+#[cfg(any(test, target_os = "linux"))]
+fn parse_canonical_u64(value: &str) -> Result<u64, CgroupError> {
+    if value.is_empty()
+        || (value.len() > 1 && value.starts_with('0'))
+        || !value.bytes().all(|byte| byte.is_ascii_digit())
+    {
+        return Err(CgroupError::ObservationInvalid);
+    }
+    value.parse().map_err(|_| CgroupError::ObservationInvalid)
+}
+
 /// Owns one fresh cgroup v2 boundary for an execution attempt.
 #[derive(Debug)]
 pub struct FreshCgroup {
     path: PathBuf,
     identity: CgroupIdentity,
     process_limit: ProcessLimit,
+    #[cfg(target_os = "linux")]
+    initial_resources: Option<ResourceSnapshot>,
     #[cfg(target_os = "linux")]
     removed: bool,
     #[cfg(target_os = "linux")]
@@ -111,6 +386,7 @@ impl FreshCgroup {
                 path: capability.directory().join(&name),
                 identity,
                 process_limit,
+                initial_resources: None,
                 removed: false,
                 name,
                 parent,
@@ -177,16 +453,23 @@ impl FreshCgroup {
                         return Err(CgroupError::LimitMismatch);
                     }
                 }
+                let initial = read_resource_snapshot(&descriptor)?;
+                if !initial.is_zero() {
+                    return Err(CgroupError::ObservationNonzero);
+                }
                 if populated(&descriptor)? || !processes(&descriptor)?.is_empty() {
                     return Err(CgroupError::NotFresh);
                 }
-                Ok(())
+                Ok(initial)
             })();
-            if let Err(error) = setup {
-                drop(descriptor);
-                let _ = crate::sys::remove_directory_at(parent.as_raw_fd(), &name);
-                return Err(error);
-            }
+            let initial_resources = match setup {
+                Ok(initial) => initial,
+                Err(error) => {
+                    drop(descriptor);
+                    let _ = crate::sys::remove_directory_at(parent.as_raw_fd(), &name);
+                    return Err(error);
+                }
+            };
 
             let inode = directory_inode(&descriptor)?;
             let identity = CgroupIdentity::new(capability.mount_id(), inode);
@@ -194,6 +477,7 @@ impl FreshCgroup {
                 path: capability.directory().join(&name),
                 identity,
                 process_limit: limits.processes(),
+                initial_resources: Some(initial_resources),
                 removed: false,
                 name,
                 parent,
@@ -293,10 +577,38 @@ impl FreshCgroup {
         }
     }
 
+    /// Drains the exact group, captures version 2 observations, then removes it.
+    pub fn finish(self) -> Result<Option<TerminalResources>, CgroupError> {
+        #[cfg(target_os = "linux")]
+        {
+            let mut group = self;
+            group.drain_in_place()?;
+            let observation = match group.initial_resources {
+                Some(initial) => read_resource_snapshot(&group.descriptor)
+                    .and_then(|terminal| terminal.checked_delta(initial))
+                    .map(Some),
+                None => Ok(None),
+            };
+            let removal = group.remove_in_place();
+            match (observation, removal) {
+                (Ok(value), Ok(())) => Ok(value),
+                (Err(error), _) | (Ok(_), Err(error)) => Err(error),
+            }
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            Err(CgroupError::UnsupportedOperatingSystem)
+        }
+    }
+
     #[cfg(target_os = "linux")]
     fn cleanup_in_place(&mut self) -> Result<(), CgroupError> {
-        use std::os::fd::AsRawFd as _;
+        self.drain_in_place()?;
+        self.remove_in_place()
+    }
 
+    #[cfg(target_os = "linux")]
+    fn drain_in_place(&mut self) -> Result<(), CgroupError> {
         if self.removed {
             return Ok(());
         }
@@ -305,14 +617,24 @@ impl FreshCgroup {
         }
         for _ in 0..CLEANUP_POLLS {
             if !populated(&self.descriptor)? && processes(&self.descriptor)?.is_empty() {
-                crate::sys::remove_directory_at(self.parent.as_raw_fd(), &self.name)
-                    .map_err(|_| CgroupError::RemovalFailed)?;
-                self.removed = true;
                 return Ok(());
             }
             std::thread::sleep(std::time::Duration::from_millis(1));
         }
         Err(CgroupError::DrainFailed)
+    }
+
+    #[cfg(target_os = "linux")]
+    fn remove_in_place(&mut self) -> Result<(), CgroupError> {
+        use std::os::fd::AsRawFd as _;
+
+        if self.removed {
+            return Ok(());
+        }
+        crate::sys::remove_directory_at(self.parent.as_raw_fd(), &self.name)
+            .map_err(|_| CgroupError::RemovalFailed)?;
+        self.removed = true;
+        Ok(())
     }
 }
 
@@ -356,6 +678,12 @@ pub enum CgroupError {
     MembershipMismatch,
     /// `cgroup.events` was malformed or omitted `populated`.
     EventsInvalid,
+    /// A required resource observation was absent, malformed, or overflowing.
+    ObservationInvalid,
+    /// A fresh cgroup reported a nonzero initial resource observation.
+    ObservationNonzero,
+    /// A terminal resource counter or peak regressed.
+    ObservationRegression,
     /// The cgroup did not drain after `cgroup.kill`.
     DrainFailed,
     /// The empty cgroup could not be removed.
@@ -385,6 +713,9 @@ impl CgroupError {
             Self::ProcessIdInvalid => "cgroup.process-id.invalid",
             Self::MembershipMismatch => "cgroup.membership.mismatch",
             Self::EventsInvalid => "cgroup.events.invalid",
+            Self::ObservationInvalid => "cgroup.observation.invalid",
+            Self::ObservationNonzero => "cgroup.observation.nonzero-initial",
+            Self::ObservationRegression => "cgroup.observation.regression",
             Self::DrainFailed => "cgroup.drain.failed",
             Self::RemovalFailed => "cgroup.removal.failed",
             Self::IdentityUnavailable => "cgroup.identity.unavailable",
@@ -497,6 +828,18 @@ fn read_control(directory: &std::os::fd::OwnedFd, name: &str) -> Result<String, 
         return Err(CgroupError::ControlUnavailable);
     }
     String::from_utf8(bytes).map_err(|_| CgroupError::ControlUnavailable)
+}
+
+#[cfg(target_os = "linux")]
+fn read_resource_snapshot(
+    directory: &std::os::fd::OwnedFd,
+) -> Result<ResourceSnapshot, CgroupError> {
+    parse_resource_snapshot(
+        &read_control(directory, "memory.events.local")?,
+        &read_control(directory, "memory.swap.events")?,
+        &read_control(directory, "memory.peak")?,
+        &read_control(directory, "memory.swap.peak")?,
+    )
 }
 
 #[cfg(target_os = "linux")]
@@ -627,9 +970,7 @@ mod tests {
             "32768\n",
         )
         .expect("canonical terminal snapshot");
-        let observed = terminal
-            .checked_delta(initial)
-            .expect("monotonic counters");
+        let observed = terminal.checked_delta(initial).expect("monotonic counters");
         assert_eq!(observed.memory_peak_bytes(), 65_536);
         assert_eq!(observed.swap_peak_bytes(), 32_768);
         assert_eq!(observed.memory_events().high(), 2);
@@ -710,6 +1051,9 @@ mod tests {
             CgroupError::ProcessIdInvalid,
             CgroupError::MembershipMismatch,
             CgroupError::EventsInvalid,
+            CgroupError::ObservationInvalid,
+            CgroupError::ObservationNonzero,
+            CgroupError::ObservationRegression,
             CgroupError::DrainFailed,
             CgroupError::RemovalFailed,
             CgroupError::IdentityUnavailable,

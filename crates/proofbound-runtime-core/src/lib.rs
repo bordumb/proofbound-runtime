@@ -31,10 +31,10 @@ pub use policy::{
 };
 pub use receipt::{
     Architecture, BoundaryInstallation, BoundaryRecord, CgroupIdentity, EXECUTION_RECEIPT_SCHEMA,
-    ExecutionId, ExecutionObservations, ExecutionReceipt, ExecutionReceiptParts, NonReusableReason,
-    NonReusableReasons, POLICY_MODEL_VERSION, PlatformIdentity, REQUIRED_RUNTIME_ASSUMPTIONS,
-    ReceiptArtifactField, ReceiptCommand, ReceiptEligibility, ReceiptError, ReceiptFacts,
-    ReceiptIdentityField, ReceiptPlan, ReceiptPolicy, ReceiptStreams, ReceiptStructure,
-    RuntimeIdentity, StreamCapture, TrustedComputingBaseEntry, TrustedComputingBaseRole,
-    construct_execution_receipt, derive_receipt_eligibility,
+    ExecutionId, ExecutionObservations, ExecutionReceipt, ExecutionReceiptParts, LimitEvent,
+    LimitEvents, NonReusableReason, NonReusableReasons, POLICY_MODEL_VERSION, PlatformIdentity,
+    REQUIRED_RUNTIME_ASSUMPTIONS, ReceiptArtifactField, ReceiptCommand, ReceiptEligibility,
+    ReceiptError, ReceiptFacts, ReceiptIdentityField, ReceiptPlan, ReceiptPolicy, ReceiptStreams,
+    ReceiptStructure, RuntimeIdentity, StreamCapture, TrustedComputingBaseEntry,
+    TrustedComputingBaseRole, construct_execution_receipt, derive_receipt_eligibility,
 };

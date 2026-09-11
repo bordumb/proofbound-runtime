@@ -7,8 +7,8 @@ use proofbound_runtime_binding::{ReceiptBindingParts, construct_and_project_rece
 use serde::Serialize;
 
 pub use proofbound_runtime_receipt::{
-    BoundaryInstallation, NonReusableReason, NonReusableReasons, ReceiptEligibility, ReceiptFacts,
-    ReceiptStructure, StreamCapture, derive_receipt_eligibility,
+    BoundaryInstallation, LimitEvent, LimitEvents, NonReusableReason, NonReusableReasons,
+    ReceiptEligibility, ReceiptFacts, ReceiptStructure, StreamCapture, derive_receipt_eligibility,
 };
 
 use crate::{
