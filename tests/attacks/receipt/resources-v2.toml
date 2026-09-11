@@ -1,0 +1,69 @@
+schema = "proofbound-runtime-receipt-resource-attacks/2"
+
+[[cases]]
+id = "configured-processes"
+path = "/resources/configured/pids.max"
+
+[[cases]]
+id = "configured-memory"
+path = "/resources/configured/memory.max"
+
+[[cases]]
+id = "configured-swap"
+path = "/resources/configured/memory.swap.max"
+
+[[cases]]
+id = "configured-oom-group"
+path = "/resources/configured/memory.oom.group"
+
+[[cases]]
+id = "terminal-memory-peak"
+path = "/resources/terminal/memory_peak_bytes"
+
+[[cases]]
+id = "terminal-swap-peak"
+path = "/resources/terminal/swap_peak_bytes"
+
+[[cases]]
+id = "terminal-memory-low"
+path = "/resources/terminal/memory_events/low"
+
+[[cases]]
+id = "terminal-memory-high"
+path = "/resources/terminal/memory_events/high"
+
+[[cases]]
+id = "terminal-memory-max"
+path = "/resources/terminal/memory_events/max"
+
+[[cases]]
+id = "terminal-memory-oom"
+path = "/resources/terminal/memory_events/oom"
+
+[[cases]]
+id = "terminal-memory-oom-kill"
+path = "/resources/terminal/memory_events/oom_kill"
+
+[[cases]]
+id = "terminal-memory-oom-group-kill"
+path = "/resources/terminal/memory_events/oom_group_kill"
+
+[[cases]]
+id = "terminal-swap-max"
+path = "/resources/terminal/swap_events/max"
+
+[[cases]]
+id = "terminal-swap-fail"
+path = "/resources/terminal/swap_events/fail"
+
+[[cases]]
+id = "derived-limit-events"
+path = "/resources/limit_events"
+
+[[cases]]
+id = "derived-outcome"
+path = "/outcome"
+
+[[cases]]
+id = "derived-nonreuse-reason"
+path = "/eligibility/reasons"
