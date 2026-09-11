@@ -154,6 +154,30 @@ fn assert_native_resource_context(
     assert_eq!(runtime["size"], runtime_size);
 }
 
+fn assert_native_run_diagnostics(evidence: &Path, architecture: &str) {
+    let diagnostics = read_json(&evidence.join("native-run-diagnostics.json"));
+    assert_eq!(
+        diagnostics["schema"],
+        "proofbound-runtime-native-run-diagnostics/1"
+    );
+    assert_eq!(diagnostics["architecture"], architecture);
+    assert_eq!(
+        diagnostics["source_revision"],
+        std::env::var("PBR_RELEASE_REVISION")
+            .expect("release observation requires the exact source revision")
+    );
+    assert_eq!(
+        diagnostics["cases"],
+        serde_json::json!([
+            "receipt-target-preexists",
+            "plan-input-missing",
+            "host-capability-unavailable",
+            "output-root-preexists",
+            "executable-resolution-failure",
+        ])
+    );
+}
+
 fn assert_version_two_resources(receipt: &Value) {
     assert_eq!(receipt["schema"], "proofbound-runtime-execution-receipt/2");
     let resources = &receipt["resources"];
@@ -194,6 +218,7 @@ fn observes_runtime_release() {
     assert_eq!(receipt["platform"]["architecture"], architecture);
     assert_version_two_resources(&receipt);
     assert_native_resource_context(&evidence, &architecture, &digest, size);
+    assert_native_run_diagnostics(&evidence, &architecture);
     assert_receipt_artifact(
         &receipt["runtime"]["runtime"],
         "runtime-binary",

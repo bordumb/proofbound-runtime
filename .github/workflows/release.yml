@@ -250,6 +250,7 @@ jobs:
           }
           assert observed == {
               ("PBR-COMPOSE-008", "composer-release", "linux", architecture),
+              ("PBR-DIAGNOSTIC-011", "runtime-release", "linux", architecture),
               ("PBR-RESOURCE-010", "runtime-release", "linux", architecture),
               ("PBR-RUN-007", "runtime-release", "linux", architecture),
               ("PBR-SEQUENCE-003", "launcher-release", "linux", architecture),

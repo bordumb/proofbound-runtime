@@ -6,7 +6,11 @@ public_language = "The development run path reports a stable phase, invariant ru
 subject = "rust:proofbound_runtime_cli::run_diagnostic::RunError"
 profile = "ledger"
 tier = 0
-evidence = ["example-test:run-diagnostic-attacks"]
+evidence = [
+  "example-test:release-observe-runtime-linux-aarch64",
+  "example-test:release-observe-runtime-linux-x86-64",
+  "example-test:run-diagnostic-attacks",
+]
 assumptions = [
   "PBR-LINUX-AX-001",
   "PBR-HOST-AX-002",
@@ -41,6 +45,9 @@ source_roots = [
   "docs/specs/0002_cli_surface.md",
   "docs/specs/0009_run_denial_diagnostics.md",
   "proofbound/evidence/run-diagnostic-attacks.toml",
+  "proofbound/evidence/release-observe-runtime-linux-aarch64.toml",
+  "proofbound/evidence/release-observe-runtime-linux-x86-64.toml",
   "tests/attacks/run/diagnostics-v1.toml",
   "tools/ci/native-linux.sh",
+  "crates/proofbound-runtime-compose/tests/release_observation.rs",
 ]

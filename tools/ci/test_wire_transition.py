@@ -199,7 +199,9 @@ class WireTransitionTests(unittest.TestCase):
         self.assertIn('"tests/attacks/native-linux/memory-v2.toml"', claim)
         self.assertIn('claims = ["PBR-RESOURCE-010"]', evidence)
 
-        expected_claims = 'claims = ["PBR-RESOURCE-010", "PBR-RUN-007"]'
+        expected_claims = (
+            'claims = ["PBR-DIAGNOSTIC-011", "PBR-RESOURCE-010", "PBR-RUN-007"]'
+        )
         for architecture in ("aarch64", "x86-64"):
             manifest = (
                 REPOSITORY_ROOT
