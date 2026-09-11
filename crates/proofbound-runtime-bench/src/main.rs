@@ -553,7 +553,7 @@ fn is_source_commit(value: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{Arguments, CliError, parse_arguments};
+    use super::{Arguments, CliError, parse_arguments, validate_run_projection};
     #[cfg(not(target_os = "linux"))]
     use super::{BenchmarkError, run};
 
@@ -681,5 +681,29 @@ mod tests {
         .expect_err("native benchmarking cannot run on an unsupported host");
 
         assert_eq!(error, CliError::Benchmark(BenchmarkError::UnsupportedHost));
+    }
+
+    #[test]
+    fn native_validator_accepts_only_the_real_run_projection() {
+        let receipt = std::path::Path::new("/results/runs/000/receipt.json");
+        let digest = "a".repeat(64);
+        let projection = serde_json::json!({
+            "commitment": format!("sha256:{digest}"),
+            "execution_id": "00112233-4455-4677-8899-aabbccddeeff",
+            "outcome": {"kind": "exited", "code": 0},
+            "receipt": receipt,
+            "schema": "proofbound-runtime-run-result/1",
+        });
+        assert_eq!(validate_run_projection(&projection, receipt, &digest), Ok(()));
+
+        let mut missing_receipt = projection.clone();
+        missing_receipt
+            .as_object_mut()
+            .expect("fixture is an object")
+            .remove("receipt");
+        assert_eq!(
+            validate_run_projection(&missing_receipt, receipt, &digest),
+            Err(BenchmarkError::NativeArtifactFailed)
+        );
     }
 }
