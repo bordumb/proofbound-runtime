@@ -57,6 +57,29 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("Run the complete repository base gate", workflow)
         self.assertIn("Execute and verify the exact release binaries", workflow)
 
+    def test_version_two_release_chain_uses_cbor_and_a_decoded_projection(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn(
+            '--execution-receipt "$evidence_directory/execution-receipt.cbor"',
+            workflow,
+        )
+        self.assertIn('--output "$evidence_directory/composed-receipt.cbor"', workflow)
+        self.assertIn(
+            'pbr-compose" inspect "$evidence_directory/composed-receipt.cbor"',
+            workflow,
+        )
+        self.assertIn("composed-receipt.projection.json", workflow)
+        self.assertNotIn("execution-receipt.json", workflow)
+        self.assertNotIn("composed-receipt.json", workflow)
+
+        observation = (
+            REPOSITORY_ROOT
+            / "crates/proofbound-runtime-compose/tests/release_observation.rs"
+        ).read_text(encoding="utf-8")
+        self.assertIn('execution-receipt.cbor', observation)
+        self.assertNotIn('execution-receipt.json', observation)
+
 
 if __name__ == "__main__":
     unittest.main()
