@@ -1469,6 +1469,27 @@ mod tests {
                 .try_fold(0_u64, |sum, sample| sum.checked_add(*sample)),
             Some(measurements.runs()[0].total_ns())
         );
+        let encoded = serde_json::to_value(&measurements)
+            .expect("native measurements remain operational JSON");
+        assert_eq!(
+            encoded
+                .as_object()
+                .expect("native measurements are an object")
+                .keys()
+                .map(String::as_str)
+                .collect::<std::collections::BTreeSet<_>>(),
+            ["phases", "runs", "total"].into_iter().collect()
+        );
+        assert_eq!(encoded["runs"][0]["total_ns"], 91);
+        assert_eq!(
+            encoded["runs"][0]["phase_samples_ns"],
+            serde_json::json!([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
+        );
+        assert_eq!(
+            encoded["phases"][0]["phase"],
+            "plan-validation-and-normalization-v1"
+        );
+        assert_eq!(encoded["phases"][0]["summary"]["samples_ns"], serde_json::json!([1, 2]));
         assert_eq!(summarize_native_runs(&[]), Err(BenchmarkError::EmptySeries));
     }
 }
