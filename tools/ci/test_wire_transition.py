@@ -127,6 +127,33 @@ class WireTransitionTests(unittest.TestCase):
         self.assertIn("MemoryByteLimit::new(", harness)
         self.assertIn("SwapByteLimit::new(", harness)
 
+    def test_authority_translation_inventory_includes_v2_limit_wrappers(self) -> None:
+        translation = (
+            REPOSITORY_ROOT / "proofbound/translations/authority-normalization.toml"
+        ).read_text(encoding="utf-8")
+
+        for type_name in ("MemoryByteLimit", "SwapByteLimit"):
+            self.assertIn(
+                'kind = "type"\n'
+                f'rust_name = "proofbound_runtime_core::authority::{type_name}"',
+                translation,
+            )
+
+    def test_native_swap_matrix_does_not_infer_events_from_swap_use(self) -> None:
+        specification = MEMORY_SPEC.read_text(encoding="utf-8")
+        normalized_specification = " ".join(specification.split())
+        native = (
+            REPOSITORY_ROOT / "crates/proofbound-runtime-linux/tests/native_linux.rs"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn(
+            "A nonzero peak alone is not a limit event.",
+            normalized_specification,
+        )
+        self.assertNotIn("memory.reclaim", native)
+        self.assertIn("resources.swap_peak_bytes() > 0", native)
+        self.assertIn("resources.memory_events().oom() > 0", native)
+
     def test_v2_receipt_resources_cross_the_proven_binding_boundary(self) -> None:
         binding = (
             REPOSITORY_ROOT / "crates/proofbound-runtime-binding/src/lib.rs"
