@@ -48,6 +48,16 @@ class RequiredWorkflowTests(unittest.TestCase):
         self.assertIn('stage="${1:-all}"', script)
         self.assertIn('all|preflight|rust|formal', script)
 
+    def test_each_lane_uploads_timing_outside_assurance_evidence(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertEqual(workflow.count("actions/upload-artifact@"), 4)
+        self.assertEqual(workflow.count("if: ${{ always() }}"), 5)
+        self.assertEqual(workflow.count("proofbound-runtime-ci-timing-"), 4)
+        self.assertNotIn(".proofbound", "\n".join(
+            line for line in workflow.splitlines() if "timing" in line.lower()
+        ))
+
     def test_triggers_and_cancellation_remain_closed(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
