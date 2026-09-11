@@ -100,3 +100,87 @@ jobs:
           path: ${{ runner.temp }}/proofbound-runtime-performance/pure-${{ matrix.architecture }}
           if-no-files-found: error
           retention-days: 30
+
+  native:
+    name: native execution (${{ matrix.architecture }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x86_64
+            runner: ubuntu-24.04
+            image: ubuntu-24.04
+          - architecture: aarch64
+            runner: ubuntu-24.04-arm
+            image: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    steps:
+      - name: Check out the exact requested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.PBR_PERFORMANCE_REVISION }}
+
+      - name: Reject a symbolic or substituted revision
+        run: |
+          [[ "$PBR_PERFORMANCE_REVISION" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$PBR_PERFORMANCE_REVISION"
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@1.94.0
+
+      - name: Build the native release-profile harness and Runtime
+        run: cargo build --release --locked -p proofbound-runtime-bench -p proofbound-runtime-cli -p proofbound-runtime-linux -p proofbound-runtime-verify --bins
+
+      - name: Measure and independently verify fresh native executions
+        run: |
+          result_root="$RUNNER_TEMP/proofbound-runtime-performance/native-${{ matrix.architecture }}"
+          mkdir -p "$result_root"
+          rustc --version --verbose >"$result_root/rustc-version.txt"
+          uname -a >"$result_root/uname.txt"
+          cp target/release/pbr-bench "$result_root/pbr-bench"
+          : >"$result_root/verifier.stderr"
+          printf '%s\n' 'not-run' >"$result_root/verifier.exit"
+          set +e
+          bash tools/ci/native-performance.sh \
+            "$result_root" \
+            "$PBR_PERFORMANCE_REVISION" \
+            "${{ matrix.architecture }}" \
+            "$PWD/target/release" \
+            "${{ matrix.image }}" \
+            >"$result_root/wrapper.stdout" \
+            2>"$result_root/wrapper.stderr"
+          producer_exit=$?
+          printf '%s\n' "$producer_exit" >"$result_root/producer.exit"
+          final_exit=$producer_exit
+          if [[ "$producer_exit" -eq 0 ]]; then
+            python3 experiments/performance/verify_native.py \
+              --result "$result_root/result.json" \
+              --expected-source "$PBR_PERFORMANCE_REVISION" \
+              --expected-architecture "${{ matrix.architecture }}" \
+              --benchmark-executable "$result_root/pbr-bench" \
+              --pbr target/release/pbr \
+              --launcher target/release/pbr-native-launcher \
+              --verifier target/release/pbr-verify \
+              --plan "$result_root/workload/plan.toml" \
+              --workload-executable "$result_root/workload/hello-static" \
+              --expected-output "$result_root/workload/expected-output.txt" \
+              --runs-root "$result_root/runs" \
+              >"$result_root/verification.json" \
+              2>"$result_root/verifier.stderr"
+            verifier_exit=$?
+            printf '%s\n' "$verifier_exit" >"$result_root/verifier.exit"
+            final_exit=$verifier_exit
+          fi
+          set -e
+          (cd "$result_root" && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum >SHA256SUMS)
+          exit "$final_exit"
+
+      - name: Retain the exact native result and run artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: proofbound-runtime-performance-native-${{ matrix.architecture }}-${{ env.PBR_PERFORMANCE_REVISION }}
+          path: ${{ runner.temp }}/proofbound-runtime-performance/native-${{ matrix.architecture }}
+          if-no-files-found: error
+          retention-days: 30
