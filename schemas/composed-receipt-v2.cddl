@@ -12,8 +12,15 @@ composed-receipt-v2 = {
   "assumptions": [* inherited-entry],
   "composition_id": bstr .size 32,
   "runtime_bundle": runtime-bundle,
-  "not_proved_out_of_scope": [* text],
+  "not_proved_out_of_scope": residual-obligations,
   "trusted_computing_base": [* composed-tcb-entry]
+}
+
+residual-obligations = {
+  "assumptions": [* text],
+  "exclusions": [* text],
+  "open_obligations": [* text],
+  "undischarged_premises": [* text]
 }
 
 artifact = {

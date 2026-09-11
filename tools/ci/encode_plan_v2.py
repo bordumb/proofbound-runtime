@@ -21,6 +21,12 @@ def encode_argument(major: int, value: int) -> bytes:
 
 
 def encode(value: Any) -> bytes:
+    if value is None:
+        return b"\xf6"
+    if isinstance(value, bool):
+        return b"\xf5" if value else b"\xf4"
+    if isinstance(value, bytes):
+        return encode_argument(2, len(value)) + value
     if isinstance(value, str):
         payload = value.encode("utf-8")
         return encode_argument(3, len(payload)) + payload
