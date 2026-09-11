@@ -84,6 +84,18 @@ class PerformanceWorkflowTests(unittest.TestCase):
         )
         self.assertNotIn('sha256sum "$result_root"/*', workflow)
 
+    def test_native_checksum_inventory_is_staged_outside_the_scanned_tree(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn(
+            'inventory_path="$RUNNER_TEMP/proofbound-runtime-performance/'
+            'native-${{ matrix.workload }}-${{ matrix.architecture }}.SHA256SUMS"',
+            workflow,
+        )
+        self.assertIn('xargs -0 sha256sum >"$inventory_path")', workflow)
+        self.assertIn('mv "$inventory_path" "$result_root/SHA256SUMS"', workflow)
+        self.assertNotIn('xargs -0 sha256sum >SHA256SUMS)', workflow)
+
     def test_native_job_runs_the_exact_fresh_execution_protocol(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
