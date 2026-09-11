@@ -2,16 +2,41 @@ name: Reproducible release artifacts
 
 on:
   workflow_dispatch:
+    inputs:
+      revision:
+        description: Exact 40-character commit on main to reproduce
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 env:
   CARGO_TERM_COLOR: always
+  PBR_RELEASE_REVISION: ${{ inputs.revision }}
 
 jobs:
+  validate-revision:
+    name: Validate exact mainline revision
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out the exact requested revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PBR_RELEASE_REVISION }}
+          fetch-depth: 0
+
+      - name: Reject a symbolic or non-mainline revision
+        run: |
+          [[ "$PBR_RELEASE_REVISION" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$PBR_RELEASE_REVISION"
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          git merge-base --is-ancestor "$PBR_RELEASE_REVISION" origin/main
+
   release:
     name: Reproduce and seal release (${{ matrix.architecture }})
+    needs: validate-revision
     strategy:
       fail-fast: false
       matrix:
@@ -27,9 +52,12 @@ jobs:
     steps:
       - name: Check out the exact requested head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PBR_RELEASE_REVISION }}
+          fetch-depth: 0
 
       - name: Confirm the exact requested head
-        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+        run: test "$(git rev-parse HEAD)" = "$PBR_RELEASE_REVISION"
 
       - name: Install pinned Rust toolchain
         uses: dtolnay/rust-toolchain@1.94.0
@@ -174,7 +202,7 @@ jobs:
       - name: Confirm the complete observed release chain
         run: |
           python3 - \
-            "$GITHUB_SHA" \
+            "$PBR_RELEASE_REVISION" \
             "${{ matrix.architecture }}" \
             "${{ matrix.context }}" \
             "dist/assurance/${{ matrix.architecture }}/proofbound-release.verification.json" \

@@ -48,6 +48,7 @@ if selected "preflight"; then
   timed_unit install-release-tests python3 -m unittest tools.ci.test_install_release
   timed_unit build-example-tests python3 -m unittest tools.ci.test_build_example
   timed_unit workflow-tests python3 -m unittest tools.ci.test_required_workflow
+  timed_unit release-workflow-tests python3 -m unittest tools.ci.test_release_workflow
   timed_unit timing-tests python3 -m unittest tools.ci.test_timing
   timed_unit tool-cache-tests python3 -m unittest tools.ci.test_tool_cache
   timed_unit network-record-port-tests python3 -m unittest experiments.network_authority.test_record_port_control
