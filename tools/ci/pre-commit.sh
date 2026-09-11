@@ -13,12 +13,15 @@ python3 -m unittest tools.ci.test_build_example
 python3 -m unittest tools.ci.test_required_workflow
 python3 -m unittest tools.ci.test_native_context
 python3 -m unittest tools.ci.test_release_workflow
+python3 -m unittest tools.ci.test_acceptance_action
+python3 -m unittest tools.ci.test_acceptance_policy_compiler
 python3 -m unittest tools.release.test_validate_release_state
 python3 -m unittest tools.ci.test_timing
 python3 -m unittest tools.ci.test_summarize_timings
 python3 -m unittest tools.ci.test_tool_cache
 python3 -m unittest tools.ci.test_lean_toolchain
 python3 -m unittest tools.ci.test_wire_transition
+python3 -m unittest tools.ci.test_wire_v2_vectors
 python3 -m unittest experiments.network_authority.test_record_common
 python3 -m unittest experiments.network_authority.test_record_port_control
 python3 -m unittest experiments.network_authority.test_record_endpoint_control

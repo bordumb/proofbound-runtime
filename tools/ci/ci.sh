@@ -50,12 +50,15 @@ if selected "preflight"; then
   timed_unit workflow-tests python3 -m unittest tools.ci.test_required_workflow
   timed_unit native-context-tests python3 -m unittest tools.ci.test_native_context
   timed_unit release-workflow-tests python3 -m unittest tools.ci.test_release_workflow
+  timed_unit acceptance-action-tests python3 -m unittest tools.ci.test_acceptance_action
+  timed_unit acceptance-policy-compiler-tests python3 -m unittest tools.ci.test_acceptance_policy_compiler
   timed_unit release-state-tests python3 -m unittest tools.release.test_validate_release_state
   timed_unit timing-tests python3 -m unittest tools.ci.test_timing
   timed_unit timing-summary-tests python3 -m unittest tools.ci.test_summarize_timings
   timed_unit tool-cache-tests python3 -m unittest tools.ci.test_tool_cache
   timed_unit lean-toolchain-tests python3 -m unittest tools.ci.test_lean_toolchain
   timed_unit wire-transition-tests python3 -m unittest tools.ci.test_wire_transition
+  timed_unit wire-v2-vector-tests python3 -m unittest tools.ci.test_wire_v2_vectors
   timed_unit performance-workflow-tests python3 -m unittest tools.ci.test_performance_workflow
   timed_unit performance-schema-tests python3 -m unittest experiments.performance.test_pure_result_schema experiments.performance.test_native_result_schema
   timed_unit performance-verifier-tests python3 -m unittest experiments.performance.test_discover_runtime_libraries experiments.performance.test_verify_pure experiments.performance.test_verify_native
