@@ -276,10 +276,7 @@ fn parse_named_counters<const N: usize, const I: usize>(
                 return Err(CgroupError::ObservationInvalid);
             }
             values[index] = Some(parse_canonical_u64(value)?);
-        } else if let Some(index) = ignored_names
-            .iter()
-            .position(|ignored| *ignored == name)
-        {
+        } else if let Some(index) = ignored_names.iter().position(|ignored| *ignored == name) {
             if ignored[index] {
                 return Err(CgroupError::ObservationInvalid);
             }
