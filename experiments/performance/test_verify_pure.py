@@ -29,7 +29,10 @@ def digest(data: bytes) -> str:
 
 
 def fixture_result(
-    executable: bytes, plan_fixture: bytes, receipt_fixture: bytes
+    executable: bytes,
+    plan_fixture: bytes,
+    receipt_fixture: bytes,
+    composition_fixture: bytes,
 ) -> dict[str, object]:
     samples = list(range(1_000))
     measurement = {
@@ -65,6 +68,8 @@ def fixture_result(
                 "subject": subject,
                 "fixture_sha256": digest(
                     plan_fixture if subject.startswith(("plan-", "authority-", "policy-"))
+                    else composition_fixture
+                    if subject.startswith("release-")
                     else receipt_fixture
                 ),
                 "measurement": copy.deepcopy(measurement),
@@ -86,13 +91,16 @@ class PureBenchmarkVerifierTests(unittest.TestCase):
         self.executable = root / "pbr-bench"
         self.plan_fixture = root / "minimal-v1.toml"
         self.receipt_fixture = root / "reusable-receipt-v1.json"
+        self.composition_fixture = root / "composition_fixture.rs"
         self.executable.write_bytes(b"exact benchmark executable")
         self.plan_fixture.write_bytes(b"exact plan fixture")
         self.receipt_fixture.write_bytes(b"exact receipt fixture")
+        self.composition_fixture.write_bytes(b"exact composition fixture")
         self.value = fixture_result(
             self.executable.read_bytes(),
             self.plan_fixture.read_bytes(),
             self.receipt_fixture.read_bytes(),
+            self.composition_fixture.read_bytes(),
         )
 
     def verify(self, value: object | None = None) -> dict[str, object]:
@@ -102,6 +110,7 @@ class PureBenchmarkVerifierTests(unittest.TestCase):
             self.executable,
             self.plan_fixture,
             self.receipt_fixture,
+            self.composition_fixture,
         )
 
     def test_valid_result_is_rederived_from_raw_bytes(self) -> None:
@@ -112,6 +121,7 @@ class PureBenchmarkVerifierTests(unittest.TestCase):
             self.executable,
             self.plan_fixture,
             self.receipt_fixture,
+            self.composition_fixture,
         )
         self.assertEqual(report["schema"], "proofbound-runtime-performance-verification/1")
         self.assertTrue(report["valid"])
@@ -137,6 +147,7 @@ class PureBenchmarkVerifierTests(unittest.TestCase):
                     self.executable,
                     self.plan_fixture,
                     self.receipt_fixture,
+                    self.composition_fixture,
                 )
             self.assertEqual(caught.exception.code, code)
 
@@ -187,6 +198,8 @@ class PureBenchmarkVerifierTests(unittest.TestCase):
                     str(self.plan_fixture),
                     "--receipt-fixture",
                     str(self.receipt_fixture),
+                    "--composition-fixture",
+                    str(self.composition_fixture),
                 ]
             )
         self.assertEqual(exit_code, 0)
