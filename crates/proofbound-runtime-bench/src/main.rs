@@ -322,23 +322,7 @@ fn validate_native_run(
     expected_output: &[u8],
 ) -> Result<String, CliError> {
     let receipt_sha256 = sha256_path(receipt, BenchmarkError::NativeArtifactFailed)?;
-    let report = observed
-        .report()
-        .as_object()
-        .ok_or(BenchmarkError::NativeArtifactFailed)?;
-    if report.len() != 4
-        || report.get("schema").and_then(serde_json::Value::as_str)
-            != Some("proofbound-runtime-run-result/1")
-        || report.get("commitment").and_then(serde_json::Value::as_str)
-            != Some(format!("sha256:{receipt_sha256}").as_str())
-        || report
-            .get("execution_id")
-            .and_then(serde_json::Value::as_str)
-            .is_none_or(str::is_empty)
-        || report.get("outcome") != Some(&serde_json::json!({"kind": "exited", "code": 0}))
-    {
-        return Err(BenchmarkError::NativeArtifactFailed.into());
-    }
+    validate_run_projection(observed.report(), receipt, &receipt_sha256)?;
     let entries = std::fs::read_dir(
         workload_output
             .parent()
@@ -356,6 +340,32 @@ fn validate_native_run(
         return Err(BenchmarkError::NativeArtifactFailed.into());
     }
     Ok(receipt_sha256)
+}
+
+fn validate_run_projection(
+    projection: &serde_json::Value,
+    receipt: &Path,
+    receipt_sha256: &str,
+) -> Result<(), BenchmarkError> {
+    let report = projection
+        .as_object()
+        .ok_or(BenchmarkError::NativeArtifactFailed)?;
+    if report.len() != 5
+        || report.get("schema").and_then(serde_json::Value::as_str)
+            != Some("proofbound-runtime-run-result/1")
+        || report.get("commitment").and_then(serde_json::Value::as_str)
+            != Some(format!("sha256:{receipt_sha256}").as_str())
+        || report.get("receipt").and_then(serde_json::Value::as_str)
+            != Some(receipt.to_string_lossy().as_ref())
+        || report
+            .get("execution_id")
+            .and_then(serde_json::Value::as_str)
+            .is_none_or(str::is_empty)
+        || report.get("outcome") != Some(&serde_json::json!({"kind": "exited", "code": 0}))
+    {
+        return Err(BenchmarkError::NativeArtifactFailed);
+    }
+    Ok(())
 }
 
 #[cfg(target_os = "linux")]
@@ -553,9 +563,9 @@ fn is_source_commit(value: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{Arguments, CliError, parse_arguments, validate_run_projection};
     #[cfg(not(target_os = "linux"))]
-    use super::{BenchmarkError, run};
+    use super::run;
+    use super::{Arguments, BenchmarkError, CliError, parse_arguments, validate_run_projection};
 
     #[test]
     fn arguments_accept_one_exact_pure_source() {
@@ -694,7 +704,10 @@ mod tests {
             "receipt": receipt,
             "schema": "proofbound-runtime-run-result/1",
         });
-        assert_eq!(validate_run_projection(&projection, receipt, &digest), Ok(()));
+        assert_eq!(
+            validate_run_projection(&projection, receipt, &digest),
+            Ok(())
+        );
 
         let mut missing_receipt = projection.clone();
         missing_receipt
