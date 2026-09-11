@@ -51,6 +51,26 @@ The initial implementation uses `nix-community/cache-nix-action` at commit
 scope, key construction, restored paths, or downstream identity checks reopens
 this decision.
 
+## Initial operational observation
+
+The first miss and hit establish that the exact-key mechanism functions; they
+do not satisfy the two-week retention gate below. Seed run
+[`34551042525`](https://github.com/bordumb/proofbound-runtime/actions/runs/34551042525)
+at exact source `ccfa7f3bbfe1e4e38bc9ea1af4d03f2e943e23bb` built the translation-tool
+closure in 20 minutes 22 seconds and saved cache entry `7571759207` under key
+`formal-nix-v1-Linux-X64-3a8586facab25b31bdb1e1f5f45acd60d1cc5ff0-2c46b140b0b35c42621384abf2ff0cef460cff5186c5ff59733b6abdd77af205`.
+
+Follow-up run
+[`34554553968`](https://github.com/bordumb/proofbound-runtime/actions/runs/34554553968)
+at exact source `2232851973b8fabc873a056b87d25442b4d2ddc4` restored that closure in 2
+minutes 7 seconds, installed the pinned Charon and Aeneas outputs in 15 seconds,
+and then completed the unchanged fresh evidence gate successfully. Its retained
+formal timing artifact records a complete 1,096,887 ms formal stage, including
+734,720 ms for fresh evidence. The cache therefore removed about 18 minutes
+from this observed tool-install slice without reusing an assurance conclusion.
+One hit is not a latency distribution, reliability result, or independent
+review.
+
 ## Consequences
 
 ### Positive
