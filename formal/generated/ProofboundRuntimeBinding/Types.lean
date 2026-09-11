@@ -15,7 +15,7 @@ set_option maxRecDepth 2048
 namespace proofbound_runtime_binding
 
 /-- [proofbound_runtime_binding::ReceiptBindingParts]
-    Source: 'crates/proofbound-runtime-binding/src/lib.rs', lines 17:0-38:1
+    Source: 'crates/proofbound-runtime-binding/src/lib.rs', lines 18:0-40:1
     Visibility: public -/
 structure ReceiptBindingParts where
   assumptions : alloc.vec.Vec Std.U8
@@ -34,13 +34,14 @@ structure ReceiptBindingParts where
   policy : alloc.vec.Vec Std.U8
   producer : alloc.vec.Vec Std.U8
   product_version : alloc.vec.Vec Std.U8
+  resources : Option (alloc.vec.Vec Std.U8)
   runtime : alloc.vec.Vec Std.U8
   schema : alloc.vec.Vec Std.U8
   streams : alloc.vec.Vec Std.U8
   trusted_computing_base : alloc.vec.Vec Std.U8
 
 /-- [proofbound_runtime_binding::ReceiptBinding]
-    Source: 'crates/proofbound-runtime-binding/src/lib.rs', lines 42:0-44:1
+    Source: 'crates/proofbound-runtime-binding/src/lib.rs', lines 44:0-46:1
     Visibility: public -/
 structure ReceiptBinding where
   parts : ReceiptBindingParts
