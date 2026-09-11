@@ -19,10 +19,22 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  bootstrap:
-    name: Current assurance gate
+  preflight:
+    name: Preflight
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 10
+    steps:
+      - name: Check out the exact event head
+        uses: actions/checkout@v4
+
+      - name: Run metadata, documentation, and fixture preflight
+        run: bash tools/ci/ci.sh preflight
+
+  rust:
+    name: Rust and dependencies
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - name: Check out the exact event head
         uses: actions/checkout@v4
@@ -31,6 +43,30 @@ jobs:
         uses: dtolnay/rust-toolchain@1.94.0
         with:
           components: clippy,rustfmt
+
+      - name: Install pinned dependency auditor
+        run: cargo install --locked cargo-deny --version 0.20.2
+
+      - name: Fetch locked Rust dependencies
+        run: cargo fetch --locked
+
+      - name: Reject Rust lockfile drift
+        run: git diff --exit-code -- Cargo.lock
+
+      - name: Run Rust and dependency gates
+        run: bash tools/ci/ci.sh rust
+
+  formal:
+    name: Formal and fresh evidence
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Check out the exact event head
+        uses: actions/checkout@v4
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@1.94.0
 
       - name: Install pinned Lean toolchain
         uses: leanprover/lean-action@38fbc41a8c28c4cbaec22d7f7de508ec2e7c0dd9 # v1.5.0
@@ -64,11 +100,6 @@ jobs:
           test "$(charon version)" = "0.1.225"
           test "$(aeneas -version)" = "aeneas 3a8586fa"
 
-      - name: Install pinned repository tools
-        run: |
-          cargo install --locked just --version 1.46.0
-          cargo install --locked cargo-deny --version 0.20.2
-
       - name: Install pinned Proofbound tools
         run: >-
           cargo install
@@ -95,10 +126,59 @@ jobs:
           cargo kani setup
 
       - name: Fetch locked project dependencies
-        run: just bootstrap
+        run: |
+          cargo fetch --locked
+          lake update
 
       - name: Reject bootstrap lockfile drift
         run: git diff --exit-code -- Cargo.lock lake-manifest.json
 
-      - name: Run the repository gate on Linux
-        run: just ci
+      - name: Run formal and fresh evidence gates
+        run: bash tools/ci/ci.sh formal
+
+  native:
+    name: Native boundary (${{ matrix.architecture }})
+    needs: preflight
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x86_64
+            runner: ubuntu-24.04
+          - architecture: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    steps:
+      - name: Check out the exact event head
+        uses: actions/checkout@v4
+
+      - name: Confirm the exact event head
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@1.94.0
+
+      - name: Run the required native boundary corpus
+        env:
+          PROOFBOUND_EXPECTED_ARCH: ${{ matrix.architecture }}
+        run: bash tools/ci/native-linux.sh
+
+  required:
+    name: Current assurance gate
+    if: ${{ always() }}
+    needs:
+      - preflight
+      - rust
+      - formal
+      - native
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Reject any incomplete or failed required lane
+        if: ${{ needs.preflight.result != 'success' || needs.rust.result != 'success' || needs.formal.result != 'success' || needs.native.result != 'success' }}
+        run: exit 1
+
+      - name: Admit the exact successful partition
+        if: ${{ needs.preflight.result == 'success' && needs.rust.result == 'success' && needs.formal.result == 'success' && needs.native.result == 'success' }}
+        run: 'true'
