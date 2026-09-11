@@ -12,6 +12,7 @@ MANUAL_EXPERIMENT_WORKFLOWS = (
 )
 CI_SCRIPT = REPOSITORY_ROOT / "tools" / "ci" / "ci.sh"
 PRE_COMMIT_SCRIPT = REPOSITORY_ROOT / "tools" / "ci" / "pre-commit.sh"
+CLAIMS_ROOT = REPOSITORY_ROOT / "claims"
 LEGACY_NATIVE_WORKFLOW = (
     REPOSITORY_ROOT / ".github" / "workflows" / "linux-enforcement.yml"
 )
@@ -82,6 +83,48 @@ class RequiredWorkflowTests(unittest.TestCase):
         self.assertIn("bash tools/ci/ci.sh evidence", evidence)
         self.assertIn("Install pinned Proofbound tools", evidence)
         self.assertIn("Install pinned Kani verifier", evidence)
+
+    def test_fresh_evidence_matrix_is_a_closed_claim_partition(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        evidence = workflow[workflow.index("\n  fresh-evidence:\n") : workflow.index("\n  native:\n")]
+        manifests = (REPOSITORY_ROOT / "tools/ci/manifests.sh").read_text(
+            encoding="utf-8"
+        )
+        expected_kernel_shards = {
+            "authority": "PBR-AUTH-001",
+            "binding": "PBR-BINDING-005",
+            "policy": "PBR-POLICY-002",
+            "receipt": "PBR-RECEIPT-004",
+        }
+        claims = []
+        for path in sorted(CLAIMS_ROOT.glob("*.toml")):
+            content = path.read_text(encoding="utf-8")
+            claim_id = re.search(r'(?m)^id = "([^"]+)"$', content)
+            profile = re.search(r'(?m)^profile = "([^"]+)"$', content)
+            self.assertIsNotNone(claim_id, path)
+            self.assertIsNotNone(profile, path)
+            claims.append({"id": claim_id.group(1), "profile": profile.group(1)})
+
+        self.assertEqual(
+            {claim["id"] for claim in claims if claim["profile"] == "kernel-with-assumptions"},
+            set(expected_kernel_shards.values()),
+        )
+        self.assertTrue(
+            all(claim["profile"] in {"kernel-with-assumptions", "ledger"} for claim in claims)
+        )
+        self.assertIn("fail-fast: false", evidence)
+        for shard, selector in (*expected_kernel_shards.items(), ("ledger", "ledger")):
+            self.assertIn(f"- shard: {shard}\n              selector: {selector}", evidence)
+        self.assertIn("PBR_EVIDENCE_SELECTOR: ${{ matrix.selector }}", evidence)
+        self.assertIn(
+            "proofbound-runtime-ci-timing-fresh-evidence-"
+            "${{ matrix.shard }}-${{ env.PBR_EXACT_SHA }}",
+            evidence,
+        )
+        for selector in (*expected_kernel_shards.values(), "ledger"):
+            self.assertIn(f"{selector})", manifests)
+        self.assertIn('check_args=(--profile ledger)', manifests)
+        self.assertIn('check_args=(--claim "$selector")', manifests)
 
     def test_fast_hook_excludes_fresh_evidence(self) -> None:
         hook = PRE_COMMIT_SCRIPT.read_text(encoding="utf-8")
