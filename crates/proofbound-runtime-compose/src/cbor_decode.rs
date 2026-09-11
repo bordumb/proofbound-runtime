@@ -14,7 +14,7 @@ enum Value {
     Null,
 }
 
-const MAX_BYTES: usize = 64 * 1024 * 1024;
+const MAX_BYTES: usize = 16 * 1024 * 1024;
 const MAX_DEPTH: usize = 128;
 const MAX_ITEMS: usize = 1_000_000;
 

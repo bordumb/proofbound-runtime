@@ -217,9 +217,6 @@ impl Decoder<'_> {
             4 => {
                 let count = bounded_count(argument)?;
                 let mut values = Vec::new();
-                values
-                    .try_reserve(count)
-                    .map_err(|_| Error::LimitExceeded)?;
                 for _ in 0..count {
                     values.push(self.item(depth + 1)?);
                 }
@@ -234,9 +231,6 @@ impl Decoder<'_> {
     fn map(&mut self, argument: u64, depth: usize) -> Result<Value, Error> {
         let count = bounded_count(argument)?;
         let mut values = Vec::new();
-        values
-            .try_reserve(count)
-            .map_err(|_| Error::LimitExceeded)?;
         let mut previous: Option<&[u8]> = None;
         for _ in 0..count {
             let key_start = self.offset;
@@ -274,6 +268,23 @@ fn bounded_count(value: u64) -> Result<usize, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde::Deserialize;
+
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct CarrierCatalog {
+        schema: String,
+        cases: Vec<CarrierCase>,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct CarrierCase {
+        id: String,
+        bytes_hex: Option<String>,
+        mutation: Option<String>,
+        expected_error: String,
+    }
 
     #[test]
     fn rejects_noncanonical_and_unadmitted_encodings() {
@@ -289,6 +300,58 @@ mod tests {
         ];
         for attack in attacks {
             assert!(decode(attack).is_err());
+        }
+    }
+
+    #[test]
+    fn producer_and_verifier_codecs_share_the_frozen_carrier_corpus() {
+        let catalog: CarrierCatalog = toml::from_str(include_str!(
+            "../../../tests/attacks/receipt/carrier-v2.toml"
+        ))
+        .expect("version 2 carrier attack catalog is valid");
+        assert_eq!(
+            catalog.schema,
+            "proofbound-runtime-receipt-carrier-attacks/2"
+        );
+        assert_eq!(catalog.cases.len(), 4);
+        for case in catalog.cases {
+            let attacked = if let Some(encoded) = case.bytes_hex {
+                encoded
+                    .as_bytes()
+                    .chunks_exact(2)
+                    .map(|pair| {
+                        u8::from_str_radix(
+                            core::str::from_utf8(pair).expect("hex pair is UTF-8"),
+                            16,
+                        )
+                        .expect("carrier attack hex is valid")
+                    })
+                    .collect()
+            } else if case.mutation.as_deref() == Some("append-zero-to-golden") {
+                let mut bytes =
+                    include_str!("../../../schemas/vectors/v2/execution-receipt.cbor.hex")
+                        .trim()
+                        .as_bytes()
+                        .chunks_exact(2)
+                        .map(|pair| {
+                            u8::from_str_radix(
+                                core::str::from_utf8(pair).expect("hex pair is UTF-8"),
+                                16,
+                            )
+                            .expect("golden receipt hex is valid")
+                        })
+                        .collect::<Vec<_>>();
+                bytes.push(0);
+                bytes
+            } else {
+                panic!("attack {} has no implemented carrier mutation", case.id);
+            };
+            assert!(decode(&attacked).is_err(), "producer attack {}", case.id);
+            assert_eq!(
+                case.expected_error, "receipt.schema.malformed-cbor",
+                "verifier attack contract {}",
+                case.id
+            );
         }
     }
 

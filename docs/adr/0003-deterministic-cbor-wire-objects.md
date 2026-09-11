@@ -56,7 +56,12 @@ wave that freezes more JSON surface.
 5. **Producer and verifier keep separate codecs.** The independent verifier's
    decoder shares no code with the producer, as the contributor guide
    requires. An external CBOR crate, if one is used, joins the recorded
-   trusted computing base for that role.
+   trusted computing base for that role. The carrier parser is a synchronized
+   but separately owned implementation in each crate: neither crate imports,
+   includes, or depends on the other's codec. Both consume the same frozen
+   valid golden and malicious-carrier corpus so a behavioral divergence fails
+   CI, while their typed schema projections remain independently implemented.
+   Every Runtime CBOR decoder uses the same 16 MiB input ceiling.
 6. **The version 2 cut carries the change.** The encoding change lands in the
    same claim wave as the version 2 plan and receipt required by
    Specification 0007, so the binding-projection refinement and the
