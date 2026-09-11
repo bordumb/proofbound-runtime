@@ -184,8 +184,8 @@ fn validate_policy(policy: &AcceptancePolicy) -> Result<(), AcceptanceError> {
         || execution.resources.pids_max == 0
         || !(65_536..=1_099_511_627_776).contains(&execution.resources.memory_max)
         || execution.resources.memory_swap_max > 1_099_511_627_776
-        || execution.resources.memory_max % 65_536 != 0
-        || execution.resources.memory_swap_max % 65_536 != 0
+        || !execution.resources.memory_max.is_multiple_of(65_536)
+        || !execution.resources.memory_swap_max.is_multiple_of(65_536)
         || execution.resources.memory_oom_group != 1
         || !is_digest(&execution.executable.sha256)
         || !is_digest(&execution.policy_sha256)
