@@ -959,18 +959,34 @@ mod tests {
         assert_eq!(
             subjects
                 .iter()
-                .map(PureSubjectResult::subject)
+                .map(|subject| {
+                    serde_json::to_value(subject.subject())
+                        .expect("subject serializes")
+                        .as_str()
+                        .expect("subject serializes as text")
+                        .to_owned()
+                })
                 .collect::<Vec<_>>(),
             vec![
-                PureSubject::PlanParseV1,
-                PureSubject::AuthorityNormalizationV1,
-                PureSubject::PolicyCompilationV1,
+                "plan-parse-v1",
+                "authority-normalization-v1",
+                "policy-compilation-v1",
+                "receipt-construction-v1",
+                "receipt-canonical-encoding-v1",
             ]
         );
-        assert!(subjects.iter().all(|subject| {
+        assert!(subjects[..3].iter().all(|subject| {
             subject.fixture_sha256()
                 == "80194be084f9749fe47bc5feb1ac737d8e793b67230b0590abc2d2948881aa4a"
         }));
+        assert_eq!(
+            subjects[3].fixture_sha256(),
+            subjects[4].fixture_sha256()
+        );
+        assert_ne!(
+            subjects[3].fixture_sha256(),
+            subjects[0].fixture_sha256()
+        );
         assert!(subjects.iter().all(|subject| {
             subject.measurement().summary.count == 2 && subject.measurement().batch_count >= 1
         }));
