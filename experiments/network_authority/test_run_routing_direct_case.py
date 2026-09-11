@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import tempfile
+import threading
+import time
 import unittest
 from pathlib import Path
 
@@ -17,6 +20,7 @@ from experiments.network_authority.run_routing_direct_case import (
     observed_raw,
     read_document,
     validate_ready,
+    wait_contact_marker,
 )
 from experiments.network_authority.routing_transport_case import load_routing_matrix
 
@@ -142,6 +146,31 @@ class RoutingDirectCaseTests(unittest.TestCase):
             path.write_bytes(b'{"event":"first","event":"second"}\n')
             with self.assertRaises(RoutingOrchestrationError):
                 read_document(path)
+
+    def test_contact_marker_waits_for_an_in_progress_atomic_publication(self) -> None:
+        class RunningFixture:
+            @staticmethod
+            def poll():
+                return None
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            temporary_marker = root / ".fixture-contact.json.pending"
+            contact_marker = root / "fixture-contact.json"
+            temporary_marker.write_text('{"event":"tcp-accepted"}\n', encoding="utf-8")
+
+            def publish() -> None:
+                time.sleep(0.03)
+                os.replace(temporary_marker, contact_marker)
+
+            publisher = threading.Thread(target=publish)
+            publisher.start()
+            try:
+                self.assertTrue(
+                    wait_contact_marker(contact_marker, RunningFixture(), timeout=0.2)
+                )
+            finally:
+                publisher.join()
 
 
 if __name__ == "__main__":
