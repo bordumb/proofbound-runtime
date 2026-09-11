@@ -1537,6 +1537,43 @@ mod tests {
     }
 
     #[test]
+    fn version_two_receipt_is_deterministic_cbor_with_closed_resource_object() {
+        let mut input = parts();
+        input.resources = Some(
+            ReceiptResources::new(
+                ResourceLimits::new_v2(
+                    ProcessLimit::new(2).expect("valid process limit"),
+                    WallTimeLimit::from_milliseconds(1_000).expect("valid wall limit"),
+                    OutputByteLimit::new(1_024),
+                    OutputByteLimit::new(2_048),
+                    MemoryByteLimit::new(65_536).expect("valid memory limit"),
+                    SwapByteLimit::new(0).expect("valid swap limit"),
+                ),
+                32_768,
+                0,
+                ReceiptMemoryEvents::new(0, 0, 0, 0, 0, 0),
+                ReceiptSwapEvents::new(0, 0),
+            )
+            .expect("complete v2 resources"),
+        );
+        let receipt = ExecutionReceipt::new(input).expect("v2 receipt is valid");
+        let bytes = receipt.canonical_bytes().expect("v2 receipt encodes");
+        assert_ne!(bytes.first(), Some(&b'{'));
+        let decoded = crate::wire_v2::decode(&bytes).expect("producer CBOR decodes strictly");
+        assert_eq!(crate::wire_v2::encode(&decoded), Ok(bytes));
+        let crate::wire_v2::Value::Map(fields) = decoded else {
+            panic!("receipt must be a CBOR map");
+        };
+        assert_eq!(
+            fields.iter().find(|(key, _)| key == "schema").map(|(_, value)| value),
+            Some(&crate::wire_v2::Value::Text(
+                "proofbound-runtime-execution-receipt/2".to_owned()
+            ))
+        );
+        assert!(fields.iter().any(|(key, _)| key == "resources"));
+    }
+
+    #[test]
     fn constructor_rejects_identity_substitution() {
         let mut input = parts();
         input.boundary.execution_id = ExecutionId::from_bytes([
