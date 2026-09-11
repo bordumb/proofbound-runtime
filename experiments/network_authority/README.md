@@ -138,9 +138,8 @@ The expected control result is that both distinct services on port 443 are
 reachable, port 8443 is denied, and the TLS client rejects a wrong certificate.
 The runner retains an unexpected result and then exits nonzero.
 
-The `Network authority experiment` workflow is path-limited to changes in this
-directory or the workflow itself while it is introduced by a pull request.
-After the workflow exists on the default branch it may also be run through an
-explicit manual dispatch. It executes the selected controls on hosted x86_64
-and aarch64 Linux and retains each exact result for 14 days. Unrelated pushes
-and pull-request changes do not run experiments.
+The `Network authority experiment` workflow runs only through an explicit
+manual dispatch with one exact 40-character commit. It executes the selected
+controls on hosted x86_64 and aarch64 Linux and retains each exact result for
+14 days. Ordinary pushes and pull-request updates never rerun this completed
+experiment automatically.

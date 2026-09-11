@@ -59,9 +59,11 @@ defined by Specification 0006. It checks the committed claim, cited bounded
 evidence, and model-check declarations before the later Proofbound stage. It
 is a local fail-closed invariant, not an evidence producer.
 
-The fast and full gates test the network experiment result recorder without
-running the experiment. Only an explicit manual workflow dispatch creates a
-network namespace, applies the experiment rule, or publishes a result.
+The fast and full gates test the network experiment recorders and performance
+verifiers without running either hosted experiment. Only an explicit manual
+workflow dispatch against one exact 40-character commit creates a network
+namespace, applies an experiment rule, publishes a network result, or runs the
+hosted performance matrix.
 
 As the implementation grows, add a named script for each distinct evidence
 family. Keep `ci.sh` as an ordered coordinator. Do not hide theorem, bounded,
