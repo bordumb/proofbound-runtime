@@ -178,6 +178,44 @@ fn assert_native_run_diagnostics(evidence: &Path, architecture: &str) {
     );
 }
 
+fn assert_native_preflight(evidence: &Path, architecture: &str) {
+    let preflight = read_json(&evidence.join("preflight.json"));
+    assert_eq!(preflight["schema"], "proofbound-runtime-preflight/1");
+    assert_eq!(preflight["ready"], true);
+    assert_eq!(preflight["caveat"], "preflight.point-in-time");
+    assert_eq!(preflight["platform"]["architecture"], architecture);
+    assert_eq!(preflight["plan_id"], "ci.native-cli-e2e");
+}
+
+fn assert_native_scaffold(evidence: &Path, architecture: &str) {
+    let scaffold = read_json(&evidence.join("plan-scaffold.json"));
+    assert_eq!(scaffold["schema"], "proofbound-runtime-plan-scaffold/1");
+    assert_eq!(scaffold["safe_policy"], false);
+    assert_eq!(scaffold["dependencies"], serde_json::json!([]));
+    assert_eq!(scaffold["interpreter"], Value::Null);
+    let profile = match architecture {
+        "x86_64" => "linux-glibc-x86-64-v1",
+        "aarch64" => "linux-glibc-aarch64-v1",
+        other => panic!("unsupported native scaffold architecture: {other}"),
+    };
+    assert_eq!(scaffold["host_profile"], profile);
+    let codes = scaffold["open_items"]
+        .as_array()
+        .expect("scaffold open items are an array")
+        .iter()
+        .map(|item| item["code"].as_str().expect("open-item code is text"))
+        .collect::<std::collections::BTreeSet<_>>();
+    for required in [
+        "choose-environment-names",
+        "choose-limits",
+        "choose-network-mode",
+        "choose-write-roots",
+        "dynamic-loads-unresolved",
+    ] {
+        assert!(codes.contains(required));
+    }
+}
+
 fn assert_version_two_resources(receipt: &Value) {
     assert_eq!(receipt["schema"], "proofbound-runtime-execution-receipt/2");
     let resources = &receipt["resources"];
@@ -219,6 +257,8 @@ fn observes_runtime_release() {
     assert_version_two_resources(&receipt);
     assert_native_resource_context(&evidence, &architecture, &digest, size);
     assert_native_run_diagnostics(&evidence, &architecture);
+    assert_native_preflight(&evidence, &architecture);
+    assert_native_scaffold(&evidence, &architecture);
     assert_receipt_artifact(
         &receipt["runtime"]["runtime"],
         "runtime-binary",

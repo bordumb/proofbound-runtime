@@ -77,6 +77,7 @@ if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
   result="$e2e_root/run-result.json"
   verification="$e2e_root/verification.json"
   preflight="$e2e_root/preflight.json"
+  scaffold="$e2e_root/plan-scaffold.json"
   diagnostic_child_marker="$e2e_root/output/diagnostic-child-ran"
   python3 tools/ci/encode_plan_v2.py \
     --output "$plan" \
@@ -164,6 +165,41 @@ assert report["command"]["executable"]["artifact"] == expected_artifact(
 )
 ' "$preflight" "$plan" "$PROOFBOUND_NATIVE_FIXTURE" \
     "$PROOFBOUND_CGROUP_ROOT" "$receipt" "$expected_architecture"
+
+  case "$expected_architecture" in
+    x86_64) scaffold_profile="linux-glibc-x86-64-v1" ;;
+    aarch64) scaffold_profile="linux-glibc-aarch64-v1" ;;
+    *)
+      echo "native scaffold architecture is unsupported: $expected_architecture" >&2
+      exit 1
+      ;;
+  esac
+  "$runtime_bin_directory/pbr" plan scaffold \
+    --executable "$PROOFBOUND_NATIVE_FIXTURE" \
+    --host-profile "$scaffold_profile" >"$scaffold"
+  python3 -c '
+import json
+import sys
+
+path, profile, executable = sys.argv[1:]
+with open(path, encoding="utf-8") as source:
+    report = json.load(source)
+assert set(report) == {
+    "dependencies", "executable", "host_profile", "interpreter", "open_items",
+    "resolution_inputs", "safe_policy", "schema", "suggested_runtime_roots",
+}
+assert report["schema"] == "proofbound-runtime-plan-scaffold/1"
+assert report["safe_policy"] is False
+assert report["host_profile"] == profile
+assert report["executable"]["requested"] == executable
+assert report["dependencies"] == []
+assert report["interpreter"] is None
+required = {
+    "choose-environment-names", "choose-limits", "choose-network-mode",
+    "choose-write-roots", "dynamic-loads-unresolved",
+}
+assert required <= {item["code"] for item in report["open_items"]}
+' "$scaffold" "$scaffold_profile" "$PROOFBOUND_NATIVE_FIXTURE"
 
   occupied_receipt="$e2e_root/occupied-receipt.cbor"
   printf '%s\n' 'preserve-me' >"$occupied_receipt"
@@ -375,6 +411,7 @@ assert result["commitment"].startswith("sha256:")
     mkdir -p "$evidence_directory"
     install -m 0644 "$plan" "$evidence_directory/plan.cbor"
     install -m 0644 "$preflight" "$evidence_directory/preflight.json"
+    install -m 0644 "$scaffold" "$evidence_directory/plan-scaffold.json"
     install -m 0644 "$receipt" "$evidence_directory/execution-receipt.cbor"
     install -m 0644 "$example_result" "$evidence_directory/example-result.json"
     install -m 0644 "$verification" "$evidence_directory/verification.json"

@@ -200,7 +200,8 @@ class WireTransitionTests(unittest.TestCase):
         self.assertIn('claims = ["PBR-RESOURCE-010"]', evidence)
 
         expected_claims = (
-            'claims = ["PBR-DIAGNOSTIC-011", "PBR-RESOURCE-010", "PBR-RUN-007"]'
+            'claims = ["PBR-DIAGNOSTIC-011", "PBR-PREFLIGHT-009", '
+            '"PBR-RESOURCE-010", "PBR-RUN-007", "PBR-SCAFFOLD-013"]'
         )
         for architecture in ("aarch64", "x86-64"):
             manifest = (

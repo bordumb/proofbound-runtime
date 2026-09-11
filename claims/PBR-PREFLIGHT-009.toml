@@ -6,7 +6,11 @@ public_language = "The development preflight path reports bounded, point-in-time
 subject = "rust:proofbound_runtime_cli::preflight::execute"
 profile = "ledger"
 tier = 0
-evidence = ["example-test:preflight-orchestration-attacks"]
+evidence = [
+  "example-test:preflight-orchestration-attacks",
+  "example-test:release-observe-runtime-linux-aarch64",
+  "example-test:release-observe-runtime-linux-x86-64",
+]
 assumptions = [
   "PBR-LINUX-AX-001",
   "PBR-HOST-AX-002",
@@ -42,7 +46,11 @@ source_roots = [
   "crates/proofbound-runtime-linux/src/sys.rs",
   "docs/specs/0005_read_only_preflight.md",
   "proofbound/evidence/preflight-orchestration-attacks.toml",
+  "proofbound/evidence/release-observe-runtime-linux-aarch64.toml",
+  "proofbound/evidence/release-observe-runtime-linux-x86-64.toml",
   "schemas/preflight-v1.schema.json",
   "tests/attacks/preflight/",
   "tools/ci/native-linux.sh",
+  "crates/proofbound-runtime-compose/tests/release_observation.rs",
+  "tools/release/observation_inputs.py",
 ]

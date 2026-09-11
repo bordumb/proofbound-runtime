@@ -6,7 +6,11 @@ public_language = "The development scaffold inventories the registered bounded s
 subject = "rust:proofbound_runtime_cli::scaffold::execute"
 profile = "ledger"
 tier = 0
-evidence = ["example-test:plan-scaffold-attacks"]
+evidence = [
+  "example-test:plan-scaffold-attacks",
+  "example-test:release-observe-runtime-linux-aarch64",
+  "example-test:release-observe-runtime-linux-x86-64",
+]
 assumptions = [
   "PBR-HOST-AX-002",
   "PBR-TOOLCHAIN-AX-003",
@@ -31,7 +35,13 @@ source_roots = [
   "crates/proofbound-runtime-cli/src/scaffold.rs",
   "docs/specs/0011_plan_scaffold.md",
   "proofbound/evidence/plan-scaffold-attacks.toml",
+  "proofbound/evidence/release-observe-runtime-linux-aarch64.toml",
+  "proofbound/evidence/release-observe-runtime-linux-x86-64.toml",
   "schemas/plan-scaffold-v1.schema.json",
   "tests/attacks/scaffold/v1.toml",
   "tools/ci/test_plan_scaffold_contract.py",
+  "tools/ci/native-linux.sh",
+  "crates/proofbound-runtime-compose/tests/release_observation.rs",
+  "crates/proofbound-runtime-linux/tests/fixtures/native-boundary-probe.c",
+  "tools/release/observation_inputs.py",
 ]
