@@ -39,7 +39,11 @@ class PerformanceWorkflowTests(unittest.TestCase):
             workflow,
         )
         self.assertIn(
-            'target/release/pbr-bench pure --source-commit "$PBR_PERFORMANCE_REVISION"',
+            'cp target/release/pbr-bench "$result_root/pbr-bench"',
+            workflow,
+        )
+        self.assertIn(
+            '"$result_root/pbr-bench" pure --source-commit "$PBR_PERFORMANCE_REVISION"',
             workflow,
         )
         self.assertIn("experiments/performance/verify_pure.py", workflow)
@@ -53,6 +57,7 @@ class PerformanceWorkflowTests(unittest.TestCase):
             "--composition-fixture crates/proofbound-runtime-bench/src/composition_fixture.rs",
             workflow,
         )
+        self.assertIn('--benchmark-executable "$result_root/pbr-bench"', workflow)
         self.assertIn(
             "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
             workflow,
