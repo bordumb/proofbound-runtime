@@ -19,8 +19,14 @@ use crate::{
 /// The only execution-receipt schema emitted by version 1.
 pub const EXECUTION_RECEIPT_SCHEMA: &str = "proofbound-runtime-receipt/1";
 
+/// The execution-receipt schema emitted for complete version 2 resources.
+pub const EXECUTION_RECEIPT_V2_SCHEMA: &str = "proofbound-runtime-execution-receipt/2";
+
 /// The only compiled-policy model accepted by version 1 receipts.
 pub const POLICY_MODEL_VERSION: &str = "proofbound-runtime-linux-policy/1";
+
+/// The compiled-policy model bound into version 2 receipts.
+pub const POLICY_MODEL_VERSION_V2: &str = "proofbound-runtime-linux-policy/2";
 
 /// The assumptions that every version 1 runtime receipt must inherit.
 pub const REQUIRED_RUNTIME_ASSUMPTIONS: [&str; 3] = [
@@ -774,6 +780,9 @@ impl ExecutionReceipt {
     /// ASCII, every 64-bit counter is a decimal string, and conversion through
     /// `serde_json::Value` sorts every object key before compact encoding.
     pub fn canonical_bytes(&self) -> Result<Vec<u8>, ReceiptError> {
+        if self.parts.resources.is_some() {
+            return canonical_v2_bytes(self);
+        }
         let wire = WireExecutionReceipt::from(self);
         let parts = ReceiptBindingParts {
             assumptions: canonical_field_bytes(&wire.assumptions)?,
@@ -799,6 +808,383 @@ impl ExecutionReceipt {
         };
         encode_binding(construct_and_project_receipt_binding(parts))
     }
+}
+
+fn canonical_v2_bytes(receipt: &ExecutionReceipt) -> Result<Vec<u8>, ReceiptError> {
+    use crate::wire_v2::Value as Cbor;
+
+    let parts = &receipt.parts;
+    let resources = parts
+        .resources
+        .ok_or(ReceiptError::ResourceProfileIncomplete)?;
+    let value = Cbor::Map(vec![
+        ("plan".to_owned(), cbor_plan(&parts.plan)),
+        (
+            "schema".to_owned(),
+            Cbor::Text(EXECUTION_RECEIPT_V2_SCHEMA.to_owned()),
+        ),
+        (
+            "inputs".to_owned(),
+            Cbor::Array(parts.inputs.iter().map(cbor_artifact).collect()),
+        ),
+        (
+            "policy".to_owned(),
+            Cbor::Map(vec![
+                ("identity".to_owned(), cbor_artifact(&parts.policy.identity)),
+                (
+                    "model_version".to_owned(),
+                    Cbor::Text(POLICY_MODEL_VERSION_V2.to_owned()),
+                ),
+            ]),
+        ),
+        (
+            "runtime".to_owned(),
+            Cbor::Map(vec![
+                ("runtime".to_owned(), cbor_artifact(&parts.runtime.runtime)),
+                (
+                    "launcher".to_owned(),
+                    cbor_artifact(&parts.runtime.launcher),
+                ),
+            ]),
+        ),
+        ("streams".to_owned(), cbor_streams(&parts.streams)),
+        ("command".to_owned(), cbor_command(&parts.command)),
+        ("outcome".to_owned(), cbor_outcome(parts.outcome)),
+        (
+            "outputs".to_owned(),
+            Cbor::Array(parts.outputs.iter().map(cbor_artifact).collect()),
+        ),
+        ("boundary".to_owned(), cbor_boundary(&parts.boundary)),
+        ("producer".to_owned(), cbor_artifact(&parts.producer)),
+        ("platform".to_owned(), cbor_platform(&parts.platform)),
+        ("resources".to_owned(), cbor_resources(resources)),
+        (
+            "eligibility".to_owned(),
+            cbor_eligibility(&receipt.eligibility),
+        ),
+        (
+            "environment".to_owned(),
+            cbor_text_array(receipt.environment.iter().map(String::as_str)),
+        ),
+        (
+            "execution_id".to_owned(),
+            Cbor::Bytes(parts.execution_id.0.to_vec()),
+        ),
+        (
+            "observations".to_owned(),
+            Cbor::Map(vec![
+                ("clock".to_owned(), Cbor::Text("linux-monotonic".to_owned())),
+                (
+                    "started_ns".to_owned(),
+                    Cbor::Unsigned(parts.observations.started_ns),
+                ),
+                (
+                    "finished_ns".to_owned(),
+                    Cbor::Unsigned(parts.observations.finished_ns),
+                ),
+            ]),
+        ),
+        (
+            "product_version".to_owned(),
+            Cbor::Text(env!("CARGO_PKG_VERSION").to_owned()),
+        ),
+        (
+            "assumptions".to_owned(),
+            cbor_text_array(receipt.assumptions.iter().map(String::as_str)),
+        ),
+        ("output_root".to_owned(), cbor_artifact(&parts.output_root)),
+        (
+            "trusted_computing_base".to_owned(),
+            Cbor::Array(
+                parts
+                    .trusted_computing_base
+                    .iter()
+                    .map(|entry| {
+                        Cbor::Map(vec![
+                            (
+                                "role".to_owned(),
+                                Cbor::Text(entry.role.as_str().to_owned()),
+                            ),
+                            ("identity".to_owned(), Cbor::Text(entry.identity.clone())),
+                        ])
+                    })
+                    .collect(),
+            ),
+        ),
+    ]);
+    crate::wire_v2::encode(&value).map_err(|_| ReceiptError::CanonicalEncoding)
+}
+
+fn cbor_artifact(identity: &ArtifactIdentity) -> crate::wire_v2::Value {
+    use crate::wire_v2::Value as Cbor;
+    Cbor::Map(vec![
+        (
+            "mode".to_owned(),
+            Cbor::Unsigned(u64::from(identity.mode().get())),
+        ),
+        (
+            "role".to_owned(),
+            Cbor::Text(identity.role().as_str().to_owned()),
+        ),
+        ("size".to_owned(), Cbor::Unsigned(identity.size())),
+        (
+            "sha256".to_owned(),
+            Cbor::Bytes(identity.digest().as_bytes().to_vec()),
+        ),
+    ])
+}
+
+fn cbor_plan(plan: &ReceiptPlan) -> crate::wire_v2::Value {
+    use crate::wire_v2::Value as Cbor;
+    Cbor::Map(vec![
+        ("id".to_owned(), Cbor::Text(plan.id.as_str().to_owned())),
+        ("source".to_owned(), cbor_artifact(&plan.source)),
+        ("normalized".to_owned(), cbor_artifact(&plan.normalized)),
+    ])
+}
+
+fn cbor_command(command: &ReceiptCommand) -> crate::wire_v2::Value {
+    use crate::wire_v2::Value as Cbor;
+    Cbor::Map(vec![
+        (
+            "loader".to_owned(),
+            command.loader.as_ref().map_or(Cbor::Null, cbor_artifact),
+        ),
+        ("executable".to_owned(), cbor_artifact(&command.executable)),
+        (
+            "arguments_sha256".to_owned(),
+            Cbor::Bytes(command.arguments_sha256.as_bytes().to_vec()),
+        ),
+        (
+            "working_directory".to_owned(),
+            cbor_artifact(&command.working_directory),
+        ),
+    ])
+}
+
+fn cbor_boundary(boundary: &BoundaryRecord) -> crate::wire_v2::Value {
+    use crate::wire_v2::Value as Cbor;
+    Cbor::Map(vec![
+        (
+            "state".to_owned(),
+            Cbor::Text(boundary_wire_name(boundary.state).to_owned()),
+        ),
+        (
+            "cgroup".to_owned(),
+            Cbor::Map(vec![
+                ("inode".to_owned(), Cbor::Unsigned(boundary.cgroup.inode)),
+                (
+                    "mount_id".to_owned(),
+                    Cbor::Unsigned(boundary.cgroup.mount_id),
+                ),
+            ]),
+        ),
+        (
+            "execution_id".to_owned(),
+            Cbor::Bytes(boundary.execution_id.0.to_vec()),
+        ),
+        (
+            "policy_sha256".to_owned(),
+            Cbor::Bytes(boundary.policy_sha256.as_bytes().to_vec()),
+        ),
+    ])
+}
+
+fn cbor_platform(platform: &PlatformIdentity) -> crate::wire_v2::Value {
+    use crate::wire_v2::Value as Cbor;
+    Cbor::Map(vec![
+        (
+            "architecture".to_owned(),
+            Cbor::Text(platform.architecture.as_str().to_owned()),
+        ),
+        (
+            "landlock_abi".to_owned(),
+            Cbor::Unsigned(u64::from(platform.landlock_abi)),
+        ),
+        (
+            "kernel_release".to_owned(),
+            Cbor::Text(platform.kernel_release.clone()),
+        ),
+        (
+            "operating_system".to_owned(),
+            Cbor::Text("linux".to_owned()),
+        ),
+        (
+            "seccomp_features".to_owned(),
+            cbor_text_array(platform.seccomp_features.iter().map(String::as_str)),
+        ),
+        (
+            "cgroup_controllers".to_owned(),
+            cbor_text_array(platform.cgroup_controllers.iter().map(String::as_str)),
+        ),
+    ])
+}
+
+fn cbor_streams(streams: &ReceiptStreams) -> crate::wire_v2::Value {
+    use crate::wire_v2::Value as Cbor;
+    let stream = |record: &StreamRecord| {
+        Cbor::Map(vec![
+            (
+                "capture".to_owned(),
+                Cbor::Text(stream_capture_wire_name(record.capture).to_owned()),
+            ),
+            ("artifact".to_owned(), cbor_artifact(&record.artifact)),
+        ])
+    };
+    Cbor::Map(vec![
+        ("stderr".to_owned(), stream(&streams.stderr)),
+        ("stdout".to_owned(), stream(&streams.stdout)),
+    ])
+}
+
+fn cbor_outcome(outcome: ExecutionOutcome) -> crate::wire_v2::Value {
+    use crate::wire_v2::Value as Cbor;
+    let mut fields = Vec::new();
+    match outcome {
+        ExecutionOutcome::Exited { code } => {
+            fields.push(("kind".to_owned(), Cbor::Text("exited".to_owned())));
+            let code = if code >= 0 {
+                Cbor::Unsigned(u64::try_from(code).expect("nonnegative i32 fits u64"))
+            } else {
+                Cbor::Negative(u64::try_from(-1_i64 - i64::from(code)).expect("i32 fits u64"))
+            };
+            fields.push(("code".to_owned(), code));
+        }
+        ExecutionOutcome::Signaled { signal } => {
+            fields.push(("kind".to_owned(), Cbor::Text("signaled".to_owned())));
+            fields.push(("signal".to_owned(), Cbor::Unsigned(u64::from(signal.get()))));
+        }
+        ExecutionOutcome::TimedOut => {
+            fields.push(("kind".to_owned(), Cbor::Text("timed-out".to_owned())))
+        }
+        ExecutionOutcome::Denied => {
+            fields.push(("kind".to_owned(), Cbor::Text("denied".to_owned())))
+        }
+        ExecutionOutcome::LauncherFailed => {
+            fields.push(("kind".to_owned(), Cbor::Text("launcher-failed".to_owned())))
+        }
+        ExecutionOutcome::Incomplete => {
+            fields.push(("kind".to_owned(), Cbor::Text("incomplete".to_owned())))
+        }
+    }
+    Cbor::Map(fields)
+}
+
+fn cbor_resources(resources: ReceiptResources) -> crate::wire_v2::Value {
+    use crate::wire_v2::Value as Cbor;
+    let memory = resources.memory_events;
+    let swap = resources.swap_events;
+    Cbor::Map(vec![
+        (
+            "terminal".to_owned(),
+            Cbor::Map(vec![
+                (
+                    "swap_events".to_owned(),
+                    Cbor::Map(vec![
+                        ("max".to_owned(), Cbor::Unsigned(swap.max)),
+                        ("fail".to_owned(), Cbor::Unsigned(swap.fail)),
+                    ]),
+                ),
+                (
+                    "memory_events".to_owned(),
+                    Cbor::Map(vec![
+                        ("low".to_owned(), Cbor::Unsigned(memory.low)),
+                        ("oom".to_owned(), Cbor::Unsigned(memory.oom)),
+                        ("high".to_owned(), Cbor::Unsigned(memory.high)),
+                        ("max".to_owned(), Cbor::Unsigned(memory.max)),
+                        ("oom_kill".to_owned(), Cbor::Unsigned(memory.oom_kill)),
+                        (
+                            "oom_group_kill".to_owned(),
+                            Cbor::Unsigned(memory.oom_group_kill),
+                        ),
+                    ]),
+                ),
+                (
+                    "swap_peak_bytes".to_owned(),
+                    Cbor::Unsigned(resources.swap_peak_bytes),
+                ),
+                (
+                    "memory_peak_bytes".to_owned(),
+                    Cbor::Unsigned(resources.memory_peak_bytes),
+                ),
+            ]),
+        ),
+        (
+            "configured".to_owned(),
+            Cbor::Map(vec![
+                (
+                    "pids.max".to_owned(),
+                    Cbor::Unsigned(u64::from(resources.processes.get())),
+                ),
+                (
+                    "memory.max".to_owned(),
+                    Cbor::Unsigned(resources.memory.get()),
+                ),
+                ("memory.oom.group".to_owned(), Cbor::Unsigned(1)),
+                (
+                    "memory.swap.max".to_owned(),
+                    Cbor::Unsigned(resources.swap.get()),
+                ),
+            ]),
+        ),
+        (
+            "limit_events".to_owned(),
+            Cbor::Array(
+                canonical_limit_events(resources.limit_events)
+                    .into_iter()
+                    .map(|event| Cbor::Text(event.to_owned()))
+                    .collect(),
+            ),
+        ),
+    ])
+}
+
+fn canonical_limit_events(events: LimitEvents) -> Vec<&'static str> {
+    [
+        (LimitEvent::MemoryHigh, "memory-high"),
+        (LimitEvent::MemoryMax, "memory-max"),
+        (LimitEvent::MemoryOom, "memory-oom"),
+        (LimitEvent::MemoryOomKill, "memory-oom-kill"),
+        (LimitEvent::MemoryOomGroupKill, "memory-oom-group-kill"),
+        (LimitEvent::SwapMax, "swap-max"),
+        (LimitEvent::SwapFail, "swap-fail"),
+    ]
+    .into_iter()
+    .filter_map(|(event, name)| events.contains(event).then_some(name))
+    .collect()
+}
+
+fn cbor_eligibility(eligibility: &ReceiptEligibility) -> crate::wire_v2::Value {
+    use crate::wire_v2::Value as Cbor;
+    let (status, reasons) = match eligibility {
+        ReceiptEligibility::Reusable => ("reusable", Vec::new()),
+        ReceiptEligibility::NonReusable(reasons) => (
+            "non-reusable",
+            reasons
+                .as_slice()
+                .iter()
+                .copied()
+                .map(non_reusable_reason_wire_name)
+                .collect(),
+        ),
+    };
+    Cbor::Map(vec![
+        ("status".to_owned(), Cbor::Text(status.to_owned())),
+        (
+            "reasons".to_owned(),
+            Cbor::Array(
+                reasons
+                    .into_iter()
+                    .map(|reason| Cbor::Text(reason.to_owned()))
+                    .collect(),
+            ),
+        ),
+    ])
+}
+
+fn cbor_text_array<'a>(values: impl Iterator<Item = &'a str>) -> crate::wire_v2::Value {
+    use crate::wire_v2::Value as Cbor;
+    Cbor::Array(values.map(|value| Cbor::Text(value.to_owned())).collect())
 }
 
 fn canonical_field_bytes<T: Serialize>(value: &T) -> Result<Vec<u8>, ReceiptError> {
@@ -1565,7 +1951,10 @@ mod tests {
             panic!("receipt must be a CBOR map");
         };
         assert_eq!(
-            fields.iter().find(|(key, _)| key == "schema").map(|(_, value)| value),
+            fields
+                .iter()
+                .find(|(key, _)| key == "schema")
+                .map(|(_, value)| value),
             Some(&crate::wire_v2::Value::Text(
                 "proofbound-runtime-execution-receipt/2".to_owned()
             ))
