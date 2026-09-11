@@ -11,8 +11,9 @@ use proofbound_runtime_core::{
     ExecutionReceiptParts, FileAccess, FileMode, PathRole, PlatformIdentity,
     REQUIRED_RUNTIME_ASSUMPTIONS, ReceiptCommand, ReceiptError, ReceiptMemoryEvents, ReceiptPlan,
     ReceiptPolicy, ReceiptResources, ReceiptStreams, ReceiptSwapEvents, ResourceLimits,
-    RuntimeIdentity, Sha256Digest, TrustedComputingBaseEntry, TrustedComputingBaseRole,
-    compile_policy, normalize_authority, parse_execution_plan_for_execution,
+    RunResultV2, RuntimeIdentity, Sha256Digest, TrustedComputingBaseEntry,
+    TrustedComputingBaseRole, compile_policy, normalize_authority,
+    parse_execution_plan_for_execution,
 };
 use proofbound_runtime_linux::{
     Architecture, CgroupError, ExecutionSetupError, FreshCgroup, FreshOutputRoot, InstallRequest,
@@ -26,7 +27,6 @@ use sha2::{Digest as _, Sha256};
 
 use crate::run_diagnostic::{RunError, RunPhase, RunRule};
 
-const RUN_RESULT_SCHEMA: &str = "proofbound-runtime-run-result/1";
 const NORMALIZED_PLAN_MODE: u16 = 0;
 const POLICY_MODE: u16 = 0;
 const STREAM_MODE: u16 = 0;
@@ -585,17 +585,12 @@ pub fn execute_observed(
             error.code(),
         )
     })?;
-    let commitment = format!("sha256:{}", hex_digest(&receipt_bytes));
+    let commitment = Sha256Digest::from_bytes(Sha256::digest(&receipt_bytes).into());
     persist_receipt(&receipt_path, execution_id.as_bytes(), &receipt_bytes)?;
     let receipt_construction_and_publication = phase_start.elapsed();
 
     let phase_start = std::time::Instant::now();
-    let report = run_result_json(
-        &receipt_path,
-        execution_id,
-        &commitment,
-        execution.outcome(),
-    )?;
+    let report = run_result_json(&receipt_path, execution_id, commitment, execution.outcome())?;
     let run_result_projection = phase_start.elapsed();
     let timings = RunTimings::from_intervals([
         plan_validation_and_normalization,
@@ -1142,41 +1137,22 @@ impl Drop for TemporaryReceipt {
     }
 }
 
-fn outcome_json(outcome: ExecutionOutcome) -> Value {
-    match outcome {
-        ExecutionOutcome::Exited { code } => json!({"kind": "exited", "code": code}),
-        ExecutionOutcome::Signaled { signal } => {
-            json!({"kind": "signaled", "signal": signal.get()})
-        }
-        ExecutionOutcome::TimedOut => json!({"kind": "timed-out"}),
-        ExecutionOutcome::Denied => json!({"kind": "denied"}),
-        ExecutionOutcome::LauncherFailed => json!({"kind": "launcher-failed"}),
-        ExecutionOutcome::Incomplete => json!({"kind": "incomplete"}),
-    }
-}
-
 fn run_result_json(
     receipt_path: &Path,
     execution_id: proofbound_runtime_core::ExecutionId,
-    commitment: &str,
+    commitment: Sha256Digest,
     outcome: ExecutionOutcome,
 ) -> Result<Value, RunError> {
-    Ok(json!({
-        "schema": RUN_RESULT_SCHEMA,
-        "execution_id": execution_id.to_text(),
-        "receipt": receipt_path.to_str()
-            .ok_or_else(|| RunError::invalid(
+    let result =
+        RunResultV2::new(receipt_path, execution_id, commitment, outcome).map_err(|_| {
+            RunError::invalid(
                 RunPhase::ResultProjection,
                 RunRule::RunResultRepresentable,
                 "receipt.path.utf8-invalid",
-            ))?,
-        "commitment": commitment,
-        "outcome": outcome_json(outcome),
-    }))
-}
-
-fn hex_digest(bytes: &[u8]) -> String {
-    encode_hex(&Sha256::digest(bytes))
+            )
+        })?;
+    let _committed_wire = result.canonical_bytes();
+    Ok(result.json_projection())
 }
 
 fn encode_hex(bytes: &[u8]) -> String {
