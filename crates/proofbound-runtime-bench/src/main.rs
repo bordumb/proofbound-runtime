@@ -164,8 +164,45 @@ mod tests {
                 "--source-commit".to_owned(),
                 revision.clone(),
             ]),
-            Ok(Arguments {
+            Ok(Arguments::Pure {
                 source_commit: revision,
+            })
+        );
+    }
+
+    #[test]
+    fn arguments_accept_the_closed_native_input_set() {
+        let revision = "a".repeat(40);
+        assert_eq!(
+            parse_arguments([
+                "pbr-bench".to_owned(),
+                "native".to_owned(),
+                "--source-commit".to_owned(),
+                revision.clone(),
+                "--result-root".to_owned(),
+                "/results".to_owned(),
+                "--cgroup-root".to_owned(),
+                "/sys/fs/cgroup/delegated".to_owned(),
+                "--runtime-bin-directory".to_owned(),
+                "/runtime".to_owned(),
+                "--plan".to_owned(),
+                "/work/plan.toml".to_owned(),
+                "--workload-executable".to_owned(),
+                "/work/hello-static".to_owned(),
+                "--expected-output".to_owned(),
+                "/work/expected-output.txt".to_owned(),
+                "--runner-image".to_owned(),
+                "ubuntu-24.04".to_owned(),
+            ]),
+            Ok(Arguments::Native {
+                source_commit: revision,
+                result_root: "/results".into(),
+                cgroup_root: "/sys/fs/cgroup/delegated".into(),
+                runtime_bin_directory: "/runtime".into(),
+                plan: "/work/plan.toml".into(),
+                workload_executable: "/work/hello-static".into(),
+                expected_output: "/work/expected-output.txt".into(),
+                runner_image: "ubuntu-24.04".to_owned(),
             })
         );
     }
@@ -175,6 +212,26 @@ mod tests {
         for arguments in [
             vec!["pbr-bench"],
             vec!["pbr-bench", "native", "--source-commit", "a"],
+            vec![
+                "pbr-bench",
+                "native",
+                "--source-commit",
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "--result-root",
+                "relative",
+                "--cgroup-root",
+                "/cgroup",
+                "--runtime-bin-directory",
+                "/runtime",
+                "--plan",
+                "/plan",
+                "--workload-executable",
+                "/workload",
+                "--expected-output",
+                "/expected",
+                "--runner-image",
+                "ubuntu-24.04",
+            ],
             vec!["pbr-bench", "pure", "--source-commit", "a"],
             vec![
                 "pbr-bench",
