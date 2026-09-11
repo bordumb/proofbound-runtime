@@ -348,7 +348,7 @@ class RequiredWorkflowTests(unittest.TestCase):
             ),
             6,
         )
-        self.assertEqual(workflow.count("-${{ env.PBR_EXACT_SHA }}"), 7)
+        self.assertEqual(workflow.count("-${{ env.PBR_EXACT_SHA }}"), 8)
         self.assertNotIn('= "$GITHUB_SHA"', workflow)
 
     def test_first_party_actions_are_exact_node24_releases(self) -> None:

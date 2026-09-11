@@ -210,9 +210,63 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  proofbound-tools:
+    name: Pinned Proofbound tools
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out the exact event head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.PBR_EXACT_SHA }}
+
+      - name: Confirm the exact event head
+        run: test "$(git rev-parse HEAD)" = "$PBR_EXACT_SHA"
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@fef00d40025f7fd8f1ec759cbbb0f577ddfc3133 # 1.94.0
+
+      - name: Install pinned Proofbound tools
+        run: >-
+          cargo install
+          --locked
+          --git https://github.com/bordumb/proof-bound
+          --rev 70af5e61110fc09704076a6d8b00fd8ff011b1c8
+          proofbound-cli
+          proofbound-adapter-aeneas
+          proofbound-adapter-test
+          proofbound-adapter-kani
+          proofbound-adapter-lean
+
+      - name: Bundle exact Proofbound executables
+        run: |
+          mkdir -p "$RUNNER_TEMP/proofbound-tools"
+          for executable in \
+            proofbound \
+            proofbound-adapter-aeneas \
+            proofbound-adapter-test \
+            proofbound-adapter-kani \
+            proofbound-adapter-lean
+          do
+            cp "$(command -v "$executable")" "$RUNNER_TEMP/proofbound-tools/$executable"
+          done
+          cd "$RUNNER_TEMP/proofbound-tools"
+          sha256sum proofbound* > SHA256SUMS
+
+      - name: Upload pinned Proofbound tools
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: proofbound-tools-${{ env.PBR_EXACT_SHA }}
+          path: ${{ runner.temp }}/proofbound-tools
+          if-no-files-found: error
+          retention-days: 1
+
   fresh-evidence:
     name: Fresh Proofbound evidence (${{ matrix.shard }})
-    needs: preflight
+    needs:
+      - preflight
+      - proofbound-tools
     strategy:
       fail-fast: false
       matrix:
@@ -292,17 +346,18 @@ jobs:
           test "$(charon version)" = "0.1.225"
           test "$(aeneas -version)" = "aeneas 3a8586fa"
 
-      - name: Install pinned Proofbound tools
-        run: >-
-          cargo install
-          --locked
-          --git https://github.com/bordumb/proof-bound
-          --rev 70af5e61110fc09704076a6d8b00fd8ff011b1c8
-          proofbound-cli
-          proofbound-adapter-aeneas
-          proofbound-adapter-test
-          proofbound-adapter-kani
-          proofbound-adapter-lean
+      - name: Download pinned Proofbound tools
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: proofbound-tools-${{ env.PBR_EXACT_SHA }}
+          path: ${{ runner.temp }}/proofbound-tools
+
+      - name: Verify pinned Proofbound tool bundle
+        run: |
+          cd "$RUNNER_TEMP/proofbound-tools"
+          sha256sum --check SHA256SUMS
+          chmod +x proofbound*
+          echo "$RUNNER_TEMP/proofbound-tools" >> "$GITHUB_PATH"
 
       - name: Verify Proofbound executables
         run: |
