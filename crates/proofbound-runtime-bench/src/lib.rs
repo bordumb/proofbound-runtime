@@ -236,6 +236,280 @@ impl NativeMeasurements {
     }
 }
 
+/// Host facts retained for one native benchmark series.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct NativeHostIdentity {
+    runner_image: String,
+    cpu_model: String,
+    cpu_count: u64,
+    memory_bytes: u64,
+    kernel_release: String,
+    cgroup_version: u64,
+    enabled_controllers: Vec<String>,
+    maximum_resident_set_bytes: Option<u64>,
+}
+
+impl NativeHostIdentity {
+    /// Validates the closed supported-host observation.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        runner_image: String,
+        cpu_model: String,
+        cpu_count: u64,
+        memory_bytes: u64,
+        kernel_release: String,
+        cgroup_version: u64,
+        mut enabled_controllers: Vec<String>,
+        maximum_resident_set_bytes: Option<u64>,
+    ) -> Result<Self, BenchmarkError> {
+        if [&runner_image, &cpu_model, &kernel_release]
+            .into_iter()
+            .any(|value| value.is_empty() || value.len() > 512)
+            || cpu_count == 0
+            || memory_bytes == 0
+            || cgroup_version != 2
+            || maximum_resident_set_bytes == Some(0)
+        {
+            return Err(BenchmarkError::ConfigurationMismatch);
+        }
+        enabled_controllers.sort();
+        enabled_controllers.dedup();
+        if enabled_controllers.is_empty()
+            || enabled_controllers
+                .iter()
+                .any(|value| value.is_empty() || value.len() > 512)
+            || !enabled_controllers.iter().any(|value| value == "pids")
+        {
+            return Err(BenchmarkError::ConfigurationMismatch);
+        }
+        Ok(Self {
+            runner_image,
+            cpu_model,
+            cpu_count,
+            memory_bytes,
+            kernel_release,
+            cgroup_version,
+            enabled_controllers,
+            maximum_resident_set_bytes,
+        })
+    }
+}
+
+/// Exact Runtime executables used by one native benchmark series.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct NativeRuntimeIdentity {
+    pbr_sha256: String,
+    launcher_sha256: String,
+    verifier_sha256: String,
+}
+
+impl NativeRuntimeIdentity {
+    /// Validates all executable SHA-256 identities.
+    pub fn new(
+        pbr_sha256: String,
+        launcher_sha256: String,
+        verifier_sha256: String,
+    ) -> Result<Self, BenchmarkError> {
+        if [&pbr_sha256, &launcher_sha256, &verifier_sha256]
+            .into_iter()
+            .any(|digest| !is_lower_hex_exact(digest, 64))
+        {
+            return Err(BenchmarkError::InvalidDigest);
+        }
+        Ok(Self {
+            pbr_sha256,
+            launcher_sha256,
+            verifier_sha256,
+        })
+    }
+}
+
+/// Exact inputs and expected output for the frozen native workload.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct NativeWorkloadIdentity {
+    id: &'static str,
+    plan_sha256: String,
+    executable_sha256: String,
+    expected_output_sha256: String,
+}
+
+impl NativeWorkloadIdentity {
+    /// Validates the first closed native workload identity.
+    pub fn new(
+        id: &str,
+        plan_sha256: String,
+        executable_sha256: String,
+        expected_output_sha256: String,
+    ) -> Result<Self, BenchmarkError> {
+        if id != "hello-static-v1" {
+            return Err(BenchmarkError::ConfigurationMismatch);
+        }
+        if [&plan_sha256, &executable_sha256, &expected_output_sha256]
+            .into_iter()
+            .any(|digest| !is_lower_hex_exact(digest, 64))
+        {
+            return Err(BenchmarkError::InvalidDigest);
+        }
+        Ok(Self {
+            id: "hello-static-v1",
+            plan_sha256,
+            executable_sha256,
+            expected_output_sha256,
+        })
+    }
+}
+
+/// Exact receipt, projection, and workload-output identities for one run.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NativeRunArtifacts {
+    receipt_sha256: String,
+    run_result_sha256: String,
+    output_sha256: String,
+}
+
+impl NativeRunArtifacts {
+    /// Validates the three independently retained run identities.
+    pub fn new(
+        receipt_sha256: String,
+        run_result_sha256: String,
+        output_sha256: String,
+    ) -> Result<Self, BenchmarkError> {
+        if [&receipt_sha256, &run_result_sha256, &output_sha256]
+            .into_iter()
+            .any(|digest| !is_lower_hex_exact(digest, 64))
+        {
+            return Err(BenchmarkError::InvalidDigest);
+        }
+        Ok(Self {
+            receipt_sha256,
+            run_result_sha256,
+            output_sha256,
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+struct NativeProtocol {
+    warmup_count: usize,
+    sample_count: usize,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+struct NativePublishedRun {
+    index: usize,
+    total_ns: u64,
+    phase_samples_ns: [u64; RunBenchmarkPhase::ALL.len()],
+    receipt_sha256: String,
+    run_result_sha256: String,
+    output_sha256: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+struct NativePublishedMeasurements {
+    runs: Vec<NativePublishedRun>,
+    total: Summary,
+    phases: Vec<NativePhaseResult>,
+}
+
+/// One complete operational result for the first native benchmark workload.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct NativeBenchmarkResult {
+    schema: &'static str,
+    kind: &'static str,
+    complete: bool,
+    source: SourceRevision,
+    benchmark_executable_sha256: String,
+    toolchain: ToolchainIdentity,
+    build_profile: &'static str,
+    architecture: String,
+    protocol: NativeProtocol,
+    host: NativeHostIdentity,
+    runtime: NativeRuntimeIdentity,
+    workload: NativeWorkloadIdentity,
+    measurements: NativePublishedMeasurements,
+}
+
+impl NativeBenchmarkResult {
+    /// Validates and joins native timings with every retained run artifact.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        source: SourceRevision,
+        benchmark_executable_sha256: String,
+        toolchain: ToolchainIdentity,
+        build_profile: &'static str,
+        architecture: String,
+        host: NativeHostIdentity,
+        runtime: NativeRuntimeIdentity,
+        workload: NativeWorkloadIdentity,
+        measurements: NativeMeasurements,
+        artifacts: Vec<NativeRunArtifacts>,
+    ) -> Result<Self, BenchmarkError> {
+        const SAMPLE_COUNT: usize = 100;
+        if !is_lower_hex_exact(&benchmark_executable_sha256, 64) {
+            return Err(BenchmarkError::InvalidDigest);
+        }
+        let target_prefix = match architecture.as_str() {
+            "x86_64" => "x86_64-",
+            "aarch64" => "aarch64-",
+            _ => return Err(BenchmarkError::ConfigurationMismatch),
+        };
+        if build_profile != "release"
+            || !toolchain.target().starts_with(target_prefix)
+            || measurements.runs.len() != SAMPLE_COUNT
+            || measurements.total.count != SAMPLE_COUNT
+            || measurements.phases.len() != RunBenchmarkPhase::ALL.len()
+            || measurements
+                .phases
+                .iter()
+                .any(|phase| phase.summary.count != SAMPLE_COUNT)
+            || artifacts.len() != SAMPLE_COUNT
+        {
+            return Err(BenchmarkError::ConfigurationMismatch);
+        }
+        let runs = measurements
+            .runs
+            .iter()
+            .zip(artifacts)
+            .enumerate()
+            .map(|(index, (sample, artifacts))| NativePublishedRun {
+                index,
+                total_ns: sample.total_ns,
+                phase_samples_ns: sample.phase_samples_ns,
+                receipt_sha256: artifacts.receipt_sha256,
+                run_result_sha256: artifacts.run_result_sha256,
+                output_sha256: artifacts.output_sha256,
+            })
+            .collect();
+        Ok(Self {
+            schema: "proofbound-runtime-performance-result/1",
+            kind: "native",
+            complete: true,
+            source,
+            benchmark_executable_sha256,
+            toolchain,
+            build_profile,
+            architecture,
+            protocol: NativeProtocol {
+                warmup_count: 10,
+                sample_count: SAMPLE_COUNT,
+            },
+            host,
+            runtime,
+            workload,
+            measurements: NativePublishedMeasurements {
+                runs,
+                total: measurements.total,
+                phases: measurements.phases,
+            },
+        })
+    }
+
+    /// Encodes stable compact operational JSON.
+    pub fn to_json(&self) -> Result<Vec<u8>, BenchmarkError> {
+        serde_json::to_vec(self).map_err(|_| BenchmarkError::Encoding)
+    }
+}
+
 /// Summarizes a series of successful fresh native executions.
 pub fn summarize_native_runs(runs: &[RunTimings]) -> Result<NativeMeasurements, BenchmarkError> {
     if runs.is_empty() {
@@ -966,12 +1240,11 @@ mod tests {
     use std::cell::Cell;
 
     use super::{
-        BenchmarkError, Measurement, MeasurementConfig, NativeBenchmarkResult,
-        NativeHostIdentity, NativePhaseResult, NativeRunArtifacts, NativeRuntimeIdentity,
-        NativeWorkloadIdentity, PureBenchmarkResult, PureSubject, PureSubjectResult,
-        SourceRevision, Summary, ToolchainIdentity, benchmark_core_v1,
-        measure_prepared_with_clock, measure_with_clock, next_batch_count, summarize,
-        summarize_native_runs,
+        BenchmarkError, Measurement, MeasurementConfig, NativeBenchmarkResult, NativeHostIdentity,
+        NativePhaseResult, NativeRunArtifacts, NativeRuntimeIdentity, NativeWorkloadIdentity,
+        PureBenchmarkResult, PureSubject, PureSubjectResult, SourceRevision, Summary,
+        ToolchainIdentity, benchmark_core_v1, measure_prepared_with_clock, measure_with_clock,
+        next_batch_count, summarize, summarize_native_runs,
     };
 
     #[test]
@@ -1597,14 +1870,26 @@ mod tests {
         assert_eq!(encoded["schema"], "proofbound-runtime-performance-result/1");
         assert_eq!(encoded["kind"], "native");
         assert_eq!(encoded["complete"], true);
-        assert_eq!(encoded["protocol"], serde_json::json!({
-            "warmup_count": 10,
-            "sample_count": 100,
-        }));
-        assert_eq!(encoded["host"]["maximum_resident_set_bytes"], serde_json::Value::Null);
+        assert_eq!(
+            encoded["protocol"],
+            serde_json::json!({
+                "warmup_count": 10,
+                "sample_count": 100,
+            })
+        );
+        assert_eq!(
+            encoded["host"]["maximum_resident_set_bytes"],
+            serde_json::Value::Null
+        );
         assert_eq!(encoded["measurements"]["runs"][0]["index"], 0);
         assert_eq!(encoded["measurements"]["runs"][99]["index"], 99);
-        assert_eq!(encoded["measurements"]["runs"][0]["receipt_sha256"], "1".repeat(64));
-        assert_eq!(encoded["measurements"]["phases"].as_array().map(Vec::len), Some(13));
+        assert_eq!(
+            encoded["measurements"]["runs"][0]["receipt_sha256"],
+            "1".repeat(64)
+        );
+        assert_eq!(
+            encoded["measurements"]["phases"].as_array().map(Vec::len),
+            Some(13)
+        );
     }
 }
