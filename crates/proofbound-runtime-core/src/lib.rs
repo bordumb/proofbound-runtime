@@ -10,6 +10,7 @@ mod outcome;
 mod plan;
 mod policy;
 mod receipt;
+mod run_result;
 mod wire_v2;
 
 pub use authority::{
