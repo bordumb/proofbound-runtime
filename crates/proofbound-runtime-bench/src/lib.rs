@@ -966,10 +966,12 @@ mod tests {
     use std::cell::Cell;
 
     use super::{
-        BenchmarkError, Measurement, MeasurementConfig, NativePhaseResult, PureBenchmarkResult,
-        PureSubject, PureSubjectResult, SourceRevision, Summary, ToolchainIdentity,
-        benchmark_core_v1, measure_prepared_with_clock, measure_with_clock, next_batch_count,
-        summarize, summarize_native_runs,
+        BenchmarkError, Measurement, MeasurementConfig, NativeBenchmarkResult,
+        NativeHostIdentity, NativePhaseResult, NativeRunArtifacts, NativeRuntimeIdentity,
+        NativeWorkloadIdentity, PureBenchmarkResult, PureSubject, PureSubjectResult,
+        SourceRevision, Summary, ToolchainIdentity, benchmark_core_v1,
+        measure_prepared_with_clock, measure_with_clock, next_batch_count, summarize,
+        summarize_native_runs,
     };
 
     #[test]
@@ -1505,5 +1507,104 @@ mod tests {
             serde_json::json!([1, 2])
         );
         assert_eq!(summarize_native_runs(&[]), Err(BenchmarkError::EmptySeries));
+    }
+
+    #[test]
+    fn native_result_closes_protocol_identities_and_run_artifacts() {
+        use proofbound_runtime_cli::run::RunTimings;
+
+        let runs = (0..100)
+            .map(|run| {
+                RunTimings::from_intervals(core::array::from_fn(|phase| {
+                    std::time::Duration::from_nanos(
+                        u64::try_from(run + phase + 1).expect("fixture duration fits"),
+                    )
+                }))
+            })
+            .collect::<Vec<_>>();
+        let measurements = summarize_native_runs(&runs).expect("native series is complete");
+        let artifacts = (0..100)
+            .map(|_| NativeRunArtifacts::new("1".repeat(64), "2".repeat(64), "3".repeat(64)))
+            .collect::<Result<Vec<_>, _>>()
+            .expect("run identities are valid");
+        let revision = "a".repeat(40);
+        let result = NativeBenchmarkResult::new(
+            SourceRevision::new(&revision, &revision, "").expect("source is valid"),
+            "b".repeat(64),
+            ToolchainIdentity::parse("host: x86_64-unknown-linux-gnu\nrelease: 1.94.0\n")
+                .expect("toolchain is valid"),
+            "release",
+            "x86_64".to_owned(),
+            NativeHostIdentity::new(
+                "ubuntu-24.04".to_owned(),
+                "fixture cpu".to_owned(),
+                4,
+                8 * 1024 * 1024 * 1024,
+                "6.17.0-fixture".to_owned(),
+                2,
+                vec!["pids".to_owned()],
+                Some(4 * 1024 * 1024),
+            )
+            .expect("host identity is valid"),
+            NativeRuntimeIdentity::new("c".repeat(64), "d".repeat(64), "e".repeat(64))
+                .expect("runtime identities are valid"),
+            NativeWorkloadIdentity::new(
+                "hello-static-v1",
+                "f".repeat(64),
+                "0".repeat(64),
+                "1".repeat(64),
+            )
+            .expect("workload identities are valid"),
+            measurements.clone(),
+            artifacts[..99].to_vec(),
+        );
+        assert_eq!(result, Err(BenchmarkError::ConfigurationMismatch));
+
+        let result = NativeBenchmarkResult::new(
+            SourceRevision::new(&revision, &revision, "").expect("source is valid"),
+            "b".repeat(64),
+            ToolchainIdentity::parse("host: x86_64-unknown-linux-gnu\nrelease: 1.94.0\n")
+                .expect("toolchain is valid"),
+            "release",
+            "x86_64".to_owned(),
+            NativeHostIdentity::new(
+                "ubuntu-24.04".to_owned(),
+                "fixture cpu".to_owned(),
+                4,
+                8 * 1024 * 1024 * 1024,
+                "6.17.0-fixture".to_owned(),
+                2,
+                vec!["pids".to_owned()],
+                None,
+            )
+            .expect("host identity is valid"),
+            NativeRuntimeIdentity::new("c".repeat(64), "d".repeat(64), "e".repeat(64))
+                .expect("runtime identities are valid"),
+            NativeWorkloadIdentity::new(
+                "hello-static-v1",
+                "f".repeat(64),
+                "0".repeat(64),
+                "1".repeat(64),
+            )
+            .expect("workload identities are valid"),
+            measurements,
+            artifacts,
+        )
+        .expect("complete native result is valid");
+        let encoded: serde_json::Value =
+            serde_json::from_slice(&result.to_json().expect("native result encodes"))
+                .expect("native result is JSON");
+        assert_eq!(encoded["schema"], "proofbound-runtime-performance-result/1");
+        assert_eq!(encoded["kind"], "native");
+        assert_eq!(encoded["complete"], true);
+        assert_eq!(encoded["protocol"], serde_json::json!({
+            "warmup_count": 10,
+            "sample_count": 100,
+        }));
+        assert_eq!(encoded["host"]["maximum_resident_set_bytes"], serde_json::Value::Null);
+        assert_eq!(encoded["measurements"]["runs"][0]["index"], 0);
+        assert_eq!(encoded["measurements"]["runs"][99]["index"], 99);
+        assert_eq!(encoded["measurements"]["runs"][0]["receipt_sha256"], "1".repeat(64));
+        assert_eq!(encoded["measurements"]["phases"].as_array().map(Vec::len), Some(13));
     }
 }
