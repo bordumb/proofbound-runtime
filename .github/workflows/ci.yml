@@ -16,6 +16,8 @@ permissions:
   contents: read
 
 env:
+  AENEAS_SOURCE_REVISION: 3a8586facab25b31bdb1e1f5f45acd60d1cc5ff0
+  AENEAS_VERSION: 3a8586fa
   CARGO_TERM_COLOR: always
   PBR_EXACT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
@@ -135,10 +137,13 @@ jobs:
       - name: Install Nix for pinned translation tools
         uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31
 
+      - name: Restore the exact Nix tool closure
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+        with:
+          primary-key: formal-nix-v1-${{ runner.os }}-${{ runner.arch }}-${{ env.AENEAS_SOURCE_REVISION }}-${{ hashFiles('proofbound/toolchains/translation.lock') }}
+          gc-max-store-size-linux: 4G
+
       - name: Install pinned Charon and Aeneas tools
-        env:
-          AENEAS_SOURCE_REVISION: 3a8586facab25b31bdb1e1f5f45acd60d1cc5ff0
-          AENEAS_VERSION: 3a8586fa
         run: |
           tools_path="$(AENEAS_RELEASE_VERSION="$AENEAS_VERSION" nix build \
             --impure \

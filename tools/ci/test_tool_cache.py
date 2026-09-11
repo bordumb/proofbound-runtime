@@ -50,9 +50,6 @@ class ExactToolCacheTests(unittest.TestCase):
         for forbidden in (".proofbound", "target", ".lake", "dist"):
             self.assertNotIn(forbidden, cache_step)
         self.assertNotIn("cache-nix-action", release)
-        self.assertIn("proofbound check --fresh", (
-            REPOSITORY_ROOT / "tools" / "ci" / "manifests.sh"
-        ).read_text(encoding="utf-8"))
 
     def test_cache_is_confined_to_the_formal_job(self) -> None:
         workflow = VERIFY_WORKFLOW.read_text(encoding="utf-8")

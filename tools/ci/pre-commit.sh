@@ -12,6 +12,7 @@ python3 -m unittest tools.ci.test_install_release
 python3 -m unittest tools.ci.test_build_example
 python3 -m unittest tools.ci.test_required_workflow
 python3 -m unittest tools.ci.test_timing
+python3 -m unittest tools.ci.test_tool_cache
 python3 -m unittest experiments.network_authority.test_record_common
 python3 -m unittest experiments.network_authority.test_record_port_control
 python3 -m unittest experiments.network_authority.test_record_endpoint_control
