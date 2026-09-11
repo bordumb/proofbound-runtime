@@ -19,6 +19,7 @@ SUBJECTS = (
     "policy-compilation-v1",
     "receipt-construction-v1",
     "receipt-canonical-encoding-v1",
+    "receipt-independent-verification-v1",
 )
 
 
