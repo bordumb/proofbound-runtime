@@ -23,18 +23,37 @@ jobs:
     name: Preflight
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    env:
+      PBR_CI_TIMING_FILE: /tmp/proofbound-runtime-ci-timing.jsonl
     steps:
       - name: Check out the exact event head
         uses: actions/checkout@v4
 
       - name: Run metadata, documentation, and fixture preflight
-        run: bash tools/ci/ci.sh preflight
+        run: >-
+          python3 tools/ci/timing.py run
+          --output "$PBR_CI_TIMING_FILE"
+          --stage preflight
+          --kind stage
+          --name preflight
+          -- bash tools/ci/ci.sh preflight
+
+      - name: Upload preflight timing metadata
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: proofbound-runtime-ci-timing-preflight-${{ github.sha }}
+          path: ${{ env.PBR_CI_TIMING_FILE }}
+          if-no-files-found: error
+          retention-days: 14
 
   rust:
     name: Rust and dependencies
     needs: preflight
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    env:
+      PBR_CI_TIMING_FILE: /tmp/proofbound-runtime-ci-timing.jsonl
     steps:
       - name: Check out the exact event head
         uses: actions/checkout@v4
@@ -54,13 +73,30 @@ jobs:
         run: git diff --exit-code -- Cargo.lock
 
       - name: Run Rust and dependency gates
-        run: bash tools/ci/ci.sh rust
+        run: >-
+          python3 tools/ci/timing.py run
+          --output "$PBR_CI_TIMING_FILE"
+          --stage rust
+          --kind stage
+          --name rust
+          -- bash tools/ci/ci.sh rust
+
+      - name: Upload Rust timing metadata
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: proofbound-runtime-ci-timing-rust-${{ github.sha }}
+          path: ${{ env.PBR_CI_TIMING_FILE }}
+          if-no-files-found: error
+          retention-days: 14
 
   formal:
     name: Formal and fresh evidence
     needs: preflight
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    env:
+      PBR_CI_TIMING_FILE: /tmp/proofbound-runtime-ci-timing.jsonl
     steps:
       - name: Check out the exact event head
         uses: actions/checkout@v4
@@ -134,7 +170,22 @@ jobs:
         run: git diff --exit-code -- Cargo.lock lake-manifest.json
 
       - name: Run formal and fresh evidence gates
-        run: bash tools/ci/ci.sh formal
+        run: >-
+          python3 tools/ci/timing.py run
+          --output "$PBR_CI_TIMING_FILE"
+          --stage formal
+          --kind stage
+          --name formal
+          -- bash tools/ci/ci.sh formal
+
+      - name: Upload formal timing metadata
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: proofbound-runtime-ci-timing-formal-${{ github.sha }}
+          path: ${{ env.PBR_CI_TIMING_FILE }}
+          if-no-files-found: error
+          retention-days: 14
 
   native:
     name: Native boundary (${{ matrix.architecture }})
@@ -149,6 +200,8 @@ jobs:
             runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 20
+    env:
+      PBR_CI_TIMING_FILE: /tmp/proofbound-runtime-ci-timing.jsonl
     steps:
       - name: Check out the exact event head
         uses: actions/checkout@v4
@@ -162,7 +215,22 @@ jobs:
       - name: Run the required native boundary corpus
         env:
           PROOFBOUND_EXPECTED_ARCH: ${{ matrix.architecture }}
-        run: bash tools/ci/native-linux.sh
+        run: >-
+          python3 tools/ci/timing.py run
+          --output "$PBR_CI_TIMING_FILE"
+          --stage native
+          --kind stage
+          --name native-boundary
+          -- bash tools/ci/native-linux.sh
+
+      - name: Upload native timing metadata
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: proofbound-runtime-ci-timing-native-${{ matrix.architecture }}-${{ github.sha }}
+          path: ${{ env.PBR_CI_TIMING_FILE }}
+          if-no-files-found: error
+          retention-days: 14
 
   required:
     name: Current assurance gate
