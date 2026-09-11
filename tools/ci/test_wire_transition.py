@@ -5,6 +5,17 @@ from pathlib import Path
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 ADR = REPOSITORY_ROOT / "docs/adr/0003-deterministic-cbor-wire-objects.md"
 MEMORY_SPEC = REPOSITORY_ROOT / "docs/specs/0007_memory_and_swap_profile.md"
+SCHEMA_ROOT = REPOSITORY_ROOT / "schemas"
+VECTOR_ROOT = SCHEMA_ROOT / "vectors/v2"
+VERSION_TWO_OBJECTS = (
+    "execution-plan",
+    "compiled-policy",
+    "run-result",
+    "execution-receipt",
+    "composed-receipt",
+)
+
+
 class WireTransitionTests(unittest.TestCase):
     def test_version_two_wire_contract_selects_text_map_keys(self) -> None:
         adr = ADR.read_text(encoding="utf-8")
@@ -29,6 +40,20 @@ class WireTransitionTests(unittest.TestCase):
         self.assertIn(
             "the projection is not a wire object and is never a verification input",
             normalized,
+        )
+
+    def test_every_version_two_wire_object_has_schema_and_golden_pair(self) -> None:
+        self.assertEqual(
+            {path.stem.removesuffix("-v2") for path in SCHEMA_ROOT.glob("*-v2.cddl")},
+            set(VERSION_TWO_OBJECTS),
+        )
+        self.assertEqual(
+            {path.name.removesuffix(".cbor.hex") for path in VECTOR_ROOT.glob("*.cbor.hex")},
+            set(VERSION_TWO_OBJECTS),
+        )
+        self.assertEqual(
+            {path.name.removesuffix(".projection.json") for path in VECTOR_ROOT.glob("*.projection.json")},
+            set(VERSION_TWO_OBJECTS),
         )
 
 
