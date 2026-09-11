@@ -23,7 +23,7 @@ expected_reason = "claim-formal-mismatch"
 [[cases]]
 id = "execution-replay"
 mutation = "supply an execution identifier other than the verified receipt identifier"
-expected_reason = "input-verification-failed"
+expected_reason = "execution-replay"
 
 [[cases]]
 id = "stale-policy"

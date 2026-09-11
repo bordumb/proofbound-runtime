@@ -238,8 +238,11 @@ fn strict_by<'a, T>(values: &'a [T], key: impl Fn(&'a T) -> &'a str) -> bool {
 #[serde(rename_all = "kebab-case")]
 pub enum RejectionReason {
     PolicyIdentityMismatch,
+    ReleaseVerificationFailed,
+    ExecutionVerificationFailed,
     InputVerificationFailed,
     CompositionMissing,
+    ExecutionReplay,
     ExecutionSchemaMismatch,
     RuntimeVersionMismatch,
     PlatformMismatch,
@@ -271,8 +274,11 @@ impl RejectionReason {
     pub const fn all_codes() -> &'static [&'static str] {
         &[
             "policy-identity-mismatch",
+            "release-verification-failed",
+            "execution-verification-failed",
             "input-verification-failed",
             "composition-missing",
+            "execution-replay",
             "execution-schema-mismatch",
             "runtime-version-mismatch",
             "platform-mismatch",
@@ -303,8 +309,11 @@ impl RejectionReason {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::PolicyIdentityMismatch => "policy-identity-mismatch",
+            Self::ReleaseVerificationFailed => "release-verification-failed",
+            Self::ExecutionVerificationFailed => "execution-verification-failed",
             Self::InputVerificationFailed => "input-verification-failed",
             Self::CompositionMissing => "composition-missing",
+            Self::ExecutionReplay => "execution-replay",
             Self::ExecutionSchemaMismatch => "execution-schema-mismatch",
             Self::RuntimeVersionMismatch => "runtime-version-mismatch",
             Self::PlatformMismatch => "platform-mismatch",
@@ -486,11 +495,9 @@ pub fn reject_unverified(
     expected_execution_commitment: &str,
     expected_execution_id: &str,
     artifacts: Vec<DecisionInput>,
+    reason: RejectionReason,
 ) -> Result<AcceptanceDecision, AcceptanceError> {
-    let mut reasons = vec![
-        RejectionReason::InputVerificationFailed,
-        RejectionReason::CompositionMissing,
-    ];
+    let mut reasons = vec![reason];
     if !policy.identity_matches {
         reasons.push(RejectionReason::PolicyIdentityMismatch);
         reasons.sort_unstable();
@@ -985,14 +992,12 @@ mod tests {
             &digest(b"receipt"),
             "00112233-4455-4677-8899-aabbccddeeff",
             input_artifacts(&policy_bytes),
+            RejectionReason::InputVerificationFailed,
         )
         .expect("rejection encodes");
         assert_eq!(
             rejection.reasons(),
-            &[
-                RejectionReason::InputVerificationFailed,
-                RejectionReason::CompositionMissing,
-            ]
+            &[RejectionReason::InputVerificationFailed]
         );
 
         let mut forged = bytes_from_hex(include_str!(

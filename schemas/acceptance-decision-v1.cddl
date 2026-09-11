@@ -27,7 +27,8 @@ input-role = "acceptance-policy" / "release-envelope" / "compiled-release" /
   "execution-verification"
 
 rejection-reason = "policy-identity-mismatch" /
-  "input-verification-failed" / "composition-missing" /
+  "release-verification-failed" / "execution-verification-failed" /
+  "input-verification-failed" / "composition-missing" / "execution-replay" /
   "execution-schema-mismatch" / "runtime-version-mismatch" /
   "platform-mismatch" / "architecture-mismatch" / "plan-id-mismatch" /
   "executable-mismatch" / "authority-mismatch" / "resource-mismatch" /

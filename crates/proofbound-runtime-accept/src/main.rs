@@ -10,11 +10,11 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode, Output};
 
 use proofbound_runtime_accept::{
-    AcceptanceDecision, DecisionInput, DecodedPolicy, EvaluationInputs, decode_policy, evaluate,
-    project_decision, reject_unverified,
+    AcceptanceDecision, DecisionInput, DecodedPolicy, EvaluationInputs, RejectionReason,
+    decode_policy, evaluate, project_decision, reject_unverified,
 };
 use proofbound_runtime_compose::{
-    ArtifactBytes, CompositionInputs, compose, decode_release_acceptance_facts,
+    ArtifactBytes, CompositionError, CompositionInputs, compose, decode_release_acceptance_facts,
 };
 use proofbound_runtime_verify::{ReceiptCommitment, decode_receipt, verify_receipt};
 use serde_json::json;
@@ -161,17 +161,34 @@ fn run_inner(args: Vec<OsString>) -> Result<Outcome, CliError> {
         execution_verification: &execution_verification.stdout,
     };
 
-    let decision = if release_verification.valid && execution_verification.valid {
+    let decision = if !release_verification.valid {
+        reject(
+            &policy,
+            &raw,
+            &args,
+            RejectionReason::ReleaseVerificationFailed,
+        )?
+    } else if !execution_verification.valid {
+        reject(
+            &policy,
+            &raw,
+            &args,
+            RejectionReason::ExecutionVerificationFailed,
+        )?
+    } else {
         let composition_inputs = composition_inputs(&raw, &args);
         match compose(&composition_inputs) {
             Ok(composed) => match verified_decision(&policy, &raw, &args, &composed) {
                 Ok(decision) => decision,
-                Err(()) => reject(&policy, &raw, &args)?,
+                Err(()) => reject(
+                    &policy,
+                    &raw,
+                    &args,
+                    RejectionReason::InputVerificationFailed,
+                )?,
             },
-            Err(_) => reject(&policy, &raw, &args)?,
+            Err(error) => reject(&policy, &raw, &args, composition_rejection(error))?,
         }
-    } else {
-        reject(&policy, &raw, &args)?
     };
 
     publish_no_replace(&args.output, decision.bytes())?;
@@ -286,14 +303,24 @@ fn reject(
     policy: &DecodedPolicy,
     raw: &RawInputs<'_>,
     args: &Args,
+    reason: RejectionReason,
 ) -> Result<AcceptanceDecision, CliError> {
     reject_unverified(
         policy,
         &args.execution_commitment,
         &args.expected_execution_id,
         raw.decision_inputs(),
+        reason,
     )
     .map_err(|error| map_accept_error(error.code()))
+}
+
+fn composition_rejection(error: CompositionError) -> RejectionReason {
+    if error == CompositionError::ExecutionReplayed {
+        RejectionReason::ExecutionReplay
+    } else {
+        RejectionReason::CompositionMissing
+    }
 }
 
 fn parse_args(args: &[OsString]) -> Result<Args, CliError> {
@@ -556,6 +583,18 @@ mod tests {
             "accepted"
         );
         assert!(stderr.is_empty());
+    }
+
+    #[test]
+    fn composition_replay_has_a_distinct_rejection_reason() {
+        assert_eq!(
+            composition_rejection(CompositionError::ExecutionReplayed),
+            RejectionReason::ExecutionReplay
+        );
+        assert_eq!(
+            composition_rejection(CompositionError::ReleaseSubstituted),
+            RejectionReason::CompositionMissing
+        );
     }
 
     fn bytes_from_hex(text: &str) -> Vec<u8> {
