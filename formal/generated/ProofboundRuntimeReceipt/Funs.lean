@@ -48,8 +48,77 @@ def ReceiptStructure.Insts.CoreCmpPartialEqReceiptStructure.eq
   let other1 := read_discriminant other
   ok (self1 = other1)
 
+/-- [proofbound_runtime_receipt::{proofbound_runtime_receipt::LimitEvents}::contains]:
+    Source: 'crates/proofbound-runtime-receipt/src/lib.rs', lines 129:4-139:5
+    Visibility: public -/
+def LimitEvents.contains
+  (self : LimitEvents) (event : LimitEvent) : Result Bool := do
+  match event with
+  | LimitEvent.MemoryHigh => ok self.memory_high
+  | LimitEvent.MemoryMax => ok self.memory_max
+  | LimitEvent.MemoryOom => ok self.memory_oom
+  | LimitEvent.MemoryOomKill => ok self.memory_oom_kill
+  | LimitEvent.MemoryOomGroupKill => ok self.memory_oom_group_kill
+  | LimitEvent.SwapMax => ok self.swap_max
+  | LimitEvent.SwapFail => ok self.swap_fail
+
+/-- [proofbound_runtime_receipt::append_reason]:
+    Source: 'crates/proofbound-runtime-receipt/src/lib.rs', lines 259:0-268:1 -/
+def append_reason
+  (reasons : alloc.vec.Vec NonReusableReason) (present : Bool)
+  (reason : NonReusableReason) :
+  Result (alloc.vec.Vec NonReusableReason)
+  := do
+  if present
+  then alloc.vec.Vec.push reasons reason
+  else ok reasons
+
+/-- [proofbound_runtime_receipt::append_limit_event_reasons]:
+    Source: 'crates/proofbound-runtime-receipt/src/lib.rs', lines 270:0-309:1 -/
+def append_limit_event_reasons
+  (reasons : alloc.vec.Vec NonReusableReason) (events : LimitEvents) :
+  Result (alloc.vec.Vec NonReusableReason)
+  := do
+  let b ← LimitEvents.contains events LimitEvent.MemoryHigh
+  let reasons1 ← append_reason reasons b NonReusableReason.MemoryHigh
+  let b1 ← LimitEvents.contains events LimitEvent.MemoryMax
+  let reasons2 ← append_reason reasons1 b1 NonReusableReason.MemoryMax
+  let b2 ← LimitEvents.contains events LimitEvent.MemoryOom
+  let reasons3 ← append_reason reasons2 b2 NonReusableReason.MemoryOom
+  let b3 ← LimitEvents.contains events LimitEvent.MemoryOomKill
+  let reasons4 ← append_reason reasons3 b3 NonReusableReason.MemoryOomKill
+  let b4 ← LimitEvents.contains events LimitEvent.MemoryOomGroupKill
+  let reasons5 ←
+    append_reason reasons4 b4 NonReusableReason.MemoryOomGroupKill
+  let b5 ← LimitEvents.contains events LimitEvent.SwapMax
+  let reasons6 ← append_reason reasons5 b5 NonReusableReason.SwapMax
+  let b6 ← LimitEvents.contains events LimitEvent.SwapFail
+  append_reason reasons6 b6 NonReusableReason.SwapFail
+
+/-- [proofbound_runtime_receipt::append_outcome_reason]:
+    Source: 'crates/proofbound-runtime-receipt/src/lib.rs', lines 311:0-325:1 -/
+def append_outcome_reason
+  (reasons : alloc.vec.Vec NonReusableReason) (outcome : ExecutionOutcome) :
+  Result (alloc.vec.Vec NonReusableReason)
+  := do
+  match outcome with
+  | ExecutionOutcome.Exited i =>
+    match i with
+    | 0#iscalar => ok reasons
+    | _ => alloc.vec.Vec.push reasons NonReusableReason.ExitCodeNonzero
+  | ExecutionOutcome.Signaled _ =>
+    alloc.vec.Vec.push reasons NonReusableReason.ProcessSignaled
+  | ExecutionOutcome.TimedOut =>
+    alloc.vec.Vec.push reasons NonReusableReason.TimedOut
+  | ExecutionOutcome.Denied =>
+    alloc.vec.Vec.push reasons NonReusableReason.Denied
+  | ExecutionOutcome.LauncherFailed =>
+    alloc.vec.Vec.push reasons NonReusableReason.LauncherFailed
+  | ExecutionOutcome.Incomplete =>
+    alloc.vec.Vec.push reasons NonReusableReason.ExecutionIncomplete
+
 /-- [proofbound_runtime_receipt::derive_receipt_eligibility]:
-    Source: 'crates/proofbound-runtime-receipt/src/lib.rs', lines 164:0-196:1
+    Source: 'crates/proofbound-runtime-receipt/src/lib.rs', lines 331:0-360:1
     Visibility: public -/
 def derive_receipt_eligibility
   (facts : ReceiptFacts) : Result ReceiptEligibility := do
@@ -57,51 +126,27 @@ def derive_receipt_eligibility
     BoundaryInstallation.Insts.CoreCmpPartialEqBoundaryInstallation.eq
       facts.boundary BoundaryInstallation.Incomplete
   let reasons ←
-    if b
-    then
-      alloc.vec.Vec.push (alloc.vec.Vec.new NonReusableReason)
-        NonReusableReason.BoundaryIncomplete
-    else ok (alloc.vec.Vec.new NonReusableReason)
-  let reasons1 ←
-    match facts.outcome with
-    | ExecutionOutcome.Exited i =>
-      match i with
-      | 0#iscalar => ok reasons
-      | _ => alloc.vec.Vec.push reasons NonReusableReason.ExitCodeNonzero
-    | ExecutionOutcome.Signaled _ =>
-      alloc.vec.Vec.push reasons NonReusableReason.ProcessSignaled
-    | ExecutionOutcome.TimedOut =>
-      alloc.vec.Vec.push reasons NonReusableReason.TimedOut
-    | ExecutionOutcome.Denied =>
-      alloc.vec.Vec.push reasons NonReusableReason.Denied
-    | ExecutionOutcome.LauncherFailed =>
-      alloc.vec.Vec.push reasons NonReusableReason.LauncherFailed
-    | ExecutionOutcome.Incomplete =>
-      alloc.vec.Vec.push reasons NonReusableReason.ExecutionIncomplete
+    append_reason (alloc.vec.Vec.new NonReusableReason) b
+      NonReusableReason.BoundaryIncomplete
+  let reasons1 ← append_outcome_reason reasons facts.outcome
   let b1 ←
     StreamCapture.Insts.CoreCmpPartialEqStreamCapture.eq facts.stdout
       StreamCapture.Truncated
   let reasons2 ←
-    if b1
-    then alloc.vec.Vec.push reasons1 NonReusableReason.StandardOutputTruncated
-    else ok reasons1
+    append_reason reasons1 b1 NonReusableReason.StandardOutputTruncated
   let b2 ←
     StreamCapture.Insts.CoreCmpPartialEqStreamCapture.eq facts.stderr
       StreamCapture.Truncated
   let reasons3 ←
-    if b2
-    then alloc.vec.Vec.push reasons2 NonReusableReason.StandardErrorTruncated
-    else ok reasons2
+    append_reason reasons2 b2 NonReusableReason.StandardErrorTruncated
   let b3 ←
     ReceiptStructure.Insts.CoreCmpPartialEqReceiptStructure.eq
       facts.«structure» ReceiptStructure.Malformed
-  let reasons4 ←
-    if b3
-    then alloc.vec.Vec.push reasons3 NonReusableReason.ReceiptMalformed
-    else ok reasons3
-  let b4 ← alloc.vec.Vec.is_empty Global reasons4
+  let reasons4 ← append_reason reasons3 b3 NonReusableReason.ReceiptMalformed
+  let reasons5 ← append_limit_event_reasons reasons4 facts.limit_events
+  let b4 ← alloc.vec.Vec.is_empty Global reasons5
   if b4
   then ok ReceiptEligibility.Reusable
-  else ok (ReceiptEligibility.NonReusable reasons4)
+  else ok (ReceiptEligibility.NonReusable reasons5)
 
 end proofbound_runtime_receipt

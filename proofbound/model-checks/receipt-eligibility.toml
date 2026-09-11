@@ -9,15 +9,15 @@ claims = ["PBR-RECEIPT-004"]
 solver = "cadical"
 unwind = 12
 assumptions = [
-  "Signal identity does not affect version 1 eligibility, so the signaled outcome uses one nonzero representative.",
-  "The model covers all 2^32 signed exit-code bit patterns and every other closed version 1 outcome class.",
+  "Signal identity does not affect receipt eligibility, so the signaled outcome uses one nonzero representative.",
+  "The model covers all 2^32 signed exit-code bit patterns, every other closed outcome class, and every subset of the seven version 2 memory and swap limit events.",
 ]
 
 [domain]
-id = "receipt-eligibility-v1-closed-states"
-description = "All boundary, stream-capture, structure, and outcome classes, including every i32 exit code; 16 * (2^32 + 5) finite states."
-cardinality = 68719476816
-ordering_key = [0, 1, 2, 3, 4]
+id = "receipt-eligibility-v2-closed-states"
+description = "All boundary, stream-capture, structure, and outcome classes, including every i32 exit code and every subset of seven version 2 memory and swap limit events; 16 * (2^32 + 5) * 128 finite states."
+cardinality = 8796093032448
+ordering_key = [0, 1, 2, 3, 4, 5]
 
 [resource_budget]
 time_seconds = 900

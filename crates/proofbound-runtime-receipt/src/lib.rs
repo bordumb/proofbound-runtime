@@ -93,45 +93,61 @@ pub enum LimitEvent {
     SwapFail,
 }
 
-impl LimitEvent {
-    const fn index(self) -> usize {
-        match self {
-            Self::MemoryHigh => 0,
-            Self::MemoryMax => 1,
-            Self::MemoryOom => 2,
-            Self::MemoryOomKill => 3,
-            Self::MemoryOomGroupKill => 4,
-            Self::SwapMax => 5,
-            Self::SwapFail => 6,
-        }
-    }
-}
-
 /// Contains the canonical set of terminal resource events.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct LimitEvents([bool; 7]);
+pub struct LimitEvents {
+    memory_high: bool,
+    memory_max: bool,
+    memory_oom: bool,
+    memory_oom_kill: bool,
+    memory_oom_group_kill: bool,
+    swap_max: bool,
+    swap_fail: bool,
+}
 
 impl LimitEvents {
     /// Canonicalizes an event collection and removes duplicates.
     #[must_use]
     pub fn new(events: &[LimitEvent]) -> Self {
-        let mut present = [false; 7];
+        let mut present = Self::default();
         for event in events {
-            present[event.index()] = true;
+            match event {
+                LimitEvent::MemoryHigh => present.memory_high = true,
+                LimitEvent::MemoryMax => present.memory_max = true,
+                LimitEvent::MemoryOom => present.memory_oom = true,
+                LimitEvent::MemoryOomKill => present.memory_oom_kill = true,
+                LimitEvent::MemoryOomGroupKill => present.memory_oom_group_kill = true,
+                LimitEvent::SwapMax => present.swap_max = true,
+                LimitEvent::SwapFail => present.swap_fail = true,
+            }
         }
-        Self(present)
+        present
     }
 
     /// Reports whether the canonical set contains an event.
     #[must_use]
     pub const fn contains(self, event: LimitEvent) -> bool {
-        self.0[event.index()]
+        match event {
+            LimitEvent::MemoryHigh => self.memory_high,
+            LimitEvent::MemoryMax => self.memory_max,
+            LimitEvent::MemoryOom => self.memory_oom,
+            LimitEvent::MemoryOomKill => self.memory_oom_kill,
+            LimitEvent::MemoryOomGroupKill => self.memory_oom_group_kill,
+            LimitEvent::SwapMax => self.swap_max,
+            LimitEvent::SwapFail => self.swap_fail,
+        }
     }
 
     /// Reports whether no registered event occurred.
     #[must_use]
     pub fn is_empty(self) -> bool {
-        !self.0.into_iter().any(|present| present)
+        !self.memory_high
+            && !self.memory_max
+            && !self.memory_oom
+            && !self.memory_oom_kill
+            && !self.memory_oom_group_kill
+            && !self.swap_max
+            && !self.swap_fail
     }
 }
 
@@ -234,24 +250,69 @@ impl NonReusableReasons {
 /// Reports whether a receipt can be reused as execution evidence.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ReceiptEligibility {
-    /// The receipt satisfies every version 1 reuse condition.
+    /// The receipt satisfies every reuse condition for its represented facts.
     Reusable,
     /// The receipt does not satisfy one or more reuse conditions.
     NonReusable(NonReusableReasons),
 }
 
-/// Derives receipt reuse eligibility from typed execution facts.
-///
-/// The returned reasons use the canonical order from specification 0001.
-#[must_use]
-pub fn derive_receipt_eligibility(facts: &ReceiptFacts) -> ReceiptEligibility {
-    let mut reasons = Vec::new();
-
-    if facts.boundary == BoundaryInstallation::Incomplete {
-        reasons.push(NonReusableReason::BoundaryIncomplete);
+fn append_reason(
+    mut reasons: Vec<NonReusableReason>,
+    present: bool,
+    reason: NonReusableReason,
+) -> Vec<NonReusableReason> {
+    if present {
+        reasons.push(reason);
     }
+    reasons
+}
 
-    match facts.outcome {
+fn append_limit_event_reasons(
+    reasons: Vec<NonReusableReason>,
+    events: LimitEvents,
+) -> Vec<NonReusableReason> {
+    let reasons = append_reason(
+        reasons,
+        events.contains(LimitEvent::MemoryHigh),
+        NonReusableReason::MemoryHigh,
+    );
+    let reasons = append_reason(
+        reasons,
+        events.contains(LimitEvent::MemoryMax),
+        NonReusableReason::MemoryMax,
+    );
+    let reasons = append_reason(
+        reasons,
+        events.contains(LimitEvent::MemoryOom),
+        NonReusableReason::MemoryOom,
+    );
+    let reasons = append_reason(
+        reasons,
+        events.contains(LimitEvent::MemoryOomKill),
+        NonReusableReason::MemoryOomKill,
+    );
+    let reasons = append_reason(
+        reasons,
+        events.contains(LimitEvent::MemoryOomGroupKill),
+        NonReusableReason::MemoryOomGroupKill,
+    );
+    let reasons = append_reason(
+        reasons,
+        events.contains(LimitEvent::SwapMax),
+        NonReusableReason::SwapMax,
+    );
+    append_reason(
+        reasons,
+        events.contains(LimitEvent::SwapFail),
+        NonReusableReason::SwapFail,
+    )
+}
+
+fn append_outcome_reason(
+    mut reasons: Vec<NonReusableReason>,
+    outcome: ExecutionOutcome,
+) -> Vec<NonReusableReason> {
+    match outcome {
         ExecutionOutcome::Exited { code: 0 } => {}
         ExecutionOutcome::Exited { .. } => reasons.push(NonReusableReason::ExitCodeNonzero),
         ExecutionOutcome::Signaled { .. } => reasons.push(NonReusableReason::ProcessSignaled),
@@ -260,32 +321,36 @@ pub fn derive_receipt_eligibility(facts: &ReceiptFacts) -> ReceiptEligibility {
         ExecutionOutcome::LauncherFailed => reasons.push(NonReusableReason::LauncherFailed),
         ExecutionOutcome::Incomplete => reasons.push(NonReusableReason::ExecutionIncomplete),
     }
+    reasons
+}
 
-    if facts.stdout == StreamCapture::Truncated {
-        reasons.push(NonReusableReason::StandardOutputTruncated);
-    }
-    if facts.stderr == StreamCapture::Truncated {
-        reasons.push(NonReusableReason::StandardErrorTruncated);
-    }
-    if facts.structure == ReceiptStructure::Malformed {
-        reasons.push(NonReusableReason::ReceiptMalformed);
-    }
-    for (event, reason) in [
-        (LimitEvent::MemoryHigh, NonReusableReason::MemoryHigh),
-        (LimitEvent::MemoryMax, NonReusableReason::MemoryMax),
-        (LimitEvent::MemoryOom, NonReusableReason::MemoryOom),
-        (LimitEvent::MemoryOomKill, NonReusableReason::MemoryOomKill),
-        (
-            LimitEvent::MemoryOomGroupKill,
-            NonReusableReason::MemoryOomGroupKill,
-        ),
-        (LimitEvent::SwapMax, NonReusableReason::SwapMax),
-        (LimitEvent::SwapFail, NonReusableReason::SwapFail),
-    ] {
-        if facts.limit_events.contains(event) {
-            reasons.push(reason);
-        }
-    }
+/// Derives receipt reuse eligibility from typed execution facts.
+///
+/// The returned reasons use the canonical order from specification 0001.
+#[must_use]
+pub fn derive_receipt_eligibility(facts: &ReceiptFacts) -> ReceiptEligibility {
+    let reasons = append_reason(
+        Vec::new(),
+        facts.boundary == BoundaryInstallation::Incomplete,
+        NonReusableReason::BoundaryIncomplete,
+    );
+    let reasons = append_outcome_reason(reasons, facts.outcome);
+    let reasons = append_reason(
+        reasons,
+        facts.stdout == StreamCapture::Truncated,
+        NonReusableReason::StandardOutputTruncated,
+    );
+    let reasons = append_reason(
+        reasons,
+        facts.stderr == StreamCapture::Truncated,
+        NonReusableReason::StandardErrorTruncated,
+    );
+    let reasons = append_reason(
+        reasons,
+        facts.structure == ReceiptStructure::Malformed,
+        NonReusableReason::ReceiptMalformed,
+    );
+    let reasons = append_limit_event_reasons(reasons, facts.limit_events);
 
     if reasons.is_empty() {
         ReceiptEligibility::Reusable

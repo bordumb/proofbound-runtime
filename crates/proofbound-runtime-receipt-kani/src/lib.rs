@@ -4,8 +4,9 @@
 
 #[cfg(kani)]
 use proofbound_runtime_core::{
-    BoundaryInstallation, ExecutionOutcome, NonReusableReason, ReceiptEligibility, ReceiptFacts,
-    ReceiptStructure, SignalNumber, StreamCapture, derive_receipt_eligibility,
+    BoundaryInstallation, ExecutionOutcome, LimitEvent, LimitEvents, NonReusableReason,
+    ReceiptEligibility, ReceiptFacts, ReceiptStructure, SignalNumber, StreamCapture,
+    derive_receipt_eligibility,
 };
 
 #[cfg(kani)]
@@ -43,7 +44,43 @@ fn receipt_eligibility_is_exact_for_bounded_state_model() {
     } else {
         ReceiptStructure::Malformed
     };
-    let facts = ReceiptFacts::new(boundary, outcome, stdout, stderr, structure);
+    let memory_high: bool = kani::any();
+    let memory_max: bool = kani::any();
+    let memory_oom: bool = kani::any();
+    let memory_oom_kill: bool = kani::any();
+    let memory_oom_group_kill: bool = kani::any();
+    let swap_max: bool = kani::any();
+    let swap_fail: bool = kani::any();
+    let mut events = Vec::new();
+    if memory_high {
+        events.push(LimitEvent::MemoryHigh);
+    }
+    if memory_max {
+        events.push(LimitEvent::MemoryMax);
+    }
+    if memory_oom {
+        events.push(LimitEvent::MemoryOom);
+    }
+    if memory_oom_kill {
+        events.push(LimitEvent::MemoryOomKill);
+    }
+    if memory_oom_group_kill {
+        events.push(LimitEvent::MemoryOomGroupKill);
+    }
+    if swap_max {
+        events.push(LimitEvent::SwapMax);
+    }
+    if swap_fail {
+        events.push(LimitEvent::SwapFail);
+    }
+    let facts = ReceiptFacts::new_v2(
+        boundary,
+        outcome,
+        stdout,
+        stderr,
+        structure,
+        LimitEvents::new(&events),
+    );
     let mut expected_reasons = Vec::new();
     if boundary == BoundaryInstallation::Incomplete {
         expected_reasons.push(NonReusableReason::BoundaryIncomplete);
@@ -73,6 +110,27 @@ fn receipt_eligibility_is_exact_for_bounded_state_model() {
     }
     if structure == ReceiptStructure::Malformed {
         expected_reasons.push(NonReusableReason::ReceiptMalformed);
+    }
+    if memory_high {
+        expected_reasons.push(NonReusableReason::MemoryHigh);
+    }
+    if memory_max {
+        expected_reasons.push(NonReusableReason::MemoryMax);
+    }
+    if memory_oom {
+        expected_reasons.push(NonReusableReason::MemoryOom);
+    }
+    if memory_oom_kill {
+        expected_reasons.push(NonReusableReason::MemoryOomKill);
+    }
+    if memory_oom_group_kill {
+        expected_reasons.push(NonReusableReason::MemoryOomGroupKill);
+    }
+    if swap_max {
+        expected_reasons.push(NonReusableReason::SwapMax);
+    }
+    if swap_fail {
+        expected_reasons.push(NonReusableReason::SwapFail);
     }
 
     match derive_receipt_eligibility(&facts) {
