@@ -1002,6 +1002,20 @@ mod tests {
     }
 
     #[test]
+    fn swap_observation_accepts_the_kernel_high_counter_without_claiming_it() {
+        let snapshot = parse_resource_snapshot(
+            "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+            "high 7\nmax 2\nfail 3\n",
+            "0\n",
+            "0\n",
+        )
+        .expect("the excluded swap-high counter is present on supported kernels");
+
+        assert_eq!(snapshot.swap_events.max, 2);
+        assert_eq!(snapshot.swap_events.fail, 3);
+    }
+
+    #[test]
     fn parses_kernel_events_and_process_sets_strictly() {
         assert_eq!(parse_events("populated 0\nfrozen 0\n"), Ok(false));
         assert_eq!(parse_events("populated 1\n"), Ok(true));
