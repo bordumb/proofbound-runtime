@@ -72,8 +72,9 @@ evidence composition possible.
 Proofbound Runtime owns agent execution plans, authority semantics, Linux
 policy compilation, boundary installation, run observations, and execution
 receipts. It also owns `pbr-compose`, the Runtime-specific typed join between a
-verified Proofbound release and a verified execution. Proofbound does not run
-in the child security path.
+verified Proofbound release and a verified execution, and `pbr-accept`, the
+adopter-owned exact-facet decision over both. Proofbound does not run in the
+child security path.
 
 Runtime discoveries that require generic Proofbound support are recorded in
 [`docs/proofbound-feedback`](docs/proofbound-feedback/README.md) before they are
@@ -154,6 +155,7 @@ cargo build --locked --release --bins
 target/release/pbr --version
 target/release/pbr-verify --version
 target/release/pbr-compose --version
+target/release/pbr-accept --version
 ```
 
 The `v0.1.0` host must provide a delegated cgroup v2 directory with the `pids`
@@ -229,6 +231,12 @@ pbr-compose \
 The composition preserves claim facets, assumptions, exclusions, open
 obligations, verifier identities, and trusted-computing-base identities. It
 does not promote `MODEL_ONLY` or `TESTED` evidence to `ARTIFACT_BOUND`.
+
+`pbr-accept` re-runs both independent verifiers over the raw inputs, applies a
+closed deterministic-CBOR adopter policy, and publishes a no-replace canonical
+decision binding every input identity. The first-party Action and reviewable
+policy compiler are documented in the
+[GitHub Actions acceptance guide](docs/guides/github-action.md).
 
 ## Repository checks
 

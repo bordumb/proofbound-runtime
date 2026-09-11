@@ -1,0 +1,100 @@
+name: Proofbound Runtime acceptance
+description: Run, independently verify, compose, and apply an adopter policy.
+
+inputs:
+  runtime-archive:
+    description: Path to one exact Proofbound Runtime release archive.
+    required: true
+  runtime-archive-sha256:
+    description: Trusted lowercase SHA-256 of runtime-archive.
+    required: true
+  acceptor:
+    description: Path to the matching standalone pbr-accept release binary.
+    required: true
+  acceptor-sha256:
+    description: Trusted lowercase SHA-256 of acceptor.
+    required: true
+  policy:
+    description: Path to the reviewed deterministic-CBOR acceptance policy.
+    required: true
+  policy-identity:
+    description: Trusted domain-separated sha256 identity of the policy bytes.
+    required: true
+  plan:
+    description: Path to the reviewed deterministic-CBOR execution plan.
+    required: true
+  cgroup-root:
+    description: Path to an already delegated empty cgroup v2 subtree.
+    required: true
+  proofbound-release:
+    description: Path to the exact Proofbound release directory.
+    required: true
+  proofbound-verifier:
+    description: Path to the exact Proofbound independent verifier.
+    required: true
+  proofbound-observation-inputs:
+    description: Path to the exact Proofbound observation-input manifest.
+    required: true
+  upload-exact-artifacts:
+    description: Explicitly authorize upload of all supplied inputs and derived outputs to GitHub.
+    required: false
+    default: "false"
+  artifact-name:
+    description: Name for the retained exact-input and decision artifact.
+    required: false
+    default: proofbound-runtime-acceptance
+  retention-days:
+    description: GitHub artifact retention period.
+    required: false
+    default: "30"
+
+outputs:
+  decision-id:
+    description: Canonical acceptance decision identity.
+    value: ${{ steps.accept.outputs.decision-id }}
+  status:
+    description: Canonical accepted or rejected status.
+    value: ${{ steps.accept.outputs.status }}
+  reasons:
+    description: Compact JSON array of typed rejection reasons.
+    value: ${{ steps.accept.outputs.reasons }}
+
+runs:
+  using: composite
+  steps:
+    - id: accept
+      name: Run the exact acceptance chain
+      shell: bash
+      env:
+        PBR_ACTION_OUTPUT: ${{ runner.temp }}/proofbound-runtime-${{ github.run_id }}-${{ github.run_attempt }}
+      run: >-
+        python3 "${{ github.action_path }}/run.py"
+        --runtime-archive "${{ inputs.runtime-archive }}"
+        --runtime-archive-sha256 "${{ inputs.runtime-archive-sha256 }}"
+        --acceptor "${{ inputs.acceptor }}"
+        --acceptor-sha256 "${{ inputs.acceptor-sha256 }}"
+        --policy "${{ inputs.policy }}"
+        --policy-identity "${{ inputs.policy-identity }}"
+        --plan "${{ inputs.plan }}"
+        --cgroup-root "${{ inputs.cgroup-root }}"
+        --proofbound-release "${{ inputs.proofbound-release }}"
+        --proofbound-verifier "${{ inputs.proofbound-verifier }}"
+        --proofbound-observation-inputs "${{ inputs.proofbound-observation-inputs }}"
+        --output "$PBR_ACTION_OUTPUT"
+
+    - name: Retain exact inputs and independently derived outputs
+      if: always() && inputs.upload-exact-artifacts == 'true'
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: ${{ inputs.artifact-name }}
+        retention-days: ${{ inputs.retention-days }}
+        if-no-files-found: error
+        path: |
+          ${{ steps.accept.outputs.result-root }}
+          ${{ inputs.runtime-archive }}
+          ${{ inputs.acceptor }}
+          ${{ inputs.policy }}
+          ${{ inputs.plan }}
+          ${{ inputs.proofbound-release }}
+          ${{ inputs.proofbound-verifier }}
+          ${{ inputs.proofbound-observation-inputs }}

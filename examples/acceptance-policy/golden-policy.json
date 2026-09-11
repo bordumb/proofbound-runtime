@@ -1,0 +1,57 @@
+{
+  "schema": "proofbound-runtime-acceptance-policy/1",
+  "execution": {
+    "receipt_schema": "proofbound-runtime-execution-receipt/2",
+    "runtime_version": "0.2.0",
+    "platform": {
+      "operating_system": "linux",
+      "architecture": "x86_64"
+    },
+    "plan_id": "golden-v2",
+    "executable": {
+      "sha256": "sha256:5c18c8bd473f526f3bda0097dc1ee8f1773d28dcdc2fbb015a1e698049f35684",
+      "size": 17,
+      "mode": 493
+    },
+    "policy_sha256": "sha256:5e73121cc9850ccc90a41e7f4ff951c5c499e8847292f94597230061d25d8480",
+    "policy_model_version": "proofbound-runtime-linux-policy/2",
+    "resources": {
+      "pids.max": 2,
+      "memory.max": 65536,
+      "memory.swap.max": 0,
+      "memory.oom.group": 1
+    },
+    "eligibility": "reusable",
+    "freshness": {
+      "mode": "not-required"
+    }
+  },
+  "release": {
+    "project": "proofbound-runtime",
+    "project_revision": "1111111111111111111111111111111111111111",
+    "payload_sha256": "sha256:251a4c587ca4d69aebbb0a679954edae44b9de659001ff3eab1f8ceec4056182",
+    "evidence_context": "release-linux-x86-64-runtime",
+    "claims": [
+      {
+        "claim_id": "PBR-AUTH-001",
+        "formal": "PROVED",
+        "linkage": "ARTIFACT_BOUND",
+        "assumption": "ASSUMED",
+        "policy_admitted": true
+      },
+      {
+        "claim_id": "PBR-RESOURCE-010",
+        "formal": "TESTED",
+        "linkage": "ARTIFACT_BOUND",
+        "assumption": "ASSUMED",
+        "policy_admitted": true
+      }
+    ]
+  },
+  "reject_if_present": {
+    "assumptions": ["PBR-UNREVIEWED-AX-999"],
+    "exclusions": ["network-enabled-execution"],
+    "open_obligations": ["unreviewed-native-context"],
+    "tcb_roles": ["unregistered-wrapper"]
+  }
+}
