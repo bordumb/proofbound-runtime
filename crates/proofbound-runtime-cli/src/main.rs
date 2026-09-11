@@ -6,6 +6,7 @@ mod plan;
 mod preflight;
 mod run;
 mod run_diagnostic;
+mod scaffold;
 
 use std::env;
 use std::ffi::{OsStr, OsString};
@@ -64,6 +65,33 @@ where
         let Some(subcommand) = args.next() else {
             return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
         };
+        if subcommand == "scaffold" {
+            let Some(executable_option) = args.next() else {
+                return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+            };
+            let Some(executable) = args.next() else {
+                return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+            };
+            let Some(profile_option) = args.next() else {
+                return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+            };
+            let Some(profile) = args.next() else {
+                return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+            };
+            if executable_option != OsStr::new("--executable")
+                || profile_option != OsStr::new("--host-profile")
+                || args.next().is_some()
+            {
+                return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
+            }
+            let Some(profile) = profile.to_str() else {
+                return fail(stderr, INVALID_INPUT, "scaffold.profile.unsupported");
+            };
+            return match scaffold::execute(Path::new(&executable), profile, stdout) {
+                Ok(()) => SUCCESS,
+                Err(error) => fail(stderr, INVALID_INPUT, error.code()),
+            };
+        }
         let Some(option) = args.next() else {
             return fail(stderr, INVALID_INPUT, "cli.usage.invalid");
         };
