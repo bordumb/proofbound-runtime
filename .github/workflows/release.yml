@@ -55,6 +55,9 @@ jobs:
       - name: Install pinned Rust toolchain
         uses: dtolnay/rust-toolchain@fef00d40025f7fd8f1ec759cbbb0f577ddfc3133 # 1.94.0
 
+      - name: Populate the locked Cargo dependency cache
+        run: cargo fetch --locked
+
       - name: Build and byte-compare all SDK packages
         run: python3 tools/release/build_sdks.py --output dist/sdk
 

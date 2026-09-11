@@ -79,6 +79,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn(
             'test "$(git rev-parse HEAD)" = "$PBR_RELEASE_REVISION"', sdk_job
         )
+        self.assertIn("cargo fetch --locked", sdk_job)
         self.assertIn("python3 tools/release/build_sdks.py --output dist/sdk", sdk_job)
         self.assertIn("sha256sum --check SHA256SUMS", sdk_job)
         self.assertIn("name: proofbound-runtime-sdk-packages-", sdk_job)
