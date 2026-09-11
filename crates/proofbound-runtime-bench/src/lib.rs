@@ -408,6 +408,8 @@ pub fn benchmark_core_v1(
 ) -> Result<Vec<PureSubjectResult>, BenchmarkError> {
     const PLAN_FIXTURE: &str =
         include_str!("../../../tests/conformance/plan/positive/minimal-v1.toml");
+    const RECEIPT_FIXTURE: &[u8] =
+        include_bytes!("../../../experiments/performance/fixtures/reusable-receipt-v1.json");
 
     let plan = parse_execution_plan(PLAN_FIXTURE).map_err(|_| BenchmarkError::SubjectFailed)?;
     let normalized =
@@ -420,7 +422,10 @@ pub fn benchmark_core_v1(
     let receipt_bytes = receipt
         .canonical_bytes()
         .map_err(|_| BenchmarkError::SubjectFailed)?;
-    let receipt_fixture_digest: [u8; 32] = Sha256::digest(&receipt_bytes).into();
+    if RECEIPT_FIXTURE.strip_suffix(b"\n") != Some(receipt_bytes.as_slice()) {
+        return Err(BenchmarkError::SubjectFailed);
+    }
+    let receipt_fixture_digest: [u8; 32] = Sha256::digest(RECEIPT_FIXTURE).into();
     let receipt_fixture_sha256 = Sha256Digest::from_bytes(receipt_fixture_digest).to_hex();
 
     let plan_parse = measure(config, || {
@@ -1160,9 +1165,8 @@ mod tests {
         )
         .expect("receipt constructs");
         let bytes = receipt.canonical_bytes().expect("receipt encodes");
-        let fixture = include_bytes!(
-            "../../../experiments/performance/fixtures/reusable-receipt-v1.json"
-        );
+        let fixture =
+            include_bytes!("../../../experiments/performance/fixtures/reusable-receipt-v1.json");
         assert_eq!(fixture.strip_suffix(b"\n"), Some(bytes.as_slice()));
     }
 
