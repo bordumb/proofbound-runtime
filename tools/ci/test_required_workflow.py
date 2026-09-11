@@ -189,6 +189,8 @@ class RequiredWorkflowTests(unittest.TestCase):
 
         self.assertIn('"$runtime_bin_directory/pbr" plan scaffold', native_script)
         self.assertIn("plan-scaffold.json", native_script)
+        self.assertIn('"choose-environment", "choose-limits"', native_script)
+        self.assertNotIn('"choose-environment-names"', native_script)
         self.assertIn("assert_native_preflight", observation)
         self.assertIn("assert_native_scaffold", observation)
 

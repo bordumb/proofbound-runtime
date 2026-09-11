@@ -195,7 +195,7 @@ assert report["executable"]["requested"] == executable
 assert report["dependencies"] == []
 assert report["interpreter"] is None
 required = {
-    "choose-environment-names", "choose-limits", "choose-network-mode",
+    "choose-environment", "choose-limits", "choose-network-mode",
     "choose-write-roots", "dynamic-loads-unresolved",
 }
 assert required <= {item["code"] for item in report["open_items"]}

@@ -206,7 +206,7 @@ fn assert_native_scaffold(evidence: &Path, architecture: &str) {
         .map(|item| item["code"].as_str().expect("open-item code is text"))
         .collect::<std::collections::BTreeSet<_>>();
     for required in [
-        "choose-environment-names",
+        "choose-environment",
         "choose-limits",
         "choose-network-mode",
         "choose-write-roots",
