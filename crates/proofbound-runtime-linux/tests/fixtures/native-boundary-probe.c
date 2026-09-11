@@ -314,6 +314,15 @@ int main(int argc, char **argv) {
         }
         return emit(STDOUT_FILENO, "boundary-installed\n");
     }
+    if (strcmp(argv[1], "mark") == 0 && argc == 3) {
+        int marker = open(argv[2], O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC,
+                          S_IRUSR | S_IWUSR);
+        if (marker < 0) {
+            return 118;
+        }
+        int result = emit(marker, "child-ran\n");
+        return close(marker) == 0 && result == 0 ? 0 : 119;
+    }
     if (strcmp(argv[1], "read-allowed") == 0 && argc == 3) {
         int descriptor = open(argv[2], O_RDONLY);
         if (descriptor < 0) {

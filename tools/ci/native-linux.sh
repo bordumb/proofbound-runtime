@@ -77,11 +77,13 @@ if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
   result="$e2e_root/run-result.json"
   verification="$e2e_root/verification.json"
   preflight="$e2e_root/preflight.json"
+  diagnostic_child_marker="$e2e_root/output/diagnostic-child-ran"
   python3 tools/ci/encode_plan_v2.py \
     --output "$plan" \
     --id ci.native-cli-e2e \
     --executable "$PROOFBOUND_NATIVE_FIXTURE" \
-    --argument positive \
+    --argument mark \
+    --argument output/diagnostic-child-ran \
     --working-directory . \
     --write output \
     --execute "$PROOFBOUND_NATIVE_FIXTURE" \
@@ -215,6 +217,98 @@ with open(sys.argv[1], encoding="utf-8") as source:
 ' "$e2e_root/occupied-output-result.json"
   rmdir "$e2e_root/output"
 
+  diagnostic_cases=()
+  assert_prelaunch_failure() {
+    local case_id="$1"
+    local case_plan="$2"
+    local case_receipt="$3"
+    local case_cgroup="$4"
+    local expected_status="$5"
+    local expected_diagnostic="$6"
+    local case_stdout="$e2e_root/$case_id.stdout"
+    local case_stderr="$e2e_root/$case_id.stderr"
+    local actual_status
+
+    test ! -e "$diagnostic_child_marker"
+    set +e
+    "$runtime_bin_directory/pbr" run \
+      --plan "$case_plan" \
+      --receipt "$case_receipt" \
+      --cgroup-root "$case_cgroup" \
+      >"$case_stdout" 2>"$case_stderr"
+    actual_status=$?
+    set -e
+    test "$actual_status" -eq "$expected_status"
+    test ! -s "$case_stdout"
+    test "$(<"$case_stderr")" = "$expected_diagnostic"
+    test ! -e "$diagnostic_child_marker"
+    diagnostic_cases+=("$case_id")
+  }
+
+  occupied_run_receipt="$e2e_root/occupied-run-receipt.cbor"
+  printf '%s\n' 'preserve-me' >"$occupied_run_receipt"
+  assert_prelaunch_failure "receipt-target-preexists" \
+    "$plan" "$occupied_run_receipt" "$PROOFBOUND_CGROUP_ROOT" 2 \
+    "pbr: phase=receipt-target rule=receipt-target-valid code=receipt.path.exists"
+  test "$(<"$occupied_run_receipt")" = 'preserve-me'
+
+  assert_prelaunch_failure "plan-input-missing" \
+    "$e2e_root/missing-plan.cbor" "$receipt" "$PROOFBOUND_CGROUP_ROOT" 2 \
+    "pbr: phase=plan-input rule=plan-source-readable code=plan.input.read-failed"
+  test ! -e "$receipt"
+
+  assert_prelaunch_failure "host-capability-unavailable" \
+    "$plan" "$receipt" "$e2e_root/not-a-cgroup" 3 \
+    "pbr: phase=host-capabilities rule=host-supported code=platform.cgroup-v2.unavailable"
+  test ! -e "$receipt"
+
+  mkdir "$e2e_root/output"
+  assert_prelaunch_failure "output-root-preexists" \
+    "$plan" "$receipt" "$PROOFBOUND_CGROUP_ROOT" 2 \
+    "pbr: phase=output-root rule=output-root-fresh code=output.root.exists"
+  test ! -e "$receipt"
+  rmdir "$e2e_root/output"
+
+  resolution_plan="$e2e_root/resolution-plan.cbor"
+  python3 tools/ci/encode_plan_v2.py \
+    --output "$resolution_plan" \
+    --id ci.native-diagnostic-resolution \
+    --executable missing-executable \
+    --working-directory . \
+    --write resolution-output \
+    --execute missing-executable \
+    --processes 1 \
+    --wall-time-ms 5000 \
+    --stdout-bytes 4096 \
+    --stderr-bytes 4096 \
+    --memory-bytes 268435456 \
+    --swap-bytes 0
+  assert_prelaunch_failure "executable-resolution-failure" \
+    "$resolution_plan" "$receipt" "$PROOFBOUND_CGROUP_ROOT" 2 \
+    "pbr: phase=executable-closure rule=executable-closure-resolved code=resolve.path.unavailable"
+  test ! -e "$receipt"
+  rmdir "$e2e_root/resolution-output"
+
+  native_diagnostics="$e2e_root/native-run-diagnostics.json"
+  python3 -c '
+import json
+import os
+import sys
+
+output, architecture, revision, *cases = sys.argv[1:]
+record = {
+    "architecture": architecture,
+    "cases": cases,
+    "schema": "proofbound-runtime-native-run-diagnostics/1",
+    "source_revision": revision,
+}
+descriptor = os.open(output, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+with os.fdopen(descriptor, "w", encoding="utf-8") as destination:
+    json.dump(record, destination, sort_keys=True, separators=(",", ":"))
+    destination.write("\n")
+' "$native_diagnostics" "$expected_architecture" "$(git rev-parse HEAD)" \
+    "${diagnostic_cases[@]}"
+
   "$runtime_bin_directory/pbr" run \
     --plan "$plan" \
     --receipt "$receipt" \
@@ -284,6 +378,8 @@ assert result["commitment"].startswith("sha256:")
     install -m 0644 "$receipt" "$evidence_directory/execution-receipt.cbor"
     install -m 0644 "$example_result" "$evidence_directory/example-result.json"
     install -m 0644 "$verification" "$evidence_directory/verification.json"
+    install -m 0644 "$native_diagnostics" \
+      "$evidence_directory/native-run-diagnostics.json"
     printf '%s\n' "$commitment" >"$evidence_directory/receipt-commitment.txt"
     python3 -c '
 import json
