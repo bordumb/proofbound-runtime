@@ -430,8 +430,8 @@ mod tests {
 
     use super::{
         BenchmarkError, Measurement, MeasurementConfig, PureBenchmarkResult, PureSubject,
-        PureSubjectResult, Summary, measure_prepared_with_clock, measure_with_clock,
-        next_batch_count, summarize,
+        PureSubjectResult, Summary, benchmark_core_v1, measure_prepared_with_clock,
+        measure_with_clock, next_batch_count, summarize,
     };
 
     #[test]
@@ -689,5 +689,31 @@ mod tests {
             ),
             Err(BenchmarkError::SubjectDomainMismatch)
         );
+    }
+
+    #[test]
+    fn core_benchmark_uses_the_exact_closed_version_one_subjects() {
+        let config = MeasurementConfig::new(1, 2, 1).expect("config is valid");
+        let subjects = benchmark_core_v1(config).expect("core subjects measure");
+
+        assert_eq!(
+            subjects
+                .iter()
+                .map(PureSubjectResult::subject)
+                .collect::<Vec<_>>(),
+            vec![
+                PureSubject::PlanParseV1,
+                PureSubject::AuthorityNormalizationV1,
+                PureSubject::PolicyCompilationV1,
+            ]
+        );
+        assert!(subjects.iter().all(|subject| {
+            subject.fixture_sha256()
+                == "80194be084f9749fe47bc5feb1ac737d8e793b67230b0590abc2d2948881aa4a"
+        }));
+        assert!(subjects.iter().all(|subject| {
+            subject.measurement().summary.count == 2
+                && subject.measurement().batch_count >= 1
+        }));
     }
 }
