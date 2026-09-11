@@ -137,6 +137,16 @@ class WireTransitionTests(unittest.TestCase):
         self.assertIn("construct_and_project_receipt_binding(parts)", receipt)
         self.assertNotIn("all 20 version 1 top-level fields", claim)
 
+    def test_binding_refinement_rebuilds_the_changed_model(self) -> None:
+        script = (
+            REPOSITORY_ROOT / "tools/ci/binding-refinement.sh"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn(
+            "lake build Aeneas ProofboundRuntime.Binding",
+            script,
+        )
+
     def test_composer_has_separate_historical_and_v2_wire_paths(self) -> None:
         manifest = (
             REPOSITORY_ROOT / "crates/proofbound-runtime-compose/Cargo.toml"
