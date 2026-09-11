@@ -22,6 +22,8 @@ pub enum BenchmarkError {
     InvalidWarmupCount,
     /// The supplied monotonic clock moved backwards.
     ClockRegression,
+    /// An input-preparation step returned the wrong number of inputs.
+    PreparationCountMismatch,
 }
 
 impl fmt::Display for BenchmarkError {
@@ -33,6 +35,7 @@ impl fmt::Display for BenchmarkError {
             Self::BatchOverflow => "benchmark.batch.overflow",
             Self::InvalidWarmupCount => "benchmark.warmup.invalid",
             Self::ClockRegression => "benchmark.clock.regression",
+            Self::PreparationCountMismatch => "benchmark.preparation.count-mismatch",
         })
     }
 }
@@ -211,6 +214,79 @@ where
     clock()
         .checked_sub(started_ns)
         .ok_or(BenchmarkError::ClockRegression)
+}
+
+/// Measures a consuming operation while excluding input construction.
+pub fn measure_prepared_with_clock<Input, Output, Prepare, Operation, Clock>(
+    config: MeasurementConfig,
+    mut prepare: Prepare,
+    mut operation: Operation,
+    mut clock: Clock,
+) -> Result<Measurement, BenchmarkError>
+where
+    Prepare: FnMut(usize) -> Vec<Input>,
+    Operation: FnMut(Input) -> Output,
+    Clock: FnMut() -> u64,
+{
+    run_prepared_batch(
+        config.warmup_count,
+        &mut prepare,
+        &mut operation,
+        None::<&mut Clock>,
+    )?;
+
+    let mut batch_count = 1;
+    loop {
+        let elapsed_ns =
+            run_prepared_batch(batch_count, &mut prepare, &mut operation, Some(&mut clock))?
+                .expect("a supplied clock produces elapsed time");
+        match next_batch_count(batch_count, elapsed_ns, config.target_sample_ns)? {
+            Some(next) => batch_count = next,
+            None => break,
+        }
+    }
+
+    let divisor = u64::try_from(batch_count).map_err(|_| BenchmarkError::BatchOverflow)?;
+    let mut samples_ns = Vec::with_capacity(config.sample_count);
+    for _ in 0..config.sample_count {
+        let elapsed_ns =
+            run_prepared_batch(batch_count, &mut prepare, &mut operation, Some(&mut clock))?
+                .expect("a supplied clock produces elapsed time");
+        samples_ns.push(elapsed_ns / divisor);
+    }
+
+    Ok(Measurement {
+        batch_count,
+        summary: summarize(samples_ns)?,
+    })
+}
+
+fn run_prepared_batch<Input, Output, Prepare, Operation, Clock>(
+    count: usize,
+    prepare: &mut Prepare,
+    operation: &mut Operation,
+    mut clock: Option<&mut Clock>,
+) -> Result<Option<u64>, BenchmarkError>
+where
+    Prepare: FnMut(usize) -> Vec<Input>,
+    Operation: FnMut(Input) -> Output,
+    Clock: FnMut() -> u64,
+{
+    let inputs = prepare(count);
+    if inputs.len() != count {
+        return Err(BenchmarkError::PreparationCountMismatch);
+    }
+    let started_ns = clock.as_mut().map(|clock| clock());
+    for input in inputs {
+        std::hint::black_box(operation(input));
+    }
+    match started_ns {
+        Some(started_ns) => clock.expect("clock is present when a start was recorded")()
+            .checked_sub(started_ns)
+            .map(Some)
+            .ok_or(BenchmarkError::ClockRegression),
+        None => Ok(None),
+    }
 }
 
 #[cfg(test)]
