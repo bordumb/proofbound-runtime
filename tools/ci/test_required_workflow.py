@@ -66,6 +66,7 @@ class RequiredWorkflowTests(unittest.TestCase):
 
         self.assertIn(
             "timed_unit performance-verifier-tests python3 -m unittest "
+            "experiments.performance.test_discover_runtime_libraries "
             "experiments.performance.test_verify_pure "
             "experiments.performance.test_verify_native",
             script,
