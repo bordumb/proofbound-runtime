@@ -108,9 +108,24 @@ eight downloaded immutable inventories passed the strengthened independent
 verifier, matching 144 of 144 registered cells. The retained identities and
 failure history are recorded in
 [`0001h-bypass-lifecycle-slice.md`](experiments/0001h-bypass-lifecycle-slice.md).
-The next experiment step is measurement, followed by deterministic comparison
-and the independently reviewed ADR.
-No production network implementation is authorized yet. The decision-grade
+The measurement slice is complete. At exact source
+`f78fd26338e6fe414ca5b8e5586bf8a99c804a9c`, GitHub Actions run
+[`34539937335`](https://github.com/bordumb/proofbound-runtime/actions/runs/34539937335)
+produced eight mechanism-and-architecture results. Every downloaded immutable
+inventory passed the independent verifier and retained 100 setup samples, 100
+request samples, and 1,000 of 1,000 successful lifecycle trials. The
+deterministic comparison then consumed all 32 independently verified results
+at exact source `085a8c8ea83e77ea5b704bb88f831f2fcce385bf`.
+Its producer and independent verifier reproduced canonical result SHA-256
+`2b42d8a5dfdc617bf6324db2ad26d0d5ff27c35730e3145c9aacad409deb7c1f`
+with `complete: true` and `verified: true`.
+
+[ADR 0004](adr/0004-authenticated-service-session.md) now proposes the
+connector-owned authenticated service session selected by that comparison.
+The ADR remains proposed and requires independent approval; its machine
+comparison deliberately retains `production_selection: null`. No production
+network implementation is authorized until that review gate is satisfied.
+The decision-grade
 execution protocol is frozen in
 [`0001e-decision-matrix-execution.md`](experiments/0001e-decision-matrix-execution.md),
 with three bounded functional slices, one measurement slice, a machine-checked
