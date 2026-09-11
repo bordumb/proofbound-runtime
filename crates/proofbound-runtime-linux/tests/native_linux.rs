@@ -738,6 +738,7 @@ mod linux {
             FreshCgroup::create(supported.cgroup_v2(), execution_id, limits.processes())
         }
         .expect("create fresh execution cgroup");
+        let cgroup_path = cgroup.path().to_owned();
         let PreparedCase {
             executable,
             working_directory,
@@ -758,7 +759,7 @@ mod linux {
         if let Some(readable) = &readable {
             inherited.push(readable.as_fd());
         }
-        supervise_launcher(
+        let execution = supervise_launcher(
             Path::new(env!("CARGO_BIN_EXE_pbr-native-launcher")),
             request,
             cgroup,
@@ -767,7 +768,12 @@ mod linux {
             supported.architecture(),
             supported.landlock_abi(),
         )
-        .expect("supervise native launcher")
+        .expect("supervise native launcher");
+        assert!(
+            !cgroup_path.exists(),
+            "terminal execution must remove its exact fresh cgroup"
+        );
+        execution
     }
 
     #[allow(clippy::too_many_arguments)]
