@@ -19,3 +19,4 @@ inevitable. Add a new ADR and mark the earlier record as superseded.
 | --- | --- | --- |
 | [0001](0001-linux-enforcement-boundary.md) | Use a native Linux enforcement boundary for version 1 | accepted |
 | [0002](0002-external-receipt-commitment.md) | Require an external receipt commitment | accepted |
+| [0003](0003-deterministic-cbor-wire-objects.md) | Encode committed version 2 wire objects as deterministic CBOR | accepted |

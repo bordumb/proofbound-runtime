@@ -127,6 +127,13 @@ sealed by a new approval-only envelope before the promotion PR can become a
 merge candidate. No Runtime claim wave depends on treating that pending stack
 as released.
 
+On 2026-09-10, [ADR 0003](adr/0003-deterministic-cbor-wire-objects.md) accepted
+deterministic CBOR for every committed version 2 or later wire object. The
+change lands inside the RT-1 version 2 cut rather than as a separate
+migration, so the binding-projection refinement and independent verifier are
+redone once. Version 1 contracts are unchanged. Memory implementation now
+also waits for the version 2 CDDL schemas and golden vectors.
+
 ## 1. Executive decision
 
 The next production capability should be a cgroup v2 memory boundary. The
@@ -403,6 +410,22 @@ without marking the generic request resolved. After each upstream change,
 record the exact Proofbound ADR, commit, PR, release, Runtime pin, and migration
 before changing its feedback status.
 
+### UP-0.8 Decide the release-envelope encoding upstream
+
+Runtime's [ADR 0003](adr/0003-deterministic-cbor-wire-objects.md) encodes every
+committed version 2 wire object as deterministic CBOR. The Proofbound release
+envelope, verification report, and observation-input manifest are canonical
+JSON today and are consumed by `pbr-compose`.
+
+- Decide in a Proofbound ADR whether those objects move to deterministic
+  CBOR. Record the decision before or with the UP-0.1 promotion so the
+  Runtime pin and the composer change together.
+- Make the Runtime composer accept exactly the encoding the pinned release
+  declares. It does not carry both encodings silently.
+- If Proofbound keeps canonical JSON for its envelope, record that as a
+  cross-project exception under the ADR 0003 revisit conditions rather than
+  reopening the Runtime decision.
+
 ## 6. Epic RT-0: make commits, PRs, and CI fast enough to sustain PDD
 
 This epic changes delivery mechanics, not evidence meaning.
@@ -540,6 +563,10 @@ the [cgroup v2 documentation](https://www.kernel.org/doc/html/latest/admin-guide
   schemas are closed; do not silently add fields to them.
 - Decide whether new executions require plan version 2 while the verifier
   continues to validate historical version 1 receipts.
+- Encode every version 2 wire object as deterministic CBOR under
+  [ADR 0003](adr/0003-deterministic-cbor-wire-objects.md). Write the closed
+  CDDL schemas and golden vectors before production code. Version 1
+  canonical JSON is not converted.
 - Define `MemoryByteLimit` and `SwapByteLimit` as validated newtypes. State
   units, minimums, maximums, and whether swap zero is required or selectable.
 - Define whether `memory.high` is excluded. It is a throttle, not the hard
@@ -556,8 +583,10 @@ the [cgroup v2 documentation](https://www.kernel.org/doc/html/latest/admin-guide
 - Add typed memory and swap limits to `ResourceLimits` and every subset check.
 - Extend canonical normalization and normalized-plan identity.
 - Extend `CgroupPolicy` and installed-policy identity.
-- Update plan conformance vectors, schemas, independent reference code, Kani
-  domains, Lean model, translated source closure, and refinement theorem.
+- Update plan conformance vectors, CDDL schemas and golden vectors,
+  independent reference code, Kani domains, Lean model, translated source
+  closure, and refinement theorem, including the version 2 canonical wire
+  projection under ADR 0003.
 - Add negative cases for zero, overflow, missing fields, version downgrade,
   and more-permissive normalization.
 - Retain the local bounded-domain consistency guard added at `9154c7f` until a
@@ -601,6 +630,8 @@ the [cgroup v2 documentation](https://www.kernel.org/doc/html/latest/admin-guide
 ### RT-1.5 Publish only the admitted result
 
 - Update `doctor`, `plan check`, `run`, `inspect`, and both verifiers.
+  `inspect` and machine results print the JSON projection of decoded
+  version 2 objects; the projection is never a verification input.
 - Update the quick start and examples with explicit memory and swap values.
 - Update the release composer for the new receipt schema without reinterpreting
   historical receipts.
@@ -933,6 +964,9 @@ Every security-relevant Runtime epic must use the same merge checklist:
    additions.
 9. Reproduce and observe both native release contexts at the merge SHA.
 10. Publish only the language admitted by the compiled evidence.
+11. Encode any new committed wire object as deterministic CBOR under
+    [ADR 0003](adr/0003-deterministic-cbor-wire-objects.md), and define it by
+    CDDL and golden vectors before code.
 
 No optimization may:
 

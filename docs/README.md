@@ -74,6 +74,8 @@ NOT silently broaden or narrow it.
 
 - [ADR index](adr/README.md)
 - [ADR 0001: Linux enforcement boundary](adr/0001-linux-enforcement-boundary.md)
+- [ADR 0002: External receipt commitment](adr/0002-external-receipt-commitment.md)
+- [ADR 0003: Deterministic CBOR for committed wire objects](adr/0003-deterministic-cbor-wire-objects.md)
 
 Accepted trust-boundary and architecture decisions belong in `docs/adr/`.
 ADRs explain why a decision exists and what would justify revisiting it.

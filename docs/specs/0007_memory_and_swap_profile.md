@@ -55,6 +55,15 @@ The version 1 plan and receipt schemas are closed. This change introduces:
 - `proofbound-runtime-linux-policy/2`; and
 - `proofbound-runtime-execution-receipt/2`.
 
+Under [ADR 0003](../adr/0003-deterministic-cbor-wire-objects.md), each
+version 2 object is deterministic CBOR defined by a closed CDDL schema with
+golden vectors. The ADR's text-versus-integer map-key decision remains an
+explicit owner gate; no version 2 schema, vector, or codec may land before it
+is resolved. The version 1 canonical JSON contracts are unchanged and are not
+converted. `inspect` and machine results print a JSON projection of the
+decoded object; the projection is not a wire object and is never a
+verification input.
+
 Version 0.2 execution commands accept only plan version 2. `plan check`,
 `preflight`, and `run` reject a version 1 plan with
 `plan.schema.execution-obsolete`; they do not fill in implicit limits. A
@@ -269,8 +278,9 @@ a digest alone do not close the release-artifact obligation.
 This draft must receive explicit review before production code changes the
 plan, policy, launcher, boundary, or receipt. Review must resolve at least the
 64 KiB quantum and maximum values, required kernel/file baseline, event-key
-compatibility, version 1 execution migration, and the exact version 2 receipt
-schema.
+compatibility, version 1 execution migration, the exact version 2 receipt
+schema, and the version 2 CDDL schemas and golden vectors required by
+[ADR 0003](../adr/0003-deterministic-cbor-wire-objects.md).
 
 Even after implementation, the public claim must retain Linux kernel and host
 assumptions, temporary-overshoot semantics, allocation classes that do not
