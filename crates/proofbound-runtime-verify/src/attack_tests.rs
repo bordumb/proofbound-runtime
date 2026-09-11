@@ -22,6 +22,20 @@ struct AttackCase {
     expected_error: String,
 }
 
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ResourceAttackCatalog {
+    schema: String,
+    cases: Vec<ResourceAttackCase>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ResourceAttackCase {
+    id: String,
+    path: String,
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 enum Detection {
@@ -35,6 +49,46 @@ fn catalog() -> AttackCatalog {
         "../../../tests/attacks/receipt/receipt-v1.toml"
     ))
     .expect("receipt carrier attack catalog is valid")
+}
+
+fn resource_catalog() -> ResourceAttackCatalog {
+    toml::from_str(include_str!(
+        "../../../tests/attacks/receipt/resources-v2.toml"
+    ))
+    .expect("version 2 resource attack catalog is valid")
+}
+
+#[test]
+fn frozen_v2_resource_attack_catalog_is_closed() {
+    let expected = [
+        "configured-processes",
+        "configured-memory",
+        "configured-swap",
+        "configured-oom-group",
+        "terminal-memory-peak",
+        "terminal-swap-peak",
+        "terminal-memory-low",
+        "terminal-memory-high",
+        "terminal-memory-max",
+        "terminal-memory-oom",
+        "terminal-memory-oom-kill",
+        "terminal-memory-oom-group-kill",
+        "terminal-swap-max",
+        "terminal-swap-fail",
+        "derived-limit-events",
+        "derived-outcome",
+        "derived-nonreuse-reason",
+    ];
+    let catalog = resource_catalog();
+    assert_eq!(
+        catalog.schema,
+        "proofbound-runtime-receipt-resource-attacks/2"
+    );
+    assert_eq!(catalog.cases.len(), expected.len());
+    for (case, expected_id) in catalog.cases.iter().zip(expected) {
+        assert_eq!(case.id, expected_id);
+        assert!(!case.path.is_empty());
+    }
 }
 
 #[test]
