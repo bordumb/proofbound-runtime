@@ -21,6 +21,41 @@ DIST_INFO = "proofbound_runtime_sdk-0.2.0.dist-info"
 
 
 class SdkPackageTests(unittest.TestCase):
+    def test_rust_sdk_is_independently_packageable(self) -> None:
+        manifest = (
+            ROOT / "crates/proofbound-runtime-sdk/Cargo.toml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("publish = true", manifest)
+        self.assertNotIn("proofbound-runtime-core", manifest)
+        result = subprocess.run(
+            [
+                "cargo",
+                "package",
+                "--locked",
+                "--allow-dirty",
+                "--no-verify",
+                "--list",
+                "-p",
+                "proofbound-runtime-sdk",
+            ],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(
+            result.stdout.splitlines(),
+            [
+                ".cargo_vcs_info.json",
+                ".cargo_vcs_info.json.orig",
+                "Cargo.lock",
+                "Cargo.toml",
+                "Cargo.toml.orig",
+                "src/lib.rs",
+            ],
+        )
+
     def test_python_wheel_is_reproducible_and_closed(self) -> None:
         with tempfile.TemporaryDirectory() as first, tempfile.TemporaryDirectory() as second:
             artifacts = []
