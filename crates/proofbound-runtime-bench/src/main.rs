@@ -52,6 +52,7 @@ impl CliError {
                 BenchmarkError::DirtyTree => "benchmark.tree.dirty",
                 BenchmarkError::InvalidToolchain => "benchmark.toolchain.invalid",
                 BenchmarkError::InvalidBuildProfile => "benchmark.build-profile.invalid",
+                BenchmarkError::ConfigurationMismatch => "benchmark.configuration.mismatch",
             },
         }
     }
@@ -104,6 +105,7 @@ fn run(
         toolchain,
         BUILD_PROFILE,
         std::env::consts::ARCH.to_owned(),
+        config,
         subjects,
     )?;
     output

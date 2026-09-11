@@ -47,6 +47,8 @@ pub enum BenchmarkError {
     InvalidToolchain,
     /// The benchmark binary was not built with the frozen release profile.
     InvalidBuildProfile,
+    /// Retained samples disagree with the declared measurement protocol.
+    ConfigurationMismatch,
 }
 
 impl fmt::Display for BenchmarkError {
@@ -68,6 +70,7 @@ impl fmt::Display for BenchmarkError {
             Self::DirtyTree => "benchmark.tree.dirty",
             Self::InvalidToolchain => "benchmark.toolchain.invalid",
             Self::InvalidBuildProfile => "benchmark.build-profile.invalid",
+            Self::ConfigurationMismatch => "benchmark.configuration.mismatch",
         })
     }
 }
@@ -92,7 +95,7 @@ pub struct Summary {
 }
 
 /// Frozen controls for one measured operation.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 pub struct MeasurementConfig {
     warmup_count: usize,
     sample_count: usize,
@@ -207,6 +210,7 @@ pub struct PureBenchmarkResult {
     toolchain: ToolchainIdentity,
     build_profile: &'static str,
     architecture: String,
+    protocol: MeasurementConfig,
     subjects: Vec<PureSubjectResult>,
 }
 
@@ -218,6 +222,7 @@ impl PureBenchmarkResult {
         toolchain: ToolchainIdentity,
         build_profile: &'static str,
         architecture: String,
+        protocol: MeasurementConfig,
         mut subjects: Vec<PureSubjectResult>,
     ) -> Result<Self, BenchmarkError> {
         if !is_lower_hex_exact(&benchmark_executable_sha256, 64) {
@@ -235,6 +240,13 @@ impl PureBenchmarkResult {
         {
             return Err(BenchmarkError::SubjectDomainMismatch);
         }
+        if subjects.iter().any(|subject| {
+            subject.measurement.batch_count == 0
+                || subject.measurement.summary.count != protocol.sample_count
+                || subject.measurement.summary.samples_ns.len() != protocol.sample_count
+        }) {
+            return Err(BenchmarkError::ConfigurationMismatch);
+        }
         Ok(Self {
             schema: "proofbound-runtime-performance-result/1",
             kind: "pure",
@@ -244,6 +256,7 @@ impl PureBenchmarkResult {
             toolchain,
             build_profile,
             architecture,
+            protocol,
             subjects,
         })
     }
@@ -928,8 +941,7 @@ mod tests {
         ];
         assert_eq!(
             make(
-                SourceRevision::new(&revision, &revision, "")
-                    .expect("source is valid"),
+                SourceRevision::new(&revision, &revision, "").expect("source is valid"),
                 "b".repeat(64),
                 "release",
                 MeasurementConfig::new(1, 3, 1).expect("config is valid"),
