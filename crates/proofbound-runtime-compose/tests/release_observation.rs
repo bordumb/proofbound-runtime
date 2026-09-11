@@ -49,6 +49,17 @@ fn read_json(path: &Path) -> Value {
         .expect("observation input is valid JSON")
 }
 
+fn inspect_execution_receipt(bundle: &Path, evidence: &Path) -> Value {
+    let output = Command::new(bundle.join("pbr"))
+        .arg("inspect")
+        .arg(evidence.join("execution-receipt.cbor"))
+        .output()
+        .expect("release runtime inspects the execution receipt");
+    assert!(output.status.success());
+    assert!(output.stderr.is_empty());
+    serde_json::from_slice(&output.stdout).expect("receipt projection is JSON")
+}
+
 fn digest(bytes: &[u8]) -> String {
     Sha256::digest(bytes)
         .iter()
@@ -116,7 +127,7 @@ fn assert_version(binary: &Path, name: &str) {
 fn observes_runtime_release() {
     let (architecture, bundle, evidence) = release_paths();
     let (digest, size) = assert_manifest_artifact(&bundle, "pbr");
-    let receipt = read_json(&evidence.join("execution-receipt.json"));
+    let receipt = inspect_execution_receipt(&bundle, &evidence);
     assert_eq!(receipt["platform"]["architecture"], architecture);
     assert_receipt_artifact(
         &receipt["runtime"]["runtime"],
@@ -132,7 +143,7 @@ fn observes_runtime_release() {
 fn observes_launcher_release() {
     let (architecture, bundle, evidence) = release_paths();
     let (digest, size) = assert_manifest_artifact(&bundle, "pbr-native-launcher");
-    let receipt = read_json(&evidence.join("execution-receipt.json"));
+    let receipt = inspect_execution_receipt(&bundle, &evidence);
     assert_eq!(receipt["platform"]["architecture"], architecture);
     assert_receipt_artifact(
         &receipt["runtime"]["launcher"],
@@ -151,7 +162,7 @@ fn observes_verifier_release() {
     let output = Command::new(bundle.join("pbr-verify"))
         .arg("--expected-commitment")
         .arg(commitment.trim())
-        .arg(evidence.join("execution-receipt.json"))
+        .arg(evidence.join("execution-receipt.cbor"))
         .output()
         .expect("release verifier executes");
     assert!(output.status.success());

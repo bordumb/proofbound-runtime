@@ -66,8 +66,11 @@ class ReleaseWorkflowTests(unittest.TestCase):
         )
         self.assertIn('--output "$evidence_directory/composed-receipt.cbor"', workflow)
         self.assertIn(
-            'pbr-compose" inspect "$evidence_directory/composed-receipt.cbor"',
+            '"$runtime_directory/pbr-compose" inspect',
             workflow,
+        )
+        self.assertGreaterEqual(
+            workflow.count('"$evidence_directory/composed-receipt.cbor"'), 2
         )
         self.assertIn("composed-receipt.projection.json", workflow)
         self.assertNotIn("execution-receipt.json", workflow)

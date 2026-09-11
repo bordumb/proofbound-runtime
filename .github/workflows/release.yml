@@ -197,10 +197,14 @@ jobs:
             --proofbound-verifier "$proofbound_release/bin/proofbound-verify" \
             --proofbound-observation-inputs "$evidence_directory/proofbound-observation-inputs.json" \
             --runtime-bundle "$runtime_directory" \
-            --execution-receipt "$evidence_directory/execution-receipt.json" \
+            --execution-receipt "$evidence_directory/execution-receipt.cbor" \
             --execution-commitment "$commitment" \
             --expected-execution-id "$execution_id" \
-            --output "$evidence_directory/composed-receipt.json"
+            --output "$evidence_directory/composed-receipt.cbor" \
+            >"$evidence_directory/composition-result.json"
+          "$runtime_directory/pbr-compose" inspect \
+            "$evidence_directory/composed-receipt.cbor" \
+            >"$evidence_directory/composed-receipt.projection.json"
 
       - name: Confirm the complete observed release chain
         run: |
@@ -209,7 +213,7 @@ jobs:
             "${{ matrix.architecture }}" \
             "${{ matrix.context }}" \
             "dist/assurance/${{ matrix.architecture }}/proofbound-release.verification.json" \
-            "dist/native-evidence/${{ matrix.architecture }}/composed-receipt.json" \
+            "dist/native-evidence/${{ matrix.architecture }}/composed-receipt.projection.json" \
             "dist/assurance/${{ matrix.architecture }}/proofbound-release/compiled-receipt.json" \
             "dist/release-observation/${{ matrix.architecture }}/RELEASE-MANIFEST.json" <<'PY'
           import json
@@ -228,9 +232,9 @@ jobs:
           assert compiled["schema"] == "proofbound-compiled-release/6"
           assert compiled["project_revision"] == revision
           assert compiled["evidence_context"] == context
-          assert receipt["schema"] == "proofbound-runtime-composed-receipt/1"
+          assert receipt["schema"] == "proofbound-runtime-composed-receipt/2"
           assert receipt["eligibility"] == {"status": "composed"}
-          assert receipt["release"]["project_revision"] == revision
+          assert receipt["release"]["project_revision"] == f"hex:{revision}"
           assert receipt["release"]["evidence_context"] == context
           assert receipt["release"]["verification_verdict"] == "bytes-observed"
           assert receipt["runtime_bundle"]["architecture"] == architecture

@@ -19,7 +19,7 @@ const INVALID_INPUT: u8 = 2;
 const VERIFICATION_FAILED: u8 = 7;
 const MAX_INPUT_BYTES: u64 = 64 * 1024 * 1024;
 const MAX_VERIFIER_OUTPUT_BYTES: usize = 16 * 1024 * 1024;
-const HELP: &str = "usage: pbr-compose --release <directory> --proofbound-verifier <path> --proofbound-observation-inputs <path> --runtime-bundle <directory> --execution-receipt <path> --execution-commitment sha256:<digest> --expected-execution-id <uuid> --output <absent-path>";
+const HELP: &str = "usage: pbr-compose --release <directory> --proofbound-verifier <path> --proofbound-observation-inputs <path> --runtime-bundle <directory> --execution-receipt <path> --execution-commitment sha256:<digest> --expected-execution-id <uuid> --output <absent-path>\n       pbr-compose inspect <composed-receipt>";
 
 fn main() -> ExitCode {
     let mut stdout = io::stdout().lock();
@@ -74,6 +74,14 @@ fn run_inner(args: Vec<OsString>) -> Result<Option<String>, CliError> {
     }
     if args.len() == 2 && args[1] == "--version" {
         return Ok(Some(format!("pbr-compose {}", env!("CARGO_PKG_VERSION"))));
+    }
+    if args.len() == 3 && args[1] == "inspect" {
+        let bytes = read_regular(Path::new(&args[2]))?;
+        let projection = project_composed_receipt(&bytes)
+            .map_err(|_| CliError::verification("composition.schema.invalid"))?;
+        return serde_json::to_string(&projection)
+            .map(Some)
+            .map_err(|_| CliError::invalid("composition.output.write-failed"));
     }
     let args = parse_args(&args)?;
     require_directory(&args.release)?;
@@ -426,6 +434,51 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn inspect_projects_the_frozen_version_two_composed_receipt() {
+        let directory = std::env::temp_dir().join(format!(
+            "proofbound-runtime-compose-inspect-test-{}",
+            std::process::id()
+        ));
+        let _ignored = fs::remove_dir_all(&directory);
+        fs::create_dir(&directory).expect("test directory is created");
+        let receipt = directory.join("composed-receipt.cbor");
+        let bytes = include_str!("../../../schemas/vectors/v2/composed-receipt.cbor.hex")
+            .trim()
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| {
+                u8::from_str_radix(std::str::from_utf8(pair).expect("hex pair"), 16)
+                    .expect("golden hex")
+            })
+            .collect::<Vec<_>>();
+        fs::write(&receipt, bytes).expect("write composed receipt fixture");
+        let expected = serde_json::from_str::<serde_json::Value>(include_str!(
+            "../../../schemas/vectors/v2/composed-receipt.projection.json"
+        ))
+        .expect("golden projection parses");
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+        assert_eq!(
+            run(
+                vec![
+                    OsString::from("pbr-compose"),
+                    OsString::from("inspect"),
+                    receipt.into_os_string(),
+                ],
+                &mut stdout,
+                &mut stderr,
+            ),
+            SUCCESS
+        );
+        assert!(stderr.is_empty());
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&stdout).expect("projection JSON"),
+            expected
+        );
+        fs::remove_dir_all(directory).expect("test directory is removed");
     }
 
     #[test]
