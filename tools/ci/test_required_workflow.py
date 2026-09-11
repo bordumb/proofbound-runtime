@@ -57,6 +57,15 @@ class RequiredWorkflowTests(unittest.TestCase):
         self.assertIn('stage="${1:-all}"', script)
         self.assertIn('all|preflight|rust|formal', script)
 
+    def test_preflight_runs_independent_performance_verifier_falsifiers(self) -> None:
+        script = CI_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "timed_unit performance-verifier-tests python3 -m unittest "
+            "experiments.performance.test_verify_pure",
+            script,
+        )
+
     def test_each_lane_uploads_timing_outside_assurance_evidence(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
