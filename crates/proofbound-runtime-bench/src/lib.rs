@@ -20,7 +20,7 @@ use proofbound_runtime_core::{
     construct_execution_receipt, normalize_authority, parse_execution_plan,
 };
 use proofbound_runtime_verify::{ReceiptCommitment, verify_receipt};
-use serde::Serialize;
+use serde::{Serialize, Serializer};
 use sha2::{Digest, Sha256};
 
 /// One closed benchmark-harness failure.
@@ -150,10 +150,21 @@ pub struct Measurement {
 }
 
 /// One native phase and the summary across fresh executions.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct NativePhaseResult {
+    #[serde(serialize_with = "serialize_run_phase")]
     phase: RunBenchmarkPhase,
     summary: Summary,
+}
+
+fn serialize_run_phase<Output>(
+    phase: &RunBenchmarkPhase,
+    serializer: Output,
+) -> Result<Output::Ok, Output::Error>
+where
+    Output: Serializer,
+{
+    serializer.serialize_str(phase.as_str())
 }
 
 impl NativePhaseResult {
@@ -171,7 +182,7 @@ impl NativePhaseResult {
 }
 
 /// One execution's phase durations before cross-run sorting.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct NativeRunSample {
     total_ns: u64,
     phase_samples_ns: [u64; RunBenchmarkPhase::ALL.len()],
@@ -198,7 +209,7 @@ impl NativeRunSample {
 }
 
 /// Complete total and per-phase observations for fresh native executions.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct NativeMeasurements {
     runs: Vec<NativeRunSample>,
     total: Summary,
@@ -1489,7 +1500,10 @@ mod tests {
             encoded["phases"][0]["phase"],
             "plan-validation-and-normalization-v1"
         );
-        assert_eq!(encoded["phases"][0]["summary"]["samples_ns"], serde_json::json!([1, 2]));
+        assert_eq!(
+            encoded["phases"][0]["summary"]["samples_ns"],
+            serde_json::json!([1, 2])
+        );
         assert_eq!(summarize_native_runs(&[]), Err(BenchmarkError::EmptySeries));
     }
 }
