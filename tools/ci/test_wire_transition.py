@@ -216,6 +216,41 @@ class WireTransitionTests(unittest.TestCase):
             ).read_text(encoding="utf-8")
             self.assertIn('"PBR-RESOURCE-010"', source)
 
+    def test_effectful_claims_close_over_the_v2_wire_implementation(self) -> None:
+        run = (REPOSITORY_ROOT / "claims/PBR-RUN-007.toml").read_text(
+            encoding="utf-8"
+        )
+        verifier = (REPOSITORY_ROOT / "claims/PBR-VERIFY-006.toml").read_text(
+            encoding="utf-8"
+        )
+        composer = (REPOSITORY_ROOT / "claims/PBR-COMPOSE-008.toml").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertNotIn(
+            "Receipt properties not represented by the version 1 schema.", run
+        )
+        for required in (
+            "docs/specs/0007_memory_and_swap_profile.md",
+            "schemas/execution-plan-v2.cddl",
+            "schemas/run-result-v2.cddl",
+            "schemas/execution-receipt-v2.cddl",
+        ):
+            self.assertIn(f'"{required}"', run)
+        for required in (
+            "crates/proofbound-runtime-verify/src/cbor.rs",
+            "crates/proofbound-runtime-verify/src/decode_v2.rs",
+            "schemas/execution-receipt-v2.cddl",
+            "tests/attacks/receipt/resources-v2.toml",
+        ):
+            self.assertIn(f'"{required}"', verifier)
+        for required in (
+            "crates/proofbound-runtime-compose/src/cbor_decode.rs",
+            "crates/proofbound-runtime-compose/src/cbor_encode.rs",
+            "schemas/composed-receipt-v2.cddl",
+        ):
+            self.assertIn(f'"{required}"', composer)
+
     def test_v2_receipt_resources_cross_the_proven_binding_boundary(self) -> None:
         binding = (
             REPOSITORY_ROOT / "crates/proofbound-runtime-binding/src/lib.rs"
