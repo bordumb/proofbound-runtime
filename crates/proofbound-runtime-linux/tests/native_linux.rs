@@ -47,9 +47,10 @@ fn native_memory_catalog_is_closed() {
         "oom-cleanup-exact",
         "receipt-resource-mutations-rejected",
     ];
-    assert!(MEMORY_ATTACK_CATALOG.starts_with(
-        "schema = \"proofbound-runtime-native-memory-attacks/2\""
-    ));
+    assert!(
+        MEMORY_ATTACK_CATALOG
+            .starts_with("schema = \"proofbound-runtime-native-memory-attacks/2\"")
+    );
     assert_eq!(
         MEMORY_ATTACK_CATALOG.matches("[[case]]").count(),
         expected.len()
@@ -84,14 +85,16 @@ fn native_memory_workload_modes_are_closed() {
 #[cfg(target_os = "linux")]
 mod linux {
     use std::collections::BTreeMap;
-    use std::fs::File;
+    use std::fs::{File, OpenOptions};
+    use std::io::Write as _;
     use std::os::fd::{AsFd as _, AsRawFd as _};
     use std::path::{Path, PathBuf};
     use std::sync::atomic::{AtomicU8, Ordering};
 
     use proofbound_runtime_core::{
         ArtifactRole, AuthorityPath, BoundaryInstallation, ExecutionId, ExecutionOutcome,
-        OutputByteLimit, ProcessLimit, ResourceLimits, Sha256Digest, StreamCapture, WallTimeLimit,
+        LimitEvent, MemoryByteLimit, OutputByteLimit, ProcessLimit, ResourceLimits, Sha256Digest,
+        StreamCapture, SwapByteLimit, WallTimeLimit,
     };
     use proofbound_runtime_linux::{
         FreshCgroup, InstallRequest, LandlockAccess, LauncherFilesystemRule, LauncherIdentity,
@@ -261,6 +264,152 @@ mod linux {
     }
 
     #[test]
+    fn production_launcher_enforces_native_memory_corpus() {
+        let required = std::env::var_os("PROOFBOUND_NATIVE_REQUIRED").is_some();
+        let (Some(cgroup_root), Some(fixture)) = (
+            std::env::var_os("PROOFBOUND_CGROUP_ROOT"),
+            std::env::var_os("PROOFBOUND_NATIVE_FIXTURE"),
+        ) else {
+            assert!(!required, "native corpus configuration is required");
+            return;
+        };
+        let supported = probe_capabilities(Path::new(&cgroup_root))
+            .require_supported()
+            .expect("identified native host must satisfy the complete capability profile");
+        let fixture = PathBuf::from(fixture);
+        let workspace = create_fixture_directory();
+        let memory_file = workspace.0.join("memory.bin");
+        write_memory_file(&memory_file, 16 * 1024 * 1024);
+
+        let anonymous = run_v2_case(
+            &supported,
+            &fixture,
+            &workspace.0,
+            "memory-anonymous",
+            &["16777216"],
+            None,
+            1,
+            128 * 1024 * 1024,
+            0,
+            5_000,
+        );
+        assert_eq!(anonymous.boundary(), BoundaryInstallation::Installed);
+        assert_outcome(&anonymous, ExecutionOutcome::Exited { code: 0 });
+        assert_eq!(anonymous.stdout().bytes(), b"anonymous-accounted\n");
+        assert_accounted_without_limit_event(&anonymous);
+
+        drop_file_cache(&memory_file);
+        let mapped = run_v2_case(
+            &supported,
+            &fixture,
+            &workspace.0,
+            "memory-mapped-file",
+            &["memory.bin"],
+            Some("memory.bin"),
+            1,
+            128 * 1024 * 1024,
+            0,
+            5_000,
+        );
+        assert_outcome(&mapped, ExecutionOutcome::Exited { code: 0 });
+        assert_eq!(mapped.stdout().bytes(), b"mapped-file-accounted\n");
+        assert_accounted_without_limit_event(&mapped);
+
+        drop_file_cache(&memory_file);
+        let page_cache = run_v2_case(
+            &supported,
+            &fixture,
+            &workspace.0,
+            "memory-page-cache",
+            &["memory.bin"],
+            Some("memory.bin"),
+            1,
+            128 * 1024 * 1024,
+            0,
+            5_000,
+        );
+        assert_outcome(&page_cache, ExecutionOutcome::Exited { code: 0 });
+        assert_eq!(page_cache.stdout().bytes(), b"page-cache-accounted\n");
+        assert_accounted_without_limit_event(&page_cache);
+
+        let shared = run_v2_case(
+            &supported,
+            &fixture,
+            &workspace.0,
+            "memory-shared",
+            &["16777216"],
+            None,
+            1,
+            128 * 1024 * 1024,
+            0,
+            5_000,
+        );
+        assert_outcome(&shared, ExecutionOutcome::Exited { code: 0 });
+        assert_eq!(shared.stdout().bytes(), b"shared-memory-accounted\n");
+        assert_accounted_without_limit_event(&shared);
+
+        let single_oom = run_v2_case(
+            &supported,
+            &fixture,
+            &workspace.0,
+            "memory-over-limit",
+            &["8388608"],
+            None,
+            1,
+            64 * 1024 * 1024,
+            0,
+            10_000,
+        );
+        assert_eq!(single_oom.boundary(), BoundaryInstallation::Installed);
+        assert_memory_denial(&single_oom);
+
+        let mut sibling = std::process::Command::new("sleep")
+            .arg("30")
+            .spawn()
+            .expect("spawn supervisor-cgroup sibling");
+        let process_tree_oom = run_v2_case(
+            &supported,
+            &fixture,
+            &workspace.0,
+            "memory-process-tree-over-limit",
+            &["4194304", "3"],
+            None,
+            4,
+            64 * 1024 * 1024,
+            0,
+            10_000,
+        );
+        assert_memory_denial(&process_tree_oom);
+        assert!(
+            sibling.try_wait().expect("inspect sibling").is_none(),
+            "workload OOM selection must not kill a supervisor-cgroup sibling"
+        );
+        sibling.kill().expect("stop sibling");
+        sibling.wait().expect("reap sibling");
+
+        let timeout = run_v2_case(
+            &supported,
+            &fixture,
+            &workspace.0,
+            "memory-pressure-timeout",
+            &["16777216"],
+            None,
+            1,
+            128 * 1024 * 1024,
+            0,
+            50,
+        );
+        assert_outcome(&timeout, ExecutionOutcome::TimedOut);
+        assert!(
+            timeout
+                .resources()
+                .expect("v2 timeout observations")
+                .memory_peak_bytes()
+                > 0
+        );
+    }
+
+    #[test]
     fn discovers_and_retains_the_native_shell_executable_closure() {
         let architecture = if cfg!(target_arch = "x86_64") {
             proofbound_runtime_linux::Architecture::X86_64
@@ -352,6 +501,31 @@ mod linux {
         assert_eq!(execution.outcome(), expected, "{execution:#?}");
     }
 
+    fn assert_accounted_without_limit_event(
+        execution: &proofbound_runtime_linux::SupervisedExecution,
+    ) {
+        let resources = execution.resources().expect("v2 resource observations");
+        assert!(
+            resources.memory_peak_bytes() >= 1024 * 1024,
+            "{execution:#?}"
+        );
+        assert!(resources.limit_events().is_empty(), "{execution:#?}");
+        assert_eq!(resources.swap_peak_bytes(), 0, "{execution:#?}");
+    }
+
+    fn assert_memory_denial(execution: &proofbound_runtime_linux::SupervisedExecution) {
+        let resources = execution.resources().expect("v2 resource observations");
+        assert!(
+            resources.limit_events().contains(LimitEvent::MemoryMax),
+            "{execution:#?}"
+        );
+        assert!(
+            resources.memory_events().oom_kill() > 0
+                || execution.stdout().bytes() == b"allocation-denied\n",
+            "{execution:#?}"
+        );
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn run_case(
         supported: &SupportedLinux,
@@ -363,6 +537,65 @@ mod linux {
         process_limit: u32,
         stdout_limit: u64,
         wall_time_ms: u64,
+    ) -> proofbound_runtime_linux::SupervisedExecution {
+        let limits = ResourceLimits::new(
+            ProcessLimit::new(process_limit).expect("nonzero process limit"),
+            WallTimeLimit::from_milliseconds(wall_time_ms).expect("nonzero wall time"),
+            OutputByteLimit::new(stdout_limit),
+            OutputByteLimit::new(1024),
+        );
+        run_case_with_limits(
+            supported,
+            fixture,
+            workspace,
+            case,
+            case_arguments,
+            readable_file,
+            limits,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn run_v2_case(
+        supported: &SupportedLinux,
+        fixture: &Path,
+        workspace: &Path,
+        case: &str,
+        case_arguments: &[&str],
+        readable_file: Option<&str>,
+        process_limit: u32,
+        memory_bytes: u64,
+        swap_bytes: u64,
+        wall_time_ms: u64,
+    ) -> proofbound_runtime_linux::SupervisedExecution {
+        let limits = ResourceLimits::new_v2(
+            ProcessLimit::new(process_limit).expect("nonzero process limit"),
+            WallTimeLimit::from_milliseconds(wall_time_ms).expect("nonzero wall time"),
+            OutputByteLimit::new(1024),
+            OutputByteLimit::new(1024),
+            MemoryByteLimit::new(memory_bytes).expect("valid memory limit"),
+            SwapByteLimit::new(swap_bytes).expect("valid swap limit"),
+        );
+        run_case_with_limits(
+            supported,
+            fixture,
+            workspace,
+            case,
+            case_arguments,
+            readable_file,
+            limits,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn run_case_with_limits(
+        supported: &SupportedLinux,
+        fixture: &Path,
+        workspace: &Path,
+        case: &str,
+        case_arguments: &[&str],
+        readable_file: Option<&str>,
+        limits: ResourceLimits,
     ) -> proofbound_runtime_linux::SupervisedExecution {
         let resolver = RootedPathResolver::open(workspace).expect("open fixture root");
         let fixture_authority = AuthorityPath::new(
@@ -400,14 +633,12 @@ mod linux {
         });
 
         let execution_id = execution_id();
-        let limits = ResourceLimits::new(
-            ProcessLimit::new(process_limit).expect("nonzero process limit"),
-            WallTimeLimit::from_milliseconds(wall_time_ms).expect("nonzero wall time"),
-            OutputByteLimit::new(stdout_limit),
-            OutputByteLimit::new(1024),
-        );
-        let cgroup = FreshCgroup::create(supported.cgroup_v2(), execution_id, limits.processes())
-            .expect("create fresh execution cgroup");
+        let cgroup = if limits.memory().is_some() {
+            FreshCgroup::create_v2(supported.cgroup_v2(), execution_id, limits)
+        } else {
+            FreshCgroup::create(supported.cgroup_v2(), execution_id, limits.processes())
+        }
+        .expect("create fresh execution cgroup");
         let seccomp = compile_deny_network_program(
             proofbound_runtime_core::SeccompPolicy::DenyNetworkV1,
             supported.architecture(),
@@ -494,5 +725,28 @@ mod linux {
             std::env::temp_dir().join(format!("proofbound-runtime-native-{}", std::process::id()));
         std::fs::create_dir(&path).expect("create unique native fixture directory");
         FixtureDirectory(path)
+    }
+
+    fn write_memory_file(path: &Path, size: usize) {
+        let mut file = OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(path)
+            .expect("create memory-accounting fixture");
+        let block = vec![0x5a; 64 * 1024];
+        for _ in 0..(size / block.len()) {
+            file.write_all(&block)
+                .expect("write memory-accounting fixture");
+        }
+        file.sync_all().expect("sync memory-accounting fixture");
+    }
+
+    fn drop_file_cache(path: &Path) {
+        let file = File::open(path).expect("open memory-accounting fixture");
+        // SAFETY: the descriptor is live and the offset/length request covers
+        // the file without exposing memory to libc.
+        let result =
+            unsafe { libc::posix_fadvise(file.as_raw_fd(), 0, 0, libc::POSIX_FADV_DONTNEED) };
+        assert_eq!(result, 0, "drop fixture pages before cgroup accounting");
     }
 }
