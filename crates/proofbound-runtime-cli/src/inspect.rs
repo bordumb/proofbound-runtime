@@ -194,6 +194,16 @@ mod tests {
             projection["schema"],
             "proofbound-runtime-execution-receipt/2"
         );
-        assert!(projection.get("resources").is_some());
+        let resources = &projection["resources"];
+        assert_eq!(resources["configured"]["memory.max"], "65536");
+        assert_eq!(resources["configured"]["memory.swap.max"], "0");
+        assert_eq!(resources["terminal"]["memory_peak_bytes"], "32768");
+        assert_eq!(resources["terminal"]["swap_peak_bytes"], "0");
+        for name in ["low", "high", "max", "oom", "oom_kill", "oom_group_kill"] {
+            assert_eq!(resources["terminal"]["memory_events"][name], "0");
+        }
+        for name in ["max", "fail"] {
+            assert_eq!(resources["terminal"]["swap_events"][name], "0");
+        }
     }
 }
