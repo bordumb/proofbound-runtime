@@ -981,25 +981,7 @@ mod tests {
     }
 
     #[test]
-    fn assumption_loss_and_forged_acceptance_fail_closed() {
-        let policy_bytes = bytes_from_hex(include_str!(
-            "../../../schemas/vectors/v2/acceptance-policy.cbor.hex"
-        ));
-        let identity = domain_digest(POLICY_DOMAIN, &policy_bytes);
-        let policy = decode_policy(&policy_bytes, &identity).expect("policy decodes");
-        let rejection = reject_unverified(
-            &policy,
-            &digest(b"receipt"),
-            "00112233-4455-4677-8899-aabbccddeeff",
-            input_artifacts(&policy_bytes),
-            RejectionReason::InputVerificationFailed,
-        )
-        .expect("rejection encodes");
-        assert_eq!(
-            rejection.reasons(),
-            &[RejectionReason::InputVerificationFailed]
-        );
-
+    fn forged_acceptance_fails_closed() {
         let mut forged = bytes_from_hex(include_str!(
             "../../../schemas/vectors/v2/acceptance-decision.cbor.hex"
         ));

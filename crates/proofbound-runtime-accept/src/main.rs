@@ -316,10 +316,10 @@ fn reject(
 }
 
 fn composition_rejection(error: CompositionError) -> RejectionReason {
-    if error == CompositionError::ExecutionReplayed {
-        RejectionReason::ExecutionReplay
-    } else {
-        RejectionReason::CompositionMissing
+    match error {
+        CompositionError::ExecutionReplayed => RejectionReason::ExecutionReplay,
+        CompositionError::AssumptionOmitted => RejectionReason::InputVerificationFailed,
+        _ => RejectionReason::CompositionMissing,
     }
 }
 
@@ -586,10 +586,14 @@ mod tests {
     }
 
     #[test]
-    fn composition_replay_has_a_distinct_rejection_reason() {
+    fn composition_failures_derive_distinct_rejection_reasons() {
         assert_eq!(
             composition_rejection(CompositionError::ExecutionReplayed),
             RejectionReason::ExecutionReplay
+        );
+        assert_eq!(
+            composition_rejection(CompositionError::AssumptionOmitted),
+            RejectionReason::InputVerificationFailed
         );
         assert_eq!(
             composition_rejection(CompositionError::ReleaseSubstituted),

@@ -1533,7 +1533,7 @@ mod tests {
     }
 
     #[test]
-    fn composed_v2_assumption_tcb_and_status_mutations_fail_closed() {
+    fn v2_assumption_loss_attack_mutates_inherited_facts_and_fails_closed() {
         let mut fixture = Fixture::new();
         fixture.upgrade_execution_to_v2();
         let bytes = compose(&fixture.inputs()).expect("valid v2 chain composes");
