@@ -129,6 +129,17 @@ class RequiredWorkflowTests(unittest.TestCase):
         self.assertIn('check_args=(--profile ledger)', manifests)
         self.assertIn('check_args=(--claim "$selector")', manifests)
 
+    def test_kernel_evidence_builds_lean_objects_before_theorem_audit(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        evidence = workflow[workflow.index("\n  fresh-evidence:\n") : workflow.index("\n  native:\n")]
+
+        build_step = "Build pinned Lean project for theorem audit"
+        self.assertIn(build_step, evidence)
+        self.assertIn("if: ${{ matrix.selector != 'ledger' }}", evidence)
+        self.assertIn("run: lake build", evidence)
+        self.assertLess(evidence.index("Reject bootstrap lockfile drift"), evidence.index(build_step))
+        self.assertLess(evidence.index(build_step), evidence.index("Run fresh evidence gate"))
+
     def test_fast_hook_excludes_fresh_evidence(self) -> None:
         hook = PRE_COMMIT_SCRIPT.read_text(encoding="utf-8")
         full_gate = CI_SCRIPT.read_text(encoding="utf-8")
