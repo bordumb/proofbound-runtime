@@ -44,7 +44,7 @@ class LeanToolchainIdentityTests(unittest.TestCase):
     def test_tracked_tree_has_no_lean_431_reference(self) -> None:
         old_version = "4." + "31"
         result = subprocess.run(
-            ["git", "grep", "-n", "-E", f"v?{old_version}(\\.0)?"],
+            ["git", "grep", "-n", "-F", old_version],
             cwd=REPOSITORY_ROOT,
             text=True,
             capture_output=True,
