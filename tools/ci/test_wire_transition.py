@@ -66,6 +66,20 @@ class WireTransitionTests(unittest.TestCase):
                 self.assertIn("parse_execution_plan_for_execution(&plan_bytes)", source)
                 self.assertNotIn("from_utf8(&plan_bytes)", source)
 
+    def test_run_installs_v2_limits_and_retains_terminal_observations(self) -> None:
+        run = (REPOSITORY_ROOT / "crates/proofbound-runtime-cli/src/run.rs").read_text(
+            encoding="utf-8"
+        )
+        supervisor = (
+            REPOSITORY_ROOT / "crates/proofbound-runtime-linux/src/supervisor.rs"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("FreshCgroup::create_v2(", run)
+        self.assertNotIn("FreshCgroup::create(supported.cgroup_v2()", run)
+        self.assertIn("let resources = cgroup.finish();", supervisor)
+        self.assertIn("resources: resources?", supervisor)
+        self.assertIn("pub const fn resources(&self) -> Option<TerminalResources>", supervisor)
+
 
 if __name__ == "__main__":
     unittest.main()
