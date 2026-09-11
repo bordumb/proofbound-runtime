@@ -6,7 +6,7 @@ from pathlib import Path
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = REPOSITORY_ROOT / ".github" / "workflows" / "ci.yml"
 WORKFLOW_ROOT = REPOSITORY_ROOT / ".github" / "workflows"
-LONG_PR_WORKFLOWS = (
+MANUAL_EXPERIMENT_WORKFLOWS = (
     WORKFLOW_ROOT / "network-authority-experiment.yml",
     WORKFLOW_ROOT / "performance-baseline.yml",
 )
@@ -155,19 +155,23 @@ class RequiredWorkflowTests(unittest.TestCase):
         )
         self.assertIsNone(re.search(r"(?m)^\s+continue-on-error:\s*true\s*$", workflow))
 
-    def test_long_optional_workflows_cancel_only_superseded_pr_heads(self) -> None:
-        for workflow_path in LONG_PR_WORKFLOWS:
+    def test_completed_experiment_workflows_are_manual_only(self) -> None:
+        for workflow_path in MANUAL_EXPERIMENT_WORKFLOWS:
             with self.subTest(workflow=workflow_path.name):
                 workflow = workflow_path.read_text(encoding="utf-8")
-                self.assertIn(
-                    "group: ${{ github.workflow }}-"
-                    "${{ github.event.pull_request.number || github.run_id }}",
-                    workflow,
-                )
-                self.assertIn(
-                    "cancel-in-progress: ${{ github.event_name == 'pull_request' }}",
-                    workflow,
-                )
+                self.assertIn("  workflow_dispatch:\n", workflow)
+                self.assertIn("    inputs:\n      revision:\n", workflow)
+                self.assertNotIn("  pull_request:\n", workflow)
+                self.assertNotIn("github.event.pull_request", workflow)
+
+    def test_network_experiment_requires_an_exact_revision(self) -> None:
+        workflow = MANUAL_EXPERIMENT_WORKFLOWS[0].read_text(encoding="utf-8")
+
+        self.assertIn("EXPERIMENT_SHA: ${{ inputs.revision }}", workflow)
+        self.assertEqual(
+            workflow.count('[[ "$EXPERIMENT_SHA" =~ ^[0-9a-f]{40}$ ]]'),
+            workflow.count("Confirm the exact experiment head"),
+        )
 
 
 if __name__ == "__main__":

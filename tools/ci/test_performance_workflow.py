@@ -10,17 +10,14 @@ NATIVE_SCRIPT = REPOSITORY_ROOT / "tools/ci/native-performance.sh"
 
 
 class PerformanceWorkflowTests(unittest.TestCase):
-    def test_workflow_is_exact_revision_manual_or_scoped_pr_matrix(self) -> None:
+    def test_workflow_is_exact_revision_manual_matrix(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
         self.assertIn("workflow_dispatch:", workflow)
         self.assertIn("revision:", workflow)
-        self.assertIn("pull_request:\n    paths:", workflow)
-        self.assertIn('      - "crates/proofbound-runtime-cli/**"', workflow)
-        self.assertIn('      - "crates/proofbound-runtime-linux/**"', workflow)
+        self.assertNotIn("  pull_request:\n", workflow)
         self.assertIn(
-            "PBR_PERFORMANCE_REVISION: "
-            "${{ inputs.revision || github.event.pull_request.head.sha }}",
+            "PBR_PERFORMANCE_REVISION: ${{ inputs.revision }}",
             workflow,
         )
         self.assertIn("runner: ubuntu-24.04\n", workflow)
