@@ -15,7 +15,11 @@ SUBJECTS = (
     "plan-parse-v1",
     "authority-normalization-v1",
     "policy-compilation-v1",
+    "receipt-construction-v1",
+    "receipt-canonical-encoding-v1",
 )
+PLAN_SUBJECTS = frozenset(SUBJECTS[:3])
+RECEIPT_SUBJECTS = frozenset(SUBJECTS[3:])
 TOP_LEVEL_KEYS = {
     "schema",
     "kind",
@@ -148,7 +152,8 @@ def verify_result(
     raw: bytes,
     expected_source: str,
     benchmark_executable: Path,
-    fixture: Path,
+    plan_fixture: Path,
+    receipt_fixture: Path,
 ) -> dict[str, object]:
     """Verifies a raw result against separately supplied exact identities."""
 
@@ -206,12 +211,19 @@ def verify_result(
     ] != list(SUBJECTS):
         fail("benchmark.verify.subject-domain-mismatch")
     try:
-        fixture_identity = digest_path(fixture)
+        plan_fixture_identity = digest_path(plan_fixture)
+        receipt_fixture_identity = digest_path(receipt_fixture)
     except OSError:
         fail("benchmark.verify.fixture-mismatch")
     for subject_value in subjects_value:
         subject = require_object(
             subject_value, {"subject", "fixture_sha256", "measurement"}
+        )
+        subject_name = subject["subject"]
+        fixture_identity = (
+            plan_fixture_identity
+            if subject_name in PLAN_SUBJECTS
+            else receipt_fixture_identity
         )
         if (
             not is_lower_hex(subject["fixture_sha256"], 64)
@@ -241,7 +253,8 @@ def main(arguments: list[str] | None = None) -> int:
     parser.add_argument("--result", type=Path, required=True)
     parser.add_argument("--expected-source", required=True)
     parser.add_argument("--benchmark-executable", type=Path, required=True)
-    parser.add_argument("--fixture", type=Path, required=True)
+    parser.add_argument("--plan-fixture", type=Path, required=True)
+    parser.add_argument("--receipt-fixture", type=Path, required=True)
     options = parser.parse_args(arguments)
 
     try:
@@ -252,7 +265,8 @@ def main(arguments: list[str] | None = None) -> int:
             raw,
             options.expected_source,
             options.benchmark_executable,
-            options.fixture,
+            options.plan_fixture,
+            options.receipt_fixture,
         )
     except OSError:
         print("benchmark.verify.result-read-failed", file=sys.stderr)

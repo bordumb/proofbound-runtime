@@ -28,8 +28,8 @@
     "protocol": { "$ref": "#/$defs/protocol" },
     "subjects": {
       "type": "array",
-      "minItems": 3,
-      "maxItems": 3,
+      "minItems": 5,
+      "maxItems": 5,
       "prefixItems": [
         {
           "allOf": [
@@ -53,6 +53,26 @@
             {
               "properties": {
                 "subject": { "const": "policy-compilation-v1" }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/subject" },
+            {
+              "properties": {
+                "subject": { "const": "receipt-construction-v1" }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/subject" },
+            {
+              "properties": {
+                "subject": { "const": "receipt-canonical-encoding-v1" }
               }
             }
           ]
