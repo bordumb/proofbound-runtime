@@ -4,7 +4,8 @@ use core::fmt;
 use std::path::{Path, PathBuf};
 
 use proofbound_runtime_core::{
-    CgroupIdentity, ExecutionId, LimitEvent, LimitEvents, ProcessLimit, ResourceLimits,
+    CgroupIdentity, ExecutionId, LimitEvent, LimitEvents, MemoryByteLimit, ProcessLimit,
+    ResourceLimits, SwapByteLimit,
 };
 
 use crate::CgroupV2Capability;
@@ -134,6 +135,7 @@ impl SwapEvents {
 /// Contains terminal version 2 observations from one exact fresh cgroup.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct TerminalResources {
+    configured: ConfiguredResources,
     memory_peak_bytes: u64,
     swap_peak_bytes: u64,
     memory_events: MemoryEvents,
@@ -141,6 +143,11 @@ pub struct TerminalResources {
 }
 
 impl TerminalResources {
+    /// Returns the exact values read back after installing the cgroup controls.
+    #[must_use]
+    pub const fn configured(self) -> ConfiguredResources {
+        self.configured
+    }
     /// Returns the terminal `memory.peak` value.
     #[must_use]
     pub const fn memory_peak_bytes(self) -> u64 {
@@ -186,6 +193,41 @@ impl TerminalResources {
     }
 }
 
+/// Contains the exact version 2 control values read back from one fresh cgroup.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ConfiguredResources {
+    processes: ProcessLimit,
+    memory: MemoryByteLimit,
+    swap: SwapByteLimit,
+    memory_oom_group: u64,
+}
+
+impl ConfiguredResources {
+    /// Returns the read-back `pids.max` value.
+    #[must_use]
+    pub const fn processes(self) -> ProcessLimit {
+        self.processes
+    }
+
+    /// Returns the read-back `memory.max` value.
+    #[must_use]
+    pub const fn memory(self) -> MemoryByteLimit {
+        self.memory
+    }
+
+    /// Returns the read-back `memory.swap.max` value.
+    #[must_use]
+    pub const fn swap(self) -> SwapByteLimit {
+        self.swap
+    }
+
+    /// Returns the read-back `memory.oom.group` value.
+    #[must_use]
+    pub const fn memory_oom_group(self) -> u64 {
+        self.memory_oom_group
+    }
+}
+
 #[cfg(any(test, target_os = "linux"))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct ResourceSnapshot {
@@ -204,13 +246,18 @@ impl ResourceSnapshot {
             && self.swap_events.is_zero()
     }
 
-    fn checked_delta(self, initial: Self) -> Result<TerminalResources, CgroupError> {
+    fn checked_delta(
+        self,
+        initial: Self,
+        configured: ConfiguredResources,
+    ) -> Result<TerminalResources, CgroupError> {
         if self.memory_peak_bytes < initial.memory_peak_bytes
             || self.swap_peak_bytes < initial.swap_peak_bytes
         {
             return Err(CgroupError::ObservationRegression);
         }
         Ok(TerminalResources {
+            configured,
             memory_peak_bytes: self.memory_peak_bytes,
             swap_peak_bytes: self.swap_peak_bytes,
             memory_events: self
@@ -223,6 +270,35 @@ impl ResourceSnapshot {
                 .ok_or(CgroupError::ObservationRegression)?,
         })
     }
+}
+
+#[cfg(any(test, target_os = "linux"))]
+fn configured_resources_from_readbacks(
+    values: [&str; 4],
+) -> Result<ConfiguredResources, CgroupError> {
+    let processes = parse_canonical_u64(values[0])
+        .ok()
+        .and_then(|value| u32::try_from(value).ok())
+        .and_then(|value| ProcessLimit::new(value).ok())
+        .ok_or(CgroupError::LimitMismatch)?;
+    let memory = parse_canonical_u64(values[1])
+        .ok()
+        .and_then(|value| MemoryByteLimit::new(value).ok())
+        .ok_or(CgroupError::LimitMismatch)?;
+    let swap = parse_canonical_u64(values[2])
+        .ok()
+        .and_then(|value| SwapByteLimit::new(value).ok())
+        .ok_or(CgroupError::LimitMismatch)?;
+    let memory_oom_group = parse_canonical_u64(values[3])?;
+    if memory_oom_group != 1 {
+        return Err(CgroupError::LimitMismatch);
+    }
+    Ok(ConfiguredResources {
+        processes,
+        memory,
+        swap,
+        memory_oom_group,
+    })
 }
 
 #[cfg(any(test, target_os = "linux"))]
@@ -319,6 +395,8 @@ pub struct FreshCgroup {
     identity: CgroupIdentity,
     process_limit: ProcessLimit,
     #[cfg(target_os = "linux")]
+    configured_resources: Option<ConfiguredResources>,
+    #[cfg(target_os = "linux")]
     initial_resources: Option<ResourceSnapshot>,
     #[cfg(target_os = "linux")]
     removed: bool,
@@ -395,6 +473,7 @@ impl FreshCgroup {
                 path: capability.directory().join(&name),
                 identity,
                 process_limit,
+                configured_resources: None,
                 initial_resources: None,
                 removed: false,
                 name,
@@ -456,12 +535,22 @@ impl FreshCgroup {
             };
 
             let setup = (|| {
+                let mut readbacks = Vec::with_capacity(controls.len());
                 for (name, value) in &controls {
                     write_control(&descriptor, name, value.as_bytes())?;
-                    if read_control(&descriptor, name)?.trim() != value {
+                    let observed = read_control(&descriptor, name)?;
+                    let observed = observed.trim();
+                    if observed != value {
                         return Err(CgroupError::LimitMismatch);
                     }
+                    readbacks.push(observed.to_owned());
                 }
+                let configured = configured_resources_from_readbacks([
+                    &readbacks[0],
+                    &readbacks[1],
+                    &readbacks[2],
+                    &readbacks[3],
+                ])?;
                 let initial = read_resource_snapshot(&descriptor)?;
                 if !initial.is_zero() {
                     return Err(CgroupError::ObservationNonzero);
@@ -469,10 +558,10 @@ impl FreshCgroup {
                 if populated(&descriptor)? || !processes(&descriptor)?.is_empty() {
                     return Err(CgroupError::NotFresh);
                 }
-                Ok(initial)
+                Ok((initial, configured))
             })();
-            let initial_resources = match setup {
-                Ok(initial) => initial,
+            let (initial_resources, configured_resources) = match setup {
+                Ok(values) => values,
                 Err(error) => {
                     drop(descriptor);
                     let _ = crate::sys::remove_directory_at(parent.as_raw_fd(), &name);
@@ -486,6 +575,7 @@ impl FreshCgroup {
                 path: capability.directory().join(&name),
                 identity,
                 process_limit: limits.processes(),
+                configured_resources: Some(configured_resources),
                 initial_resources: Some(initial_resources),
                 removed: false,
                 name,
@@ -593,8 +683,13 @@ impl FreshCgroup {
             let mut group = self;
             group.drain_in_place()?;
             let observation = match group.initial_resources {
-                Some(initial) => read_resource_snapshot(&group.descriptor)
-                    .and_then(|terminal| terminal.checked_delta(initial))
+                Some(initial) => group
+                    .configured_resources
+                    .ok_or(CgroupError::ObservationInvalid)
+                    .and_then(|configured| {
+                        read_resource_snapshot(&group.descriptor)
+                            .and_then(|terminal| terminal.checked_delta(initial, configured))
+                    })
                     .map(Some),
                 None => Ok(None),
             };
@@ -979,7 +1074,16 @@ mod tests {
             "32768\n",
         )
         .expect("canonical terminal snapshot");
-        let observed = terminal.checked_delta(initial).expect("monotonic counters");
+        let configured = configured_resources_from_readbacks(["2", "65536", "0", "1"])
+            .expect("canonical configured readbacks");
+        let observed = terminal
+            .checked_delta(initial, configured)
+            .expect("monotonic counters");
+        assert_eq!(observed.configured(), configured);
+        assert_eq!(observed.configured().processes().get(), 2);
+        assert_eq!(observed.configured().memory().get(), 65_536);
+        assert_eq!(observed.configured().swap().get(), 0);
+        assert_eq!(observed.configured().memory_oom_group(), 1);
         assert_eq!(observed.memory_peak_bytes(), 65_536);
         assert_eq!(observed.swap_peak_bytes(), 32_768);
         assert_eq!(observed.memory_events().high(), 2);
@@ -996,7 +1100,7 @@ mod tests {
         assert!(observed.limit_events().contains(LimitEvent::SwapFail));
 
         assert_eq!(
-            initial.checked_delta(terminal),
+            initial.checked_delta(terminal, configured),
             Err(CgroupError::ObservationRegression)
         );
         assert_eq!(

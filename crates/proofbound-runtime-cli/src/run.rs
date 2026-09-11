@@ -825,8 +825,12 @@ fn build_receipt(input: ReceiptInputs<'_>) -> Result<ExecutionReceipt, RunError>
     })?;
     let memory = terminal.memory_events();
     let swap = terminal.swap_events();
-    let resources = ReceiptResources::new(
-        input.plan.authority().limits(),
+    let configured = terminal.configured();
+    let resources = ReceiptResources::from_configured(
+        configured.processes(),
+        configured.memory(),
+        configured.swap(),
+        configured.memory_oom_group(),
         terminal.memory_peak_bytes(),
         terminal.swap_peak_bytes(),
         ReceiptMemoryEvents::new(

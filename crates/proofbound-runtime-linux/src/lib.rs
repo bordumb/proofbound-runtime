@@ -18,7 +18,9 @@ pub mod supervisor;
 #[allow(unsafe_code)]
 mod sys;
 
-pub use cgroup::{CgroupError, FreshCgroup, MemoryEvents, SwapEvents, TerminalResources};
+pub use cgroup::{
+    CgroupError, ConfiguredResources, FreshCgroup, MemoryEvents, SwapEvents, TerminalResources,
+};
 pub use execution::{ExecutionSetupError, fresh_execution_id};
 pub use inventory::{ResolvedDirectory, ResolvedReadPath};
 pub use landlock::{

@@ -10,7 +10,7 @@ Verified against the branch head, the four reviews, and the roadmap's own exit c
 
 ## Memory profile, Order 4
 
-- [ ] **Retain cgroup readback values and put them in the receipt.** `crates/proofbound-runtime-linux/src/cgroup.rs:459` compares and discards; `crates/proofbound-runtime-cli/src/run.rs:828` fills the receipt from the plan. Spec 0007 line 177 requires exact readback values.
+- [x] **Retain cgroup readback values and put them in the receipt.** `crates/proofbound-runtime-linux/src/cgroup.rs:459` compares and discards; `crates/proofbound-runtime-cli/src/run.rs:828` fills the receipt from the plan. Spec 0007 line 177 requires exact readback values.
 - [ ] **Make the verifier compare configured and peak values** to the normalized plan limits. `crates/proofbound-runtime-verify/src/identity.rs:222` currently discards them. Add attack cases that expect a semantic reason, not a commitment mismatch.
 - [ ] **Turn observation failure into a non-reusable receipt, not an aborted run.** `supervisor.rs:314` maps any `cgroup.finish()` error to a hard error. Spec 0007 line 169.
 - [ ] **Add the missing native assertions:** group-OOM kill count in the max-process-tree case, `swap.events` max and fail in the swap-limit case, and a real sibling-cgroup case. Bind each catalog id in `memory-v2.toml` to an executed case instead of substring matching.

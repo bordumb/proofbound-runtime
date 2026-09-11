@@ -390,6 +390,7 @@ pub struct ReceiptResources {
     processes: ProcessLimit,
     memory: MemoryByteLimit,
     swap: SwapByteLimit,
+    memory_oom_group: u64,
     memory_peak_bytes: u64,
     swap_peak_bytes: u64,
     memory_events: ReceiptMemoryEvents,
@@ -412,6 +413,32 @@ impl ReceiptResources {
         let swap = limits
             .swap()
             .ok_or(ReceiptError::ResourceProfileIncomplete)?;
+        Self::from_configured(
+            limits.processes(),
+            memory,
+            swap,
+            1,
+            memory_peak_bytes,
+            swap_peak_bytes,
+            memory_events,
+            swap_events,
+        )
+    }
+
+    /// Builds version 2 resources from the exact installed-control readbacks.
+    pub fn from_configured(
+        processes: ProcessLimit,
+        memory: MemoryByteLimit,
+        swap: SwapByteLimit,
+        memory_oom_group: u64,
+        memory_peak_bytes: u64,
+        swap_peak_bytes: u64,
+        memory_events: ReceiptMemoryEvents,
+        swap_events: ReceiptSwapEvents,
+    ) -> Result<Self, ReceiptError> {
+        if memory_oom_group != 1 {
+            return Err(ReceiptError::ConfiguredResourcesInvalid);
+        }
         let mut events = Vec::new();
         for (present, event) in [
             (memory_events.high != 0, LimitEvent::MemoryHigh),
@@ -430,9 +457,10 @@ impl ReceiptResources {
             }
         }
         Ok(Self {
-            processes: limits.processes(),
+            processes,
             memory,
             swap,
+            memory_oom_group,
             memory_peak_bytes,
             swap_peak_bytes,
             memory_events,
@@ -452,6 +480,10 @@ impl ReceiptResources {
     #[must_use]
     pub const fn swap(self) -> SwapByteLimit {
         self.swap
+    }
+    #[must_use]
+    pub const fn memory_oom_group(self) -> u64 {
+        self.memory_oom_group
     }
     #[must_use]
     pub const fn memory_peak_bytes(self) -> u64 {
@@ -1203,7 +1235,10 @@ fn cbor_resources(resources: ReceiptResources) -> crate::wire_v2::Value {
                     "memory.max".to_owned(),
                     Cbor::Unsigned(resources.memory.get()),
                 ),
-                ("memory.oom.group".to_owned(), Cbor::Unsigned(1)),
+                (
+                    "memory.oom.group".to_owned(),
+                    Cbor::Unsigned(resources.memory_oom_group),
+                ),
                 (
                     "memory.swap.max".to_owned(),
                     Cbor::Unsigned(resources.swap.get()),
@@ -1693,6 +1728,8 @@ pub enum ReceiptError {
     AssumptionMissing,
     /// Version 2 receipt resources were built from a legacy limit profile.
     ResourceProfileIncomplete,
+    /// Installed version 2 cgroup controls were not the closed configured profile.
+    ConfiguredResourcesInvalid,
     /// A required trusted-computing-base role is absent.
     TrustedComputingBaseRoleMissing,
     /// Canonical JSON encoding failed.
@@ -1723,6 +1760,7 @@ impl ReceiptError {
             Self::TrustedComputingBaseEmpty => "receipt.tcb.empty",
             Self::AssumptionMissing => "receipt.assumption.missing",
             Self::ResourceProfileIncomplete => "receipt.resources.incomplete",
+            Self::ConfiguredResourcesInvalid => "receipt.resources.configured-invalid",
             Self::TrustedComputingBaseRoleMissing => "receipt.tcb.role.missing",
             Self::CanonicalEncoding => "receipt.canonical.encoding-failed",
         }
