@@ -116,6 +116,14 @@ must byte-match the bundle's composer role. This closes silent tool
 substitution within the represented bundle; it does not prove the composer's
 behavior or discharge the compiler premise.
 
+Required source-assurance CI may restore the exact registered Charon and Aeneas
+Nix closure through a pinned cache action and the GitHub Actions cache service.
+Those components and restored bytes are retained under the toolchain premise.
+Post-restore version checks detect accidental identity drift but do not prove a
+hostile replacement's behavior. Release reproduction does not consume this
+cache, and no Proofbound output, project compiler output, receipt, or release
+artifact is restored into a protected fresh gate.
+
 ## Initial enforced boundary
 
 The initial supported profile requires:

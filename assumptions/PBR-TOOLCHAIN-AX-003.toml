@@ -3,7 +3,7 @@ id = "PBR-TOOLCHAIN-AX-003"
 statement = "The identified compiler, linker, standard library, dependencies, and build process preserve the behavior of the registered Rust source in the produced Runtime artifacts."
 category = "compiler-tcb"
 owner = "Proofbound Runtime release maintainer"
-rationale = "Source tests, bounded checks, model theorems, and source refinement do not by themselves prove the correctness of the complete compilation and linking toolchain."
+rationale = "Source tests, bounded checks, model theorems, and source refinement do not by themselves prove the correctness of the complete compilation and linking toolchain. Required CI may restore the exact registered Nix tool closure through the pinned cache action and GitHub Actions cache service; post-restore identity checks do not prove the behavior of hostile replacement bytes."
 scope = "The source-to-artifact interpretation of the Runtime claims listed in affected_claims."
 affected_claims = [
   "PBR-AUTH-001",
@@ -24,8 +24,10 @@ review_evidence = [
   "Cargo.lock",
   "deny.toml",
   "proofbound/toolchains/translation.lock",
+  ".github/workflows/ci.yml",
+  "docs/adr/0005-exact-tool-cache-boundary.md",
 ]
-discharge_plan = "Use exact toolchain identity, reproducible builds, source refinement, artifact binding, and an independently verified release receipt. Retain any compiler premise that those routes do not close."
+discharge_plan = "Use exact toolchain identity, closed cache keys, post-restore identity checks, cache-free reproducible release builds, source refinement, artifact binding, and an independently verified release receipt. Retain the compiler and required-CI cache premises that those routes do not close."
 source_citation = "docs/specs/0001_initial_spec.md#93-rust-policy"
 formal_axioms = ["ProofboundRuntime.ReleaseArtifacts.toolchainWitness"]
 status = "active"

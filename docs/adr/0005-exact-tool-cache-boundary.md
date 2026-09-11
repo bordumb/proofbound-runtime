@@ -1,0 +1,107 @@
+# ADR 0005: Cache exact formal tools without caching assurance conclusions
+
+- **Status:** proposed
+- **Date:** 2026-09-10
+- **Decision owners:** Proofbound Runtime maintainers
+- **Applies to:** required pull-request and mainline verification workflows
+
+## Context
+
+The last successful serial Verify run before CI partitioning spent about 21
+minutes building the pinned Charon and Aeneas closure and about 23 minutes in
+the repository gate. The proof tools were rebuilt for every superseding commit,
+including commits that changed only documentation or workflow mechanics.
+
+RT-0.3 now records stage and unit duration as operational build metadata and
+keeps the fresh Proofbound run separate from those records. The first measured
+bottleneck is therefore the exact Nix closure used for source translation, not
+the assurance conclusions produced from Runtime source.
+
+A restored cache is not evidence. The cache action, GitHub cache service, Nix
+store database, and restored bytes can affect which tool executes. Version
+output alone cannot prove that a hostile replacement implements the named
+tool. Any required workflow that consumes a cache must retain that premise
+explicitly.
+
+## Proposed decision
+
+Cache only the Nix store used to obtain the exact registered Charon and Aeneas
+toolchain in the required formal lane.
+
+- Pin the cache action by its full commit identity.
+- Use one exact primary key containing the runner operating system and
+  architecture, the complete Aeneas source revision, and the registered
+  translation-toolchain lock identity.
+- Do not use prefix or fallback restore keys. A changed toolchain produces a
+  miss and a new isolated cache.
+- Run the same `nix build` command on hits and misses, then verify the registered
+  Charon and Aeneas version outputs before any refinement or evidence command.
+- Keep `proofbound check --fresh` in every protected full gate. Never restore
+  `.proofbound`, Rust or Lean compiled project outputs, release artifacts, or
+  prior verification results.
+- Do not use the cache in release reproduction. Both release architectures
+  retain clean double builds and exact artifact observation.
+- Upload timing as operational metadata so a cache hit can change duration but
+  cannot change evidence kind, freshness, bounds, status, or public language.
+- Register the pinned cache action and GitHub Actions cache service under the
+  existing toolchain assumption and trusted-computing-base description.
+
+The initial implementation uses `nix-community/cache-nix-action` at commit
+`7df957e333c1e5da7721f60227dbba6d06080569`. Changing that identity, cache
+scope, key construction, restored paths, or downstream identity checks reopens
+this decision.
+
+## Consequences
+
+### Positive
+
+- The dominant repeated tool build can be reused without reusing a Runtime
+  proof, test result, receipt, compiled object, or release artifact.
+- Exact keys make toolchain changes fail toward recomputation rather than a
+  partial cache match.
+- A cache outage or eviction degrades to a normal clean tool build.
+- Timing artifacts show whether the cache meets the roadmap target in practice.
+
+### Negative
+
+- The pinned cache action and GitHub cache service become explicit required-CI
+  dependencies and TCB roles.
+- Post-restore version checks detect accidental mismatch but do not prove the
+  behavior of hostile replacement bytes. The toolchain assumption remains.
+- Saving and restoring a Nix store may cost more than rebuilding on some runs;
+  the timing record must justify retaining the mechanism.
+- The cache does not accelerate Rust, Kani, Proofbound, or Lean installation in
+  this first slice.
+
+## Alternatives
+
+### Restore prior Proofbound output
+
+Rejected. A prior compiled manifest or evidence receipt is an assurance
+conclusion, not a tool. Restoring it would undermine the protected fresh gate.
+
+### Use fallback cache prefixes
+
+Rejected. A partial match can silently select a closure produced under a
+different toolchain identity.
+
+### Cache release build outputs
+
+Rejected. Release evidence requires two clean reproductions and observation of
+the final exact artifacts.
+
+### Cache every compiler output
+
+Deferred. Broad Rust, Lean, Kani, or project-target caches enlarge the mutable
+input surface before timing demonstrates that they are needed.
+
+## Review gate
+
+This ADR remains proposed until an independent reviewer confirms that the cache
+key is closed over the selected toolchain, restored paths exclude assurance and
+release outputs, post-restore checks run before evidence, and the added TCB
+premise appears in every affected claim through the registered toolchain
+assumption.
+
+After two weeks of timing records, retain this mechanism only if formal-lane
+latency improves without changing any evidence outcome or freshness label.
