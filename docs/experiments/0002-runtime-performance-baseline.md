@@ -59,9 +59,20 @@ meaning:
 - stopped launcher creation;
 - Landlock, seccomp, privilege, and cgroup boundary installation;
 - child release and process execution;
+- process-tree drain and exact cgroup cleanup;
 - bounded stream collection;
+- output-root inventory and identity revalidation;
 - receipt construction and publication; and
-- process-tree drain and exact cgroup cleanup.
+- run-result projection.
+
+These are non-overlapping wall-clock intervals in the production operation's
+actual dependency order. Supervisor instrumentation distinguishes stopped
+launcher creation, boundary installation, child execution, cleanup, and stream
+joining without changing the launcher protocol. Run orchestration
+instrumentation distinguishes the surrounding pure and filesystem phases. The
+timings are returned only to the benchmark harness: they do not enter an
+execution receipt, run-result projection, launcher message, policy identity,
+or any assurance input.
 
 The first workload exits successfully after writing the fixed maintained
 example output. A second repeated-invocation series runs the same exact plan
