@@ -132,6 +132,7 @@ def read_records(inputs: list[Path]) -> list[dict[str, object]]:
                 record["run_id"],
                 record["run_attempt"],
                 record["job"],
+                record["runner_arch"],
                 record["kind"],
                 record["stage"],
                 record["name"],
