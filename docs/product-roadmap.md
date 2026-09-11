@@ -142,11 +142,13 @@ Its producer and independent verifier reproduced canonical result SHA-256
 `2b42d8a5dfdc617bf6324db2ad26d0d5ff27c35730e3145c9aacad409deb7c1f`
 with `complete: true` and `verified: true`.
 
-[ADR 0004](adr/0004-authenticated-service-session.md) now proposes the
-connector-owned authenticated service session selected by that comparison.
-The ADR remains proposed and requires independent approval; its machine
-comparison deliberately retains `production_selection: null`. No production
-network implementation is authorized until that review gate is satisfied.
+[ADR 0004](adr/0004-authenticated-service-session.md) now accepts the
+connector-owned authenticated service session selected by that comparison
+after independent review on 2026-09-11. Its machine comparison deliberately
+retains `production_selection: null`: the accepted decision authorizes a
+normative specification, not production behavior. The deterministic address
+rule, IPv4/IPv6 attempt order, two descriptor-transfer native cases, and the
+complete version 2 claim wave remain explicit implementation gates.
 The decision-grade
 execution protocol is frozen in
 [`0001e-decision-matrix-execution.md`](experiments/0001e-decision-matrix-execution.md),
@@ -158,11 +160,17 @@ Upstream promotion is intentionally paused at its review boundary. Proofbound
 PR 2 is green but still needs an independent approving review. A dry run of
 the later integration promotion correctly failed because its head retained an
 older approval envelope followed by newer changes. The obsolete envelope has
-been retired in a local subject commit. After PR 2 merges, the promotion diff
-must be recomputed against the new exact `main`, independently reviewed, and
-sealed by a new approval-only envelope before the promotion PR can become a
-merge candidate. No Runtime claim wave depends on treating that pending stack
-as released.
+been retired in a local subject commit. An independent review of PR 6 at head
+`a6964f6` confirmed that PR 2's six commits are embedded in the promotion and
+found 43 unapproved regressions in the current 618-change diff: 27 enlarged
+trusted-computing-base changes, 12 formal downgrades, and four new assumptions.
+The formal downgrades change the allowance demo from property tests to example
+tests and require restoration or an explicit reason; an envelope cannot
+silently approve that weakening. After PR 2 merges, the promotion diff must be
+recomputed against the new exact `main`, each remaining regression adjudicated,
+and the result sealed by a new approval-only envelope with no later byte
+changes. No Runtime claim wave depends on treating that pending stack as
+released.
 
 On 2026-09-10, [ADR 0003](adr/0003-deterministic-cbor-wire-objects.md) accepted
 deterministic CBOR for every committed version 2 or later wire object. The
@@ -180,9 +188,10 @@ at exact source `2232851973b8fabc873a056b87d25442b4d2ddc4` restored the register
 Nix closure in 2 minutes 7 seconds and installed the pinned Charon and Aeneas
 outputs in 15 seconds, compared with a 20 minute 22 second build in seed run
 [`34551042525`](https://github.com/bordumb/proofbound-runtime/actions/runs/34551042525).
-The unchanged fresh evidence stage remained green. This is one operational
-observation, not the two-week RT-0.4 latency distribution or the independent
-approval required for proposed [ADR 0005](adr/0005-exact-tool-cache-boundary.md).
+The unchanged fresh evidence stage remained green. Independent review accepted
+[ADR 0005](adr/0005-exact-tool-cache-boundary.md) on 2026-09-11. This remains one
+operational observation, not the two-week RT-0.4 latency distribution; the
+retention decision stays open until 2026-09-25 02:25 UTC.
 
 RT-6.3 is complete at exact source
 `774df9813371ce6476dfa182d4526669daa3d64c`. Performance run

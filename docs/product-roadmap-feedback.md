@@ -39,7 +39,7 @@ Verified against the branch head, the four reviews, and the roadmap's own exit c
 
 ## Upstream, Order 1
 
-- [ ] **Get Proofbound PR 2 an independent approving review,** then recompute the promotion diff against upstream main and seal it with a new approval envelope. Runtime is still pinned to `70af5e6`, which is not on upstream main.
+- [ ] **Get Proofbound PR 2 an independent approving review,** then recompute the promotion diff against upstream main and seal it with a new approval envelope. Runtime is still pinned to `70af5e6`, which is not on upstream main. The 2026-09-11 independent review of PR 6 confirmed that PR 2 is embedded and found 43 regressions; those must be recomputed and adjudicated only after PR 2 merges.
 - [ ] **Protect upstream main and tag a Proofbound release,** then move `ci.yml:235` and `release.yml:147` to that identity.
 - [ ] **Upstream PBF-0007, then PBF-0003, then PBF-0002 and PBF-0001.** All four are still "not upstreamed." PBF-0007 gates any new bounded resource claim beyond the local guard.
 - [ ] **Decide the Proofbound envelope encoding upstream** per UP-0.8 and make the composer accept exactly what the pinned release declares.
