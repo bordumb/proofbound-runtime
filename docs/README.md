@@ -33,7 +33,7 @@ The document type determines its authority.
 - [Specification 0006](specs/0006_bounded_domain_consistency_guard.md) defines
   the temporary fail-closed Runtime guard for claim, evidence, and model-check
   bounded-domain equality while the generic Proofbound invariant remains open.
-- [Specification 0007](specs/0007_memory_and_swap_profile.md) drafts the
+- [Specification 0007](specs/0007_memory_and_swap_profile.md) defines the accepted
   version 2 memory and swap execution profile, wire transition, terminal
   observations, and required native falsifiers.
 

@@ -1,6 +1,6 @@
 # Specification 0007: Memory and swap execution profile
 
-**Status:** Draft implementation specification
+**Status:** Accepted implementation specification
 
 **Target version:** 0.2.0
 
@@ -57,12 +57,11 @@ The version 1 plan and receipt schemas are closed. This change introduces:
 
 Under [ADR 0003](../adr/0003-deterministic-cbor-wire-objects.md), each
 version 2 object is deterministic CBOR defined by a closed CDDL schema with
-golden vectors. The ADR's text-versus-integer map-key decision remains an
-explicit owner gate; no version 2 schema, vector, or codec may land before it
-is resolved. The version 1 canonical JSON contracts are unchanged and are not
-converted. `inspect` and machine results print a JSON projection of the
-decoded object; the projection is not a wire object and is never a
-verification input.
+golden vectors. Version 2 maps use text keys, as selected in the accepted ADR;
+an integer-key representation is a different wire and is rejected. The
+version 1 canonical JSON contracts are unchanged and are not converted.
+`inspect` and machine results print a JSON projection of the decoded object;
+the projection is not a wire object and is never a verification input.
 
 Version 0.2 execution commands accept only plan version 2. `plan check`,
 `preflight`, and `run` reject a version 1 plan with
@@ -277,14 +276,15 @@ aarch64, the complete native attack corpus, independent version 2 receipt
 verification, exact artifact binding, and release composition. Source tests or
 a digest alone do not close the release-artifact obligation.
 
-## Review gate and residual obligations
+## Approval and residual obligations
 
-This draft must receive explicit review before production code changes the
-plan, policy, launcher, boundary, or receipt. Review must resolve at least the
-64 KiB quantum and maximum values, required kernel/file baseline, event-key
-compatibility, version 1 execution migration, the exact version 2 receipt
-schema, and the version 2 CDDL schemas and golden vectors required by
-[ADR 0003](../adr/0003-deterministic-cbor-wire-objects.md).
+The decision owner approved this specification as written on 2026-09-11.
+That approval fixes the 64 KiB quantum and maximum values, required
+kernel/file baseline, event-key compatibility, version 1 execution migration,
+receipt semantics, and the requirement for closed version 2 CDDL schemas and
+golden vectors under [ADR 0003](../adr/0003-deterministic-cbor-wire-objects.md).
+The schemas and vectors remain implementation obligations and must precede
+the corresponding production codecs.
 
 Even after implementation, the public claim must retain Linux kernel and host
 assumptions, temporary-overshoot semantics, allocation classes that do not

@@ -42,10 +42,10 @@ wave that freezes more JSON surface.
 2. **A closed CDDL schema defines each object.** The CDDL and its golden
    vectors define the wire; Rust struct layout does not. Unknown keys, missing
    required keys, and noncanonical bytes are rejected before semantic
-   validation, as today. The decision owner must confirm whether version 2
-   schemas use text or unsigned-integer map keys before any schema, golden
-   vector, or codec is written. The existing version 1 launcher schema uses
-   text keys and does not settle the version 2 choice.
+   validation, as today. Version 2 schemas use text map keys. Their encoded
+   text strings participate directly in the RFC 8949 section 4.2.1 bytewise
+   ordering rule; field declaration order and Rust field names do not define
+   the wire.
 3. **Version 1 is unchanged.** Version 1 producers, the frozen version 1
    verifier path, and historical receipts keep RFC 8785 canonical JSON and
    their existing meaning. No version 1 object is converted.
@@ -78,15 +78,15 @@ wire projection admitted under `PBR-BINDING-005` must be re-refined for the
 version 2 projection; the version 1 theorem remains bound to version 1 bytes
 only.
 
-## Open decision parameter
+## Map-key representation
 
-The deterministic-CBOR decision is accepted. The map-key representation is
-not yet selected. Text keys and unsigned-integer keys can both satisfy the
-RFC 8949 deterministic-encoding requirements, but they define different wire
-contracts and golden vectors. No implementation may infer this choice from
-Auths, the version 1 launcher protocol, Rust field names, or implementation
-convenience. The decision owner must record the selected representation here
-before version 2 CDDL, vectors, producer codecs, or verifier codecs land.
+The deterministic-CBOR decision is accepted. On 2026-09-11, the decision
+owner selected text keys for every Runtime version 2 map. This selection is
+part of the wire contract: integer-key encodings of otherwise equivalent
+values are rejected. The choice follows the existing launcher schema's
+readable field vocabulary while retaining a closed CDDL shape; it does not
+make the version 1 launcher message a version 2 wire object and does not adopt
+its codec by implication.
 
 ## Consequences
 

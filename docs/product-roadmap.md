@@ -49,12 +49,14 @@ local prerequisite for memory contract work. It does not resolve PBF-0007 or
 permit Runtime to describe the generic Proofbound compiler and verifier as
 fixed.
 
-RT-1.1 contract work has started at `d24a1c7` with a draft version 2 memory and
-swap profile. The draft fixes the intended schema transition, cgroup controls,
+RT-1.1 contract work started at `d24a1c7` with the version 2 memory and swap
+profile. On 2026-09-11, the decision owner approved Specification 0007 as
+written and selected text map keys for every version 2 CBOR object under ADR
+0003. The accepted contract fixes the schema transition, cgroup controls,
 terminal observations, outcome separation, historical receipt behavior, and
-native falsifier inventory. It is not yet an accepted production contract.
-Memory implementation remains paused until review resolves the draft's
-explicit decisions and the upstream consolidation boundary is satisfied.
+native falsifier inventory. Closed CDDL schemas and golden vectors still must
+land before their production codecs, and the upstream consolidation boundary
+remains an external release gate rather than an implementation shortcut.
 
 RT-4.1 is pre-registered at `946c457`. Experiment 0001 freezes the first HTTPS
 workload, controlled DNS/TLS fixture, four candidate mechanisms, common attack
@@ -146,8 +148,10 @@ On 2026-09-10, [ADR 0003](adr/0003-deterministic-cbor-wire-objects.md) accepted
 deterministic CBOR for every committed version 2 or later wire object. The
 change lands inside the RT-1 version 2 cut rather than as a separate
 migration, so the binding-projection refinement and independent verifier are
-redone once. Version 1 contracts are unchanged. Memory implementation now
-also waits for the version 2 CDDL schemas and golden vectors.
+redone once. Version 1 contracts are unchanged. On 2026-09-11, the decision
+owner selected text map keys; no open wire-format parameter remains. Memory
+implementation now waits only for the version 2 CDDL schemas and golden
+vectors that must precede codec code.
 
 The first exact formal-tool cache hit is green. Run
 [`34554553968`](https://github.com/bordumb/proofbound-runtime/actions/runs/34554553968)
