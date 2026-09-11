@@ -15,6 +15,8 @@ class PerformanceWorkflowTests(unittest.TestCase):
         self.assertIn("workflow_dispatch:", workflow)
         self.assertIn("revision:", workflow)
         self.assertIn("pull_request:\n    paths:", workflow)
+        self.assertIn('      - "crates/proofbound-runtime-cli/**"', workflow)
+        self.assertIn('      - "crates/proofbound-runtime-linux/**"', workflow)
         self.assertIn(
             "PBR_PERFORMANCE_REVISION: "
             "${{ inputs.revision || github.event.pull_request.head.sha }}",
