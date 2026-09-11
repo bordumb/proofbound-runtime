@@ -266,6 +266,39 @@ pub enum RejectionReason {
 }
 
 impl RejectionReason {
+    /// Returns the complete closed reason vocabulary in canonical order.
+    #[must_use]
+    pub const fn all_codes() -> &'static [&'static str] {
+        &[
+            "policy-identity-mismatch",
+            "input-verification-failed",
+            "composition-missing",
+            "execution-schema-mismatch",
+            "runtime-version-mismatch",
+            "platform-mismatch",
+            "architecture-mismatch",
+            "plan-id-mismatch",
+            "executable-mismatch",
+            "authority-mismatch",
+            "resource-mismatch",
+            "eligibility-mismatch",
+            "freshness-policy-unsupported",
+            "release-project-mismatch",
+            "release-revision-mismatch",
+            "release-payload-mismatch",
+            "release-context-mismatch",
+            "claim-missing",
+            "claim-formal-mismatch",
+            "claim-linkage-mismatch",
+            "claim-assumption-mismatch",
+            "claim-policy-mismatch",
+            "forbidden-assumption",
+            "forbidden-exclusion",
+            "forbidden-open-obligation",
+            "forbidden-tcb-role",
+        ]
+    }
+
     #[must_use]
     pub fn as_str(self) -> &'static str {
         match self {
@@ -727,6 +760,22 @@ mod tests {
     use super::*;
     use proofbound_runtime_compose::{AcceptanceClaimFacts, ReleaseAcceptanceFacts};
     use proofbound_runtime_verify::{CompositionArtifact, ReceiptAcceptanceFacts};
+    use serde::Deserialize;
+
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct AttackCatalog {
+        schema: String,
+        cases: Vec<AttackCase>,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct AttackCase {
+        id: String,
+        mutation: String,
+        expected_reason: String,
+    }
 
     #[test]
     fn policy_golden_decodes_with_exact_identity() {
@@ -831,6 +880,136 @@ mod tests {
                 RejectionReason::ForbiddenAssumption,
             ]
         );
+    }
+
+    #[test]
+    fn registered_attack_catalog_is_closed_and_complete() {
+        let catalog: AttackCatalog =
+            toml::from_str(include_str!("../../../tests/attacks/acceptance/v1.toml"))
+                .expect("attack catalog is closed TOML");
+        assert_eq!(catalog.schema, "proofbound-runtime-acceptance-attacks/1");
+        assert_eq!(
+            catalog
+                .cases
+                .iter()
+                .map(|case| case.id.as_str())
+                .collect::<Vec<_>>(),
+            [
+                "claim-omission",
+                "executable-substitution",
+                "resource-substitution",
+                "facet-downgrade",
+                "execution-replay",
+                "stale-policy",
+                "assumption-loss",
+                "forged-acceptance",
+            ]
+        );
+        assert!(catalog.cases.iter().all(|case| {
+            !case.mutation.is_empty()
+                && (case.expected_reason.starts_with("acceptance.")
+                    || RejectionReason::all_codes().contains(&case.expected_reason.as_str()))
+        }));
+    }
+
+    #[test]
+    fn omission_substitution_and_replay_are_independent_rejections() {
+        let policy_bytes = bytes_from_hex(include_str!(
+            "../../../schemas/vectors/v2/acceptance-policy.cbor.hex"
+        ));
+        let identity = domain_digest(POLICY_DOMAIN, &policy_bytes);
+        let policy = decode_policy(&policy_bytes, &identity).expect("policy decodes");
+
+        let execution = execution_facts();
+        let mut omitted = release_facts();
+        omitted.claims.remove(0);
+        assert_decision_reasons(
+            &policy,
+            &execution,
+            &omitted,
+            "00112233-4455-4677-8899-aabbccddeeff",
+            &policy_bytes,
+            &[RejectionReason::ClaimMissing],
+        );
+
+        let mut substituted = execution_facts();
+        substituted.executable.sha256 = digest(b"substituted executable");
+        assert_decision_reasons(
+            &policy,
+            &substituted,
+            &release_facts(),
+            "00112233-4455-4677-8899-aabbccddeeff",
+            &policy_bytes,
+            &[RejectionReason::ExecutableMismatch],
+        );
+
+        assert_decision_reasons(
+            &policy,
+            &execution,
+            &release_facts(),
+            "11112233-4455-4677-8899-aabbccddeeff",
+            &policy_bytes,
+            &[RejectionReason::InputVerificationFailed],
+        );
+    }
+
+    #[test]
+    fn assumption_loss_and_forged_acceptance_fail_closed() {
+        let policy_bytes = bytes_from_hex(include_str!(
+            "../../../schemas/vectors/v2/acceptance-policy.cbor.hex"
+        ));
+        let identity = domain_digest(POLICY_DOMAIN, &policy_bytes);
+        let policy = decode_policy(&policy_bytes, &identity).expect("policy decodes");
+        let rejection = reject_unverified(
+            &policy,
+            &digest(b"receipt"),
+            "00112233-4455-4677-8899-aabbccddeeff",
+            input_artifacts(&policy_bytes),
+        )
+        .expect("rejection encodes");
+        assert_eq!(
+            rejection.reasons(),
+            &[
+                RejectionReason::InputVerificationFailed,
+                RejectionReason::CompositionMissing,
+            ]
+        );
+
+        let mut forged = bytes_from_hex(include_str!(
+            "../../../schemas/vectors/v2/acceptance-decision.cbor.hex"
+        ));
+        let offset = forged
+            .windows(b"accepted".len())
+            .position(|window| window == b"accepted")
+            .expect("golden contains accepted status");
+        forged[offset..offset + 8].copy_from_slice(b"rejected");
+        assert_eq!(
+            project_decision(&forged),
+            Err(AcceptanceError::InvalidDecision)
+        );
+    }
+
+    fn assert_decision_reasons(
+        policy: &DecodedPolicy,
+        execution: &ReceiptAcceptanceFacts,
+        release: &ReleaseAcceptanceFacts,
+        expected_execution_id: &str,
+        policy_bytes: &[u8],
+        expected: &[RejectionReason],
+    ) {
+        let decision = evaluate(
+            policy,
+            EvaluationInputs {
+                execution,
+                release,
+                expected_execution_commitment: &digest(b"receipt"),
+                expected_execution_id,
+                composition_id: &digest(b"composition"),
+                artifacts: input_artifacts(policy_bytes),
+            },
+        )
+        .expect("decision encodes");
+        assert_eq!(decision.reasons(), expected);
     }
 
     fn execution_facts() -> ReceiptAcceptanceFacts {
