@@ -241,8 +241,20 @@ assert verification == {
 }
   ' "$verification" "$commitment"
   "$runtime_bin_directory/pbr" inspect "$receipt" >/dev/null
+  example_bundle_result="$e2e_root/example-bundle-result.json"
+  python3 tools/release/build_example.py \
+    --output-directory "$e2e_root" >"$example_bundle_result"
+  example_archive="$(python3 -c '
+import json
+import sys
+with open(sys.argv[1], encoding="utf-8") as source:
+    print(json.load(source)["archive"])
+' "$example_bundle_result")"
+  example_source="$e2e_root/example-source"
+  mkdir "$example_source"
+  tar -xzf "$example_archive" -C "$example_source" --strip-components=1
   example_result="$e2e_root/maintained-example-result.json"
-  "$repository_root/examples/hello-static/run-example.sh" \
+  "$example_source/run-example.sh" \
     "$runtime_bin_directory" \
     "$PROOFBOUND_CGROUP_ROOT" \
     "$e2e_root/maintained-example" >"$example_result"
