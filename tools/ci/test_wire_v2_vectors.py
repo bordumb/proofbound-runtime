@@ -11,18 +11,20 @@ from tools.ci.deterministic_cbor import CborError, decode_strict, json_projectio
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 SCHEMA_ROOT = REPOSITORY_ROOT / "schemas"
 VECTOR_ROOT = SCHEMA_ROOT / "vectors/v2"
-IDENTITIES = {
-    "execution-plan": "proofbound-runtime-plan/2",
-    "compiled-policy": "proofbound-runtime-linux-policy/2",
-    "run-result": "proofbound-runtime-run-result/2",
-    "execution-receipt": "proofbound-runtime-execution-receipt/2",
-    "composed-receipt": "proofbound-runtime-composed-receipt/2",
+WIRE_OBJECTS = {
+    "execution-plan": ("proofbound-runtime-plan/2", 2),
+    "compiled-policy": ("proofbound-runtime-linux-policy/2", 2),
+    "run-result": ("proofbound-runtime-run-result/2", 2),
+    "execution-receipt": ("proofbound-runtime-execution-receipt/2", 2),
+    "composed-receipt": ("proofbound-runtime-composed-receipt/2", 2),
+    "acceptance-policy": ("proofbound-runtime-acceptance-policy/1", 1),
+    "acceptance-decision": ("proofbound-runtime-acceptance-decision/1", 1),
 }
 
 
 class WireV2GoldenVectorTests(unittest.TestCase):
     def test_vectors_are_strict_deterministic_cbor_with_expected_projection(self) -> None:
-        for name, identity in IDENTITIES.items():
+        for name, (identity, _version) in WIRE_OBJECTS.items():
             with self.subTest(name=name):
                 encoded = bytes.fromhex(
                     (VECTOR_ROOT / f"{name}.cbor.hex").read_text(encoding="ascii")
@@ -53,10 +55,10 @@ class WireV2GoldenVectorTests(unittest.TestCase):
                     decode_strict(encoded)
 
     def test_cddl_roots_and_text_key_policy_are_explicit(self) -> None:
-        for name in IDENTITIES:
+        for name, (_identity, version) in WIRE_OBJECTS.items():
             with self.subTest(name=name):
-                cddl = (SCHEMA_ROOT / f"{name}-v2.cddl").read_text(encoding="utf-8")
-                self.assertIn(f"{name}-v2 = {{", cddl)
+                cddl = (SCHEMA_ROOT / f"{name}-v{version}.cddl").read_text(encoding="utf-8")
+                self.assertIn(f"{name}-v{version} = {{", cddl)
                 self.assertNotRegex(cddl, r"(?m)^\s*[0-9]+\s*:")
 
     def test_maintained_plan_encoder_reproduces_the_golden_vector(self) -> None:
