@@ -95,7 +95,8 @@ and cannot define decision semantics.
 The decision binds the policy identity, supplied execution commitment,
 expected execution ID, optional successful composition identity, and the
 digest and byte count of every raw or generated input consumed by the
-decision. The fixed role inventory prevents omission and role substitution.
+decision, including the running `pbr-accept` binary. The fixed role inventory
+prevents omission and role substitution.
 
 Acceptance and execution reuse eligibility remain separate. A policy may
 require reusable eligibility, but a reusable receipt can still be rejected by

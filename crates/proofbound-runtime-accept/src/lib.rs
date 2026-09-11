@@ -234,7 +234,7 @@ fn strict_by<'a, T>(values: &'a [T], key: impl Fn(&'a T) -> &'a str) -> bool {
 }
 
 /// Closed, stably ordered rejection reasons.
-#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum RejectionReason {
     PolicyIdentityMismatch,
@@ -300,7 +300,8 @@ impl RejectionReason {
 }
 
 /// Exact bytes consumed or produced by one decision.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct DecisionInput {
     pub role: String,
     pub size: u64,
@@ -328,7 +329,8 @@ pub struct EvaluationInputs<'a> {
     pub artifacts: Vec<DecisionInput>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
 struct WireDecision {
     schema: String,
     status: String,
@@ -369,6 +371,41 @@ impl AcceptanceDecision {
     }
 }
 
+/// Strictly decodes, checks, and returns the non-authoritative JSON projection
+/// of one canonical decision.
+pub fn project_decision(bytes: &[u8]) -> Result<Value, AcceptanceError> {
+    let value = cbor::decode_model(bytes).map_err(|_| AcceptanceError::InvalidDecision)?;
+    let wire: WireDecision =
+        serde_json::from_value(value).map_err(|_| AcceptanceError::InvalidDecision)?;
+    if wire.schema != DECISION_SCHEMA
+        || !is_digest(&wire.decision_id)
+        || !is_digest(&wire.policy_identity)
+        || !is_digest(&wire.execution_commitment)
+        || !is_uuid(&wire.execution_id)
+        || wire
+            .composition_id
+            .as_deref()
+            .is_some_and(|value| !is_digest(value))
+        || !wire.reasons.windows(2).all(|pair| pair[0] < pair[1])
+        || (wire.status == "accepted"
+            && (!wire.reasons.is_empty() || wire.composition_id.is_none()))
+        || (wire.status == "rejected" && wire.reasons.is_empty())
+        || !matches!(wire.status.as_str(), "accepted" | "rejected")
+    {
+        return Err(AcceptanceError::InvalidDecision);
+    }
+    validate_artifacts(&wire.inputs)?;
+    let mut body = serde_json::to_value(&wire).map_err(|_| AcceptanceError::InvalidDecision)?;
+    body.as_object_mut()
+        .ok_or(AcceptanceError::InvalidDecision)?
+        .remove("decision_id");
+    let encoded = cbor::encode_model(&body).map_err(|_| AcceptanceError::InvalidDecision)?;
+    if domain_digest(DECISION_DOMAIN, &encoded) != wire.decision_id {
+        return Err(AcceptanceError::InvalidDecision);
+    }
+    cbor::project_json(bytes).map_err(|_| AcceptanceError::InvalidDecision)
+}
+
 /// Evaluates every policy clause and returns one deterministic decision.
 pub fn evaluate(
     policy: &DecodedPolicy,
@@ -399,7 +436,56 @@ pub fn evaluate(
     if inputs.execution.execution_id != inputs.expected_execution_id {
         reasons.insert(RejectionReason::InputVerificationFailed);
     }
-    let reasons = reasons.into_iter().collect::<Vec<_>>();
+    build_decision(
+        policy,
+        inputs.expected_execution_commitment,
+        inputs.expected_execution_id,
+        Some(inputs.composition_id),
+        inputs.artifacts,
+        reasons.into_iter().collect(),
+    )
+}
+
+/// Produces a canonical rejection when either independent verifier or the
+/// composition boundary rejects its raw inputs. No unverified facts are used.
+pub fn reject_unverified(
+    policy: &DecodedPolicy,
+    expected_execution_commitment: &str,
+    expected_execution_id: &str,
+    artifacts: Vec<DecisionInput>,
+) -> Result<AcceptanceDecision, AcceptanceError> {
+    let mut reasons = vec![
+        RejectionReason::InputVerificationFailed,
+        RejectionReason::CompositionMissing,
+    ];
+    if !policy.identity_matches {
+        reasons.push(RejectionReason::PolicyIdentityMismatch);
+        reasons.sort_unstable();
+    }
+    build_decision(
+        policy,
+        expected_execution_commitment,
+        expected_execution_id,
+        None,
+        artifacts,
+        reasons,
+    )
+}
+
+fn build_decision(
+    policy: &DecodedPolicy,
+    expected_execution_commitment: &str,
+    expected_execution_id: &str,
+    composition_id: Option<&str>,
+    artifacts: Vec<DecisionInput>,
+    reasons: Vec<RejectionReason>,
+) -> Result<AcceptanceDecision, AcceptanceError> {
+    if !is_digest(expected_execution_commitment)
+        || composition_id.is_some_and(|value| !is_digest(value))
+        || !is_uuid(expected_execution_id)
+    {
+        return Err(AcceptanceError::InvalidIdentity);
+    }
     let mut wire = WireDecision {
         schema: DECISION_SCHEMA.to_owned(),
         status: if reasons.is_empty() {
@@ -408,13 +494,13 @@ pub fn evaluate(
             "rejected"
         }
         .to_owned(),
-        inputs: inputs.artifacts,
+        inputs: artifacts,
         reasons,
         decision_id: String::new(),
-        execution_id: inputs.expected_execution_id.to_owned(),
-        composition_id: Some(inputs.composition_id.to_owned()),
+        execution_id: expected_execution_id.to_owned(),
+        composition_id: composition_id.map(str::to_owned),
         policy_identity: policy.identity.clone(),
-        execution_commitment: inputs.expected_execution_commitment.to_owned(),
+        execution_commitment: expected_execution_commitment.to_owned(),
     };
     validate_artifacts(&wire.inputs)?;
     let mut value = serde_json::to_value(&wire).map_err(|_| AcceptanceError::EncodingFailed)?;
@@ -553,7 +639,7 @@ fn intersects(forbidden: &[String], actual: &[String]) -> bool {
     forbidden.iter().any(|value| actual.contains(value))
 }
 
-const INPUT_ROLES: [&str; 14] = [
+const INPUT_ROLES: [&str; 15] = [
     "acceptance-policy",
     "release-envelope",
     "compiled-release",
@@ -566,6 +652,7 @@ const INPUT_ROLES: [&str; 14] = [
     "launcher",
     "execution-verifier",
     "composer",
+    "acceptor",
     "execution-receipt",
     "execution-verification",
 ];

@@ -23,7 +23,7 @@ input-artifact = {
 input-role = "acceptance-policy" / "release-envelope" / "compiled-release" /
   "release-verification" / "release-verifier" / "release-observation-inputs" /
   "release-tcb-ledger" / "runtime-manifest" / "runtime" / "launcher" /
-  "execution-verifier" / "composer" / "execution-receipt" /
+  "execution-verifier" / "composer" / "acceptor" / "execution-receipt" /
   "execution-verification"
 
 rejection-reason = "policy-identity-mismatch" /

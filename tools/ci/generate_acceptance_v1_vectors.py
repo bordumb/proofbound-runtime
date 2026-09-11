@@ -100,6 +100,7 @@ def decision(policy_bytes: bytes) -> dict[str, object]:
             artifact("launcher", b"launcher"),
             artifact("execution-verifier", b"execution verifier"),
             artifact("composer", b"composer"),
+            artifact("acceptor", b"acceptor"),
             artifact("execution-receipt", b"golden execution receipt"),
             artifact("execution-verification", b"execution verification"),
         ],
