@@ -672,6 +672,34 @@ mod tests {
     }
 
     #[test]
+    fn inspect_rejects_the_noncanonical_json_projection() {
+        let path =
+            std::env::temp_dir().join(format!("pbr-accept-projection-{}.json", std::process::id()));
+        fs::write(
+            &path,
+            include_bytes!("../../../schemas/vectors/v2/acceptance-decision.projection.json"),
+        )
+        .unwrap();
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+        assert_eq!(
+            run(
+                vec![
+                    OsString::from("pbr-accept"),
+                    OsString::from("inspect"),
+                    path.clone().into_os_string(),
+                ],
+                &mut stdout,
+                &mut stderr,
+            ),
+            INVALID_INPUT
+        );
+        fs::remove_file(path).unwrap();
+        assert!(stdout.is_empty());
+        assert_eq!(stderr, b"pbr-accept: acceptance.decision.invalid\n");
+    }
+
+    #[test]
     fn composition_failures_derive_distinct_rejection_reasons() {
         assert_eq!(
             composition_rejection(CompositionError::ExecutionReplayed),

@@ -161,6 +161,30 @@ mod tests {
     }
 
     #[test]
+    fn json_projection_is_not_accepted_as_a_version_two_receipt() {
+        let projection =
+            include_bytes!("../../../schemas/vectors/v2/execution-receipt.projection.json")
+                .to_vec();
+        let commitment = ReceiptCommitment::for_bytes(&projection).to_text();
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+        let code = run_with(
+            args(&[
+                "pbr-verify",
+                "--expected-commitment",
+                &commitment,
+                "execution-receipt.projection.json",
+            ]),
+            |_| Ok(projection.clone()),
+            &mut stdout,
+            &mut stderr,
+        );
+        assert_eq!(code, 7);
+        assert!(stdout.is_empty());
+        assert_eq!(stderr, b"pbr-verify: receipt.schema.invalid\n");
+    }
+
+    #[test]
     fn help_and_version_are_successful() {
         for option in ["--help", "--version"] {
             let mut stdout = Vec::new();

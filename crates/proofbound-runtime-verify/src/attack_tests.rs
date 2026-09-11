@@ -38,6 +38,22 @@ struct ResourceAttackCase {
     expected_error: String,
 }
 
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct V2CarrierCatalog {
+    schema: String,
+    cases: Vec<V2CarrierCase>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct V2CarrierCase {
+    id: String,
+    bytes_hex: Option<String>,
+    mutation: Option<String>,
+    expected_error: String,
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 enum Detection {
@@ -58,6 +74,48 @@ fn resource_catalog() -> ResourceAttackCatalog {
         "../../../tests/attacks/receipt/resources-v2.toml"
     ))
     .expect("version 2 resource attack catalog is valid")
+}
+
+fn v2_carrier_catalog() -> V2CarrierCatalog {
+    toml::from_str(include_str!(
+        "../../../tests/attacks/receipt/carrier-v2.toml"
+    ))
+    .expect("version 2 carrier attack catalog is valid")
+}
+
+#[test]
+fn public_verifier_rejects_every_v2_carrier_attack() {
+    let catalog = v2_carrier_catalog();
+    assert_eq!(
+        catalog.schema,
+        "proofbound-runtime-receipt-carrier-attacks/2"
+    );
+    assert_eq!(catalog.cases.len(), 4);
+    for case in catalog.cases {
+        let attacked = if let Some(encoded) = case.bytes_hex {
+            decode_hex(&encoded)
+        } else if case.mutation.as_deref() == Some("append-zero-to-golden") {
+            let mut bytes = v2_golden_bytes();
+            bytes.push(0);
+            bytes
+        } else {
+            panic!("attack {} has no implemented carrier mutation", case.id);
+        };
+        let error = verify_receipt(&attacked, ReceiptCommitment::for_bytes(&attacked))
+            .expect_err("malicious version 2 carrier must fail at the public verifier");
+        assert_eq!(error.code(), case.expected_error, "attack {}", case.id);
+    }
+}
+
+fn decode_hex(encoded: &str) -> Vec<u8> {
+    encoded
+        .as_bytes()
+        .chunks_exact(2)
+        .map(|pair| {
+            u8::from_str_radix(core::str::from_utf8(pair).expect("hex pair is UTF-8"), 16)
+                .expect("carrier attack hex is valid")
+        })
+        .collect()
 }
 
 #[test]

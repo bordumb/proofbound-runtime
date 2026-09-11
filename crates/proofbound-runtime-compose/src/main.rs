@@ -482,6 +482,36 @@ mod tests {
     }
 
     #[test]
+    fn inspect_rejects_the_noncanonical_json_projection() {
+        let path = std::env::temp_dir().join(format!(
+            "pbr-compose-projection-{}.json",
+            std::process::id()
+        ));
+        fs::write(
+            &path,
+            include_bytes!("../../../schemas/vectors/v2/composed-receipt.projection.json"),
+        )
+        .unwrap();
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+        assert_eq!(
+            run(
+                vec![
+                    OsString::from("pbr-compose"),
+                    OsString::from("inspect"),
+                    path.clone().into_os_string(),
+                ],
+                &mut stdout,
+                &mut stderr,
+            ),
+            VERIFICATION_FAILED
+        );
+        fs::remove_file(path).unwrap();
+        assert!(stdout.is_empty());
+        assert_eq!(stderr, b"pbr-compose: composition.schema.invalid\n");
+    }
+
+    #[test]
     fn verifier_error_propagation_is_closed() {
         assert_eq!(
             exact_pbr_error(b"pbr-verify: receipt.canonical.non-canonical\n"),
