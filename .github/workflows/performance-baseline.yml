@@ -202,3 +202,61 @@ jobs:
           path: ${{ runner.temp }}/proofbound-runtime-performance/native-${{ matrix.workload }}-${{ matrix.architecture }}
           if-no-files-found: error
           retention-days: 30
+
+  verify-native-artifacts:
+    needs: native
+    name: reverify native artifact (${{ matrix.workload }}, ${{ matrix.architecture }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x86_64
+            runner: ubuntu-24.04
+            workload: static
+            workload_id: hello-static-v1
+          - architecture: x86_64
+            runner: ubuntu-24.04
+            workload: dynamic
+            workload_id: hello-dynamic-v1
+          - architecture: aarch64
+            runner: ubuntu-24.04-arm
+            workload: static
+            workload_id: hello-static-v1
+          - architecture: aarch64
+            runner: ubuntu-24.04-arm
+            workload: dynamic
+            workload_id: hello-dynamic-v1
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 5
+    steps:
+      - name: Check out the exact requested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.PBR_PERFORMANCE_REVISION }}
+
+      - name: Download the retained native artifact
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: proofbound-runtime-performance-native-${{ matrix.workload }}-${{ matrix.architecture }}-${{ env.PBR_PERFORMANCE_REVISION }}
+          path: ${{ runner.temp }}/proofbound-runtime-performance/native-${{ matrix.workload }}-${{ matrix.architecture }}
+
+      - name: Independently reverify the downloaded artifact
+        run: |
+          result_root="$RUNNER_TEMP/proofbound-runtime-performance/native-${{ matrix.workload }}-${{ matrix.architecture }}"
+          (cd "$result_root" && sha256sum --check SHA256SUMS)
+          chmod +x "$result_root/pbr-bench" "$result_root/runtime-bin/pbr" "$result_root/runtime-bin/pbr-native-launcher" "$result_root/runtime-bin/pbr-verify"
+          python3 experiments/performance/verify_native.py \
+            --result "$result_root/result.json" \
+            --expected-source "$PBR_PERFORMANCE_REVISION" \
+            --expected-architecture "${{ matrix.architecture }}" \
+            --expected-workload "${{ matrix.workload_id }}" \
+            --benchmark-executable "$result_root/pbr-bench" \
+            --pbr "$result_root/runtime-bin/pbr" \
+            --launcher "$result_root/runtime-bin/pbr-native-launcher" \
+            --verifier "$result_root/runtime-bin/pbr-verify" \
+            --plan "$result_root/workload/plan.toml" \
+            --workload-executable "$result_root/workload/hello-${{ matrix.workload }}" \
+            --expected-output "$result_root/workload/expected-output.txt" \
+            --runs-root "$result_root/runs" \
+            >"$RUNNER_TEMP/reverification.json"
+          cmp "$result_root/verification.json" "$RUNNER_TEMP/reverification.json"

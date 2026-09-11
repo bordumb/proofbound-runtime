@@ -95,8 +95,8 @@ class PerformanceWorkflowTests(unittest.TestCase):
             "${{ matrix.architecture }})",
             workflow,
         )
-        self.assertEqual(workflow.count("workload: static"), 2)
-        self.assertEqual(workflow.count("workload: dynamic"), 2)
+        self.assertEqual(workflow.count("workload: static"), 4)
+        self.assertEqual(workflow.count("workload: dynamic"), 4)
         self.assertIn(
             "cargo build --release --locked "
             "-p proofbound-runtime-bench -p proofbound-runtime-cli "
