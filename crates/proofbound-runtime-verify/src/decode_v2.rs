@@ -588,9 +588,7 @@ fn hex(bytes: &[u8]) -> String {
 
 fn project(value: &Value, path: &mut Vec<String>) -> Result<Json, DecodeError> {
     Ok(match value {
-        Value::Unsigned(value) if decimal_projection_path(path) => {
-            Json::String(value.to_string())
-        }
+        Value::Unsigned(value) if decimal_projection_path(path) => Json::String(value.to_string()),
         Value::Unsigned(value) => Json::from(*value),
         Value::Negative(argument) => {
             let value = -1_i128

@@ -4,8 +4,9 @@
 
 #[cfg(kani)]
 use proofbound_runtime_core::{
-    AuthorityPath, EnvironmentName, FileAccess, NormalizedAuthority, OutputByteLimit,
-    PathAuthority, PathRole, ProcessLimit, ResourceLimits, WallTimeLimit, compile_policy,
+    AuthorityPath, EnvironmentName, FileAccess, MemoryByteLimit, NormalizedAuthority,
+    OutputByteLimit, PathAuthority, PathRole, ProcessLimit, ResourceLimits, SwapByteLimit,
+    WallTimeLimit, compile_policy,
 };
 
 #[cfg(kani)]
@@ -37,11 +38,15 @@ fn policy_compilation_does_not_amplify_bounded_catalog() {
     let authority = NormalizedAuthority::from_canonical_catalog_for_model_check(
         vec![path_from(kani::any())],
         vec![environment_from(kani::any())],
-        ResourceLimits::new(
+        ResourceLimits::new_v2(
             ProcessLimit::new(1).expect("catalog process limit is valid"),
             WallTimeLimit::from_milliseconds(1).expect("catalog wall time is valid"),
             OutputByteLimit::new(1),
             OutputByteLimit::new(1),
+            MemoryByteLimit::new(if kani::any() { 65_536 } else { 131_072 })
+                .expect("catalog memory limit is valid"),
+            SwapByteLimit::new(if kani::any() { 0 } else { 65_536 })
+                .expect("catalog swap limit is valid"),
         ),
     );
     let policy = compile_policy(authority.clone());

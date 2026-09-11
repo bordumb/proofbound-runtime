@@ -238,11 +238,11 @@ const fn path_role_name(role: PathRole) -> &'static str {
     }
 }
 
-/// Compiles normalized authority into the closed version 1 Linux policy model.
+/// Compiles normalized authority into the matching closed Linux policy model.
 ///
 /// This pure function preserves the exact normalized filesystem, environment,
-/// and limit inputs. Version 1 maps denied network authority to its only
-/// supported seccomp profile and requires `no_new_privs`.
+/// and limit inputs. Both versions map denied network authority to the only
+/// supported seccomp profile and require `no_new_privs`.
 #[must_use]
 pub fn compile_policy(authority: NormalizedAuthority) -> CompiledPolicy {
     let (paths, environment, limits, _) = authority.into_parts();

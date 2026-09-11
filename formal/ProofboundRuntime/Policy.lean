@@ -25,6 +25,8 @@ structure ResourceLimits where
   wallTimeMilliseconds : Nat
   standardOutputBytes : Nat
   standardErrorBytes : Nat
+  memoryBytes : Option Nat
+  swapBytes : Option Nat
   deriving DecidableEq, Repr
 
 structure NormalizedAuthority where
@@ -60,11 +62,20 @@ structure CompiledPolicy where
 def ListSubset {α : Type} (left right : List α) : Prop :=
   ∀ item, item ∈ left → item ∈ right
 
+def OptionalBoundNoMorePermissive (left right : Option Nat) : Prop :=
+  match left, right with
+  | some leftValue, some rightValue => leftValue ≤ rightValue
+  | some _, none => True
+  | none, none => True
+  | none, some _ => False
+
 def LimitsNoMorePermissive (left right : ResourceLimits) : Prop :=
   left.processes ≤ right.processes ∧
     left.wallTimeMilliseconds ≤ right.wallTimeMilliseconds ∧
     left.standardOutputBytes ≤ right.standardOutputBytes ∧
-    left.standardErrorBytes ≤ right.standardErrorBytes
+    left.standardErrorBytes ≤ right.standardErrorBytes ∧
+    OptionalBoundNoMorePermissive left.memoryBytes right.memoryBytes ∧
+    OptionalBoundNoMorePermissive left.swapBytes right.swapBytes
 
 def NoAmplification (policy : CompiledPolicy) (authority : NormalizedAuthority) : Prop :=
   ListSubset policy.filesystem.rules authority.paths ∧
@@ -84,6 +95,10 @@ def compile (authority : NormalizedAuthority) : CompiledPolicy :=
 
 theorem compile_no_amplification (authority : NormalizedAuthority) :
     NoAmplification (compile authority) authority := by
-  simp [NoAmplification, compile, ListSubset, LimitsNoMorePermissive]
+  rcases authority with ⟨paths, environment, limits⟩
+  rcases limits with ⟨processes, wallTime, stdout, stderr, memory, swap⟩
+  cases memory <;> cases swap <;>
+    simp [NoAmplification, compile, ListSubset, LimitsNoMorePermissive,
+      OptionalBoundNoMorePermissive]
 
 end ProofboundRuntime.Policy
