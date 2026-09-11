@@ -11,30 +11,38 @@ AENEAS_REVISION = "3a8586facab25b31bdb1e1f5f45acd60d1cc5ff0"
 
 
 class ExactToolCacheTests(unittest.TestCase):
-    def test_formal_cache_identity_is_closed_and_immutable(self) -> None:
+    def test_proof_jobs_share_a_closed_immutable_cache_identity(self) -> None:
         workflow = VERIFY_WORKFLOW.read_text(encoding="utf-8")
 
-        self.assertEqual(workflow.count(CACHE_ACTION), 1)
+        self.assertEqual(workflow.count(CACHE_ACTION), 2)
         self.assertIn(f"AENEAS_SOURCE_REVISION: {AENEAS_REVISION}", workflow)
-        self.assertIn(
+        cache_identity = (
             "primary-key: formal-nix-v1-${{ runner.os }}-${{ runner.arch }}-"
             "${{ env.AENEAS_SOURCE_REVISION }}-"
-            "${{ hashFiles('proofbound/toolchains/translation.lock') }}",
-            workflow,
+            "${{ hashFiles('proofbound/toolchains/translation.lock') }}"
         )
+        self.assertEqual(workflow.count(cache_identity), 2)
         self.assertNotRegex(workflow, r"restore-prefix(?:es|-keys)")
 
-    def test_cache_precedes_build_and_identity_tool_identity_verification(self) -> None:
+    def test_cache_precedes_each_build_and_tool_identity_verification(self) -> None:
         workflow = VERIFY_WORKFLOW.read_text(encoding="utf-8")
 
-        self.assertIn(CACHE_ACTION, workflow)
-        cache_position = workflow.index(CACHE_ACTION)
-        build_position = workflow.index("Install pinned Charon and Aeneas tools")
-        verify_position = workflow.index("Verify pinned translation tools")
-        evidence_position = workflow.index("Run formal and fresh evidence gates")
-        self.assertLess(cache_position, build_position)
-        self.assertLess(build_position, verify_position)
-        self.assertLess(verify_position, evidence_position)
+        formal_start = workflow.index("\n  formal:\n")
+        evidence_start = workflow.index("\n  fresh-evidence:\n")
+        native_start = workflow.index("\n  native:\n")
+        jobs = (
+            (workflow[formal_start:evidence_start], "Run formal model and refinement gates"),
+            (workflow[evidence_start:native_start], "Run fresh evidence gate"),
+        )
+        for job, gate_name in jobs:
+            with self.subTest(gate=gate_name):
+                cache_position = job.index(CACHE_ACTION)
+                build_position = job.index("Install pinned Charon and Aeneas tools")
+                verify_position = job.index("Verify pinned translation tools")
+                gate_position = job.index(gate_name)
+                self.assertLess(cache_position, build_position)
+                self.assertLess(build_position, verify_position)
+                self.assertLess(verify_position, gate_position)
         manifests = (REPOSITORY_ROOT / "tools" / "ci" / "manifests.sh").read_text(
             encoding="utf-8"
         )
@@ -51,13 +59,13 @@ class ExactToolCacheTests(unittest.TestCase):
             self.assertNotIn(forbidden, cache_step)
         self.assertNotIn("cache-nix-action", release)
 
-    def test_cache_is_confined_to_the_formal_job(self) -> None:
+    def test_cache_is_confined_to_the_proof_jobs(self) -> None:
         workflow = VERIFY_WORKFLOW.read_text(encoding="utf-8")
         formal_start = workflow.index("\n  formal:\n")
         native_start = workflow.index("\n  native:\n")
-        formal_job = workflow[formal_start:native_start]
+        proof_jobs = workflow[formal_start:native_start]
 
-        self.assertIn(CACHE_ACTION, formal_job)
+        self.assertEqual(proof_jobs.count(CACHE_ACTION), 2)
         self.assertIsNone(re.search(r"cache-nix-action", workflow[:formal_start]))
         self.assertIsNone(re.search(r"cache-nix-action", workflow[native_start:]))
 
