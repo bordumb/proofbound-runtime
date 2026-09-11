@@ -670,6 +670,27 @@ mod tests {
     }
 
     #[test]
+    fn supervisor_timings_preserve_non_overlapping_phase_intervals() {
+        let timings = SupervisorTimings::new(
+            Duration::from_nanos(11),
+            Duration::from_nanos(13),
+            Duration::from_nanos(17),
+            Duration::from_nanos(19),
+            Duration::from_nanos(23),
+        );
+
+        assert_eq!(timings.launcher_creation(), Duration::from_nanos(11));
+        assert_eq!(timings.boundary_installation(), Duration::from_nanos(13));
+        assert_eq!(timings.process_execution(), Duration::from_nanos(17));
+        assert_eq!(timings.cleanup(), Duration::from_nanos(19));
+        assert_eq!(timings.stream_collection(), Duration::from_nanos(23));
+        assert_eq!(
+            timings.total(),
+            Duration::from_nanos(11 + 13 + 17 + 19 + 23)
+        );
+    }
+
+    #[test]
     fn hidden_launcher_bootstrap_round_trips_exactly() {
         let identity = identity();
         let arguments = bootstrap_arguments(
