@@ -62,6 +62,14 @@ pub enum BenchmarkError {
     ConfigurationMismatch,
     /// A measured monotonic duration exceeded the operational u64 domain.
     DurationOverflow,
+    /// Native measurement was requested on an unsupported operating system.
+    UnsupportedHost,
+    /// A required native benchmark input or host fact was invalid.
+    InvalidNativeInput,
+    /// One fresh native execution did not complete successfully.
+    NativeExecutionFailed,
+    /// A retained native run artifact was missing or inconsistent.
+    NativeArtifactFailed,
 }
 
 impl fmt::Display for BenchmarkError {
@@ -85,6 +93,10 @@ impl fmt::Display for BenchmarkError {
             Self::InvalidBuildProfile => "benchmark.build-profile.invalid",
             Self::ConfigurationMismatch => "benchmark.configuration.mismatch",
             Self::DurationOverflow => "benchmark.duration.overflow",
+            Self::UnsupportedHost => "benchmark.native.os-unsupported",
+            Self::InvalidNativeInput => "benchmark.native.input-invalid",
+            Self::NativeExecutionFailed => "benchmark.native.execution-failed",
+            Self::NativeArtifactFailed => "benchmark.native.artifact-failed",
         })
     }
 }
