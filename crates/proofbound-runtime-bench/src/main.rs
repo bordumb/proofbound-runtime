@@ -53,6 +53,7 @@ impl CliError {
                 BenchmarkError::InvalidToolchain => "benchmark.toolchain.invalid",
                 BenchmarkError::InvalidBuildProfile => "benchmark.build-profile.invalid",
                 BenchmarkError::ConfigurationMismatch => "benchmark.configuration.mismatch",
+                BenchmarkError::DurationOverflow => "benchmark.duration.overflow",
             },
         }
     }

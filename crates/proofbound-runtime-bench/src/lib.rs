@@ -9,6 +9,7 @@ use core::fmt;
 use std::time::Instant;
 
 use composition_fixture::CompositionFixture;
+use proofbound_runtime_cli::run::{RunBenchmarkPhase, RunTimings};
 use proofbound_runtime_compose::compose;
 use proofbound_runtime_core::{
     Architecture, ArtifactIdentity, ArtifactRole, BoundaryInstallation, BoundaryRecord,
@@ -59,6 +60,8 @@ pub enum BenchmarkError {
     InvalidBuildProfile,
     /// Retained samples disagree with the declared measurement protocol.
     ConfigurationMismatch,
+    /// A measured monotonic duration exceeded the operational u64 domain.
+    DurationOverflow,
 }
 
 impl fmt::Display for BenchmarkError {
@@ -81,6 +84,7 @@ impl fmt::Display for BenchmarkError {
             Self::InvalidToolchain => "benchmark.toolchain.invalid",
             Self::InvalidBuildProfile => "benchmark.build-profile.invalid",
             Self::ConfigurationMismatch => "benchmark.configuration.mismatch",
+            Self::DurationOverflow => "benchmark.duration.overflow",
         })
     }
 }
@@ -143,6 +147,78 @@ pub struct Measurement {
     pub batch_count: usize,
     /// Per-invocation elapsed-time observations.
     pub summary: Summary,
+}
+
+/// One native phase and the summary across fresh executions.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NativePhaseResult {
+    phase: RunBenchmarkPhase,
+    summary: Summary,
+}
+
+impl NativePhaseResult {
+    /// Returns the Runtime-owned phase.
+    #[must_use]
+    pub const fn phase(&self) -> RunBenchmarkPhase {
+        self.phase
+    }
+
+    /// Returns the complete sorted phase observations.
+    #[must_use]
+    pub const fn summary(&self) -> &Summary {
+        &self.summary
+    }
+}
+
+/// Complete total and per-phase observations for fresh native executions.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NativeMeasurements {
+    total: Summary,
+    phases: Vec<NativePhaseResult>,
+}
+
+impl NativeMeasurements {
+    /// Returns whole-run elapsed observations derived from phase sums.
+    #[must_use]
+    pub const fn total(&self) -> &Summary {
+        &self.total
+    }
+
+    /// Returns every Runtime-owned phase in production dependency order.
+    #[must_use]
+    pub fn phases(&self) -> &[NativePhaseResult] {
+        &self.phases
+    }
+}
+
+/// Summarizes a series of successful fresh native executions.
+pub fn summarize_native_runs(runs: &[RunTimings]) -> Result<NativeMeasurements, BenchmarkError> {
+    if runs.is_empty() {
+        return Err(BenchmarkError::EmptySeries);
+    }
+    let total = summarize(
+        runs.iter()
+            .map(|timings| duration_ns(timings.total()))
+            .collect::<Result<Vec<_>, _>>()?,
+    )?;
+    let phases = RunBenchmarkPhase::ALL
+        .into_iter()
+        .map(|phase| {
+            let samples = runs
+                .iter()
+                .map(|timings| duration_ns(timings.phase(phase)))
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(NativePhaseResult {
+                phase,
+                summary: summarize(samples)?,
+            })
+        })
+        .collect::<Result<Vec<_>, BenchmarkError>>()?;
+    Ok(NativeMeasurements { total, phases })
+}
+
+fn duration_ns(duration: std::time::Duration) -> Result<u64, BenchmarkError> {
+    u64::try_from(duration.as_nanos()).map_err(|_| BenchmarkError::DurationOverflow)
 }
 
 /// Closed version 1 pure-operation benchmark domain.
@@ -831,9 +907,10 @@ mod tests {
     use std::cell::Cell;
 
     use super::{
-        BenchmarkError, Measurement, MeasurementConfig, PureBenchmarkResult, PureSubject,
-        PureSubjectResult, SourceRevision, Summary, ToolchainIdentity, benchmark_core_v1,
-        measure_prepared_with_clock, measure_with_clock, next_batch_count, summarize,
+        BenchmarkError, Measurement, MeasurementConfig, NativePhaseResult, PureBenchmarkResult,
+        PureSubject, PureSubjectResult, SourceRevision, Summary, ToolchainIdentity,
+        benchmark_core_v1, measure_prepared_with_clock, measure_with_clock, next_batch_count,
+        summarize, summarize_native_runs,
     };
 
     #[test]
@@ -1315,8 +1392,8 @@ mod tests {
         let second = RunTimings::from_intervals(core::array::from_fn(|index| {
             std::time::Duration::from_nanos(u64::try_from(index + 2).expect("index fits u64"))
         }));
-        let measurements = summarize_native_runs(&[first, second])
-            .expect("complete native runs must summarize");
+        let measurements =
+            summarize_native_runs(&[first, second]).expect("complete native runs must summarize");
 
         assert_eq!(measurements.total().samples_ns, vec![91, 104]);
         assert_eq!(measurements.phases().len(), RunBenchmarkPhase::ALL.len());
@@ -1330,9 +1407,6 @@ mod tests {
         );
         assert_eq!(measurements.phases()[0].summary().samples_ns, vec![1, 2]);
         assert_eq!(measurements.phases()[12].summary().samples_ns, vec![13, 14]);
-        assert_eq!(
-            summarize_native_runs(&[]),
-            Err(BenchmarkError::EmptySeries)
-        );
+        assert_eq!(summarize_native_runs(&[]), Err(BenchmarkError::EmptySeries));
     }
 }
