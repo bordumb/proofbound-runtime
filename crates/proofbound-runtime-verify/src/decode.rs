@@ -53,6 +53,37 @@ pub enum RecordedEligibility {
     NonReusable(Vec<WireReason>),
 }
 
+/// One artifact identity exposed to independent receipt consumers.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CompositionArtifact {
+    pub mode: u16,
+    pub role: &'static str,
+    pub sha256: String,
+    pub size: String,
+}
+
+/// One trusted-computing-base entry exposed to independent receipt consumers.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CompositionTcbEntry {
+    pub identity: String,
+    pub role: String,
+}
+
+/// The closed receipt facts needed by release composition.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ReceiptCompositionFacts {
+    pub assumptions: Vec<String>,
+    pub execution_id: String,
+    pub producer: CompositionArtifact,
+    pub product_version: String,
+    pub reusable: bool,
+    pub runtime: CompositionArtifact,
+    pub launcher: CompositionArtifact,
+    pub schema: String,
+    pub trusted_computing_base: Vec<CompositionTcbEntry>,
+    pub version_two: bool,
+}
+
 /// Contains one independently decoded version 1 receipt.
 #[derive(Clone, Debug, PartialEq)]
 pub struct DecodedReceipt {
@@ -87,6 +118,33 @@ impl DecodedReceipt {
         &self.recorded_eligibility
     }
 
+    /// Projects only typed facts needed by a receipt composer. This is not the
+    /// JSON inspection projection and retains the independently decoded wire
+    /// identities directly.
+    #[must_use]
+    pub fn composition_facts(&self) -> ReceiptCompositionFacts {
+        ReceiptCompositionFacts {
+            assumptions: self.wire.assumptions.clone(),
+            execution_id: self.wire.execution_id.clone(),
+            producer: composition_artifact(&self.wire.producer),
+            product_version: self.wire.product_version.clone(),
+            reusable: matches!(self.recorded_eligibility, RecordedEligibility::Reusable),
+            runtime: composition_artifact(&self.wire.runtime.runtime),
+            launcher: composition_artifact(&self.wire.runtime.launcher),
+            schema: self.wire.schema.clone(),
+            trusted_computing_base: self
+                .wire
+                .trusted_computing_base
+                .iter()
+                .map(|entry| CompositionTcbEntry {
+                    identity: entry.identity.clone(),
+                    role: entry.role.clone(),
+                })
+                .collect(),
+            version_two: self.version_two,
+        }
+    }
+
     pub(crate) const fn is_version_two(&self) -> bool {
         self.version_two
     }
@@ -110,6 +168,35 @@ impl DecodedReceipt {
 
     pub(crate) const fn resources(&self) -> Option<&WireResources> {
         self.resources.as_ref()
+    }
+}
+
+fn composition_artifact(wire: &WireArtifact) -> CompositionArtifact {
+    CompositionArtifact {
+        mode: wire.mode,
+        role: wire_artifact_role(wire.role),
+        sha256: wire.sha256.clone(),
+        size: wire.size.clone(),
+    }
+}
+
+const fn wire_artifact_role(role: WireArtifactRole) -> &'static str {
+    match role {
+        WireArtifactRole::ExecutionPlan => "execution-plan",
+        WireArtifactRole::NormalizedPlan => "normalized-plan",
+        WireArtifactRole::CompiledPolicy => "compiled-policy",
+        WireArtifactRole::RuntimeBinary => "runtime-binary",
+        WireArtifactRole::LauncherBinary => "launcher-binary",
+        WireArtifactRole::VerifierBinary => "verifier-binary",
+        WireArtifactRole::RuntimeExecutable => "runtime-executable",
+        WireArtifactRole::RuntimeLoaderExecutable => "runtime-loader-executable",
+        WireArtifactRole::RuntimeLibrary => "runtime-library",
+        WireArtifactRole::WorkingDirectory => "working-directory",
+        WireArtifactRole::ProjectInput => "project-input",
+        WireArtifactRole::OutputRoot => "output-root",
+        WireArtifactRole::StandardOutput => "standard-output",
+        WireArtifactRole::StandardError => "standard-error",
+        WireArtifactRole::OutputArtifact => "output-artifact",
     }
 }
 
