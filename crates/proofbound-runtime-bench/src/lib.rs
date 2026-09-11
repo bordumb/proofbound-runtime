@@ -525,8 +525,8 @@ mod tests {
 
     use super::{
         BenchmarkError, Measurement, MeasurementConfig, PureBenchmarkResult, PureSubject,
-        PureSubjectResult, Summary, benchmark_core_v1, measure_prepared_with_clock,
-        measure_with_clock, next_batch_count, summarize,
+        PureSubjectResult, SourceRevision, Summary, ToolchainIdentity, benchmark_core_v1,
+        measure_prepared_with_clock, measure_with_clock, next_batch_count, summarize,
     };
 
     #[test]
@@ -809,5 +809,46 @@ mod tests {
         assert!(subjects.iter().all(|subject| {
             subject.measurement().summary.count == 2 && subject.measurement().batch_count >= 1
         }));
+    }
+
+    #[test]
+    fn source_revision_requires_exact_clean_head() {
+        let revision = "a".repeat(40);
+        let source = SourceRevision::new(&revision, &revision, "")
+            .expect("exact clean head is valid");
+        assert_eq!(source.commit(), revision);
+        assert_eq!(source.tree_state(), "clean");
+        assert_eq!(
+            SourceRevision::new(&revision, &"b".repeat(40), ""),
+            Err(BenchmarkError::SourceMismatch)
+        );
+        assert_eq!(
+            SourceRevision::new(&revision, &revision, " M src/lib.rs\n"),
+            Err(BenchmarkError::DirtyTree)
+        );
+    }
+
+    #[test]
+    fn toolchain_identity_parses_closed_rustc_verbose_output() {
+        let identity = ToolchainIdentity::parse(
+            "rustc 1.93.0 (fixture 2026-01-01)\n\
+             binary: rustc\n\
+             commit-hash: fixture\n\
+             commit-date: 2026-01-01\n\
+             host: x86_64-unknown-linux-gnu\n\
+             release: 1.93.0\n\
+             LLVM version: 20.1.0\n",
+        )
+        .expect("complete rustc identity parses");
+        assert_eq!(identity.release(), "1.93.0");
+        assert_eq!(identity.target(), "x86_64-unknown-linux-gnu");
+        assert_eq!(
+            ToolchainIdentity::parse("rustc 1.93.0\n"),
+            Err(BenchmarkError::InvalidToolchain)
+        );
+        assert_eq!(
+            ToolchainIdentity::parse("host: a\nhost: b\nrelease: 1\n"),
+            Err(BenchmarkError::InvalidToolchain)
+        );
     }
 }
