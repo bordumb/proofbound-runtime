@@ -34,11 +34,12 @@ class WireTransitionTests(unittest.TestCase):
 
     def test_memory_receipt_uses_cbor_integers_not_json_workarounds(self) -> None:
         specification = MEMORY_SPEC.read_text(encoding="utf-8")
+        normalized = " ".join(specification.split())
 
         self.assertIn(
             "Each byte count and counter is encoded as an unsigned integer in the "
             "version 2 committed CBOR bytes.",
-            specification,
+            normalized,
         )
         self.assertNotIn("so the JSON wire can represent", specification)
         self.assertIn(

@@ -184,11 +184,15 @@ section contains the exact readback values for `pids.max`, `memory.max`,
 - `swap_events`, the checked deltas for `max` and `fail` from
   `memory.swap.events`.
 
-Each byte count and counter is a canonical decimal string so the JSON wire can
-represent every `u64` value exactly. The producer retains the initial and final
-snapshots until receipt construction, performs checked monotonic subtraction,
-and rejects counter regression or overflow. The receipt carries the deltas,
-not the mutable cgroup files or an assertion that the host reported truthfully.
+Each byte count and counter is encoded as an unsigned integer in the version 2
+committed CBOR bytes. Its closed CDDL type must admit exactly the `u64` range.
+The noncommitted JSON projection renders those integers as canonical decimal
+strings so tools that do not preserve the full JSON integer range can display
+them exactly; that projection is never a verification input. The producer
+retains the initial and final snapshots until receipt construction, performs
+checked monotonic subtraction, and rejects counter regression or overflow. The
+receipt carries the deltas, not the mutable cgroup files or an assertion that
+the host reported truthfully.
 
 The receipt also contains a canonical sorted `limit_events` set derived only
 from nonzero deltas:
