@@ -53,8 +53,8 @@ if selected "preflight"; then
   timed_unit timing-tests python3 -m unittest tools.ci.test_timing
   timed_unit tool-cache-tests python3 -m unittest tools.ci.test_tool_cache
   timed_unit performance-workflow-tests python3 -m unittest tools.ci.test_performance_workflow
-  timed_unit performance-schema-tests python3 -m unittest experiments.performance.test_pure_result_schema
-  timed_unit performance-verifier-tests python3 -m unittest experiments.performance.test_verify_pure
+  timed_unit performance-schema-tests python3 -m unittest experiments.performance.test_pure_result_schema experiments.performance.test_native_result_schema
+  timed_unit performance-verifier-tests python3 -m unittest experiments.performance.test_verify_pure experiments.performance.test_verify_native
   timed_unit network-record-port-tests python3 -m unittest experiments.network_authority.test_record_port_control
   timed_unit network-record-endpoint-tests python3 -m unittest experiments.network_authority.test_record_endpoint_control
   timed_unit network-broker-tests python3 -m unittest experiments.network_authority.test_explicit_broker
