@@ -109,7 +109,7 @@ impl Decoder<'_> {
             }
             4 => {
                 let count = bounded_count(argument)?;
-                let mut values = Vec::with_capacity(count);
+                let mut values = Vec::new();
                 for _ in 0..count {
                     values.push(self.item(depth + 1)?);
                 }
@@ -122,7 +122,7 @@ impl Decoder<'_> {
 
     fn map(&mut self, argument: u64, depth: usize) -> Result<Value, ()> {
         let count = bounded_count(argument)?;
-        let mut values = Vec::with_capacity(count);
+        let mut values = Vec::new();
         let mut previous: Option<&[u8]> = None;
         for _ in 0..count {
             let start = self.offset;

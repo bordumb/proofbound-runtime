@@ -831,6 +831,19 @@ mod tests {
             .unwrap_err(),
             AcceptanceError::MalformedPolicy
         );
+        for incomplete_large_container in [
+            [0x9a, 0x00, 0x0f, 0x42, 0x40],
+            [0xba, 0x00, 0x0f, 0x42, 0x40],
+        ] {
+            assert_eq!(
+                decode_policy(
+                    &incomplete_large_container,
+                    &format!("sha256:{}", "0".repeat(64))
+                )
+                .unwrap_err(),
+                AcceptanceError::MalformedPolicy
+            );
+        }
     }
 
     #[test]
