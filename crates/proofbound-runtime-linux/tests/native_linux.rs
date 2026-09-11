@@ -73,6 +73,7 @@ fn native_memory_workload_modes_are_closed() {
         "memory-baseline",
         "memory-pressure-timeout",
         "memory-pressure-stopped",
+        "memory-pre-main",
     ];
     for mode in expected {
         assert_eq!(
