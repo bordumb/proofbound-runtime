@@ -26,6 +26,10 @@ DOWNLOAD_ARTIFACT_ACTION = (
     "actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3"
     " # v8.0.0"
 )
+RUST_TOOLCHAIN_ACTION = (
+    "dtolnay/rust-toolchain@fef00d40025f7fd8f1ec759cbbb0f577ddfc3133"
+    " # 1.94.0"
+)
 
 
 class RequiredWorkflowTests(unittest.TestCase):
@@ -139,6 +143,23 @@ class RequiredWorkflowTests(unittest.TestCase):
             [(name, action) for name, action in observed if action not in allowed],
             [],
         )
+
+    def test_every_external_action_is_pinned_to_one_commit(self) -> None:
+        uses_pattern = re.compile(r"(?m)^\s*uses:\s+([^#\s]+)")
+        observed: list[tuple[str, str]] = []
+        for workflow_path in sorted(WORKFLOW_ROOT.glob("*.yml")):
+            for action in uses_pattern.findall(
+                workflow_path.read_text(encoding="utf-8")
+            ):
+                if not action.startswith("./"):
+                    observed.append((workflow_path.name, action))
+
+        self.assertTrue(observed)
+        for workflow_name, action in observed:
+            with self.subTest(workflow=workflow_name, action=action):
+                self.assertRegex(action, r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}$")
+        rust_action = RUST_TOOLCHAIN_ACTION.split()[0]
+        self.assertEqual(sum(action == rust_action for _, action in observed), 6)
 
     def test_triggers_and_cancellation_remain_closed(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
