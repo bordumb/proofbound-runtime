@@ -17,6 +17,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-RUN-007` | Tested/model-only with exact native artifact observation | Each native release executes the exact `pbr` bundle role end to end without turning that observation into a theorem. |
 | `PBR-COMPOSE-008` | Tested/model-only with exact native artifact observation | Each exact native composer joins verified receipts without upgrading any inherited facet. |
 | `PBR-PREFLIGHT-009` | Tested/model-only on the development branch | The point-in-time preflight projection and registered failure surface are tested; exact native release observation remains an explicit obligation. |
+| `PBR-DIAGNOSTIC-011` | Tested/model-only on the development branch | The closed run phase and rule mapping is tested without inferring a kernel denial or changing receipt meaning. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -197,6 +198,26 @@ native workflow and binds the resulting exact `pbr` members, the command is a
 development capability rather than a released artifact claim. A successful
 report is never evidence that a later run will observe the same identities or
 install a boundary.
+
+## PBR-DIAGNOSTIC-011
+
+The production subject is the typed `pbr run` error boundary and its stderr
+renderer. Each call site assigns one closed execution phase and one closed
+failed-invariant rule while retaining the low-level machine code and existing
+exit class.
+
+The current bounded evidence path is:
+
+1. a frozen catalog for capability, resolution, identity drift, output-root,
+   launcher-protocol, cgroup, receipt, and result-projection failures;
+2. typed phase and rule enums with unique bounded identifiers;
+3. direct tests that the producer mappings match the frozen catalog; and
+4. an exact one-line renderer test that contains no dynamic failure context.
+
+The claim remains `TESTED` and `MODEL_ONLY`. It does not infer a denial from a
+child exit code, child stderr, host logs, or kernel audit text. Specification
+0009 and an exact release artifact remain open review and publication
+obligations.
 
 ## Bounded-domain declaration guard
 

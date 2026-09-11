@@ -1,0 +1,46 @@
+schema = "proofbound-claim/1"
+id = "PBR-DIAGNOSTIC-011"
+title = "Run failures retain typed diagnostic ownership"
+statement = "When pbr run stops at a Runtime-owned boundary, its diagnostic identifies the closed execution phase, failed invariant rule, and existing exact machine code without changing a completed child outcome or constructing a receipt from an incomplete execution."
+public_language = "The development run path reports a stable phase, invariant rule, and machine code for the registered Runtime-owned failure classes. This is bounded test evidence for diagnostic selection, not proof of a kernel denial, a live trace, or released exact-artifact evidence."
+subject = "rust:proofbound_runtime_cli::run_diagnostic::RunError"
+profile = "ledger"
+tier = 0
+evidence = ["example-test:run-diagnostic-attacks"]
+assumptions = [
+  "PBR-LINUX-AX-001",
+  "PBR-HOST-AX-002",
+  "PBR-TOOLCHAIN-AX-003",
+]
+open_obligations = [
+  "Obtain explicit review of Specification 0009 before publishing the diagnostic vocabulary as the version 0.2 CLI contract.",
+  "Execute the complete native run failure corpus on both supported architectures at the next release head.",
+  "Bind exact native pbr artifacts containing the diagnostic boundary before describing it as released.",
+]
+out_of_scope = [
+  "Proof that the Linux kernel caused a child-visible EPERM, EACCES, signal, or exit code.",
+  "Inference of a denial rule from arbitrary child behavior, stderr, host logs, or audit text.",
+  "A live diagnostic observer or any expansion of child permissions or the trusted computing base.",
+  "A change to execution outcome, receipt construction, verification, or reuse meaning.",
+  "Correctness of the Linux kernel or host platform under the recorded assumptions.",
+]
+source_roots = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-cli/Cargo.toml",
+  "crates/proofbound-runtime-cli/src/main.rs",
+  "crates/proofbound-runtime-cli/src/run.rs",
+  "crates/proofbound-runtime-cli/src/run_diagnostic.rs",
+  "crates/proofbound-runtime-linux/src/cgroup.rs",
+  "crates/proofbound-runtime-linux/src/execution.rs",
+  "crates/proofbound-runtime-linux/src/launcher.rs",
+  "crates/proofbound-runtime-linux/src/output.rs",
+  "crates/proofbound-runtime-linux/src/probe.rs",
+  "crates/proofbound-runtime-linux/src/resolve.rs",
+  "crates/proofbound-runtime-linux/src/supervisor.rs",
+  "docs/specs/0002_cli_surface.md",
+  "docs/specs/0009_run_denial_diagnostics.md",
+  "proofbound/evidence/run-diagnostic-attacks.toml",
+  "tests/attacks/run/diagnostics-v1.toml",
+  "tools/ci/native-linux.sh",
+]
