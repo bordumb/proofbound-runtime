@@ -56,6 +56,16 @@ class WireTransitionTests(unittest.TestCase):
             set(VERSION_TWO_OBJECTS),
         )
 
+    def test_every_execution_entry_point_uses_the_v2_plan_decoder(self) -> None:
+        for relative in (
+            "crates/proofbound-runtime-cli/src/preflight.rs",
+            "crates/proofbound-runtime-cli/src/run.rs",
+        ):
+            with self.subTest(relative=relative):
+                source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+                self.assertIn("parse_execution_plan_for_execution(&plan_bytes)", source)
+                self.assertNotIn("from_utf8(&plan_bytes)", source)
+
 
 if __name__ == "__main__":
     unittest.main()
