@@ -175,9 +175,14 @@ on 2026-09-12 at exact subject head
 gate passed. A different Codex agent independently re-reviewed that exact
 base and head, closed all five findings, found no new blocker, and recorded an
 APPROVE verdict that the maintainer endorsed. Approval-only commit `bcd2d46`
-binds the four exact new-assumption regressions to that reviewed subject; its
-hosted exact-head gate and merge remain the next execution step. A dry run of
-the later integration promotion correctly failed because its head retained an
+bound the four exact new-assumption regressions, but its hosted gate exposed a
+Node-version-specific npm archive digest: the registered bytes came from Node
+22 while CI correctly runs pinned Node 24.3.0. New subject `f774429` restores
+the Node-24 digest, retires the stale envelope, and passes the exact Node 24
+TypeScript vertical locally. Because that is a post-review byte change, a
+narrow independent re-review and replacement envelope are required before
+merge. A dry run of the later integration promotion correctly failed because
+its head retained an
 older approval envelope followed by newer changes. The obsolete envelope has
 been retired in a local subject commit. An independent review of PR 6 at head
 `a6964f6` confirmed that PR 2's six commits are embedded in the promotion and

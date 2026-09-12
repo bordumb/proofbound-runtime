@@ -129,6 +129,25 @@ approve.
   must remain a separate commit and the full exact-head evidence must run
   again after it lands.
 
+### Post-review hosted-gate finding
+
+- **Envelope head:** `bcd2d46925375e1d3d243ddeab116b08672611bd`
+- **Hosted result:** the approval envelope resolved all four exact assurance
+  regressions, and the full gate progressed through the formal stages and the
+  Python reference vertical. The TypeScript package claim then became INVALID
+  on Linux because its registered npm archive digest had been generated under
+  Node 22 rather than the workflow's pinned Node 24.3.0 runtime+- **Root cause and fix:** Node 24.3.0's npm 11.4.2 produces SHA-256
+  `6315de8611c4f8f2133ddf8fca9b4577128b8665b3d9b1af11db85d36c717446`
+  for the registered archive; Node 22 produces a different compressed byte
+  stream. The exact Node 24.3.0 archive was reproduced locally from the locked
+  source and the full TypeScript reference vertical passed with the corrected
+  registration.
+- **New subject:** `f7744290176e01496079d5c7a2415598d67e2757` restores
+  the Node-24 digest and retires the now-stale approval manifest. This
+  post-review change invalidates the approval at `21ab780`; PR 2 therefore
+  requires a narrow independent re-review of `21ab780..f774429` and a new
+  approval-only envelope before merge.
+
 ### Blocking items
 
 1. **Status derivation weakened for every subject, not only Python and
