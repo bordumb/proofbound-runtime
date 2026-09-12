@@ -167,18 +167,17 @@ with three bounded functional slices, one measurement slice, a machine-checked
 expectation domain, immutable per-mechanism results, and a deterministic
 comparison boundary.
 
-Upstream promotion is intentionally paused at its review boundary. Claude's
-independent model review of Proofbound PR 2 requested changes on five blocking
-items. The first is a cross-project status weakening in mutation-witness
-validation: the core and independent verifier lost the universal two-shadow
-rule and selected the pytest command branch from an unvalidated argument
-prefix. PR 2 remains open until all five items land and are re-reviewed; the
-maintainer's endorsement of the completed review, not the model review by
-itself, is the promotion decision. All five fixes were pushed on 2026-09-12
-at exact head `21ab780127193422219254d31077952475094908`, where the complete
-12-stage local gate passed. That implementation report does not close the
-review gate; the head still requires independent re-review. A dry run of the
-later integration promotion correctly failed because its head retained an
+Proofbound PR 2 has cleared its independent-review boundary. Claude's initial
+model review requested changes on five blocking items, led by a cross-project
+status weakening in mutation-witness validation. All five fixes were pushed
+on 2026-09-12 at exact subject head
+`21ab780127193422219254d31077952475094908`, where the complete 12-stage local
+gate passed. A different Codex agent independently re-reviewed that exact
+base and head, closed all five findings, found no new blocker, and recorded an
+APPROVE verdict that the maintainer endorsed. Approval-only commit `bcd2d46`
+binds the four exact new-assumption regressions to that reviewed subject; its
+hosted exact-head gate and merge remain the next execution step. A dry run of
+the later integration promotion correctly failed because its head retained an
 older approval envelope followed by newer changes. The obsolete envelope has
 been retired in a local subject commit. An independent review of PR 6 at head
 `a6964f6` confirmed that PR 2's six commits are embedded in the promotion and
@@ -192,7 +191,8 @@ and the result sealed by a new approval-only envelope with no later byte
 changes. No Runtime claim wave depends on treating that pending stack as
 released.
 
-The stacked upstream reviews impose the exact repair order after PR 2: PR 7's
+The stacked upstream reviews impose the exact repair order after PR 2 merges:
+PR 7's
 required compiled-release/7 transition and same-wave Runtime composer change;
 PR 8's two requested changes; PR 9's three requested changes; then the fresh
 PR 6 diff and regression adjudication. PBF-0001 remains last. Branch

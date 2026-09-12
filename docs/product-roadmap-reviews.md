@@ -2,9 +2,11 @@
 
 - **Reviewer:** Claude, an agent independent of the authoring agent
 - **Date:** 2026-09-11
-- **Status of these records:** review findings, not approvals. The
-  maintainer decides whether an AI review satisfies the UP-0.1 requirement
-  for a reviewer other than the change author.
+- **Status of these records:** the initial records are review findings, not
+  approvals. A later section is an approval only when it names an exact
+  re-reviewed head and explicitly records an APPROVE verdict. The maintainer
+  decides whether an AI review satisfies the UP-0.1 requirement for a
+  reviewer other than the change author.
 - **Scope:** `bordumb/proof-bound` pull requests 2, 6, 7, 8, and 9
 
 Each record lists the exact diff reviewed, the findings with file and line,
@@ -33,6 +35,99 @@ approve.
   verticals and standalone verification of both portable releases. This is
   an implementation report, not a review verdict; PR 2 remains REQUEST
   CHANGES until an independent re-review records approval.
+
+### Independent re-review at exact head `21ab780127193422219254d31077952475094908`
+
+- **Reviewer:** Codex, independent of the authoring agent
+- **Review date:** 2026-09-12
+- **Reviewed base:** `main` at
+  `0a5c6b6dcf7e3b59cdf71ec5f8d50082c5f3a3e0`
+- **Reviewed head:**
+  `21ab780127193422219254d31077952475094908`
+- **Reviewed range:**
+  `0a5c6b6dcf7e3b59cdf71ec5f8d50082c5f3a3e0...21ab780127193422219254d31077952475094908`,
+  with focused regression review of the fixes after `ed4fab9`
+- **Method:** source and diff inspection, review of the committed negative
+  tests and workflow wiring, and read-only inspection of both exact-head
+  GitHub Actions failures. No build or test command was run during this
+  review, to avoid interfering with the concurrent authoring work.
+- **Verdict:** **APPROVE**. All five blocking findings are closed at the
+  reviewed head. The fixes introduce no new blocking finding. This verdict
+  is byte-specific and does not apply after any head change.
+- **Maintainer endorsement:** **ENDORSED** for preparation of the required
+  non-author approval envelope and continuation of the merge sequence. This
+  endorsement is not the Proofbound approval envelope and does not bypass
+  the fail-closed approval gate.
+
+#### Disposition of the five blocking findings
+
+1. **Closed: mutation status derivation is again subject-specific and
+   fail-closed.** Core and the independent verifier now parse the witness
+   subject into a closed Rust, Python, or Node form before they select a
+   command grammar. Rust requires distinct `$BASELINE` and `$MUTANT`
+   executable roots and its exact test ABI. Python requires the exact
+   `python3 -m pytest -p no:cacheprovider --rootdir` shadow ABI. Node
+   requires the exact Vitest shadow ABI. The expected mutation exit is 101
+   for Rust and 1 for Python and Node. Malformed subjects, a pytest-shaped
+   command for a Rust subject, and reuse of the baseline command as the
+   mutant command have negative coverage in both the core status tests and
+   independent-verifier conformance tests. The original cross-subject
+   acceptance path is no longer present.
+
+2. **Closed: Node receipts distinguish the two mutation shadows.** The Node
+   adapter records mutation commands through a mutation-specific
+   observation path. It maps the two execution roots to distinct
+   `$BASELINE` and `$MUTANT` logical roots instead of mapping both to
+   `$PROJECT`. Core and the independent verifier require those distinct
+   roots and equal command tails. Adapter tests pin both logical command
+   identities, and conformance tests reject a receipt that replays the
+   baseline command as the mutant command.
+
+3. **Closed: the relaxed wire rules have new schema versions.** The adapter
+   observation schema is now version 3, the evidence schema is version 4,
+   the mutation registry and witness schemas are version 3, and the release
+   envelope and compiled release schemas are version 4. Producer, public
+   JSON schemas, fixtures, and independent verifier agree on the new
+   versions. The old constants remain only where needed to identify and
+   reject superseded input; legacy-version rejection is covered by tests.
+   The change is an explicit pre-release cutover, not a silent edit to an
+   accepted wire version.
+
+4. **Closed: both new language reference verticals are part of CI.** Stage
+   10 now runs fresh check, release, and standalone-verifier flows for the
+   Python inventory and TypeScript codec demos. The workflow installs a
+   pinned Node 24.3.0 toolchain and uses the repository lockfile cache. The
+   Node adapter installs each isolated shadow with `npm ci`, lifecycle
+   scripts disabled, audit disabled, and the lockfile enforced. Xtask tests
+   pin all three commands for both demos. The author-reported clean local
+   run reached all 12 stages; that report was not rerun by this reviewer.
+
+5. **Closed: `node_modules` is a reserved translation path component.** It
+   is present in the typed manifest validator and in the public translation
+   unit schema. Runtime and schema tests reject paths that contain it. The
+   earlier note about `dist`, `build`, and `coverage` does not create a
+   blocker: those names can identify reviewed source or build inputs, so a
+   universal name-only exclusion would require a separate semantic claim.
+
+#### Regression and gate review
+
+- The fix range also removes the obsolete self-approval envelope. It does
+  not replace it with another self-review artifact.
+- The two final fixture commits bind the test inputs with `include_bytes!`
+  so a reused build cache cannot redirect the tests to unreviewed runtime
+  paths. They do not relax producer or verifier behavior.
+- No new schema, status-derivation, subject-grammar, shadow-identity,
+  translation-boundary, verifier-independence, or CI-coverage blocker was
+  found in the fix range.
+- Both GitHub Actions runs for this exact head currently fail at the same
+  intended `PB-DIFF-0002` approval check. The reported regressions are the
+  four new assumptions for `PY-RESERVATION-001`, `PY-WHEEL-001`,
+  `TS-CODEC-001`, and `TS-PACKAGE-001`, each with `approved_by: null`.
+  Earlier stages in the inspected logs pass. This is the expected
+  fail-closed state before the required non-author approval envelope is
+  added; it is not evidence of a new implementation blocker. The envelope
+  must remain a separate commit and the full exact-head evidence must run
+  again after it lands.
 
 ### Blocking items
 
