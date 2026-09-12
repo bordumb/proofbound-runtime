@@ -154,7 +154,8 @@ with `complete: true` and `verified: true`.
 
 [ADR 0004](adr/0004-authenticated-service-session.md) now accepts the
 connector-owned authenticated service session selected by that comparison
-after independent review on 2026-09-11. Its machine comparison deliberately
+after Claude's independent model review on 2026-09-11 and the maintainer's
+endorsement of that review. Its machine comparison deliberately
 retains `production_selection: null`: the accepted decision authorizes a
 normative specification, not production behavior. The deterministic address
 rule, IPv4/IPv6 attempt order, two descriptor-transfer native cases, and the
@@ -173,8 +174,11 @@ validation: the core and independent verifier lost the universal two-shadow
 rule and selected the pytest command branch from an unvalidated argument
 prefix. PR 2 remains open until all five items land and are re-reviewed; the
 maintainer's endorsement of the completed review, not the model review by
-itself, is the promotion decision. A dry run of the later integration
-promotion correctly failed because its head retained an
+itself, is the promotion decision. All five fixes were pushed on 2026-09-12
+at exact head `21ab780127193422219254d31077952475094908`, where the complete
+12-stage local gate passed. That implementation report does not close the
+review gate; the head still requires independent re-review. A dry run of the
+later integration promotion correctly failed because its head retained an
 older approval envelope followed by newer changes. The obsolete envelope has
 been retired in a local subject commit. An independent review of PR 6 at head
 `a6964f6` confirmed that PR 2's six commits are embedded in the promotion and

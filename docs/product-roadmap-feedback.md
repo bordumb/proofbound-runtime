@@ -39,7 +39,7 @@ Verified against the branch head, the four reviews, and the roadmap's own exit c
 
 ## Upstream, Order 1
 
-- [ ] **Resolve Proofbound PR 2's independent review,** then obtain the maintainer-endorsed non-author envelope, merge, recompute the promotion diff against upstream main, and seal it with a new approval envelope. Claude's 2026-09-11 model review requested changes on five blockers; item 1 identifies a cross-project mutation-witness status weakening caused by lost two-shadow validation and argument-prefix language dispatch. Runtime is still pinned to `70af5e6`, which is not on upstream main. The separate PR 6 review confirmed that PR 2 is embedded and found 43 regressions; those must be recomputed and adjudicated only after PR 2 merges.
+- [ ] **Resolve Proofbound PR 2's independent review,** then obtain the maintainer-endorsed non-author envelope, merge, recompute the promotion diff against upstream main, and seal it with a new approval envelope. Claude's 2026-09-11 model review requested changes on five blockers; all five fixes are pushed at exact head `21ab780127193422219254d31077952475094908`, and the complete 12-stage local gate passed there. The checkbox remains open pending independent re-review and its recorded verdict. Runtime is still pinned to `70af5e6`, which is not on upstream main. The separate PR 6 review confirmed that PR 2 is embedded and found 43 regressions; those must be recomputed and adjudicated only after PR 2 merges.
 - [ ] **Protect upstream main and tag a Proofbound release,** then move `ci.yml:235` and `release.yml:147` to that identity. Protection and tagging are maintainer actions.
 - [ ] **Upstream PBF-0007, then PBF-0003, then PBF-0002 and PBF-0001.** PR 7 is approved with required changes, led by a compiled-release/7 transition that must move Runtime's composer in the same wave. PRs 8 and 9 requested changes (two and three items respectively). PBF-0001 remains last. PBF-0007 gates any new bounded resource claim beyond the local guard.
 - [ ] **Decide the Proofbound envelope encoding upstream** per UP-0.8 and make the composer accept exactly what the pinned release declares.
@@ -52,7 +52,7 @@ Verified against the branch head, the four reviews, and the roadmap's own exit c
 
 ## Network decision, Order 7
 
-- [x] **Get ADR 0004 an independent review** and record acceptance or rejection. Claude independently reviewed the frozen comparison and registered attack domain on 2026-09-11; the accepted ADR records the four required changes and retains the implementation gates.
+- [x] **Get ADR 0004 an independent review** and record acceptance or rejection. Acceptance rests on Claude's independent model review of the frozen comparison and registered attack domain on 2026-09-11, endorsed by the maintainer; it does not imply a human reviewer under UP-0.1. The accepted ADR records the four required changes and retains the implementation gates.
 
 ## Deferred by the roadmap's own rules, not incomplete
 
