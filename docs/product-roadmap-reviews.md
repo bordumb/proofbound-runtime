@@ -135,18 +135,85 @@ approve.
 - **Hosted result:** the approval envelope resolved all four exact assurance
   regressions, and the full gate progressed through the formal stages and the
   Python reference vertical. The TypeScript package claim then became INVALID
-  on Linux because its registered npm archive digest had been generated under
-  Node 22 rather than the workflow's pinned Node 24.3.0 runtime+- **Root cause and fix:** Node 24.3.0's npm 11.4.2 produces SHA-256
+  on Linux because its registered npm archive digest had been generated with
+  npm 10.9.8 rather than the workflow's pinned npm 11.4.2.
+- **Root cause and fix:** Node 24.3.0's npm 11.4.2 produces SHA-256
   `6315de8611c4f8f2133ddf8fca9b4577128b8665b3d9b1af11db85d36c717446`
-  for the registered archive; Node 22 produces a different compressed byte
-  stream. The exact Node 24.3.0 archive was reproduced locally from the locked
-  source and the full TypeScript reference vertical passed with the corrected
-  registration.
+  for the registered archive; Node 22.23.1's npm 10.9.8 produces the former
+  `931e913bdcdcd3f22d7d3ed324f8f3546fce3b0482a58770af0c5c86079043ea`
+  compressed byte stream. The author reports that the full TypeScript
+  reference vertical passed locally with the corrected registration.
 - **New subject:** `f7744290176e01496079d5c7a2415598d67e2757` restores
   the Node-24 digest and retires the now-stale approval manifest. This
   post-review change invalidates the approval at `21ab780`; PR 2 therefore
   requires a narrow independent re-review of `21ab780..f774429` and a new
   approval-only envelope before merge.
+
+### Narrow independent re-review at exact head `f7744290176e01496079d5c7a2415598d67e2757`
+
+- **Reviewer:** Codex, independent of the authoring agent
+- **Review date:** 2026-09-12
+- **PR base:** `main` at
+  `0a5c6b6dcf7e3b59cdf71ec5f8d50082c5f3a3e0`
+- **Previously reviewed head:**
+  `21ab780127193422219254d31077952475094908`
+- **Reviewed delta:**
+  `21ab780127193422219254d31077952475094908..f7744290176e01496079d5c7a2415598d67e2757`
+- **Reviewed head:**
+  `f7744290176e01496079d5c7a2415598d67e2757`
+- **Method:** inspected both commits and their combined diff, inspected the
+  intermediate and final review-envelope trees, reproduced `npm pack` twice
+  with the workflow's exact Node 24.3.0 and npm 11.4.2 executables, reproduced
+  the old digest with Node 22.23.1 and npm 10.9.8, and inspected the completed
+  exact-head GitHub Actions regression output. The reproductions wrote only to
+  a temporary directory. No repository build or broad test was run.
+- **Verdict:** **APPROVE**. The corrected digest is exact for the workflow
+  toolchain, the stale approval envelope is absent, the four adjudicated
+  new-assumption regressions are unchanged, and the delta introduces no new
+  blocking finding. This verdict is byte-specific and does not apply after a
+  head change.
+- **Maintainer endorsement:** **ENDORSED**. The maintainer authorized the
+  agent to use its best judgment to complete the roadmap, then explicitly
+  authorized the independent review to inspect the repository contents. This
+  endorsement permits the new exact-head non-author approval envelope; it
+  does not replace that envelope or bypass the fail-closed gate.
+
+#### Narrow re-review findings
+
+1. **The npm package digest is correct.** Two independent `npm pack` runs
+   against the reviewed TypeScript demo, using Node 24.3.0 and npm 11.4.2 with
+   lifecycle scripts disabled, produced byte-identical 1,300-byte archives.
+   Both archives have SHA-256
+   `6315de8611c4f8f2133ddf8fca9b4577128b8665b3d9b1af11db85d36c717446`,
+   exactly the value registered at the reviewed head. The same source packed
+   with Node 22.23.1 and npm 10.9.8 reproduces the previous
+   `931e913bdcdcd3f22d7d3ed324f8f3546fce3b0482a58770af0c5c86079043ea`
+   digest. This confirms npm packer version drift as the failure's root cause;
+   it does not indicate source or inventory drift.
+
+2. **The stale approval envelope was correctly retired.** Commit `bcd2d469`
+   added `proofbound/reviews/pr-0002-language-support.toml` for the prior
+   reviewed subject. Commit `f774429` changes a reviewed evidence byte, so the
+   prior base/head-bound envelope cannot authorize the new subject. The same
+   commit deletes that envelope. At the reviewed head, `proofbound/reviews/`
+   contains only the pre-existing PR 1 envelope.
+
+3. **The assurance regressions are unchanged.** The completed exact-head
+   GitHub Actions diff reports the same four `new-assumption` regressions, with
+   the same IDs and claim bindings, for `PY-RESERVATION-001`, `PY-WHEEL-001`,
+   `TS-CODEC-001`, and `TS-PACKAGE-001`. Each correctly has
+   `approved_by: null`, and the run stops with `PB-DIFF-0002`. No fifth
+   regression appears. A new exact-head envelope may therefore adjudicate the
+   same four findings, but it must bind the new head revision.
+
+4. **No new blocker is introduced.** Across the reviewed delta, the envelope
+   add and delete cancel. The only net repository change is the one-line
+   registered digest correction. No production code, schema, specification,
+   workflow, source input, assumption, exclusion, claim, or verifier behavior
+   changes. The exact-head hosted workflow is red only because the corrected
+   subject intentionally has no approval envelope yet; it stops before the
+   TypeScript reference vertical and must be rerun after the new envelope
+   lands.
 
 ### Blocking items
 
