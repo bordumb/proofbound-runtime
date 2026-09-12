@@ -49,6 +49,16 @@ registry publication, and external dogfood obligations. Those are release or
 adoption facts, not missing source code, and cannot be satisfied by a
 self-authored branch run or an older release candidate.
 
+The required gate is green at exact source
+`3186d62434fe79b1ee7a59c527a38c1fb42148ef`. GitHub Actions run
+[`34667606741`](https://github.com/bordumb/proofbound-runtime/actions/runs/34667606741)
+passed preflight, Rust and dependency checks, both native architectures, formal
+refinement, every fresh-evidence shard, and the final assurance gate. The
+receipt bounded check now partitions the closed outcome classes across seven
+harnesses while preserving the registered 8,796,093,032,448-state domain. Its
+host-measured 2,400-second execution envelope leaves the 8 GiB memory and 2 GiB
+disk bounds unchanged.
+
 As of 2026-09-10, Order 0 is implemented on the roadmap branch, the version
 0.1 installation path and host-prerequisite explanations are implemented and
 locally verified, and the two measured upstream workflow observations are

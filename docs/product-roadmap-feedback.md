@@ -4,7 +4,7 @@ Verified against the branch head, the four reviews, and the roadmap's own exit c
 
 ## Do first: get the gate green
 
-- [x] **Root-cause the receipt shard.** The long-running unit is `receipt-eligibility-bounds`, the v2 receipt Kani bounded check in `proofbound/model-checks/receipt-eligibility.toml`. An isolated reproduction at branch head `849e2ce` passed in 13m54s; the hosted shard was terminated before that unit could finish, without a proof failure. Resume CI work by giving this proof an execution envelope that includes setup plus its measured solver time.
+- [x] **Root-cause the receipt shard.** The long-running unit is `receipt-eligibility-bounds`, the v2 receipt Kani bounded check in `proofbound/model-checks/receipt-eligibility.toml`. The proof is partitioned into seven outcome-class harnesses without changing its registered 8,796,093,032,448-state domain or its 8 GiB memory and 2 GiB disk bounds. The 2,400-second host-measured envelope passed at exact source `3186d62434fe79b1ee7a59c527a38c1fb42148ef` in GitHub Actions run `34667606741`, together with every other required job and the final assurance gate.
 - [x] **Add `--fresh` to the release evidence run** in `tools/release/proofbound-release.sh:67`. RT-0.4 requires it in release contexts.
 - [x] **Replace the self-referential tool-bundle checksum** in `ci.yml:255` with a pinned expected digest so restored tools are verified against something the job did not just produce.
 
