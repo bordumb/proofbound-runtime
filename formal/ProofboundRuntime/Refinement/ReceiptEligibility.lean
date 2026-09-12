@@ -276,6 +276,7 @@ private theorem derive_receipt_eligibility_refines_fields_spec
           }) ⦄ := by
   unfold proofbound_runtime_receipt.derive_receipt_eligibility
   simp only [
+    alloc.vec.Vec.with_capacity,
     proofbound_runtime_receipt.BoundaryInstallation.Insts.CoreCmpPartialEqBoundaryInstallation.eq]
   have usizeMinimum := Usize.cMax_bound_concrete.1
   step with append_reason_spec

@@ -3,7 +3,13 @@ id = "receipt-eligibility-bounds"
 adapter = "kani"
 package = "proofbound-runtime-receipt-kani"
 harnesses = [
-  "receipt_eligibility_is_exact_for_bounded_state_model",
+  "receipt_eligibility_is_exact_for_exit_zero",
+  "receipt_eligibility_is_exact_for_exit_nonzero",
+  "receipt_eligibility_is_exact_for_signaled",
+  "receipt_eligibility_is_exact_for_timed_out",
+  "receipt_eligibility_is_exact_for_denied",
+  "receipt_eligibility_is_exact_for_launcher_failed",
+  "receipt_eligibility_is_exact_for_incomplete",
 ]
 claims = ["PBR-RECEIPT-004"]
 solver = "cadical"
@@ -20,6 +26,6 @@ cardinality = 8796093032448
 ordering_key = [0, 1, 2, 3, 4, 5]
 
 [resource_budget]
-time_seconds = 900
+time_seconds = 1800
 disk_bytes = 2147483648
 memory_bytes = 8589934592

@@ -330,7 +330,9 @@ fn append_outcome_reason(
 #[must_use]
 pub fn derive_receipt_eligibility(facts: &ReceiptFacts) -> ReceiptEligibility {
     let reasons = append_reason(
-        Vec::new(),
+        // At most one boundary, outcome, stdout, stderr, and structure reason
+        // plus all seven resource-event reasons can be present.
+        Vec::with_capacity(12),
         facts.boundary == BoundaryInstallation::Incomplete,
         NonReusableReason::BoundaryIncomplete,
     );
@@ -475,12 +477,22 @@ mod tests {
 
     #[test]
     fn retains_all_applicable_reasons_in_canonical_order() {
-        let facts = ReceiptFacts::new(
+        let events = LimitEvents::new(&[
+            LimitEvent::MemoryHigh,
+            LimitEvent::MemoryMax,
+            LimitEvent::MemoryOom,
+            LimitEvent::MemoryOomKill,
+            LimitEvent::MemoryOomGroupKill,
+            LimitEvent::SwapMax,
+            LimitEvent::SwapFail,
+        ]);
+        let facts = ReceiptFacts::new_v2(
             BoundaryInstallation::Incomplete,
             ExecutionOutcome::LauncherFailed,
             StreamCapture::Truncated,
             StreamCapture::Truncated,
             ReceiptStructure::Malformed,
+            events,
         );
         let ReceiptEligibility::NonReusable(reasons) = derive_receipt_eligibility(&facts) else {
             panic!("invalid execution facts must not be reusable");
@@ -493,6 +505,13 @@ mod tests {
                 NonReusableReason::StandardOutputTruncated,
                 NonReusableReason::StandardErrorTruncated,
                 NonReusableReason::ReceiptMalformed,
+                NonReusableReason::MemoryHigh,
+                NonReusableReason::MemoryMax,
+                NonReusableReason::MemoryOom,
+                NonReusableReason::MemoryOomKill,
+                NonReusableReason::MemoryOomGroupKill,
+                NonReusableReason::SwapMax,
+                NonReusableReason::SwapFail,
             ]
         );
     }

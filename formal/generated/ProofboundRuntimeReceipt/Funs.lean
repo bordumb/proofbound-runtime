@@ -118,16 +118,15 @@ def append_outcome_reason
     alloc.vec.Vec.push reasons NonReusableReason.ExecutionIncomplete
 
 /-- [proofbound_runtime_receipt::derive_receipt_eligibility]:
-    Source: 'crates/proofbound-runtime-receipt/src/lib.rs', lines 331:0-360:1
+    Source: 'crates/proofbound-runtime-receipt/src/lib.rs', lines 331:0-362:1
     Visibility: public -/
 def derive_receipt_eligibility
   (facts : ReceiptFacts) : Result ReceiptEligibility := do
+  let v := alloc.vec.Vec.with_capacity NonReusableReason 12#usize
   let b ←
     BoundaryInstallation.Insts.CoreCmpPartialEqBoundaryInstallation.eq
       facts.boundary BoundaryInstallation.Incomplete
-  let reasons ←
-    append_reason (alloc.vec.Vec.new NonReusableReason) b
-      NonReusableReason.BoundaryIncomplete
+  let reasons ← append_reason v b NonReusableReason.BoundaryIncomplete
   let reasons1 ← append_outcome_reason reasons facts.outcome
   let b1 ←
     StreamCapture.Insts.CoreCmpPartialEqStreamCapture.eq facts.stdout
