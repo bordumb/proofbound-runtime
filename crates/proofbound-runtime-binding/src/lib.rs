@@ -7,12 +7,13 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 
-/// Contains the canonical bytes of every version 1 top-level receipt field.
+/// Contains the canonical bytes of every supported top-level receipt field.
 ///
-/// A field is represented by the canonical JSON bytes of its value, excluding
-/// the top-level field name. Using a closed structure makes omission,
-/// duplication, reordering, and unknown top-level fields unrepresentable at
-/// the production construction boundary.
+/// A field is represented by its version-specific canonical value bytes,
+/// excluding the top-level field name. Version 1 uses canonical JSON and omits
+/// `resources`; version 2 uses deterministic CBOR and requires it. Using a
+/// closed structure makes omission, duplication, reordering, and unknown
+/// top-level fields unrepresentable at the production construction boundary.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ReceiptBindingParts {
     pub assumptions: Vec<u8>,
@@ -31,6 +32,7 @@ pub struct ReceiptBindingParts {
     pub policy: Vec<u8>,
     pub producer: Vec<u8>,
     pub product_version: Vec<u8>,
+    pub resources: Option<Vec<u8>>,
     pub runtime: Vec<u8>,
     pub schema: Vec<u8>,
     pub streams: Vec<u8>,
@@ -84,6 +86,7 @@ mod tests {
             policy: vec![13],
             producer: vec![14],
             product_version: vec![15],
+            resources: None,
             runtime: vec![16],
             schema: vec![17],
             streams: vec![18],
@@ -92,8 +95,16 @@ mod tests {
     }
 
     #[test]
-    fn construction_and_projection_retain_all_twenty_fields_exactly() {
+    fn construction_and_projection_retain_all_v1_fields_exactly() {
         let input = parts();
+        let output = construct_and_project_receipt_binding(input.clone());
+        assert_eq!(output, input);
+    }
+
+    #[test]
+    fn construction_and_projection_retain_all_v2_fields_exactly() {
+        let mut input = parts();
+        input.resources = Some(vec![20]);
         let output = construct_and_project_receipt_binding(input.clone());
         assert_eq!(output, input);
     }

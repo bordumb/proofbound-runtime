@@ -15,6 +15,8 @@ const POLICY_MODEL_VERSION: &str = "proofbound-runtime-linux-policy/1";
 pub enum DecodeError {
     /// The input is not one complete JSON value.
     MalformedJson,
+    /// The input is not one deterministic CBOR item.
+    MalformedCbor,
     /// The value does not have the closed version 1 structure.
     InvalidSchema,
     /// The receipt schema version is unsupported.
@@ -27,6 +29,7 @@ impl DecodeError {
     pub const fn code(self) -> &'static str {
         match self {
             Self::MalformedJson => "receipt.schema.malformed-json",
+            Self::MalformedCbor => "receipt.schema.malformed-cbor",
             Self::InvalidSchema => "receipt.schema.invalid",
             Self::UnsupportedVersion => "receipt.schema.unsupported-version",
         }
@@ -50,6 +53,61 @@ pub enum RecordedEligibility {
     NonReusable(Vec<WireReason>),
 }
 
+/// One artifact identity exposed to independent receipt consumers.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CompositionArtifact {
+    pub mode: u16,
+    pub role: &'static str,
+    pub sha256: String,
+    pub size: String,
+}
+
+/// One trusted-computing-base entry exposed to independent receipt consumers.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CompositionTcbEntry {
+    pub identity: String,
+    pub role: String,
+}
+
+/// The closed receipt facts needed by release composition.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ReceiptCompositionFacts {
+    pub assumptions: Vec<String>,
+    pub eligibility_reasons: Vec<&'static str>,
+    pub execution_id: String,
+    pub producer: CompositionArtifact,
+    pub product_version: String,
+    pub reusable: bool,
+    pub runtime: CompositionArtifact,
+    pub launcher: CompositionArtifact,
+    pub schema: String,
+    pub trusted_computing_base: Vec<CompositionTcbEntry>,
+    pub version_two: bool,
+}
+
+/// Closed, verifier-decoded execution facts used by an adopter acceptance
+/// policy. These values come from the strict receipt codec, never from the
+/// JSON inspection projection.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ReceiptAcceptanceFacts {
+    pub schema: String,
+    pub runtime_version: String,
+    pub execution_id: String,
+    pub plan_id: String,
+    pub operating_system: String,
+    pub architecture: &'static str,
+    pub executable: CompositionArtifact,
+    pub policy_sha256: String,
+    pub policy_model_version: String,
+    pub pids_max: u32,
+    pub memory_max: u64,
+    pub memory_oom_group: u8,
+    pub memory_swap_max: u64,
+    pub reusable: bool,
+    pub assumptions: Vec<String>,
+    pub tcb_roles: Vec<String>,
+}
+
 /// Contains one independently decoded version 1 receipt.
 #[derive(Clone, Debug, PartialEq)]
 pub struct DecodedReceipt {
@@ -57,6 +115,9 @@ pub struct DecodedReceipt {
     wire: WireReceipt,
     eligibility_input: EligibilityInput,
     recorded_eligibility: RecordedEligibility,
+    version_two: bool,
+    resources: Option<WireResources>,
+    plan_limits: Option<WirePlanLimits>,
 }
 
 impl DecodedReceipt {
@@ -81,10 +142,144 @@ impl DecodedReceipt {
     pub const fn recorded_eligibility(&self) -> &RecordedEligibility {
         &self.recorded_eligibility
     }
+
+    /// Projects only typed facts needed by a receipt composer. This is not the
+    /// JSON inspection projection and retains the independently decoded wire
+    /// identities directly.
+    #[must_use]
+    pub fn composition_facts(&self) -> ReceiptCompositionFacts {
+        let eligibility_reasons = match &self.recorded_eligibility {
+            RecordedEligibility::Reusable => Vec::new(),
+            RecordedEligibility::NonReusable(reasons) => {
+                reasons.iter().map(|reason| reason.as_str()).collect()
+            }
+        };
+        ReceiptCompositionFacts {
+            assumptions: self.wire.assumptions.clone(),
+            eligibility_reasons,
+            execution_id: self.wire.execution_id.clone(),
+            producer: composition_artifact(&self.wire.producer),
+            product_version: self.wire.product_version.clone(),
+            reusable: matches!(self.recorded_eligibility, RecordedEligibility::Reusable),
+            runtime: composition_artifact(&self.wire.runtime.runtime),
+            launcher: composition_artifact(&self.wire.runtime.launcher),
+            schema: self.wire.schema.clone(),
+            trusted_computing_base: self
+                .wire
+                .trusted_computing_base
+                .iter()
+                .map(|entry| CompositionTcbEntry {
+                    identity: entry.identity.clone(),
+                    role: entry.role.clone(),
+                })
+                .collect(),
+            version_two: self.version_two,
+        }
+    }
+
+    /// Projects the closed version 2 fields required by acceptance policy.
+    /// Version 1 receipts predate the acceptance contract and return `None`.
+    #[must_use]
+    pub fn acceptance_facts(&self) -> Option<ReceiptAcceptanceFacts> {
+        let resources = self.resources.as_ref()?;
+        Some(ReceiptAcceptanceFacts {
+            schema: self.wire.schema.clone(),
+            runtime_version: self.wire.product_version.clone(),
+            execution_id: self.wire.execution_id.clone(),
+            plan_id: self.wire.plan.id.clone(),
+            operating_system: self.wire.platform.operating_system.clone(),
+            architecture: match self.wire.platform.architecture {
+                WireArchitecture::X86_64 => "x86_64",
+                WireArchitecture::Aarch64 => "aarch64",
+            },
+            executable: composition_artifact(&self.wire.command.executable),
+            policy_sha256: self.wire.boundary.policy_sha256.clone(),
+            policy_model_version: self.wire.policy.model_version.clone(),
+            pids_max: resources.processes,
+            memory_max: resources.memory,
+            memory_oom_group: 1,
+            memory_swap_max: resources.swap,
+            reusable: matches!(self.recorded_eligibility, RecordedEligibility::Reusable),
+            assumptions: self.wire.assumptions.clone(),
+            tcb_roles: self
+                .wire
+                .trusted_computing_base
+                .iter()
+                .map(|entry| entry.role.clone())
+                .collect(),
+        })
+    }
+
+    pub(crate) const fn is_version_two(&self) -> bool {
+        self.version_two
+    }
+
+    pub(crate) fn from_v2(
+        value: serde_json::Value,
+        wire: WireReceipt,
+        eligibility_input: EligibilityInput,
+        recorded_eligibility: RecordedEligibility,
+        resources: WireResources,
+        plan_limits: WirePlanLimits,
+    ) -> Self {
+        Self {
+            value,
+            wire,
+            eligibility_input,
+            recorded_eligibility,
+            version_two: true,
+            resources: Some(resources),
+            plan_limits: Some(plan_limits),
+        }
+    }
+
+    pub(crate) const fn resources(&self) -> Option<&WireResources> {
+        self.resources.as_ref()
+    }
+
+    pub(crate) const fn plan_limits(&self) -> Option<&WirePlanLimits> {
+        self.plan_limits.as_ref()
+    }
+}
+
+fn composition_artifact(wire: &WireArtifact) -> CompositionArtifact {
+    CompositionArtifact {
+        mode: wire.mode,
+        role: wire_artifact_role(wire.role),
+        sha256: wire.sha256.clone(),
+        size: wire.size.clone(),
+    }
+}
+
+const fn wire_artifact_role(role: WireArtifactRole) -> &'static str {
+    match role {
+        WireArtifactRole::ExecutionPlan => "execution-plan",
+        WireArtifactRole::NormalizedPlan => "normalized-plan",
+        WireArtifactRole::CompiledPolicy => "compiled-policy",
+        WireArtifactRole::RuntimeBinary => "runtime-binary",
+        WireArtifactRole::LauncherBinary => "launcher-binary",
+        WireArtifactRole::VerifierBinary => "verifier-binary",
+        WireArtifactRole::RuntimeExecutable => "runtime-executable",
+        WireArtifactRole::RuntimeLoaderExecutable => "runtime-loader-executable",
+        WireArtifactRole::RuntimeLibrary => "runtime-library",
+        WireArtifactRole::WorkingDirectory => "working-directory",
+        WireArtifactRole::ProjectInput => "project-input",
+        WireArtifactRole::OutputRoot => "output-root",
+        WireArtifactRole::StandardOutput => "standard-output",
+        WireArtifactRole::StandardError => "standard-error",
+        WireArtifactRole::OutputArtifact => "output-artifact",
+    }
 }
 
 /// Decodes exactly one closed version 1 execution receipt.
 pub fn decode_receipt(input: &[u8]) -> Result<DecodedReceipt, DecodeError> {
+    if input.first() != Some(&b'{') {
+        return crate::decode_v2::decode_v2_receipt(input);
+    }
+    decode_v1_receipt(input)
+}
+
+fn decode_v1_receipt(input: &[u8]) -> Result<DecodedReceipt, DecodeError> {
     let value: serde_json::Value = serde_json::from_slice(input).map_err(classify_json_error)?;
     let wire: WireReceipt =
         serde_json::from_value(value.clone()).map_err(|_| DecodeError::InvalidSchema)?;
@@ -136,6 +331,9 @@ pub fn decode_receipt(input: &[u8]) -> Result<DecodedReceipt, DecodeError> {
             StructureState::Valid,
         ),
         recorded_eligibility,
+        version_two: false,
+        resources: None,
+        plan_limits: None,
     })
 }
 
@@ -177,6 +375,29 @@ pub(crate) struct WireReceipt {
     pub(crate) producer: WireArtifact,
     pub(crate) assumptions: Vec<String>,
     pub(crate) trusted_computing_base: Vec<WireTcbEntry>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct WireResources {
+    pub(crate) processes: u32,
+    pub(crate) memory: u64,
+    pub(crate) swap: u64,
+    pub(crate) memory_peak: u64,
+    pub(crate) swap_peak: u64,
+    pub(crate) memory_events: [u64; 6],
+    pub(crate) swap_events: [u64; 2],
+    pub(crate) limit_events: Vec<WireReason>,
+    pub(crate) observations_complete: bool,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct WirePlanLimits {
+    pub(crate) processes: u32,
+    pub(crate) wall_time_ms: u64,
+    pub(crate) stdout_bytes: u64,
+    pub(crate) stderr_bytes: u64,
+    pub(crate) memory: u64,
+    pub(crate) swap: u64,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]
@@ -358,6 +579,46 @@ pub enum WireReason {
     StderrTruncated,
     /// Receipt structure is malformed.
     ReceiptMalformed,
+    /// A memory-high event occurred.
+    MemoryHigh,
+    /// A memory-max event occurred.
+    MemoryMax,
+    /// A memory OOM event occurred.
+    MemoryOom,
+    /// A memory OOM kill occurred.
+    MemoryOomKill,
+    /// A group OOM kill occurred.
+    MemoryOomGroupKill,
+    /// A swap-max event occurred.
+    SwapMax,
+    /// A swap-fail event occurred.
+    SwapFail,
+}
+
+impl WireReason {
+    /// Returns the stable wire spelling used in verification reports.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::BoundaryIncomplete => "boundary-incomplete",
+            Self::ExitCodeNonzero => "exit-code-nonzero",
+            Self::ProcessSignaled => "process-signaled",
+            Self::TimedOut => "timed-out",
+            Self::Denied => "denied",
+            Self::LauncherFailed => "launcher-failed",
+            Self::ExecutionIncomplete => "execution-incomplete",
+            Self::StdoutTruncated => "stdout-truncated",
+            Self::StderrTruncated => "stderr-truncated",
+            Self::ReceiptMalformed => "receipt-malformed",
+            Self::MemoryHigh => "memory-high",
+            Self::MemoryMax => "memory-max",
+            Self::MemoryOom => "memory-oom",
+            Self::MemoryOomKill => "memory-oom-kill",
+            Self::MemoryOomGroupKill => "memory-oom-group-kill",
+            Self::SwapMax => "swap-max",
+            Self::SwapFail => "swap-fail",
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]

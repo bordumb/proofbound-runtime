@@ -3,26 +3,148 @@ name: Verify
 on:
   pull_request:
   push:
+    branches:
+      - main
+    tags:
+      - "v*"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
 
 env:
+  AENEAS_SOURCE_REVISION: 3a8586facab25b31bdb1e1f5f45acd60d1cc5ff0
+  AENEAS_VERSION: 3a8586fa
   CARGO_TERM_COLOR: always
+  PBR_EXACT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
-  bootstrap:
-    name: Current assurance gate
+  preflight:
+    name: Preflight
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 10
+    env:
+      PBR_CI_TIMING_FILE: /tmp/proofbound-runtime-ci-timing.jsonl
     steps:
       - name: Check out the exact event head
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.PBR_EXACT_SHA }}
+
+      - name: Confirm the exact event head
+        run: test "$(git rev-parse HEAD)" = "$PBR_EXACT_SHA"
+
+      - name: Install pinned independent CBOR encoder
+        run: >-
+          python3 -m pip install
+          --require-hashes
+          --requirement tools/ci/requirements-wire-vectors.txt
+
+      - name: Run metadata, documentation, and fixture preflight
+        run: >-
+          python3 tools/ci/timing.py run
+          --output "$PBR_CI_TIMING_FILE"
+          --stage preflight
+          --kind stage
+          --name preflight
+          -- bash tools/ci/ci.sh preflight
+
+      - name: Publish preflight timing summary
+        if: ${{ always() }}
+        run: |
+          {
+            printf '%s\n' '### Preflight timing' '```text'
+            python3 tools/ci/summarize_timings.py "$PBR_CI_TIMING_FILE"
+            printf '%s\n' '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload preflight timing metadata
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: proofbound-runtime-ci-timing-preflight-${{ env.PBR_EXACT_SHA }}
+          path: ${{ env.PBR_CI_TIMING_FILE }}
+          if-no-files-found: error
+          retention-days: 14
+
+  rust:
+    name: Rust and dependencies
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PBR_CI_TIMING_FILE: /tmp/proofbound-runtime-ci-timing.jsonl
+    steps:
+      - name: Check out the exact event head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.PBR_EXACT_SHA }}
+
+      - name: Confirm the exact event head
+        run: test "$(git rev-parse HEAD)" = "$PBR_EXACT_SHA"
 
       - name: Install pinned Rust toolchain
-        uses: dtolnay/rust-toolchain@1.94.0
+        uses: dtolnay/rust-toolchain@fef00d40025f7fd8f1ec759cbbb0f577ddfc3133 # 1.94.0
         with:
           components: clippy,rustfmt
+
+      - name: Install pinned dependency auditor
+        run: cargo install --locked cargo-deny --version 0.20.2
+
+      - name: Fetch locked Rust dependencies
+        run: cargo fetch --locked
+
+      - name: Reject Rust lockfile drift
+        run: git diff --exit-code -- Cargo.lock
+
+      - name: Run Rust and dependency gates
+        run: >-
+          python3 tools/ci/timing.py run
+          --output "$PBR_CI_TIMING_FILE"
+          --stage rust
+          --kind stage
+          --name rust
+          -- bash tools/ci/ci.sh rust
+
+      - name: Publish Rust timing summary
+        if: ${{ always() }}
+        run: |
+          {
+            printf '%s\n' '### Rust timing' '```text'
+            python3 tools/ci/summarize_timings.py "$PBR_CI_TIMING_FILE"
+            printf '%s\n' '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Rust timing metadata
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: proofbound-runtime-ci-timing-rust-${{ env.PBR_EXACT_SHA }}
+          path: ${{ env.PBR_CI_TIMING_FILE }}
+          if-no-files-found: error
+          retention-days: 14
+
+  formal:
+    name: Formal model and refinements
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      PBR_CI_TIMING_FILE: /tmp/proofbound-runtime-ci-timing.jsonl
+    steps:
+      - name: Check out the exact event head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.PBR_EXACT_SHA }}
+
+      - name: Confirm the exact event head
+        run: test "$(git rev-parse HEAD)" = "$PBR_EXACT_SHA"
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@fef00d40025f7fd8f1ec759cbbb0f577ddfc3133 # 1.94.0
 
       - name: Install pinned Lean toolchain
         uses: leanprover/lean-action@38fbc41a8c28c4cbaec22d7f7de508ec2e7c0dd9 # v1.5.0
@@ -39,10 +161,13 @@ jobs:
       - name: Install Nix for pinned translation tools
         uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31
 
+      - name: Restore the exact Nix tool closure
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+        with:
+          primary-key: formal-nix-v1-${{ runner.os }}-${{ runner.arch }}-${{ env.AENEAS_SOURCE_REVISION }}-${{ hashFiles('proofbound/toolchains/translation.lock') }}
+          gc-max-store-size-linux: 4G
+
       - name: Install pinned Charon and Aeneas tools
-        env:
-          AENEAS_SOURCE_REVISION: 3a8586facab25b31bdb1e1f5f45acd60d1cc5ff0
-          AENEAS_VERSION: 3a8586fa
         run: |
           tools_path="$(AENEAS_RELEASE_VERSION="$AENEAS_VERSION" nix build \
             --impure \
@@ -56,10 +181,57 @@ jobs:
           test "$(charon version)" = "0.1.225"
           test "$(aeneas -version)" = "aeneas 3a8586fa"
 
-      - name: Install pinned repository tools
+      - name: Fetch locked project dependencies
         run: |
-          cargo install --locked just --version 1.46.0
-          cargo install --locked cargo-deny --version 0.20.2
+          cargo fetch --locked
+          lake update
+
+      - name: Reject bootstrap lockfile drift
+        run: git diff --exit-code -- Cargo.lock lake-manifest.json
+
+      - name: Run formal model and refinement gates
+        run: >-
+          python3 tools/ci/timing.py run
+          --output "$PBR_CI_TIMING_FILE"
+          --stage formal
+          --kind stage
+          --name formal
+          -- bash tools/ci/ci.sh formal
+
+      - name: Publish formal timing summary
+        if: ${{ always() }}
+        run: |
+          {
+            printf '%s\n' '### Formal timing' '```text'
+            python3 tools/ci/summarize_timings.py "$PBR_CI_TIMING_FILE"
+            printf '%s\n' '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload formal timing metadata
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: proofbound-runtime-ci-timing-formal-${{ env.PBR_EXACT_SHA }}
+          path: ${{ env.PBR_CI_TIMING_FILE }}
+          if-no-files-found: error
+          retention-days: 14
+
+  proofbound-tools:
+    name: Pinned Proofbound tools
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out the exact event head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.PBR_EXACT_SHA }}
+
+      - name: Confirm the exact event head
+        run: test "$(git rev-parse HEAD)" = "$PBR_EXACT_SHA"
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@fef00d40025f7fd8f1ec759cbbb0f577ddfc3133 # 1.94.0
 
       - name: Install pinned Proofbound tools
         run: >-
@@ -73,6 +245,126 @@ jobs:
           proofbound-adapter-kani
           proofbound-adapter-lean
 
+      - name: Bundle exact Proofbound executables
+        run: |
+          mkdir -p "$RUNNER_TEMP/proofbound-tools"
+          for executable in \
+            proofbound \
+            proofbound-adapter-aeneas \
+            proofbound-adapter-test \
+            proofbound-adapter-kani \
+            proofbound-adapter-lean
+          do
+            cp "$(command -v "$executable")" "$RUNNER_TEMP/proofbound-tools/$executable"
+          done
+          cd "$RUNNER_TEMP/proofbound-tools"
+          sha256sum --check "$GITHUB_WORKSPACE/proofbound/toolchains/proofbound-tools-linux-x86_64.sha256"
+
+      - name: Upload pinned Proofbound tools
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: proofbound-tools-${{ env.PBR_EXACT_SHA }}
+          path: ${{ runner.temp }}/proofbound-tools
+          if-no-files-found: error
+          retention-days: 1
+
+  fresh-evidence:
+    name: Fresh Proofbound evidence (${{ matrix.shard }})
+    needs:
+      - preflight
+      - proofbound-tools
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: authority
+            selector: PBR-AUTH-001
+            lean_target: ProofboundRuntime.ReleaseArtifacts.Authority
+            needs_kani: true
+          - shard: binding
+            selector: PBR-BINDING-005
+            lean_target: ProofboundRuntime.ReleaseArtifacts.ReceiptBinding
+            needs_kani: false
+          - shard: policy
+            selector: PBR-POLICY-002
+            lean_target: ProofboundRuntime.ReleaseArtifacts.Policy
+            needs_kani: true
+          - shard: receipt
+            selector: PBR-RECEIPT-004
+            lean_target: ProofboundRuntime.ReleaseArtifacts.ReceiptEligibility
+            needs_kani: true
+          - shard: ledger
+            selector: ledger
+            needs_kani: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      PBR_CI_TIMING_FILE: /tmp/proofbound-runtime-ci-timing.jsonl
+      PBR_EVIDENCE_SELECTOR: ${{ matrix.selector }}
+    steps:
+      - name: Check out the exact event head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.PBR_EXACT_SHA }}
+
+      - name: Confirm the exact event head
+        run: test "$(git rev-parse HEAD)" = "$PBR_EXACT_SHA"
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@fef00d40025f7fd8f1ec759cbbb0f577ddfc3133 # 1.94.0
+
+      - name: Install pinned Lean toolchain
+        uses: leanprover/lean-action@38fbc41a8c28c4cbaec22d7f7de508ec2e7c0dd9 # v1.5.0
+        with:
+          auto-config: false
+          build: false
+          test: false
+          lint: false
+          mk_all-check: false
+          check-reservoir-eligibility: false
+          leanchecker: false
+          nanoda: false
+
+      - name: Install Nix for pinned translation tools
+        if: ${{ matrix.selector != 'ledger' }}
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31
+
+      - name: Restore the exact Nix tool closure
+        if: ${{ matrix.selector != 'ledger' }}
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+        with:
+          primary-key: formal-nix-v1-${{ runner.os }}-${{ runner.arch }}-${{ env.AENEAS_SOURCE_REVISION }}-${{ hashFiles('proofbound/toolchains/translation.lock') }}
+          gc-max-store-size-linux: 4G
+
+      - name: Install pinned Charon and Aeneas tools
+        if: ${{ matrix.selector != 'ledger' }}
+        run: |
+          tools_path="$(AENEAS_RELEASE_VERSION="$AENEAS_VERSION" nix build \
+            --impure \
+            --no-link \
+            --print-out-paths \
+            "github:AeneasVerif/aeneas/$AENEAS_SOURCE_REVISION#aeneas")"
+          echo "$tools_path/bin" >> "$GITHUB_PATH"
+
+      - name: Verify pinned translation tools
+        if: ${{ matrix.selector != 'ledger' }}
+        run: |
+          test "$(charon version)" = "0.1.225"
+          test "$(aeneas -version)" = "aeneas 3a8586fa"
+
+      - name: Download pinned Proofbound tools
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: proofbound-tools-${{ env.PBR_EXACT_SHA }}
+          path: ${{ runner.temp }}/proofbound-tools
+
+      - name: Verify pinned Proofbound tool bundle
+        run: |
+          cd "$RUNNER_TEMP/proofbound-tools"
+          sha256sum --check "$GITHUB_WORKSPACE/proofbound/toolchains/proofbound-tools-linux-x86_64.sha256"
+          chmod +x proofbound*
+          echo "$RUNNER_TEMP/proofbound-tools" >> "$GITHUB_PATH"
+
       - name: Verify Proofbound executables
         run: |
           command -v proofbound
@@ -82,15 +374,132 @@ jobs:
           command -v proofbound-adapter-lean
 
       - name: Install pinned Kani verifier
+        if: ${{ matrix.needs_kani }}
         run: |
           cargo install --locked kani-verifier --version 0.67.0
           cargo kani setup
 
-      - name: Fetch locked project dependencies
-        run: just bootstrap
+      - name: Fetch locked Rust dependencies
+        run: cargo fetch --locked
+
+      - name: Fetch locked Lean dependencies
+        run: lake update
 
       - name: Reject bootstrap lockfile drift
         run: git diff --exit-code -- Cargo.lock lake-manifest.json
 
-      - name: Run the repository gate on Linux
-        run: just ci
+      - name: Build pinned Lean project for theorem audit
+        if: ${{ matrix.selector != 'ledger' }}
+        run: lake build ${{ matrix.lean_target }}
+
+      - name: Run fresh evidence gate
+        run: >-
+          python3 tools/ci/timing.py run
+          --output "$PBR_CI_TIMING_FILE"
+          --stage evidence
+          --kind stage
+          --name fresh-evidence
+          -- bash tools/ci/ci.sh evidence
+
+      - name: Publish fresh evidence timing summary
+        if: ${{ always() }}
+        run: |
+          {
+            printf '%s\n' '### Fresh evidence timing' '```text'
+            python3 tools/ci/summarize_timings.py "$PBR_CI_TIMING_FILE"
+            printf '%s\n' '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload fresh evidence timing metadata
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: proofbound-runtime-ci-timing-fresh-evidence-${{ matrix.shard }}-${{ env.PBR_EXACT_SHA }}
+          path: ${{ env.PBR_CI_TIMING_FILE }}
+          if-no-files-found: error
+          retention-days: 14
+
+  native:
+    name: Native boundary (${{ matrix.architecture }})
+    needs: preflight
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x86_64
+            runner: ubuntu-24.04
+          - architecture: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    env:
+      PBR_CI_TIMING_FILE: /tmp/proofbound-runtime-ci-timing.jsonl
+      PROOFBOUND_EVIDENCE_DIRECTORY: ${{ github.workspace }}/target/native-evidence/${{ matrix.architecture }}
+    steps:
+      - name: Check out the exact event head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.PBR_EXACT_SHA }}
+
+      - name: Confirm the exact event head
+        run: test "$(git rev-parse HEAD)" = "$PBR_EXACT_SHA"
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@fef00d40025f7fd8f1ec759cbbb0f577ddfc3133 # 1.94.0
+
+      - name: Run the required native boundary corpus
+        env:
+          PROOFBOUND_EXPECTED_ARCH: ${{ matrix.architecture }}
+        run: >-
+          python3 tools/ci/timing.py run
+          --output "$PBR_CI_TIMING_FILE"
+          --stage native
+          --kind stage
+          --name native-boundary
+          -- bash tools/ci/native-linux.sh
+
+      - name: Publish native timing summary
+        if: ${{ always() }}
+        run: |
+          {
+            printf '%s\n' '### Native timing' '```text'
+            python3 tools/ci/summarize_timings.py "$PBR_CI_TIMING_FILE"
+            printf '%s\n' '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload native timing metadata
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: proofbound-runtime-ci-timing-native-${{ matrix.architecture }}-${{ env.PBR_EXACT_SHA }}
+          path: ${{ env.PBR_CI_TIMING_FILE }}
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload native assurance evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: proofbound-runtime-native-evidence-${{ matrix.architecture }}-${{ env.PBR_EXACT_SHA }}
+          path: ${{ env.PROOFBOUND_EVIDENCE_DIRECTORY }}
+          if-no-files-found: error
+          retention-days: 14
+
+  required:
+    name: Current assurance gate
+    if: ${{ always() }}
+    needs:
+      - preflight
+      - rust
+      - formal
+      - fresh-evidence
+      - native
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Reject any incomplete or failed required lane
+        if: ${{ needs.preflight.result != 'success' || needs.rust.result != 'success' || needs.formal.result != 'success' || needs.fresh-evidence.result != 'success' || needs.native.result != 'success' }}
+        run: exit 1
+
+      - name: Admit the exact successful partition
+        if: ${{ needs.preflight.result == 'success' && needs.rust.result == 'success' && needs.formal.result == 'success' && needs.fresh-evidence.result == 'success' && needs.native.result == 'success' }}
+        run: 'true'

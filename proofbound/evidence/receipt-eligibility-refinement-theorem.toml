@@ -24,6 +24,7 @@ inputs = [
   "lakefile.toml",
   "lean-toolchain",
 ]
+outputs = ["claims/PBR-RECEIPT-004.toml"]
 environment_allowlist = ["LEAN_PATH", "PATH"]
 
 [operation]

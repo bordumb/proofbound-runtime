@@ -14,7 +14,11 @@ from pathlib import Path
 ARCHITECTURES = ("aarch64", "x86_64")
 OBSERVATIONS = (
     ("PBR-COMPOSE-008", "composer-release", "pbr-compose"),
+    ("PBR-DIAGNOSTIC-011", "runtime-release", "pbr"),
+    ("PBR-PREFLIGHT-009", "runtime-release", "pbr"),
+    ("PBR-RESOURCE-010", "runtime-release", "pbr"),
     ("PBR-RUN-007", "runtime-release", "pbr"),
+    ("PBR-SCAFFOLD-013", "runtime-release", "pbr"),
     ("PBR-SEQUENCE-003", "launcher-release", "pbr-native-launcher"),
     ("PBR-VERIFY-006", "verifier-release", "pbr-verify"),
 )

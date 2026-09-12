@@ -1,0 +1,49 @@
+schema = "proofbound-runtime-network-comparison-domain/1"
+architectures = ["x86_64", "aarch64"]
+mechanisms = ["landlock-port", "cgroup-endpoint", "explicit-broker", "preconnected-channel"]
+slices = ["routing-transport", "resolution-indirection", "bypass-lifecycle", "measurement"]
+classifications = ["ineligible-service-identity", "eligible-for-adr-review-with-explicit-operation-authority", "eligible-for-adr-review-with-service-session-authority", "incomplete-experiment"]
+
+[[slice_contracts]]
+id = "routing-transport"
+result_schema = "proofbound-runtime-routing-result/1"
+verification_schema = "proofbound-runtime-routing-verification/1"
+complete_conclusion = "routing-transport-slice-matched"
+functional_case_count = 16
+
+[[slice_contracts]]
+id = "resolution-indirection"
+result_schema = "proofbound-runtime-resolution-result/1"
+verification_schema = "proofbound-runtime-resolution-verification/1"
+complete_conclusion = "resolution-indirection-slice-matched"
+functional_case_count = 18
+
+[[slice_contracts]]
+id = "bypass-lifecycle"
+result_schema = "proofbound-runtime-bypass-result/1"
+verification_schema = "proofbound-runtime-bypass-verification/1"
+complete_conclusion = "bypass-lifecycle-slice-matched"
+functional_case_count = 18
+
+[[slice_contracts]]
+id = "measurement"
+result_schema = "proofbound-runtime-network-measurement-result/1"
+verification_schema = "proofbound-runtime-network-measurement-verification/1"
+complete_conclusion = "network-measurement-complete"
+functional_case_count = 0
+
+[[authority_rules]]
+residual_authority = ["direct-tcp-to-any-address-on-allowed-port", "child-controlled-resolution", "child-controlled-tls", "arbitrary-application-bytes"]
+classification = "ineligible-service-identity"
+
+[[authority_rules]]
+residual_authority = ["direct-tcp-to-selected-endpoint", "child-controlled-tls", "arbitrary-application-bytes"]
+classification = "ineligible-service-identity"
+
+[[authority_rules]]
+residual_authority = ["registered-operation-via-mediator"]
+classification = "eligible-for-adr-review-with-explicit-operation-authority"
+
+[[authority_rules]]
+residual_authority = ["arbitrary-application-bytes-on-authenticated-session"]
+classification = "eligible-for-adr-review-with-service-session-authority"

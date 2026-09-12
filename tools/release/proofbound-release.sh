@@ -64,7 +64,7 @@ trap 'rm -f -- "$temporary_verification"' EXIT
 
 cd "$repository_root"
 set +e
-check_output="$("$proofbound_bin" check --root "$repository_root" --evidence-context "$evidence_context" --json 2>&1)"
+check_output="$("$proofbound_bin" check --root "$repository_root" --evidence-context "$evidence_context" --fresh --json 2>&1)"
 check_status=$?
 set -e
 if [[ $check_status -ne 0 || "$check_output" == *'"schema":"proofbound-error/1"'* ]]; then

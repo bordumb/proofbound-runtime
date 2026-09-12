@@ -1,0 +1,56 @@
+schema = "proofbound-evidence-unit/1"
+id = "sdk-cross-language-contract"
+adapter = "independent-check"
+kind = "independent-check"
+claims = ["PBR-SDK-014"]
+tier = 1
+assumptions = ["PBR-SDK-TOOLCHAINS-AX-010"]
+expected_inventory = [
+  "python-sdk-contract",
+  "sdk-package-reproduction",
+  "typescript-sdk-contract",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "VERSION",
+  "crates/proofbound-runtime-sdk/Cargo.toml",
+  "crates/proofbound-runtime-sdk/src/lib.rs",
+  "docs/specs/0012_plan_sdks.md",
+  "schemas/run-result-v2.schema.json",
+  "schemas/vectors/v2/execution-plan.cbor.hex",
+  "sdk/python/README.md",
+  "sdk/python/proofbound_runtime/__init__.py",
+  "sdk/python/pyproject.toml",
+  "sdk/python/tests/test_sdk.py",
+  "sdk/typescript/README.md",
+  "sdk/typescript/package.json",
+  "sdk/typescript/src/index.d.ts",
+  "sdk/typescript/src/index.ts",
+  "sdk/typescript/tests/test.mjs",
+  "tests/attacks/sdk/v1.toml",
+  "tools/ci/ci.sh",
+  "tools/ci/pre-commit.sh",
+  "tools/ci/test_sdk_contract.py",
+  "tools/ci/test_sdk_packages.py",
+  "tools/release/build_sdks.py",
+  "tools/sdk/build_npm_package.py",
+  "tools/sdk/build_python_wheel.py",
+  "tools/sdk/check_cross_language.py",
+]
+outputs = []
+environment_allowlist = ["PATH"]
+
+[operation]
+type = "independent-check"
+checker = "tools/sdk/check_cross_language.py"
+arguments = []
+paths = [
+  "sdk/python",
+  "sdk/typescript",
+]
+
+[resource_budget]
+time_seconds = 60
+disk_bytes = 536870912
+memory_bytes = 1073741824

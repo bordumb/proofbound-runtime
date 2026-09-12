@@ -1,0 +1,41 @@
+schema = "proofbound-evidence-unit/1"
+id = "resource-boundary-attacks"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-RESOURCE-010"]
+tier = 0
+expected_inventory = [
+  "proofbound_runtime_linux::cgroup::tests::cgroup_name_is_a_single_stable_component",
+  "proofbound_runtime_linux::cgroup::tests::error_codes_are_unique_and_stable",
+  "proofbound_runtime_linux::cgroup::tests::frozen_cgroup_attack_catalog_is_closed",
+  "proofbound_runtime_linux::cgroup::tests::parses_kernel_events_and_process_sets_strictly",
+  "proofbound_runtime_linux::cgroup::tests::swap_observation_accepts_the_kernel_high_counter_without_claiming_it",
+  "proofbound_runtime_linux::cgroup::tests::version_two_controls_are_complete_and_canonical",
+  "proofbound_runtime_linux::cgroup::tests::version_two_observations_are_strict_monotonic_and_derive_events",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-core/src/authority.rs",
+  "crates/proofbound-runtime-core/src/lib.rs",
+  "crates/proofbound-runtime-linux/Cargo.toml",
+  "crates/proofbound-runtime-linux/src/cgroup.rs",
+  "crates/proofbound-runtime-linux/src/lib.rs",
+  "docs/specs/0007_memory_and_swap_profile.md",
+  "tests/attacks/cgroup/lifecycle-v1.toml",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-linux"
+manifest = "Cargo.toml"
+targets = ["--lib"]
+paths = []
+arguments = ["cgroup::tests::"]
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

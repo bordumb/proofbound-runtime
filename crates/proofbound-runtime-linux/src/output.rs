@@ -16,6 +16,84 @@ use crate::RootedPathResolver;
 #[cfg(target_os = "linux")]
 const EMPTY_OUTPUT_ROOT_DOMAIN: &[u8] = b"proofbound-runtime-empty-output-root/1\n";
 
+/// Describes an absent output-root target without creating it.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct OutputRootPreflight {
+    requested_path: PathBuf,
+    resolved_parent: PathBuf,
+    resolved_target: PathBuf,
+}
+
+impl OutputRootPreflight {
+    /// Inspects the parent and absence condition used by fresh-root creation.
+    pub fn inspect(
+        resolver: &RootedPathResolver,
+        requested: &AuthorityPath,
+    ) -> Result<Self, OutputRootError> {
+        #[cfg(target_os = "linux")]
+        {
+            use std::os::fd::AsRawFd as _;
+
+            let requested_path = Path::new(requested.as_str());
+            let (parent, leaf) = split_output_path(requested_path)?;
+            let parent_descriptor = crate::sys::openat2_directory(
+                resolver.root_fd().as_raw_fd(),
+                parent,
+                crate::sys::RESOLVE_BENEATH
+                    | crate::sys::RESOLVE_NO_MAGICLINKS
+                    | crate::sys::RESOLVE_NO_SYMLINKS,
+            )
+            .map_err(map_parent_error)?;
+            match crate::sys::openat2_path(
+                parent_descriptor.as_raw_fd(),
+                leaf,
+                crate::sys::RESOLVE_NO_MAGICLINKS | crate::sys::RESOLVE_NO_SYMLINKS,
+            ) {
+                Ok(_) => return Err(OutputRootError::AlreadyExists),
+                Err(error) if error.raw_os_error() == Some(libc::ENOENT) => {}
+                Err(error) if error.raw_os_error() == Some(libc::ENOSYS) => {
+                    return Err(OutputRootError::Openat2Unavailable);
+                }
+                Err(error) if error.raw_os_error() == Some(libc::ELOOP) => {
+                    return Err(OutputRootError::AlreadyExists);
+                }
+                Err(_) => return Err(OutputRootError::TargetInspectionFailed),
+            }
+            let resolved_parent = crate::resolve::descriptor_target(&parent_descriptor)
+                .map_err(|_| OutputRootError::IdentityUnavailable)?;
+            let resolved_target = resolved_parent.join(leaf);
+            Ok(Self {
+                requested_path: requested_path.to_path_buf(),
+                resolved_parent,
+                resolved_target,
+            })
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            let _ = (resolver, requested);
+            Err(OutputRootError::UnsupportedOperatingSystem)
+        }
+    }
+
+    /// Returns the path requested by the execution plan.
+    #[must_use]
+    pub fn requested_path(&self) -> &Path {
+        &self.requested_path
+    }
+
+    /// Returns the parent observed through the retained descriptor.
+    #[must_use]
+    pub fn resolved_parent(&self) -> &Path {
+        &self.resolved_parent
+    }
+
+    /// Returns the absent target beneath the observed parent.
+    #[must_use]
+    pub fn resolved_target(&self) -> &Path {
+        &self.resolved_target
+    }
+}
+
 /// Owns one fresh output-root descriptor for an execution attempt.
 #[derive(Debug)]
 pub struct FreshOutputRoot {
@@ -236,6 +314,8 @@ pub enum OutputRootError {
     ParentUnavailable,
     /// The requested fresh output root already existed.
     AlreadyExists,
+    /// The requested output-root leaf could not be inspected without mutation.
+    TargetInspectionFailed,
     /// The new directory could not be created.
     CreationFailed,
     /// The new directory could not be reopened by descriptor.
@@ -263,6 +343,7 @@ impl OutputRootError {
             Self::PathInvalid => "output.path.invalid",
             Self::ParentUnavailable => "output.parent.unavailable",
             Self::AlreadyExists => "output.root.exists",
+            Self::TargetInspectionFailed => "output.root.inspection-failed",
             Self::CreationFailed => "output.root.creation-failed",
             Self::OpenFailed => "output.root.open-failed",
             Self::ModeInvalid => "output.root.mode-invalid",
@@ -591,6 +672,7 @@ mod tests {
             OutputRootError::PathInvalid,
             OutputRootError::ParentUnavailable,
             OutputRootError::AlreadyExists,
+            OutputRootError::TargetInspectionFailed,
             OutputRootError::CreationFailed,
             OutputRootError::OpenFailed,
             OutputRootError::ModeInvalid,
@@ -688,6 +770,47 @@ mod tests {
                 output.inventory(),
                 Err(OutputRootError::ForbiddenFileKind)
             ));
+        }
+
+        #[test]
+        fn preflight_observes_absent_target_without_creating_it() {
+            let root = TestDirectory::new("preflight");
+            fs::create_dir(root.0.join("outputs")).expect("create registered output parent");
+            let resolver = RootedPathResolver::open(&root.0).expect("open plan root");
+            let path = AuthorityPath::new("outputs/fresh").expect("valid output path");
+
+            let observed =
+                OutputRootPreflight::inspect(&resolver, &path).expect("inspect absent target");
+
+            assert_eq!(observed.requested_path(), Path::new("outputs/fresh"));
+            assert_eq!(observed.resolved_parent(), root.0.join("outputs"));
+            assert_eq!(observed.resolved_target(), root.0.join("outputs/fresh"));
+            assert!(!observed.resolved_target().exists());
+            assert_eq!(
+                fs::read_dir(root.0.join("outputs"))
+                    .expect("read unchanged parent")
+                    .count(),
+                0
+            );
+        }
+
+        #[test]
+        fn preflight_rejects_existing_file_directory_and_symlink() {
+            let root = TestDirectory::new("preflight-existing");
+            fs::create_dir(root.0.join("outputs")).expect("create registered output parent");
+            fs::write(root.0.join("outputs/file"), b"occupied").expect("create occupied file");
+            fs::create_dir(root.0.join("outputs/directory")).expect("create occupied directory");
+            symlink("missing", root.0.join("outputs/link")).expect("create occupied symlink");
+            let resolver = RootedPathResolver::open(&root.0).expect("open plan root");
+
+            for name in ["file", "directory", "link"] {
+                let path =
+                    AuthorityPath::new(format!("outputs/{name}")).expect("valid output path");
+                assert_eq!(
+                    OutputRootPreflight::inspect(&resolver, &path),
+                    Err(OutputRootError::AlreadyExists)
+                );
+            }
         }
 
         #[test]

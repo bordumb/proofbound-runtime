@@ -2,19 +2,26 @@
 
 //! Validates and composes exact Proofbound release and Runtime execution facts.
 
+mod cbor_decode;
+mod cbor_encode;
+
 use std::collections::{BTreeMap, BTreeSet};
 
+use proofbound_runtime_verify::{ReceiptCommitment, decode_receipt, verify_receipt};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 const COMPOSITION_SCHEMA: &str = "proofbound-runtime-composed-receipt/1";
 const COMPOSITION_DOMAIN: &[u8] = b"proofbound-runtime-composed-receipt/1\n";
+const COMPOSITION_SCHEMA_V2: &str = "proofbound-runtime-composed-receipt/2";
+const COMPOSITION_DOMAIN_V2: &[u8] = b"proofbound-runtime-composed-receipt/2\n";
 const RELEASE_ENVELOPE_SCHEMA: &str = "proofbound-release-envelope/6";
 const RELEASE_REPORT_SCHEMA: &str = "proofbound-verification-report/3";
 const COMPILED_RELEASE_SCHEMA: &str = "proofbound-compiled-release/6";
 const RELEASE_MANIFEST_SCHEMA: &str = "proofbound-runtime-release-manifest/1";
 const EXECUTION_RECEIPT_SCHEMA: &str = "proofbound-runtime-receipt/1";
+const EXECUTION_RECEIPT_SCHEMA_V2: &str = "proofbound-runtime-execution-receipt/2";
 
 /// One exact byte carrier supplied to the pure composition boundary.
 #[derive(Clone, Copy)]
@@ -42,6 +49,35 @@ pub struct CompositionInputs<'a> {
     pub execution_verification: ArtifactBytes<'a>,
     pub expected_execution_commitment: &'a str,
     pub expected_execution_id: &'a str,
+}
+
+/// One exact Proofbound claim-facet tuple available to adopter policy.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct AcceptanceClaimFacts {
+    pub claim_id: String,
+    pub formal: String,
+    pub linkage: String,
+    pub assumption: String,
+    pub policy_admitted: bool,
+}
+
+/// Closed release and composition facts made available to adopter policy.
+/// These are decoded from canonical composed bytes, not from the JSON display
+/// projection.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ReleaseAcceptanceFacts {
+    pub composition_id: String,
+    pub project: String,
+    pub project_revision: String,
+    pub payload_sha256: String,
+    pub evidence_context: String,
+    pub runtime_bundle_version: String,
+    pub runtime_bundle_architecture: String,
+    pub claims: Vec<AcceptanceClaimFacts>,
+    pub assumptions: Vec<String>,
+    pub exclusions: Vec<String>,
+    pub open_obligations: Vec<String>,
+    pub tcb_roles: Vec<String>,
 }
 
 /// One fail-closed composition failure.
@@ -94,7 +130,7 @@ struct ReleaseEnvelope {
 #[serde(deny_unknown_fields)]
 pub struct ClaimStatus {
     #[serde(default)]
-    artifact_observations: Vec<Value>,
+    artifact_observations: Vec<ArtifactObservation>,
     assumption: String,
     assumptions: Vec<String>,
     claim_id: String,
@@ -105,12 +141,57 @@ pub struct ClaimStatus {
     undischarged_premises: Vec<String>,
 }
 
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+struct ArtifactObservation {
+    artifact: ObservedArtifact,
+    dependencies: Vec<String>,
+    evidence: String,
+    identity: String,
+    platform: ObservedPlatform,
+    procedure: ObservedArtifact,
+    semantic_kind: String,
+    subject_role: String,
+    toolchain_closure: ToolchainClosure,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+struct ObservedArtifact {
+    logical_name: String,
+    sha256: String,
+    size_bytes: u64,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+struct ObservedPlatform {
+    architecture: String,
+    operating_system: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+struct ToolchainClosure {
+    kind: String,
+    sha256: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+struct ResidualObligations {
+    assumptions: Vec<String>,
+    exclusions: Vec<String>,
+    open_obligations: Vec<String>,
+    undischarged_premises: Vec<String>,
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct ReleaseReport {
     claims: Vec<ClaimStatus>,
     evidence_context: Option<String>,
-    not_proved_out_of_scope: Value,
+    not_proved_out_of_scope: ResidualObligations,
     payload_sha256: String,
     project: String,
     project_revision: String,
@@ -184,7 +265,7 @@ struct WireArtifact {
     size: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct WireRuntime {
     launcher: WireArtifact,
@@ -228,6 +309,48 @@ struct ExecutionReceipt {
     schema: String,
     streams: Value,
     trusted_computing_base: Vec<WireTcbEntry>,
+}
+
+struct ExecutionFacts {
+    assumptions: Vec<String>,
+    eligibility: WireEligibility,
+    execution_id: String,
+    producer: WireArtifact,
+    product_version: String,
+    runtime: WireRuntime,
+    schema: String,
+    trusted_computing_base: Vec<WireTcbEntry>,
+    version_two: bool,
+}
+
+impl From<ExecutionReceipt> for ExecutionFacts {
+    fn from(receipt: ExecutionReceipt) -> Self {
+        let _closed_fields = (
+            receipt.boundary,
+            receipt.command,
+            receipt.environment,
+            receipt.inputs,
+            receipt.observations,
+            receipt.outcome,
+            receipt.output_root,
+            receipt.outputs,
+            receipt.plan,
+            receipt.platform,
+            receipt.policy,
+            receipt.streams,
+        );
+        Self {
+            assumptions: receipt.assumptions,
+            eligibility: receipt.eligibility,
+            execution_id: receipt.execution_id,
+            producer: receipt.producer,
+            product_version: receipt.product_version,
+            runtime: receipt.runtime,
+            schema: receipt.schema,
+            trusted_computing_base: receipt.trusted_computing_base,
+            version_two: false,
+        }
+    }
 }
 
 #[derive(Deserialize)]
@@ -311,7 +434,7 @@ struct ComposedReceipt {
     composition_id: String,
     eligibility: ComposedEligibility,
     execution: ExecutionIdentity,
-    not_proved_out_of_scope: Value,
+    not_proved_out_of_scope: ResidualObligations,
     release: ReleaseIdentity,
     runtime_bundle: RuntimeBundleIdentity,
     schema: String,
@@ -325,7 +448,7 @@ pub fn compose(inputs: &CompositionInputs<'_>) -> Result<Vec<u8>, CompositionErr
     let compiled: CompiledRelease = parse(inputs.compiled_release.bytes)?;
     let release_tcb: TcbLedger = parse(inputs.release_tcb_ledger.bytes)?;
     let manifest: RuntimeManifest = parse(inputs.runtime_manifest.bytes)?;
-    let execution: ExecutionReceipt = parse(inputs.execution_receipt.bytes)?;
+    let execution = parse_execution_facts(inputs)?;
     let execution_verification: ExecutionVerification = parse(inputs.execution_verification.bytes)?;
 
     let evidence_context = validate_release(&release_envelope, &release_report, &compiled, inputs)?;
@@ -336,6 +459,7 @@ pub fn compose(inputs: &CompositionInputs<'_>) -> Result<Vec<u8>, CompositionErr
         &bundle_artifacts,
         inputs,
     )?;
+    let execution_eligibility = execution.eligibility.status.clone();
 
     let assumptions = inherited_assumptions(&release_report.claims, &execution.assumptions);
     let trusted_computing_base = inherited_tcb(&release_tcb, &execution.trusted_computing_base)?;
@@ -348,7 +472,7 @@ pub fn compose(inputs: &CompositionInputs<'_>) -> Result<Vec<u8>, CompositionErr
         },
         execution: ExecutionIdentity {
             commitment: inputs.expected_execution_commitment.to_owned(),
-            eligibility: "reusable".to_owned(),
+            eligibility: execution_eligibility,
             execution_id: execution.execution_id,
             receipt: artifact_identity(inputs.execution_receipt),
             verification_report: artifact_identity(inputs.execution_verification),
@@ -374,11 +498,87 @@ pub fn compose(inputs: &CompositionInputs<'_>) -> Result<Vec<u8>, CompositionErr
             toolchain: manifest.toolchain,
             version: manifest.version,
         },
-        schema: COMPOSITION_SCHEMA.to_owned(),
+        schema: if execution.version_two {
+            COMPOSITION_SCHEMA_V2.to_owned()
+        } else {
+            COMPOSITION_SCHEMA.to_owned()
+        },
         trusted_computing_base,
     };
-    receipt.composition_id = composition_identity(&receipt)?;
-    canonical_bytes(&receipt)
+    if execution.version_two {
+        receipt.composition_id = composition_identity_v2(&receipt)?;
+        canonical_v2_bytes(&receipt)
+    } else {
+        receipt.composition_id = composition_identity(&receipt)?;
+        canonical_bytes(&receipt)
+    }
+}
+
+fn parse_execution_facts(
+    inputs: &CompositionInputs<'_>,
+) -> Result<ExecutionFacts, CompositionError> {
+    if inputs.execution_receipt.bytes.first() == Some(&b'{') {
+        let receipt: ExecutionReceipt = parse(inputs.execution_receipt.bytes)?;
+        return Ok(receipt.into());
+    }
+
+    let expected = ReceiptCommitment::parse(inputs.expected_execution_commitment)
+        .map_err(|_| CompositionError::ExecutionInvalid)?;
+    let _report = verify_receipt(inputs.execution_receipt.bytes, expected)
+        .map_err(|_| CompositionError::ExecutionInvalid)?;
+    let decoded = decode_receipt(inputs.execution_receipt.bytes)
+        .map_err(|_| CompositionError::ExecutionInvalid)?;
+    let facts = decoded.composition_facts();
+    if !facts.version_two {
+        return Err(CompositionError::ExecutionInvalid);
+    }
+    Ok(ExecutionFacts {
+        assumptions: facts.assumptions,
+        eligibility: WireEligibility {
+            reasons: facts
+                .eligibility_reasons
+                .into_iter()
+                .map(str::to_owned)
+                .collect(),
+            status: if facts.reusable {
+                "reusable".to_owned()
+            } else {
+                "non-reusable".to_owned()
+            },
+        },
+        execution_id: facts.execution_id,
+        producer: WireArtifact {
+            mode: facts.producer.mode,
+            role: facts.producer.role.to_owned(),
+            sha256: facts.producer.sha256,
+            size: facts.producer.size,
+        },
+        product_version: facts.product_version,
+        runtime: WireRuntime {
+            launcher: WireArtifact {
+                mode: facts.launcher.mode,
+                role: facts.launcher.role.to_owned(),
+                sha256: facts.launcher.sha256,
+                size: facts.launcher.size,
+            },
+            runtime: WireArtifact {
+                mode: facts.runtime.mode,
+                role: facts.runtime.role.to_owned(),
+                sha256: facts.runtime.sha256,
+                size: facts.runtime.size,
+            },
+        },
+        schema: facts.schema,
+        trusted_computing_base: facts
+            .trusted_computing_base
+            .into_iter()
+            .map(|entry| WireTcbEntry {
+                identity: entry.identity,
+                role: entry.role,
+            })
+            .collect(),
+        version_two: true,
+    })
 }
 
 /// Independently recomputes a composition and compares its complete canonical
@@ -387,9 +587,9 @@ pub fn verify_composed_receipt(
     bytes: &[u8],
     inputs: &CompositionInputs<'_>,
 ) -> Result<(), CompositionError> {
-    let actual: ComposedReceipt = parse(bytes)?;
+    let actual = parse_composed_receipt(bytes)?;
     let expected_bytes = compose(inputs)?;
-    let expected: ComposedReceipt = parse(&expected_bytes)?;
+    let expected = parse_composed_receipt(&expected_bytes)?;
     if actual.assumptions != expected.assumptions {
         return Err(CompositionError::AssumptionOmitted);
     }
@@ -403,6 +603,91 @@ pub fn verify_composed_receipt(
         return Err(CompositionError::CompositionMismatch);
     }
     Ok(())
+}
+
+/// Returns the noncommitted JSON projection of one decoded composed receipt.
+/// The returned view is for display only and is never a verification input.
+pub fn project_composed_receipt(bytes: &[u8]) -> Result<Value, CompositionError> {
+    if bytes.first() == Some(&b'{') {
+        let value: Value = parse(bytes)?;
+        let receipt: ComposedReceipt =
+            serde_json::from_value(value.clone()).map_err(|_| CompositionError::SchemaInvalid)?;
+        if receipt.schema != COMPOSITION_SCHEMA {
+            return Err(CompositionError::SchemaInvalid);
+        }
+        Ok(value)
+    } else {
+        let value =
+            cbor_decode::project_composed_v2(bytes).map_err(|_| CompositionError::SchemaInvalid)?;
+        if value.get("schema").and_then(Value::as_str) != Some(COMPOSITION_SCHEMA_V2) {
+            return Err(CompositionError::SchemaInvalid);
+        }
+        Ok(value)
+    }
+}
+
+/// Decodes the narrow typed facts needed by acceptance policy from canonical
+/// composed bytes. Callers must first create or independently verify the
+/// composition against its raw inputs; this function never accepts a JSON
+/// projection as evidence.
+pub fn decode_release_acceptance_facts(
+    bytes: &[u8],
+) -> Result<ReleaseAcceptanceFacts, CompositionError> {
+    let receipt = parse_composed_receipt(bytes)?;
+    if receipt.schema != COMPOSITION_SCHEMA_V2 {
+        return Err(CompositionError::SchemaInvalid);
+    }
+    Ok(ReleaseAcceptanceFacts {
+        composition_id: receipt.composition_id,
+        project: receipt.release.project,
+        project_revision: receipt.release.project_revision,
+        payload_sha256: receipt.release.payload_sha256,
+        evidence_context: receipt.release.evidence_context,
+        runtime_bundle_version: receipt.runtime_bundle.version,
+        runtime_bundle_architecture: receipt.runtime_bundle.architecture,
+        claims: receipt
+            .claims
+            .into_iter()
+            .map(|claim| AcceptanceClaimFacts {
+                claim_id: claim.claim_id,
+                formal: claim.formal,
+                linkage: claim.linkage,
+                assumption: claim.assumption,
+                policy_admitted: claim.policy_admitted,
+            })
+            .collect(),
+        assumptions: receipt
+            .assumptions
+            .into_iter()
+            .map(|entry| entry.id)
+            .collect(),
+        exclusions: receipt.not_proved_out_of_scope.exclusions,
+        open_obligations: receipt.not_proved_out_of_scope.open_obligations,
+        tcb_roles: receipt
+            .trusted_computing_base
+            .into_iter()
+            .map(|entry| entry.role)
+            .collect(),
+    })
+}
+
+fn parse_composed_receipt(bytes: &[u8]) -> Result<ComposedReceipt, CompositionError> {
+    if bytes.first() == Some(&b'{') {
+        let receipt: ComposedReceipt = parse(bytes)?;
+        if receipt.schema != COMPOSITION_SCHEMA {
+            return Err(CompositionError::SchemaInvalid);
+        }
+        Ok(receipt)
+    } else {
+        let value = cbor_decode::decode_composed_v2_model(bytes)
+            .map_err(|_| CompositionError::SchemaInvalid)?;
+        let receipt: ComposedReceipt =
+            serde_json::from_value(value).map_err(|_| CompositionError::SchemaInvalid)?;
+        if receipt.schema != COMPOSITION_SCHEMA_V2 {
+            return Err(CompositionError::SchemaInvalid);
+        }
+        Ok(receipt)
+    }
 }
 
 fn validate_release(
@@ -536,18 +821,22 @@ fn validate_bundle(
 }
 
 fn validate_execution(
-    receipt: &ExecutionReceipt,
+    receipt: &ExecutionFacts,
     verification: &ExecutionVerification,
     bundle_artifacts: &[ArtifactIdentity],
     inputs: &CompositionInputs<'_>,
 ) -> Result<(), CompositionError> {
-    if receipt.schema != EXECUTION_RECEIPT_SCHEMA
+    let expected_schema = if receipt.version_two {
+        EXECUTION_RECEIPT_SCHEMA_V2
+    } else {
+        EXECUTION_RECEIPT_SCHEMA
+    };
+    if receipt.schema != expected_schema
         || receipt.product_version.is_empty()
         || !verification.valid
-        || verification.eligibility.status != "reusable"
-        || !verification.eligibility.reasons.is_empty()
-        || receipt.eligibility.status != "reusable"
-        || !receipt.eligibility.reasons.is_empty()
+        || !valid_eligibility(&verification.eligibility)
+        || verification.eligibility.status != receipt.eligibility.status
+        || verification.eligibility.reasons != receipt.eligibility.reasons
         || verification.receipt_commitment != inputs.expected_execution_commitment
         || digest_text(inputs.execution_receipt.bytes) != inputs.expected_execution_commitment
     {
@@ -580,21 +869,15 @@ fn validate_execution(
             return Err(CompositionError::TrustedComputingBaseOmitted);
         }
     }
-    let _closed_fields = (
-        &receipt.boundary,
-        &receipt.command,
-        &receipt.environment,
-        &receipt.inputs,
-        &receipt.observations,
-        &receipt.outcome,
-        &receipt.output_root,
-        &receipt.outputs,
-        &receipt.plan,
-        &receipt.platform,
-        &receipt.policy,
-        &receipt.streams,
-    );
     Ok(())
+}
+
+fn valid_eligibility(eligibility: &WireEligibility) -> bool {
+    match eligibility.status.as_str() {
+        "reusable" => eligibility.reasons.is_empty(),
+        "non-reusable" => !eligibility.reasons.is_empty(),
+        _ => false,
+    }
 }
 
 fn validate_wire_artifact(
@@ -698,9 +981,28 @@ fn composition_identity(receipt: &ComposedReceipt) -> Result<String, Composition
     Ok(format!("sha256:{}", hex_digest(&hasher.finalize())))
 }
 
+fn composition_identity_v2(receipt: &ComposedReceipt) -> Result<String, CompositionError> {
+    let mut value = serde_json::to_value(receipt).map_err(|_| CompositionError::SchemaInvalid)?;
+    value
+        .as_object_mut()
+        .ok_or(CompositionError::SchemaInvalid)?
+        .remove("composition_id");
+    let body =
+        cbor_encode::encode_composed_v2(&value).map_err(|_| CompositionError::SchemaInvalid)?;
+    let mut hasher = Sha256::new();
+    hasher.update(COMPOSITION_DOMAIN_V2);
+    hasher.update(body);
+    Ok(format!("sha256:{}", hex_digest(&hasher.finalize())))
+}
+
 fn canonical_bytes(receipt: &ComposedReceipt) -> Result<Vec<u8>, CompositionError> {
     let value = serde_json::to_value(receipt).map_err(|_| CompositionError::SchemaInvalid)?;
     serde_json::to_vec(&value).map_err(|_| CompositionError::SchemaInvalid)
+}
+
+fn canonical_v2_bytes(receipt: &ComposedReceipt) -> Result<Vec<u8>, CompositionError> {
+    let value = serde_json::to_value(receipt).map_err(|_| CompositionError::SchemaInvalid)?;
+    cbor_encode::encode_composed_v2(&value).map_err(|_| CompositionError::SchemaInvalid)
 }
 
 fn artifact_identity(artifact: ArtifactBytes<'_>) -> ArtifactIdentity {
@@ -1029,7 +1331,14 @@ mod tests {
                 launcher: named("pbr-native-launcher", &self.launcher),
                 execution_verifier: named("pbr-verify", &self.execution_verifier),
                 composer: named("pbr-compose", &self.composer),
-                execution_receipt: named("execution-receipt.json", &self.execution_receipt),
+                execution_receipt: named(
+                    if self.execution_receipt.first() == Some(&b'{') {
+                        "execution-receipt.json"
+                    } else {
+                        "execution-receipt.cbor"
+                    },
+                    &self.execution_receipt,
+                ),
                 execution_verification: named(
                     "execution-verification.json",
                     &self.execution_verification,
@@ -1037,6 +1346,18 @@ mod tests {
                 expected_execution_commitment: &self.commitment,
                 expected_execution_id: &self.expected_execution_id,
             }
+        }
+
+        fn upgrade_execution_to_v2(&mut self) {
+            self.execution_receipt = decode_hex(include_str!(
+                "../../../schemas/vectors/v2/execution-receipt.cbor.hex"
+            ));
+            self.commitment = digest_text(&self.execution_receipt);
+            self.execution_verification = canonical_json(json!({
+                "eligibility": {"reasons": [], "status": "reusable"},
+                "receipt_commitment": self.commitment,
+                "valid": true
+            }));
         }
 
         fn mutate_json(&mut self, field: FixtureField, mutation: impl FnOnce(&mut Value)) {
@@ -1076,6 +1397,17 @@ mod tests {
 
     fn canonical_json(value: Value) -> Vec<u8> {
         serde_json::to_vec(&value).expect("fixture JSON encodes")
+    }
+
+    fn decode_hex(text: &str) -> Vec<u8> {
+        text.trim()
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| {
+                u8::from_str_radix(core::str::from_utf8(pair).expect("hex pair"), 16)
+                    .expect("fixture is hex")
+            })
+            .collect()
     }
 
     fn mutate_composed(bytes: &[u8], mutation: impl FnOnce(&mut Value)) -> Vec<u8> {
@@ -1118,6 +1450,120 @@ mod tests {
         assert_eq!(value["execution"]["execution_id"], EXECUTION_ID);
         assert_eq!(serde_json::to_vec(&value).unwrap(), bytes);
         verify_composed_receipt(&bytes, &fixture.inputs()).expect("output independently agrees");
+    }
+
+    #[test]
+    fn verified_non_reusable_execution_reaches_acceptance_composition() {
+        let mut fixture = Fixture::new();
+        fixture.mutate_json(FixtureField::Execution, |receipt| {
+            receipt["eligibility"] =
+                json!({"reasons": ["exit-code-nonzero"], "status": "non-reusable"});
+        });
+        fixture.execution_verification = canonical_json(json!({
+            "eligibility": {
+                "reasons": ["exit-code-nonzero"],
+                "status": "non-reusable"
+            },
+            "receipt_commitment": fixture.commitment,
+            "valid": true
+        }));
+
+        let bytes = compose(&fixture.inputs()).expect("non-reusable execution still composes");
+        let value: Value = serde_json::from_slice(&bytes).expect("composition parses");
+        assert_eq!(value["execution"]["eligibility"], "non-reusable");
+        verify_composed_receipt(&bytes, &fixture.inputs())
+            .expect("non-reusable composition independently agrees");
+    }
+
+    #[test]
+    fn version_two_execution_composes_to_deterministic_cbor_and_json_view() {
+        let mut fixture = Fixture::new();
+        fixture.upgrade_execution_to_v2();
+        let bytes = compose(&fixture.inputs()).expect("valid v2 chain composes");
+        assert_ne!(bytes.first(), Some(&b'{'));
+
+        let projection = project_composed_receipt(&bytes).expect("v2 composition projects");
+        assert_eq!(projection["schema"], COMPOSITION_SCHEMA_V2);
+        assert_eq!(
+            projection["execution"]["execution_id"],
+            "hex:00112233445546778899aabbccddeeff"
+        );
+        assert_eq!(
+            projection["execution"]["receipt"]["name"],
+            "execution-receipt.cbor"
+        );
+        assert!(
+            projection["composition_id"]
+                .as_str()
+                .is_some_and(|value| value.starts_with("hex:"))
+        );
+        assert!(projection["not_proved_out_of_scope"].is_object());
+        verify_composed_receipt(&bytes, &fixture.inputs()).expect("v2 output independently agrees");
+    }
+
+    #[test]
+    fn composed_v2_producer_and_decoder_match_the_frozen_golden() {
+        let bytes = decode_hex(include_str!(
+            "../../../schemas/vectors/v2/composed-receipt.cbor.hex"
+        ));
+        let expected: Value = serde_json::from_str(include_str!(
+            "../../../schemas/vectors/v2/composed-receipt.projection.json"
+        ))
+        .expect("projection JSON parses");
+        assert_eq!(project_composed_receipt(&bytes), Ok(expected));
+
+        let model = parse_composed_receipt(&bytes).expect("golden model decodes");
+        assert_eq!(canonical_v2_bytes(&model), Ok(bytes));
+    }
+
+    #[test]
+    fn composed_v2_decoder_rejects_noncanonical_carriers() {
+        for attack in [
+            vec![0x18, 0x17],
+            vec![0x9f, 0xff],
+            vec![0xa1, 0x00, 0x00],
+            vec![0xa2, 0x61, b'b', 0x00, 0x61, b'a', 0x00],
+            vec![0xa2, 0x61, b'a', 0x00, 0x61, b'a', 0x01],
+            vec![0x9a, 0x00, 0x0f, 0x42, 0x40],
+            vec![0xba, 0x00, 0x0f, 0x42, 0x40],
+        ] {
+            assert_eq!(
+                project_composed_receipt(&attack),
+                Err(CompositionError::SchemaInvalid)
+            );
+        }
+    }
+
+    #[test]
+    fn v2_assumption_loss_attack_mutates_inherited_facts_and_fails_closed() {
+        let mut fixture = Fixture::new();
+        fixture.upgrade_execution_to_v2();
+        let bytes = compose(&fixture.inputs()).expect("valid v2 chain composes");
+        let model = parse_composed_receipt(&bytes).expect("v2 model decodes");
+
+        let mut assumption = model.clone();
+        assumption.assumptions.remove(0);
+        let assumption = canonical_v2_bytes(&assumption).expect("forgery encodes");
+        assert_eq!(
+            verify_composed_receipt(&assumption, &fixture.inputs()),
+            Err(CompositionError::AssumptionOmitted)
+        );
+
+        let mut tcb = model.clone();
+        tcb.trusted_computing_base.remove(0);
+        let tcb = canonical_v2_bytes(&tcb).expect("forgery encodes");
+        assert_eq!(
+            verify_composed_receipt(&tcb, &fixture.inputs()),
+            Err(CompositionError::TrustedComputingBaseOmitted)
+        );
+
+        let mut promoted = model;
+        promoted.claims[0].linkage = "ARTIFACT_BOUND".to_owned();
+        let promoted = canonical_v2_bytes(&promoted).expect("forgery encodes");
+        assert_eq!(
+            verify_composed_receipt(&promoted, &fixture.inputs()),
+            Err(CompositionError::ReleaseDowngraded)
+        );
     }
 
     #[test]

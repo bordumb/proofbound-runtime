@@ -1,0 +1,46 @@
+schema = "proofbound-runtime-sdk-attacks/1"
+
+[[case]]
+id = "json-plan-substitution"
+mutation = "supply a JSON projection where deterministic-CBOR plan bytes are required"
+expected = "construction has no JSON plan-input path"
+
+[[case]]
+id = "duplicate-environment"
+mutation = "repeat one inherited environment name"
+expected = "sdk.plan.duplicate"
+
+[[case]]
+id = "unquantized-limit"
+mutation = "change a memory or swap limit by one byte"
+expected = "sdk.plan.limit-not-quantized"
+
+[[case]]
+id = "verification-smuggling"
+mutation = "add a verified boolean to the run-result JSON projection"
+expected = "sdk.result.unknown-field"
+
+[[case]]
+id = "shell-injection"
+mutation = "put shell metacharacters in an explicit plan path"
+expected = "the literal path reaches pbr and no shell command is evaluated"
+
+[[case]]
+id = "ambient-environment"
+mutation = "set an unselected variable in the SDK parent environment"
+expected = "the child receives only the explicit environment map"
+
+[[case]]
+id = "output-flood"
+mutation = "make the selected pbr process exceed its stdout or stderr capture bound"
+expected = "sdk.process.output-bound and child termination"
+
+[[case]]
+id = "package-file-injection"
+mutation = "add an undeclared source or test file to a release package"
+expected = "closed package inventory failure"
+
+[[case]]
+id = "cross-codec-drift"
+mutation = "change one language encoder away from the frozen v2 plan bytes"
+expected = "byte-for-byte golden mismatch"

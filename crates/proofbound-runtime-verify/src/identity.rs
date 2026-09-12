@@ -72,6 +72,10 @@ pub enum ValidationError {
     TcbRoleMissing,
     /// Recorded eligibility differs from independent derivation.
     EligibilityMismatch,
+    /// The recorded version 2 limit-event set does not match terminal counters.
+    ResourceEventsMismatch,
+    /// Configured values or terminal peaks contradict the normalized plan limits.
+    ResourcePlanMismatch,
 }
 
 impl ValidationError {
@@ -99,6 +103,8 @@ impl ValidationError {
             Self::TcbNotCanonical => "receipt.tcb.not-canonical",
             Self::TcbRoleMissing => "receipt.tcb.role.missing",
             Self::EligibilityMismatch => "receipt.eligibility.mismatch",
+            Self::ResourceEventsMismatch => "receipt.resources.events-mismatch",
+            Self::ResourcePlanMismatch => "receipt.resources.plan-mismatch",
         }
     }
 }
@@ -201,7 +207,63 @@ pub fn validate_receipt(receipt: &DecodedReceipt) -> Result<(), ValidationError>
     }
 
     validate_tcb(receipt)?;
+    validate_resources(receipt)?;
     validate_eligibility(receipt)
+}
+
+fn validate_resources(receipt: &DecodedReceipt) -> Result<(), ValidationError> {
+    let Some(resources) = receipt.resources() else {
+        return if receipt.is_version_two() {
+            Err(ValidationError::ResourceEventsMismatch)
+        } else {
+            Ok(())
+        };
+    };
+    if !receipt.is_version_two() {
+        return Err(ValidationError::ResourceEventsMismatch);
+    }
+    let plan = receipt
+        .plan_limits()
+        .ok_or(ValidationError::ResourcePlanMismatch)?;
+    let _supervisor_limits = (plan.wall_time_ms, plan.stdout_bytes, plan.stderr_bytes);
+    if (resources.processes, resources.memory, resources.swap)
+        != (plan.processes, plan.memory, plan.swap)
+    {
+        return Err(ValidationError::ResourcePlanMismatch);
+    }
+    if !resources.observations_complete {
+        return if resources.limit_events.is_empty() {
+            Ok(())
+        } else {
+            Err(ValidationError::ResourceEventsMismatch)
+        };
+    }
+    if (resources.memory_peak > plan.memory && resources.memory_events[2] == 0)
+        || (resources.swap_peak > plan.swap
+            && resources.swap_events[0] == 0
+            && resources.swap_events[1] == 0)
+    {
+        return Err(ValidationError::ResourcePlanMismatch);
+    }
+    let expected = [
+        (resources.memory_events[1] != 0, WireReason::MemoryHigh),
+        (resources.memory_events[2] != 0, WireReason::MemoryMax),
+        (resources.memory_events[3] != 0, WireReason::MemoryOom),
+        (resources.memory_events[4] != 0, WireReason::MemoryOomKill),
+        (
+            resources.memory_events[5] != 0,
+            WireReason::MemoryOomGroupKill,
+        ),
+        (resources.swap_events[0] != 0, WireReason::SwapMax),
+        (resources.swap_events[1] != 0, WireReason::SwapFail),
+    ]
+    .into_iter()
+    .filter_map(|(present, reason)| present.then_some(reason))
+    .collect::<Vec<_>>();
+    if resources.limit_events != expected {
+        return Err(ValidationError::ResourceEventsMismatch);
+    }
+    Ok(())
 }
 
 fn require_product_version(value: &str) -> Result<(), ValidationError> {
@@ -422,6 +484,13 @@ const fn reason_from_failure(reason: FailureReason) -> WireReason {
         FailureReason::StandardOutputTruncated => WireReason::StdoutTruncated,
         FailureReason::StandardErrorTruncated => WireReason::StderrTruncated,
         FailureReason::ReceiptMalformed => WireReason::ReceiptMalformed,
+        FailureReason::MemoryHigh => WireReason::MemoryHigh,
+        FailureReason::MemoryMax => WireReason::MemoryMax,
+        FailureReason::MemoryOom => WireReason::MemoryOom,
+        FailureReason::MemoryOomKill => WireReason::MemoryOomKill,
+        FailureReason::MemoryOomGroupKill => WireReason::MemoryOomGroupKill,
+        FailureReason::SwapMax => WireReason::SwapMax,
+        FailureReason::SwapFail => WireReason::SwapFail,
     }
 }
 

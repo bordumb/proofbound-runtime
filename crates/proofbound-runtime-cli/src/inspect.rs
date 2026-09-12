@@ -40,14 +40,21 @@ fn write_inspection(input: &[u8], output: &mut impl io::Write) -> Result<(), Ins
     if input.len() > MAX_RECEIPT_BYTES {
         return Err(InspectError::TooLarge);
     }
-    let mut deserializer = serde_json::Deserializer::from_slice(input);
-    let value = UniqueValue
-        .deserialize(&mut deserializer)
-        .and_then(|value| {
-            deserializer.end()?;
-            Ok(value)
-        })
-        .map_err(|_| InspectError::AmbiguousJson)?;
+    let value = if input.first() == Some(&b'{') {
+        let mut deserializer = serde_json::Deserializer::from_slice(input);
+        UniqueValue
+            .deserialize(&mut deserializer)
+            .and_then(|value| {
+                deserializer.end()?;
+                Ok(value)
+            })
+            .map_err(|_| InspectError::AmbiguousJson)?
+    } else {
+        proofbound_runtime_verify::decode_receipt(input)
+            .map_err(|_| InspectError::AmbiguousJson)?
+            .value()
+            .clone()
+    };
     serde_json::to_writer_pretty(&mut *output, &value).map_err(|_| InspectError::Output)?;
     writeln!(output).map_err(|_| InspectError::Output)
 }
@@ -163,5 +170,40 @@ mod tests {
             write_inspection(&vec![b' '; MAX_RECEIPT_BYTES + 1], &mut Vec::new()),
             Err(InspectError::TooLarge)
         );
+    }
+
+    #[test]
+    fn inspection_projects_a_decoded_v2_cbor_receipt_as_json() {
+        let hex = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../schemas/vectors/v2/execution-receipt.cbor.hex"
+        ));
+        let compact = hex.split_whitespace().collect::<String>();
+        let input = compact
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| {
+                u8::from_str_radix(core::str::from_utf8(pair).expect("hex is UTF-8"), 16)
+                    .expect("golden vector is hex")
+            })
+            .collect::<Vec<_>>();
+        let mut output = Vec::new();
+        write_inspection(&input, &mut output).expect("v2 receipt is inspectable");
+        let projection: Value = serde_json::from_slice(&output).expect("projection is JSON");
+        assert_eq!(
+            projection["schema"],
+            "proofbound-runtime-execution-receipt/2"
+        );
+        let resources = &projection["resources"];
+        assert_eq!(resources["configured"]["memory.max"], "65536");
+        assert_eq!(resources["configured"]["memory.swap.max"], "0");
+        assert_eq!(resources["terminal"]["memory_peak_bytes"], "32768");
+        assert_eq!(resources["terminal"]["swap_peak_bytes"], "0");
+        for name in ["low", "high", "max", "oom", "oom_kill", "oom_group_kill"] {
+            assert_eq!(resources["terminal"]["memory_events"][name], "0");
+        }
+        for name in ["max", "fail"] {
+            assert_eq!(resources["terminal"]["swap_events"][name], "0");
+        }
     }
 }

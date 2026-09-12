@@ -1,0 +1,46 @@
+; Proofbound Runtime execution plan version 2.
+; All maps are closed and use text keys. Map ordering and integer encoding use
+; the core deterministic requirements of RFC 8949 section 4.2.1.
+
+execution-plan-v2 = {
+  "id": plan-id,
+  "schema": "proofbound-runtime-plan/2",
+  "limits": resource-limits,
+  "command": command,
+  "authority": authority
+}
+
+command = {
+  "arguments": [* argument],
+  "executable": path,
+  "working_directory": path
+}
+
+authority = {
+  "read": [* path],
+  "write": [path],
+  "execute": [path],
+  "network": "deny",
+  "environment": [* environment-name],
+  "runtime_read": [* absolute-path]
+}
+
+resource-limits = {
+  "processes": uint32-nonzero,
+  "swap_bytes": swap-byte-limit,
+  "stderr_bytes": uint64,
+  "stdout_bytes": uint64,
+  "memory_bytes": memory-byte-limit,
+  "wall_time_ms": uint64-nonzero
+}
+
+plan-id = text .size (1..128)
+path = text .size (1..18446744073709551615)
+absolute-path = text .size (1..18446744073709551615)
+argument = text
+environment-name = text .size (1..18446744073709551615)
+uint32-nonzero = 1..4294967295
+uint64 = 0..18446744073709551615
+uint64-nonzero = 1..18446744073709551615
+memory-byte-limit = 65536..1099511627776
+swap-byte-limit = 0..1099511627776

@@ -1,0 +1,26 @@
+{
+  "name": "@proofbound/runtime-sdk",
+  "version": "0.2.0",
+  "description": "Plan construction and run-result decoding for Proofbound Runtime",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bordumb/proofbound-runtime.git"
+  },
+  "engines": {
+    "node": ">=22.6"
+  },
+  "exports": {
+    "types": "./src/index.d.ts",
+    "default": "./src/index.ts"
+  },
+  "files": [
+    "README.md",
+    "src/index.d.ts",
+    "src/index.ts"
+  ],
+  "scripts": {
+    "test": "node --experimental-strip-types tests/test.mjs"
+  }
+}

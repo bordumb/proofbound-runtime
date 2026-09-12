@@ -2,6 +2,7 @@
 set -euo pipefail
 
 supervisor_leaf="proofbound-supervisor"
+repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 expected_architecture="${PROOFBOUND_EXPECTED_ARCH:-$(uname -m)}"
 runtime_bins_prebuilt="${PROOFBOUND_RUNTIME_BINS_PREBUILT:-}"
 if [[ -z "$runtime_bins_prebuilt" ]]; then
@@ -38,11 +39,13 @@ if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
     echo "delegation root contains direct processes" >&2
     exit 1
   fi
-  echo +pids >"$delegation_root/cgroup.subtree_control"
-  if ! grep -qw pids "$delegation_root/cgroup.subtree_control"; then
-    echo "pids controller was not enabled below the delegation root" >&2
-    exit 1
-  fi
+  echo +memory +pids >"$delegation_root/cgroup.subtree_control"
+  for controller in memory pids; do
+    if ! grep -qw "$controller" "$delegation_root/cgroup.subtree_control"; then
+      echo "$controller controller was not enabled below the delegation root" >&2
+      exit 1
+    fi
+  done
 
   export PROOFBOUND_CGROUP_ROOT="$delegation_root"
   export PROOFBOUND_NATIVE_REQUIRED=1
@@ -53,6 +56,12 @@ if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
   "$PROOFBOUND_NATIVE_FIXTURE" landlock-fd-exec-preflight "$PROOFBOUND_NATIVE_FIXTURE"
   uname -a
   systemd --version | head -n 1
+  if [[ "${PROOFBOUND_NATIVE_SWAP_ONLY:-0}" == "1" ]]; then
+    cargo test --locked -p proofbound-runtime-linux --test native_linux \
+      production_launcher_enforces_native_swap_presence_matrix -- \
+      --test-threads=1 --nocapture
+    exit 0
+  fi
   cargo test --locked -p proofbound-runtime-linux --test native_linux -- --test-threads=1 --nocapture
 
   if [[ "$runtime_bins_prebuilt" != "1" ]]; then
@@ -63,34 +72,279 @@ if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
   done
   e2e_root="$(mktemp -d "$PWD/target/native-cli-e2e.XXXXXX")"
   trap 'rm -rf -- "$e2e_root"' EXIT
-  plan="$e2e_root/plan.toml"
-  receipt="$e2e_root/receipt.json"
+  plan="$e2e_root/plan.cbor"
+  receipt="$e2e_root/receipt.cbor"
   result="$e2e_root/run-result.json"
   verification="$e2e_root/verification.json"
-  printf '%s\n' \
-    'schema = "proofbound-runtime-plan/1"' \
-    'id = "ci.native-cli-e2e"' \
-    '' \
-    '[command]' \
-    "executable = \"$PROOFBOUND_NATIVE_FIXTURE\"" \
-    'arguments = ["positive"]' \
-    'working_directory = "."' \
-    '' \
-    '[authority]' \
-    'network = "deny"' \
-    'environment = []' \
-    'read = []' \
-    'runtime_read = []' \
-    'write = ["output"]' \
-    "execute = [\"$PROOFBOUND_NATIVE_FIXTURE\"]" \
-    '' \
-    '[limits]' \
-    'wall_time_ms = 5000' \
-    'stdout_bytes = 4096' \
-    'stderr_bytes = 4096' \
-    'processes = 1' >"$plan"
+  preflight="$e2e_root/preflight.json"
+  scaffold="$e2e_root/plan-scaffold.json"
+  diagnostic_child_marker="$e2e_root/output/diagnostic-child-ran"
+  python3 tools/ci/encode_plan_v2.py \
+    --output "$plan" \
+    --id ci.native-cli-e2e \
+    --executable "$PROOFBOUND_NATIVE_FIXTURE" \
+    --argument mark \
+    --argument output/diagnostic-child-ran \
+    --working-directory . \
+    --write output \
+    --execute "$PROOFBOUND_NATIVE_FIXTURE" \
+    --processes 1 \
+    --wall-time-ms 5000 \
+    --stdout-bytes 4096 \
+    --stderr-bytes 4096 \
+    --memory-bytes 268435456 \
+    --swap-bytes 0
 
   "$runtime_bin_directory/pbr" plan check --plan "$plan"
+  cgroup_before="$(
+    stat -Lc '%d:%i:%f' "$PROOFBOUND_CGROUP_ROOT"
+    sed -n '1p' "$PROOFBOUND_CGROUP_ROOT/cgroup.controllers"
+    sed -n '1p' "$PROOFBOUND_CGROUP_ROOT/cgroup.subtree_control"
+    sed -n '1p' "$PROOFBOUND_CGROUP_ROOT/cgroup.procs"
+  )"
+  test ! -e "$e2e_root/output"
+  test ! -e "$receipt"
+  "$runtime_bin_directory/pbr" preflight \
+    --plan "$plan" \
+    --receipt "$receipt" \
+    --cgroup-root "$PROOFBOUND_CGROUP_ROOT" >"$preflight"
+  test ! -e "$e2e_root/output"
+  test ! -e "$receipt"
+  cgroup_after="$(
+    stat -Lc '%d:%i:%f' "$PROOFBOUND_CGROUP_ROOT"
+    sed -n '1p' "$PROOFBOUND_CGROUP_ROOT/cgroup.controllers"
+    sed -n '1p' "$PROOFBOUND_CGROUP_ROOT/cgroup.subtree_control"
+    sed -n '1p' "$PROOFBOUND_CGROUP_ROOT/cgroup.procs"
+  )"
+  test "$cgroup_before" = "$cgroup_after"
+  python3 -c '
+import hashlib
+import json
+import os
+import stat
+import sys
+
+report_path, plan_path, executable_path, cgroup_root, receipt_path, expected_arch = sys.argv[1:]
+with open(report_path, encoding="utf-8") as source:
+    report = json.load(source)
+assert set(report) == {
+    "caveat", "command", "inputs", "output_root", "plan_id", "plan_source",
+    "platform", "ready", "receipt", "schema",
+}
+assert report["schema"] == "proofbound-runtime-preflight/1"
+assert report["ready"] is True
+assert report["caveat"] == "preflight.point-in-time"
+assert report["plan_id"] == "ci.native-cli-e2e"
+assert report["inputs"] == []
+assert report["command"]["interpreter"] is None
+assert report["command"]["executable"]["resolved"] == os.path.realpath(executable_path)
+assert report["command"]["working_directory"]["resolved"] == os.path.dirname(plan_path)
+assert report["output_root"] == {
+    "requested": "output",
+    "resolved_parent": os.path.dirname(plan_path),
+    "resolved_target": os.path.join(os.path.dirname(plan_path), "output"),
+}
+assert report["receipt"] == {"resolved_target": receipt_path}
+assert report["platform"]["architecture"] == expected_arch
+assert report["platform"]["cgroup_v2"]["directory"] == cgroup_root
+assert "pids" in report["platform"]["cgroup_v2"]["controllers"]
+
+def expected_artifact(path, role):
+    with open(path, "rb") as source:
+        data = source.read()
+    return {
+        "role": role,
+        "sha256": hashlib.sha256(data).hexdigest(),
+        "size": len(data),
+        "mode": stat.S_IMODE(os.stat(path).st_mode),
+    }
+
+assert report["plan_source"]["artifact"] == expected_artifact(plan_path, "execution-plan")
+assert report["command"]["executable"]["artifact"] == expected_artifact(
+    executable_path, "runtime-executable"
+)
+' "$preflight" "$plan" "$PROOFBOUND_NATIVE_FIXTURE" \
+    "$PROOFBOUND_CGROUP_ROOT" "$receipt" "$expected_architecture"
+
+  case "$expected_architecture" in
+    x86_64) scaffold_profile="linux-glibc-x86-64-v1" ;;
+    aarch64) scaffold_profile="linux-glibc-aarch64-v1" ;;
+    *)
+      echo "native scaffold architecture is unsupported: $expected_architecture" >&2
+      exit 1
+      ;;
+  esac
+  "$runtime_bin_directory/pbr" plan scaffold \
+    --executable "$PROOFBOUND_NATIVE_FIXTURE" \
+    --host-profile "$scaffold_profile" >"$scaffold"
+  python3 -c '
+import json
+import sys
+
+path, profile, executable = sys.argv[1:]
+with open(path, encoding="utf-8") as source:
+    report = json.load(source)
+assert set(report) == {
+    "dependencies", "executable", "host_profile", "interpreter", "open_items",
+    "resolution_inputs", "safe_policy", "schema", "suggested_runtime_roots",
+}
+assert report["schema"] == "proofbound-runtime-plan-scaffold/1"
+assert report["safe_policy"] is False
+assert report["host_profile"] == profile
+assert report["executable"]["requested"] == executable
+assert report["dependencies"] == []
+assert report["interpreter"] is None
+required = {
+    "choose-environment", "choose-limits", "choose-network-mode",
+    "choose-write-roots", "dynamic-loads-unresolved",
+}
+assert required <= {item["code"] for item in report["open_items"]}
+' "$scaffold" "$scaffold_profile" "$PROOFBOUND_NATIVE_FIXTURE"
+
+  occupied_receipt="$e2e_root/occupied-receipt.cbor"
+  printf '%s\n' 'preserve-me' >"$occupied_receipt"
+  set +e
+  "$runtime_bin_directory/pbr" preflight \
+    --plan "$plan" \
+    --receipt "$occupied_receipt" \
+    --cgroup-root "$PROOFBOUND_CGROUP_ROOT" \
+    >"$e2e_root/occupied-receipt-result.json" \
+    2>"$e2e_root/occupied-receipt-error.txt"
+  occupied_receipt_status=$?
+  set -e
+  test "$occupied_receipt_status" -eq 2
+  test "$(<"$occupied_receipt")" = 'preserve-me'
+  test "$(<"$e2e_root/occupied-receipt-error.txt")" = 'pbr: receipt.path.exists'
+  python3 -c '
+import json
+import sys
+with open(sys.argv[1], encoding="utf-8") as source:
+    assert json.load(source) == {
+        "schema": "proofbound-runtime-preflight/1",
+        "ready": False,
+        "phase": "receipt-target",
+        "code": "receipt.path.exists",
+    }
+' "$e2e_root/occupied-receipt-result.json"
+
+  mkdir "$e2e_root/output"
+  set +e
+  "$runtime_bin_directory/pbr" preflight \
+    --plan "$plan" \
+    --receipt "$receipt" \
+    --cgroup-root "$PROOFBOUND_CGROUP_ROOT" \
+    >"$e2e_root/occupied-output-result.json" \
+    2>"$e2e_root/occupied-output-error.txt"
+  occupied_output_status=$?
+  set -e
+  test "$occupied_output_status" -eq 2
+  test -d "$e2e_root/output"
+  test "$(<"$e2e_root/occupied-output-error.txt")" = 'pbr: output.root.exists'
+  python3 -c '
+import json
+import sys
+with open(sys.argv[1], encoding="utf-8") as source:
+    assert json.load(source) == {
+        "schema": "proofbound-runtime-preflight/1",
+        "ready": False,
+        "phase": "output-root",
+        "code": "output.root.exists",
+    }
+' "$e2e_root/occupied-output-result.json"
+  rmdir "$e2e_root/output"
+
+  diagnostic_cases=()
+  assert_prelaunch_failure() {
+    local case_id="$1"
+    local case_plan="$2"
+    local case_receipt="$3"
+    local case_cgroup="$4"
+    local expected_status="$5"
+    local expected_diagnostic="$6"
+    local case_stdout="$e2e_root/$case_id.stdout"
+    local case_stderr="$e2e_root/$case_id.stderr"
+    local actual_status
+
+    test ! -e "$diagnostic_child_marker"
+    set +e
+    "$runtime_bin_directory/pbr" run \
+      --plan "$case_plan" \
+      --receipt "$case_receipt" \
+      --cgroup-root "$case_cgroup" \
+      >"$case_stdout" 2>"$case_stderr"
+    actual_status=$?
+    set -e
+    test "$actual_status" -eq "$expected_status"
+    test ! -s "$case_stdout"
+    test "$(<"$case_stderr")" = "$expected_diagnostic"
+    test ! -e "$diagnostic_child_marker"
+    diagnostic_cases+=("$case_id")
+  }
+
+  occupied_run_receipt="$e2e_root/occupied-run-receipt.cbor"
+  printf '%s\n' 'preserve-me' >"$occupied_run_receipt"
+  assert_prelaunch_failure "receipt-target-preexists" \
+    "$plan" "$occupied_run_receipt" "$PROOFBOUND_CGROUP_ROOT" 2 \
+    "pbr: phase=receipt-target rule=receipt-target-valid code=receipt.path.exists"
+  test "$(<"$occupied_run_receipt")" = 'preserve-me'
+
+  assert_prelaunch_failure "plan-input-missing" \
+    "$e2e_root/missing-plan.cbor" "$receipt" "$PROOFBOUND_CGROUP_ROOT" 2 \
+    "pbr: phase=plan-input rule=plan-source-readable code=plan.input.read-failed"
+  test ! -e "$receipt"
+
+  assert_prelaunch_failure "host-capability-unavailable" \
+    "$plan" "$receipt" "$e2e_root/not-a-cgroup" 3 \
+    "pbr: phase=host-capabilities rule=host-supported code=platform.cgroup-v2.unavailable"
+  test ! -e "$receipt"
+
+  mkdir "$e2e_root/output"
+  assert_prelaunch_failure "output-root-preexists" \
+    "$plan" "$receipt" "$PROOFBOUND_CGROUP_ROOT" 2 \
+    "pbr: phase=output-root rule=output-root-fresh code=output.root.exists"
+  test ! -e "$receipt"
+  rmdir "$e2e_root/output"
+
+  resolution_plan="$e2e_root/resolution-plan.cbor"
+  python3 tools/ci/encode_plan_v2.py \
+    --output "$resolution_plan" \
+    --id ci.native-diagnostic-resolution \
+    --executable missing-executable \
+    --working-directory . \
+    --write resolution-output \
+    --execute missing-executable \
+    --processes 1 \
+    --wall-time-ms 5000 \
+    --stdout-bytes 4096 \
+    --stderr-bytes 4096 \
+    --memory-bytes 268435456 \
+    --swap-bytes 0
+  assert_prelaunch_failure "executable-resolution-failure" \
+    "$resolution_plan" "$receipt" "$PROOFBOUND_CGROUP_ROOT" 2 \
+    "pbr: phase=executable-closure rule=executable-closure-resolved code=resolve.path.unavailable"
+  test ! -e "$receipt"
+  rmdir "$e2e_root/resolution-output"
+
+  native_diagnostics="$e2e_root/native-run-diagnostics.json"
+  python3 -c '
+import json
+import os
+import sys
+
+output, architecture, revision, *cases = sys.argv[1:]
+record = {
+    "architecture": architecture,
+    "cases": cases,
+    "schema": "proofbound-runtime-native-run-diagnostics/1",
+    "source_revision": revision,
+}
+descriptor = os.open(output, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+with os.fdopen(descriptor, "w", encoding="utf-8") as destination:
+    json.dump(record, destination, sort_keys=True, separators=(",", ":"))
+    destination.write("\n")
+' "$native_diagnostics" "$expected_architecture" "$(git rev-parse HEAD)" \
+    "${diagnostic_cases[@]}"
+
   "$runtime_bin_directory/pbr" run \
     --plan "$plan" \
     --receipt "$receipt" \
@@ -101,10 +355,11 @@ import sys
 
 with open(sys.argv[1], encoding="utf-8") as source:
     result = json.load(source)
-assert result["schema"] == "proofbound-runtime-run-result/1"
+assert result["schema"] == "proofbound-runtime-run-result/2"
 assert result["outcome"] == {"kind": "exited", "code": 0}
 assert result["execution_id"]
-print(result["commitment"])
+assert result["commitment"].startswith("hex:")
+print("sha256:" + result["commitment"].removeprefix("hex:"))
 ' "$result")"
   "$runtime_bin_directory/pbr-verify" \
     --expected-commitment "$commitment" \
@@ -120,13 +375,48 @@ assert verification == {
     "receipt_commitment": sys.argv[2],
     "valid": True,
 }
-' "$verification" "$commitment"
+  ' "$verification" "$commitment"
   "$runtime_bin_directory/pbr" inspect "$receipt" >/dev/null
+  example_bundle_result="$e2e_root/example-bundle-result.json"
+  python3 tools/release/build_example.py \
+    --output-directory "$e2e_root" >"$example_bundle_result"
+  example_archive="$(python3 -c '
+import json
+import sys
+with open(sys.argv[1], encoding="utf-8") as source:
+    print(json.load(source)["archive"])
+' "$example_bundle_result")"
+  example_source="$e2e_root/example-source"
+  mkdir "$example_source"
+  tar -xzf "$example_archive" -C "$example_source" --strip-components=1
+  example_result="$e2e_root/maintained-example-result.json"
+  "$example_source/run-example.sh" \
+    "$runtime_bin_directory" \
+    "$PROOFBOUND_CGROUP_ROOT" \
+    "$e2e_root/maintained-example" >"$example_result"
+  python3 -c '
+import json
+import os
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as source:
+    result = json.load(source)
+assert set(result) == {"commitment", "output", "receipt", "schema", "verification"}
+assert result["schema"] == "proofbound-runtime-example-result/1"
+for field in ("output", "receipt", "verification"):
+    assert os.path.isfile(result[field])
+assert result["commitment"].startswith("sha256:")
+' "$example_result"
   if [[ -n "$evidence_directory" ]]; then
     mkdir -p "$evidence_directory"
-    install -m 0644 "$plan" "$evidence_directory/plan.toml"
-    install -m 0644 "$receipt" "$evidence_directory/execution-receipt.json"
+    install -m 0644 "$plan" "$evidence_directory/plan.cbor"
+    install -m 0644 "$preflight" "$evidence_directory/preflight.json"
+    install -m 0644 "$scaffold" "$evidence_directory/plan-scaffold.json"
+    install -m 0644 "$receipt" "$evidence_directory/execution-receipt.cbor"
+    install -m 0644 "$example_result" "$evidence_directory/example-result.json"
     install -m 0644 "$verification" "$evidence_directory/verification.json"
+    install -m 0644 "$native_diagnostics" \
+      "$evidence_directory/native-run-diagnostics.json"
     printf '%s\n' "$commitment" >"$evidence_directory/receipt-commitment.txt"
     python3 -c '
 import json
@@ -135,6 +425,12 @@ import sys
 with open(sys.argv[1], encoding="utf-8") as source:
     print(json.load(source)["execution_id"])
 ' "$result" >"$evidence_directory/execution-id.txt"
+    python3 tools/ci/native_context.py \
+      --architecture "$expected_architecture" \
+      --cgroup-root "$PROOFBOUND_CGROUP_ROOT" \
+      --fixture "$PROOFBOUND_NATIVE_FIXTURE" \
+      --runtime-bin-directory "$runtime_bin_directory" \
+      --output "$evidence_directory/native-context.json"
   fi
   exit 0
 fi
@@ -148,7 +444,6 @@ if [[ "$(id -u)" == "0" ]]; then
   exit 1
 fi
 
-repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 fixture="$repository_root/target/native-boundary-probe"
 mkdir -p "$repository_root/target"
 cc -O2 -static -Wall -Wextra -Werror \
@@ -160,23 +455,101 @@ if file "$fixture" | grep -q "dynamically linked"; then
 fi
 
 unit_suffix="${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-0}-$(uname -m)"
-exec sudo systemd-run \
-  --quiet \
-  --wait \
-  --collect \
-  --pipe \
-  --service-type=exec \
-  --unit="proofbound-runtime-native-$unit_suffix" \
-  --property="User=$(id -un)" \
-  --property="Group=$(id -gn)" \
-  --property=Delegate=pids \
-  --property="DelegateSubgroup=$supervisor_leaf" \
-  --working-directory="$repository_root" \
-  --setenv=PROOFBOUND_NATIVE_INNER=1 \
-  --setenv="PROOFBOUND_NATIVE_FIXTURE=$fixture" \
-  --setenv="PROOFBOUND_EXPECTED_ARCH=$expected_architecture" \
-  --setenv="PROOFBOUND_RUNTIME_BINS_PREBUILT=$runtime_bins_prebuilt" \
-  --setenv="PROOFBOUND_RUNTIME_BIN_DIR=$runtime_bin_directory" \
-  --setenv="PROOFBOUND_EVIDENCE_DIRECTORY=$evidence_directory" \
-  --setenv="PATH=$PATH" \
-  /usr/bin/env bash tools/ci/native-linux.sh
+
+run_native_service() {
+  local swap_only="$1"
+  sudo systemd-run \
+    --quiet \
+    --wait \
+    --collect \
+    --pipe \
+    --service-type=exec \
+    --unit="proofbound-runtime-native-$unit_suffix-$PROOFBOUND_NATIVE_SWAP_MODE" \
+    --property="User=$(id -un)" \
+    --property="Group=$(id -gn)" \
+    --property="Delegate=pids memory" \
+    --property="DelegateSubgroup=$supervisor_leaf" \
+    --working-directory="$repository_root" \
+    --setenv=PROOFBOUND_NATIVE_INNER=1 \
+    --setenv="PROOFBOUND_NATIVE_FIXTURE=$fixture" \
+    --setenv="PROOFBOUND_NATIVE_SWAP_MODE=$PROOFBOUND_NATIVE_SWAP_MODE" \
+    --setenv="PROOFBOUND_NATIVE_SWAP_ONLY=$swap_only" \
+    --setenv="PROOFBOUND_EXPECTED_ARCH=$expected_architecture" \
+    --setenv="PROOFBOUND_RUNTIME_BINS_PREBUILT=$runtime_bins_prebuilt" \
+    --setenv="PROOFBOUND_RUNTIME_BIN_DIR=$runtime_bin_directory" \
+    --setenv="PROOFBOUND_EVIDENCE_DIRECTORY=$evidence_directory" \
+    --setenv="PATH=$PATH" \
+    /usr/bin/env bash tools/ci/native-linux.sh
+}
+
+swap_file="/mnt/proofbound-runtime-native-$unit_suffix.swap"
+original_swap_paths=()
+original_swap_priorities=()
+while read -r path _ _ _ priority; do
+  original_swap_paths+=("$path")
+  original_swap_priorities+=("$priority")
+done < <(tail -n +2 /proc/swaps)
+
+restore_original_swap() {
+  local index path priority
+  for index in "${!original_swap_paths[@]}"; do
+    path="${original_swap_paths[$index]}"
+    priority="${original_swap_priorities[$index]}"
+    if ! awk -v candidate="$path" 'NR > 1 && $1 == candidate { found = 1 } END { exit !found }' /proc/swaps; then
+      sudo swapon --priority "$priority" "$path"
+    fi
+  done
+}
+
+cleanup_swap_state() {
+  if awk -v path="$swap_file" 'NR > 1 && $1 == path { found = 1 } END { exit !found }' /proc/swaps; then
+    sudo swapoff "$swap_file"
+  fi
+  sudo rm -f -- "$swap_file"
+  restore_original_swap
+}
+trap cleanup_swap_state EXIT
+
+if [[ "${#original_swap_paths[@]}" -gt 0 ]]; then
+  if [[ "${GITHUB_ACTIONS:-}" != "true" ]]; then
+    echo "native absent-swap phase will not alter swap outside a disposable GitHub runner" >&2
+    exit 1
+  fi
+  for path in "${original_swap_paths[@]}"; do
+    sudo swapoff "$path"
+  done
+fi
+test "$(wc -l </proc/swaps)" -eq 1
+PROOFBOUND_NATIVE_SWAP_MODE=absent run_native_service 0
+
+if [[ "${#original_swap_paths[@]}" -gt 0 ]]; then
+  restore_original_swap
+else
+  sudo fallocate -l 256M "$swap_file"
+  sudo chmod 0600 "$swap_file"
+  sudo mkswap "$swap_file" >/dev/null
+  sudo swapon "$swap_file"
+fi
+PROOFBOUND_NATIVE_SWAP_MODE=present run_native_service 1
+if [[ -n "$evidence_directory" ]]; then
+  python3 -c '
+import json
+import os
+import sys
+
+output, architecture, revision = sys.argv[1:]
+record = {
+    "architecture": architecture,
+    "phases": {"absent": "passed", "present": "passed"},
+    "schema": "proofbound-runtime-native-swap-matrix/1",
+    "source_revision": revision,
+}
+descriptor = os.open(output, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+with os.fdopen(descriptor, "w", encoding="utf-8") as destination:
+    json.dump(record, destination, sort_keys=True, separators=(",", ":"))
+    destination.write("\n")
+' "$evidence_directory/native-swap-matrix.json" \
+    "$expected_architecture" "$(git rev-parse HEAD)"
+fi
+cleanup_swap_state
+trap - EXIT

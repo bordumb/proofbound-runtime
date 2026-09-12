@@ -1,7 +1,7 @@
 # Assurance plan
 
 This document records the completed evidence path for each load-bearing version
-0.1 claim. Claim manifests remain the source of truth for current admitted
+0.2 claim. Claim manifests remain the source of truth for current admitted
 status, assumptions, exclusions, and exact evidence identities.
 
 ## Assurance summary
@@ -16,6 +16,12 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-VERIFY-006` | Tested/model-only with exact native artifact observation | The evidence remains bounded to the registered mutations and exact rejection reasons exercised by each native `pbr-verify`. |
 | `PBR-RUN-007` | Tested/model-only with exact native artifact observation | Each native release executes the exact `pbr` bundle role end to end without turning that observation into a theorem. |
 | `PBR-COMPOSE-008` | Tested/model-only with exact native artifact observation | Each exact native composer joins verified receipts without upgrading any inherited facet. |
+| `PBR-PREFLIGHT-009` | Tested/model-only on the development branch | The point-in-time preflight projection and registered failure surface are tested; exact native release observation remains an explicit obligation. |
+| `PBR-RESOURCE-010` | Tested/model-only pending exact 0.2 release observation | The version 2 memory and swap controls, observations, and attack corpus are tested without claiming theorem-derived kernel or artifact soundness. |
+| `PBR-DIAGNOSTIC-011` | Tested/model-only on the development branch | The closed run phase and rule mapping is tested without inferring a kernel denial or changing receipt meaning. |
+| `PBR-ACCEPT-012` | Tested/model-only on the development branch | Adopter policy decisions bind independently verified inputs; exact released acceptor observation and external Action dogfood remain open. |
+| `PBR-SCAFFOLD-013` | Tested/model-only on the development branch | Static ELF scaffolding is bounded diagnostic evidence, not a safe policy or a complete dynamic-load inventory. |
+| `PBR-SDK-014` | Tier 1, independently checked source and package contract | Rust, Python, and TypeScript SDKs preserve the separate-process boundary; registry publication and consumer dogfood remain open. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -171,6 +177,64 @@ The evidence path is:
 Composition does not increase any inherited claim's formal or linkage facet.
 It retains `PBR-COMMITMENT-AX-007`: placing a receipt and its expected
 commitment into the same replaceable carrier is still not authentication.
+
+## PBR-PREFLIGHT-009
+
+The production subject is the read-only `pbr preflight` orchestration path. It
+reuses the strict plan parser, pure normalizer and policy compiler, Linux host
+probe, confined resolver, ELF interpreter discovery, and artifact identity
+implementation used by `pbr run`. It stops before execution identifiers,
+output-root creation, cgroup creation, launcher startup, or boundary
+installation.
+
+The current bounded evidence path is:
+
+1. closed command grammar and typed failure-report tests;
+2. a frozen attack inventory for invalid plans, unsupported hosts, occupied
+   targets, path escape, symlink, executable, interpreter, and identity drift;
+3. unit tests for the exact identity projection and the read-only output-target
+   inspection primitive; and
+4. a required native workflow step that checks point-in-time identities and
+   snapshots the cgroup and absent targets on both supported architectures.
+
+The claim remains `TESTED` and `MODEL_ONLY`. Until a release head executes the
+native workflow and binds the resulting exact `pbr` members, the command is a
+development capability rather than a released artifact claim. A successful
+report is never evidence that a later run will observe the same identities or
+install a boundary.
+
+## PBR-DIAGNOSTIC-011
+
+The production subject is the typed `pbr run` error boundary and its stderr
+renderer. Each call site assigns one closed execution phase and one closed
+failed-invariant rule while retaining the low-level machine code and existing
+exit class.
+
+The current bounded evidence path is:
+
+1. a frozen catalog for capability, resolution, identity drift, output-root,
+   launcher-protocol, cgroup, receipt, and result-projection failures;
+2. typed phase and rule enums with unique bounded identifiers;
+3. direct tests that the producer mappings match the frozen catalog; and
+4. an exact one-line renderer test that contains no dynamic failure context.
+
+The claim remains `TESTED` and `MODEL_ONLY`. It does not infer a denial from a
+child exit code, child stderr, host logs, or kernel audit text. Specification
+0009 and an exact release artifact remain open review and publication
+obligations.
+
+## Bounded-domain declaration guard
+
+The workspace test stage checks every Runtime claim that cites bounded-check
+evidence before Proofbound manifest compilation. The local guard requires the
+claim, cited evidence unit, and referenced model-check manifest to declare the
+same identifier, description, cardinality, and ordering key. It also rejects
+cross-claim evidence substitution and non-confined model-manifest paths.
+
+This is a repository declaration invariant, not claim evidence. It does not
+prove that an adapter visited the finite domain or make the same check inside
+Proofbound's portable compiled bundle. PBF-0007 remains open until a reviewed
+Proofbound compiler and independent verifier enforce the relation.
 
 ## Promotion rule
 

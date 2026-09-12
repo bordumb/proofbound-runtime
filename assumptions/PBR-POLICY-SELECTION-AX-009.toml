@@ -1,0 +1,15 @@
+schema = "proofbound-assumption/1"
+id = "PBR-POLICY-SELECTION-AX-009"
+statement = "The expected acceptance-policy identity reaches pbr-accept through a channel the policy carrier cannot alter and identifies the policy the adopter actually reviewed."
+category = "external-provider"
+owner = "Proofbound Runtime adopter"
+rationale = "A deterministic policy can prove its exact byte identity but cannot authenticate its own selection. If an attacker can replace both policy bytes and their expected identity, it can choose a weaker policy that remains internally valid."
+scope = "Only the adopter-policy interpretation of PBR-ACCEPT-012."
+affected_claims = ["PBR-ACCEPT-012"]
+review_evidence = [
+  "docs/specs/0010_receipt_acceptance_policy.md",
+  "docs/guides/github-action.md",
+]
+discharge_plan = "Deliver the expected policy identity through repository review, a protected deployment configuration, or another authenticated channel independent of the policy carrier."
+source_citation = "docs/specs/0010_receipt_acceptance_policy.md#trust-inputs-and-verification-order"
+status = "active"

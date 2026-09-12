@@ -2,7 +2,7 @@ schema = "proofbound-claim/1"
 id = "PBR-BINDING-005"
 title = "Reusable receipts bind security-relevant execution inputs"
 statement = "Every reusable execution receipt binds the registered plan, compiled policy, platform, launcher, runtime, executable closure, inputs, outputs, limits, and observed outcome."
-public_language = "A kernel-checked source-refinement theorem proves that the production-used receipt binding constructor and canonical wire projection retain the exact canonical value bytes of all 20 version 1 top-level fields. The typed production constructor rejects the registered role, substitution, replay, duplicate, truncation, and premise-loss attacks. In each reviewed native release context, the theorem's closed artifact set selects the exact pbr bytes and independent verification recomputes the match, subject to every registered assumption."
+public_language = "A kernel-checked source-refinement theorem proves that the production-used receipt binding constructor and canonical wire projection retain the exact canonical value bytes of all 20 version 1 fields or all 21 version 2 fields, including the complete resource record. Version 1 remains canonical JSON; version 2 uses deterministic CBOR. The typed production constructor rejects the registered role, substitution, replay, duplicate, truncation, and premise-loss attacks. In each reviewed native release context, the theorem's closed artifact set selects the exact pbr bytes and independent verification recomputes the match, subject to every registered assumption."
 subject = "rust:proofbound_runtime_binding::construct_and_project_receipt_binding"
 profile = "kernel-with-assumptions"
 tier = 3
@@ -38,8 +38,11 @@ source_roots = [
   "crates/proofbound-runtime-core/src/lib.rs",
   "crates/proofbound-runtime-core/src/outcome.rs",
   "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-core/src/wire_v2.rs",
   "crates/proofbound-runtime-core/tests/receipt_binding_attacks.rs",
   "docs/specs/0001_initial_spec.md",
+  "docs/specs/0007_memory_and_swap_profile.md",
+  "docs/adr/0003-deterministic-cbor-wire-objects.md",
   "docs/threat-model.md",
   "docs/receipt-semantics.md",
   "formal/ProofboundRuntime/Binding.lean",
@@ -56,6 +59,9 @@ source_roots = [
   "proofbound/evidence/release-bind-receipt-binding-linux-x86-64.toml",
   "proofbound/translations/receipt-binding.toml",
   "schemas/execution-receipt-v1.schema.json",
+  "schemas/execution-receipt-v2.cddl",
+  "schemas/vectors/v2/execution-receipt.cbor.hex",
+  "schemas/vectors/v2/execution-receipt.projection.json",
   "tests/attacks/receipt/construction-v1.toml",
   "tests/attacks/receipt/",
   "tools/release/artifact_checker.py",

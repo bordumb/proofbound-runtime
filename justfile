@@ -22,7 +22,7 @@ formal:
 bounded:
     cargo kani -q -p proofbound-runtime-core --harness normalization_does_not_amplify_bounded_catalog
     cargo kani -q -p proofbound-runtime-core --harness policy_compilation_does_not_amplify_bounded_catalog
-    cargo kani -q -p proofbound-runtime-receipt-kani --harness receipt_eligibility_is_exact_for_bounded_state_model
+    cargo kani -q -p proofbound-runtime-receipt-kani
 
 docs:
     python3 tools/ci/documentation.py
@@ -51,3 +51,6 @@ ci:
 
 release-receipt context observation_inputs output:
     bash tools/release/proofbound-release.sh "{{context}}" "{{observation_inputs}}" "{{output}}"
+
+example-bundle output:
+    python3 tools/release/build_example.py --output-directory "{{output}}"

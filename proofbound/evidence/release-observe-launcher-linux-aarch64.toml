@@ -11,7 +11,7 @@ inputs = [
   "Cargo.toml",
   "crates/proofbound-runtime-compose/Cargo.toml",
   "crates/proofbound-runtime-compose/tests/release_observation.rs",
-  "dist/native-evidence/aarch64/execution-receipt.json",
+  "dist/native-evidence/aarch64/execution-receipt.cbor",
   "dist/release-observation/aarch64/RELEASE-MANIFEST.json",
   "dist/release-observation/aarch64/pbr-native-launcher",
   "rust-toolchain.toml",

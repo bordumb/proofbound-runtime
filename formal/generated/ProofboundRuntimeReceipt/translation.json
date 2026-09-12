@@ -4,7 +4,7 @@
   "crate": "proofbound_runtime_receipt",
   "functions": [
     {
-      "def_id": 6,
+      "def_id": 8,
       "lean_name": "proofbound_runtime_receipt.alloc.vec.Vec.is_empty",
       "lean_file": "FunsExternal_Template.lean",
       "rust_name": "alloc::vec::{alloc::vec::Vec<T>}::is_empty",
@@ -38,7 +38,7 @@
       "reducible": false
     },
     {
-      "def_id": 4,
+      "def_id": 5,
       "lean_name": "proofbound_runtime_receipt.StreamCapture.Insts.CoreCmpPartialEqStreamCapture.eq",
       "lean_file": "Funs.lean",
       "rust_name": "proofbound_runtime_receipt::{impl core::cmp::PartialEq<proofbound_runtime_receipt::StreamCapture> for proofbound_runtime_receipt::StreamCapture}::eq",
@@ -55,7 +55,7 @@
       "reducible": false
     },
     {
-      "def_id": 5,
+      "def_id": 6,
       "lean_name": "proofbound_runtime_receipt.ReceiptStructure.Insts.CoreCmpPartialEqReceiptStructure.eq",
       "lean_file": "Funs.lean",
       "rust_name": "proofbound_runtime_receipt::{impl core::cmp::PartialEq<proofbound_runtime_receipt::ReceiptStructure> for proofbound_runtime_receipt::ReceiptStructure}::eq",
@@ -72,6 +72,74 @@
       "reducible": false
     },
     {
+      "def_id": 17,
+      "lean_name": "proofbound_runtime_receipt.LimitEvents.contains",
+      "lean_file": "Funs.lean",
+      "rust_name": "proofbound_runtime_receipt::{proofbound_runtime_receipt::LimitEvents}::contains",
+      "is_local": true,
+      "source": {
+        "file": "crates/proofbound-runtime-receipt/src/lib.rs",
+        "begin_line": 129,
+        "end_line": 139
+      },
+      "is_opaque": false,
+      "can_fail": true,
+      "can_diverge": false,
+      "is_rec": false,
+      "reducible": false
+    },
+    {
+      "def_id": 3,
+      "lean_name": "proofbound_runtime_receipt.append_reason",
+      "lean_file": "Funs.lean",
+      "rust_name": "proofbound_runtime_receipt::append_reason",
+      "is_local": true,
+      "source": {
+        "file": "crates/proofbound-runtime-receipt/src/lib.rs",
+        "begin_line": 259,
+        "end_line": 268
+      },
+      "is_opaque": false,
+      "can_fail": true,
+      "can_diverge": false,
+      "is_rec": false,
+      "reducible": false
+    },
+    {
+      "def_id": 7,
+      "lean_name": "proofbound_runtime_receipt.append_limit_event_reasons",
+      "lean_file": "Funs.lean",
+      "rust_name": "proofbound_runtime_receipt::append_limit_event_reasons",
+      "is_local": true,
+      "source": {
+        "file": "crates/proofbound-runtime-receipt/src/lib.rs",
+        "begin_line": 270,
+        "end_line": 309
+      },
+      "is_opaque": false,
+      "can_fail": true,
+      "can_diverge": false,
+      "is_rec": false,
+      "reducible": false
+    },
+    {
+      "def_id": 4,
+      "lean_name": "proofbound_runtime_receipt.append_outcome_reason",
+      "lean_file": "Funs.lean",
+      "rust_name": "proofbound_runtime_receipt::append_outcome_reason",
+      "is_local": true,
+      "source": {
+        "file": "crates/proofbound-runtime-receipt/src/lib.rs",
+        "begin_line": 311,
+        "end_line": 325
+      },
+      "is_opaque": false,
+      "can_fail": true,
+      "can_diverge": false,
+      "is_rec": false,
+      "reducible": false
+    },
+    {
       "def_id": 0,
       "lean_name": "proofbound_runtime_receipt.derive_receipt_eligibility",
       "lean_file": "Funs.lean",
@@ -79,8 +147,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-receipt/src/lib.rs",
-        "begin_line": 164,
-        "end_line": 196
+        "begin_line": 331,
+        "end_line": 362
       },
       "is_opaque": false,
       "can_fail": true,
@@ -115,7 +183,7 @@
       }
     },
     {
-      "def_id": 9,
+      "def_id": 6,
       "lean_name": "proofbound_runtime_receipt.ExecutionOutcome",
       "lean_file": "Types.lean",
       "rust_name": "proofbound_runtime_receipt::ExecutionOutcome",
@@ -127,7 +195,7 @@
       }
     },
     {
-      "def_id": 6,
+      "def_id": 7,
       "lean_name": "proofbound_runtime_receipt.StreamCapture",
       "lean_file": "Types.lean",
       "rust_name": "proofbound_runtime_receipt::StreamCapture",
@@ -139,7 +207,7 @@
       }
     },
     {
-      "def_id": 7,
+      "def_id": 8,
       "lean_name": "proofbound_runtime_receipt.ReceiptStructure",
       "lean_file": "Types.lean",
       "rust_name": "proofbound_runtime_receipt::ReceiptStructure",
@@ -151,6 +219,30 @@
       }
     },
     {
+      "def_id": 13,
+      "lean_name": "proofbound_runtime_receipt.LimitEvent",
+      "lean_file": "Types.lean",
+      "rust_name": "proofbound_runtime_receipt::LimitEvent",
+      "is_local": true,
+      "source": {
+        "file": "crates/proofbound-runtime-receipt/src/lib.rs",
+        "begin_line": 86,
+        "end_line": 94
+      }
+    },
+    {
+      "def_id": 9,
+      "lean_name": "proofbound_runtime_receipt.LimitEvents",
+      "lean_file": "Types.lean",
+      "rust_name": "proofbound_runtime_receipt::LimitEvents",
+      "is_local": true,
+      "source": {
+        "file": "crates/proofbound-runtime-receipt/src/lib.rs",
+        "begin_line": 98,
+        "end_line": 106
+      }
+    },
+    {
       "def_id": 0,
       "lean_name": "proofbound_runtime_receipt.ReceiptFacts",
       "lean_file": "Types.lean",
@@ -158,8 +250,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-receipt/src/lib.rs",
-        "begin_line": 86,
-        "end_line": 92
+        "begin_line": 156,
+        "end_line": 163
       }
     },
     {
@@ -170,20 +262,20 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-receipt/src/lib.rs",
-        "begin_line": 116,
-        "end_line": 137
+        "begin_line": 208,
+        "end_line": 236
       }
     },
     {
-      "def_id": 8,
+      "def_id": 10,
       "lean_name": "proofbound_runtime_receipt.NonReusableReasons",
       "lean_file": "Types.lean",
       "rust_name": "proofbound_runtime_receipt::NonReusableReasons",
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-receipt/src/lib.rs",
-        "begin_line": 141,
-        "end_line": 141
+        "begin_line": 240,
+        "end_line": 240
       }
     },
     {
@@ -194,8 +286,8 @@
       "is_local": true,
       "source": {
         "file": "crates/proofbound-runtime-receipt/src/lib.rs",
-        "begin_line": 153,
-        "end_line": 158
+        "begin_line": 252,
+        "end_line": 257
       }
     }
   ],

@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "proofbound-runtime-sdk"
+version = "0.2.0"
+description = "Plan construction and run-result decoding for Proofbound Runtime"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Proofbound Runtime contributors"}]
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/bordumb/proofbound-runtime"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["proofbound_runtime"]

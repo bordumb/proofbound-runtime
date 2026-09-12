@@ -2,16 +2,79 @@ name: Reproducible release artifacts
 
 on:
   workflow_dispatch:
+    inputs:
+      revision:
+        description: Exact 40-character commit on main to reproduce
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 env:
   CARGO_TERM_COLOR: always
+  PBR_RELEASE_REVISION: ${{ inputs.revision }}
 
 jobs:
+  validate-revision:
+    name: Validate exact mainline revision
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out the exact requested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.PBR_RELEASE_REVISION }}
+          fetch-depth: 0
+
+      - name: Reject a symbolic or non-mainline revision
+        run: |
+          [[ "$PBR_RELEASE_REVISION" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$PBR_RELEASE_REVISION"
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          git merge-base --is-ancestor "$PBR_RELEASE_REVISION" origin/main
+
+      - name: Require prepared version and changelog state
+        run: python3 tools/release/validate_release_state.py
+
+  sdk-release:
+    name: Reproduce SDK release packages
+    needs: validate-revision
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out the exact requested head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.PBR_RELEASE_REVISION }}
+          fetch-depth: 0
+
+      - name: Confirm the exact requested head
+        run: test "$(git rev-parse HEAD)" = "$PBR_RELEASE_REVISION"
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@fef00d40025f7fd8f1ec759cbbb0f577ddfc3133 # 1.94.0
+
+      - name: Populate the locked Cargo dependency cache
+        run: cargo fetch --locked
+
+      - name: Build and byte-compare all SDK packages
+        run: python3 tools/release/build_sdks.py --output dist/sdk
+
+      - name: Verify the SDK package checksums
+        working-directory: dist/sdk
+        run: sha256sum --check SHA256SUMS
+
+      - name: Upload the reproduced SDK packages
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: proofbound-runtime-sdk-packages-${{ env.PBR_RELEASE_REVISION }}
+          path: dist/sdk/
+          if-no-files-found: error
+
   release:
     name: Reproduce and seal release (${{ matrix.architecture }})
+    needs: validate-revision
     strategy:
       fail-fast: false
       matrix:
@@ -26,13 +89,16 @@ jobs:
     timeout-minutes: 90
     steps:
       - name: Check out the exact requested head
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.PBR_RELEASE_REVISION }}
+          fetch-depth: 0
 
       - name: Confirm the exact requested head
-        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+        run: test "$(git rev-parse HEAD)" = "$PBR_RELEASE_REVISION"
 
       - name: Install pinned Rust toolchain
-        uses: dtolnay/rust-toolchain@1.94.0
+        uses: dtolnay/rust-toolchain@fef00d40025f7fd8f1ec759cbbb0f577ddfc3133 # 1.94.0
         with:
           components: clippy,rustfmt
 
@@ -116,6 +182,13 @@ jobs:
         working-directory: dist/runtime
         run: sha256sum --check ./*.sha256
 
+      - name: Build and verify the maintained example source bundle
+        run: |
+          mkdir -p dist/example
+          python3 tools/release/build_example.py --output-directory dist/example
+          cd dist/example
+          sha256sum --check ./*.sha256
+
       - name: Extract the exact release observation bundle
         run: |
           observation_directory="dist/release-observation/${{ matrix.architecture }}"
@@ -159,19 +232,23 @@ jobs:
             --proofbound-verifier "$proofbound_release/bin/proofbound-verify" \
             --proofbound-observation-inputs "$evidence_directory/proofbound-observation-inputs.json" \
             --runtime-bundle "$runtime_directory" \
-            --execution-receipt "$evidence_directory/execution-receipt.json" \
+            --execution-receipt "$evidence_directory/execution-receipt.cbor" \
             --execution-commitment "$commitment" \
             --expected-execution-id "$execution_id" \
-            --output "$evidence_directory/composed-receipt.json"
+            --output "$evidence_directory/composed-receipt.cbor" \
+            >"$evidence_directory/composition-result.json"
+          "$runtime_directory/pbr-compose" inspect \
+            "$evidence_directory/composed-receipt.cbor" \
+            >"$evidence_directory/composed-receipt.projection.json"
 
       - name: Confirm the complete observed release chain
         run: |
           python3 - \
-            "$GITHUB_SHA" \
+            "$PBR_RELEASE_REVISION" \
             "${{ matrix.architecture }}" \
             "${{ matrix.context }}" \
             "dist/assurance/${{ matrix.architecture }}/proofbound-release.verification.json" \
-            "dist/native-evidence/${{ matrix.architecture }}/composed-receipt.json" \
+            "dist/native-evidence/${{ matrix.architecture }}/composed-receipt.projection.json" \
             "dist/assurance/${{ matrix.architecture }}/proofbound-release/compiled-receipt.json" \
             "dist/release-observation/${{ matrix.architecture }}/RELEASE-MANIFEST.json" <<'PY'
           import json
@@ -190,9 +267,9 @@ jobs:
           assert compiled["schema"] == "proofbound-compiled-release/6"
           assert compiled["project_revision"] == revision
           assert compiled["evidence_context"] == context
-          assert receipt["schema"] == "proofbound-runtime-composed-receipt/1"
+          assert receipt["schema"] == "proofbound-runtime-composed-receipt/2"
           assert receipt["eligibility"] == {"status": "composed"}
-          assert receipt["release"]["project_revision"] == revision
+          assert receipt["release"]["project_revision"] == f"hex:{revision}"
           assert receipt["release"]["evidence_context"] == context
           assert receipt["release"]["verification_verdict"] == "bytes-observed"
           assert receipt["runtime_bundle"]["architecture"] == architecture
@@ -208,7 +285,11 @@ jobs:
           }
           assert observed == {
               ("PBR-COMPOSE-008", "composer-release", "linux", architecture),
+              ("PBR-DIAGNOSTIC-011", "runtime-release", "linux", architecture),
+              ("PBR-PREFLIGHT-009", "runtime-release", "linux", architecture),
+              ("PBR-RESOURCE-010", "runtime-release", "linux", architecture),
               ("PBR-RUN-007", "runtime-release", "linux", architecture),
+              ("PBR-SCAFFOLD-013", "runtime-release", "linux", architecture),
               ("PBR-SEQUENCE-003", "launcher-release", "linux", architecture),
               ("PBR-VERIFY-006", "verifier-release", "linux", architecture),
           }
@@ -252,12 +333,69 @@ jobs:
           PY
 
       - name: Upload the reproduced and observed release chain
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: proofbound-runtime-${{ matrix.architecture }}
           path: |
             dist/assurance/${{ matrix.architecture }}/
+            dist/example/
             dist/native-evidence/${{ matrix.architecture }}/
             dist/release-observation/${{ matrix.architecture }}/
             dist/runtime/
+          if-no-files-found: error
+
+  provenance:
+    name: Seal aggregate release provenance
+    needs: [sdk-release, release]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out the exact requested head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.PBR_RELEASE_REVISION }}
+
+      - name: Confirm the exact requested head
+        run: test "$(git rev-parse HEAD)" = "$PBR_RELEASE_REVISION"
+
+      - name: Download the reproduced SDK packages
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: proofbound-runtime-sdk-packages-${{ env.PBR_RELEASE_REVISION }}
+          path: dist/provenance-inputs/sdk
+
+      - name: Download the x86-64 release chain
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: proofbound-runtime-x86_64
+          path: dist/provenance-inputs/x86_64
+
+      - name: Download the AArch64 release chain
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: proofbound-runtime-aarch64
+          path: dist/provenance-inputs/aarch64
+
+      - name: Build and independently verify the closed provenance object
+        run: |
+          mkdir -p dist/provenance
+          python3 tools/release/build_provenance.py \
+            --revision "$PBR_RELEASE_REVISION" \
+            --artifact-root sdk=dist/provenance-inputs/sdk \
+            --artifact-root x86_64=dist/provenance-inputs/x86_64 \
+            --artifact-root aarch64=dist/provenance-inputs/aarch64 \
+            --output dist/provenance/release-provenance.cbor
+          python3 tools/release/verify_provenance.py \
+            --provenance dist/provenance/release-provenance.cbor \
+            --expected-revision "$PBR_RELEASE_REVISION" \
+            --artifact-root sdk=dist/provenance-inputs/sdk \
+            --artifact-root x86_64=dist/provenance-inputs/x86_64 \
+            --artifact-root aarch64=dist/provenance-inputs/aarch64 \
+            --projection dist/provenance/release-provenance.projection.json
+
+      - name: Upload the aggregate release provenance
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: proofbound-runtime-release-provenance-${{ env.PBR_RELEASE_REVISION }}
+          path: dist/provenance/
           if-no-files-found: error

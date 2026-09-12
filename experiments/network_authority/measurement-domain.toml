@@ -1,0 +1,66 @@
+schema = "proofbound-runtime-network-measurement-domain/1"
+architectures = ["x86_64", "aarch64"]
+mechanisms = ["landlock-port", "cgroup-endpoint", "explicit-broker", "preconnected-channel"]
+duration_unit = "nanoseconds"
+sample_order = "ascending"
+setup_sample_count = 100
+request_sample_count = 100
+median_algorithm = "midpoint-floor"
+p95_algorithm = "nearest-rank"
+lifecycle_iteration_count = 1000
+lifecycle_bit_order = "least-significant-bit-first"
+maximum_seconds = 600
+inventory_categories = ["trusted-binaries", "source-configuration", "certificates", "bpf-programs", "bpf-maps", "landlock-rules", "control-channels"]
+system_observations = ["effective-capabilities", "namespace-operations", "cgroup-v2-controllers", "landlock-abi", "bpf-features", "tls-implementation", "monotonic-clock"]
+residual_authorities = ["direct-tcp-to-any-address-on-allowed-port", "direct-tcp-to-selected-endpoint", "child-controlled-resolution", "child-controlled-tls", "arbitrary-application-bytes", "registered-operation-via-mediator", "arbitrary-application-bytes-on-authenticated-session"]
+lifecycle_failure_codes = ["create-failed", "failure-injection-failed", "request-released", "cleanup-failed", "resource-survived", "observation-invalid"]
+
+[request]
+service_name = "allowed.test"
+address = "127.0.0.1"
+port = 443
+transport = "tcp"
+application_protocol = "https"
+method = "GET"
+path = "/v1/echo"
+response_body = "0123456789abcdef0123456789abcdef"
+
+[[profiles]]
+id = "landlock-port"
+setup_subject = "one Landlock TCP connect rule for remote port 443"
+request_subject = "one child-owned TLS request through the installed port rule"
+mediator_metrics = false
+nonzero_inventory_categories = ["trusted-binaries", "source-configuration", "certificates", "landlock-rules"]
+required_harness_features = ["root", "network-namespace", "mount-namespace"]
+required_mechanism_features = ["landlock-abi-4", "landlock-access-net-connect-tcp"]
+expected_residual_authority = ["direct-tcp-to-any-address-on-allowed-port", "child-controlled-resolution", "child-controlled-tls", "arbitrary-application-bytes"]
+
+[[profiles]]
+id = "cgroup-endpoint"
+setup_subject = "two cgroup connect programs attached to one fresh cgroup"
+request_subject = "one child-owned TLS request from the attached cgroup"
+mediator_metrics = false
+nonzero_inventory_categories = ["trusted-binaries", "source-configuration", "certificates", "bpf-programs", "bpf-maps"]
+required_harness_features = ["root", "network-namespace", "mount-namespace", "cgroup-v2"]
+required_mechanism_features = ["bpf-cgroup-inet4-connect", "bpf-cgroup-inet6-connect"]
+expected_residual_authority = ["direct-tcp-to-selected-endpoint", "child-controlled-tls", "arbitrary-application-bytes"]
+
+[[profiles]]
+id = "explicit-broker"
+setup_subject = "one fixed-operation broker and one private framed channel"
+request_subject = "one registered operation mediated through the broker-owned TLS request"
+mediator_metrics = true
+nonzero_inventory_categories = ["trusted-binaries", "source-configuration", "certificates", "control-channels"]
+required_harness_features = ["root", "network-namespace", "mount-namespace"]
+required_mechanism_features = ["seccomp-deny-child-network", "broker-owned-python-tls"]
+expected_residual_authority = ["registered-operation-via-mediator"]
+
+[[profiles]]
+id = "preconnected-channel"
+setup_subject = "one authenticated connector session and one private transparent channel"
+request_subject = "one child request over the connector-owned authenticated TLS session"
+mediator_metrics = true
+nonzero_inventory_categories = ["trusted-binaries", "source-configuration", "certificates", "control-channels"]
+required_harness_features = ["root", "network-namespace", "mount-namespace"]
+required_mechanism_features = ["seccomp-deny-child-network", "connector-owned-python-tls"]
+expected_residual_authority = ["arbitrary-application-bytes-on-authenticated-session"]

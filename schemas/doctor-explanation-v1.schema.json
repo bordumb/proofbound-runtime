@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://proofbound.dev/schemas/proofbound-runtime-doctor-explanation-v1.schema.json",
+  "title": "Proofbound Runtime doctor explanation version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["capabilities", "schema", "supported"],
+  "properties": {
+    "schema": {
+      "const": "proofbound-runtime-doctor-explanation/1"
+    },
+    "supported": {
+      "type": "boolean"
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "architecture",
+        "cgroup_v2",
+        "kernel_release",
+        "landlock",
+        "no_new_privileges",
+        "operating_system",
+        "seccomp"
+      ],
+      "properties": {
+        "operating_system": {
+          "oneOf": [
+            { "$ref": "#/$defs/unavailable" },
+            { "$ref": "#/$defs/operatingSystem" }
+          ]
+        },
+        "architecture": {
+          "oneOf": [
+            { "$ref": "#/$defs/unavailable" },
+            { "$ref": "#/$defs/architecture" }
+          ]
+        },
+        "kernel_release": {
+          "oneOf": [
+            { "$ref": "#/$defs/unavailable" },
+            { "$ref": "#/$defs/kernelRelease" }
+          ]
+        },
+        "landlock": {
+          "oneOf": [
+            { "$ref": "#/$defs/unavailable" },
+            { "$ref": "#/$defs/landlock" }
+          ]
+        },
+        "no_new_privileges": {
+          "oneOf": [
+            { "$ref": "#/$defs/unavailable" },
+            { "$ref": "#/$defs/noNewPrivileges" }
+          ]
+        },
+        "seccomp": {
+          "oneOf": [
+            { "$ref": "#/$defs/unavailable" },
+            { "$ref": "#/$defs/seccomp" }
+          ]
+        },
+        "cgroup_v2": {
+          "oneOf": [
+            { "$ref": "#/$defs/unavailable" },
+            { "$ref": "#/$defs/cgroupV2" }
+          ]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "unavailable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "remediation", "requirement", "status"],
+      "properties": {
+        "status": { "const": "unavailable" },
+        "code": {
+          "enum": [
+            "platform.architecture.unsupported",
+            "platform.cgroup-v2.controller-missing",
+            "platform.cgroup-v2.delegation-unavailable",
+            "platform.cgroup-v2.unavailable",
+            "platform.kernel-release.unavailable",
+            "platform.landlock.abi-unsupported",
+            "platform.landlock.unavailable",
+            "platform.no-new-privileges.unavailable",
+            "platform.os.unsupported",
+            "platform.seccomp.action-missing",
+            "platform.seccomp.unavailable"
+          ]
+        },
+        "requirement": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "remediation": { "type": "string", "minLength": 1, "maxLength": 512 }
+      }
+    },
+    "operatingSystem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "status"],
+      "properties": {
+        "status": { "const": "available" },
+        "name": { "const": "linux" }
+      }
+    },
+    "architecture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "status"],
+      "properties": {
+        "status": { "const": "available" },
+        "name": { "enum": ["aarch64", "x86_64"] }
+      }
+    },
+    "kernelRelease": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["release", "status"],
+      "properties": {
+        "status": { "const": "available" },
+        "release": { "type": "string", "minLength": 1, "maxLength": 256 }
+      }
+    },
+    "landlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["abi", "status"],
+      "properties": {
+        "status": { "const": "available" },
+        "abi": { "type": "integer", "minimum": 3, "maximum": 11 }
+      }
+    },
+    "noNewPrivileges": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "status"],
+      "properties": {
+        "status": { "const": "available" },
+        "enabled": { "const": true }
+      }
+    },
+    "seccomp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available_actions", "status"],
+      "properties": {
+        "status": { "const": "available" },
+        "available_actions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "minItems": 3,
+          "maxItems": 64,
+          "uniqueItems": true
+        }
+      }
+    },
+    "cgroupV2": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["controllers", "directory", "directory_inode", "mount_id", "status"],
+      "properties": {
+        "status": { "const": "available" },
+        "directory": { "type": "string", "minLength": 1, "maxLength": 4096 },
+        "mount_id": { "type": "integer", "minimum": 1 },
+        "directory_inode": { "type": "integer", "minimum": 1 },
+        "controllers": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

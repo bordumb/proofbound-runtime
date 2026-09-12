@@ -1,0 +1,189 @@
+from __future__ import annotations
+
+import unittest
+from pathlib import Path
+
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+WORKFLOW = REPOSITORY_ROOT / ".github/workflows/performance-baseline.yml"
+NATIVE_SCRIPT = REPOSITORY_ROOT / "tools/ci/native-performance.sh"
+
+
+class PerformanceWorkflowTests(unittest.TestCase):
+    def test_workflow_is_exact_revision_manual_matrix(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn("workflow_dispatch:", workflow)
+        self.assertIn("revision:", workflow)
+        self.assertNotIn("  pull_request:\n", workflow)
+        self.assertIn(
+            "PBR_PERFORMANCE_REVISION: ${{ inputs.revision }}",
+            workflow,
+        )
+        self.assertIn("runner: ubuntu-24.04\n", workflow)
+        self.assertIn("runner: ubuntu-24.04-arm\n", workflow)
+        self.assertIn(
+            "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+            workflow,
+        )
+        self.assertIn('[[ "$PBR_PERFORMANCE_REVISION" =~ ^[0-9a-f]{40}$ ]]', workflow)
+        self.assertIn(
+            'test "$(git rev-parse HEAD)" = "$PBR_PERFORMANCE_REVISION"', workflow
+        )
+
+    def test_workflow_runs_and_independently_verifies_all_pure_subjects(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "cargo build --release --locked -p proofbound-runtime-bench --bin pbr-bench",
+            workflow,
+        )
+        self.assertIn(
+            'cp target/release/pbr-bench "$result_root/pbr-bench"',
+            workflow,
+        )
+        self.assertIn(
+            '"$result_root/pbr-bench" pure --source-commit "$PBR_PERFORMANCE_REVISION"',
+            workflow,
+        )
+        self.assertIn("experiments/performance/verify_pure.py", workflow)
+        self.assertIn('--expected-architecture "${{ matrix.architecture }}"', workflow)
+        self.assertIn("--plan-fixture tests/conformance/plan/positive/minimal-v1.toml", workflow)
+        self.assertIn(
+            "--receipt-fixture experiments/performance/fixtures/reusable-receipt-v1.json",
+            workflow,
+        )
+        self.assertIn(
+            "--composition-fixture crates/proofbound-runtime-bench/src/composition_fixture.rs",
+            workflow,
+        )
+        self.assertIn('--benchmark-executable "$result_root/pbr-bench"', workflow)
+        self.assertIn(
+            "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+            workflow,
+        )
+
+    def test_workflow_retains_producer_and_verifier_failures(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        for retained in (
+            "producer.stderr",
+            "producer.exit",
+            "verifier.stderr",
+            "verifier.exit",
+        ):
+            self.assertIn(retained, workflow)
+        self.assertIn("if: ${{ always() }}", workflow)
+
+    def test_retained_checksum_inventory_is_portable_after_download(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn(
+            '(cd "$result_root" && sha256sum ./* >SHA256SUMS)',
+            workflow,
+        )
+        self.assertNotIn('sha256sum "$result_root"/*', workflow)
+
+    def test_native_checksum_inventory_is_staged_outside_the_scanned_tree(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn(
+            'inventory_path="$RUNNER_TEMP/proofbound-runtime-performance/'
+            'native-${{ matrix.workload }}-${{ matrix.architecture }}.SHA256SUMS"',
+            workflow,
+        )
+        self.assertIn('xargs -0 sha256sum >"$inventory_path")', workflow)
+        self.assertIn('mv "$inventory_path" "$result_root/SHA256SUMS"', workflow)
+        self.assertNotIn('xargs -0 sha256sum >SHA256SUMS)', workflow)
+
+    def test_native_job_runs_the_exact_fresh_execution_protocol(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "name: native execution (${{ matrix.workload }}, "
+            "${{ matrix.architecture }})",
+            workflow,
+        )
+        self.assertEqual(workflow.count("workload: static"), 4)
+        self.assertEqual(workflow.count("workload: dynamic"), 4)
+        self.assertIn(
+            "cargo build --release --locked "
+            "-p proofbound-runtime-bench -p proofbound-runtime-cli "
+            "-p proofbound-runtime-linux -p proofbound-runtime-verify --bins",
+            workflow,
+        )
+        self.assertIn("bash tools/ci/native-performance.sh", workflow)
+        self.assertIn("experiments/performance/verify_native.py", workflow)
+        self.assertIn('mkdir -m 0700 "$result_root/runtime-bin"', workflow)
+        self.assertIn(
+            'cp target/release/pbr target/release/pbr-native-launcher '
+            'target/release/pbr-verify "$result_root/runtime-bin/"',
+            workflow,
+        )
+        self.assertIn('"$result_root/runtime-bin"', workflow)
+        self.assertIn('--pbr "$result_root/runtime-bin/pbr"', workflow)
+        self.assertIn(
+            '--launcher "$result_root/runtime-bin/pbr-native-launcher"', workflow
+        )
+        self.assertIn('--verifier "$result_root/runtime-bin/pbr-verify"', workflow)
+        for argument in (
+            "--benchmark-executable",
+            "--pbr",
+            "--launcher",
+            "--verifier",
+            "--plan",
+            "--workload-executable",
+            "--expected-output",
+            "--expected-workload",
+            "--runs-root",
+        ):
+            self.assertIn(argument, workflow)
+        self.assertIn(
+            "proofbound-runtime-performance-native-${{ matrix.workload }}-"
+            "${{ matrix.architecture }}-"
+            "${{ env.PBR_PERFORMANCE_REVISION }}",
+            workflow,
+        )
+
+    def test_native_wrapper_uses_one_nonroot_delegated_resource_context(self) -> None:
+        script = NATIVE_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("PROOFBOUND_NATIVE_PERFORMANCE_INNER", script)
+        self.assertIn("Delegate=pids memory", script)
+        self.assertIn("--property=DelegateSubgroup=proofbound-supervisor", script)
+        self.assertIn("echo +memory +pids", script)
+        self.assertIn('"$result_root/pbr-bench" native', script)
+        self.assertIn('--source-commit "$source_commit"', script)
+        self.assertIn('--workload-id "$workload_id"', script)
+        self.assertIn('--runner-image "$runner_image"', script)
+
+    def test_native_wrapper_builds_only_the_two_frozen_workloads(self) -> None:
+        script = NATIVE_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn('case "$workload_kind" in', script)
+        self.assertIn('workload_id="hello-static-v1"', script)
+        self.assertIn('workload_id="hello-dynamic-v1"', script)
+        self.assertIn("cc -O2 -static -Wall -Wextra -Werror", script)
+        self.assertIn("cc -O2 -Wall -Wextra -Werror", script)
+        self.assertIn("experiments/performance/discover_runtime_libraries.py", script)
+
+    def test_retained_native_artifacts_are_reverified_in_separate_jobs(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn("verify-native-artifacts:\n    needs: native", workflow)
+        self.assertIn(
+            "actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3",
+            workflow,
+        )
+        self.assertIn("sha256sum --check SHA256SUMS", workflow)
+        self.assertIn("Independently reverify the downloaded artifact", workflow)
+        self.assertIn(
+            "name: reverify native artifact (${{ matrix.workload }}, "
+            "${{ matrix.architecture }})",
+            workflow,
+        )
+        self.assertIn('--verifier "$result_root/runtime-bin/pbr-verify"', workflow)
+
+
+if __name__ == "__main__":
+    unittest.main()

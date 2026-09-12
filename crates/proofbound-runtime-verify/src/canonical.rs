@@ -54,6 +54,13 @@ impl From<DecodeError> for CanonicalError {
 
 /// Validates duplicate-free canonical bytes and returns the strict receipt.
 pub fn validate_canonical_receipt(input: &[u8]) -> Result<DecodedReceipt, CanonicalError> {
+    if input.first() != Some(&b'{') {
+        let decoded = decode_receipt(input)?;
+        if !decoded.is_version_two() {
+            return Err(CanonicalError::BytesMismatch);
+        }
+        return Ok(decoded);
+    }
     reject_duplicate_keys(input)?;
     let decoded = decode_receipt(input)?;
     let encoded = serde_json::to_vec(decoded.value()).map_err(|_| CanonicalError::BytesMismatch)?;

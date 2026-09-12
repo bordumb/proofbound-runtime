@@ -4,29 +4,63 @@
 
 #[cfg(kani)]
 use proofbound_runtime_core::{
-    BoundaryInstallation, ExecutionOutcome, NonReusableReason, ReceiptEligibility, ReceiptFacts,
-    ReceiptStructure, SignalNumber, StreamCapture, derive_receipt_eligibility,
+    BoundaryInstallation, ExecutionOutcome, LimitEvent, LimitEvents, NonReusableReason,
+    ReceiptEligibility, ReceiptFacts, ReceiptStructure, SignalNumber, StreamCapture,
+    derive_receipt_eligibility,
 };
 
 #[cfg(kani)]
 #[kani::proof]
-fn receipt_eligibility_is_exact_for_bounded_state_model() {
+fn receipt_eligibility_is_exact_for_exit_zero() {
+    check_receipt_eligibility(ExecutionOutcome::Exited { code: 0 });
+}
+
+#[cfg(kani)]
+#[kani::proof]
+fn receipt_eligibility_is_exact_for_exit_nonzero() {
+    let code: i32 = kani::any();
+    kani::assume(code != 0);
+    check_receipt_eligibility(ExecutionOutcome::Exited { code });
+}
+
+#[cfg(kani)]
+#[kani::proof]
+fn receipt_eligibility_is_exact_for_signaled() {
+    check_receipt_eligibility(ExecutionOutcome::Signaled {
+        signal: SignalNumber::MIN,
+    });
+}
+
+#[cfg(kani)]
+#[kani::proof]
+fn receipt_eligibility_is_exact_for_timed_out() {
+    check_receipt_eligibility(ExecutionOutcome::TimedOut);
+}
+
+#[cfg(kani)]
+#[kani::proof]
+fn receipt_eligibility_is_exact_for_denied() {
+    check_receipt_eligibility(ExecutionOutcome::Denied);
+}
+
+#[cfg(kani)]
+#[kani::proof]
+fn receipt_eligibility_is_exact_for_launcher_failed() {
+    check_receipt_eligibility(ExecutionOutcome::LauncherFailed);
+}
+
+#[cfg(kani)]
+#[kani::proof]
+fn receipt_eligibility_is_exact_for_incomplete() {
+    check_receipt_eligibility(ExecutionOutcome::Incomplete);
+}
+
+#[cfg(kani)]
+fn check_receipt_eligibility(outcome: ExecutionOutcome) {
     let boundary = if kani::any() {
         BoundaryInstallation::Installed
     } else {
         BoundaryInstallation::Incomplete
-    };
-    let outcome_selector: u8 = kani::any();
-    kani::assume(outcome_selector < 6);
-    let outcome = match outcome_selector {
-        0 => ExecutionOutcome::Exited { code: kani::any() },
-        1 => ExecutionOutcome::Signaled {
-            signal: SignalNumber::MIN,
-        },
-        2 => ExecutionOutcome::TimedOut,
-        3 => ExecutionOutcome::Denied,
-        4 => ExecutionOutcome::LauncherFailed,
-        _ => ExecutionOutcome::Incomplete,
     };
     let stdout = if kani::any() {
         StreamCapture::Complete
@@ -43,42 +77,184 @@ fn receipt_eligibility_is_exact_for_bounded_state_model() {
     } else {
         ReceiptStructure::Malformed
     };
-    let facts = ReceiptFacts::new(boundary, outcome, stdout, stderr, structure);
-    let mut expected_reasons = Vec::new();
-    if boundary == BoundaryInstallation::Incomplete {
-        expected_reasons.push(NonReusableReason::BoundaryIncomplete);
-    }
-    match outcome {
-        ExecutionOutcome::Exited { code: 0 } => {}
-        ExecutionOutcome::Exited { .. } => {
-            expected_reasons.push(NonReusableReason::ExitCodeNonzero);
-        }
-        ExecutionOutcome::Signaled { .. } => {
-            expected_reasons.push(NonReusableReason::ProcessSignaled);
-        }
-        ExecutionOutcome::TimedOut => expected_reasons.push(NonReusableReason::TimedOut),
-        ExecutionOutcome::Denied => expected_reasons.push(NonReusableReason::Denied),
-        ExecutionOutcome::LauncherFailed => {
-            expected_reasons.push(NonReusableReason::LauncherFailed);
-        }
-        ExecutionOutcome::Incomplete => {
-            expected_reasons.push(NonReusableReason::ExecutionIncomplete);
-        }
-    }
-    if stdout == StreamCapture::Truncated {
-        expected_reasons.push(NonReusableReason::StandardOutputTruncated);
-    }
-    if stderr == StreamCapture::Truncated {
-        expected_reasons.push(NonReusableReason::StandardErrorTruncated);
-    }
-    if structure == ReceiptStructure::Malformed {
-        expected_reasons.push(NonReusableReason::ReceiptMalformed);
-    }
+    let memory_high: bool = kani::any();
+    let memory_max: bool = kani::any();
+    let memory_oom: bool = kani::any();
+    let memory_oom_kill: bool = kani::any();
+    let memory_oom_group_kill: bool = kani::any();
+    let swap_max: bool = kani::any();
+    let swap_fail: bool = kani::any();
+    let events = canonical_limit_events(
+        memory_high,
+        memory_max,
+        memory_oom,
+        memory_oom_kill,
+        memory_oom_group_kill,
+        swap_max,
+        swap_fail,
+    );
+    let facts = ReceiptFacts::new_v2(boundary, outcome, stdout, stderr, structure, events);
+    let outcome_reason = match outcome {
+        ExecutionOutcome::Exited { code: 0 } => None,
+        ExecutionOutcome::Exited { .. } => Some(NonReusableReason::ExitCodeNonzero),
+        ExecutionOutcome::Signaled { .. } => Some(NonReusableReason::ProcessSignaled),
+        ExecutionOutcome::TimedOut => Some(NonReusableReason::TimedOut),
+        ExecutionOutcome::Denied => Some(NonReusableReason::Denied),
+        ExecutionOutcome::LauncherFailed => Some(NonReusableReason::LauncherFailed),
+        ExecutionOutcome::Incomplete => Some(NonReusableReason::ExecutionIncomplete),
+    };
+    let expected_reason_count = usize::from(boundary == BoundaryInstallation::Incomplete)
+        + usize::from(outcome_reason.is_some())
+        + usize::from(stdout == StreamCapture::Truncated)
+        + usize::from(stderr == StreamCapture::Truncated)
+        + usize::from(structure == ReceiptStructure::Malformed)
+        + usize::from(memory_high)
+        + usize::from(memory_max)
+        + usize::from(memory_oom)
+        + usize::from(memory_oom_kill)
+        + usize::from(memory_oom_group_kill)
+        + usize::from(swap_max)
+        + usize::from(swap_fail);
 
     match derive_receipt_eligibility(&facts) {
-        ReceiptEligibility::Reusable => assert!(expected_reasons.is_empty()),
+        ReceiptEligibility::Reusable => assert_eq!(expected_reason_count, 0),
         ReceiptEligibility::NonReusable(actual) => {
-            assert_eq!(actual.as_slice(), expected_reasons.as_slice());
+            let actual = actual.as_slice();
+            assert_eq!(actual.len(), expected_reason_count);
+            let mut index = 0;
+            assert_reason(
+                boundary == BoundaryInstallation::Incomplete,
+                actual,
+                &mut index,
+                NonReusableReason::BoundaryIncomplete,
+            );
+            if let Some(reason) = outcome_reason {
+                assert_eq!(actual[index], reason);
+                index += 1;
+            }
+            assert_reason(
+                stdout == StreamCapture::Truncated,
+                actual,
+                &mut index,
+                NonReusableReason::StandardOutputTruncated,
+            );
+            assert_reason(
+                stderr == StreamCapture::Truncated,
+                actual,
+                &mut index,
+                NonReusableReason::StandardErrorTruncated,
+            );
+            assert_reason(
+                structure == ReceiptStructure::Malformed,
+                actual,
+                &mut index,
+                NonReusableReason::ReceiptMalformed,
+            );
+            assert_reason(
+                memory_high,
+                actual,
+                &mut index,
+                NonReusableReason::MemoryHigh,
+            );
+            assert_reason(memory_max, actual, &mut index, NonReusableReason::MemoryMax);
+            assert_reason(memory_oom, actual, &mut index, NonReusableReason::MemoryOom);
+            assert_reason(
+                memory_oom_kill,
+                actual,
+                &mut index,
+                NonReusableReason::MemoryOomKill,
+            );
+            assert_reason(
+                memory_oom_group_kill,
+                actual,
+                &mut index,
+                NonReusableReason::MemoryOomGroupKill,
+            );
+            assert_reason(swap_max, actual, &mut index, NonReusableReason::SwapMax);
+            assert_reason(swap_fail, actual, &mut index, NonReusableReason::SwapFail);
+            assert_eq!(index, actual.len());
         }
+    }
+}
+
+#[cfg(kani)]
+fn canonical_limit_events(
+    memory_high: bool,
+    memory_max: bool,
+    memory_oom: bool,
+    memory_oom_kill: bool,
+    memory_oom_group_kill: bool,
+    swap_max: bool,
+    swap_fail: bool,
+) -> LimitEvents {
+    let filler = if memory_high {
+        Some(LimitEvent::MemoryHigh)
+    } else if memory_max {
+        Some(LimitEvent::MemoryMax)
+    } else if memory_oom {
+        Some(LimitEvent::MemoryOom)
+    } else if memory_oom_kill {
+        Some(LimitEvent::MemoryOomKill)
+    } else if memory_oom_group_kill {
+        Some(LimitEvent::MemoryOomGroupKill)
+    } else if swap_max {
+        Some(LimitEvent::SwapMax)
+    } else if swap_fail {
+        Some(LimitEvent::SwapFail)
+    } else {
+        None
+    };
+    let Some(filler) = filler else {
+        return LimitEvents::new(&[]);
+    };
+    LimitEvents::new(&[
+        if memory_high {
+            LimitEvent::MemoryHigh
+        } else {
+            filler
+        },
+        if memory_max {
+            LimitEvent::MemoryMax
+        } else {
+            filler
+        },
+        if memory_oom {
+            LimitEvent::MemoryOom
+        } else {
+            filler
+        },
+        if memory_oom_kill {
+            LimitEvent::MemoryOomKill
+        } else {
+            filler
+        },
+        if memory_oom_group_kill {
+            LimitEvent::MemoryOomGroupKill
+        } else {
+            filler
+        },
+        if swap_max {
+            LimitEvent::SwapMax
+        } else {
+            filler
+        },
+        if swap_fail {
+            LimitEvent::SwapFail
+        } else {
+            filler
+        },
+    ])
+}
+
+#[cfg(kani)]
+fn assert_reason(
+    expected: bool,
+    actual: &[NonReusableReason],
+    index: &mut usize,
+    reason: NonReusableReason,
+) {
+    if expected {
+        assert_eq!(actual[*index], reason);
+        *index += 1;
     }
 }

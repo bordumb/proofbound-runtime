@@ -53,6 +53,6 @@ source_roots = [
 
 [bounded_domain]
 id = "policy-one-path-one-environment-catalog"
-description = "All normalized authorities with one path and one environment name over two typed values each; 2^2 finite states."
-cardinality = 4
+description = "All normalized authorities with one path, one environment name, one memory limit, and one swap limit over two typed values each; 2^4 finite states."
+cardinality = 16
 ordering_key = [0, 1]

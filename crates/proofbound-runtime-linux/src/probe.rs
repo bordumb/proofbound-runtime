@@ -9,6 +9,25 @@ const MIN_LANDLOCK_ABI: u32 = 3;
 #[cfg(target_os = "linux")]
 const MAX_REVIEWED_LANDLOCK_ABI: u32 = 11;
 
+#[cfg(any(test, target_os = "linux"))]
+const fn required_cgroup_controllers() -> [&'static str; 2] {
+    ["memory", "pids"]
+}
+
+#[cfg(any(test, target_os = "linux"))]
+const fn required_cgroup_files() -> [&'static str; 8] {
+    [
+        "memory.events.local",
+        "memory.max",
+        "memory.oom.group",
+        "memory.peak",
+        "memory.swap.events",
+        "memory.swap.max",
+        "memory.swap.peak",
+        "pids.max",
+    ]
+}
+
 /// Identifies one supported native Linux architecture.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Architecture {
@@ -209,7 +228,7 @@ pub enum ProbeError {
     CgroupV2Unavailable,
     /// The configured root is not an empty delegated parent of the supervisor.
     CgroupV2DelegationUnavailable,
-    /// The pids controller required by version 1 is unavailable.
+    /// A controller or control file required by version 2 is unavailable.
     CgroupV2ControllerMissing,
 }
 
@@ -372,20 +391,28 @@ fn probe_cgroup_v2(configured_root: &Path) -> Capability<CgroupV2Capability> {
     let Capability::Available(controllers) = read_set(directory.join("cgroup.controllers")) else {
         return Capability::Unavailable(ProbeError::CgroupV2Unavailable);
     };
-    if controllers
-        .binary_search_by(|item| item.as_str().cmp("pids"))
-        .is_err()
-    {
+    if !required_cgroup_controllers().iter().all(|required| {
+        controllers
+            .binary_search_by(|item| item.as_str().cmp(required))
+            .is_ok()
+    }) {
         return Capability::Unavailable(ProbeError::CgroupV2ControllerMissing);
     }
     let Capability::Available(enabled) = read_set(directory.join("cgroup.subtree_control")) else {
         return Capability::Unavailable(ProbeError::CgroupV2DelegationUnavailable);
     };
-    if enabled
-        .binary_search_by(|item| item.as_str().cmp("pids"))
-        .is_err()
-    {
+    if !required_cgroup_controllers().iter().all(|required| {
+        enabled
+            .binary_search_by(|item| item.as_str().cmp(required))
+            .is_ok()
+    }) {
         return Capability::Unavailable(ProbeError::CgroupV2DelegationUnavailable);
+    }
+    if !required_cgroup_files()
+        .iter()
+        .all(|name| directory.join(name).is_file())
+    {
+        return Capability::Unavailable(ProbeError::CgroupV2ControllerMissing);
     }
     if !crate::sys::path_is_writable(&directory)
         || std::fs::OpenOptions::new()
@@ -474,6 +501,24 @@ fn read_set(path: impl AsRef<Path>) -> Capability<Vec<String>> {
 mod tests {
     use super::*;
 
+    #[test]
+    fn version_two_probe_requires_memory_and_pids_with_all_observation_files() {
+        assert_eq!(required_cgroup_controllers(), ["memory", "pids"]);
+        assert_eq!(
+            required_cgroup_files(),
+            [
+                "memory.events.local",
+                "memory.max",
+                "memory.oom.group",
+                "memory.peak",
+                "memory.swap.events",
+                "memory.swap.max",
+                "memory.swap.peak",
+                "pids.max",
+            ]
+        );
+    }
+
     #[cfg(not(target_os = "linux"))]
     #[test]
     fn unsupported_hosts_never_produce_supported_linux() {
@@ -491,29 +536,33 @@ mod tests {
     #[cfg(target_os = "linux")]
     #[test]
     fn supported_result_contains_every_required_capability() {
+        let required = std::env::var_os("PROOFBOUND_NATIVE_REQUIRED").is_some();
         let Some(root) = std::env::var_os("PROOFBOUND_CGROUP_ROOT") else {
+            assert!(!required, "native cgroup root is required");
             return;
         };
         let report = probe_capabilities(Path::new(&root));
-        if let Ok(supported) = report.require_supported() {
-            assert!(!supported.kernel_release().is_empty());
-            assert!(supported.landlock_abi().get() > 0);
-            assert!(supported.supports_no_new_privileges());
-            assert!(
-                supported
-                    .seccomp()
-                    .available_actions()
-                    .iter()
-                    .any(|action| action == "errno")
-            );
-            assert!(
-                supported
-                    .cgroup_v2()
-                    .controllers()
-                    .iter()
-                    .any(|controller| controller == "pids")
-            );
-        }
+        let Ok(supported) = report.require_supported() else {
+            assert!(!required, "complete native capability profile is required");
+            return;
+        };
+        assert!(!supported.kernel_release().is_empty());
+        assert!(supported.landlock_abi().get() > 0);
+        assert!(supported.supports_no_new_privileges());
+        assert!(
+            supported
+                .seccomp()
+                .available_actions()
+                .iter()
+                .any(|action| action == "errno")
+        );
+        assert!(
+            supported
+                .cgroup_v2()
+                .controllers()
+                .iter()
+                .any(|controller| controller == "pids")
+        );
     }
 
     #[test]

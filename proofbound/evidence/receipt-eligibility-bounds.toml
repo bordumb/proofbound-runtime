@@ -5,7 +5,13 @@ kind = "bounded-check"
 claims = ["PBR-RECEIPT-004"]
 tier = 1
 expected_inventory = [
-  "receipt_eligibility_is_exact_for_bounded_state_model",
+  "receipt_eligibility_is_exact_for_exit_zero",
+  "receipt_eligibility_is_exact_for_exit_nonzero",
+  "receipt_eligibility_is_exact_for_signaled",
+  "receipt_eligibility_is_exact_for_timed_out",
+  "receipt_eligibility_is_exact_for_denied",
+  "receipt_eligibility_is_exact_for_launcher_failed",
+  "receipt_eligibility_is_exact_for_incomplete",
 ]
 inputs = [
   "crates/proofbound-runtime-receipt/src/lib.rs",
@@ -20,16 +26,22 @@ type = "kani"
 package = "proofbound-runtime-receipt-kani"
 manifest = "proofbound/model-checks/receipt-eligibility.toml"
 targets = [
-  "receipt_eligibility_is_exact_for_bounded_state_model",
+  "receipt_eligibility_is_exact_for_exit_zero",
+  "receipt_eligibility_is_exact_for_exit_nonzero",
+  "receipt_eligibility_is_exact_for_signaled",
+  "receipt_eligibility_is_exact_for_timed_out",
+  "receipt_eligibility_is_exact_for_denied",
+  "receipt_eligibility_is_exact_for_launcher_failed",
+  "receipt_eligibility_is_exact_for_incomplete",
 ]
 
 [bounded_domain]
-id = "receipt-eligibility-v1-closed-states"
-description = "All boundary, stream-capture, structure, and outcome classes, including every i32 exit code; 16 * (2^32 + 5) finite states."
-cardinality = 68719476816
-ordering_key = [0, 1, 2, 3, 4]
+id = "receipt-eligibility-v2-closed-states"
+description = "All boundary, stream-capture, structure, and outcome classes, including every i32 exit code and every subset of seven version 2 memory and swap limit events; 16 * (2^32 + 5) * 128 finite states."
+cardinality = 8796093032448
+ordering_key = [0, 1, 2, 3, 4, 5]
 
 [resource_budget]
-time_seconds = 900
+time_seconds = 2400
 disk_bytes = 2147483648
 memory_bytes = 8589934592

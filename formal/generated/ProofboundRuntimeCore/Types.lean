@@ -78,24 +78,38 @@ def authority.WallTimeLimit := Std.U64
 @[reducible]
 def authority.OutputByteLimit := Std.U64
 
+/-- [proofbound_runtime_core::authority::MemoryByteLimit]
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 285:0-285:32
+    Visibility: public -/
+@[reducible]
+def authority.MemoryByteLimit := Std.U64
+
+/-- [proofbound_runtime_core::authority::SwapByteLimit]
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 318:0-318:30
+    Visibility: public -/
+@[reducible]
+def authority.SwapByteLimit := Std.U64
+
 /-- [proofbound_runtime_core::authority::ResourceLimits]
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 285:0-290:1
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 346:0-353:1
     Visibility: public -/
 structure authority.ResourceLimits where
   processes : authority.ProcessLimit
   wall_time : authority.WallTimeLimit
   stdout : authority.OutputByteLimit
   stderr : authority.OutputByteLimit
+  memory : Option authority.MemoryByteLimit
+  swap : Option authority.SwapByteLimit
 
 /-- [proofbound_runtime_core::authority::NetworkMode]
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 345:0-348:1
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 461:0-464:1
     Visibility: public -/
 @[discriminant isize]
 inductive authority.NetworkMode where
 | Deny : authority.NetworkMode
 
 /-- [proofbound_runtime_core::authority::AuthorityPlan]
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 352:0-357:1
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 468:0-473:1
     Visibility: public -/
 structure authority.AuthorityPlan where
   paths : alloc.vec.Vec authority.PathAuthority
@@ -104,7 +118,7 @@ structure authority.AuthorityPlan where
   network : authority.NetworkMode
 
 /-- [proofbound_runtime_core::authority::AuthorityError]
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 414:0-429:1
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 530:0-555:1
     Visibility: public -/
 @[discriminant isize]
 inductive authority.AuthorityError where
@@ -115,6 +129,11 @@ inductive authority.AuthorityError where
 | EnvironmentNameContainsEquals : authority.AuthorityError
 | ZeroProcessLimit : authority.AuthorityError
 | ZeroWallTimeLimit : authority.AuthorityError
+| MemoryLimitBelowMinimum : authority.AuthorityError
+| MemoryLimitAboveMaximum : authority.AuthorityError
+| MemoryLimitNotQuantized : authority.AuthorityError
+| SwapLimitAboveMaximum : authority.AuthorityError
+| SwapLimitNotQuantized : authority.AuthorityError
 
 /-- [proofbound_runtime_core::normalize::NormalizedAuthority]
     Source: 'crates/proofbound-runtime-core/src/normalize.rs', lines 7:0-12:1

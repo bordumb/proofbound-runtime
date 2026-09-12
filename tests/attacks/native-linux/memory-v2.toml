@@ -1,0 +1,91 @@
+schema = "proofbound-runtime-native-memory-attacks/2"
+
+[[case]]
+id = "anonymous-over-limit-single-process"
+test = "production_launcher_enforces_native_memory_corpus"
+expected = "memory-max-event-and-nonreuse"
+
+[[case]]
+id = "anonymous-over-limit-max-process-tree"
+test = "production_launcher_enforces_native_memory_corpus"
+expected = "group-oom-event-and-nonreuse"
+
+[[case]]
+id = "anonymous-memory-accounted"
+test = "production_launcher_enforces_native_memory_corpus"
+expected = "peak-increases-without-limit-event"
+
+[[case]]
+id = "mapped-file-memory-accounted"
+test = "production_launcher_enforces_native_memory_corpus"
+expected = "peak-increases-without-limit-event"
+
+[[case]]
+id = "page-cache-memory-accounted"
+test = "production_launcher_enforces_native_memory_corpus"
+expected = "peak-increases-without-limit-event"
+
+[[case]]
+id = "shared-memory-accounted"
+test = "production_launcher_enforces_native_memory_corpus"
+expected = "peak-increases-without-limit-event"
+
+[[case]]
+id = "socket-memory-accounted"
+test = "native_cgroup_accounts_socket_memory_outside_denied_network_profile"
+expected = "peak-increases-without-limit-event"
+
+[[case]]
+id = "zero-swap-enforced"
+test = "production_launcher_enforces_native_swap_presence_matrix"
+expected = "installed-zero-and-zero-swap-peak"
+
+[[case]]
+id = "bounded-swap-pressure"
+test = "production_launcher_enforces_native_swap_presence_matrix"
+expected = "bounded-nonzero-swap-peak-and-exact-event-projection"
+
+[[case]]
+id = "host-without-swap"
+test = "production_launcher_enforces_native_swap_presence_matrix"
+expected = "zero-swap-profile-remains-enforced"
+
+[[case]]
+id = "pre-release-allocation-blocked"
+test = "production_launcher_enforces_native_memory_corpus"
+expected = "no-workload-byte-before-launcher-ack"
+
+[[case]]
+id = "sibling-cgroup-immune"
+test = "production_launcher_enforces_native_memory_corpus"
+expected = "sibling-liveness-retained"
+
+[[case]]
+id = "supervisor-cgroup-immune"
+test = "production_launcher_enforces_native_memory_corpus"
+expected = "supervisor-liveness-retained"
+
+[[case]]
+id = "memory-pressure-timeout-cleanup"
+test = "production_launcher_enforces_native_memory_corpus"
+expected = "timed-out-and-exact-cgroup-removed"
+
+[[case]]
+id = "memory-pressure-launcher-failure-cleanup"
+test = "native_failure_paths_remove_cgroup_under_memory_pressure"
+expected = "launcher-failure-and-exact-cgroup-removed"
+
+[[case]]
+id = "memory-pressure-supervisor-failure-cleanup"
+test = "native_failure_paths_remove_cgroup_under_memory_pressure"
+expected = "supervisor-failure-and-exact-cgroup-removed"
+
+[[case]]
+id = "oom-cleanup-exact"
+test = "production_launcher_enforces_native_memory_corpus"
+expected = "group-drained-and-exact-cgroup-removed"
+
+[[case]]
+id = "receipt-resource-mutations-rejected"
+test = "proofbound_runtime_verify::attack_tests::verifier_rejects_every_v2_resource_mutation"
+expected = "independent-verifier-rejects-every-resource-field"

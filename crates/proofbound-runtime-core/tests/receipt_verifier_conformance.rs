@@ -1,9 +1,11 @@
 use proofbound_runtime_core::{
     Architecture, ArtifactIdentity, ArtifactRole, BoundaryInstallation, BoundaryRecord,
     CgroupIdentity, EnvironmentName, ExecutionId, ExecutionObservations, ExecutionOutcome,
-    ExecutionReceipt, ExecutionReceiptParts, FileMode, REQUIRED_RUNTIME_ASSUMPTIONS,
-    ReceiptCommand, ReceiptPlan, ReceiptPolicy, ReceiptStreams, RuntimeIdentity, Sha256Digest,
-    StreamCapture, TrustedComputingBaseEntry, TrustedComputingBaseRole,
+    ExecutionReceipt, ExecutionReceiptParts, FileMode, MemoryByteLimit, OutputByteLimit,
+    ProcessLimit, REQUIRED_RUNTIME_ASSUMPTIONS, ReceiptCommand, ReceiptMemoryEvents, ReceiptPlan,
+    ReceiptPolicy, ReceiptResources, ReceiptStreams, ReceiptSwapEvents, ResourceLimits,
+    RuntimeIdentity, Sha256Digest, StreamCapture, SwapByteLimit, TrustedComputingBaseEntry,
+    TrustedComputingBaseRole, WallTimeLimit,
 };
 use proofbound_runtime_verify::{
     EligibilityDecision, FailureReason, ReceiptCommitment, verify_receipt,
@@ -103,6 +105,7 @@ fn parts(outcome: ExecutionOutcome) -> ExecutionReceiptParts {
         )
         .expect("fixture stream roles are valid"),
         outcome,
+        resources: None,
         outputs: vec![artifact(ArtifactRole::OutputArtifact, 19)],
         producer: runtime,
         assumptions: REQUIRED_RUNTIME_ASSUMPTIONS
@@ -134,4 +137,83 @@ fn producer_and_verifier_agree_on_non_reuse() {
         panic!("denied execution must not be reusable");
     };
     assert_eq!(reasons.as_slice(), &[FailureReason::Denied]);
+}
+
+#[test]
+fn independent_verifier_accepts_v2_cbor_and_recomputes_resource_nonreuse() {
+    let mut input = parts(ExecutionOutcome::Exited { code: 0 });
+    let limits = ResourceLimits::new_v2(
+        ProcessLimit::new(2).expect("valid process limit"),
+        WallTimeLimit::from_milliseconds(1_000).expect("valid wall limit"),
+        OutputByteLimit::new(1_024),
+        OutputByteLimit::new(2_048),
+        MemoryByteLimit::new(65_536).expect("valid memory limit"),
+        SwapByteLimit::new(0).expect("valid swap limit"),
+    );
+    input.plan = ReceiptPlan::new_v2(
+        proofbound_runtime_core::PlanId::new("conformance.plan").expect("fixture plan ID is valid"),
+        artifact(ArtifactRole::ExecutionPlan, 1),
+        artifact(ArtifactRole::NormalizedPlan, 2),
+        limits,
+    )
+    .expect("fixture v2 plan roles are valid");
+    input.resources = Some(
+        ReceiptResources::new(
+            limits,
+            65_537,
+            0,
+            ReceiptMemoryEvents::new(0, 0, 1, 0, 0, 0),
+            ReceiptSwapEvents::new(0, 0),
+        )
+        .expect("complete v2 resources"),
+    );
+    let receipt = ExecutionReceipt::new(input).expect("producer accepts v2 fixture");
+    let bytes = receipt
+        .canonical_bytes()
+        .expect("producer encodes v2 fixture");
+    let report = verify_receipt(&bytes, ReceiptCommitment::for_bytes(&bytes))
+        .expect("independent verifier accepts producer v2 bytes");
+    let EligibilityDecision::NonReusable(reasons) = report.eligibility() else {
+        panic!("memory.max must force nonreuse while permitting observed overshoot");
+    };
+    assert_eq!(reasons.as_slice(), &[FailureReason::MemoryMax]);
+}
+
+#[test]
+fn observation_failure_produces_a_verified_non_reusable_receipt() {
+    let mut input = parts(ExecutionOutcome::Exited { code: 0 });
+    let limits = ResourceLimits::new_v2(
+        ProcessLimit::new(2).expect("valid process limit"),
+        WallTimeLimit::from_milliseconds(1_000).expect("valid wall limit"),
+        OutputByteLimit::new(1_024),
+        OutputByteLimit::new(2_048),
+        MemoryByteLimit::new(65_536).expect("valid memory limit"),
+        SwapByteLimit::new(0).expect("valid swap limit"),
+    );
+    input.plan = ReceiptPlan::new_v2(
+        proofbound_runtime_core::PlanId::new("conformance.plan").expect("fixture plan ID is valid"),
+        artifact(ArtifactRole::ExecutionPlan, 1),
+        artifact(ArtifactRole::NormalizedPlan, 2),
+        limits,
+    )
+    .expect("fixture v2 plan roles are valid");
+    input.resources = Some(
+        ReceiptResources::incomplete(
+            limits.processes(),
+            limits.memory().expect("v2 memory limit"),
+            limits.swap().expect("v2 swap limit"),
+            1,
+        )
+        .expect("configured readbacks remain complete"),
+    );
+    let receipt = ExecutionReceipt::new(input).expect("producer retains incomplete observation");
+    let bytes = receipt
+        .canonical_bytes()
+        .expect("producer encodes incomplete observation");
+    let report = verify_receipt(&bytes, ReceiptCommitment::for_bytes(&bytes))
+        .expect("independent verifier accepts the non-reusable receipt");
+    let EligibilityDecision::NonReusable(reasons) = report.eligibility() else {
+        panic!("incomplete resource observation must force nonreuse");
+    };
+    assert_eq!(reasons.as_slice(), &[FailureReason::ReceiptMalformed]);
 }

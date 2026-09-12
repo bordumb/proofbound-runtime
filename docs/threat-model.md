@@ -1,9 +1,9 @@
 # Threat model
 
-- **Status:** implemented version 1 boundary; version 0.1.0 released
-- **Version:** 0.1.0
-- **Date:** 2026-09-09
-- **Applies to:** the Proofbound Runtime version 1 execution profile
+- **Status:** version 1 released; version 2 memory/swap implementation pending release admission
+- **Version:** 0.2.0 candidate
+- **Date:** 2026-09-11
+- **Applies to:** the Proofbound Runtime version 1 and version 2 execution profiles
 
 ## Purpose
 
@@ -11,15 +11,20 @@ Proofbound Runtime runs a command that the caller does not fully trust. It gives
 the command declared authority and records the installed boundary and observed
 outcome in an execution receipt.
 
-This threat model defines what the initial product protects, which attacks it
-rejects, what it trusts, and what remains outside its claims. The boundary is
-implemented and has bounded native evidence on identified `x86_64` and
-`aarch64` Linux runners. The published release at revision
+This threat model defines what the product protects, which attacks it rejects,
+what it trusts, and what remains outside its claims. Version 1 is implemented
+and has bounded native evidence on identified `x86_64` and `aarch64` Linux
+runners. The published release at revision
 `c78e189e2e098489ebf9f45840bdf9ff6cb0fd6d` contextually binds the four
 source-refined claims to exact native `pbr` bytes and independently observes
 the four tested release roles. The final exact-SHA reproduction passed on both
 architectures, and the checksummed runtime and assurance bundles are retained
 with the `v0.1.0` GitHub release.
+
+Version 2 adds explicit memory and swap controls and terminal resource
+observations. Its implementation is not part of `v0.1.0` and is not a released
+claim until the exact version 2 head passes both native release contexts,
+independent receipt verification, artifact binding, and composition.
 
 ## Protected assets
 
@@ -31,7 +36,10 @@ The initial boundary protects:
 - environment values whose names are not registered;
 - inherited file descriptors that are not part of the child contract;
 - network authority, which is denied by the initial profile;
-- host process and resource capacity above registered limits;
+- in Version 1, host process count, wall time, and captured stream bytes above
+  registered limits;
+- in Version 2, cgroup-accounted memory and swap above the additional
+  registered limits, subject to the stated kernel semantics;
 - reviewed source trees from modification by the child;
 - execution outputs from substitution before receipt construction; and
 - receipt meaning from omission, substitution, downgrade, and forged reuse.
@@ -116,15 +124,23 @@ must byte-match the bundle's composer role. This closes silent tool
 substitution within the represented bundle; it does not prove the composer's
 behavior or discharge the compiler premise.
 
-## Initial enforced boundary
+Required source-assurance CI may restore the exact registered Charon and Aeneas
+Nix closure through a pinned cache action and the GitHub Actions cache service.
+Those components and restored bytes are retained under the toolchain premise.
+Post-restore version checks detect accidental identity drift but do not prove a
+hostile replacement's behavior. Release reproduction does not consume this
+cache, and no Proofbound output, project compiler output, receipt, or release
+artifact is restored into a protected fresh gate.
 
-The initial supported profile requires:
+## Versioned enforced boundary
+
+Both supported profiles require:
 
 1. A strict plan that declares command, inputs, environment names, read roots,
    write roots, executable closure, network mode, and resource limits.
 2. Validation and deterministic normalization without authority amplification.
 3. Exact resolution and identity of security-relevant files before execution.
-4. A fresh cgroup v2 boundary with the registered limits.
+4. A fresh cgroup v2 boundary with the profile's registered limits.
 5. Closure of undeclared file descriptors.
 6. Rejection of root or mismatched saved identities, removal of ambient and
    active capability sets, and verified installation of `no_new_privs`.
@@ -145,8 +161,8 @@ resolve paths under explicit roots, retain requested and resolved identities,
 control symlink traversal, and prefer descriptor-relative operations where the
 platform supports them.
 
-Version 1 accepts the explicitly reviewed Landlock ABI range 3 through 11; an
-older or newer ABI is unsupported until its guarantees are reviewed. The
+Versions 1 and 2 accept the explicitly reviewed Landlock ABI range 3 through
+11; an older or newer ABI is unsupported until its guarantees are reviewed. The
 ruleset handles truncation from ABI 3, device `ioctl` from ABI 5, and pathname
 Unix-socket resolution from ABI 9. Read and write rules may cover registered
 directory trees; execute rules are accepted only for exact regular-file
@@ -166,9 +182,9 @@ replace exact executable roles.
 
 ### Network
 
-Version 1 denies socket-related authority through a closed seccomp profile and
-closes inherited file descriptors. It does not provide hostname, address, or
-service allow-lists.
+Versions 1 and 2 deny socket-related authority through the same closed seccomp
+profile and close inherited file descriptors. Neither profile provides
+hostname, address, or service allow-lists.
 
 The filter validates the kernel audit architecture, kills x32-numbered calls on
 `x86_64`, returns `EPERM` for the complete registered socket syscall family,
@@ -185,14 +201,29 @@ boundary witnesses exist and the bound acknowledgement is sent.
 ### Environment
 
 The supervisor builds a new child environment from registered names. The child
-does not inherit the complete parent environment. Version 1 does not support
+does not inherit the complete parent environment. Neither version supports
 secret providers.
 
 ### Processes and resources
 
-A fresh cgroup v2 boundary enforces registered process limits. The supervisor
-enforces wall-time and stream-size limits. Every limit and observed termination
-state appears in the receipt.
+Version 1 uses a fresh cgroup v2 boundary for the registered process count. The
+supervisor enforces wall time and captured stream bytes. Version 1 does not
+bound memory or swap and must not be described as doing so.
+
+Version 2 requires the delegated `pids` and `memory` controllers. Before child
+code starts, the fresh cgroup receives canonical values for `pids.max`,
+`memory.max`, `memory.swap.max`, and `memory.oom.group`; the supervisor reads
+each value back and rejects any mismatch. After the process tree drains, it
+records checked deltas from `memory.events.local` and `memory.swap.events` plus
+`memory.peak` and `memory.swap.peak` before removing the exact cgroup. The Linux
+kernel and host accounting remain assumptions: `memory.max` can temporarily
+overshoot, some failed allocations do not raise a registered event, and zero
+`memory.swap.max` does not disable zswap.
+
+Every configured limit and observed termination state appears in its
+versioned receipt. A nonzero peak is an observation, not by itself a limit
+event. The verifier derives the canonical event set only from nonzero counter
+deltas and keeps the child outcome separate from those events.
 
 The supervisor starts a new launcher image and observes its `SIGSTOP` before it
 places and verifies the process in the fresh cgroup. A child-only pre-exec hook
@@ -204,6 +235,15 @@ fresh cgroup before it returns positive execution evidence.
 The supervisor classifies `SIGSYS` as a denied outcome. It does not infer a
 denial from a child exit code. A child that observes and handles `EACCES` or
 `EPERM` retains its actual exit or signal outcome in the receipt.
+
+Versions 1 and 2 do not limit CPU bandwidth, aggregate consumed CPU time, or
+output-root storage capacity. Wall time remains distinct from CPU consumption,
+and post-run output inventory cannot prevent block or inode exhaustion during
+execution. ADR 0006 freezes a possible later `cpu.max` bandwidth profile; ADR
+0007 requires a host-managed project-quota boundary before any adversarial
+output-capacity claim. Until those separately versioned profiles exist, a
+malicious child can consume CPU within its wall-time window and storage within
+the host-provided write root.
 
 ## Required attack corpus
 
@@ -218,6 +258,12 @@ must cover at least:
 - inherited socket and file-descriptor use;
 - undeclared environment access;
 - process, time, and stream limit exhaustion;
+- version 2 memory exhaustion in one process and a maximum-size process tree;
+- version 2 anonymous, mapped-file, page-cache, shared, and socket accounting;
+- zero swap, bounded swap use, and hosts with no swap device;
+- malformed, regressing, overflowing, or substituted resource observations;
+- OOM, timeout, launcher failure, and supervisor failure cleanup under memory
+  pressure;
 - boundary-installation reordering and acknowledgement forgery;
 - partial output and abnormal child termination;
 - receipt omission, duplicate fields, truncation, and unknown versions;
@@ -267,6 +313,12 @@ verifications succeeded and that the represented release, Runtime bundle,
 execution, assumptions, and trusted-computing-base inventories passed the
 specified exact-byte joins. It preserves the assurance report's status facets;
 it cannot strengthen them.
+
+Version 1 receipts remain canonical JSON and retain their original meaning.
+Version 2 receipts are deterministic CBOR and add the configured memory/swap
+values, terminal resource observations, derived limit events, and associated
+non-reuse reasons. Formatting either receipt as JSON for inspection does not
+create a verification input and does not convert one version into the other.
 
 ## Review triggers
 
