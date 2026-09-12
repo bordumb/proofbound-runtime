@@ -1,7 +1,7 @@
 # ADR 0005: Cache exact formal tools without caching assurance conclusions
 
-- **Status:** accepted by the maintainer on Claude's independent model review;
-  retention measurement open
+- **Status:** accepted; acceptance rests on Claude's independent model review
+  endorsed by the maintainer; retention measurement open
 - **Date:** 2026-09-10
 - **Decision owners:** Proofbound Runtime maintainers
 - **Applies to:** required pull-request and mainline verification workflows
