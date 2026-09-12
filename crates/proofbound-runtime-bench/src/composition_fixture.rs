@@ -95,15 +95,15 @@ impl CompositionFixture {
             "project_revision": "0123456789abcdef0123456789abcdef01234567",
             "project_tier": 3,
             "reported_statuses": [claim.clone()],
-            "schema": "proofbound-compiled-release/6",
+            "schema": "proofbound-compiled-release/7",
             "sealed_files": [],
             "tree_state": "clean"
         }));
-        let payload_digest = domain_digest_text("proofbound-compiled-release/6", &compiled_release);
+        let payload_digest = domain_digest_text("proofbound-compiled-release/7", &compiled_release);
         let release_envelope = canonical_json(json!({
             "payload": "compiled-receipt.json",
             "payload_sha256": payload_digest,
-            "schema": "proofbound-release-envelope/6"
+            "schema": "proofbound-release-envelope/7"
         }));
         let release_verification = canonical_json(json!({
             "claims": [claim],

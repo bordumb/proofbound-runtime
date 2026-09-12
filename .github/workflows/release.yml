@@ -264,7 +264,7 @@ jobs:
           assert report["evidence_context"] == context
           assert report["publication_blocked"] is False
           assert report["verdict"] == "bytes-observed"
-          assert compiled["schema"] == "proofbound-compiled-release/6"
+          assert compiled["schema"] == "proofbound-compiled-release/7"
           assert compiled["project_revision"] == revision
           assert compiled["evidence_context"] == context
           assert receipt["schema"] == "proofbound-runtime-composed-receipt/2"

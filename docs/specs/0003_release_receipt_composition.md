@@ -61,10 +61,14 @@ or noncanonical execution receipt fails closed.
 
 The Proofbound release directory must contain a valid contextual exact-
 observation and semantic artifact-binding release:
-`proofbound-release-envelope/6` with a `proofbound-compiled-release/6` payload.
+`proofbound-release-envelope/7` with a `proofbound-compiled-release/7` payload.
 The independent verifier result must be a closed
 `proofbound-verification-report/3` with verdict `bytes-observed`.
-The report and payload must name the same nonempty evidence context. The plugin
+Version 7 is the first compiled release whose claim records may carry the
+claim-owned `bounded_domain` registration. Versions 3 through 6 are rejected
+as downgraded inputs even when an independent Proofbound verifier still accepts
+them under their historical contracts. The report and payload must name the
+same nonempty evidence context. The plugin
 binds that context, the exact envelope bytes, its payload identity, the exact
 verification-report bytes, the observation-input manifest bytes, the verifier
 executable identity, project name, and project revision. The observation-input
