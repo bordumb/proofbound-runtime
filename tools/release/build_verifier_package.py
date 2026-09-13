@@ -14,6 +14,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import tomllib
 
 
 PACKAGE_NAME = "proofbound-runtime-verify"
@@ -78,6 +79,7 @@ class FailureCode(str, Enum):
     PUBLICATION_DISABLED = "package.manifest.publication-disabled"
     WORKSPACE_DEPENDENCY = "package.manifest.workspace-dependency"
     PATH_DEPENDENCY = "package.manifest.path-dependency"
+    DEPENDENCY_SOURCE = "package.manifest.dependency-source"
     SOURCE_INVENTORY = "package.source.inventory-mismatch"
     SOURCE_REVISION = "package.source.revision-mismatch"
     VERSION_MISMATCH = "package.version.mismatch"
@@ -98,108 +100,126 @@ class PackageError(ValueError):
         self.code = code.value
 
 
-def _section(source: str, name: str) -> list[str]:
-    header = f"[{name}]"
-    lines = source.splitlines()
+def _table(value: object, name: str) -> dict[str, object]:
+    if not isinstance(value, dict):
+        raise PackageError(FailureCode.MANIFEST_METADATA, f"missing or invalid {name}")
+    return value
+
+
+def _load_toml(path: Path) -> dict[str, object]:
     try:
-        start = lines.index(header) + 1
-    except ValueError as error:
-        raise PackageError(FailureCode.MANIFEST_METADATA, f"missing {header}") from error
-    result: list[str] = []
-    for line in lines[start:]:
-        if line.strip().startswith("["):
-            break
-        result.append(line)
-    return result
+        with path.open("rb") as source:
+            return _table(tomllib.load(source), str(path))
+    except tomllib.TOMLDecodeError as error:
+        raise PackageError(FailureCode.MANIFEST_METADATA, str(error)) from error
+    except OSError as error:
+        raise PackageError(FailureCode.IO, str(error)) from error
 
 
-def _assignment(lines: list[str], key: str) -> str:
-    pattern = re.compile(rf"^\s*{re.escape(key)}\s*=\s*(?P<value>[^#]+?)\s*$")
-    values = [match.group("value") for line in lines if (match := pattern.match(line))]
-    if len(values) != 1:
-        raise PackageError(
-            FailureCode.MANIFEST_METADATA,
-            f"expected one {key} assignment",
-        )
-    return values[0]
-
-
-def _dependency_sections(source: str) -> list[tuple[str, list[str]]]:
-    sections: list[tuple[str, list[str]]] = []
-    current_name = ""
-    current_lines: list[str] = []
-    for raw_line in source.splitlines():
-        line = raw_line.strip()
-        if line.startswith("[") and line.endswith("]"):
-            if current_name:
-                sections.append((current_name, current_lines))
-            current_name = line[1:-1]
-            current_lines = []
-        elif current_name:
-            current_lines.append(raw_line)
-    if current_name:
-        sections.append((current_name, current_lines))
-    return [
-        (name, lines)
-        for name, lines in sections
-        if name in {"dependencies", "dev-dependencies", "build-dependencies"}
-        or name.startswith(("dependencies.", "dev-dependencies.", "build-dependencies."))
-        or ".dependencies" in name
-        or ".dev-dependencies" in name
-        or ".build-dependencies" in name
-    ]
-
-
-def _dependency_name(section: str, line: str) -> str | None:
-    for marker in ("dependencies.", "dev-dependencies.", "build-dependencies."):
-        if marker in section:
-            return section.split(marker, 1)[1].strip('"\'')
-    content = line.split("#", 1)[0].strip()
-    if not content or "=" not in content:
-        return None
-    name = content.split("=", 1)[0].strip().strip('"\'')
-    return name.removesuffix(".workspace")
-
-
-def _workspace_dependencies(workspace: str) -> dict[str, str]:
-    result: dict[str, str] = {}
-    for section, lines in _dependency_sections(workspace):
-        if section == "workspace.dependencies":
-            for line in lines:
-                content = line.split("#", 1)[0].strip()
-                if not content or "=" not in content:
-                    continue
-                key, value = (part.strip() for part in content.split("=", 1))
-                result[key.strip('"\'')] = value
-        elif section.startswith("workspace.dependencies."):
-            dependency = section.split("workspace.dependencies.", 1)[1]
-            result[dependency.strip('"\'')] = " ".join(
-                line.split("#", 1)[0].strip() for line in lines
+def _nested(table: dict[str, object], path: str) -> object:
+    value: object = table
+    for component in path.split("."):
+        if not isinstance(value, dict) or component not in value:
+            raise PackageError(
+                FailureCode.MANIFEST_METADATA,
+                f"missing or invalid {path}",
             )
+        value = value[component]
+    return value
+
+
+DEPENDENCY_TABLES = ("dependencies", "dev-dependencies", "build-dependencies")
+
+
+def _dependency_tables(
+    manifest: dict[str, object],
+) -> list[tuple[str, dict[str, object]]]:
+    result: list[tuple[str, dict[str, object]]] = []
+    for name in DEPENDENCY_TABLES:
+        if name in manifest:
+            result.append((name, _table(manifest[name], f"[{name}]")))
+    targets = manifest.get("target", {})
+    if not isinstance(targets, dict):
+        raise PackageError(FailureCode.MANIFEST_METADATA, "invalid [target]")
+    for target, target_value in targets.items():
+        target_table = _table(target_value, f"[target.{target}]")
+        for name in DEPENDENCY_TABLES:
+            if name in target_table:
+                result.append(
+                    (
+                        f"target.{target}.{name}",
+                        _table(target_table[name], f"[target.{target}.{name}]"),
+                    )
+                )
     return result
 
 
-def _validate_dependencies(manifest: str, workspace: str) -> None:
-    workspace_dependencies = _workspace_dependencies(workspace)
-    for section, lines in _dependency_sections(manifest):
-        for line in lines:
-            content = line.split("#", 1)[0].strip()
-            if not content:
-                continue
-            dependency = _dependency_name(section, line)
-            workspace_value = workspace_dependencies.get(dependency or "", "")
-            combined = f"{content} {workspace_value}"
-            if (dependency or "").startswith("proofbound-runtime-") or re.search(
-                r"[\"']proofbound-runtime-[a-z0-9-]+[\"']", combined
-            ):
+def _dependency_specification(
+    dependency: str,
+    value: object,
+    workspace_dependencies: dict[str, object],
+) -> tuple[str, dict[str, object]]:
+    if isinstance(value, str):
+        return dependency, {}
+    specification = _table(value, f"dependency {dependency}")
+    if specification.get("workspace") is True:
+        if dependency not in workspace_dependencies:
+            raise PackageError(
+                FailureCode.MANIFEST_METADATA,
+                f"workspace dependency {dependency} is not registered",
+            )
+        workspace_value = workspace_dependencies[dependency]
+        if isinstance(workspace_value, str):
+            return dependency, {}
+        workspace_specification = _table(
+            workspace_value,
+            f"workspace dependency {dependency}",
+        )
+        return (
+            str(workspace_specification.get("package", dependency)),
+            workspace_specification,
+        )
+    return str(specification.get("package", dependency)), specification
+
+
+def _validate_dependencies(
+    manifest: dict[str, object],
+    workspace: dict[str, object],
+) -> None:
+    workspace_table = _table(workspace.get("workspace"), "[workspace]")
+    workspace_dependencies = _table(
+        workspace_table.get("dependencies", {}),
+        "[workspace.dependencies]",
+    )
+    for source_name, source in (("package", manifest), ("workspace", workspace)):
+        for replacement in ("patch", "replace"):
+            if replacement in source and source[replacement]:
+                raise PackageError(
+                    FailureCode.DEPENDENCY_SOURCE,
+                    f"{source_name} [{replacement}] dependency substitution "
+                    "is not admitted",
+                )
+    for section, dependencies in _dependency_tables(manifest):
+        for dependency, value in dependencies.items():
+            actual_name, specification = _dependency_specification(
+                dependency,
+                value,
+                workspace_dependencies,
+            )
+            if actual_name.startswith("proofbound-runtime-"):
                 raise PackageError(
                     FailureCode.WORKSPACE_DEPENDENCY,
                     f"internal dependency in [{section}]",
                 )
-            if re.search(r"\bpath\s*=", combined):
+            if "path" in specification:
                 raise PackageError(
                     FailureCode.PATH_DEPENDENCY,
                     f"path dependency in [{section}]",
+                )
+            if "git" in specification or "registry" in specification:
+                raise PackageError(
+                    FailureCode.DEPENDENCY_SOURCE,
+                    f"non-crates.io dependency source in [{section}]",
                 )
 
 
@@ -222,45 +242,42 @@ def preflight(repository: Path) -> str:
     manifest_path = repository / CRATE / "Cargo.toml"
     workspace_path = repository / "Cargo.toml"
     try:
-        manifest = manifest_path.read_text(encoding="utf-8")
-        workspace = workspace_path.read_text(encoding="utf-8")
         version_file = (repository / "VERSION").read_text(encoding="ascii").strip()
     except OSError as error:
         raise PackageError(FailureCode.IO, str(error)) from error
+    manifest = _load_toml(manifest_path)
+    workspace = _load_toml(workspace_path)
 
-    package = _section(manifest, "package")
+    package = _table(manifest.get("package"), "[package]")
     required = {
-        "name": f'"{PACKAGE_NAME}"',
-        "description": f'"{PACKAGE_DESCRIPTION}"',
-        "version.workspace": "true",
-        "edition.workspace": "true",
-        "license.workspace": "true",
-        "repository.workspace": "true",
-        "rust-version.workspace": "true",
-        "readme": '"README.md"',
-        "include": '["README.md", "src/*.rs"]',
+        "name": PACKAGE_NAME,
+        "description": PACKAGE_DESCRIPTION,
+        "version.workspace": True,
+        "edition.workspace": True,
+        "license.workspace": True,
+        "repository.workspace": True,
+        "rust-version.workspace": True,
+        "readme": "README.md",
+        "include": ["README.md", "src/*.rs"],
     }
     for key, expected in required.items():
-        if _assignment(package, key) != expected:
+        if _nested(package, key) != expected:
             raise PackageError(
                 FailureCode.MANIFEST_METADATA,
                 f"{key} does not match the public package contract",
             )
-    try:
-        publication = _assignment(package, "publish")
-    except PackageError as error:
-        raise PackageError(
-            FailureCode.PUBLICATION_DISABLED,
-            "the verifier package does not declare the approved registry",
-        ) from error
-    if publication != '["crates-io"]':
+    if package.get("publish") != ["crates-io"]:
         raise PackageError(
             FailureCode.PUBLICATION_DISABLED,
             "the verifier package is not restricted to crates.io publication",
         )
 
-    workspace_package = _section(workspace, "workspace.package")
-    workspace_version = _assignment(workspace_package, "version").strip('"')
+    workspace_table = _table(workspace.get("workspace"), "[workspace]")
+    workspace_package = _table(
+        workspace_table.get("package"),
+        "[workspace.package]",
+    )
+    workspace_version = workspace_package.get("version")
     if workspace_version != version_file:
         raise PackageError(
             FailureCode.VERSION_MISMATCH,

@@ -1,8 +1,8 @@
 schema = "proofbound-claim/1"
 id = "PBR-DISTRIBUTION-015"
 title = "The independent verifier has a closed reproducible public package"
-statement = "The registered verifier package preflight admits only the explicit public metadata, source inventory, package payload, version, and non-Runtime dependency closure; release production builds that package twice to byte equality and installs the extracted package in an unrelated temporary consumer before retaining its identity."
-public_language = "The independent verifier crate rejects the registered metadata, dependency, inventory, packaged-source substitution, version, and reproduction attacks, and its local release package is byte-reproduced and installed outside the workspace. This is source and local-package evidence, not registry publication, registry-byte identity, publisher authentication, or proof of verifier semantics."
+statement = "The registered verifier package preflight admits only the explicit public metadata, source inventory, package payload, version, and crates.io-only non-Runtime dependency closure; release production builds that package twice to byte equality and installs the extracted package in an unrelated temporary consumer before retaining its identity."
+public_language = "The independent verifier crate rejects the registered metadata, dependency-source, inventory, packaged-source substitution, version, and reproduction attacks, and its local release package is byte-reproduced and installed outside the workspace. This is source and local-package evidence, not registry publication, registry-byte identity, publisher authentication, or proof of verifier semantics."
 subject = "package:proofbound-runtime-verify"
 profile = "ledger"
 tier = 1

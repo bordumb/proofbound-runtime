@@ -184,6 +184,13 @@ manifest records the exact `.crate` identity and the two receipt schemas the
 verifier accepts. Stable `package.*` failure codes reject the registered
 preflight and production attacks before release retention.
 
+The verifier preflight parses the package and workspace manifests as TOML. It
+checks the semantic values instead of source-line spelling. It rejects path,
+Git, alternate-registry, package-patch, workspace-patch, and replacement
+sources. It also rejects a direct, aliased, workspace, or target-specific
+dependency on another Runtime crate. The admitted dependency source is the
+default `crates.io` registry only.
+
 The workflow must:
 
 1. verify the exact requested revision and release state;

@@ -48,10 +48,11 @@ approval.
 The first verifier-distribution slice now includes:
 
 - the registered `PBR-DISTRIBUTION-015` claim and package-toolchain premise;
-- a dependency-free package preflight with stable failure codes;
-- mutations for publication, metadata, workspace and path dependencies,
-  source inventory, version, revision, archive inventory, packaged-source
-  substitution, and byte reproduction;
+- a dependency-free, semantic-TOML package preflight with stable failure codes;
+- mutations for publication, metadata, workspace, path, target-specific, Git,
+  alternate-registry, and workspace-patch dependencies; source inventory;
+  version; revision; archive inventory; packaged-source substitution; and byte
+  reproduction;
 - two isolated `cargo package` productions and exact byte comparison;
 - safe archive extraction, an unrelated temporary `cargo install`, and an
   executed version check;

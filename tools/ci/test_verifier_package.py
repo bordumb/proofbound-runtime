@@ -88,6 +88,10 @@ class VerifierPackagePreflightTests(unittest.TestCase):
                 "metadata-omission",
                 "workspace-dependency",
                 "path-dependency",
+                "target-path-dependency",
+                "git-dependency",
+                "alternate-registry-dependency",
+                "workspace-patch-substitution",
                 "source-file-injection",
                 "version-substitution",
                 "source-revision-substitution",
@@ -137,6 +141,27 @@ class VerifierPackagePreflightTests(unittest.TestCase):
                 source.replace("description = ", "unregistered-description = "),
                 encoding="utf-8",
             )
+            self.assert_failure(root, package.FailureCode.MANIFEST_METADATA)
+
+    def test_semantically_equivalent_multiline_metadata_is_accepted(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.fixture(directory)
+            manifest = root / package.CRATE / "Cargo.toml"
+            source = manifest.read_text(encoding="utf-8")
+            manifest.write_text(
+                source.replace(
+                    'include = ["README.md", "src/*.rs"]',
+                    'include = [\n    "README.md",\n    "src/*.rs",\n]',
+                ),
+                encoding="utf-8",
+            )
+            self.assertEqual(package.preflight(root), "0.2.0")
+
+    def test_malformed_manifest_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.fixture(directory)
+            manifest = root / package.CRATE / "Cargo.toml"
+            manifest.write_text("[package\n", encoding="utf-8")
             self.assert_failure(root, package.FailureCode.MANIFEST_METADATA)
 
     def test_runtime_workspace_dependency_is_rejected(self) -> None:
@@ -191,6 +216,69 @@ class VerifierPackagePreflightTests(unittest.TestCase):
                 encoding="utf-8",
             )
             self.assert_failure(root, package.FailureCode.PATH_DEPENDENCY)
+
+    def test_target_specific_path_dependency_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.fixture(directory)
+            manifest = root / package.CRATE / "Cargo.toml"
+            with manifest.open("a", encoding="utf-8") as destination:
+                destination.write(
+                    "\n[target.'cfg(unix)'.dependencies]\n"
+                    'helper = { path = "../helper", version = "1" }\n'
+                )
+            self.assert_failure(root, package.FailureCode.PATH_DEPENDENCY)
+
+    def test_git_and_alternate_registry_dependencies_are_rejected(self) -> None:
+        replacements = (
+            'helper = { git = "https://example.invalid/helper", version = "1" }',
+            'helper = { registry = "private", version = "1" }',
+        )
+        for dependency in replacements:
+            with self.subTest(dependency=dependency):
+                with tempfile.TemporaryDirectory() as directory:
+                    root = self.fixture(directory)
+                    manifest = root / package.CRATE / "Cargo.toml"
+                    source = manifest.read_text(encoding="utf-8")
+                    manifest.write_text(
+                        source.replace(
+                            "[dependencies]\n",
+                            f"[dependencies]\n{dependency}\n",
+                        ),
+                        encoding="utf-8",
+                    )
+                    self.assert_failure(
+                        root,
+                        package.FailureCode.DEPENDENCY_SOURCE,
+                    )
+
+    def test_package_and_workspace_substitution_are_rejected(self) -> None:
+        mutations = (
+            (
+                package.CRATE / "Cargo.toml",
+                "\n[patch.crates-io]\n"
+                'serde = { path = "../substituted-serde" }\n',
+            ),
+            (
+                Path("Cargo.toml"),
+                "\n[patch.crates-io]\n"
+                'serde = { path = "crates/substituted-serde" }\n',
+            ),
+            (
+                Path("Cargo.toml"),
+                "\n[replace]\n"
+                '"serde:1.0.0" = { path = "crates/substituted-serde" }\n',
+            ),
+        )
+        for relative, mutation in mutations:
+            with self.subTest(relative=relative, mutation=mutation):
+                with tempfile.TemporaryDirectory() as directory:
+                    root = self.fixture(directory)
+                    with (root / relative).open("a", encoding="utf-8") as destination:
+                        destination.write(mutation)
+                    self.assert_failure(
+                        root,
+                        package.FailureCode.DEPENDENCY_SOURCE,
+                    )
 
     def test_undeclared_source_file_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

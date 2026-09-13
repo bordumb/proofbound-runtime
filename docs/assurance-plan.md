@@ -34,10 +34,11 @@ The production subject is the independently installable
 `proofbound-runtime-verify` package. Its intended closure contains:
 
 - explicit public package metadata and a fixed package payload;
-- no path dependency or dependency on another Runtime workspace crate;
+- no path, Git, alternate-registry, workspace-patch, or Runtime workspace
+  dependency;
 - a stable preflight failure vocabulary for metadata, dependency, inventory,
-  version, revision, archive inventory, archive payload, reproduction, and
-  consumer failures;
+  dependency source, version, revision, archive inventory, archive payload,
+  reproduction, and consumer failures;
 - two isolated package builds compared by exact bytes;
 - safe extraction and installation into an unrelated temporary consumer; and
 - one retained package manifest with exact source revision, artifact identity,
