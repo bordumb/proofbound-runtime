@@ -5,6 +5,11 @@ release. The normative requirements remain in
 [`specs/0001_initial_spec.md`](specs/0001_initial_spec.md). This plan records
 dependency order, commit boundaries, and completion evidence.
 
+The initial implementation queue below is historical. The active order for
+version 0.2 release closure, Roadmap 2, and Roadmap 3 candidate promotion is the
+[product roadmap execution order](product-roadmap-execution-order.md). Do not
+append later product work to this initial queue.
+
 ## Working rules
 
 - Start each security-relevant slice by refining its claim closure and adding a

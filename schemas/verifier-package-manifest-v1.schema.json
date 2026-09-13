@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bordumb/proofbound-runtime/schemas/verifier-package-manifest-v1.schema.json",
+  "title": "Proofbound Runtime verifier package manifest version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifacts",
+    "binary",
+    "package",
+    "schema",
+    "source_revision",
+    "supported_receipt_schemas",
+    "version"
+  ],
+  "properties": {
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "sha256", "size"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^proofbound-runtime-verify-(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.crate$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 18446744073709551615
+          }
+        }
+      }
+    },
+    "binary": { "const": "pbr-verify" },
+    "package": { "const": "proofbound-runtime-verify" },
+    "schema": {
+      "const": "proofbound-runtime-verifier-package-manifest/1"
+    },
+    "source_revision": {
+      "type": "string",
+      "pattern": "^(?:[0-9a-f]{40}|tree-sha256:[0-9a-f]{64})$"
+    },
+    "supported_receipt_schemas": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        { "const": "proofbound-runtime-receipt/1" },
+        { "const": "proofbound-runtime-execution-receipt/2" }
+      ],
+      "items": false
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    }
+  }
+}

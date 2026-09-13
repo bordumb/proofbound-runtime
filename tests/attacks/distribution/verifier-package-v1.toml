@@ -1,0 +1,56 @@
+schema = "proofbound-runtime-verifier-package-attacks/1"
+
+[[case]]
+id = "publication-disabled"
+mutation = "inherit or set publish false on the selected verifier package"
+expected = "package.manifest.publication-disabled"
+
+[[case]]
+id = "metadata-omission"
+mutation = "remove one required public package metadata field"
+expected = "package.manifest.metadata-invalid"
+
+[[case]]
+id = "workspace-dependency"
+mutation = "add a dependency on another unpublished Runtime workspace crate"
+expected = "package.manifest.workspace-dependency"
+
+[[case]]
+id = "path-dependency"
+mutation = "add a local path dependency to the public verifier package"
+expected = "package.manifest.path-dependency"
+
+[[case]]
+id = "source-file-injection"
+mutation = "add an undeclared file below the verifier crate root"
+expected = "package.source.inventory-mismatch"
+
+[[case]]
+id = "version-substitution"
+mutation = "make VERSION differ from the workspace package version"
+expected = "package.version.mismatch"
+
+[[case]]
+id = "source-revision-substitution"
+mutation = "build from source bytes that do not match the selected release revision"
+expected = "package.source.revision-mismatch"
+
+[[case]]
+id = "archive-file-injection"
+mutation = "add an undeclared member to the verifier crate archive"
+expected = "package.archive.inventory-mismatch"
+
+[[case]]
+id = "archive-source-substitution"
+mutation = "replace one retained verifier source member after package creation"
+expected = "package.archive.payload-mismatch"
+
+[[case]]
+id = "reproduction-drift"
+mutation = "return different verifier crate bytes from the two isolated builds"
+expected = "package.archive.reproduction-mismatch"
+
+[[case]]
+id = "unreviewed-registry-publication"
+mutation = "attempt to publish the package from the first implementation slice"
+expected = "no registry publication command exists"

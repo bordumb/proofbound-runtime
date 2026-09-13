@@ -6,9 +6,33 @@ The document type determines its authority.
 
 ## Delivery tracking
 
+- [Product roadmap execution order](product-roadmap-execution-order.md) is the
+  durable dependency order across Roadmap 1 release closure, Roadmap 2, and
+  Roadmap 3 candidate promotion.
+- [Formal semantics paper](papers/proof/README.md) presents the mathematical
+  model, refinement chain, and evidence boundary as an academic companion to
+  the implementation.
 - [Product and delivery roadmap](product-roadmap.md) records the ordered
   post-0.1 product, workflow, cross-repository, and assurance work. It does not
   replace a specification, ADR, or claim manifest.
+- [Product roadmap 2](product-roadmap-2.md) orders the capabilities the
+  first roadmap deferred by trusted-computing-base delta: published crates,
+  trace-assisted plan drafting, a multi-service network allow-list, a Linux
+  VM host profile, a signing and transparency ADR with a receipt log, and an
+  execution service. It does not replace a specification, ADR, or claim
+  manifest.
+- [Roadmap 2 execution records](roadmap-2/README.md) map the shared platform
+  vocabulary, identity, composition, and compatibility obligations into each
+  affected RT epic. They do not change roadmap order or native protocol
+  meaning.
+- [Roadmap 3 candidate register](product-roadmap-3-candidates.md) preserves
+  decision-gated ideas for credential custody, operation mediation,
+  organization policy, integration profiles, multi-language analysis, evidence
+  discovery, and fleet identity. Its [candidate records](roadmap-3/README.md)
+  are pre-planning documents, not scheduled implementation.
+- [Upstream review records](product-roadmap-reviews.md) hold the exact
+  independent review findings for Proofbound pull requests 2, 6, 7, 8,
+  and 9. They are findings, not approvals.
 - [Implementation plan](implementation-plan.md) records the ordered work queue,
   commit boundaries, and release completion criteria. It does not replace the
   normative specification or claim ledger.
@@ -36,6 +60,25 @@ The document type determines its authority.
 - [Specification 0007](specs/0007_memory_and_swap_profile.md) defines the accepted
   version 2 memory and swap execution profile, wire transition, terminal
   observations, and required native falsifiers.
+- [Specification 0008](specs/0008_cross_receipt_linkage.md) drafts the
+  cross-project linkage between one Auths execution receipt, one Runtime
+  execution receipt, and the Proofbound release, using one profile claim and
+  one declared plan input without changing any existing receipt schema.
+- [Specification 0009](specs/0009_run_denial_diagnostics.md) drafts the closed
+  prelaunch and Runtime failure diagnostics for `pbr run` without claiming to
+  explain a kernel denial.
+- [Specification 0010](specs/0010_receipt_acceptance_policy.md) defines bounded
+  consumer policy over independently verified Runtime and Proofbound inputs.
+- [Specification 0011](specs/0011_plan_scaffold.md) defines bounded static plan
+  scaffolding with explicit provenance and unresolved human choices.
+- [Specification 0012](specs/0012_plan_sdks.md) defines the separate-process
+  Rust, Python, and TypeScript plan SDK boundaries and package contracts.
+- [Specification 0013](specs/0013_platform_integration_contract.md) drafts the
+  ownership, terminology, typed identity, composition, compatibility, and
+  conformance contract across Runtime, Proofbound, Auths, and Capsec.
+- [Specification 0014](specs/0014_public_compatibility_and_distribution.md)
+  drafts RT-7's public version, package, registry, compatibility-matrix, and
+  consumer-support contract. It does not authorize publication.
 
 Normative product or wire behavior belongs in `docs/specs/`. A specification
 revision requires explicit review because it can change claim meaning.
@@ -93,6 +136,8 @@ specification.
 
 | Material | Location |
 | --- | --- |
+| Cross-roadmap dependency and decision order | `docs/product-roadmap-execution-order.md` |
+| Pre-planned product candidate with an evidence gate | `docs/product-roadmap-3-candidates.md` and `docs/roadmap-3/` |
 | Normative Runtime behavior | `docs/specs/` |
 | Accepted architecture or trust-boundary decision | `docs/adr/` |
 | Runtime threat or trust analysis | `docs/threat-model.md` or a linked security document |

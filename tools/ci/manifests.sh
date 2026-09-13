@@ -23,7 +23,7 @@ case "$selector" in
   ledger)
     check_args=(--profile ledger)
     ;;
-  PBR-AUTH-001|PBR-BINDING-005|PBR-POLICY-002|PBR-RECEIPT-004)
+  PBR-AUTH-001|PBR-BINDING-005|PBR-POLICY-002|PBR-RECEIPT-004|PBR-DISTRIBUTION-015)
     check_args=(--claim "$selector")
     ;;
   *)
@@ -81,8 +81,13 @@ if ! git rev-parse --verify HEAD^{commit} >/dev/null 2>&1; then
 fi
 
 check_output_file="$(mktemp)"
-"$proofbound_bin" check --root "$check_root" "${check_args[@]}" --fresh --json \
-  >"$check_output_file" 2>&1 &
+if [[ "$selector" == "all" ]]; then
+  "$proofbound_bin" check --root "$check_root" --fresh --json \
+    >"$check_output_file" 2>&1 &
+else
+  "$proofbound_bin" check --root "$check_root" "${check_args[@]}" --fresh --json \
+    >"$check_output_file" 2>&1 &
+fi
 check_pid=$!
 (
   elapsed_seconds=0

@@ -22,10 +22,43 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-ACCEPT-012` | Tested/model-only on the development branch | Adopter policy decisions bind independently verified inputs; exact released acceptor observation and external Action dogfood remain open. |
 | `PBR-SCAFFOLD-013` | Tested/model-only on the development branch | Static ELF scaffolding is bounded diagnostic evidence, not a safe policy or a complete dynamic-load inventory. |
 | `PBR-SDK-014` | Tier 1, independently checked source and package contract | Rust, Python, and TypeScript SDKs preserve the separate-process boundary; registry publication and consumer dogfood remain open. |
+| `PBR-DISTRIBUTION-015` | Tier 1 verified in the working tree; exact release binding pending | The verifier package has a closed preflight, source-payload comparison, byte reproduction, local consumer, and release-retention path; no registry or publisher claim is admitted. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
 observations do not promote the four test-based claims to `ARTIFACT_BOUND`.
+
+## PBR-DISTRIBUTION-015
+
+The production subject is the independently installable
+`proofbound-runtime-verify` package. Its intended closure contains:
+
+- explicit public package metadata and a fixed package payload;
+- no path dependency or dependency on another Runtime workspace crate;
+- a stable preflight failure vocabulary for metadata, dependency, inventory,
+  version, revision, archive inventory, archive payload, reproduction, and
+  consumer failures;
+- two isolated package builds compared by exact bytes;
+- safe extraction and installation into an unrelated temporary consumer; and
+- one retained package manifest with exact source revision, artifact identity,
+  binary name, and supported receipt schemas.
+
+The evidence path is:
+
+1. mutate explicit publication, required metadata, dependencies, source files,
+   product version, selected revision, archive members, and reproduction bytes;
+2. inspect the exact archive member inventory and compare retained package
+   source bytes with the registered repository source;
+3. compare two independently produced `.crate` byte strings;
+4. install the extracted package outside the workspace and execute
+   `pbr-verify --version`; and
+5. retain the package manifest and checksum in the exact-revision release
+   workflow and aggregate release provenance.
+
+This claim does not establish verifier semantics. `PBR-VERIFY-006` owns that
+behavior. It does not authenticate a publisher or assert registry-byte
+identity. Specification 0014 remains under review, clean exact-head evidence
+remains open, and registry publication remains blocked.
 
 ## PBR-POLICY-002
 
