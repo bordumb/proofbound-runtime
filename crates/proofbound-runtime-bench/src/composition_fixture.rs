@@ -108,12 +108,17 @@ impl CompositionFixture {
         let release_verification = canonical_json(json!({
             "claims": [claim],
             "evidence_context": "release-linux-x86-64",
-            "not_proved_out_of_scope": {
-                "assumptions": ["PBR-TEST-001: PBR-TOOLCHAIN-AX-003"],
-                "exclusions": [],
-                "open_obligations": ["PBR-TEST-001: exact release linkage"],
+            "not_proved_out_of_scope": [{
+                "assumptions": ["PBR-TOOLCHAIN-AX-003"],
+                "claim_id": "PBR-TEST-001",
+                "open_obligations": [{
+                    "id": "PBR-TEST-OBL-001",
+                    "remediation": "Supply exact release linkage evidence.",
+                    "statement": "Exact release linkage remains open."
+                }],
+                "out_of_scope": [],
                 "undischarged_premises": []
-            },
+            }],
             "payload_sha256": payload_digest,
             "project": "proofbound-runtime",
             "project_revision": "0123456789abcdef0123456789abcdef01234567",
