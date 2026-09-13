@@ -39,7 +39,7 @@ dependency order, commit boundaries, and completion evidence.
   enforcement crate, and the first fail-closed `pbr doctor` product command.
 - Independent verification covers closed decoding, canonical bytes, external
   receipt commitment, identities, relationships, and eligibility derivation.
-- `PBR-COMPOSE-008` has tested model-only evidence over its closed 16-case
+- `PBR-COMPOSE-008` has tested model-only evidence over its closed 17-case
   cross-receipt attack corpus and exact composer-role observations in both
   native release contexts.
 

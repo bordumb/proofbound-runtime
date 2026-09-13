@@ -1,0 +1,44 @@
+schema = "proofbound-evidence-unit/1"
+id = "plan-scaffold-attacks"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-SCAFFOLD-013"]
+tier = 0
+expected_inventory = [
+  "pbr::scaffold::tests::full_glibc_closure_is_resolved_with_provenance",
+  "pbr::scaffold::tests::full_musl_closure_is_resolved_with_provenance",
+  "pbr::scaffold::tests::identity_drift_has_a_separate_failure_code",
+  "pbr::scaffold::tests::missing_library_fails_closed",
+  "pbr::scaffold::tests::ordered_conflicts_are_reported_not_hidden",
+  "pbr::scaffold::tests::registered_attack_catalog_is_closed",
+  "pbr::scaffold::tests::static_elf_has_no_inferred_runtime_closure",
+  "pbr::scaffold::tests::symlink_cycles_are_rejected",
+  "pbr::scaffold::tests::unsupported_search_token_stays_open",
+  "pbr::scaffold::tests::wrong_architecture_fails_closed",
+  "pbr::tests::plan_scaffold_is_a_non_policy_and_does_not_probe_or_use_plan_reader",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-cli/Cargo.toml",
+  "crates/proofbound-runtime-cli/src/main.rs",
+  "crates/proofbound-runtime-cli/src/scaffold.rs",
+  "docs/specs/0011_plan_scaffold.md",
+  "schemas/plan-scaffold-v1.schema.json",
+  "tests/attacks/scaffold/v1.toml",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-cli"
+manifest = "Cargo.toml"
+targets = ["--bin=pbr"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

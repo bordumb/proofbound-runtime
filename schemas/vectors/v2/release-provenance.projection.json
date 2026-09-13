@@ -1,0 +1,1 @@
+{"artifacts":[{"logical_name":"a/file","sha256":"hex:1111111111111111111111111111111111111111111111111111111111111111","size_bytes":"1"},{"logical_name":"b/file","sha256":"hex:2222222222222222222222222222222222222222222222222222222222222222","size_bytes":"2"}],"schema":"proofbound-runtime-release-provenance/2","source_revision":"hex:000102030405060708090a0b0c0d0e0f10111213"}

@@ -1,0 +1,611 @@
+name: Network authority experiment
+
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Exact 40-character commit to measure
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  decision-fixtures:
+    name: decision fixtures (${{ matrix.architecture }})
+    env:
+      EXPERIMENT_SHA: ${{ inputs.revision }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x86_64
+            runner: ubuntu-24.04
+          - architecture: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 5
+    steps:
+      - name: Check out the exact experiment head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.EXPERIMENT_SHA }}
+
+      - name: Confirm the exact experiment head
+        run: |
+          [[ "$EXPERIMENT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+
+      - name: Validate the decision fixtures
+        run: |
+          python3 -m unittest \
+            experiments.network_authority.test_record_common \
+            experiments.network_authority.test_scripted_dns \
+            experiments.network_authority.test_decision_http_fixture \
+            experiments.network_authority.test_decision_proxy_fixture \
+            experiments.network_authority.test_decision_socket_fixture \
+            experiments.network_authority.test_routing_transport_case \
+            experiments.network_authority.test_routing_child_control \
+            experiments.network_authority.test_routing_landlock_control \
+            experiments.network_authority.test_routing_endpoint_control \
+            experiments.network_authority.test_routing_transport_client \
+            experiments.network_authority.test_routing_mediated_client \
+            experiments.network_authority.test_routing_mediator \
+            experiments.network_authority.test_routing_cell \
+            experiments.network_authority.test_run_routing_direct_case \
+            experiments.network_authority.test_run_routing_broker_case \
+            experiments.network_authority.test_run_routing_preconnected_case \
+            experiments.network_authority.test_record_routing_transport \
+            experiments.network_authority.test_run_routing_transport \
+            experiments.network_authority.test_verify_routing_transport
+          python3 -m unittest \
+            experiments.network_authority.test_resolution_indirection_case \
+            experiments.network_authority.test_resolution_indirection_client \
+            experiments.network_authority.test_resolution_network_client \
+            experiments.network_authority.test_resolution_broker \
+            experiments.network_authority.test_resolution_cell \
+            experiments.network_authority.test_run_resolution_direct_case \
+            experiments.network_authority.test_run_resolution_broker_case \
+            experiments.network_authority.test_run_resolution_preconnected_case \
+            experiments.network_authority.test_record_resolution_indirection \
+            experiments.network_authority.test_verify_resolution_indirection \
+            experiments.network_authority.test_run_resolution_indirection
+          python3 -m unittest \
+            experiments.network_authority.test_bypass_lifecycle_case \
+            experiments.network_authority.test_bypass_syscall_probe \
+            experiments.network_authority.test_bypass_lifecycle_evidence \
+            experiments.network_authority.test_bypass_cell \
+            experiments.network_authority.test_run_bypass_lifecycle_case \
+            experiments.network_authority.test_process_limit_control \
+            experiments.network_authority.test_stopped_release_control \
+            experiments.network_authority.test_run_bypass_syscall_case \
+            experiments.network_authority.test_connection_reuse_fixture \
+            experiments.network_authority.test_connection_reuse_channel \
+            experiments.network_authority.test_connection_reuse_client \
+            experiments.network_authority.test_run_connection_reuse_case \
+            experiments.network_authority.test_record_bypass_lifecycle \
+            experiments.network_authority.test_verify_bypass_lifecycle \
+            experiments.network_authority.test_run_bypass_lifecycle
+          python3 -m unittest \
+            experiments.network_authority.test_measurement_domain \
+            experiments.network_authority.test_measurement_observation \
+            experiments.network_authority.test_run_network_measurement \
+            experiments.network_authority.test_record_network_measurement \
+            experiments.network_authority.test_comparison_domain \
+            experiments.network_authority.test_compare_network_results \
+            experiments.network_authority.test_verify_network_comparison
+
+      - name: Falsify the native routing boundaries
+        run: |
+          sudo python3 -m unittest \
+            experiments.network_authority.test_routing_child_control \
+            experiments.network_authority.test_routing_landlock_control \
+            experiments.network_authority.test_routing_endpoint_control \
+            experiments.network_authority.test_run_network_measurement.NetworkMeasurementRunnerTests.test_shared_root_allows_dropped_output_but_seals_private_inputs
+
+  measurement-slice:
+    name: measurement (${{ matrix.mechanism }}, ${{ matrix.architecture }})
+    env:
+      EXPERIMENT_SHA: ${{ inputs.revision }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mechanism: landlock-port
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - mechanism: landlock-port
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+          - mechanism: cgroup-endpoint
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - mechanism: cgroup-endpoint
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+          - mechanism: explicit-broker
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - mechanism: explicit-broker
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+          - mechanism: preconnected-channel
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - mechanism: preconnected-channel
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    steps:
+      - name: Check out the exact experiment head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.EXPERIMENT_SHA }}
+
+      - name: Confirm the exact experiment head
+        run: |
+          [[ "$EXPERIMENT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+
+      - name: Run and independently verify the measurement slice
+        run: |
+          result_root="$RUNNER_TEMP/network-authority/measurement-${{ matrix.mechanism }}-${{ matrix.architecture }}"
+          mkdir -p "$result_root"
+          set +e
+          # The runner retains and verifies complete or incomplete result semantics.
+          # shellcheck disable=SC2024
+          sudo experiments/network_authority/run_network_measurement.sh \
+            "${{ matrix.mechanism }}" \
+            "$result_root/result" \
+            >"$result_root/runner.stdout" \
+            2>"$result_root/runner.stderr"
+          experiment_exit=$?
+          set -e
+          printf '%s\n' "$experiment_exit" >"$result_root/runner.exit"
+          exit "$experiment_exit"
+
+      - name: Retain the exact measurement or native failure
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: network-authority-measurement-${{ matrix.mechanism }}-${{ matrix.architecture }}-${{ env.EXPERIMENT_SHA }}
+          path: ${{ runner.temp }}/network-authority/measurement-${{ matrix.mechanism }}-${{ matrix.architecture }}
+          if-no-files-found: error
+          retention-days: 14
+
+  routing-transport-slice:
+    name: routing transport (${{ matrix.mechanism }}, ${{ matrix.architecture }})
+    env:
+      EXPERIMENT_SHA: ${{ inputs.revision }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mechanism: landlock-port
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - mechanism: landlock-port
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+          - mechanism: cgroup-endpoint
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - mechanism: cgroup-endpoint
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+          - mechanism: explicit-broker
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - mechanism: explicit-broker
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+          - mechanism: preconnected-channel
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - mechanism: preconnected-channel
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    steps:
+      - name: Check out the exact experiment head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.EXPERIMENT_SHA }}
+
+      - name: Confirm the exact experiment head
+        run: |
+          [[ "$EXPERIMENT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+
+      - name: Run and independently verify the routing transport slice
+        run: |
+          result_root="$RUNNER_TEMP/network-authority/routing-${{ matrix.mechanism }}-${{ matrix.architecture }}"
+          mkdir -p "$result_root"
+          set +e
+          # The runner, not sudo, intentionally owns the failure envelope.
+          # shellcheck disable=SC2024
+          sudo experiments/network_authority/run_routing_transport.sh \
+            "${{ matrix.mechanism }}" \
+            "$result_root/result" \
+            >"$result_root/runner.stdout" \
+            2>"$result_root/runner.stderr"
+          experiment_exit=$?
+          set -e
+          printf '%s\n' "$experiment_exit" >"$result_root/runner.exit"
+          exit "$experiment_exit"
+
+      - name: Retain the exact result or runner failure
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: network-authority-routing-${{ matrix.mechanism }}-${{ matrix.architecture }}-${{ env.EXPERIMENT_SHA }}
+          path: ${{ runner.temp }}/network-authority/routing-${{ matrix.mechanism }}-${{ matrix.architecture }}
+          if-no-files-found: error
+          retention-days: 14
+
+  resolution-indirection-slice:
+    name: resolution indirection (${{ matrix.mechanism }}, ${{ matrix.architecture }})
+    env:
+      EXPERIMENT_SHA: ${{ inputs.revision }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mechanism: landlock-port
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - mechanism: landlock-port
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+          - mechanism: cgroup-endpoint
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - mechanism: cgroup-endpoint
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+          - mechanism: explicit-broker
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - mechanism: explicit-broker
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+          - mechanism: preconnected-channel
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - mechanism: preconnected-channel
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    steps:
+      - name: Check out the exact experiment head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.EXPERIMENT_SHA }}
+
+      - name: Confirm the exact experiment head
+        run: |
+          [[ "$EXPERIMENT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+
+      - name: Run and independently verify the resolution indirection slice
+        run: |
+          result_root="$RUNNER_TEMP/network-authority/resolution-${{ matrix.mechanism }}-${{ matrix.architecture }}"
+          mkdir -p "$result_root"
+          set +e
+          # The runner, not sudo, intentionally owns the failure envelope.
+          # shellcheck disable=SC2024
+          sudo experiments/network_authority/run_resolution_indirection.sh \
+            "${{ matrix.mechanism }}" \
+            "$result_root/result" \
+            >"$result_root/runner.stdout" \
+            2>"$result_root/runner.stderr"
+          experiment_exit=$?
+          set -e
+          printf '%s\n' "$experiment_exit" >"$result_root/runner.exit"
+          exit "$experiment_exit"
+
+      - name: Retain the exact result or runner failure
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: network-authority-resolution-${{ matrix.mechanism }}-${{ matrix.architecture }}-${{ env.EXPERIMENT_SHA }}
+          path: ${{ runner.temp }}/network-authority/resolution-${{ matrix.mechanism }}-${{ matrix.architecture }}
+          if-no-files-found: error
+          retention-days: 14
+
+  bypass-lifecycle-slice:
+    name: bypass lifecycle (${{ matrix.mechanism }}, ${{ matrix.architecture }})
+    env:
+      EXPERIMENT_SHA: ${{ inputs.revision }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mechanism: landlock-port
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - mechanism: landlock-port
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+          - mechanism: cgroup-endpoint
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - mechanism: cgroup-endpoint
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+          - mechanism: explicit-broker
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - mechanism: explicit-broker
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+          - mechanism: preconnected-channel
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - mechanism: preconnected-channel
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    steps:
+      - name: Check out the exact experiment head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.EXPERIMENT_SHA }}
+
+      - name: Confirm the exact experiment head
+        run: |
+          [[ "$EXPERIMENT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+
+      - name: Run and independently verify the bypass lifecycle slice
+        run: |
+          result_root="$RUNNER_TEMP/network-authority/bypass-${{ matrix.mechanism }}-${{ matrix.architecture }}"
+          mkdir -p "$result_root"
+          set +e
+          # The runner, not sudo, intentionally owns the failure envelope.
+          # shellcheck disable=SC2024
+          sudo experiments/network_authority/run_bypass_lifecycle.sh \
+            "${{ matrix.mechanism }}" \
+            "$result_root/result" \
+            >"$result_root/runner.stdout" \
+            2>"$result_root/runner.stderr"
+          experiment_exit=$?
+          set -e
+          printf '%s\n' "$experiment_exit" >"$result_root/runner.exit"
+          exit "$experiment_exit"
+
+      - name: Retain the exact result or runner failure
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: network-authority-bypass-${{ matrix.mechanism }}-${{ matrix.architecture }}-${{ env.EXPERIMENT_SHA }}
+          path: ${{ runner.temp }}/network-authority/bypass-${{ matrix.mechanism }}-${{ matrix.architecture }}
+          if-no-files-found: error
+          retention-days: 14
+
+  landlock-port-control:
+    name: Landlock port control (${{ matrix.architecture }})
+    env:
+      EXPERIMENT_SHA: ${{ inputs.revision }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x86_64
+            runner: ubuntu-24.04
+          - architecture: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
+    steps:
+      - name: Check out the exact experiment head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.EXPERIMENT_SHA }}
+
+      - name: Confirm the exact experiment head
+        run: |
+          [[ "$EXPERIMENT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+
+      - name: Falsify result publication
+        run: python3 -m unittest experiments.network_authority.test_record_port_control
+
+      - name: Run the disposable Landlock port control
+        run: |
+          result_root="$RUNNER_TEMP/network-authority/port-control-${{ matrix.architecture }}"
+          mkdir -p "$result_root"
+          set +e
+          # The runner, not sudo, intentionally owns the failure envelope.
+          # shellcheck disable=SC2024
+          sudo experiments/network_authority/run_port_control.sh \
+            "$result_root/result" \
+            >"$result_root/runner.stdout" \
+            2>"$result_root/runner.stderr"
+          experiment_exit=$?
+          set -e
+          printf '%s\n' "$experiment_exit" >"$result_root/runner.exit"
+          exit "$experiment_exit"
+
+      - name: Retain the exact experiment result
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: network-authority-port-control-${{ matrix.architecture }}-${{ env.EXPERIMENT_SHA }}
+          path: ${{ runner.temp }}/network-authority/port-control-${{ matrix.architecture }}
+          if-no-files-found: error
+          retention-days: 14
+
+  cgroup-bpf-endpoint-control:
+    name: cgroup-BPF endpoint control (${{ matrix.architecture }})
+    env:
+      EXPERIMENT_SHA: ${{ inputs.revision }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x86_64
+            runner: ubuntu-24.04
+          - architecture: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
+    steps:
+      - name: Check out the exact experiment head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.EXPERIMENT_SHA }}
+
+      - name: Confirm the exact experiment head
+        run: |
+          [[ "$EXPERIMENT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+
+      - name: Falsify result publication
+        run: |
+          python3 -m unittest \
+            experiments.network_authority.test_record_endpoint_control
+
+      - name: Run the disposable cgroup-BPF endpoint control
+        run: |
+          result_root="$RUNNER_TEMP/network-authority/endpoint-control-${{ matrix.architecture }}"
+          mkdir -p "$result_root"
+          set +e
+          # The runner, not sudo, intentionally owns the failure envelope.
+          # shellcheck disable=SC2024
+          sudo experiments/network_authority/run_endpoint_control.sh \
+            "$result_root/result" \
+            >"$result_root/runner.stdout" \
+            2>"$result_root/runner.stderr"
+          experiment_exit=$?
+          set -e
+          printf '%s\n' "$experiment_exit" >"$result_root/runner.exit"
+          exit "$experiment_exit"
+
+      - name: Retain the exact experiment result or runner failure
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: network-authority-endpoint-control-${{ matrix.architecture }}-${{ env.EXPERIMENT_SHA }}
+          path: ${{ runner.temp }}/network-authority/endpoint-control-${{ matrix.architecture }}
+          if-no-files-found: error
+          retention-days: 14
+
+  explicit-broker-control:
+    name: explicit broker control (${{ matrix.architecture }})
+    env:
+      EXPERIMENT_SHA: ${{ inputs.revision }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x86_64
+            runner: ubuntu-24.04
+          - architecture: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
+    steps:
+      - name: Check out the exact experiment head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.EXPERIMENT_SHA }}
+
+      - name: Confirm the exact experiment head
+        run: |
+          [[ "$EXPERIMENT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+
+      - name: Falsify broker and result boundaries
+        run: |
+          python3 -m unittest \
+            experiments.network_authority.test_explicit_broker \
+            experiments.network_authority.test_broker_case_client \
+            experiments.network_authority.test_record_broker_control
+
+      - name: Run the explicit broker attack corpus
+        run: |
+          result_root="$RUNNER_TEMP/network-authority/broker-control-${{ matrix.architecture }}"
+          mkdir -p "$result_root"
+          set +e
+          # The runner, not sudo, intentionally owns the failure envelope.
+          # shellcheck disable=SC2024
+          sudo experiments/network_authority/run_broker_control.sh \
+            "$result_root/result" \
+            >"$result_root/runner.stdout" \
+            2>"$result_root/runner.stderr"
+          experiment_exit=$?
+          set -e
+          printf '%s\n' "$experiment_exit" >"$result_root/runner.exit"
+          exit "$experiment_exit"
+
+      - name: Retain the exact experiment result or runner failure
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: network-authority-broker-control-${{ matrix.architecture }}-${{ env.EXPERIMENT_SHA }}
+          path: ${{ runner.temp }}/network-authority/broker-control-${{ matrix.architecture }}
+          if-no-files-found: error
+          retention-days: 14
+
+  preconnected-channel-control:
+    name: preconnected channel control (${{ matrix.architecture }})
+    env:
+      EXPERIMENT_SHA: ${{ inputs.revision }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x86_64
+            runner: ubuntu-24.04
+          - architecture: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
+    steps:
+      - name: Check out the exact experiment head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.EXPERIMENT_SHA }}
+
+      - name: Confirm the exact experiment head
+        run: |
+          [[ "$EXPERIMENT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPERIMENT_SHA"
+
+      - name: Falsify channel and result boundaries
+        run: |
+          python3 -m unittest \
+            experiments.network_authority.test_preconnected_channel \
+            experiments.network_authority.test_preconnected_case_client \
+            experiments.network_authority.test_record_preconnected_control
+
+      - name: Run the preconnected channel attack corpus
+        run: |
+          result_root="$RUNNER_TEMP/network-authority/preconnected-control-${{ matrix.architecture }}"
+          mkdir -p "$result_root"
+          set +e
+          # The runner, not sudo, intentionally owns the failure envelope.
+          # shellcheck disable=SC2024
+          sudo experiments/network_authority/run_preconnected_control.sh \
+            "$result_root/result" \
+            >"$result_root/runner.stdout" \
+            2>"$result_root/runner.stderr"
+          experiment_exit=$?
+          set -e
+          printf '%s\n' "$experiment_exit" >"$result_root/runner.exit"
+          exit "$experiment_exit"
+
+      - name: Retain the exact experiment result or runner failure
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: network-authority-preconnected-control-${{ matrix.architecture }}-${{ env.EXPERIMENT_SHA }}
+          path: ${{ runner.temp }}/network-authority/preconnected-control-${{ matrix.architecture }}
+          if-no-files-found: error
+          retention-days: 14

@@ -127,6 +127,10 @@ rust_name = "proofbound_runtime_core::authority::FileAccess"
 
 [[invocations.translated_closure]]
 kind = "type"
+rust_name = "proofbound_runtime_core::authority::MemoryByteLimit"
+
+[[invocations.translated_closure]]
+kind = "type"
 rust_name = "proofbound_runtime_core::authority::NetworkMode"
 
 [[invocations.translated_closure]]
@@ -148,6 +152,10 @@ rust_name = "proofbound_runtime_core::authority::ProcessLimit"
 [[invocations.translated_closure]]
 kind = "type"
 rust_name = "proofbound_runtime_core::authority::ResourceLimits"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_core::authority::SwapByteLimit"
 
 [[invocations.translated_closure]]
 kind = "type"

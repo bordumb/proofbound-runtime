@@ -94,6 +94,13 @@ fn reason_text(reason: &NonReusableReason) -> &'static str {
         NonReusableReason::StandardOutputTruncated => "stdout-truncated",
         NonReusableReason::StandardErrorTruncated => "stderr-truncated",
         NonReusableReason::ReceiptMalformed => "receipt-malformed",
+        NonReusableReason::MemoryHigh => "memory-high",
+        NonReusableReason::MemoryMax => "memory-max",
+        NonReusableReason::MemoryOom => "memory-oom",
+        NonReusableReason::MemoryOomKill => "memory-oom-kill",
+        NonReusableReason::MemoryOomGroupKill => "memory-oom-group-kill",
+        NonReusableReason::SwapMax => "swap-max",
+        NonReusableReason::SwapFail => "swap-fail",
     }
 }
 

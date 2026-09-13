@@ -81,6 +81,76 @@ pub enum ReceiptStructure {
     Malformed,
 }
 
+/// Identifies one terminal cgroup resource event retained by version 2.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum LimitEvent {
+    MemoryHigh,
+    MemoryMax,
+    MemoryOom,
+    MemoryOomKill,
+    MemoryOomGroupKill,
+    SwapMax,
+    SwapFail,
+}
+
+/// Contains the canonical set of terminal resource events.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct LimitEvents {
+    memory_high: bool,
+    memory_max: bool,
+    memory_oom: bool,
+    memory_oom_kill: bool,
+    memory_oom_group_kill: bool,
+    swap_max: bool,
+    swap_fail: bool,
+}
+
+impl LimitEvents {
+    /// Canonicalizes an event collection and removes duplicates.
+    #[must_use]
+    pub fn new(events: &[LimitEvent]) -> Self {
+        let mut present = Self::default();
+        for event in events {
+            match event {
+                LimitEvent::MemoryHigh => present.memory_high = true,
+                LimitEvent::MemoryMax => present.memory_max = true,
+                LimitEvent::MemoryOom => present.memory_oom = true,
+                LimitEvent::MemoryOomKill => present.memory_oom_kill = true,
+                LimitEvent::MemoryOomGroupKill => present.memory_oom_group_kill = true,
+                LimitEvent::SwapMax => present.swap_max = true,
+                LimitEvent::SwapFail => present.swap_fail = true,
+            }
+        }
+        present
+    }
+
+    /// Reports whether the canonical set contains an event.
+    #[must_use]
+    pub const fn contains(self, event: LimitEvent) -> bool {
+        match event {
+            LimitEvent::MemoryHigh => self.memory_high,
+            LimitEvent::MemoryMax => self.memory_max,
+            LimitEvent::MemoryOom => self.memory_oom,
+            LimitEvent::MemoryOomKill => self.memory_oom_kill,
+            LimitEvent::MemoryOomGroupKill => self.memory_oom_group_kill,
+            LimitEvent::SwapMax => self.swap_max,
+            LimitEvent::SwapFail => self.swap_fail,
+        }
+    }
+
+    /// Reports whether no registered event occurred.
+    #[must_use]
+    pub fn is_empty(self) -> bool {
+        !self.memory_high
+            && !self.memory_max
+            && !self.memory_oom
+            && !self.memory_oom_kill
+            && !self.memory_oom_group_kill
+            && !self.swap_max
+            && !self.swap_fail
+    }
+}
+
 /// Contains the facts that determine reuse eligibility.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ReceiptFacts {
@@ -89,6 +159,7 @@ pub struct ReceiptFacts {
     stdout: StreamCapture,
     stderr: StreamCapture,
     structure: ReceiptStructure,
+    limit_events: LimitEvents,
 }
 
 impl ReceiptFacts {
@@ -107,6 +178,27 @@ impl ReceiptFacts {
             stdout,
             stderr,
             structure,
+            limit_events: LimitEvents::default(),
+        }
+    }
+
+    /// Creates one complete version 2 eligibility input.
+    #[must_use]
+    pub fn new_v2(
+        boundary: BoundaryInstallation,
+        outcome: ExecutionOutcome,
+        stdout: StreamCapture,
+        stderr: StreamCapture,
+        structure: ReceiptStructure,
+        limit_events: LimitEvents,
+    ) -> Self {
+        Self {
+            boundary,
+            outcome,
+            stdout,
+            stderr,
+            structure,
+            limit_events,
         }
     }
 }
@@ -134,6 +226,13 @@ pub enum NonReusableReason {
     StandardErrorTruncated,
     /// Receipt structure validation failed.
     ReceiptMalformed,
+    MemoryHigh,
+    MemoryMax,
+    MemoryOom,
+    MemoryOomKill,
+    MemoryOomGroupKill,
+    SwapMax,
+    SwapFail,
 }
 
 /// Contains one or more reasons in canonical order.
@@ -151,24 +250,69 @@ impl NonReusableReasons {
 /// Reports whether a receipt can be reused as execution evidence.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ReceiptEligibility {
-    /// The receipt satisfies every version 1 reuse condition.
+    /// The receipt satisfies every reuse condition for its represented facts.
     Reusable,
     /// The receipt does not satisfy one or more reuse conditions.
     NonReusable(NonReusableReasons),
 }
 
-/// Derives receipt reuse eligibility from typed execution facts.
-///
-/// The returned reasons use the canonical order from specification 0001.
-#[must_use]
-pub fn derive_receipt_eligibility(facts: &ReceiptFacts) -> ReceiptEligibility {
-    let mut reasons = Vec::new();
-
-    if facts.boundary == BoundaryInstallation::Incomplete {
-        reasons.push(NonReusableReason::BoundaryIncomplete);
+fn append_reason(
+    mut reasons: Vec<NonReusableReason>,
+    present: bool,
+    reason: NonReusableReason,
+) -> Vec<NonReusableReason> {
+    if present {
+        reasons.push(reason);
     }
+    reasons
+}
 
-    match facts.outcome {
+fn append_limit_event_reasons(
+    reasons: Vec<NonReusableReason>,
+    events: LimitEvents,
+) -> Vec<NonReusableReason> {
+    let reasons = append_reason(
+        reasons,
+        events.contains(LimitEvent::MemoryHigh),
+        NonReusableReason::MemoryHigh,
+    );
+    let reasons = append_reason(
+        reasons,
+        events.contains(LimitEvent::MemoryMax),
+        NonReusableReason::MemoryMax,
+    );
+    let reasons = append_reason(
+        reasons,
+        events.contains(LimitEvent::MemoryOom),
+        NonReusableReason::MemoryOom,
+    );
+    let reasons = append_reason(
+        reasons,
+        events.contains(LimitEvent::MemoryOomKill),
+        NonReusableReason::MemoryOomKill,
+    );
+    let reasons = append_reason(
+        reasons,
+        events.contains(LimitEvent::MemoryOomGroupKill),
+        NonReusableReason::MemoryOomGroupKill,
+    );
+    let reasons = append_reason(
+        reasons,
+        events.contains(LimitEvent::SwapMax),
+        NonReusableReason::SwapMax,
+    );
+    append_reason(
+        reasons,
+        events.contains(LimitEvent::SwapFail),
+        NonReusableReason::SwapFail,
+    )
+}
+
+fn append_outcome_reason(
+    mut reasons: Vec<NonReusableReason>,
+    outcome: ExecutionOutcome,
+) -> Vec<NonReusableReason> {
+    match outcome {
         ExecutionOutcome::Exited { code: 0 } => {}
         ExecutionOutcome::Exited { .. } => reasons.push(NonReusableReason::ExitCodeNonzero),
         ExecutionOutcome::Signaled { .. } => reasons.push(NonReusableReason::ProcessSignaled),
@@ -177,16 +321,38 @@ pub fn derive_receipt_eligibility(facts: &ReceiptFacts) -> ReceiptEligibility {
         ExecutionOutcome::LauncherFailed => reasons.push(NonReusableReason::LauncherFailed),
         ExecutionOutcome::Incomplete => reasons.push(NonReusableReason::ExecutionIncomplete),
     }
+    reasons
+}
 
-    if facts.stdout == StreamCapture::Truncated {
-        reasons.push(NonReusableReason::StandardOutputTruncated);
-    }
-    if facts.stderr == StreamCapture::Truncated {
-        reasons.push(NonReusableReason::StandardErrorTruncated);
-    }
-    if facts.structure == ReceiptStructure::Malformed {
-        reasons.push(NonReusableReason::ReceiptMalformed);
-    }
+/// Derives receipt reuse eligibility from typed execution facts.
+///
+/// The returned reasons use the canonical order from specification 0001.
+#[must_use]
+pub fn derive_receipt_eligibility(facts: &ReceiptFacts) -> ReceiptEligibility {
+    let reasons = append_reason(
+        // At most one boundary, outcome, stdout, stderr, and structure reason
+        // plus all seven resource-event reasons can be present.
+        Vec::with_capacity(12),
+        facts.boundary == BoundaryInstallation::Incomplete,
+        NonReusableReason::BoundaryIncomplete,
+    );
+    let reasons = append_outcome_reason(reasons, facts.outcome);
+    let reasons = append_reason(
+        reasons,
+        facts.stdout == StreamCapture::Truncated,
+        NonReusableReason::StandardOutputTruncated,
+    );
+    let reasons = append_reason(
+        reasons,
+        facts.stderr == StreamCapture::Truncated,
+        NonReusableReason::StandardErrorTruncated,
+    );
+    let reasons = append_reason(
+        reasons,
+        facts.structure == ReceiptStructure::Malformed,
+        NonReusableReason::ReceiptMalformed,
+    );
+    let reasons = append_limit_event_reasons(reasons, facts.limit_events);
 
     if reasons.is_empty() {
         ReceiptEligibility::Reusable
@@ -198,6 +364,34 @@ pub fn derive_receipt_eligibility(facts: &ReceiptFacts) -> ReceiptEligibility {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn every_resource_limit_event_forces_nonreuse_in_canonical_order() {
+        let events = LimitEvents::new(&[
+            LimitEvent::SwapFail,
+            LimitEvent::MemoryOomKill,
+            LimitEvent::MemoryHigh,
+        ]);
+        let facts = ReceiptFacts::new_v2(
+            BoundaryInstallation::Installed,
+            ExecutionOutcome::Exited { code: 0 },
+            StreamCapture::Complete,
+            StreamCapture::Complete,
+            ReceiptStructure::Valid,
+            events,
+        );
+        let ReceiptEligibility::NonReusable(reasons) = derive_receipt_eligibility(&facts) else {
+            panic!("a resource limit event must make the receipt non-reusable");
+        };
+        assert_eq!(
+            reasons.as_slice(),
+            &[
+                NonReusableReason::MemoryHigh,
+                NonReusableReason::MemoryOomKill,
+                NonReusableReason::SwapFail,
+            ]
+        );
+    }
 
     const BOUNDARIES: [BoundaryInstallation; 2] = [
         BoundaryInstallation::Installed,
@@ -283,12 +477,22 @@ mod tests {
 
     #[test]
     fn retains_all_applicable_reasons_in_canonical_order() {
-        let facts = ReceiptFacts::new(
+        let events = LimitEvents::new(&[
+            LimitEvent::MemoryHigh,
+            LimitEvent::MemoryMax,
+            LimitEvent::MemoryOom,
+            LimitEvent::MemoryOomKill,
+            LimitEvent::MemoryOomGroupKill,
+            LimitEvent::SwapMax,
+            LimitEvent::SwapFail,
+        ]);
+        let facts = ReceiptFacts::new_v2(
             BoundaryInstallation::Incomplete,
             ExecutionOutcome::LauncherFailed,
             StreamCapture::Truncated,
             StreamCapture::Truncated,
             ReceiptStructure::Malformed,
+            events,
         );
         let ReceiptEligibility::NonReusable(reasons) = derive_receipt_eligibility(&facts) else {
             panic!("invalid execution facts must not be reusable");
@@ -301,6 +505,13 @@ mod tests {
                 NonReusableReason::StandardOutputTruncated,
                 NonReusableReason::StandardErrorTruncated,
                 NonReusableReason::ReceiptMalformed,
+                NonReusableReason::MemoryHigh,
+                NonReusableReason::MemoryMax,
+                NonReusableReason::MemoryOom,
+                NonReusableReason::MemoryOomKill,
+                NonReusableReason::MemoryOomGroupKill,
+                NonReusableReason::SwapMax,
+                NonReusableReason::SwapFail,
             ]
         );
     }

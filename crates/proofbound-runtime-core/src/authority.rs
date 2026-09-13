@@ -280,6 +280,67 @@ impl OutputByteLimit {
     }
 }
 
+/// Contains the cgroup-accounted memory hard limit in bytes.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct MemoryByteLimit(u64);
+
+impl MemoryByteLimit {
+    /// Smallest accepted memory limit: 64 KiB.
+    pub const MINIMUM: u64 = 65_536;
+    /// Largest accepted memory limit: 1 TiB.
+    pub const MAXIMUM: u64 = 1_099_511_627_776;
+    /// Portable product quantum shared by supported architectures.
+    pub const QUANTUM: u64 = 65_536;
+
+    /// Validates an exact memory limit without rounding or host inference.
+    pub fn new(value: u64) -> Result<Self, AuthorityError> {
+        if value < Self::MINIMUM {
+            return Err(AuthorityError::MemoryLimitBelowMinimum);
+        }
+        if value > Self::MAXIMUM {
+            return Err(AuthorityError::MemoryLimitAboveMaximum);
+        }
+        if !value.is_multiple_of(Self::QUANTUM) {
+            return Err(AuthorityError::MemoryLimitNotQuantized);
+        }
+        Ok(Self(value))
+    }
+
+    /// Returns the exact configured byte count.
+    #[must_use]
+    pub const fn get(self) -> u64 {
+        self.0
+    }
+}
+
+/// Contains the cgroup-accounted swap hard limit in bytes.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct SwapByteLimit(u64);
+
+impl SwapByteLimit {
+    /// Largest accepted swap limit: 1 TiB.
+    pub const MAXIMUM: u64 = 1_099_511_627_776;
+    /// Portable product quantum shared by supported architectures.
+    pub const QUANTUM: u64 = 65_536;
+
+    /// Validates an exact swap limit. Zero explicitly disables swap use.
+    pub fn new(value: u64) -> Result<Self, AuthorityError> {
+        if value > Self::MAXIMUM {
+            return Err(AuthorityError::SwapLimitAboveMaximum);
+        }
+        if !value.is_multiple_of(Self::QUANTUM) {
+            return Err(AuthorityError::SwapLimitNotQuantized);
+        }
+        Ok(Self(value))
+    }
+
+    /// Returns the exact configured byte count.
+    #[must_use]
+    pub const fn get(self) -> u64 {
+        self.0
+    }
+}
+
 /// Contains the resource limits for one execution.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ResourceLimits {
@@ -287,10 +348,15 @@ pub struct ResourceLimits {
     wall_time: WallTimeLimit,
     stdout: OutputByteLimit,
     stderr: OutputByteLimit,
+    memory: Option<MemoryByteLimit>,
+    swap: Option<SwapByteLimit>,
 }
 
 impl ResourceLimits {
-    /// Creates one resource-limit set.
+    /// Creates one legacy version 1 resource-limit set.
+    ///
+    /// Absence of memory and swap bounds represents the frozen version 1
+    /// model. New executions must use [`Self::new_v2`].
     #[must_use]
     pub fn new(
         processes: ProcessLimit,
@@ -303,6 +369,28 @@ impl ResourceLimits {
             wall_time,
             stdout,
             stderr,
+            memory: None,
+            swap: None,
+        }
+    }
+
+    /// Creates one complete version 2 resource-limit set.
+    #[must_use]
+    pub fn new_v2(
+        processes: ProcessLimit,
+        wall_time: WallTimeLimit,
+        stdout: OutputByteLimit,
+        stderr: OutputByteLimit,
+        memory: MemoryByteLimit,
+        swap: SwapByteLimit,
+    ) -> Self {
+        Self {
+            processes,
+            wall_time,
+            stdout,
+            stderr,
+            memory: Some(memory),
+            swap: Some(swap),
         }
     }
 
@@ -330,6 +418,24 @@ impl ResourceLimits {
         self.stderr
     }
 
+    /// Returns the version 2 memory bound, or `None` for a legacy profile.
+    #[must_use]
+    pub const fn memory(self) -> Option<MemoryByteLimit> {
+        self.memory
+    }
+
+    /// Returns the version 2 swap bound, or `None` for a legacy profile.
+    #[must_use]
+    pub const fn swap(self) -> Option<SwapByteLimit> {
+        self.swap
+    }
+
+    /// Reports whether all six version 2 limits are present.
+    #[must_use]
+    pub const fn is_version_two(self) -> bool {
+        self.memory.is_some() && self.swap.is_some()
+    }
+
     /// Reports whether this limit set permits no more use than another set.
     #[must_use]
     pub fn is_no_more_permissive_than(self, other: Self) -> bool {
@@ -337,6 +443,16 @@ impl ResourceLimits {
             && self.wall_time <= other.wall_time
             && self.stdout <= other.stdout
             && self.stderr <= other.stderr
+            && optional_bound_is_no_more_permissive(self.memory, other.memory)
+            && optional_bound_is_no_more_permissive(self.swap, other.swap)
+    }
+}
+
+fn optional_bound_is_no_more_permissive<T: Ord>(left: Option<T>, right: Option<T>) -> bool {
+    match (left, right) {
+        (Some(left), Some(right)) => left <= right,
+        (Some(_), None) | (None, None) => true,
+        (None, Some(_)) => false,
     }
 }
 
@@ -426,6 +542,16 @@ pub enum AuthorityError {
     ZeroProcessLimit,
     /// The wall-time limit is zero.
     ZeroWallTimeLimit,
+    /// The memory limit is smaller than the accepted 64 KiB minimum.
+    MemoryLimitBelowMinimum,
+    /// The memory limit is larger than the accepted 1 TiB maximum.
+    MemoryLimitAboveMaximum,
+    /// The memory limit is not an exact multiple of 64 KiB.
+    MemoryLimitNotQuantized,
+    /// The swap limit is larger than the accepted 1 TiB maximum.
+    SwapLimitAboveMaximum,
+    /// The swap limit is not an exact multiple of 64 KiB.
+    SwapLimitNotQuantized,
 }
 
 impl AuthorityError {
@@ -440,6 +566,11 @@ impl AuthorityError {
             Self::EnvironmentNameContainsEquals => "authority.environment.equals",
             Self::ZeroProcessLimit => "authority.limit.processes.zero",
             Self::ZeroWallTimeLimit => "authority.limit.wall_time.zero",
+            Self::MemoryLimitBelowMinimum => "authority.limit.memory.below-minimum",
+            Self::MemoryLimitAboveMaximum => "authority.limit.memory.above-maximum",
+            Self::MemoryLimitNotQuantized => "authority.limit.memory.not-quantized",
+            Self::SwapLimitAboveMaximum => "authority.limit.swap.above-maximum",
+            Self::SwapLimitNotQuantized => "authority.limit.swap.not-quantized",
         }
     }
 }
@@ -455,6 +586,51 @@ impl std::error::Error for AuthorityError {}
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn memory_and_swap_limits_enforce_the_accepted_domain() {
+        const QUANTUM: u64 = 65_536;
+        const MAXIMUM: u64 = 1_099_511_627_776;
+
+        assert_eq!(
+            MemoryByteLimit::new(0),
+            Err(AuthorityError::MemoryLimitBelowMinimum)
+        );
+        assert_eq!(
+            MemoryByteLimit::new(QUANTUM - 1),
+            Err(AuthorityError::MemoryLimitBelowMinimum)
+        );
+        assert_eq!(
+            MemoryByteLimit::new(QUANTUM + 1),
+            Err(AuthorityError::MemoryLimitNotQuantized)
+        );
+        assert_eq!(
+            MemoryByteLimit::new(MAXIMUM + QUANTUM),
+            Err(AuthorityError::MemoryLimitAboveMaximum)
+        );
+        assert_eq!(
+            MemoryByteLimit::new(QUANTUM).map(MemoryByteLimit::get),
+            Ok(QUANTUM)
+        );
+        assert_eq!(
+            MemoryByteLimit::new(MAXIMUM).map(MemoryByteLimit::get),
+            Ok(MAXIMUM)
+        );
+
+        assert_eq!(SwapByteLimit::new(0).map(SwapByteLimit::get), Ok(0));
+        assert_eq!(
+            SwapByteLimit::new(1),
+            Err(AuthorityError::SwapLimitNotQuantized)
+        );
+        assert_eq!(
+            SwapByteLimit::new(MAXIMUM + QUANTUM),
+            Err(AuthorityError::SwapLimitAboveMaximum)
+        );
+        assert_eq!(
+            SwapByteLimit::new(MAXIMUM).map(SwapByteLimit::get),
+            Ok(MAXIMUM)
+        );
+    }
 
     #[test]
     fn rejects_invalid_security_strings() {
@@ -485,6 +661,41 @@ mod tests {
         );
         assert!(smaller.is_no_more_permissive_than(larger));
         assert!(!larger.is_no_more_permissive_than(smaller));
+    }
+
+    #[test]
+    fn resource_limit_subset_compares_memory_and_swap_without_legacy_amplification() {
+        let processes = ProcessLimit::new(2).expect("valid fixture");
+        let wall_time = WallTimeLimit::from_milliseconds(20).expect("valid fixture");
+        let stdout = OutputByteLimit::new(4);
+        let stderr = OutputByteLimit::new(6);
+        let legacy = ResourceLimits::new(processes, wall_time, stdout, stderr);
+        let smaller = ResourceLimits::new_v2(
+            processes,
+            wall_time,
+            stdout,
+            stderr,
+            MemoryByteLimit::new(65_536).expect("valid fixture"),
+            SwapByteLimit::new(0).expect("valid fixture"),
+        );
+        let larger = ResourceLimits::new_v2(
+            processes,
+            wall_time,
+            stdout,
+            stderr,
+            MemoryByteLimit::new(131_072).expect("valid fixture"),
+            SwapByteLimit::new(65_536).expect("valid fixture"),
+        );
+
+        assert_eq!(
+            smaller.memory(),
+            Some(MemoryByteLimit::new(65_536).unwrap())
+        );
+        assert_eq!(smaller.swap(), Some(SwapByteLimit::new(0).unwrap()));
+        assert!(smaller.is_no_more_permissive_than(larger));
+        assert!(!larger.is_no_more_permissive_than(smaller));
+        assert!(smaller.is_no_more_permissive_than(legacy));
+        assert!(!legacy.is_no_more_permissive_than(smaller));
     }
 
     #[test]

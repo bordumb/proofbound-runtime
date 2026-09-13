@@ -49,6 +49,17 @@ fn read_json(path: &Path) -> Value {
         .expect("observation input is valid JSON")
 }
 
+fn inspect_execution_receipt(bundle: &Path, evidence: &Path) -> Value {
+    let output = Command::new(bundle.join("pbr"))
+        .arg("inspect")
+        .arg(evidence.join("execution-receipt.cbor"))
+        .output()
+        .expect("release runtime inspects the execution receipt");
+    assert!(output.status.success());
+    assert!(output.stderr.is_empty());
+    serde_json::from_slice(&output.stdout).expect("receipt projection is JSON")
+}
+
 fn digest(bytes: &[u8]) -> String {
     Sha256::digest(bytes)
         .iter()
@@ -112,12 +123,142 @@ fn assert_version(binary: &Path, name: &str) {
     );
 }
 
+fn assert_native_resource_context(
+    evidence: &Path,
+    architecture: &str,
+    runtime_digest: &str,
+    runtime_size: u64,
+) {
+    let context = read_json(&evidence.join("native-context.json"));
+    assert_eq!(context["schema"], "proofbound-runtime-native-context/1");
+    assert_eq!(context["architecture"], architecture);
+    assert_eq!(
+        context["source_revision"],
+        std::env::var("PBR_RELEASE_REVISION")
+            .expect("release observation requires the exact source revision")
+    );
+    let controllers = context["cgroup_v2"]["controllers"]
+        .as_array()
+        .expect("native cgroup controller inventory is an array");
+    for required in ["memory", "pids"] {
+        assert!(controllers.iter().any(|controller| controller == required));
+    }
+    let runtime = context["artifacts"]
+        .as_array()
+        .expect("native artifact inventory is an array")
+        .iter()
+        .find(|artifact| artifact["role"] == "runtime")
+        .expect("native context identifies the Runtime artifact");
+    assert_eq!(runtime["name"], "pbr");
+    assert_eq!(runtime["sha256"], runtime_digest);
+    assert_eq!(runtime["size"], runtime_size);
+}
+
+fn assert_native_run_diagnostics(evidence: &Path, architecture: &str) {
+    let diagnostics = read_json(&evidence.join("native-run-diagnostics.json"));
+    assert_eq!(
+        diagnostics["schema"],
+        "proofbound-runtime-native-run-diagnostics/1"
+    );
+    assert_eq!(diagnostics["architecture"], architecture);
+    assert_eq!(
+        diagnostics["source_revision"],
+        std::env::var("PBR_RELEASE_REVISION")
+            .expect("release observation requires the exact source revision")
+    );
+    assert_eq!(
+        diagnostics["cases"],
+        serde_json::json!([
+            "receipt-target-preexists",
+            "plan-input-missing",
+            "host-capability-unavailable",
+            "output-root-preexists",
+            "executable-resolution-failure",
+        ])
+    );
+}
+
+fn assert_native_preflight(evidence: &Path, architecture: &str) {
+    let preflight = read_json(&evidence.join("preflight.json"));
+    assert_eq!(preflight["schema"], "proofbound-runtime-preflight/1");
+    assert_eq!(preflight["ready"], true);
+    assert_eq!(preflight["caveat"], "preflight.point-in-time");
+    assert_eq!(preflight["platform"]["architecture"], architecture);
+    assert_eq!(preflight["plan_id"], "ci.native-cli-e2e");
+}
+
+fn assert_native_scaffold(evidence: &Path, architecture: &str) {
+    let scaffold = read_json(&evidence.join("plan-scaffold.json"));
+    assert_eq!(scaffold["schema"], "proofbound-runtime-plan-scaffold/1");
+    assert_eq!(scaffold["safe_policy"], false);
+    assert_eq!(scaffold["dependencies"], serde_json::json!([]));
+    assert_eq!(scaffold["interpreter"], Value::Null);
+    let profile = match architecture {
+        "x86_64" => "linux-glibc-x86-64-v1",
+        "aarch64" => "linux-glibc-aarch64-v1",
+        other => panic!("unsupported native scaffold architecture: {other}"),
+    };
+    assert_eq!(scaffold["host_profile"], profile);
+    let codes = scaffold["open_items"]
+        .as_array()
+        .expect("scaffold open items are an array")
+        .iter()
+        .map(|item| item["code"].as_str().expect("open-item code is text"))
+        .collect::<std::collections::BTreeSet<_>>();
+    for required in [
+        "choose-environment",
+        "choose-limits",
+        "choose-network-mode",
+        "choose-write-roots",
+        "dynamic-loads-unresolved",
+    ] {
+        assert!(codes.contains(required));
+    }
+}
+
+fn assert_version_two_resources(receipt: &Value) {
+    assert_eq!(receipt["schema"], "proofbound-runtime-execution-receipt/2");
+    let resources = &receipt["resources"];
+    assert_eq!(resources["configured"]["pids.max"], 1);
+    assert_eq!(resources["configured"]["memory.max"], "268435456");
+    assert_eq!(resources["configured"]["memory.swap.max"], "0");
+    assert_eq!(resources["configured"]["memory.oom.group"], 1);
+    assert_eq!(resources["limit_events"], serde_json::json!([]));
+    assert!(
+        resources["terminal"]["memory_peak_bytes"]
+            .as_str()
+            .expect("memory peak is an exact decimal string")
+            .parse::<u64>()
+            .expect("memory peak fits u64")
+            > 0
+    );
+    assert_eq!(resources["terminal"]["swap_peak_bytes"], "0");
+    for group in ["memory_events", "swap_events"] {
+        for counter in resources["terminal"][group]
+            .as_object()
+            .expect("resource event group is an object")
+            .values()
+        {
+            counter
+                .as_str()
+                .expect("resource event is an exact decimal string")
+                .parse::<u64>()
+                .expect("resource event fits u64");
+        }
+    }
+}
+
 #[test]
 fn observes_runtime_release() {
     let (architecture, bundle, evidence) = release_paths();
     let (digest, size) = assert_manifest_artifact(&bundle, "pbr");
-    let receipt = read_json(&evidence.join("execution-receipt.json"));
+    let receipt = inspect_execution_receipt(&bundle, &evidence);
     assert_eq!(receipt["platform"]["architecture"], architecture);
+    assert_version_two_resources(&receipt);
+    assert_native_resource_context(&evidence, &architecture, &digest, size);
+    assert_native_run_diagnostics(&evidence, &architecture);
+    assert_native_preflight(&evidence, &architecture);
+    assert_native_scaffold(&evidence, &architecture);
     assert_receipt_artifact(
         &receipt["runtime"]["runtime"],
         "runtime-binary",
@@ -132,7 +273,7 @@ fn observes_runtime_release() {
 fn observes_launcher_release() {
     let (architecture, bundle, evidence) = release_paths();
     let (digest, size) = assert_manifest_artifact(&bundle, "pbr-native-launcher");
-    let receipt = read_json(&evidence.join("execution-receipt.json"));
+    let receipt = inspect_execution_receipt(&bundle, &evidence);
     assert_eq!(receipt["platform"]["architecture"], architecture);
     assert_receipt_artifact(
         &receipt["runtime"]["launcher"],
@@ -151,7 +292,7 @@ fn observes_verifier_release() {
     let output = Command::new(bundle.join("pbr-verify"))
         .arg("--expected-commitment")
         .arg(commitment.trim())
-        .arg(evidence.join("execution-receipt.json"))
+        .arg(evidence.join("execution-receipt.cbor"))
         .output()
         .expect("release verifier executes");
     assert!(output.status.success());

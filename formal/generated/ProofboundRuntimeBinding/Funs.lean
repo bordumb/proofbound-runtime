@@ -16,21 +16,21 @@ set_option maxRecDepth 2048
 namespace proofbound_runtime_binding
 
 /-- [proofbound_runtime_binding::construct_receipt_binding]:
-    Source: 'crates/proofbound-runtime-binding/src/lib.rs', lines 48:0-50:1
+    Source: 'crates/proofbound-runtime-binding/src/lib.rs', lines 50:0-52:1
     Visibility: public -/
 def construct_receipt_binding
   (parts : ReceiptBindingParts) : Result ReceiptBinding := do
   ok { parts }
 
 /-- [proofbound_runtime_binding::project_receipt_binding]:
-    Source: 'crates/proofbound-runtime-binding/src/lib.rs', lines 54:0-56:1
+    Source: 'crates/proofbound-runtime-binding/src/lib.rs', lines 56:0-58:1
     Visibility: public -/
 def project_receipt_binding
   (binding : ReceiptBinding) : Result ReceiptBindingParts := do
   ok binding.parts
 
 /-- [proofbound_runtime_binding::construct_and_project_receipt_binding]:
-    Source: 'crates/proofbound-runtime-binding/src/lib.rs', lines 60:0-62:1
+    Source: 'crates/proofbound-runtime-binding/src/lib.rs', lines 62:0-64:1
     Visibility: public -/
 def construct_and_project_receipt_binding
   (parts : ReceiptBindingParts) : Result ReceiptBindingParts := do

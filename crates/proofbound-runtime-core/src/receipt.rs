@@ -7,20 +7,26 @@ use proofbound_runtime_binding::{ReceiptBindingParts, construct_and_project_rece
 use serde::Serialize;
 
 pub use proofbound_runtime_receipt::{
-    BoundaryInstallation, NonReusableReason, NonReusableReasons, ReceiptEligibility, ReceiptFacts,
-    ReceiptStructure, StreamCapture, derive_receipt_eligibility,
+    BoundaryInstallation, LimitEvent, LimitEvents, NonReusableReason, NonReusableReasons,
+    ReceiptEligibility, ReceiptFacts, ReceiptStructure, StreamCapture, derive_receipt_eligibility,
 };
 
 use crate::{
     ArtifactIdentity, ArtifactRole, EnvironmentName, ErrorClass, ExecutionOutcome, MachineError,
-    PlanId, Sha256Digest,
+    MemoryByteLimit, PlanId, ProcessLimit, ResourceLimits, Sha256Digest, SwapByteLimit,
 };
 
 /// The only execution-receipt schema emitted by version 1.
 pub const EXECUTION_RECEIPT_SCHEMA: &str = "proofbound-runtime-receipt/1";
 
+/// The execution-receipt schema emitted for complete version 2 resources.
+pub const EXECUTION_RECEIPT_V2_SCHEMA: &str = "proofbound-runtime-execution-receipt/2";
+
 /// The only compiled-policy model accepted by version 1 receipts.
 pub const POLICY_MODEL_VERSION: &str = "proofbound-runtime-linux-policy/1";
+
+/// The compiled-policy model bound into version 2 receipts.
+pub const POLICY_MODEL_VERSION_V2: &str = "proofbound-runtime-linux-policy/2";
 
 /// The assumptions that every version 1 runtime receipt must inherit.
 pub const REQUIRED_RUNTIME_ASSUMPTIONS: [&str; 3] = [
@@ -88,6 +94,7 @@ pub struct ReceiptPlan {
     id: PlanId,
     source: ArtifactIdentity,
     normalized: ArtifactIdentity,
+    normalized_limits: Option<ResourceLimits>,
 }
 
 impl ReceiptPlan {
@@ -111,7 +118,23 @@ impl ReceiptPlan {
             id,
             source,
             normalized,
+            normalized_limits: None,
         })
+    }
+
+    /// Validates v2 plan roles and retains the exact normalized six-limit record.
+    pub fn new_v2(
+        id: PlanId,
+        source: ArtifactIdentity,
+        normalized: ArtifactIdentity,
+        normalized_limits: ResourceLimits,
+    ) -> Result<Self, ReceiptError> {
+        if !normalized_limits.is_version_two() {
+            return Err(ReceiptError::ResourceProfileIncomplete);
+        }
+        let mut plan = Self::new(id, source, normalized)?;
+        plan.normalized_limits = Some(normalized_limits);
+        Ok(plan)
     }
 }
 
@@ -297,6 +320,260 @@ pub struct ExecutionObservations {
     finished_ns: u64,
 }
 
+/// Contains the checked terminal deltas from `memory.events.local`.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ReceiptMemoryEvents {
+    low: u64,
+    high: u64,
+    max: u64,
+    oom: u64,
+    oom_kill: u64,
+    oom_group_kill: u64,
+}
+
+impl ReceiptMemoryEvents {
+    /// Creates the complete closed memory-event counter set.
+    #[must_use]
+    pub const fn new(
+        low: u64,
+        high: u64,
+        max: u64,
+        oom: u64,
+        oom_kill: u64,
+        oom_group_kill: u64,
+    ) -> Self {
+        Self {
+            low,
+            high,
+            max,
+            oom,
+            oom_kill,
+            oom_group_kill,
+        }
+    }
+
+    #[must_use]
+    pub const fn low(self) -> u64 {
+        self.low
+    }
+    #[must_use]
+    pub const fn high(self) -> u64 {
+        self.high
+    }
+    #[must_use]
+    pub const fn max(self) -> u64 {
+        self.max
+    }
+    #[must_use]
+    pub const fn oom(self) -> u64 {
+        self.oom
+    }
+    #[must_use]
+    pub const fn oom_kill(self) -> u64 {
+        self.oom_kill
+    }
+    #[must_use]
+    pub const fn oom_group_kill(self) -> u64 {
+        self.oom_group_kill
+    }
+}
+
+/// Contains the checked terminal deltas from `memory.swap.events`.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ReceiptSwapEvents {
+    max: u64,
+    fail: u64,
+}
+
+impl ReceiptSwapEvents {
+    /// Creates the complete closed swap-event counter set.
+    #[must_use]
+    pub const fn new(max: u64, fail: u64) -> Self {
+        Self { max, fail }
+    }
+    #[must_use]
+    pub const fn max(self) -> u64 {
+        self.max
+    }
+    #[must_use]
+    pub const fn fail(self) -> u64 {
+        self.fail
+    }
+}
+
+/// Contains the exact resource-control values read back from the installed cgroup.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ReceiptConfiguredResources {
+    processes: ProcessLimit,
+    memory: MemoryByteLimit,
+    swap: SwapByteLimit,
+    memory_oom_group: u64,
+}
+
+impl ReceiptConfiguredResources {
+    /// Creates a closed configured-resource observation.
+    pub fn new(
+        processes: ProcessLimit,
+        memory: MemoryByteLimit,
+        swap: SwapByteLimit,
+        memory_oom_group: u64,
+    ) -> Result<Self, ReceiptError> {
+        if memory_oom_group != 1 {
+            return Err(ReceiptError::ConfiguredResourcesInvalid);
+        }
+        Ok(Self {
+            processes,
+            memory,
+            swap,
+            memory_oom_group,
+        })
+    }
+}
+
+/// Contains exact configured limits and terminal observations for version 2.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ReceiptResources {
+    processes: ProcessLimit,
+    memory: MemoryByteLimit,
+    swap: SwapByteLimit,
+    memory_oom_group: u64,
+    memory_peak_bytes: u64,
+    swap_peak_bytes: u64,
+    memory_events: ReceiptMemoryEvents,
+    swap_events: ReceiptSwapEvents,
+    limit_events: LimitEvents,
+    observations_complete: bool,
+}
+
+impl ReceiptResources {
+    /// Validates a complete v2 limit profile and derives its event set.
+    pub fn new(
+        limits: ResourceLimits,
+        memory_peak_bytes: u64,
+        swap_peak_bytes: u64,
+        memory_events: ReceiptMemoryEvents,
+        swap_events: ReceiptSwapEvents,
+    ) -> Result<Self, ReceiptError> {
+        let memory = limits
+            .memory()
+            .ok_or(ReceiptError::ResourceProfileIncomplete)?;
+        let swap = limits
+            .swap()
+            .ok_or(ReceiptError::ResourceProfileIncomplete)?;
+        Self::from_configured(
+            ReceiptConfiguredResources::new(limits.processes(), memory, swap, 1)?,
+            memory_peak_bytes,
+            swap_peak_bytes,
+            memory_events,
+            swap_events,
+        )
+    }
+
+    /// Builds version 2 resources from the exact installed-control readbacks.
+    pub fn from_configured(
+        configured: ReceiptConfiguredResources,
+        memory_peak_bytes: u64,
+        swap_peak_bytes: u64,
+        memory_events: ReceiptMemoryEvents,
+        swap_events: ReceiptSwapEvents,
+    ) -> Result<Self, ReceiptError> {
+        let mut events = Vec::new();
+        for (present, event) in [
+            (memory_events.high != 0, LimitEvent::MemoryHigh),
+            (memory_events.max != 0, LimitEvent::MemoryMax),
+            (memory_events.oom != 0, LimitEvent::MemoryOom),
+            (memory_events.oom_kill != 0, LimitEvent::MemoryOomKill),
+            (
+                memory_events.oom_group_kill != 0,
+                LimitEvent::MemoryOomGroupKill,
+            ),
+            (swap_events.max != 0, LimitEvent::SwapMax),
+            (swap_events.fail != 0, LimitEvent::SwapFail),
+        ] {
+            if present {
+                events.push(event);
+            }
+        }
+        Ok(Self {
+            processes: configured.processes,
+            memory: configured.memory,
+            swap: configured.swap,
+            memory_oom_group: configured.memory_oom_group,
+            memory_peak_bytes,
+            swap_peak_bytes,
+            memory_events,
+            swap_events,
+            limit_events: LimitEvents::new(&events),
+            observations_complete: true,
+        })
+    }
+
+    /// Builds a non-reusable v2 resource record when terminal observation failed.
+    pub fn incomplete(
+        processes: ProcessLimit,
+        memory: MemoryByteLimit,
+        swap: SwapByteLimit,
+        memory_oom_group: u64,
+    ) -> Result<Self, ReceiptError> {
+        if memory_oom_group != 1 {
+            return Err(ReceiptError::ConfiguredResourcesInvalid);
+        }
+        Ok(Self {
+            processes,
+            memory,
+            swap,
+            memory_oom_group,
+            memory_peak_bytes: 0,
+            swap_peak_bytes: 0,
+            memory_events: ReceiptMemoryEvents::new(0, 0, 0, 0, 0, 0),
+            swap_events: ReceiptSwapEvents::new(0, 0),
+            limit_events: LimitEvents::new(&[]),
+            observations_complete: false,
+        })
+    }
+
+    #[must_use]
+    pub const fn processes(self) -> ProcessLimit {
+        self.processes
+    }
+    #[must_use]
+    pub const fn memory(self) -> MemoryByteLimit {
+        self.memory
+    }
+    #[must_use]
+    pub const fn swap(self) -> SwapByteLimit {
+        self.swap
+    }
+    #[must_use]
+    pub const fn memory_oom_group(self) -> u64 {
+        self.memory_oom_group
+    }
+    #[must_use]
+    pub const fn memory_peak_bytes(self) -> u64 {
+        self.memory_peak_bytes
+    }
+    #[must_use]
+    pub const fn swap_peak_bytes(self) -> u64 {
+        self.swap_peak_bytes
+    }
+    #[must_use]
+    pub const fn memory_events(self) -> ReceiptMemoryEvents {
+        self.memory_events
+    }
+    #[must_use]
+    pub const fn swap_events(self) -> ReceiptSwapEvents {
+        self.swap_events
+    }
+    #[must_use]
+    pub const fn limit_events(self) -> LimitEvents {
+        self.limit_events
+    }
+    #[must_use]
+    pub const fn observations_complete(self) -> bool {
+        self.observations_complete
+    }
+}
+
 impl ExecutionObservations {
     /// Rejects a finish observation that precedes the start observation.
     pub const fn new(started_ns: u64, finished_ns: u64) -> Result<Self, ReceiptError> {
@@ -480,6 +757,8 @@ pub struct ExecutionReceiptParts {
     pub streams: ReceiptStreams,
     /// Observed execution outcome.
     pub outcome: ExecutionOutcome,
+    /// Exact version 2 configured and terminal resource facts; absent for v1.
+    pub resources: Option<ReceiptResources>,
     /// Produced output identities.
     pub outputs: Vec<ArtifactIdentity>,
     /// Identity of the receipt producer.
@@ -561,13 +840,28 @@ impl ExecutionReceipt {
             }
         }
         require_tcb_roles(&parts)?;
-        let facts = ReceiptFacts::new(
-            parts.boundary.state,
-            parts.outcome,
-            parts.streams.stdout.capture,
-            parts.streams.stderr.capture,
-            ReceiptStructure::Valid,
-        );
+        let facts = match (parts.resources, parts.plan.normalized_limits) {
+            (Some(resources), Some(_)) => ReceiptFacts::new_v2(
+                parts.boundary.state,
+                parts.outcome,
+                parts.streams.stdout.capture,
+                parts.streams.stderr.capture,
+                if resources.observations_complete {
+                    ReceiptStructure::Valid
+                } else {
+                    ReceiptStructure::Malformed
+                },
+                resources.limit_events,
+            ),
+            (None, None) => ReceiptFacts::new(
+                parts.boundary.state,
+                parts.outcome,
+                parts.streams.stdout.capture,
+                parts.streams.stderr.capture,
+                ReceiptStructure::Valid,
+            ),
+            _ => return Err(ReceiptError::ResourceProfileIncomplete),
+        };
         let eligibility = derive_receipt_eligibility(&facts);
 
         Ok(Self {
@@ -590,6 +884,9 @@ impl ExecutionReceipt {
     /// ASCII, every 64-bit counter is a decimal string, and conversion through
     /// `serde_json::Value` sorts every object key before compact encoding.
     pub fn canonical_bytes(&self) -> Result<Vec<u8>, ReceiptError> {
+        if self.parts.resources.is_some() {
+            return canonical_v2_bytes(self);
+        }
         let wire = WireExecutionReceipt::from(self);
         let parts = ReceiptBindingParts {
             assumptions: canonical_field_bytes(&wire.assumptions)?,
@@ -608,6 +905,7 @@ impl ExecutionReceipt {
             policy: canonical_field_bytes(&wire.policy)?,
             producer: canonical_field_bytes(&wire.producer)?,
             product_version: canonical_field_bytes(&wire.product_version)?,
+            resources: None,
             runtime: canonical_field_bytes(&wire.runtime)?,
             schema: canonical_field_bytes(&wire.schema)?,
             streams: canonical_field_bytes(&wire.streams)?,
@@ -615,6 +913,502 @@ impl ExecutionReceipt {
         };
         encode_binding(construct_and_project_receipt_binding(parts))
     }
+}
+
+fn canonical_v2_bytes(receipt: &ExecutionReceipt) -> Result<Vec<u8>, ReceiptError> {
+    let parts = canonical_v2_binding_parts(receipt)?;
+    encode_v2_binding(construct_and_project_receipt_binding(parts))
+}
+
+fn canonical_v2_binding_parts(
+    receipt: &ExecutionReceipt,
+) -> Result<ReceiptBindingParts, ReceiptError> {
+    use crate::wire_v2::Value as Cbor;
+
+    let parts = &receipt.parts;
+    let resources = parts
+        .resources
+        .ok_or(ReceiptError::ResourceProfileIncomplete)?;
+    let value = Cbor::Map(vec![
+        ("plan".to_owned(), cbor_plan(&parts.plan)?),
+        (
+            "schema".to_owned(),
+            Cbor::Text(EXECUTION_RECEIPT_V2_SCHEMA.to_owned()),
+        ),
+        (
+            "inputs".to_owned(),
+            Cbor::Array(parts.inputs.iter().map(cbor_artifact).collect()),
+        ),
+        (
+            "policy".to_owned(),
+            Cbor::Map(vec![
+                ("identity".to_owned(), cbor_artifact(&parts.policy.identity)),
+                (
+                    "model_version".to_owned(),
+                    Cbor::Text(POLICY_MODEL_VERSION_V2.to_owned()),
+                ),
+            ]),
+        ),
+        (
+            "runtime".to_owned(),
+            Cbor::Map(vec![
+                ("runtime".to_owned(), cbor_artifact(&parts.runtime.runtime)),
+                (
+                    "launcher".to_owned(),
+                    cbor_artifact(&parts.runtime.launcher),
+                ),
+            ]),
+        ),
+        ("streams".to_owned(), cbor_streams(&parts.streams)),
+        ("command".to_owned(), cbor_command(&parts.command)),
+        ("outcome".to_owned(), cbor_outcome(parts.outcome)),
+        (
+            "outputs".to_owned(),
+            Cbor::Array(parts.outputs.iter().map(cbor_artifact).collect()),
+        ),
+        ("boundary".to_owned(), cbor_boundary(&parts.boundary)),
+        ("producer".to_owned(), cbor_artifact(&parts.producer)),
+        ("platform".to_owned(), cbor_platform(&parts.platform)),
+        ("resources".to_owned(), cbor_resources(resources)),
+        (
+            "eligibility".to_owned(),
+            cbor_eligibility(&receipt.eligibility),
+        ),
+        (
+            "environment".to_owned(),
+            cbor_text_array(receipt.environment.iter().map(String::as_str)),
+        ),
+        (
+            "execution_id".to_owned(),
+            Cbor::Bytes(parts.execution_id.0.to_vec()),
+        ),
+        (
+            "observations".to_owned(),
+            Cbor::Map(vec![
+                ("clock".to_owned(), Cbor::Text("linux-monotonic".to_owned())),
+                (
+                    "started_ns".to_owned(),
+                    Cbor::Unsigned(parts.observations.started_ns),
+                ),
+                (
+                    "finished_ns".to_owned(),
+                    Cbor::Unsigned(parts.observations.finished_ns),
+                ),
+            ]),
+        ),
+        (
+            "product_version".to_owned(),
+            Cbor::Text(env!("CARGO_PKG_VERSION").to_owned()),
+        ),
+        (
+            "assumptions".to_owned(),
+            cbor_text_array(receipt.assumptions.iter().map(String::as_str)),
+        ),
+        ("output_root".to_owned(), cbor_artifact(&parts.output_root)),
+        (
+            "trusted_computing_base".to_owned(),
+            Cbor::Array(
+                parts
+                    .trusted_computing_base
+                    .iter()
+                    .map(|entry| {
+                        Cbor::Map(vec![
+                            (
+                                "role".to_owned(),
+                                Cbor::Text(entry.role.as_str().to_owned()),
+                            ),
+                            ("identity".to_owned(), Cbor::Text(entry.identity.clone())),
+                        ])
+                    })
+                    .collect(),
+            ),
+        ),
+    ]);
+    let Cbor::Map(mut fields) = value else {
+        return Err(ReceiptError::CanonicalEncoding);
+    };
+    let parts = ReceiptBindingParts {
+        assumptions: take_cbor_field(&mut fields, "assumptions")?,
+        boundary: take_cbor_field(&mut fields, "boundary")?,
+        command: take_cbor_field(&mut fields, "command")?,
+        eligibility: take_cbor_field(&mut fields, "eligibility")?,
+        environment: take_cbor_field(&mut fields, "environment")?,
+        execution_id: take_cbor_field(&mut fields, "execution_id")?,
+        inputs: take_cbor_field(&mut fields, "inputs")?,
+        observations: take_cbor_field(&mut fields, "observations")?,
+        outcome: take_cbor_field(&mut fields, "outcome")?,
+        output_root: take_cbor_field(&mut fields, "output_root")?,
+        outputs: take_cbor_field(&mut fields, "outputs")?,
+        plan: take_cbor_field(&mut fields, "plan")?,
+        platform: take_cbor_field(&mut fields, "platform")?,
+        policy: take_cbor_field(&mut fields, "policy")?,
+        producer: take_cbor_field(&mut fields, "producer")?,
+        product_version: take_cbor_field(&mut fields, "product_version")?,
+        resources: Some(take_cbor_field(&mut fields, "resources")?),
+        runtime: take_cbor_field(&mut fields, "runtime")?,
+        schema: take_cbor_field(&mut fields, "schema")?,
+        streams: take_cbor_field(&mut fields, "streams")?,
+        trusted_computing_base: take_cbor_field(&mut fields, "trusted_computing_base")?,
+    };
+    if fields.is_empty() {
+        Ok(parts)
+    } else {
+        Err(ReceiptError::CanonicalEncoding)
+    }
+}
+
+fn take_cbor_field(
+    fields: &mut Vec<(String, crate::wire_v2::Value)>,
+    name: &str,
+) -> Result<Vec<u8>, ReceiptError> {
+    let index = fields
+        .iter()
+        .position(|(field, _)| field == name)
+        .ok_or(ReceiptError::CanonicalEncoding)?;
+    let (_, value) = fields.remove(index);
+    crate::wire_v2::encode(&value).map_err(|_| ReceiptError::CanonicalEncoding)
+}
+
+fn encode_v2_binding(parts: ReceiptBindingParts) -> Result<Vec<u8>, ReceiptError> {
+    let resources = parts
+        .resources
+        .ok_or(ReceiptError::ResourceProfileIncomplete)?;
+    crate::wire_v2::encode_bound_map(vec![
+        ("assumptions".to_owned(), parts.assumptions),
+        ("boundary".to_owned(), parts.boundary),
+        ("command".to_owned(), parts.command),
+        ("eligibility".to_owned(), parts.eligibility),
+        ("environment".to_owned(), parts.environment),
+        ("execution_id".to_owned(), parts.execution_id),
+        ("inputs".to_owned(), parts.inputs),
+        ("observations".to_owned(), parts.observations),
+        ("outcome".to_owned(), parts.outcome),
+        ("output_root".to_owned(), parts.output_root),
+        ("outputs".to_owned(), parts.outputs),
+        ("plan".to_owned(), parts.plan),
+        ("platform".to_owned(), parts.platform),
+        ("policy".to_owned(), parts.policy),
+        ("producer".to_owned(), parts.producer),
+        ("product_version".to_owned(), parts.product_version),
+        ("resources".to_owned(), resources),
+        ("runtime".to_owned(), parts.runtime),
+        ("schema".to_owned(), parts.schema),
+        ("streams".to_owned(), parts.streams),
+        (
+            "trusted_computing_base".to_owned(),
+            parts.trusted_computing_base,
+        ),
+    ])
+    .map_err(|_| ReceiptError::CanonicalEncoding)
+}
+
+fn cbor_artifact(identity: &ArtifactIdentity) -> crate::wire_v2::Value {
+    use crate::wire_v2::Value as Cbor;
+    Cbor::Map(vec![
+        (
+            "mode".to_owned(),
+            Cbor::Unsigned(u64::from(identity.mode().get())),
+        ),
+        (
+            "role".to_owned(),
+            Cbor::Text(identity.role().as_str().to_owned()),
+        ),
+        ("size".to_owned(), Cbor::Unsigned(identity.size())),
+        (
+            "sha256".to_owned(),
+            Cbor::Bytes(identity.digest().as_bytes().to_vec()),
+        ),
+    ])
+}
+
+fn cbor_plan(plan: &ReceiptPlan) -> Result<crate::wire_v2::Value, ReceiptError> {
+    use crate::wire_v2::Value as Cbor;
+    let limits = plan
+        .normalized_limits
+        .ok_or(ReceiptError::ResourceProfileIncomplete)?;
+    let memory = limits
+        .memory()
+        .ok_or(ReceiptError::ResourceProfileIncomplete)?;
+    let swap = limits
+        .swap()
+        .ok_or(ReceiptError::ResourceProfileIncomplete)?;
+    Ok(Cbor::Map(vec![
+        ("id".to_owned(), Cbor::Text(plan.id.as_str().to_owned())),
+        ("source".to_owned(), cbor_artifact(&plan.source)),
+        ("normalized".to_owned(), cbor_artifact(&plan.normalized)),
+        (
+            "limits".to_owned(),
+            Cbor::Map(vec![
+                (
+                    "processes".to_owned(),
+                    Cbor::Unsigned(u64::from(limits.processes().get())),
+                ),
+                (
+                    "wall_time_ms".to_owned(),
+                    Cbor::Unsigned(limits.wall_time().milliseconds()),
+                ),
+                (
+                    "stdout_bytes".to_owned(),
+                    Cbor::Unsigned(limits.stdout().get()),
+                ),
+                (
+                    "stderr_bytes".to_owned(),
+                    Cbor::Unsigned(limits.stderr().get()),
+                ),
+                ("memory_bytes".to_owned(), Cbor::Unsigned(memory.get())),
+                ("swap_bytes".to_owned(), Cbor::Unsigned(swap.get())),
+            ]),
+        ),
+    ]))
+}
+
+fn cbor_command(command: &ReceiptCommand) -> crate::wire_v2::Value {
+    use crate::wire_v2::Value as Cbor;
+    Cbor::Map(vec![
+        (
+            "loader".to_owned(),
+            command.loader.as_ref().map_or(Cbor::Null, cbor_artifact),
+        ),
+        ("executable".to_owned(), cbor_artifact(&command.executable)),
+        (
+            "arguments_sha256".to_owned(),
+            Cbor::Bytes(command.arguments_sha256.as_bytes().to_vec()),
+        ),
+        (
+            "working_directory".to_owned(),
+            cbor_artifact(&command.working_directory),
+        ),
+    ])
+}
+
+fn cbor_boundary(boundary: &BoundaryRecord) -> crate::wire_v2::Value {
+    use crate::wire_v2::Value as Cbor;
+    Cbor::Map(vec![
+        (
+            "state".to_owned(),
+            Cbor::Text(boundary_wire_name(boundary.state).to_owned()),
+        ),
+        (
+            "cgroup".to_owned(),
+            Cbor::Map(vec![
+                ("inode".to_owned(), Cbor::Unsigned(boundary.cgroup.inode)),
+                (
+                    "mount_id".to_owned(),
+                    Cbor::Unsigned(boundary.cgroup.mount_id),
+                ),
+            ]),
+        ),
+        (
+            "execution_id".to_owned(),
+            Cbor::Bytes(boundary.execution_id.0.to_vec()),
+        ),
+        (
+            "policy_sha256".to_owned(),
+            Cbor::Bytes(boundary.policy_sha256.as_bytes().to_vec()),
+        ),
+    ])
+}
+
+fn cbor_platform(platform: &PlatformIdentity) -> crate::wire_v2::Value {
+    use crate::wire_v2::Value as Cbor;
+    Cbor::Map(vec![
+        (
+            "architecture".to_owned(),
+            Cbor::Text(platform.architecture.as_str().to_owned()),
+        ),
+        (
+            "landlock_abi".to_owned(),
+            Cbor::Unsigned(u64::from(platform.landlock_abi)),
+        ),
+        (
+            "kernel_release".to_owned(),
+            Cbor::Text(platform.kernel_release.clone()),
+        ),
+        (
+            "operating_system".to_owned(),
+            Cbor::Text("linux".to_owned()),
+        ),
+        (
+            "seccomp_features".to_owned(),
+            cbor_text_array(platform.seccomp_features.iter().map(String::as_str)),
+        ),
+        (
+            "cgroup_controllers".to_owned(),
+            cbor_text_array(platform.cgroup_controllers.iter().map(String::as_str)),
+        ),
+    ])
+}
+
+fn cbor_streams(streams: &ReceiptStreams) -> crate::wire_v2::Value {
+    use crate::wire_v2::Value as Cbor;
+    let stream = |record: &StreamRecord| {
+        Cbor::Map(vec![
+            (
+                "capture".to_owned(),
+                Cbor::Text(stream_capture_wire_name(record.capture).to_owned()),
+            ),
+            ("artifact".to_owned(), cbor_artifact(&record.artifact)),
+        ])
+    };
+    Cbor::Map(vec![
+        ("stderr".to_owned(), stream(&streams.stderr)),
+        ("stdout".to_owned(), stream(&streams.stdout)),
+    ])
+}
+
+fn cbor_outcome(outcome: ExecutionOutcome) -> crate::wire_v2::Value {
+    use crate::wire_v2::Value as Cbor;
+    let mut fields = Vec::new();
+    match outcome {
+        ExecutionOutcome::Exited { code } => {
+            fields.push(("kind".to_owned(), Cbor::Text("exited".to_owned())));
+            let code = if code >= 0 {
+                Cbor::Unsigned(u64::try_from(code).expect("nonnegative i32 fits u64"))
+            } else {
+                Cbor::Negative(u64::try_from(-1_i64 - i64::from(code)).expect("i32 fits u64"))
+            };
+            fields.push(("code".to_owned(), code));
+        }
+        ExecutionOutcome::Signaled { signal } => {
+            fields.push(("kind".to_owned(), Cbor::Text("signaled".to_owned())));
+            fields.push(("signal".to_owned(), Cbor::Unsigned(u64::from(signal.get()))));
+        }
+        ExecutionOutcome::TimedOut => {
+            fields.push(("kind".to_owned(), Cbor::Text("timed-out".to_owned())))
+        }
+        ExecutionOutcome::Denied => {
+            fields.push(("kind".to_owned(), Cbor::Text("denied".to_owned())))
+        }
+        ExecutionOutcome::LauncherFailed => {
+            fields.push(("kind".to_owned(), Cbor::Text("launcher-failed".to_owned())))
+        }
+        ExecutionOutcome::Incomplete => {
+            fields.push(("kind".to_owned(), Cbor::Text("incomplete".to_owned())))
+        }
+    }
+    Cbor::Map(fields)
+}
+
+fn cbor_resources(resources: ReceiptResources) -> crate::wire_v2::Value {
+    use crate::wire_v2::Value as Cbor;
+    let memory = resources.memory_events;
+    let swap = resources.swap_events;
+    let terminal = if resources.observations_complete {
+        Cbor::Map(vec![
+            (
+                "swap_events".to_owned(),
+                Cbor::Map(vec![
+                    ("max".to_owned(), Cbor::Unsigned(swap.max)),
+                    ("fail".to_owned(), Cbor::Unsigned(swap.fail)),
+                ]),
+            ),
+            (
+                "memory_events".to_owned(),
+                Cbor::Map(vec![
+                    ("low".to_owned(), Cbor::Unsigned(memory.low)),
+                    ("oom".to_owned(), Cbor::Unsigned(memory.oom)),
+                    ("high".to_owned(), Cbor::Unsigned(memory.high)),
+                    ("max".to_owned(), Cbor::Unsigned(memory.max)),
+                    ("oom_kill".to_owned(), Cbor::Unsigned(memory.oom_kill)),
+                    (
+                        "oom_group_kill".to_owned(),
+                        Cbor::Unsigned(memory.oom_group_kill),
+                    ),
+                ]),
+            ),
+            (
+                "swap_peak_bytes".to_owned(),
+                Cbor::Unsigned(resources.swap_peak_bytes),
+            ),
+            (
+                "memory_peak_bytes".to_owned(),
+                Cbor::Unsigned(resources.memory_peak_bytes),
+            ),
+        ])
+    } else {
+        Cbor::Null
+    };
+    Cbor::Map(vec![
+        ("terminal".to_owned(), terminal),
+        (
+            "configured".to_owned(),
+            Cbor::Map(vec![
+                (
+                    "pids.max".to_owned(),
+                    Cbor::Unsigned(u64::from(resources.processes.get())),
+                ),
+                (
+                    "memory.max".to_owned(),
+                    Cbor::Unsigned(resources.memory.get()),
+                ),
+                (
+                    "memory.oom.group".to_owned(),
+                    Cbor::Unsigned(resources.memory_oom_group),
+                ),
+                (
+                    "memory.swap.max".to_owned(),
+                    Cbor::Unsigned(resources.swap.get()),
+                ),
+            ]),
+        ),
+        (
+            "limit_events".to_owned(),
+            Cbor::Array(
+                canonical_limit_events(resources.limit_events)
+                    .into_iter()
+                    .map(|event| Cbor::Text(event.to_owned()))
+                    .collect(),
+            ),
+        ),
+    ])
+}
+
+fn canonical_limit_events(events: LimitEvents) -> Vec<&'static str> {
+    [
+        (LimitEvent::MemoryHigh, "memory-high"),
+        (LimitEvent::MemoryMax, "memory-max"),
+        (LimitEvent::MemoryOom, "memory-oom"),
+        (LimitEvent::MemoryOomKill, "memory-oom-kill"),
+        (LimitEvent::MemoryOomGroupKill, "memory-oom-group-kill"),
+        (LimitEvent::SwapMax, "swap-max"),
+        (LimitEvent::SwapFail, "swap-fail"),
+    ]
+    .into_iter()
+    .filter_map(|(event, name)| events.contains(event).then_some(name))
+    .collect()
+}
+
+fn cbor_eligibility(eligibility: &ReceiptEligibility) -> crate::wire_v2::Value {
+    use crate::wire_v2::Value as Cbor;
+    let (status, reasons) = match eligibility {
+        ReceiptEligibility::Reusable => ("reusable", Vec::new()),
+        ReceiptEligibility::NonReusable(reasons) => (
+            "non-reusable",
+            reasons
+                .as_slice()
+                .iter()
+                .copied()
+                .map(non_reusable_reason_wire_name)
+                .collect(),
+        ),
+    };
+    Cbor::Map(vec![
+        ("status".to_owned(), Cbor::Text(status.to_owned())),
+        (
+            "reasons".to_owned(),
+            Cbor::Array(
+                reasons
+                    .into_iter()
+                    .map(|reason| Cbor::Text(reason.to_owned()))
+                    .collect(),
+            ),
+        ),
+    ])
+}
+
+fn cbor_text_array<'a>(values: impl Iterator<Item = &'a str>) -> crate::wire_v2::Value {
+    use crate::wire_v2::Value as Cbor;
+    Cbor::Array(values.map(|value| Cbor::Text(value.to_owned())).collect())
 }
 
 fn canonical_field_bytes<T: Serialize>(value: &T) -> Result<Vec<u8>, ReceiptError> {
@@ -839,6 +1633,13 @@ fn non_reusable_reason_wire_name(reason: NonReusableReason) -> &'static str {
         NonReusableReason::StandardOutputTruncated => "stdout-truncated",
         NonReusableReason::StandardErrorTruncated => "stderr-truncated",
         NonReusableReason::ReceiptMalformed => "receipt-malformed",
+        NonReusableReason::MemoryHigh => "memory-high",
+        NonReusableReason::MemoryMax => "memory-max",
+        NonReusableReason::MemoryOom => "memory-oom",
+        NonReusableReason::MemoryOomKill => "memory-oom-kill",
+        NonReusableReason::MemoryOomGroupKill => "memory-oom-group-kill",
+        NonReusableReason::SwapMax => "swap-max",
+        NonReusableReason::SwapFail => "swap-fail",
     }
 }
 
@@ -1031,6 +1832,10 @@ pub enum ReceiptError {
     TrustedComputingBaseEmpty,
     /// A registered runtime assumption is absent.
     AssumptionMissing,
+    /// Version 2 receipt resources were built from a legacy limit profile.
+    ResourceProfileIncomplete,
+    /// Installed version 2 cgroup controls were not the closed configured profile.
+    ConfiguredResourcesInvalid,
     /// A required trusted-computing-base role is absent.
     TrustedComputingBaseRoleMissing,
     /// Canonical JSON encoding failed.
@@ -1060,6 +1865,8 @@ impl ReceiptError {
             Self::ObservationOrder => "receipt.observation.order",
             Self::TrustedComputingBaseEmpty => "receipt.tcb.empty",
             Self::AssumptionMissing => "receipt.assumption.missing",
+            Self::ResourceProfileIncomplete => "receipt.resources.incomplete",
+            Self::ConfiguredResourcesInvalid => "receipt.resources.configured-invalid",
             Self::TrustedComputingBaseRoleMissing => "receipt.tcb.role.missing",
             Self::CanonicalEncoding => "receipt.canonical.encoding-failed",
         }
@@ -1196,7 +2003,8 @@ fn require_tcb_role(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::FileMode;
+    use crate::{FileMode, OutputByteLimit, WallTimeLimit};
+    use sha2::{Digest, Sha256};
 
     fn artifact(role: ArtifactRole, marker: u8) -> ArtifactIdentity {
         ArtifactIdentity::new(
@@ -1205,6 +2013,147 @@ mod tests {
             u64::from(marker),
             FileMode::new(0o640).expect("fixture mode is valid"),
         )
+    }
+
+    fn golden_artifact(role: ArtifactRole, bytes: &[u8], mode: u16) -> ArtifactIdentity {
+        ArtifactIdentity::new(
+            role,
+            Sha256Digest::from_bytes(Sha256::digest(bytes).into()),
+            u64::try_from(bytes.len()).expect("golden artifact size fits u64"),
+            FileMode::new(mode).expect("golden artifact mode is valid"),
+        )
+    }
+
+    fn golden_v2_parts() -> ExecutionReceiptParts {
+        let execution_id = execution_id();
+        let runtime = golden_artifact(ArtifactRole::RuntimeBinary, b"exact-pbr", 0o755);
+        let launcher = golden_artifact(ArtifactRole::LauncherBinary, b"exact-launcher", 0o755);
+        let executable =
+            golden_artifact(ArtifactRole::RuntimeExecutable, b"golden executable", 0o755);
+        let policy = golden_artifact(ArtifactRole::CompiledPolicy, b"golden policy", 0o755);
+        let limits = version_two_limits();
+        ExecutionReceiptParts {
+            execution_id,
+            plan: ReceiptPlan::new_v2(
+                PlanId::new("golden-v2").expect("golden plan id is valid"),
+                golden_artifact(ArtifactRole::ExecutionPlan, b"golden source plan", 0o755),
+                golden_artifact(
+                    ArtifactRole::NormalizedPlan,
+                    b"golden normalized plan",
+                    0o755,
+                ),
+                limits,
+            )
+            .expect("golden plan roles are valid"),
+            policy: ReceiptPolicy::new(policy.clone()).expect("golden policy role is valid"),
+            platform: PlatformIdentity::new(
+                Architecture::X86_64,
+                "6.8.0",
+                4,
+                vec!["deny-network-v1".to_owned()],
+                vec!["memory".to_owned(), "pids".to_owned()],
+            )
+            .expect("golden platform is valid"),
+            runtime: RuntimeIdentity::new(runtime.clone(), launcher.clone())
+                .expect("golden runtime roles are valid"),
+            command: ReceiptCommand::new(
+                executable.clone(),
+                None,
+                golden_artifact(ArtifactRole::WorkingDirectory, b"golden cwd", 0o755),
+                Sha256Digest::from_bytes(Sha256::digest(b"golden arguments").into()),
+            )
+            .expect("golden command roles are valid"),
+            inputs: Vec::new(),
+            environment: Vec::new(),
+            output_root: golden_artifact(ArtifactRole::OutputRoot, b"golden output", 0o700),
+            boundary: BoundaryRecord::new(
+                BoundaryInstallation::Installed,
+                execution_id,
+                policy.digest(),
+                CgroupIdentity::new(34, 12),
+            ),
+            observations: ExecutionObservations::new(100, 200)
+                .expect("golden observations are ordered"),
+            streams: ReceiptStreams::new(
+                golden_artifact(ArtifactRole::StandardOutput, b"golden stdout", 0o600),
+                StreamCapture::Complete,
+                golden_artifact(ArtifactRole::StandardError, b"golden stderr", 0o600),
+                StreamCapture::Complete,
+            )
+            .expect("golden stream roles are valid"),
+            outcome: ExecutionOutcome::Exited { code: 0 },
+            resources: Some(
+                ReceiptResources::new(
+                    limits,
+                    32_768,
+                    0,
+                    ReceiptMemoryEvents::new(0, 0, 0, 0, 0, 0),
+                    ReceiptSwapEvents::new(0, 0),
+                )
+                .expect("golden resources are complete"),
+            ),
+            outputs: Vec::new(),
+            producer: runtime.clone(),
+            assumptions: REQUIRED_RUNTIME_ASSUMPTIONS
+                .into_iter()
+                .map(str::to_owned)
+                .collect(),
+            trusted_computing_base: [
+                (
+                    TrustedComputingBaseRole::HostHardwareFirmware,
+                    "golden-host".to_owned(),
+                ),
+                (
+                    TrustedComputingBaseRole::LinuxKernel,
+                    "golden-linux".to_owned(),
+                ),
+                (
+                    TrustedComputingBaseRole::Landlock,
+                    "golden-landlock".to_owned(),
+                ),
+                (
+                    TrustedComputingBaseRole::Seccomp,
+                    "golden-seccomp".to_owned(),
+                ),
+                (
+                    TrustedComputingBaseRole::CgroupV2,
+                    "golden-cgroup".to_owned(),
+                ),
+                (
+                    TrustedComputingBaseRole::NoNewPrivileges,
+                    "golden-nnp".to_owned(),
+                ),
+                (
+                    TrustedComputingBaseRole::Filesystem,
+                    "golden-filesystem".to_owned(),
+                ),
+                (
+                    TrustedComputingBaseRole::RuntimeBinary,
+                    runtime.digest().to_hex(),
+                ),
+                (
+                    TrustedComputingBaseRole::LauncherBinary,
+                    launcher.digest().to_hex(),
+                ),
+                (
+                    TrustedComputingBaseRole::RustToolchain,
+                    "golden-rust".to_owned(),
+                ),
+                (
+                    TrustedComputingBaseRole::CryptographicDigest,
+                    "sha256".to_owned(),
+                ),
+                (
+                    TrustedComputingBaseRole::RuntimeExecutable,
+                    executable.digest().to_hex(),
+                ),
+            ]
+            .into_iter()
+            .map(|(role, identity)| {
+                TrustedComputingBaseEntry::new(role, identity).expect("golden TCB entry is valid")
+            })
+            .collect(),
+        }
     }
 
     fn execution_id() -> ExecutionId {
@@ -1273,6 +2222,7 @@ mod tests {
             )
             .expect("fixture stream roles are valid"),
             outcome: ExecutionOutcome::Exited { code: 0 },
+            resources: None,
             outputs: vec![artifact(ArtifactRole::OutputArtifact, 19)],
             producer: runtime,
             assumptions: REQUIRED_RUNTIME_ASSUMPTIONS
@@ -1305,6 +2255,17 @@ mod tests {
         }
     }
 
+    fn version_two_limits() -> ResourceLimits {
+        ResourceLimits::new_v2(
+            ProcessLimit::new(2).expect("valid process limit"),
+            WallTimeLimit::from_milliseconds(1_000).expect("valid wall limit"),
+            OutputByteLimit::new(1_024),
+            OutputByteLimit::new(2_048),
+            MemoryByteLimit::new(65_536).expect("valid memory limit"),
+            SwapByteLimit::new(0).expect("valid swap limit"),
+        )
+    }
+
     #[test]
     fn constructor_derives_reuse_and_canonicalizes_sets() {
         let receipt = ExecutionReceipt::new(parts()).expect("fixture receipt is valid");
@@ -1312,6 +2273,78 @@ mod tests {
         assert_eq!(receipt.environment, ["LANG", "PATH"]);
         assert_eq!(receipt.assumptions, REQUIRED_RUNTIME_ASSUMPTIONS);
         assert_eq!(receipt.parts.inputs[0].role(), ArtifactRole::RuntimeLibrary);
+    }
+
+    #[test]
+    fn version_two_resources_drive_receipt_eligibility() {
+        let mut input = parts();
+        let limits = version_two_limits();
+        input.plan.normalized_limits = Some(limits);
+        input.resources = Some(
+            ReceiptResources::new(
+                limits,
+                32_768,
+                0,
+                ReceiptMemoryEvents::new(0, 1, 0, 0, 0, 0),
+                ReceiptSwapEvents::new(0, 0),
+            )
+            .expect("complete v2 resources"),
+        );
+        let receipt = ExecutionReceipt::new(input).expect("v2 receipt is valid");
+        let ReceiptEligibility::NonReusable(reasons) = receipt.eligibility() else {
+            panic!("memory.high must force nonreuse");
+        };
+        assert_eq!(reasons.as_slice(), &[NonReusableReason::MemoryHigh]);
+    }
+
+    #[test]
+    fn version_two_receipt_is_deterministic_cbor_with_closed_resource_object() {
+        let mut input = parts();
+        let limits = version_two_limits();
+        input.plan.normalized_limits = Some(limits);
+        input.resources = Some(
+            ReceiptResources::new(
+                limits,
+                32_768,
+                0,
+                ReceiptMemoryEvents::new(0, 0, 0, 0, 0, 0),
+                ReceiptSwapEvents::new(0, 0),
+            )
+            .expect("complete v2 resources"),
+        );
+        let receipt = ExecutionReceipt::new(input).expect("v2 receipt is valid");
+        let bytes = receipt.canonical_bytes().expect("v2 receipt encodes");
+        assert_ne!(bytes.first(), Some(&b'{'));
+        let decoded = crate::wire_v2::decode(&bytes).expect("producer CBOR decodes strictly");
+        assert_eq!(crate::wire_v2::encode(&decoded), Ok(bytes));
+        let crate::wire_v2::Value::Map(fields) = decoded else {
+            panic!("receipt must be a CBOR map");
+        };
+        assert_eq!(
+            fields
+                .iter()
+                .find(|(key, _)| key == "schema")
+                .map(|(_, value)| value),
+            Some(&crate::wire_v2::Value::Text(
+                "proofbound-runtime-execution-receipt/2".to_owned()
+            ))
+        );
+        assert!(fields.iter().any(|(key, _)| key == "resources"));
+    }
+
+    #[test]
+    fn version_two_receipt_producer_matches_the_frozen_golden_bytes() {
+        let receipt = ExecutionReceipt::new(golden_v2_parts()).expect("golden receipt is valid");
+        let expected = include_str!("../../../schemas/vectors/v2/execution-receipt.cbor.hex")
+            .trim()
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| {
+                u8::from_str_radix(core::str::from_utf8(pair).expect("golden hex is UTF-8"), 16)
+                    .expect("golden hex is valid")
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(receipt.canonical_bytes(), Ok(expected));
     }
 
     #[test]

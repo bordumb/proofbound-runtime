@@ -1,0 +1,25 @@
+; Proofbound Runtime run-result control message version 2.
+; The JSON rendering is a noncommitted projection, never verification input.
+
+run-result-v2 = {
+  "schema": "proofbound-runtime-run-result/2",
+  "outcome": outcome,
+  "receipt": text .size (1..18446744073709551615),
+  "commitment": bstr .size 32,
+  "execution_id": bstr .size 16
+}
+
+outcome = exited / signaled / terminal-kind
+exited = {
+  "code": 0..255,
+  "kind": "exited"
+}
+signaled = {
+  "kind": "signaled",
+  "signal": uint32-nonzero
+}
+terminal-kind = {
+  "kind": "denied" / "incomplete" / "launcher-failed" / "timed-out"
+}
+
+uint32-nonzero = 1..4294967295

@@ -1,0 +1,21 @@
+schema = "proofbound-runtime-receipt-carrier-attacks/2"
+
+[[cases]]
+id = "duplicate-map-key"
+bytes_hex = "a2616100616101"
+expected_error = "receipt.schema.malformed-cbor"
+
+[[cases]]
+id = "reordered-map-key"
+bytes_hex = "a2616200616100"
+expected_error = "receipt.schema.malformed-cbor"
+
+[[cases]]
+id = "trailing-byte"
+mutation = "append-zero-to-golden"
+expected_error = "receipt.schema.malformed-cbor"
+
+[[cases]]
+id = "invalid-utf8"
+bytes_hex = "61ff"
+expected_error = "receipt.schema.malformed-cbor"

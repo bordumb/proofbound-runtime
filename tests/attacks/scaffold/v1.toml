@@ -1,0 +1,46 @@
+schema = "proofbound-runtime-scaffold-attacks/1"
+
+[[case]]
+id = "static-elf"
+mutation = "supply an ELF image with no interpreter or dynamic segment"
+expected = "empty dependency closure and explicit human-choice open items"
+
+[[case]]
+id = "glibc-closure"
+mutation = "supply a glibc ELF with one transitive DT_NEEDED edge"
+expected = "both dependencies and their resolution provenance are inventoried"
+
+[[case]]
+id = "musl-closure"
+mutation = "supply a musl ELF under the explicit musl host profile"
+expected = "musl interpreter family and search provenance remain distinct"
+
+[[case]]
+id = "missing-library"
+mutation = "remove every candidate for one required soname"
+expected = "scaffold.dependency.missing"
+
+[[case]]
+id = "conflicting-search-path"
+mutation = "place the same soname in two ordered RUNPATH directories"
+expected = "select the first candidate and emit search-path-conflict"
+
+[[case]]
+id = "plugin-load"
+mutation = "request a scaffold for an image whose runtime plugin behavior is unknowable"
+expected = "dynamic-loads-unresolved remains an open item"
+
+[[case]]
+id = "symlink-cycle"
+mutation = "replace the executable path with a two-link cycle"
+expected = "scaffold.executable.path-invalid"
+
+[[case]]
+id = "identity-drift"
+mutation = "replace executable or dependency identity during its bounded read"
+expected = "the role-specific identity-drift code"
+
+[[case]]
+id = "unsupported-dynamic-token"
+mutation = "put a non-ORIGIN token in RPATH or RUNPATH"
+expected = "unsupported-dynamic-token remains an open item and is not searched"

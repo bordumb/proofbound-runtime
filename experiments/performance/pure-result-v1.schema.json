@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://proofbound.dev/runtime/experiments/performance/pure-result-v1.schema.json",
+  "title": "Proofbound Runtime pure performance result version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "kind",
+    "complete",
+    "source",
+    "benchmark_executable_sha256",
+    "toolchain",
+    "build_profile",
+    "architecture",
+    "protocol",
+    "subjects"
+  ],
+  "properties": {
+    "schema": { "const": "proofbound-runtime-performance-result/1" },
+    "kind": { "const": "pure" },
+    "complete": { "const": true },
+    "source": { "$ref": "#/$defs/source" },
+    "benchmark_executable_sha256": { "$ref": "#/$defs/sha256" },
+    "toolchain": { "$ref": "#/$defs/toolchain" },
+    "build_profile": { "const": "release" },
+    "architecture": { "enum": ["x86_64", "aarch64"] },
+    "protocol": { "$ref": "#/$defs/protocol" },
+    "subjects": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "prefixItems": [
+        {
+          "allOf": [
+            { "$ref": "#/$defs/subject" },
+            { "properties": { "subject": { "const": "plan-parse-v1" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/subject" },
+            {
+              "properties": {
+                "subject": { "const": "authority-normalization-v1" }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/subject" },
+            {
+              "properties": {
+                "subject": { "const": "policy-compilation-v1" }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/subject" },
+            {
+              "properties": {
+                "subject": { "const": "receipt-construction-v1" }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/subject" },
+            {
+              "properties": {
+                "subject": { "const": "receipt-canonical-encoding-v1" }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/subject" },
+            {
+              "properties": {
+                "subject": { "const": "receipt-independent-verification-v1" }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/subject" },
+            {
+              "properties": {
+                "subject": { "const": "release-execution-composition-v1" }
+              }
+            }
+          ]
+        }
+      ],
+      "items": false
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commit", "tree_state"],
+      "properties": {
+        "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "tree_state": { "const": "clean" }
+      }
+    },
+    "toolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["release", "target"],
+      "properties": {
+        "release": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "target": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["warmup_count", "sample_count", "target_sample_ns"],
+      "properties": {
+        "warmup_count": { "const": 100 },
+        "sample_count": { "const": 1000 },
+        "target_sample_ns": { "const": 10000000 }
+      }
+    },
+    "measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["batch_count", "summary"],
+      "properties": {
+        "batch_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 18446744073709551615
+        },
+        "summary": { "$ref": "#/$defs/summary" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "samples_ns",
+        "count",
+        "minimum_ns",
+        "median_ns",
+        "p95_ns",
+        "maximum_ns"
+      ],
+      "properties": {
+        "samples_ns": {
+          "type": "array",
+          "minItems": 1000,
+          "maxItems": 1000,
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 18446744073709551615
+          }
+        },
+        "count": { "const": 1000 },
+        "minimum_ns": { "$ref": "#/$defs/nanoseconds" },
+        "median_ns": { "$ref": "#/$defs/nanoseconds" },
+        "p95_ns": { "$ref": "#/$defs/nanoseconds" },
+        "maximum_ns": { "$ref": "#/$defs/nanoseconds" }
+      }
+    },
+    "nanoseconds": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 18446744073709551615
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject", "fixture_sha256", "measurement"],
+      "properties": {
+        "subject": { "type": "string" },
+        "fixture_sha256": { "$ref": "#/$defs/sha256" },
+        "measurement": { "$ref": "#/$defs/measurement" }
+      }
+    }
+  }
+}

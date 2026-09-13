@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://proofbound.dev/runtime/plan-scaffold-v1.schema.json",
+  "title": "Proofbound Runtime reviewable plan scaffold version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "dependencies",
+    "executable",
+    "host_profile",
+    "interpreter",
+    "open_items",
+    "resolution_inputs",
+    "safe_policy",
+    "schema",
+    "suggested_runtime_roots"
+  ],
+  "properties": {
+    "schema": {"const": "proofbound-runtime-plan-scaffold/1"},
+    "safe_policy": {"const": false},
+    "host_profile": {
+      "enum": [
+        "linux-glibc-x86-64-v1",
+        "linux-glibc-aarch64-v1",
+        "linux-musl-x86-64-v1",
+        "linux-musl-aarch64-v1"
+      ]
+    },
+    "executable": {"$ref": "#/$defs/artifact"},
+    "interpreter": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/artifact"}
+      ]
+    },
+    "resolution_inputs": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/artifact"}
+    },
+    "dependencies": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {"$ref": "#/$defs/dependency"}
+    },
+    "suggested_runtime_roots": {
+      "type": "array",
+      "maxItems": 257,
+      "items": {"$ref": "#/$defs/runtimeRoot"}
+    },
+    "open_items": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/openItem"}
+    }
+  },
+  "$defs": {
+    "symlinkHop": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "target"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "target": {"type": "string", "minLength": 1}
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "requested",
+        "resolved",
+        "sha256",
+        "size_bytes",
+        "symlink_chain"
+      ],
+      "properties": {
+        "mode": {"type": "string", "pattern": "^[0-7]{4}$"},
+        "requested": {"type": "string", "minLength": 1},
+        "resolved": {"type": "string", "pattern": "^/"},
+        "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "size_bytes": {"type": "integer", "minimum": 0, "maximum": 67108864},
+        "symlink_chain": {
+          "type": "array",
+          "maxItems": 40,
+          "items": {"$ref": "#/$defs/symlinkHop"}
+        }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "search_rule"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^/"},
+        "search_rule": {
+          "enum": [
+            "elf-rpath",
+            "elf-runpath",
+            "glibc-loader-cache-exact",
+            "inherited-rpath",
+            "musl-path-file",
+            "profile-default"
+          ]
+        }
+      }
+    },
+    "dependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidates", "declared_by", "search_rule", "selected", "soname"],
+      "properties": {
+        "candidates": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {"$ref": "#/$defs/candidate"}
+        },
+        "declared_by": {"type": "string", "pattern": "^/"},
+        "search_rule": {"$ref": "#/$defs/candidate/properties/search_rule"},
+        "selected": {"$ref": "#/$defs/artifact"},
+        "soname": {"type": "string", "minLength": 1, "pattern": "^[^/]+$"}
+      }
+    },
+    "runtimeRoot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "provenance"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^/"},
+        "provenance": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "openItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "detail"],
+      "properties": {
+        "code": {
+          "enum": [
+            "choose-environment",
+            "choose-limits",
+            "choose-network-mode",
+            "choose-write-roots",
+            "configuration-unresolved",
+            "dynamic-loads-unresolved",
+            "loader-data-unavailable",
+            "relative-search-path",
+            "search-path-conflict",
+            "unsupported-dynamic-token"
+          ]
+        },
+        "detail": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

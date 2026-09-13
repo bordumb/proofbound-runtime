@@ -4,7 +4,7 @@
 - **Priority:** `near-term`
 - **Kind:** `plugin-boundary`
 - **Created:** 2026-09-04
-- **Last updated:** 2026-09-05
+- **Last updated:** 2026-09-09
 - **Runtime claim:** `PBR-AUTH-001`
 - **Runtime milestone:** Milestone 1
 - **Proofbound target:** external integration or template
@@ -129,12 +129,17 @@ bridge.
 
 ## Local treatment
 
-`PBR-AUTH-001` remains Tier 2 and model-only. Runtime has reduced the local
-bridge surface to `String::as_bytes` and `Vec::truncate`, committed executable
-definitions for both, and made their compilation part of the repository's
-formal check. It will not register a source-refinement unit until the bridge
-and refinement theorem pass the pinned audit. The handwritten Lean model is
-not used as evidence about the shipping Rust function.
+Runtime reduced the local bridge surface to `String::as_bytes` and
+`Vec::truncate`, committed executable definitions for both, and byte-pinned
+them in the registered translation and refinement closures. The pinned audit,
+source-refinement theorem, and contextual exact-artifact bindings now admit
+`PBR-AUTH-001` at Tier 3 for the released subjects while retaining the
+translation-toolchain assumption.
+
+This local success does not provide a reusable bridge pack or make the bridge
+applicable to another project, translator version, declaration shape, or
+representation. Runtime continues to own and review its exact bridge bytes;
+the generic packaging and adoption workflow remains unresolved.
 
 ## Upstream handoff
 

@@ -79,3 +79,8 @@ expected_error = "composition.release.downgraded"
 id = "PBR-COMP-016"
 mutation = "substitute-release-observation-inputs"
 expected_error = "composition.release.verification-failed"
+
+[[cases]]
+id = "PBR-COMP-017"
+mutation = "omit-release-residual-row"
+expected_error = "composition.release.claim-omitted"

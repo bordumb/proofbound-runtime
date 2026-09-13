@@ -27,7 +27,7 @@ def normalize.NormalizedAuthority.into_parts
   ok (self.paths, self.environment, self.limits, self.network)
 
 /-- [proofbound_runtime_core::policy::compile_policy]:
-    Source: 'crates/proofbound-runtime-core/src/policy.rs', lines 112:0-121:1
+    Source: 'crates/proofbound-runtime-core/src/policy.rs', lines 247:0-256:1
     Visibility: public -/
 def policy.compile_policy
   (authority : normalize.NormalizedAuthority) :

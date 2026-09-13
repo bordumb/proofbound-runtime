@@ -1,0 +1,15 @@
+schema = "proofbound-runtime-network-experiment-plan/1"
+experiment = "network-authority/1"
+mechanism = "cgroup-bpf-endpoint-control"
+declared_service = "allowed.test"
+transport = "tcp"
+allowed_ipv4 = "127.0.0.1"
+allowed_port = 443
+expected_conclusion = "endpoint-control-selects-routing-tuple-only"
+
+cases = [
+  "allowed-endpoint",
+  "same-port-endpoint-substitution",
+  "other-port-denied",
+  "wrong-certificate-denied",
+]

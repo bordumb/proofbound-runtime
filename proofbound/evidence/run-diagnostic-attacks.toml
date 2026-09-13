@@ -1,0 +1,43 @@
+schema = "proofbound-evidence-unit/1"
+id = "run-diagnostic-attacks"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-DIAGNOSTIC-011"]
+tier = 0
+expected_inventory = [
+  "pbr::run::tests::diagnostic_attack_catalog_is_closed",
+  "pbr::run::tests::diagnostic_mappings_match_the_frozen_boundary",
+  "pbr::run_diagnostic::tests::phase_and_rule_names_are_unique_and_bounded",
+  "pbr::tests::run_failure_renders_one_closed_bounded_diagnostic",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-cli/Cargo.toml",
+  "crates/proofbound-runtime-cli/src/main.rs",
+  "crates/proofbound-runtime-cli/src/run.rs",
+  "crates/proofbound-runtime-cli/src/run_diagnostic.rs",
+  "crates/proofbound-runtime-linux/src/cgroup.rs",
+  "crates/proofbound-runtime-linux/src/execution.rs",
+  "crates/proofbound-runtime-linux/src/launcher.rs",
+  "crates/proofbound-runtime-linux/src/output.rs",
+  "crates/proofbound-runtime-linux/src/probe.rs",
+  "crates/proofbound-runtime-linux/src/resolve.rs",
+  "crates/proofbound-runtime-linux/src/supervisor.rs",
+  "tests/attacks/run/diagnostics-v1.toml",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-cli"
+manifest = "Cargo.toml"
+targets = ["--bin=pbr"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

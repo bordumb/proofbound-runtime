@@ -12,7 +12,10 @@ use proofbound_runtime_core::{
 #[cfg(any(test, target_os = "linux"))]
 use proofbound_runtime_core::{OutputByteLimit, SignalNumber};
 
-use crate::{FreshCgroup, InstallRequest, LauncherError, LauncherFailure, LauncherIdentity};
+use crate::{
+    FreshCgroup, InstallRequest, LauncherError, LauncherFailure, LauncherIdentity,
+    ResourceObservation,
+};
 #[cfg(target_os = "linux")]
 use crate::{LauncherChannel, LauncherMessage};
 
@@ -50,7 +53,9 @@ pub struct SupervisedExecution {
     stdout: CapturedStream,
     stderr: CapturedStream,
     launcher_failure: Option<LauncherFailure>,
+    resources: ResourceObservation,
     elapsed: Duration,
+    timings: SupervisorTimings,
 }
 
 impl SupervisedExecution {
@@ -84,10 +89,98 @@ impl SupervisedExecution {
         self.launcher_failure.as_ref()
     }
 
+    /// Returns terminal resources for a version 2 cgroup lifecycle.
+    #[must_use]
+    pub const fn resources(&self) -> ResourceObservation {
+        self.resources
+    }
+
     /// Returns elapsed monotonic supervisor time.
     #[must_use]
     pub const fn elapsed(&self) -> Duration {
         self.elapsed
+    }
+
+    /// Returns non-overlapping operational timings for the supervisor phases.
+    #[must_use]
+    pub const fn timings(&self) -> SupervisorTimings {
+        self.timings
+    }
+}
+
+/// Non-overlapping operational timings for one successful supervisor return.
+///
+/// These values are benchmark telemetry only. They are not receipt facts or
+/// launcher-protocol fields.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SupervisorTimings {
+    launcher_creation: Duration,
+    boundary_installation: Duration,
+    process_execution: Duration,
+    cleanup: Duration,
+    stream_collection: Duration,
+}
+
+impl SupervisorTimings {
+    #[cfg(any(test, target_os = "linux"))]
+    const fn new(
+        launcher_creation: Duration,
+        boundary_installation: Duration,
+        process_execution: Duration,
+        cleanup: Duration,
+        stream_collection: Duration,
+    ) -> Self {
+        Self {
+            launcher_creation,
+            boundary_installation,
+            process_execution,
+            cleanup,
+            stream_collection,
+        }
+    }
+
+    /// Returns time through creation and observation of the stopped launcher.
+    #[must_use]
+    pub const fn launcher_creation(self) -> Duration {
+        self.launcher_creation
+    }
+
+    /// Returns time from the stopped launcher through its boundary response.
+    #[must_use]
+    pub const fn boundary_installation(self) -> Duration {
+        self.boundary_installation
+    }
+
+    /// Returns time from the boundary response through terminal child status.
+    #[must_use]
+    pub const fn process_execution(self) -> Duration {
+        self.process_execution
+    }
+
+    /// Returns time spent draining the exact cgroup and waiting for the child.
+    #[must_use]
+    pub const fn cleanup(self) -> Duration {
+        self.cleanup
+    }
+
+    /// Returns time spent joining the already-running bounded stream drains.
+    #[must_use]
+    pub const fn stream_collection(self) -> Duration {
+        self.stream_collection
+    }
+
+    /// Returns the sum of all reported non-overlapping intervals.
+    #[must_use]
+    pub fn total(self) -> Duration {
+        [
+            self.launcher_creation,
+            self.boundary_installation,
+            self.process_execution,
+            self.cleanup,
+            self.stream_collection,
+        ]
+        .into_iter()
+        .fold(Duration::ZERO, Duration::saturating_add)
     }
 }
 
@@ -212,25 +305,36 @@ pub fn supervise_launcher(
             &request,
             &cgroup,
             deadline,
+            start,
         );
         if lifecycle.is_err() {
             let _ = child.0.kill();
         }
-        let cleanup = cgroup.cleanup();
+        let cleanup_start = std::time::Instant::now();
+        let resources = cgroup.finish();
         let _ = child.0.wait();
+        let cleanup_elapsed = cleanup_start.elapsed();
+        let stream_start = std::time::Instant::now();
         let stdout = join_capture(stdout_reader)?;
         let stderr = join_capture(stderr_reader)?;
-        if cleanup.is_err() {
-            return Err(SupervisorError::CleanupFailed);
-        }
-        let (boundary, outcome, launcher_failure) = lifecycle?;
+        let stream_collection_elapsed = stream_start.elapsed();
+        let resources = resources.map_err(|_| SupervisorError::CleanupFailed);
+        let lifecycle = lifecycle?;
         Ok(SupervisedExecution {
-            boundary,
-            outcome,
+            boundary: lifecycle.boundary,
+            outcome: lifecycle.outcome,
             stdout,
             stderr,
-            launcher_failure,
+            launcher_failure: lifecycle.launcher_failure,
+            resources: resources?,
             elapsed: start.elapsed(),
+            timings: SupervisorTimings::new(
+                lifecycle.launcher_creation,
+                lifecycle.boundary_installation,
+                lifecycle.process_execution,
+                cleanup_elapsed,
+                stream_collection_elapsed,
+            ),
         })
     }
     #[cfg(not(target_os = "linux"))]
@@ -246,6 +350,16 @@ pub fn supervise_launcher(
         );
         Err(SupervisorError::UnsupportedOperatingSystem)
     }
+}
+
+#[cfg(target_os = "linux")]
+struct LifecycleResult {
+    boundary: BoundaryInstallation,
+    outcome: ExecutionOutcome,
+    launcher_failure: Option<LauncherFailure>,
+    launcher_creation: Duration,
+    boundary_installation: Duration,
+    process_execution: Duration,
 }
 
 #[cfg(target_os = "linux")]
@@ -420,15 +534,10 @@ fn supervise_lifecycle(
     request: &InstallRequest,
     cgroup: &FreshCgroup,
     deadline: std::time::Instant,
-) -> Result<
-    (
-        BoundaryInstallation,
-        ExecutionOutcome,
-        Option<LauncherFailure>,
-    ),
-    SupervisorError,
-> {
+    supervisor_start: std::time::Instant,
+) -> Result<LifecycleResult, SupervisorError> {
     wait_for_pause(child.id(), deadline)?;
+    let launcher_ready = std::time::Instant::now();
     cgroup
         .place_process(child.id())
         .map_err(|_| SupervisorError::CgroupPlacementFailed)?;
@@ -441,36 +550,57 @@ fn supervise_lifecycle(
         Ok(response) => response,
         Err(LauncherError::ChannelTimeout) => {
             let _ = child.kill();
-            return Ok((
-                BoundaryInstallation::Incomplete,
-                ExecutionOutcome::TimedOut,
-                None,
-            ));
+            let boundary_complete = std::time::Instant::now();
+            return Ok(LifecycleResult {
+                boundary: BoundaryInstallation::Incomplete,
+                outcome: ExecutionOutcome::TimedOut,
+                launcher_failure: None,
+                launcher_creation: launcher_ready.duration_since(supervisor_start),
+                boundary_installation: boundary_complete.duration_since(launcher_ready),
+                process_execution: Duration::ZERO,
+            });
         }
         Err(_) => return Err(SupervisorError::ProtocolFailed),
     };
     crate::verify_launcher_response(&response, request.identity())
         .map_err(|_| SupervisorError::ProtocolFailed)?;
+    let boundary_complete = std::time::Instant::now();
     match response {
         LauncherMessage::BoundaryInstalled(_) => {
             let outcome = monitor_process(child, deadline)?;
-            if let Some(failure) = receive_late_failure(channel, request.identity())? {
-                Ok((
-                    BoundaryInstallation::Installed,
-                    ExecutionOutcome::LauncherFailed,
-                    Some(failure),
-                ))
+            let launcher_failure = receive_late_failure(channel, request.identity())?;
+            let process_complete = std::time::Instant::now();
+            if launcher_failure.is_some() {
+                Ok(LifecycleResult {
+                    boundary: BoundaryInstallation::Installed,
+                    outcome: ExecutionOutcome::LauncherFailed,
+                    launcher_failure,
+                    launcher_creation: launcher_ready.duration_since(supervisor_start),
+                    boundary_installation: boundary_complete.duration_since(launcher_ready),
+                    process_execution: process_complete.duration_since(boundary_complete),
+                })
             } else {
-                Ok((BoundaryInstallation::Installed, outcome, None))
+                Ok(LifecycleResult {
+                    boundary: BoundaryInstallation::Installed,
+                    outcome,
+                    launcher_failure: None,
+                    launcher_creation: launcher_ready.duration_since(supervisor_start),
+                    boundary_installation: boundary_complete.duration_since(launcher_ready),
+                    process_execution: process_complete.duration_since(boundary_complete),
+                })
             }
         }
         LauncherMessage::Failure(failure) => {
             let _ = monitor_process(child, deadline)?;
-            Ok((
-                BoundaryInstallation::Incomplete,
-                ExecutionOutcome::LauncherFailed,
-                Some(failure),
-            ))
+            let process_complete = std::time::Instant::now();
+            Ok(LifecycleResult {
+                boundary: BoundaryInstallation::Incomplete,
+                outcome: ExecutionOutcome::LauncherFailed,
+                launcher_failure: Some(failure),
+                launcher_creation: launcher_ready.duration_since(supervisor_start),
+                boundary_installation: boundary_complete.duration_since(launcher_ready),
+                process_execution: process_complete.duration_since(boundary_complete),
+            })
         }
         LauncherMessage::Install(_) => Err(SupervisorError::ProtocolFailed),
     }
@@ -666,6 +796,27 @@ mod tests {
         assert_eq!(
             classify_process_result(None, None, false, false),
             ExecutionOutcome::Incomplete
+        );
+    }
+
+    #[test]
+    fn supervisor_timings_preserve_non_overlapping_phase_intervals() {
+        let timings = SupervisorTimings::new(
+            Duration::from_nanos(11),
+            Duration::from_nanos(13),
+            Duration::from_nanos(17),
+            Duration::from_nanos(19),
+            Duration::from_nanos(23),
+        );
+
+        assert_eq!(timings.launcher_creation(), Duration::from_nanos(11));
+        assert_eq!(timings.boundary_installation(), Duration::from_nanos(13));
+        assert_eq!(timings.process_execution(), Duration::from_nanos(17));
+        assert_eq!(timings.cleanup(), Duration::from_nanos(19));
+        assert_eq!(timings.stream_collection(), Duration::from_nanos(23));
+        assert_eq!(
+            timings.total(),
+            Duration::from_nanos(11 + 13 + 17 + 19 + 23)
         );
     }
 

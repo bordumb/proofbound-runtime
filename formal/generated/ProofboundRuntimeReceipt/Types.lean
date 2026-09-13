@@ -56,8 +56,33 @@ inductive ReceiptStructure where
 | Valid : ReceiptStructure
 | Malformed : ReceiptStructure
 
+/-- [proofbound_runtime_receipt::LimitEvent]
+    Source: 'crates/proofbound-runtime-receipt/src/lib.rs', lines 86:0-94:1
+    Visibility: public -/
+@[discriminant isize]
+inductive LimitEvent where
+| MemoryHigh : LimitEvent
+| MemoryMax : LimitEvent
+| MemoryOom : LimitEvent
+| MemoryOomKill : LimitEvent
+| MemoryOomGroupKill : LimitEvent
+| SwapMax : LimitEvent
+| SwapFail : LimitEvent
+
+/-- [proofbound_runtime_receipt::LimitEvents]
+    Source: 'crates/proofbound-runtime-receipt/src/lib.rs', lines 98:0-106:1
+    Visibility: public -/
+structure LimitEvents where
+  memory_high : Bool
+  memory_max : Bool
+  memory_oom : Bool
+  memory_oom_kill : Bool
+  memory_oom_group_kill : Bool
+  swap_max : Bool
+  swap_fail : Bool
+
 /-- [proofbound_runtime_receipt::ReceiptFacts]
-    Source: 'crates/proofbound-runtime-receipt/src/lib.rs', lines 86:0-92:1
+    Source: 'crates/proofbound-runtime-receipt/src/lib.rs', lines 156:0-163:1
     Visibility: public -/
 structure ReceiptFacts where
   boundary : BoundaryInstallation
@@ -65,9 +90,10 @@ structure ReceiptFacts where
   stdout : StreamCapture
   stderr : StreamCapture
   «structure» : ReceiptStructure
+  limit_events : LimitEvents
 
 /-- [proofbound_runtime_receipt::NonReusableReason]
-    Source: 'crates/proofbound-runtime-receipt/src/lib.rs', lines 116:0-137:1
+    Source: 'crates/proofbound-runtime-receipt/src/lib.rs', lines 208:0-236:1
     Visibility: public -/
 @[discriminant isize]
 inductive NonReusableReason where
@@ -81,15 +107,22 @@ inductive NonReusableReason where
 | StandardOutputTruncated : NonReusableReason
 | StandardErrorTruncated : NonReusableReason
 | ReceiptMalformed : NonReusableReason
+| MemoryHigh : NonReusableReason
+| MemoryMax : NonReusableReason
+| MemoryOom : NonReusableReason
+| MemoryOomKill : NonReusableReason
+| MemoryOomGroupKill : NonReusableReason
+| SwapMax : NonReusableReason
+| SwapFail : NonReusableReason
 
 /-- [proofbound_runtime_receipt::NonReusableReasons]
-    Source: 'crates/proofbound-runtime-receipt/src/lib.rs', lines 141:0-141:54
+    Source: 'crates/proofbound-runtime-receipt/src/lib.rs', lines 240:0-240:54
     Visibility: public -/
 @[reducible]
 def NonReusableReasons := alloc.vec.Vec NonReusableReason
 
 /-- [proofbound_runtime_receipt::ReceiptEligibility]
-    Source: 'crates/proofbound-runtime-receipt/src/lib.rs', lines 153:0-158:1
+    Source: 'crates/proofbound-runtime-receipt/src/lib.rs', lines 252:0-257:1
     Visibility: public -/
 @[discriminant isize]
 inductive ReceiptEligibility where

@@ -78,17 +78,31 @@ def authority.WallTimeLimit := Std.U64
 @[reducible]
 def authority.OutputByteLimit := Std.U64
 
+/-- [proofbound_runtime_core::authority::MemoryByteLimit]
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 285:0-285:32
+    Visibility: public -/
+@[reducible]
+def authority.MemoryByteLimit := Std.U64
+
+/-- [proofbound_runtime_core::authority::SwapByteLimit]
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 318:0-318:30
+    Visibility: public -/
+@[reducible]
+def authority.SwapByteLimit := Std.U64
+
 /-- [proofbound_runtime_core::authority::ResourceLimits]
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 285:0-290:1
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 346:0-353:1
     Visibility: public -/
 structure authority.ResourceLimits where
   processes : authority.ProcessLimit
   wall_time : authority.WallTimeLimit
   stdout : authority.OutputByteLimit
   stderr : authority.OutputByteLimit
+  memory : Option authority.MemoryByteLimit
+  swap : Option authority.SwapByteLimit
 
 /-- [proofbound_runtime_core::authority::NetworkMode]
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 345:0-348:1
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 461:0-464:1
     Visibility: public -/
 @[discriminant isize]
 inductive authority.NetworkMode where
@@ -104,33 +118,33 @@ structure normalize.NormalizedAuthority where
   network : authority.NetworkMode
 
 /-- [proofbound_runtime_core::policy::FilesystemPolicy]
-    Source: 'crates/proofbound-runtime-core/src/policy.rs', lines 5:0-7:1
+    Source: 'crates/proofbound-runtime-core/src/policy.rs', lines 33:0-35:1
     Visibility: public -/
 structure policy.FilesystemPolicy where
   rules : alloc.vec.Vec authority.PathAuthority
 
 /-- [proofbound_runtime_core::policy::SeccompPolicy]
-    Source: 'crates/proofbound-runtime-core/src/policy.rs', lines 19:0-22:1
+    Source: 'crates/proofbound-runtime-core/src/policy.rs', lines 47:0-50:1
     Visibility: public -/
 @[discriminant isize]
 inductive policy.SeccompPolicy where
 | DenyNetworkV1 : policy.SeccompPolicy
 
 /-- [proofbound_runtime_core::policy::CgroupPolicy]
-    Source: 'crates/proofbound-runtime-core/src/policy.rs', lines 26:0-28:1
+    Source: 'crates/proofbound-runtime-core/src/policy.rs', lines 54:0-56:1
     Visibility: public -/
 structure policy.CgroupPolicy where
   limits : authority.ResourceLimits
 
 /-- [proofbound_runtime_core::policy::NoNewPrivileges]
-    Source: 'crates/proofbound-runtime-core/src/policy.rs', lines 40:0-43:1
+    Source: 'crates/proofbound-runtime-core/src/policy.rs', lines 68:0-71:1
     Visibility: public -/
 @[discriminant isize]
 inductive policy.NoNewPrivileges where
 | Required : policy.NoNewPrivileges
 
 /-- [proofbound_runtime_core::policy::CompiledPolicy]
-    Source: 'crates/proofbound-runtime-core/src/policy.rs', lines 47:0-53:1
+    Source: 'crates/proofbound-runtime-core/src/policy.rs', lines 75:0-81:1
     Visibility: public -/
 structure policy.CompiledPolicy where
   filesystem : policy.FilesystemPolicy

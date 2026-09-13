@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://proofbound.dev/runtime/run-result-v2.schema.json",
+  "title": "Proofbound Runtime run-result JSON projection version 2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["commitment", "execution_id", "outcome", "receipt", "schema"],
+  "properties": {
+    "commitment": {
+      "type": "string",
+      "pattern": "^hex:[0-9a-f]{64}$"
+    },
+    "execution_id": {
+      "type": "string",
+      "pattern": "^hex:[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$"
+    },
+    "outcome": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code", "kind"],
+          "properties": {
+            "code": {"type": "integer", "minimum": 0, "maximum": 255},
+            "kind": {"const": "exited"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "signal"],
+          "properties": {
+            "kind": {"const": "signaled"},
+            "signal": {"type": "integer", "minimum": 1, "maximum": 255}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": {
+              "enum": ["denied", "incomplete", "launcher-failed", "timed-out"]
+            }
+          }
+        }
+      ]
+    },
+    "receipt": {"type": "string", "minLength": 1},
+    "schema": {"const": "proofbound-runtime-run-result/2"}
+  }
+}

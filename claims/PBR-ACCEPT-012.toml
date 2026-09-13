@@ -1,0 +1,54 @@
+schema = "proofbound-claim/1"
+id = "PBR-ACCEPT-012"
+title = "Adopter policy decisions bind independently verified inputs"
+statement = "Given an independently selected acceptance policy identity, execution commitment and execution ID, exact Runtime and Proofbound release inputs, and successful independent verification, pbr-accept emits accepted only when every registered execution, release, claim-facet, assumption, exclusion, obligation, and trusted-computing-base policy predicate holds; otherwise it emits every applicable typed rejection reason bound to the exact inputs."
+public_language = "The acceptance evaluator strictly decodes a deterministic-CBOR adopter policy, re-runs both independent verifiers over raw inputs, and binds a canonical decision to the policy, execution, release, verifier, composer, and acceptor identities. The current evidence is a closed source-level attack corpus and CLI contract, not a proof of external policy selection, artifact storage authenticity, or exact released pbr-accept bytes."
+subject = "rust:proofbound_runtime_accept::evaluate"
+profile = "ledger"
+tier = 0
+evidence = [
+  "example-test:receipt-acceptance-attacks",
+  "example-test:receipt-acceptance-cli",
+]
+assumptions = [
+  "PBR-COMMITMENT-AX-007",
+  "PBR-POLICY-SELECTION-AX-009",
+  "PBR-TOOLCHAIN-AX-003",
+]
+open_obligations = [
+  "Observe both independently reproduced pbr-accept release artifacts at the exact version 0.2 mainline revision.",
+  "Dogfood the pinned Action in an external sample repository and retain its exact decision identity and workflow run.",
+]
+out_of_scope = [
+  "Authenticity or confidentiality of GitHub Actions artifact storage.",
+  "Authenticity of a policy identity delivered through the same replaceable carrier as the policy bytes.",
+  "Age-based freshness, trusted current time, signatures, transparency logs, or a receipt database.",
+  "Correctness of the independently supplied Proofbound and Runtime verifier binaries beyond their separately admitted claims and visible identities.",
+  "Promotion of any Proofbound claim facet by the acceptance evaluator.",
+]
+source_roots = [
+  ".github/actions/proofbound-runtime/action.yml",
+  ".github/actions/proofbound-runtime/run.py",
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-accept/Cargo.toml",
+  "crates/proofbound-runtime-accept/src/cbor.rs",
+  "crates/proofbound-runtime-accept/src/lib.rs",
+  "crates/proofbound-runtime-accept/src/main.rs",
+  "crates/proofbound-runtime-compose/src/cbor_decode.rs",
+  "crates/proofbound-runtime-compose/src/lib.rs",
+  "crates/proofbound-runtime-verify/src/cbor.rs",
+  "crates/proofbound-runtime-verify/src/decode.rs",
+  "crates/proofbound-runtime-verify/src/decode_v2.rs",
+  "crates/proofbound-runtime-verify/src/lib.rs",
+  "docs/adr/0003-deterministic-cbor-wire-objects.md",
+  "docs/specs/0010_receipt_acceptance_policy.md",
+  "proofbound/evidence/receipt-acceptance-attacks.toml",
+  "proofbound/evidence/receipt-acceptance-cli.toml",
+  "schemas/acceptance-decision-v1.cddl",
+  "schemas/acceptance-policy-v1.cddl",
+  "schemas/vectors/v2/acceptance-decision.cbor.hex",
+  "schemas/vectors/v2/acceptance-policy.cbor.hex",
+  "tests/attacks/acceptance/v1.toml",
+  "tools/acceptance/compile_policy.py",
+]

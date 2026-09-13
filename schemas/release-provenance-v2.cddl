@@ -1,0 +1,11 @@
+release-provenance-v2 = {
+  "schema": "proofbound-runtime-release-provenance/2",
+  "source_revision": bytes .size 20,
+  "artifacts": [+ release-provenance-artifact-v2],
+}
+
+release-provenance-artifact-v2 = {
+  "logical_name": text .size (1..4096),
+  "sha256": bytes .size 32,
+  "size_bytes": uint,
+}

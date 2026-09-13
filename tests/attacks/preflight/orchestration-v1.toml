@@ -1,0 +1,51 @@
+schema = "proofbound-runtime-preflight-attacks/1"
+
+[[case]]
+id = "invalid-plan"
+mutation = "supply-plan-bytes-that-fail-the-closed-versioned-parser"
+expected = "plan-validation-and-no-mutation"
+
+[[case]]
+id = "unsupported-host"
+mutation = "remove-one-required-host-capability"
+expected = "host-capabilities-and-no-mutation"
+
+[[case]]
+id = "receipt-preexists"
+mutation = "select-an-existing-receipt-target"
+expected = "receipt-target-and-existing-file-preserved"
+
+[[case]]
+id = "output-preexists"
+mutation = "select-an-existing-output-root-target"
+expected = "output-root-and-existing-object-preserved"
+
+[[case]]
+id = "plan-root-escape"
+mutation = "resolve-a-relative-input-above-the-plan-root"
+expected = "read-authority-and-no-mutation"
+
+[[case]]
+id = "runtime-root-symlink"
+mutation = "replace-a-registered-runtime-library-root-with-a-symlink"
+expected = "read-authority-and-no-mutation"
+
+[[case]]
+id = "executable-architecture-substitution"
+mutation = "supply-an-elf-executable-for-another-architecture"
+expected = "executable-closure-and-no-mutation"
+
+[[case]]
+id = "interpreter-substitution"
+mutation = "make-the-declared-elf-interpreter-unavailable"
+expected = "executable-closure-and-no-mutation"
+
+[[case]]
+id = "identity-drift"
+mutation = "change-a-retained-input-after-observation"
+expected = "identity-revalidation-and-no-mutation"
+
+[[case]]
+id = "preflight-as-receipt"
+mutation = "submit-a-successful-preflight-report-to-the-independent-receipt-verifier"
+expected = "receipt-schema-rejected"

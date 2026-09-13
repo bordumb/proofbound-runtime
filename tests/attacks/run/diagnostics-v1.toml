@@ -1,0 +1,73 @@
+schema = "proofbound-runtime-run-diagnostic-attacks/1"
+
+[[case]]
+id = "capability-unavailable"
+source = "probe-error"
+expected_exit = 3
+expected_phase = "host-capabilities"
+expected_rule = "host-supported"
+expected_code = "platform.cgroup-v2.controller-missing"
+
+[[case]]
+id = "resolution-failure"
+source = "resolution-error"
+expected_exit = 2
+expected_phase = "executable-closure"
+expected_rule = "executable-closure-resolved"
+expected_code = "resolve.elf.malformed"
+
+[[case]]
+id = "identity-drift"
+source = "resolution-error"
+expected_exit = 4
+expected_phase = "identity-revalidation"
+expected_rule = "artifact-identities-stable"
+expected_code = "resolve.identity.drift"
+
+[[case]]
+id = "output-root-failure"
+source = "output-root-error"
+expected_exit = 2
+expected_phase = "output-root"
+expected_rule = "output-root-fresh"
+expected_code = "output.root.exists"
+
+[[case]]
+id = "launcher-protocol-failure"
+source = "supervisor-error"
+expected_exit = 5
+expected_phase = "launcher-protocol"
+expected_rule = "launcher-boundary-complete"
+expected_code = "supervisor.protocol.failed"
+
+[[case]]
+id = "cgroup-failure"
+source = "cgroup-error"
+expected_exit = 5
+expected_phase = "cgroup"
+expected_rule = "cgroup-boundary-prepared"
+expected_code = "cgroup.limit.mismatch"
+
+[[case]]
+id = "receipt-construction-failure"
+source = "receipt-error"
+expected_exit = 6
+expected_phase = "receipt-construction"
+expected_rule = "receipt-constructed"
+expected_code = "receipt.observation.range"
+
+[[case]]
+id = "receipt-publication-failure"
+source = "io-error"
+expected_exit = 6
+expected_phase = "receipt-publication"
+expected_rule = "receipt-published"
+expected_code = "receipt.output.publish-failed"
+
+[[case]]
+id = "result-projection-failure"
+source = "path-error"
+expected_exit = 2
+expected_phase = "result-projection"
+expected_rule = "run-result-representable"
+expected_code = "receipt.path.utf8-invalid"

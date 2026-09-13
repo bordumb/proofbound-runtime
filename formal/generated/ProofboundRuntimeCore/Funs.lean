@@ -207,7 +207,7 @@ def authority.PathAuthority.comes_before
   else authority.AuthorityPath.comes_before self.path other.path
 
 /-- [proofbound_runtime_core::authority::{proofbound_runtime_core::authority::AuthorityPlan}::into_parts]:
-    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 400:4-409:5 -/
+    Source: 'crates/proofbound-runtime-core/src/authority.rs', lines 516:4-525:5 -/
 def authority.AuthorityPlan.into_parts
   (self : authority.AuthorityPlan) :
   Result ((alloc.vec.Vec authority.PathAuthority) × (alloc.vec.Vec

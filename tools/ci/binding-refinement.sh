@@ -9,7 +9,7 @@ mkdir -p "$output_root"
 refinement_root=".lake/build/lib/lean/ProofboundRuntime/Refinement"
 mkdir -p "$refinement_root"
 
-lake build Aeneas
+lake build Aeneas ProofboundRuntime.Binding
 
 lake env lean \
   formal/generated/ProofboundRuntimeBinding/Types.lean \

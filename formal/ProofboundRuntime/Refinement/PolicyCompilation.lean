@@ -36,6 +36,8 @@ def toModelResourceLimits
   wallTimeMilliseconds := limits.wall_time.val
   standardOutputBytes := limits.stdout.val
   standardErrorBytes := limits.stderr.val
+  memoryBytes := limits.memory.map fun value => value.val
+  swapBytes := limits.swap.map fun value => value.val
 }
 
 def toModelEnvironmentName

@@ -1,0 +1,114 @@
+; Proofbound Runtime composed receipt version 2.
+; Runtime's composition is deterministic CBOR with closed text-key maps. The
+; embedded Proofbound release remains an identified external artifact; its
+; own encoding is selected by the pinned Proofbound release.
+
+composed-receipt-v2 = {
+  "schema": "proofbound-runtime-composed-receipt/2",
+  "claims": [+ claim],
+  "release": release,
+  "execution": execution,
+  "eligibility": { "status": "composed" },
+  "assumptions": [* inherited-entry],
+  "composition_id": bstr .size 32,
+  "runtime_bundle": runtime-bundle,
+  "not_proved_out_of_scope": residual-obligations,
+  "trusted_computing_base": [* composed-tcb-entry]
+}
+
+residual-obligations = {
+  "assumptions": [* text],
+  "exclusions": [* text],
+  "open_obligations": [* text],
+  "undischarged_premises": [* text]
+}
+
+artifact = {
+  "name": text .size (1..18446744073709551615),
+  "size": uint64,
+  "sha256": bstr .size 32
+}
+
+execution = {
+  "receipt": artifact,
+  "verifier": artifact,
+  "commitment": bstr .size 32,
+  "eligibility": "reusable" / "non-reusable",
+  "execution_id": bstr .size 16,
+  "verification_report": artifact
+}
+
+release = {
+  "project": text .size (1..18446744073709551615),
+  "envelope": artifact,
+  "verifier": artifact,
+  "payload_sha256": bstr .size 32,
+  "evidence_context": text .size (1..128),
+  "project_revision": bstr .size 20,
+  "observation_inputs": artifact,
+  "verification_report": artifact,
+  "verification_verdict": "bytes-observed"
+}
+
+runtime-bundle = {
+  "target": "aarch64-unknown-linux-gnu" / "x86_64-unknown-linux-gnu",
+  "version": text,
+  "manifest": artifact,
+  "artifacts": [artifact, artifact, artifact, artifact],
+  "toolchain": text .size (1..18446744073709551615),
+  "architecture": "aarch64" / "x86_64"
+}
+
+claim = {
+  "formal": "PROVED" / "BOUNDED_CHECKED" / "TESTED" / "OPEN" / "INVALID",
+  "linkage": "REFINED" / "ARTIFACT_BOUND" / "TRANSCRIBED" / "MODEL_ONLY" /
+    "INVALID",
+  "claim_id": text .size (1..18446744073709551615),
+  "assumption": "NONE" / "ASSUMED" / "INVALID",
+  "assumptions": [* text],
+  "policy_admitted": bool,
+  "public_statement": text .size (1..18446744073709551615),
+  "artifact_observations": [* artifact-observation],
+  "undischarged_premises": [* text]
+}
+
+artifact-observation = {
+  "artifact": observed-artifact,
+  "evidence": bstr .size 32,
+  "identity": bstr .size 32,
+  "platform": observed-platform,
+  "procedure": observed-artifact,
+  "dependencies": [* bstr .size 32],
+  "semantic_kind": text .size (1..18446744073709551615),
+  "subject_role": text .size (1..18446744073709551615),
+  "toolchain_closure": toolchain-closure
+}
+
+observed-artifact = {
+  "sha256": bstr .size 32,
+  "size_bytes": uint64,
+  "logical_name": text .size (1..18446744073709551615)
+}
+
+observed-platform = {
+  "architecture": "aarch64" / "x86_64",
+  "operating_system": "linux"
+}
+
+toolchain-closure = {
+  "kind": "toolchain",
+  "sha256": bstr .size 32
+}
+
+inherited-entry = {
+  "id": text .size (1..18446744073709551615),
+  "origins": [+ "execution" / "release"]
+}
+
+composed-tcb-entry = {
+  "role": text .size (1..18446744073709551615),
+  "origins": [+ "execution" / "release"],
+  "identity": text .size (1..18446744073709551615)
+}
+
+uint64 = 0..18446744073709551615

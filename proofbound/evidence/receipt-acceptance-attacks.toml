@@ -1,0 +1,45 @@
+schema = "proofbound-evidence-unit/1"
+id = "receipt-acceptance-attacks"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-ACCEPT-012"]
+tier = 0
+expected_inventory = [
+  "proofbound_runtime_accept::tests::decision_golden_round_trips_through_the_strict_codec",
+  "proofbound_runtime_accept::tests::exact_verified_facts_are_accepted_and_bound",
+  "proofbound_runtime_accept::tests::forged_acceptance_fails_closed",
+  "proofbound_runtime_accept::tests::omission_substitution_and_replay_are_independent_rejections",
+  "proofbound_runtime_accept::tests::policy_decoder_rejects_json_and_noncanonical_cbor",
+  "proofbound_runtime_accept::tests::policy_golden_decodes_with_exact_identity",
+  "proofbound_runtime_accept::tests::policy_reports_all_independent_mismatches",
+  "proofbound_runtime_accept::tests::registered_attack_catalog_is_closed_and_complete",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-accept/Cargo.toml",
+  "crates/proofbound-runtime-accept/src/cbor.rs",
+  "crates/proofbound-runtime-accept/src/lib.rs",
+  "crates/proofbound-runtime-compose/src/lib.rs",
+  "crates/proofbound-runtime-verify/src/decode.rs",
+  "schemas/acceptance-decision-v1.cddl",
+  "schemas/acceptance-policy-v1.cddl",
+  "schemas/vectors/v2/acceptance-decision.cbor.hex",
+  "schemas/vectors/v2/acceptance-policy.cbor.hex",
+  "tests/attacks/acceptance/v1.toml",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-accept"
+manifest = "Cargo.toml"
+targets = ["--lib"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

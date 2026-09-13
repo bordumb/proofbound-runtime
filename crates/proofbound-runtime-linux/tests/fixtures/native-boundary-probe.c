@@ -4,11 +4,14 @@
 #include <fcntl.h>
 #include <linux/landlock.h>
 #include <signal.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/prctl.h>
+#include <sys/mman.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -76,6 +79,210 @@ static int emit(int descriptor, const char *text) {
     return 0;
 }
 
+static int parse_size(const char *text, size_t *output) {
+    char *end = NULL;
+    errno = 0;
+    unsigned long long value = strtoull(text, &end, 10);
+    if (errno != 0 || end == text || *end != '\0' || value == 0 ||
+        value > (unsigned long long)SIZE_MAX) {
+        return -1;
+    }
+    *output = (size_t)value;
+    return 0;
+}
+
+static void touch_writable_pages(unsigned char *memory, size_t size) {
+    long page_size = sysconf(_SC_PAGESIZE);
+    if (page_size <= 0) {
+        _exit(88);
+    }
+    for (size_t offset = 0; offset < size; offset += (size_t)page_size) {
+        memory[offset] = (unsigned char)(offset / (size_t)page_size);
+    }
+    memory[size - 1] = 1;
+}
+
+static unsigned char *pre_main_memory = NULL;
+
+__attribute__((constructor)) static void allocate_before_main(void) {
+    const char *enabled = getenv("PROOFBOUND_PRE_MAIN_ALLOCATION");
+    if (enabled == NULL || strcmp(enabled, "1") != 0) {
+        return;
+    }
+    const size_t size = 4 * 1024 * 1024;
+    pre_main_memory = mmap(NULL, size, PROT_READ | PROT_WRITE,
+                           MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (pre_main_memory == MAP_FAILED) {
+        _exit(116);
+    }
+    touch_writable_pages(pre_main_memory, size);
+}
+
+static int allocate_anonymous(size_t size, int retain) {
+    unsigned char *memory = mmap(NULL, size, PROT_READ | PROT_WRITE,
+                                 MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (memory == MAP_FAILED) {
+        return errno == ENOMEM ? 0 : 81;
+    }
+    touch_writable_pages(memory, size);
+    if (retain) {
+        for (;;) {
+            pause();
+        }
+    }
+    return munmap(memory, size) == 0 ? 0 : 82;
+}
+
+static int allocate_until_denied(size_t chunk_size) {
+    for (;;) {
+        unsigned char *memory = mmap(NULL, chunk_size, PROT_READ | PROT_WRITE,
+                                     MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        if (memory == MAP_FAILED) {
+            return errno == ENOMEM
+                       ? emit(STDOUT_FILENO, "allocation-denied\n")
+                       : 83;
+        }
+        touch_writable_pages(memory, chunk_size);
+    }
+}
+
+static int mapped_file(const char *path, size_t size) {
+    int descriptor = open(path, O_RDWR | O_CLOEXEC);
+    if (descriptor < 0) {
+        return 84;
+    }
+    if (ftruncate(descriptor, 0) != 0 ||
+        ftruncate(descriptor, (off_t)size) != 0) {
+        close(descriptor);
+        return 85;
+    }
+    unsigned char *memory = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED,
+                                 descriptor, 0);
+    if (memory == MAP_FAILED) {
+        close(descriptor);
+        return 86;
+    }
+    touch_writable_pages(memory, size);
+    return msync(memory, size, MS_SYNC) == 0 && munmap(memory, size) == 0 &&
+                   close(descriptor) == 0
+               ? 0
+               : 89;
+}
+
+static int read_page_cache(const char *path, size_t size) {
+    int descriptor = open(path, O_RDWR | O_CLOEXEC);
+    if (descriptor < 0) {
+        return 92;
+    }
+    unsigned char buffer[65536];
+    memset(buffer, 0x5a, sizeof(buffer));
+    if (ftruncate(descriptor, 0) != 0) {
+        close(descriptor);
+        return 93;
+    }
+    size_t remaining = size;
+    while (remaining > 0) {
+        size_t requested = remaining < sizeof(buffer) ? remaining : sizeof(buffer);
+        ssize_t written = write(descriptor, buffer, requested);
+        if (written <= 0) {
+            close(descriptor);
+            return 94;
+        }
+        remaining -= (size_t)written;
+    }
+    if (lseek(descriptor, 0, SEEK_SET) != 0) {
+        close(descriptor);
+        return 95;
+    }
+    volatile unsigned char checksum = 0;
+    for (;;) {
+        ssize_t received = read(descriptor, buffer, sizeof(buffer));
+        if (received < 0) {
+            close(descriptor);
+            return 96;
+        }
+        if (received == 0) {
+            break;
+        }
+        for (ssize_t index = 0; index < received; index += 4096) {
+            checksum ^= buffer[index];
+        }
+    }
+    int result = close(descriptor) == 0 ? 0 : 97;
+    return checksum == 0xff ? 98 : result;
+}
+
+static int allocate_shared(size_t size) {
+    int descriptor = memfd_create("proofbound-memory", MFD_CLOEXEC);
+    if (descriptor < 0 || ftruncate(descriptor, (off_t)size) != 0) {
+        if (descriptor >= 0) {
+            close(descriptor);
+        }
+        return 96;
+    }
+    unsigned char *memory = mmap(NULL, size, PROT_READ | PROT_WRITE,
+                                 MAP_SHARED, descriptor, 0);
+    if (memory == MAP_FAILED) {
+        close(descriptor);
+        return 97;
+    }
+    touch_writable_pages(memory, size);
+    int result = munmap(memory, size) == 0 && close(descriptor) == 0 ? 0 : 98;
+    return result;
+}
+
+static int allocate_socket_memory(void) {
+    int descriptors[2];
+    if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, descriptors) != 0) {
+        return 108;
+    }
+    int flags = fcntl(descriptors[0], F_GETFL, 0);
+    if (flags < 0 || fcntl(descriptors[0], F_SETFL, flags | O_NONBLOCK) != 0) {
+        return 109;
+    }
+    int buffer_size = 1024 * 1024;
+    if (setsockopt(descriptors[0], SOL_SOCKET, SO_SNDBUF, &buffer_size,
+                   sizeof(buffer_size)) != 0) {
+        return 110;
+    }
+    unsigned char buffer[65536];
+    memset(buffer, 0x5a, sizeof(buffer));
+    size_t written_total = 0;
+    for (;;) {
+        ssize_t written = write(descriptors[0], buffer, sizeof(buffer));
+        if (written > 0) {
+            written_total += (size_t)written;
+            continue;
+        }
+        if (written < 0 && errno == EAGAIN) {
+            break;
+        }
+        return 111;
+    }
+    int result = close(descriptors[0]) == 0 && close(descriptors[1]) == 0 &&
+                         written_total >= 65536
+                     ? 0
+                     : 112;
+    return result;
+}
+
+static int hold_anonymous_pressure(size_t size, const char *marker_path) {
+    unsigned char *memory = mmap(NULL, size, PROT_READ | PROT_WRITE,
+                                 MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (memory == MAP_FAILED) {
+        return 114;
+    }
+    touch_writable_pages(memory, size);
+    int marker = open(marker_path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC,
+                      0600);
+    if (marker < 0 || emit(marker, "ready\n") != 0 || close(marker) != 0) {
+        return 115;
+    }
+    for (;;) {
+        pause();
+    }
+}
+
 int main(int argc, char **argv) {
     if (argc < 2) {
         return 64;
@@ -106,6 +313,15 @@ int main(int argc, char **argv) {
             return 20;
         }
         return emit(STDOUT_FILENO, "boundary-installed\n");
+    }
+    if (strcmp(argv[1], "mark") == 0 && argc == 3) {
+        int marker = open(argv[2], O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC,
+                          S_IRUSR | S_IWUSR);
+        if (marker < 0) {
+            return 118;
+        }
+        int result = emit(marker, "child-ran\n");
+        return close(marker) == 0 && result == 0 ? 0 : 119;
     }
     if (strcmp(argv[1], "read-allowed") == 0 && argc == 3) {
         int descriptor = open(argv[2], O_RDONLY);
@@ -170,6 +386,87 @@ int main(int argc, char **argv) {
             }
         }
         return 0;
+    }
+    if (strcmp(argv[1], "memory-anonymous") == 0 && argc == 3) {
+        size_t size = 0;
+        return parse_size(argv[2], &size) == 0 && allocate_anonymous(size, 0) == 0
+                   ? emit(STDOUT_FILENO, "anonymous-accounted\n")
+                   : 100;
+    }
+    if (strcmp(argv[1], "memory-pre-main") == 0) {
+        return pre_main_memory != NULL
+                   ? emit(STDOUT_FILENO, "pre-main-allocation-accounted\n")
+                   : 117;
+    }
+    if (strcmp(argv[1], "memory-over-limit") == 0 && argc == 3) {
+        size_t chunk_size = 0;
+        return parse_size(argv[2], &chunk_size) == 0
+                   ? allocate_until_denied(chunk_size)
+                   : 101;
+    }
+    if (strcmp(argv[1], "memory-process-tree-over-limit") == 0 && argc == 4) {
+        size_t chunk_size = 0;
+        size_t children = 0;
+        if (parse_size(argv[2], &chunk_size) != 0 ||
+            parse_size(argv[3], &children) != 0) {
+            return 102;
+        }
+        for (size_t index = 0; index < children; ++index) {
+            pid_t child = fork();
+            if (child < 0) {
+                return 103;
+            }
+            if (child == 0) {
+                _exit(allocate_until_denied(chunk_size));
+            }
+        }
+        return allocate_until_denied(chunk_size);
+    }
+    if (strcmp(argv[1], "memory-mapped-file") == 0 && argc == 4) {
+        size_t size = 0;
+        return parse_size(argv[3], &size) == 0 && mapped_file(argv[2], size) == 0
+                   ? emit(STDOUT_FILENO, "mapped-file-accounted\n")
+                   : 104;
+    }
+    if (strcmp(argv[1], "memory-page-cache") == 0 && argc == 4) {
+        size_t size = 0;
+        return parse_size(argv[3], &size) == 0 &&
+                       read_page_cache(argv[2], size) == 0
+                   ? emit(STDOUT_FILENO, "page-cache-accounted\n")
+                   : 105;
+    }
+    if (strcmp(argv[1], "memory-shared") == 0 && argc == 3) {
+        size_t size = 0;
+        return parse_size(argv[2], &size) == 0 && allocate_shared(size) == 0
+                   ? emit(STDOUT_FILENO, "shared-memory-accounted\n")
+                   : 106;
+    }
+    if (strcmp(argv[1], "memory-baseline") == 0) {
+        raise(SIGSTOP);
+        return 0;
+    }
+    if (strcmp(argv[1], "memory-socket") == 0) {
+        raise(SIGSTOP);
+        return allocate_socket_memory() == 0
+                   ? emit(STDOUT_FILENO, "socket-memory-accounted\n")
+                   : 113;
+    }
+    if (strcmp(argv[1], "memory-pressure-timeout") == 0 && argc == 3) {
+        size_t size = 0;
+        if (parse_size(argv[2], &size) != 0 || allocate_anonymous(size, 0) != 0) {
+            return 107;
+        }
+        for (;;) {
+            pause();
+        }
+    }
+    if (strcmp(argv[1], "memory-pressure-stopped") == 0 && argc == 4) {
+        size_t size = 0;
+        if (parse_size(argv[2], &size) != 0) {
+            return 116;
+        }
+        raise(SIGSTOP);
+        return hold_anonymous_pressure(size, argv[3]);
     }
     return 65;
 }

@@ -18,7 +18,10 @@ pub mod supervisor;
 #[allow(unsafe_code)]
 mod sys;
 
-pub use cgroup::{CgroupError, FreshCgroup};
+pub use cgroup::{
+    CgroupError, ConfiguredResources, FreshCgroup, MemoryEvents, ResourceObservation, SwapEvents,
+    TerminalResources,
+};
 pub use execution::{ExecutionSetupError, fresh_execution_id};
 pub use inventory::{ResolvedDirectory, ResolvedReadPath};
 pub use landlock::{
@@ -31,7 +34,9 @@ pub use launcher::{
     decode_launcher_message, encode_launcher_message, pause_for_supervisor,
     receive_install_request, run_launcher, verify_launcher_response,
 };
-pub use output::{FreshOutputRoot, OutputEntry, OutputInventory, OutputRootError};
+pub use output::{
+    FreshOutputRoot, OutputEntry, OutputInventory, OutputRootError, OutputRootPreflight,
+};
 pub use privilege::{LockedPrivileges, PrivilegeError, lock_privileges};
 pub use probe::{
     Architecture, Capability, CapabilityReport, CgroupV2Capability, ProbeError, SeccompCapability,
@@ -45,6 +50,6 @@ pub use seccomp::{
     SeccompBoundary, SeccompError, compile_deny_network_program, install_deny_network,
 };
 pub use supervisor::{
-    CapturedStream, LauncherBootstrap, SupervisedExecution, SupervisorError,
+    CapturedStream, LauncherBootstrap, SupervisedExecution, SupervisorError, SupervisorTimings,
     parse_launcher_bootstrap, supervise_launcher,
 };

@@ -31,6 +31,18 @@ include = []
 
 [[invocations.translated_closure]]
 kind = "function"
+rust_name = "proofbound_runtime_receipt::append_limit_event_reasons"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_receipt::append_outcome_reason"
+
+[[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_receipt::append_reason"
+
+[[invocations.translated_closure]]
+kind = "function"
 rust_name = "proofbound_runtime_receipt::derive_receipt_eligibility"
 
 [[invocations.translated_closure]]
@@ -46,12 +58,24 @@ kind = "function"
 rust_name = "proofbound_runtime_receipt::{impl core::cmp::PartialEq<proofbound_runtime_receipt::StreamCapture> for proofbound_runtime_receipt::StreamCapture}::eq"
 
 [[invocations.translated_closure]]
+kind = "function"
+rust_name = "proofbound_runtime_receipt::{proofbound_runtime_receipt::LimitEvents}::contains"
+
+[[invocations.translated_closure]]
 kind = "type"
 rust_name = "proofbound_runtime_receipt::BoundaryInstallation"
 
 [[invocations.translated_closure]]
 kind = "type"
 rust_name = "proofbound_runtime_receipt::ExecutionOutcome"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_receipt::LimitEvent"
+
+[[invocations.translated_closure]]
+kind = "type"
+rust_name = "proofbound_runtime_receipt::LimitEvents"
 
 [[invocations.translated_closure]]
 kind = "type"

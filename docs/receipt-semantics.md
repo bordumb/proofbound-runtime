@@ -35,6 +35,33 @@ verifiers apply these rules:
 - Preserve array order. Arrays that represent sets must already be sorted by
   their specified semantic key and contain no duplicates.
 
+## Version 2 wire contract
+
+Version 2 plans, compiled policies, run results, execution receipts, and
+composed receipts use deterministic CBOR under RFC 8949 section 4.2.1. Each
+object has a closed CDDL schema and a committed golden byte vector. Maps use
+text keys. Integers use their shortest valid encoding, maps use deterministic
+key order, indefinite-length items are rejected, and no float or tag is
+accepted unless its schema explicitly permits it. Version 1 remains canonical
+JSON and is never converted to Version 2.
+
+The producer and independent verifier maintain separate decoders and encoders.
+`pbr inspect` and machine-facing commands may print a canonical JSON projection
+of a decoded Version 2 object. That projection is never a verification input:
+commitments, identities, verification, and composition consume the exact CBOR
+bytes.
+
+A Version 2 execution receipt adds the exact installed `pids.max`,
+`memory.max`, `memory.swap.max`, and `memory.oom.group` values. It also records
+the terminal memory and swap peaks and checked event-counter deltas from the
+same fresh cgroup. Its `limit_events` value is the canonical ordered set
+derived from nonzero registered counters. A nonzero peak alone is not a limit
+event, and a limit event does not replace or reinterpret the child outcome.
+
+Every Version 2 limit event produces its corresponding non-reuse reason.
+Historical Version 1 eligibility is derived by the frozen Version 1 path;
+Version 2 resource rules are not applied retroactively.
+
 ## Carrier integrity
 
 Canonical bytes are stable; they are not self-authenticating. Independent
@@ -110,12 +137,14 @@ the latter records the evidence, assumptions, source closure, and artifact
 linkage admitted for a Runtime release. Consumers must verify each receipt with
 its independent verifier before composing their meanings.
 
-`pbr-compose` performs the version 1 typed join. It executes the explicitly
+`pbr-compose` performs a versioned typed join. The historical Version 1 path
+emits canonical `proofbound-runtime-composed-receipt/1` JSON. The Version 2
+path decodes the exact CBOR execution receipt and emits deterministic
+`proofbound-runtime-composed-receipt/2` CBOR. Both paths execute the explicitly
 supplied Proofbound verifier and the exact `pbr-verify` from the Runtime bundle,
-checks the bundle manifest and cross-receipt identities, and emits canonical
-`proofbound-runtime-composed-receipt/1` bytes. The composed receipt retains the
-exact verifier and input identities, every claim facet, inherited assumptions,
-open obligations, exclusions, and trusted-computing-base roles. Its
+check the bundle manifest and cross-receipt identities, and retain the exact
+verifier and input identities, every claim facet, inherited assumptions, open
+obligations, exclusions, and trusted-computing-base roles. Their
 domain-separated `composition_id` covers all other output fields.
 
 Composition is not evidence promotion. A `TESTED · MODEL_ONLY` claim remains

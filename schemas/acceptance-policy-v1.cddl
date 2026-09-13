@@ -1,0 +1,76 @@
+; Proofbound Runtime adopter acceptance policy version 1.
+; This is a closed text-key deterministic-CBOR contract under RFC 8949
+; section 4.2.1. A JSON rendering is descriptive and never policy input.
+
+acceptance-policy-v1 = {
+  "schema": "proofbound-runtime-acceptance-policy/1",
+  "release": release-policy,
+  "execution": execution-policy,
+  "reject_if_present": rejection-policy
+}
+
+execution-policy = {
+  "plan_id": text .size (1..128),
+  "platform": platform-policy,
+  "resources": resource-policy,
+  "executable": executable-policy,
+  "eligibility": "reusable" / "non-reusable",
+  "freshness": { "mode": "not-required" },
+  "policy_sha256": bstr .size 32,
+  "runtime_version": text .size (1..18446744073709551615),
+  "receipt_schema": "proofbound-runtime-execution-receipt/2",
+  "policy_model_version": "proofbound-runtime-linux-policy/2"
+}
+
+platform-policy = {
+  "architecture": "x86_64" / "aarch64",
+  "operating_system": "linux"
+}
+
+resource-policy = {
+  "pids.max": uint32-nonzero,
+  "memory.max": memory-byte-limit,
+  "memory.oom.group": 1,
+  "memory.swap.max": swap-byte-limit
+}
+
+executable-policy = {
+  "mode": 1..4095,
+  "size": uint64,
+  "sha256": bstr .size 32
+}
+
+release-policy = {
+  "claims": [+ claim-policy],
+  "directory_sha256": bstr .size 32,
+  "project": text .size (1..18446744073709551615),
+  "payload_sha256": bstr .size 32,
+  "evidence_context": text .size (1..128),
+  "project_revision": bstr .size 20,
+  "verifier_sha256": bstr .size 32
+}
+
+claim-policy = {
+  "formal": formal-facet,
+  "linkage": linkage-facet,
+  "claim_id": text .size (1..18446744073709551615),
+  "assumption": assumption-facet,
+  "policy_admitted": bool
+}
+
+formal-facet = "PROVED" / "BOUNDED_CHECKED" / "TESTED" / "OPEN" / "INVALID"
+linkage-facet = "REFINED" / "ARTIFACT_BOUND" / "TRANSCRIBED" /
+  "MODEL_ONLY" / "INVALID"
+assumption-facet = "NONE" / "ASSUMED" / "INVALID"
+
+rejection-policy = {
+  "tcb_roles": [* text],
+  "exclusions": [* text],
+  "assumptions": [* text],
+  "open_obligations": [* text]
+}
+
+uint32-nonzero = 1..4294967295
+uint64 = 0..18446744073709551615
+memory-byte-limit = 65536..1099511627776
+swap-byte-limit = 0..1099511627776

@@ -1,0 +1,27 @@
+schema = "proofbound-runtime-network-experiment-plan/1"
+experiment = "network-authority/1"
+mechanism = "explicit-per-execution-broker-control"
+declared_service = "allowed.test"
+routing_endpoint = "127.0.0.1:443"
+transport = "tls"
+operation = "echo"
+maximum_payload_bytes = 1024
+maximum_frame_bytes = 4096
+expected_conclusion = "explicit-broker-binds-fixed-service-control"
+
+cases = [
+  "allowed-request",
+  "target-substitution",
+  "direct-tcp-denied",
+  "direct-udp-denied",
+  "wrong-certificate-denied",
+  "zero-frame-denied",
+  "oversized-frame-denied",
+  "truncated-frame-denied",
+  "duplicate-key-denied",
+  "invalid-utf8-denied",
+  "noncanonical-frame-denied",
+  "fork-direct-tcp-denied",
+  "broker-crash-denied",
+  "foreign-descriptor-denied",
+]

@@ -1,6 +1,6 @@
 namespace ProofboundRuntime.Binding
 
-/-- The closed top-level field inventory of a version 1 execution receipt. -/
+/-- The closed top-level field inventory of supported execution receipts. -/
 inductive ReceiptField where
   | assumptions
   | boundary
@@ -18,15 +18,15 @@ inductive ReceiptField where
   | policy
   | producer
   | productVersion
+  | resources
   | runtime
   | schema
   | streams
   | trustedComputingBase
   deriving DecidableEq, Repr
 
-/-- The one accepted field order. Equality with this list forbids omission,
-duplication, reordering, and unknown top-level fields. -/
-def requiredFields : List ReceiptField := [
+/-- The accepted version 1 field order. -/
+def requiredFieldsV1 : List ReceiptField := [
   .assumptions,
   .boundary,
   .command,
@@ -49,6 +49,31 @@ def requiredFields : List ReceiptField := [
   .trustedComputingBase
 ]
 
+/-- The accepted version 2 field order adds the required resource record. -/
+def requiredFieldsV2 : List ReceiptField := [
+  .assumptions,
+  .boundary,
+  .command,
+  .eligibility,
+  .environment,
+  .executionId,
+  .inputs,
+  .observations,
+  .outcome,
+  .outputRoot,
+  .outputs,
+  .plan,
+  .platform,
+  .policy,
+  .producer,
+  .productVersion,
+  .resources,
+  .runtime,
+  .schema,
+  .streams,
+  .trustedComputingBase
+]
+
 /-- Exact canonical bytes of one top-level field value. The model deliberately
 does not assign domain meaning to the bytes; it proves that the production
 binding boundary cannot omit, duplicate, reorder, or change them. -/
@@ -65,7 +90,8 @@ structure Receipt where
   deriving DecidableEq, Repr
 
 def Complete (candidate : Candidate) : Prop :=
-  candidate.bindings.map Prod.fst = requiredFields
+  candidate.bindings.map Prod.fst = requiredFieldsV1 ∨
+    candidate.bindings.map Prod.fst = requiredFieldsV2
 
 instance (candidate : Candidate) : Decidable (Complete candidate) := by
   unfold Complete

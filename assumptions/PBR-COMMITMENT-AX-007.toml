@@ -4,8 +4,8 @@ statement = "The expected execution-receipt commitment reaches the independent v
 category = "external-provider"
 owner = "Proofbound Runtime deployment operator"
 rationale = "A self-contained unsigned receipt cannot authenticate its own bytes. Canonical encoding and embedded artifact digests do not prevent a carrier from replacing an unconstrained value and recomputing a valid receipt."
-scope = "Only the carrier-integrity interpretation of independent verification and receipt composition for PBR-VERIFY-006 and PBR-COMPOSE-008."
-affected_claims = ["PBR-VERIFY-006", "PBR-COMPOSE-008"]
+scope = "Only the carrier-integrity interpretation of independent verification, receipt composition, and adopter acceptance for PBR-VERIFY-006, PBR-COMPOSE-008, and PBR-ACCEPT-012."
+affected_claims = ["PBR-VERIFY-006", "PBR-COMPOSE-008", "PBR-ACCEPT-012"]
 review_evidence = [
   "docs/adr/0002-external-receipt-commitment.md",
   "docs/threat-model.md#malicious-receipt-carrier",

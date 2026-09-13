@@ -1,0 +1,41 @@
+schema = "proofbound-runtime-acceptance-attacks/1"
+
+[[cases]]
+id = "claim-omission"
+mutation = "remove one required exact claim from independently composed release facts"
+expected_reason = "claim-missing"
+
+[[cases]]
+id = "executable-substitution"
+mutation = "replace the independently decoded executable digest"
+expected_reason = "executable-mismatch"
+
+[[cases]]
+id = "resource-substitution"
+mutation = "replace one independently decoded configured resource value"
+expected_reason = "resource-mismatch"
+
+[[cases]]
+id = "facet-downgrade"
+mutation = "replace a required formal or linkage facet with a weaker value"
+expected_reason = "claim-formal-mismatch"
+
+[[cases]]
+id = "execution-replay"
+mutation = "supply an execution identifier other than the verified receipt identifier"
+expected_reason = "execution-replay"
+
+[[cases]]
+id = "stale-policy"
+mutation = "supply an expected policy identity that does not select the exact policy bytes"
+expected_reason = "policy-identity-mismatch"
+
+[[cases]]
+id = "assumption-loss"
+mutation = "remove an inherited release assumption before composition verification"
+expected_reason = "input-verification-failed"
+
+[[cases]]
+id = "forged-acceptance"
+mutation = "change canonical decision status without recomputing its bound identity"
+expected_reason = "acceptance.decision.invalid"

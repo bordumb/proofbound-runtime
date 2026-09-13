@@ -16,7 +16,10 @@ assumptions = [
   "PBR-HOST-AX-002",
   "PBR-TOOLCHAIN-AX-003",
 ]
-open_obligations = []
+open_obligations = [
+  "Execute the complete launcher sequencing and boundary-denial corpus on both supported native architectures at the next release head.",
+  "Bind exact native pbr-native-launcher artifacts before describing the launcher sequence as released.",
+]
 out_of_scope = [
   "A malicious host administrator, compromised kernel, hostile firmware, or hostile hardware.",
   "Correctness of the untrusted child after the boundary starts it.",

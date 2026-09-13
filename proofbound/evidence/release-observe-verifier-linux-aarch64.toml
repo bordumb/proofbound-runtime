@@ -12,7 +12,7 @@ inputs = [
   "VERSION",
   "crates/proofbound-runtime-compose/Cargo.toml",
   "crates/proofbound-runtime-compose/tests/release_observation.rs",
-  "dist/native-evidence/aarch64/execution-receipt.json",
+  "dist/native-evidence/aarch64/execution-receipt.cbor",
   "dist/native-evidence/aarch64/receipt-commitment.txt",
   "dist/native-evidence/aarch64/verification.json",
   "dist/release-observation/aarch64/RELEASE-MANIFEST.json",

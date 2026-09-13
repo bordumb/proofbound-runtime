@@ -125,9 +125,11 @@ cannot interpret.
 ## Local treatment
 
 Runtime uses one Lean 4.33 project and records the vendored support provenance
-in `formal/vendor/aeneas/PROVENANCE.md`. `PBR-AUTH-001` remains Tier 2 with
-`MODEL_ONLY` linkage until the handwritten refinement theorem and registered
-translation evidence pass; compilation alone is not treated as refinement.
+in `formal/vendor/aeneas/PROVENANCE.md`. The handwritten refinement theorem,
+registered translation evidence, axiom audit, and contextual exact-artifact
+bindings now admit `PBR-AUTH-001` at Tier 3 with `REFINED` linkage. The
+toolchain remains a visible assumption, and compilation alone is still not
+treated as refinement.
 
 ## Upstream handoff
 

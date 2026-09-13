@@ -16,6 +16,7 @@ toml.workspace = true
 
 [dev-dependencies]
 proofbound-runtime-verify = { path = "../proofbound-runtime-verify" }
+sha2.workspace = true
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ["cfg(kani)"] }
