@@ -186,12 +186,38 @@ struct ResidualObligations {
     undischarged_premises: Vec<String>,
 }
 
+#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(deny_unknown_fields)]
+struct ReportOpenObligation {
+    id: String,
+    statement: String,
+    remediation: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(deny_unknown_fields)]
+struct ReportExclusion {
+    id: String,
+    statement: String,
+    rationale: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+struct ClaimResidualReport {
+    claim_id: String,
+    open_obligations: Vec<ReportOpenObligation>,
+    undischarged_premises: Vec<String>,
+    assumptions: Vec<String>,
+    out_of_scope: Vec<ReportExclusion>,
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct ReleaseReport {
     claims: Vec<ClaimStatus>,
     evidence_context: Option<String>,
-    not_proved_out_of_scope: ResidualObligations,
+    not_proved_out_of_scope: Vec<ClaimResidualReport>,
     payload_sha256: String,
     project: String,
     project_revision: String,
@@ -462,6 +488,10 @@ pub fn compose(inputs: &CompositionInputs<'_>) -> Result<Vec<u8>, CompositionErr
     let execution_eligibility = execution.eligibility.status.clone();
 
     let assumptions = inherited_assumptions(&release_report.claims, &execution.assumptions);
+    let residual_obligations = residual_obligations(
+        &release_report.claims,
+        &release_report.not_proved_out_of_scope,
+    )?;
     let trusted_computing_base = inherited_tcb(&release_tcb, &execution.trusted_computing_base)?;
     let mut receipt = ComposedReceipt {
         assumptions,
@@ -478,7 +508,7 @@ pub fn compose(inputs: &CompositionInputs<'_>) -> Result<Vec<u8>, CompositionErr
             verification_report: artifact_identity(inputs.execution_verification),
             verifier: artifact_identity(inputs.execution_verifier),
         },
-        not_proved_out_of_scope: release_report.not_proved_out_of_scope,
+        not_proved_out_of_scope: residual_obligations,
         release: ReleaseIdentity {
             envelope: artifact_identity(inputs.release_envelope),
             evidence_context,
@@ -782,6 +812,89 @@ fn claim_ids(claims: &[ClaimStatus]) -> Result<BTreeSet<&str>, CompositionError>
         return Err(CompositionError::SchemaInvalid);
     }
     Ok(ids)
+}
+
+fn residual_obligations(
+    claims: &[ClaimStatus],
+    rows: &[ClaimResidualReport],
+) -> Result<ResidualObligations, CompositionError> {
+    let claim_ids = claim_ids(claims)?;
+    let row_ids = rows
+        .iter()
+        .map(|row| row.claim_id.as_str())
+        .collect::<BTreeSet<_>>();
+    if row_ids.len() != rows.len() || row_ids != claim_ids {
+        return Err(CompositionError::ReleaseClaimOmitted);
+    }
+
+    let claims = claims
+        .iter()
+        .map(|claim| (claim.claim_id.as_str(), claim))
+        .collect::<BTreeMap<_, _>>();
+    let mut assumptions = BTreeSet::new();
+    let mut exclusions = BTreeSet::new();
+    let mut open_obligations = BTreeSet::new();
+    let mut undischarged_premises = BTreeSet::new();
+    for row in rows {
+        let claim = claims
+            .get(row.claim_id.as_str())
+            .ok_or(CompositionError::ReleaseClaimOmitted)?;
+        if row.assumptions != claim.assumptions
+            || row.undischarged_premises != claim.undischarged_premises
+        {
+            return Err(CompositionError::ReleaseDowngraded);
+        }
+        for assumption in &row.assumptions {
+            assumptions.insert(format!("{}: {assumption}", row.claim_id));
+        }
+        for premise in &row.undischarged_premises {
+            undischarged_premises.insert(format!("{}: {premise}", row.claim_id));
+        }
+        for obligation in &row.open_obligations {
+            open_obligations.insert(residual_record(
+                "open-obligation",
+                &row.claim_id,
+                &obligation.id,
+                &obligation.statement,
+                "remediation",
+                &obligation.remediation,
+            )?);
+        }
+        for exclusion in &row.out_of_scope {
+            exclusions.insert(residual_record(
+                "exclusion",
+                &row.claim_id,
+                &exclusion.id,
+                &exclusion.statement,
+                "rationale",
+                &exclusion.rationale,
+            )?);
+        }
+    }
+    Ok(ResidualObligations {
+        assumptions: assumptions.into_iter().collect(),
+        exclusions: exclusions.into_iter().collect(),
+        open_obligations: open_obligations.into_iter().collect(),
+        undischarged_premises: undischarged_premises.into_iter().collect(),
+    })
+}
+
+fn residual_record(
+    kind: &str,
+    claim_id: &str,
+    id: &str,
+    statement: &str,
+    detail_name: &str,
+    detail: &str,
+) -> Result<String, CompositionError> {
+    let record = BTreeMap::from([
+        ("claim_id", claim_id),
+        (detail_name, detail),
+        ("id", id),
+        ("kind", kind),
+        ("statement", statement),
+    ]);
+    serde_json::to_string(&record).map_err(|_| CompositionError::SchemaInvalid)
 }
 
 fn validate_bundle(
@@ -1200,12 +1313,21 @@ mod tests {
             let release_verification = canonical_json(json!({
                 "claims": [claim],
                 "evidence_context": "release-linux-x86-64",
-                "not_proved_out_of_scope": {
-                    "assumptions": ["PBR-TEST-001: PBR-TOOLCHAIN-AX-003"],
-                    "exclusions": [],
-                    "open_obligations": ["PBR-TEST-001: exact release linkage"],
+                "not_proved_out_of_scope": [{
+                    "assumptions": ["PBR-TOOLCHAIN-AX-003"],
+                    "claim_id": "PBR-TEST-001",
+                    "open_obligations": [{
+                        "id": "PBR-TEST-OB-001",
+                        "remediation": "Bind the exact release artifact.",
+                        "statement": "Exact release linkage remains open."
+                    }],
+                    "out_of_scope": [{
+                        "id": "PBR-TEST-EX-001",
+                        "rationale": "The claim covers one registered target.",
+                        "statement": "Other targets are excluded."
+                    }],
                     "undischarged_premises": []
-                },
+                }],
                 "payload_sha256": payload_digest,
                 "project": "proofbound-runtime",
                 "project_revision": "0123456789abcdef0123456789abcdef01234567",
@@ -1424,7 +1546,7 @@ mod tests {
             toml::from_str(include_str!("../../../tests/attacks/composition/v1.toml"))
                 .expect("composition attack catalog parses");
         assert_eq!(catalog.schema, "proofbound-runtime-composition-attacks/1");
-        assert_eq!(catalog.cases.len(), 16);
+        assert_eq!(catalog.cases.len(), 17);
         for (index, case) in catalog.cases.into_iter().enumerate() {
             assert_eq!(case.id, format!("PBR-COMP-{:03}", index + 1));
             assert!(!case.mutation.is_empty());
@@ -1475,6 +1597,44 @@ mod tests {
         assert_eq!(value["execution"]["eligibility"], "non-reusable");
         verify_composed_receipt(&bytes, &fixture.inputs())
             .expect("non-reusable composition independently agrees");
+    }
+
+    #[test]
+    fn pinned_proofbound_v3_report_shape_is_consumed_without_loss() {
+        let report: ReleaseReport = parse(include_bytes!(
+            "../tests/fixtures/proofbound-verification-report-v3-38b4124.json"
+        ))
+        .expect("the exact pinned report shape parses");
+        let residuals = residual_obligations(&report.claims, &report.not_proved_out_of_scope)
+            .expect("claim rows agree with report claims");
+
+        assert_eq!(
+            residuals.assumptions,
+            vec!["PBR-TEST-001: PBR-TOOLCHAIN-AX-003".to_owned()]
+        );
+        assert_eq!(
+            residuals.undischarged_premises,
+            vec!["PBR-TEST-001: PBR-TEST-PREMISE-001".to_owned()]
+        );
+        let open_obligation = concat!(
+            "{\"claim_id\":\"PBR-TEST-001\",",
+            "\"id\":\"PBR-TEST-OB-001\",",
+            "\"kind\":\"open-obligation\",",
+            "\"remediation\":\"Bind the exact release artifact.\",",
+            "\"statement\":\"Exact release linkage remains open.\"}"
+        )
+        .to_owned();
+        assert_eq!(residuals.open_obligations, vec![open_obligation]);
+
+        let exclusion = concat!(
+            "{\"claim_id\":\"PBR-TEST-001\",",
+            "\"id\":\"PBR-TEST-EX-001\",",
+            "\"kind\":\"exclusion\",",
+            "\"rationale\":\"The claim covers one registered target.\",",
+            "\"statement\":\"Other targets are excluded.\"}"
+        )
+        .to_owned();
+        assert_eq!(residuals.exclusions, vec![exclusion]);
     }
 
     #[test]
@@ -1594,6 +1754,24 @@ mod tests {
         });
         assert_eq!(
             compose(&downgraded.inputs()).unwrap_err(),
+            CompositionError::ReleaseDowngraded
+        );
+
+        let mut residual_row_omitted = Fixture::new();
+        residual_row_omitted.mutate_json(FixtureField::Report, |value| {
+            value["not_proved_out_of_scope"] = json!([]);
+        });
+        assert_eq!(
+            compose(&residual_row_omitted.inputs()).unwrap_err(),
+            CompositionError::ReleaseClaimOmitted
+        );
+
+        let mut residual_status_changed = Fixture::new();
+        residual_status_changed.mutate_json(FixtureField::Report, |value| {
+            value["not_proved_out_of_scope"][0]["assumptions"] = json!([]);
+        });
+        assert_eq!(
+            compose(&residual_status_changed.inputs()).unwrap_err(),
             CompositionError::ReleaseDowngraded
         );
     }

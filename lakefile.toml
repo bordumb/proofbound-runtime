@@ -5,7 +5,7 @@ defaultTargets = ["ProofboundRuntime", "proofbound_lean_audit"]
 [[require]]
 name = "proofbound"
 git = "https://github.com/bordumb/proof-bound"
-rev = "70af5e61110fc09704076a6d8b00fd8ff011b1c8"
+rev = "38b4124cd251b335f1d8e1eb770a551a028f4a25"
 
 [[require]]
 name = "aeneas"

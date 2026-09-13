@@ -238,7 +238,7 @@ jobs:
           cargo install
           --locked
           --git https://github.com/bordumb/proof-bound
-          --rev 70af5e61110fc09704076a6d8b00fd8ff011b1c8
+          --rev 38b4124cd251b335f1d8e1eb770a551a028f4a25
           proofbound-cli
           proofbound-adapter-aeneas
           proofbound-adapter-test
@@ -258,6 +258,7 @@ jobs:
             cp "$(command -v "$executable")" "$RUNNER_TEMP/proofbound-tools/$executable"
           done
           cd "$RUNNER_TEMP/proofbound-tools"
+          sha256sum proofbound*
           sha256sum --check "$GITHUB_WORKSPACE/proofbound/toolchains/proofbound-tools-linux-x86_64.sha256"
 
       - name: Upload pinned Proofbound tools
