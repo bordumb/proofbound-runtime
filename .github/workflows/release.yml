@@ -172,6 +172,12 @@ jobs:
       - name: Reject bootstrap lockfile drift
         run: git diff --exit-code -- Cargo.lock lake-manifest.json
 
+      - name: Install pinned independent CBOR encoder
+        run: >-
+          python3 -m pip install
+          --require-hashes
+          --requirement tools/ci/requirements-wire-vectors.txt
+
       - name: Run the complete repository base gate
         run: just ci
 
