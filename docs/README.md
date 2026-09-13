@@ -9,9 +9,6 @@ The document type determines its authority.
 - [Product roadmap execution order](product-roadmap-execution-order.md) is the
   durable dependency order across Roadmap 1 release closure, Roadmap 2, and
   Roadmap 3 candidate promotion.
-- [Formal semantics paper](papers/proof/README.md) presents the mathematical
-  model, refinement chain, and evidence boundary as an academic companion to
-  the implementation.
 - [Product and delivery roadmap](product-roadmap.md) records the ordered
   post-0.1 product, workflow, cross-repository, and assurance work. It does not
   replace a specification, ADR, or claim manifest.
