@@ -129,6 +129,98 @@ approve.
   must remain a separate commit and the full exact-head evidence must run
   again after it lands.
 
+### Superseding independent re-review at exact head `21ab780127193422219254d31077952475094908`
+
+- **Reviewer:** Codex, independent of the authoring agent
+- **Review date:** 2026-09-12
+- **Reviewed base:** `main` at
+  `0a5c6b6dcf7e3b59cdf71ec5f8d50082c5f3a3e0`
+- **Reviewed head:**
+  `21ab780127193422219254d31077952475094908`
+- **Reviewed range:**
+  `0a5c6b6dcf7e3b59cdf71ec5f8d50082c5f3a3e0...21ab780127193422219254d31077952475094908`,
+  with focused inspection of the seven commits after `ed4fab9`
+- **Method:** inspected the exact-head tree from an immutable `git archive`,
+  the complete fix-range diff, the producer, pure core, independent verifier,
+  public schemas, negative tests, reference manifests, and CI plan. No branch
+  was checked out and no build or test command was run, to avoid interfering
+  with concurrent authoring work.
+- **Verdict:** **REQUEST CHANGES**. All five previously reported blockers are
+  closed, but the exact head contains one newly identified blocking
+  producer/schema contradiction. This verdict supersedes the earlier
+  same-head `APPROVE` record above.
+- **Maintainer endorsement:** **NOT ENDORSED**. The earlier same-head
+  endorsement is withdrawn. Do not prepare a non-author approval envelope or
+  continue the merge sequence from this subject.
+
+#### Recheck of the five original blockers
+
+1. **Closed: mutation validation is subject-specific and fail-closed.** Core
+   and the independent verifier parse a closed Rust, Python, or Node subject
+   grammar before selecting a command grammar. Rust requires programs below
+   distinct `$BASELINE/target` and `$MUTANT/target` roots plus the exact
+   libtest selector and `--exact`. Python requires the exact pytest shadow
+   command. Node requires the same Vitest tool tail below distinct
+   `$BASELINE/node_modules` and `$MUTANT/node_modules` roots and the exact
+   selected-test arguments. The expected exit remains 101 for Rust and 1 for
+   Python and Node. Negative tests cover malformed subjects, cross-subject
+   pytest selection, injected arguments, and baseline-command replay.
+
+2. **Closed: Node mutation commands preserve shadow identity.** The Node
+   adapter now uses a mutation-specific observation path and emits distinct
+   `$BASELINE` and `$MUTANT` logical roots. Core and verifier reject replay of
+   the baseline program as the mutant program. Adapter and conformance tests
+   pin this distinction.
+
+3. **Closed: the relaxed wire contracts use new versions.** The adapter
+   observation, evidence, mutation registry, mutation witness, release
+   envelope, and compiled release contracts moved to versions 3, 4, 3, 3, 4,
+   and 4 respectively. Producers and the independent verifier select the new
+   versions, and public-schema tests reject the superseded versions.
+
+4. **Closed: both new language verticals are in CI.** Stage 10 performs fresh
+   check, release, and standalone verification for the Python inventory and
+   TypeScript codec demos. The workflow installs Node 24.3.0. Node shadows use
+   lockfile-enforced `npm ci` with lifecycle scripts, audit, and funding
+   requests disabled.
+
+5. **Closed: `node_modules` is reserved from translation.** The typed
+   manifest validator and public translation-unit schema both reject the path
+   component, with direct negative coverage.
+
+#### New blocking finding
+
+1. **BLOCKER: the public evidence and receipt schemas reject every valid Node
+   mutation receipt.** A Node mutation unit registers exactly six input
+   artifacts: the registry, target preimage, mutant artifact, witness source,
+   `package-lock.json`, and `package.json`
+   (`demo/typescript-codec/evidence/reject-padding-mutant.toml:8`). Core
+   requires those six at `crates/proofbound-core/src/evidence.rs:1760-1781`,
+   and the independent verifier mirrors that rule at
+   `crates/proofbound-verify/src/verifier.rs:2088-2103`. However,
+   `schemas/evidence.schema.json:100` and
+   `schemas/receipt.schema.json:190` both constrain every mutation witness to
+   exactly four input artifacts. A producer/verifier-valid Node mutation
+   receipt therefore cannot validate against either published v4 schema. The
+   Stage 10 vertical does not expose this because it does not validate the
+   generated evidence and release against the public JSON schemas.
+
+   Required change: make both schemas encode the same subject-specific
+   cardinality as core and verifier (six for a validated `npm:` subject and
+   four for Rust or Python), then add public-schema tests that validate a
+   complete Node mutation evidence record and compiled release and reject
+   wrong cardinalities for all three subject kinds. Re-run the independent
+   re-review at the resulting exact head.
+
+#### Fix-range regression review
+
+- The obsolete self-approval envelope is absent.
+- The final two fixture commits only bind existing test inputs at compile
+  time; they do not relax production or verifier behavior.
+- No additional blocker was found in subject parsing, exact command
+  selection, shadow identity, schema-version selection, translation path
+  handling, adapter failure behavior, or CI wiring.
+
 ### Post-review hosted-gate finding
 
 - **Envelope head:** `bcd2d46925375e1d3d243ddeab116b08672611bd`
@@ -526,3 +618,550 @@ approve.
    the outputs.
 5. **LOW, no test for an out-of-boundary adapter write** in the new Lean
    path, although ADR 0025 lists it as a required falsifier.
+
+## PR 6 independent re-review: exact artifact observations
+
+- **Reviewer:** Independent Codex task `01a09849-d631-7971-8b29-e6112f51d58d`
+- **Reviewed base:** `0268b2918395f4f2901ef4e982546332a3b6715a`
+- **Reviewed head:** `f87315f19d722bc3493d9f36837556cd400aea7b`
+- **Working tree:** Clean; the reviewer made no changes.
+- **Verdict:** **REQUEST CHANGES**
+
+### Blocking findings
+
+1. **Bounded exact observations disagree between producer and verifier.**
+   `EvidenceRecord::validate` uses `EvidenceKind::is_empirical`, which excludes
+   `BoundedCheck`, while the independent verifier and ADR 0020 explicitly
+   admit bounded checks as exact-observation evidence. The status predicate
+   must remain unchanged. Add a separate observation-support predicate and
+   producer/verifier parity coverage for all seven admitted kinds.
+2. **The normative version transition is incomplete.** Specification 0001
+   remains at version 0.13.0 and Section 11.5 ends with the coordinated `/4`
+   transition, while the implementation emits and verifies compiled releases
+   and envelopes `/5` and `/6`. The specification must define exact
+   observations, reviewed evidence contexts, contextual artifact bindings,
+   the related evidence/report fields, and the distinction between
+   `record-consistent` and `bytes-observed`.
+3. **The normative graph vocabulary contradicts the implementation.** The
+   closed endpoint table omits the new test-suite/model-check dependency
+   pairs and `(translation-unit, premise)`. Its cycle rule also says that only
+   declared mutual theorem cycles are valid, although Section 8.1 and both
+   implementations admit the exact typed premise-discharge cycle. Reconcile
+   the closed table and cycle rule without broadening either implementation.
+
+### Rechecked prior blockers and requested areas
+
+- The earlier PR 2 blocking findings and ancestry issue are closed at this
+  head.
+- The Node mutation schema cardinalities are aligned across Rust, Python, and
+  Node.
+- The 12 `property-test` to `example-test` changes are justified
+  reclassifications. The 27 enlarged-TCB findings all trace to the one frozen
+  toolchain-corpus artifact and are acceptable false-positive classifications
+  for the reviewed research path.
+- EXP0005 revision immutability is restored with new revisions in new files.
+- Evidence contexts and contextual binding sets otherwise fail closed.
+- Python plugin identity now binds the compiler-owned plugin distribution
+  closure and distinguishes materially different pytest environments.
+- Producer/verifier independence remains intact.
+- The reviewer found no other release blocker, but requested removal of
+  trailing blank lines in four EXP0022 research documents as review hygiene.
+
+No approval envelope may cover this reviewed head. A fresh exact-head review
+is required after the three blockers are fixed.
+
+## PR 6 independent re-review: reviewed-context enforcement
+
+- **Reviewer:** Independent Codex task `01a09863-e2fc-71c3-832b-4f5ba5e2f61c`
+- **Reviewed base:** `0268b2918395f4f2901ef4e982546332a3b6715a`
+- **Reviewed head:** `dcd7d4fbcfd79850f57d44a7fd99209146a9ea65`
+- **Method:** Static inspection only; no builds, tests, edits, commits, or pushes.
+- **Working tree:** Clean.
+- **Verdict:** **REQUEST CHANGES**
+
+### Blocking findings
+
+1. **HIGH — `project/2` can bypass its required reviewed release context.**
+   ADR 0021 requires a nonempty `required_release_contexts` subset, but the
+   public project schema does not require either context field for `project/2`
+   or give the sets a nonzero lower bound. Semantic validation accepts empty
+   sets, and release validation enforces membership and omission only after
+   the required set is nonempty. A `project/2` manifest can therefore produce
+   a base release or select any registered context contrary to the documented
+   fail-closed contract.
+2. **MEDIUM — the normative version-4/version-5 transition overstates
+   contextual ownership.** Specification 0001 says every
+   `proofbound-evidence-unit/5` is owned by one context. The schema and semantic
+   validator intentionally permit `/5` without a context as the registration
+   route for a noncontextual exact observation, which produces a version-4
+   release. The specification must distinguish the observation-manifest
+   version from optional contextual activation.
+
+The reviewer confirmed that the earlier observation-kind, graph-table, and
+cycle-rule blockers are closed. The PR 2 fixes, EXP0005 frozen history, Python
+plugin identity, assurance-regression explanations, independent-verifier
+separation, and EXP0022 hygiene changes remain acceptable. The reviewed diff
+was whitespace-clean, and no approval envelope existed.
+
+No approval envelope may cover this reviewed head. A fresh exact-head review
+is required after the two findings are fixed.
+
+## PR 6 final independent approval
+
+- **Reviewer:** Independent Codex task `01a09863-e2fc-71c3-832b-4f5ba5e2f61c`
+- **Reviewed base:** `0268b2918395f4f2901ef4e982546332a3b6715a`
+- **Reviewed head:** `3da584e4046cbe024be9649ff3dd65cd19e49880`
+- **Branch:** `codex/exact-artifact-observations`
+- **Method:** Static inspection only; no builds, tests, edits, commits, or pushes.
+- **Working tree:** Clean.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the final context-enforcement commit requires both
+nonempty context sets in the public `project/2` schema, independently rejects
+empty sets in semantic validation, and adds positive, missing, and empty
+falsifiers. Specification 0001 now correctly distinguishes a noncontextual
+evidence-unit `/5` that contributes to a version-4 release from a context-owned
+`/5` unit that contributes to the version-5 release route.
+
+The previously closed exact-observation kind parity, graph endpoint and cycle
+contracts, Node mutation receipts, EXP0005 frozen history, Python plugin
+identity, verifier independence, 39 assurance-regression adjudications, and
+EXP0022 hygiene remain intact. The final fix is limited to four relevant files,
+the exact diff is whitespace-clean, and the reviewed head contains no approval
+envelope.
+
+As maintainer, I endorse this independent `APPROVE` verdict for the exact base
+and reviewed head above. The approval-only envelope may bind this reviewed
+parent; no later production, schema, specification, or evidence bytes may be
+included in that approval commit.
+
+## PR 7 independent re-review: bounded-domain release semantics
+
+- **Reviewer:** Independent Codex task `01a09863-e2fc-71c3-832b-4f5ba5e2f61c`
+- **Reviewed base:** `354d6f853082b8b8b348efe460725e4dc90558a1`
+- **Reviewed head:** `c269cfefe627ad97393acb919765a073ad890761`
+- **Branch:** `codex/pbf-0007-domain-consistency`
+- **Method:** Static inspection only; no builds, tests, edits, envelopes, or
+  GitHub review submission.
+- **Working tree:** Clean; `git diff --check` passed.
+- **Verdict:** **REQUEST CHANGES**
+
+### Blocking findings
+
+1. **HIGH — the public schema rejects valid contextual version-7 releases.**
+   The producer emits compiled-release `/7` for every release shape and keeps
+   a selected `evidence_context`, but `schemas/receipt.schema.json` requires a
+   context only for versions 5 and 6 and forbids it for every other version.
+   Contextual observation and contextual artifact-binding releases produced
+   under version 7 therefore fail the shipped public schema. Version 7 must
+   permit the optional context; semantic verification remains responsible for
+   requiring it when a contextual record is present.
+2. **MEDIUM — producer and verifier disagree when theorem and exhaustive
+   evidence coexist.** The producer gives an admitted theorem precedence and
+   treats exhaustive evidence as proof only when no theorem earned `PROVED`.
+   The independent verifier activates exhaustive-as-proof whenever the policy
+   flag and an exhaustive record exist, even after theorem proof. It can then
+   require a claim-owned exhaustive domain that the producer correctly treats
+   as corroborating. The verifier must mirror theorem precedence, with a
+   mixed theorem-plus-exhaustive parity case.
+3. **LOW — standalone format documentation stops its byte-verdict semantics at
+   version 6.** `crates/proofbound-verify/FORMAT.md` must include version 7 and
+   state how its noncontextual, contextual-observation, and contextual-binding
+   shapes inherit byte and context rules.
+
+The reviewer confirmed that the original version-7 migration,
+`registered_domain_language` derivation, primary-family bounded/exhaustive
+scoping, mixed-domain verifier coverage, and version-4-through-version-6
+historical behavior are otherwise corrected. The final formatting-only commit
+did not alter semantics.
+
+No approval envelope may cover this reviewed head. A fresh exact-head review
+is required after all three findings are fixed.
+
+## PR 7 second independent re-review: structural domain projection
+
+- **Reviewer:** Independent Codex task `01a09863-e2fc-71c3-832b-4f5ba5e2f61c`
+- **Reviewed base:** `354d6f853082b8b8b348efe460725e4dc90558a1`
+- **Reviewed head:** `df974548c2b132c52bfba831614372c73deca3fa`
+- **Branch:** `codex/pbf-0007-domain-consistency`
+- **Method:** Static inspection only; no builds, tests, edits, envelopes, or
+  GitHub review submission.
+- **Working tree:** Clean; the full-range `git diff --check` passed.
+- **Verdict:** **REQUEST CHANGES**
+
+### Blocking finding
+
+1. **MEDIUM — the derived domain-language invariant remains
+   standing-dependent.** Specification 0001 and ADR 0023 define version-7
+   `registered_domain_language` solely as the exact projection of
+   `bounded_domain.description`. The producer and verifier enforce the pair
+   only after `BOUNDED_CHECKED` or exhaustive-derived `PROVED` standing. A
+   version-7 `OPEN` or `TESTED` claim can therefore retain a missing or
+   contradictory pair. The pair must be structurally equal for every
+   version-7 claim, with non-standing negative cases and historical-version
+   gating in the independent verifier.
+
+The reviewer confirmed that all three findings from the prior review are
+closed. Version 7 now permits an optional public-schema context while versions
+4 through 6 keep their historical rules; theorem precedence is aligned between
+producer and verifier with parity coverage; and the byte-verdict documentation
+includes every version-7 release shape. The final `f8607d7..df97454` change is
+formatting-only and has no semantic effect.
+
+No approval envelope may cover this reviewed head. A fresh exact-head review
+is required after the structural projection rule is fixed.
+
+## PR 7 final independent approval
+
+- **Reviewer:** Independent Codex task `01a09863-e2fc-71c3-832b-4f5ba5e2f61c`
+- **Reviewed base:** `354d6f853082b8b8b348efe460725e4dc90558a1`
+- **Reviewed head:** `073689ee5382356ca921a4b9baf0ca4ccbba3dad`
+- **Branch:** `codex/pbf-0007-domain-consistency`
+- **Method:** Static inspection only; no builds, tests, edits, envelopes, or
+  GitHub review submission.
+- **Working tree:** Clean; the full-range `git diff --check` passed.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the structural domain projection applies before
+standing selection in the producer and to every version-7 claim in the
+independent verifier. Positive, missing-domain, missing-language, and
+mismatched-language cases cover non-standing claims, while versions 4 through
+6 retain their historical behavior. The version-7 context schema, theorem
+precedence, primary evidence-family scoping, mixed-domain coverage, and
+byte-verdict documentation remain aligned. The final
+`699d119..073689e` delta changes formatter layout in two test files only.
+
+As maintainer, I endorse this independent `APPROVE` verdict for the exact base
+and reviewed head above. An approval-only envelope may bind this reviewed
+parent; no later production, schema, specification, documentation, or evidence
+bytes may be included in that approval commit.
+
+## PR 7 final independent approval after hosted lint
+
+- **Reviewer:** Independent Codex task `01a09863-e2fc-71c3-832b-4f5ba5e2f61c`
+- **Reviewed base:** `354d6f853082b8b8b348efe460725e4dc90558a1`
+- **Reviewed head:** `567e9e67d44d575dedbfb8256d0ba5aed9ffbbc2`
+- **Branch:** `codex/pbf-0007-domain-consistency`
+- **Method:** Static inspection only; no builds, tests, edits, envelopes, or
+  GitHub review submission.
+- **Working tree:** Clean; the full-range `git diff --check` passed.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The prior exact-head approval was superseded by one unsigned lint-only commit.
+The reviewer confirmed that `073689e..567e9e6` only combines adjacent branches
+that return `PROVED`. The guarded `exhaustive_as_proof` predicate still requires
+an empty admitted-theorem set, so theorem precedence and primary-family
+selection are logically unchanged. Every earlier PR 7 finding remains closed.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`567e9e67d44d575dedbfb8256d0ba5aed9ffbbc2`. An approval-only envelope may bind
+this reviewed parent; no later production, schema, specification,
+documentation, or evidence bytes may be included in that approval commit.
+
+## PR 7 final independent approval after release-smoke repair
+
+- **Reviewer:** Independent Codex task `01a09863-e2fc-71c3-832b-4f5ba5e2f61c`
+- **Reviewed base:** `354d6f853082b8b8b348efe460725e4dc90558a1`
+- **Reviewed head:** `60674c5e40a718780e87b64a43f2482ee27be391`
+- **Branch:** `codex/pbf-0007-domain-consistency`
+- **Method:** Static inspection only; no builds or tests.
+- **Working tree:** Clean; the full-range `git diff --check` passed.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+Hosted release construction exposed that the smoke path emitted a version-7
+payload while retaining a version-4 envelope and digest domain. The reviewer
+confirmed that `567e9e67..60674c5e` closes that defect with one exact shared
+mapping for payload and envelope versions 4 through 7, rejects unknown payload
+schemas, leaves the normal release path's payload-domain hashing correct, and
+makes the smoke path hash the actual emitted payload schema. The regression
+case binds the payload schema, envelope schema, and domain-separated digest.
+All previously approved PR 7 domain-consistency, compatibility, context,
+precedence, scoping, documentation, and verifier-independence fixes remain
+unchanged.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`60674c5e40a718780e87b64a43f2482ee27be391`. An approval-only envelope may bind
+this reviewed parent; no later production, schema, specification,
+documentation, or evidence bytes may be included in that approval commit.
+
+## PR 8 independent re-review: retained adapter failure diagnostics
+
+- **Reviewer:** Independent Codex task `01a09863-e2fc-71c3-832b-4f5ba5e2f61c`
+- **Reviewed base:** `32e44f08cd5b6ef36822d4881aaeccf54532de6c`
+- **Reviewed head:** `4fe933e0d8603e423f024c5c30199ecc5cd73c05`
+- **Branch:** `codex/pbf-0003-unit-diagnostics`
+- **Method:** Static inspection only; no builds, tests, edits, or envelopes.
+- **Working tree:** Clean; the exact-range `git diff --check` passed.
+- **Verdict:** **REQUEST CHANGES**
+
+### Blocking findings
+
+1. **HIGH — Lean timeout paths still emit `PB-LEAN-0011`.** The orchestrator
+   classifies only the new protocol-wide `PB-ADAPTER-0010` code as `timeout`,
+   so an actual Lean timeout remains an ordinary `failed` run.
+2. **MEDIUM — the Python protocol-v2 helper does not implement the version-2
+   operation contract.** It equates success with evidence presence, accepts
+   failed responses with inventory and no diagnostic, can serialize those
+   invalid failures, and rejects valid successful `doctor` and `inventory`
+   responses that correctly have null evidence.
+3. **LOW — `PB-ADAPTER-0010` retains a second non-timeout meaning.** A
+   defensive compiler guard uses the reserved timeout code for generic adapter
+   rejection. The path is not normally reachable, but the code must be removed
+   or renumbered.
+
+The reviewer confirmed that claim reports and explanations retain unit runs,
+invocation errors are typed without display-text scraping, every run path uses
+the registered executable identity, and the absent-executable falsifier
+actually attempts to spawn the missing registered program. Protocol and report
+version adoption is otherwise consistent, evidence remains fail-closed, and
+the approved PR 7 merge adds no blocker. The later `c6d096d` commit changes
+formatter layout only and does not resolve these findings.
+
+No approval envelope may cover either head. A fresh exact-head independent
+review is required after all three findings are fixed.
+
+## PR 8 second independent re-review: timeout and protocol falsifiers
+
+- **Reviewer:** Independent Codex task `01a09863-e2fc-71c3-832b-4f5ba5e2f61c`
+- **Reviewed base:** `32e44f08cd5b6ef36822d4881aaeccf54532de6c`
+- **Reviewed head:** `a93716965b8b221e070f5836ad985a6050d0b87c`
+- **Branch:** `codex/pbf-0003-unit-diagnostics`
+- **Method:** Static inspection only; no builds, tests, edits, or envelopes.
+- **Working tree:** Clean; the exact-range `git diff --check` passed.
+- **Verdict:** **REQUEST CHANGES**
+
+### Blocking findings
+
+1. **MEDIUM — Python still permits whitespace-only inventory.** The helper
+   rejects empty, oversized, controlled, unsorted, and duplicate strings but
+   accepts a value such as `" "`. It can therefore serialize a version-2
+   response that the public schema and Rust boundary reject.
+2. **LOW — Lean timeout falsification is narrower than the implementation.**
+   Static tracing confirms that all request-reachable deadline paths now emit
+   `PB-ADAPTER-0010` and non-time resource failures keep `PB-LEAN-0011`, but
+   the new runtime unit test covers only an already-exhausted deadline. Direct
+   captured-execution and child-process deadline cases must retain the new
+   code.
+
+The earlier Lean-code, Python failure-invariant, null-evidence success, and
+defensive-code findings are closed in production behavior. The hosted suite at
+this head compiled, formatted, and linted the workspace; its only Rust-test
+failure was the existing captured-execution falsifier still expecting
+`PB-LEAN-0011`. The later one-line `f2e0e6b` commit updates that direct case to
+the protocol-wide timeout code but does not address the Python lexical boundary
+or add a child-process deadline falsifier.
+
+No approval envelope may cover these reviewed heads. A fresh exact-head review
+is required after both remaining findings are fixed.
+
+## PR 8 final independent approval
+
+- **Reviewer:** Independent Codex task `01a09863-e2fc-71c3-832b-4f5ba5e2f61c`
+- **Reviewed base:** `32e44f08cd5b6ef36822d4881aaeccf54532de6c`
+- **Reviewed head:** `440eafa59c4b19245177d9a9d12f007c4e09c264`
+- **Branch:** `codex/pbf-0003-unit-diagnostics`
+- **Method:** Static inspection only; no builds, tests, edits, or envelopes.
+- **Working tree:** Clean; the exact-range `git diff --check` passed.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that all original and subsequent PR 8 findings are
+closed. Claim reports and explanations retain relevant unit diagnostics;
+invocation errors are typed without display-text scraping; every cache,
+success, adapter-failure, and invocation-failure path uses the registered
+executable identity; the actual absent-executable fixture performs a failed
+spawn; and version-2 reports and protocol envelopes remain fail-closed.
+
+Every Lean deadline, elapsed-time, captured-time, child-process, and redundant
+receipt-level time overrun now maps to `PB-ADAPTER-0010`. Disk, memory, budget
+arithmetic, platform-limit, and oversized-output failures retain the distinct
+Lean resource code. Python accepts valid successful null-evidence envelopes,
+rejects whitespace-only inventory, and enforces failure evidence, inventory,
+and diagnostic invariants during parsing and serialization. The final
+`fea5be6..440eafa` delta changes only the redundant receipt-level budget guard,
+with timeout taking precedence if time and another resource both exceed their
+limits. The approved PR 7 integration adds no blocker.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`440eafa59c4b19245177d9a9d12f007c4e09c264`. An approval-only envelope may bind
+this reviewed parent; no later production, schema, specification,
+documentation, or evidence bytes may be included in that approval commit.
+
+## PR 8 final independent approval after hosted compile
+
+- **Reviewer:** Independent Codex task `01a09863-e2fc-71c3-832b-4f5ba5e2f61c`
+- **Reviewed base:** `32e44f08cd5b6ef36822d4881aaeccf54532de6c`
+- **Reviewed head:** `b8a5fc16d0d14b0e12df25670f3583f8ebf85734`
+- **Branch:** `codex/pbf-0003-unit-diagnostics`
+- **Method:** Static inspection only; no builds, tests, edits, or envelopes.
+- **Working tree:** Clean; the exact-range `git diff --check` passed.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+Hosted compilation showed that the child-timeout test's `unwrap_err()` imposed
+an unintended `Debug` bound on the successful output type. The reviewer
+confirmed that `440eafa..b8a5fc1` changes only that test harness: an explicit
+`Ok(_)` arm still fails the falsifier, while `Err(error)` preserves the exact
+timeout code and message assertions. No production behavior changed, and all
+prior PR 8 conclusions remain valid.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`b8a5fc16d0d14b0e12df25670f3583f8ebf85734`. An approval-only envelope may bind
+this reviewed parent; no later production, schema, specification,
+documentation, or evidence bytes may be included in that approval commit.
+
+## PR 9 final independent approval: reviewed Lean identity updates
+
+- **Reviewer:** Independent Codex task `01a09863-e2fc-71c3-832b-4f5ba5e2f61c`
+- **Reviewed base:** `7137a576c064d62e66b6d97659325c835ef53411`
+- **Reviewed head:** `f061b00611b9fdb3e713a305603e3ab7cb4c5c73`
+- **Branch:** `codex/pbf-0002-lean-identity-update`
+- **Method:** Static inspection only; no builds, tests, formatters, edits, or
+  envelopes.
+- **Working tree:** Clean; the exact-range `git diff --check` passed.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that all five PR 9 findings are closed. ADR 0025 states
+the fail-closed request and configuration identity migration; the unrelated
+`lake build` behavior is absent; and the orchestrator-supplied Git provenance
+shift is explicit as a trusted-computing-base change. A Lean unit's `outputs`
+field is now only an update allowlist: check, update, and reproduce receipts do
+not report the owning claim manifest as a generated proof artifact, while the
+complete unit configuration remains identity-bound. The Lean-specific escaped
+write falsifier exercises the production validate-before-import helper and
+confirms that neither the intended manifest rewrite nor the foreign adapter
+write reaches the real tree after rejection.
+
+Hosted preflight required one formatter-only adjustment after the behavioral
+fixes. The reviewer confirmed that `1b957c9661595335146a1162026e1a3883f5bd9d`
+to `f061b00611b9fdb3e713a305603e3ab7cb4c5c73` changes formatting only, that the
+final head is an unsigned direct child of the behaviorally reviewed head, and
+that every earlier conclusion remains valid. The approved PR 8 integration
+introduces no new blocker.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`f061b00611b9fdb3e713a305603e3ab7cb4c5c73`. An approval-only envelope may bind
+this reviewed parent; no later production, schema, specification,
+documentation, or evidence bytes may be included in that approval commit.
+
+## PR 9 final independent approval after hosted compile
+
+- **Reviewer:** Independent Codex task `01a09863-e2fc-71c3-832b-4f5ba5e2f61c`
+- **Reviewed base:** `7137a576c064d62e66b6d97659325c835ef53411`
+- **Reviewed head:** `7d3b0bb1b96e4b39a03f435d7fd4a6a5c17cf6d5`
+- **Branch:** `codex/pbf-0002-lean-identity-update`
+- **Method:** Static inspection only; no builds, tests, formatters, edits, or
+  envelopes.
+- **Working tree:** Clean; the exact-range `git diff --check` passed.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+Hosted compilation showed that `std::fs` remained necessary for the existing
+`fs::symlink_metadata` call in `validate_exact_paths`. The reviewer confirmed
+that `f061b00611b9fdb3e713a305603e3ab7cb4c5c73` to
+`7d3b0bb1b96e4b39a03f435d7fd4a6a5c17cf6d5` restores only that import in the
+Lean receipt module. No runtime logic, receipt meaning, or earlier review
+conclusion changes, and the final unsigned head is a direct child of the prior
+approved head.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`7d3b0bb1b96e4b39a03f435d7fd4a6a5c17cf6d5`. An approval-only envelope may bind
+this reviewed parent; no later production, schema, specification,
+documentation, or evidence bytes may be included in that approval commit.
+
+## PR 9 final independent approval after corpus migration
+
+- **Reviewer:** Independent Codex task `01a09863-e2fc-71c3-832b-4f5ba5e2f61c`
+- **Reviewed base:** `7137a576c064d62e66b6d97659325c835ef53411`
+- **Reviewed head:** `38b4124cd251b335f1d8e1eb770a551a028f4a25`
+- **Branch:** `codex/pbf-0002-lean-identity-update`
+- **Method:** Static inspection only; no builds, tests, formatters, edits, or
+  envelopes.
+- **Working tree:** Clean; the exact-range `git diff --check` passed.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+Hosted tests exposed that PR 9 changed the exact bytes of the
+`accept-conserves` evidence unit after merged-main conformance had frozen
+corpus revision 4. The reviewer confirmed that the repair preserves
+`corpus/cases.json`, `cases-r3.json`, and `cases-r4.json` byte-for-byte; adds a
+revision-5 corpus whose only semantic-input change is the exact current
+`accept-conserves.toml` SHA-256; and makes Rust and independent Python
+conformance select revision 5. Every path and digest registered by revision 5
+matches the reviewed tree. Historical result references retain their original
+corpus, and the documentation does not reopen or strengthen the concluded
+experiment.
+
+The unsigned final head is a direct child of the prior approved head. This
+closes the stale-corpus failure without changing the registered experiment
+cases, projection meaning, or any earlier PR 9 behavior. No new blocker was
+found.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`38b4124cd251b335f1d8e1eb770a551a028f4a25`. An approval-only envelope may bind
+this reviewed parent; no later production, schema, specification,
+documentation, or evidence bytes may be included in that approval commit.
+
+## PR 9 final independent approval after corpus-header correction
+
+- **Reviewer:** Independent Codex task `01a09863-e2fc-71c3-832b-4f5ba5e2f61c`
+- **Reviewed base:** `7137a576c064d62e66b6d97659325c835ef53411`
+- **Reviewed head:** `918ec9821b3010dcfcb964b476351deac63df751`
+- **Branch:** `codex/pbf-0002-lean-identity-update`
+- **Method:** Static inspection only; no builds, tests, formatters, edits, or
+  envelopes.
+- **Working tree:** Clean; the exact-range `git diff --check` passed.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+Hosted preflight showed that the immutable revision-5 corpus was selected by
+all seven current IR prototype tests while the shared header validator still
+required revision 4 and its prior frozen status. The reviewer confirmed that
+the final unsigned direct-child commit changes only those two expectations to
+the exact revision and status already carried by `cases-r5.json`.
+
+The commit does not change a corpus, source or digest registration, projection
+rule, experiment identifier, schema, baseline, source-identity contract, case,
+profile, or conclusion. Historical corpus files remain byte-unchanged, and the
+remaining revision-4 references describe history rather than current test
+selectors. No new blocker was found.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`918ec9821b3010dcfcb964b476351deac63df751`. No later production, schema,
+specification, documentation, or evidence byte may be included without a new
+exact-head review.
+
+## PR 9 final independent approval after checker parity correction
+
+- **Reviewer:** Independent Codex task `01a09863-e2fc-71c3-832b-4f5ba5e2f61c`
+- **Reviewed base:** `7137a576c064d62e66b6d97659325c835ef53411`
+- **Reviewed head:** `1084e0d1dc5685933b705d8844af5b123399e0b9`
+- **Branch:** `codex/pbf-0002-lean-identity-update`
+- **Method:** Static inspection only; no builds, tests, formatters, edits, or
+  envelopes.
+- **Working tree:** Clean; the exact-range `git diff --check` passed.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The revision-5 Rust prototype tests passed at the preceding hosted head. The
+two Python failures then showed that the independent checker retained the same
+stale revision-4 header guard. The reviewer confirmed that the final unsigned
+direct-child commit changes only the Python checker's accepted revision and
+frozen status to the exact values in immutable `cases-r5.json` and the Rust
+producer.
+
+The Python tests already select revision 5. No live revision-4 guard remains in
+either implementation. The change does not modify corpus bytes, registrations,
+projection cases, baseline, schema, experiment identity, hashing, or any
+conclusion. Producer and independent checker continue to recompute identities
+and semantics separately. No new blocker was found.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`1084e0d1dc5685933b705d8844af5b123399e0b9`. No later production, schema,
+specification, documentation, or evidence byte may be included without a new
+exact-head review.

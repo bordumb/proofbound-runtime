@@ -205,12 +205,12 @@ and superseded items in the table.
 | ID | Title | Kind | Priority | Status | Runtime milestone | Upstream record |
 | --- | --- | --- | --- | --- | --- | --- |
 | [PBF-0001](pbf-0001-aeneas-standard-library-bridges.md) | Reusable Aeneas standard-library bridges | `plugin-boundary` | `near-term` | `proposed` | Milestone 1 | Not upstreamed |
-| [PBF-0002](pbf-0002-lean-theorem-identity-update.md) | Lean theorem identity update | `workflow` | `near-term` | `proposed` | Milestone 1 | Not upstreamed |
-| [PBF-0003](pbf-0003-missing-adapter-diagnostics.md) | Missing adapter diagnostics | `workflow` | `near-term` | `proposed` | Milestone 1 | Not upstreamed |
+| [PBF-0002](pbf-0002-lean-theorem-identity-update.md) | Lean theorem identity update | `workflow` | `near-term` | `resolved` | Milestone 1 | Proofbound PR 9, merge `3a78873` |
+| [PBF-0003](pbf-0003-missing-adapter-diagnostics.md) | Missing adapter diagnostics | `workflow` | `near-term` | `resolved` | Milestone 1 | Proofbound PR 8, merge `7137a57` |
 | [PBF-0004](pbf-0004-lean-toolchain-isolation.md) | Lean toolchain isolation for theorem evidence | `workflow` | `later` | `resolved` | Milestone 1 | Deliberately deferred |
 | [PBF-0005](pbf-0005-source-refinement-premise-edges.md) | Source-refinement premise edges | `evidence-semantics` | `blocking` | `resolved` | Milestone 1 | `proof-bound@d6ed79d` |
 | [PBF-0006](pbf-0006-typed-premise-discharge-joins.md) | Typed premise discharge joins | `evidence-semantics` | `blocking` | `resolved` | Milestone 1 | `proof-bound@504d17d` |
-| [PBF-0007](pbf-0007-claim-evidence-domain-consistency.md) | Claim/evidence bounded-domain consistency | `verifier` | `near-term` | `upstream-ready` | Policy compilation | Not upstreamed |
+| [PBF-0007](pbf-0007-claim-evidence-domain-consistency.md) | Claim/evidence bounded-domain consistency | `verifier` | `near-term` | `resolved` | Policy compilation | Proofbound PR 7, merge `32e44f0` |
 | [PBF-0008](pbf-0008-tested-release-artifact-observations.md) | Tested release-artifact observations | `evidence-semantics` | `blocking` | `resolved` | Version 0.1 release linkage | `proof-bound` ADR 0020; `dd5893d..cf8f2ba` |
 | [PBF-0009](pbf-0009-reviewed-release-evidence-contexts.md) | Reviewed release evidence contexts | `workflow` | `blocking` | `resolved` | Version 0.1 release linkage | `proof-bound` ADR 0021; `23065d2..65b4698` |
 | [PBF-0010](pbf-0010-translation-cache-state-exclusion.md) | Translation cache state exclusion | `workflow` | `blocking` | `resolved` | Version 0.1 release linkage | `proof-bound@585c0e0` |

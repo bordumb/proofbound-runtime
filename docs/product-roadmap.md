@@ -4,7 +4,7 @@
   and adopter-dogfood gates remain
 - **Date:** 2026-09-09
 - **Runtime baseline:** `0b83bfe` (`v0.1.0` is `c78e189`)
-- **Proofbound baseline consumed by Runtime:** `70af5e6`
+- **Proofbound baseline consumed by Runtime:** `1084e0d`
 - **Planning horizon:** post-0.1 product and assurance waves
 
 This roadmap turns the version 0.1 implementation into an adoptable execution
@@ -167,43 +167,24 @@ with three bounded functional slices, one measurement slice, a machine-checked
 expectation domain, immutable per-mechanism results, and a deterministic
 comparison boundary.
 
-Proofbound PR 2 has cleared its independent-review boundary. Claude's initial
-model review requested changes on five blocking items, led by a cross-project
-status weakening in mutation-witness validation. All five fixes were pushed
-on 2026-09-12 at exact subject head
-`21ab780127193422219254d31077952475094908`, where the complete 12-stage local
-gate passed. A different Codex agent independently re-reviewed that exact
-base and head, closed all five findings, found no new blocker, and recorded an
-APPROVE verdict that the maintainer endorsed. Approval-only commit `bcd2d46`
-bound the four exact new-assumption regressions, but its hosted gate exposed a
-Node-version-specific npm archive digest: the registered bytes came from Node
-22 while CI correctly runs pinned Node 24.3.0. New subject `f774429` restores
-the Node-24 digest, retires the stale envelope, and passes the exact Node 24
-TypeScript vertical locally. Because that is a post-review byte change, a
-narrow independent re-review and replacement envelope are required before
-merge. A dry run of the later integration promotion correctly failed because
-its head retained an
-older approval envelope followed by newer changes. The obsolete envelope has
-been retired in a local subject commit. An independent review of PR 6 at head
-`a6964f6` confirmed that PR 2's six commits are embedded in the promotion and
-found 43 unapproved regressions in the current 618-change diff: 27 enlarged
-trusted-computing-base changes, 12 formal downgrades, and four new assumptions.
-The formal downgrades change the allowance demo from property tests to example
-tests and require restoration or an explicit reason; an envelope cannot
-silently approve that weakening. After PR 2 merges, the promotion diff must be
-recomputed against the new exact `main`, each remaining regression adjudicated,
-and the result sealed by a new approval-only envelope with no later byte
-changes. No Runtime claim wave depends on treating that pending stack as
-released.
+The reviewed upstream integration sequence is now mainline. Proofbound PR 2
+merged as `0268b2918395f4f2901ef4e982546332a3b6715a`, PR 6 merged as
+`354d6f853082b8b8b348efe460725e4dc90558a1`, PR 7 merged as
+`32e44f08cd5b6ef36822d4881aaeccf54532de6c`, PR 8 merged as
+`7137a576c064d62e66b6d97659325c835ef53411`, and PR 9 merged as
+`3a78873634dbfeccfac1624b09d19a8afbe1b52a` from independently approved exact
+unsigned subject `1084e0d1dc5685933b705d8844af5b123399e0b9`. Each blocking review
+finding was fixed in a separate commit and re-reviewed at an exact head.
+GitHub Actions run
+[`34739057595`](https://github.com/bordumb/proof-bound/actions/runs/34739057595)
+then passed all 12 verify-only stages at that exact PR 9 subject.
 
-The stacked upstream reviews impose the exact repair order after PR 2 merges:
-PR 7's
-required compiled-release/7 transition and same-wave Runtime composer change;
-PR 8's two requested changes; PR 9's three requested changes; then the fresh
-PR 6 diff and regression adjudication. PBF-0001 remains last. Branch
-protection, the review-count policy, the Proofbound release tag, and Runtime
-0.2.0 dispatch remain maintainer actions and stay open in the completion
-ledger.
+Runtime pins PR 9's exact reviewed subject for the schema-v7 compiler,
+independent verifier, adapters, and Lean library. PBF-0007, PBF-0003, and
+PBF-0002 are implemented by the reviewed upstream stack; PBF-0001 remains
+later work. Branch protection, the review-count policy, the Proofbound release
+tag, and Runtime 0.2.0 dispatch remain maintainer actions and stay open in the
+completion ledger.
 
 On 2026-09-10, [ADR 0003](adr/0003-deterministic-cbor-wire-objects.md) accepted
 deterministic CBOR for every committed version 2 or later wire object. The
@@ -309,12 +290,11 @@ assurance burden:
   cause; and
 - the Proofbound `main` branch is not protected.
 
-The branch topology also exposes an upstream release risk. Runtime installs
-Proofbound at `70af5e6`, while the sibling repository's `main` remains at
-`0a5c6b6`. The consumed commit is the head of
-`codex/exact-artifact-observations`, which contains stacked merges for
-Proofbound PRs 3 through 5. Exact commit pinning preserves byte identity, but
-the dependency is not on the upstream mainline or a versioned release.
+The Runtime branch installs and imports Proofbound at independently reviewed
+subject `1084e0d1dc5685933b705d8844af5b123399e0b9`. The prerequisite PR 2, PR 6,
+PR 7, PR 8, and PR 9 changes are on upstream `main`; PR 9 merged as
+`3a78873634dbfeccfac1624b09d19a8afbe1b52a`. Exact commit pinning preserves
+source identity, but the dependency is not yet a tagged Proofbound release.
 
 ### CI timing baseline
 

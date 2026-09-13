@@ -1,14 +1,14 @@
 # PBF-0002: Lean theorem identity update
 
-- **Status:** `upstream-review`
+- **Status:** `resolved`
 - **Priority:** `near-term`
 - **Kind:** `workflow`
 - **Created:** 2026-09-04
-- **Last updated:** 2026-09-11
+- **Last updated:** 2026-09-13
 - **Runtime claim:** `PBR-AUTH-001`
 - **Runtime milestone:** Milestone 1
 - **Proofbound target:** CLI and Lean adapter
-- **Upstream record:** [Proofbound PR 9](https://github.com/bordumb/proof-bound/pull/9), commit `d935913`
+- **Upstream record:** [Proofbound PR 9](https://github.com/bordumb/proof-bound/pull/9), reviewed subject `1084e0d1dc5685933b705d8844af5b123399e0b9`, merge commit `3a78873634dbfeccfac1624b09d19a8afbe1b52a`
 - **Supersedes:** none
 - **Superseded by:** none
 
@@ -131,18 +131,25 @@ disposable upstream acceptance run removed all four fields from
 pbac-sum-theorem`, and observed a diff containing only the four identity
 fields at the one reported manifest path. After committing that reviewed diff,
 a fresh full claim check returned `PROVED · ARTIFACT_BOUND · ADMITTED`, with
-all four units `verified-now`. Runtime must keep the local workaround until it
-can pin a reviewed upstream release containing this change.
+all four units `verified-now`. Runtime already pins the exact independently
+reviewed PR 9 subject, so it does not depend on an unreviewed branch tip while
+the release-tag obligation remains open.
 
 ## Upstream handoff
 
 - **Destination:** [Proofbound PR 9](https://github.com/bordumb/proof-bound/pull/9)
 - **Issue:** none
 - **Specification or ADR:** upstream proposed ADR 0025
-- **Commit or pull request:** `d935913` / [PR 9](https://github.com/bordumb/proof-bound/pull/9)
+- **Commit or pull request:** reviewed subject `1084e0d1dc5685933b705d8844af5b123399e0b9`; [PR 9](https://github.com/bordumb/proof-bound/pull/9); merge commit `3a78873634dbfeccfac1624b09d19a8afbe1b52a`
 
 ## Resolution
 
-Implemented with focused attack tests and a real update-then-verify acceptance
-run. Pending independent upstream review and merge; this record must not be
-marked resolved before that gate.
+Proofbound PR 9 implemented the sealed, uniquely owned claim-manifest update
+path with focused attack tests and a real update-then-verify acceptance run.
+An independent reviewer approved exact subject
+`1084e0d1dc5685933b705d8844af5b123399e0b9`; PR 9 merged as
+`3a78873634dbfeccfac1624b09d19a8afbe1b52a`. Runtime consumes the reviewed
+subject directly for its compiler, verifier, adapters, and Lean library.
+GitHub Actions run `34739057595` passed all 12 verify-only stages at that exact
+subject. A tagged Proofbound release remains a distribution obligation, not an
+unresolved PBF-0002 behavior.

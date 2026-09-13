@@ -1,14 +1,14 @@
 # PBF-0003: Missing adapter diagnostics
 
-- **Status:** `proposed`
+- **Status:** `resolved`
 - **Priority:** `near-term`
 - **Kind:** `workflow`
 - **Created:** 2026-09-05
-- **Last updated:** 2026-09-09
+- **Last updated:** 2026-09-12
 - **Runtime claim:** `PBR-AUTH-001`
 - **Runtime milestone:** Milestone 1
 - **Proofbound target:** CLI reporting
-- **Upstream record:** not upstreamed
+- **Upstream record:** Proofbound PR 8, merge commit `7137a576c064d62e66b6d97659325c835ef53411`
 - **Supersedes:** none
 - **Superseded by:** none
 
@@ -124,11 +124,16 @@ replace the proposed generic Proofbound report extension.
 
 ## Upstream handoff
 
-- **Destination:** not upstreamed
+- **Destination:** [Proofbound PR 8](https://github.com/bordumb/proof-bound/pull/8)
 - **Issue:** none
-- **Specification or ADR:** none
-- **Commit or pull request:** none
+- **Specification or ADR:** Proofbound Specification 0001 protocol and report version-2 diagnostics
+- **Commit or pull request:** [PR 8](https://github.com/bordumb/proof-bound/pull/8), merge commit `7137a576c064d62e66b6d97659325c835ef53411`
 
 ## Resolution
 
-Unresolved.
+Proofbound PR 8 was independently approved after its timeout, protocol,
+identity, and Python parity falsifiers passed review. It merged as
+`7137a576c064d62e66b6d97659325c835ef53411`. Claim reports and human
+explanations now retain typed unit-run diagnostics, including missing
+executables and timeouts, without promoting failed or missing evidence.
+Runtime consumes the merged behavior through its exact Proofbound pin.
