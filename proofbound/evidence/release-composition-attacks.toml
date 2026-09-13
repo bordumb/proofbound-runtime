@@ -6,19 +6,23 @@ claims = ["PBR-COMPOSE-008"]
 tier = 0
 expected_inventory = [
   "proofbound_runtime_compose::tests::bundle_substitution_and_role_swap_fail_closed",
+  "proofbound_runtime_compose::tests::composed_v2_decoder_rejects_noncanonical_carriers",
+  "proofbound_runtime_compose::tests::composed_v2_producer_and_decoder_match_the_frozen_golden",
   "proofbound_runtime_compose::tests::composed_assumption_tcb_and_status_mutations_fail_closed",
   "proofbound_runtime_compose::tests::execution_replay_and_unknown_fields_fail_closed",
   "proofbound_runtime_compose::tests::frozen_attack_catalog_is_closed",
   "proofbound_runtime_compose::tests::pinned_proofbound_v3_report_shape_is_consumed_without_loss",
   "proofbound_runtime_compose::tests::release_omission_substitution_and_downgrade_fail_closed",
   "proofbound_runtime_compose::tests::valid_chain_is_canonical_and_self_verifying",
+  "proofbound_runtime_compose::tests::v2_assumption_loss_attack_mutates_inherited_facts_and_fails_closed",
+  "proofbound_runtime_compose::tests::version_two_execution_composes_to_deterministic_cbor_and_json_view",
 ]
 inputs = [
   "crates/proofbound-runtime-compose/Cargo.toml",
   "crates/proofbound-runtime-compose/src/cbor_decode.rs",
   "crates/proofbound-runtime-compose/src/cbor_encode.rs",
   "crates/proofbound-runtime-compose/src/lib.rs",
-  "crates/proofbound-runtime-compose/tests/fixtures/proofbound-verification-report-v3-38b4124.json",
+  "crates/proofbound-runtime-compose/tests/fixtures/proofbound-verification-report-v3-918ec98.json",
   "schemas/composed-receipt-v1.schema.json",
   "schemas/composed-receipt-v2.cddl",
   "schemas/vectors/v2/composed-receipt.cbor.hex",

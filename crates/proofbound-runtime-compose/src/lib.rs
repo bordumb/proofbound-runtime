@@ -1602,7 +1602,7 @@ mod tests {
     #[test]
     fn pinned_proofbound_v3_report_shape_is_consumed_without_loss() {
         let report: ReleaseReport = parse(include_bytes!(
-            "../tests/fixtures/proofbound-verification-report-v3-38b4124.json"
+            "../tests/fixtures/proofbound-verification-report-v3-918ec98.json"
         ))
         .expect("the exact pinned report shape parses");
         let residuals = residual_obligations(&report.claims, &report.not_proved_out_of_scope)
