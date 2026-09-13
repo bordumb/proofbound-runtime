@@ -22,7 +22,7 @@ inputs = [
   "crates/proofbound-runtime-compose/src/cbor_decode.rs",
   "crates/proofbound-runtime-compose/src/cbor_encode.rs",
   "crates/proofbound-runtime-compose/src/lib.rs",
-  "crates/proofbound-runtime-compose/tests/fixtures/proofbound-verification-report-v3-918ec98.json",
+  "crates/proofbound-runtime-compose/tests/fixtures/proofbound-verification-report-v3-1084e0d.json",
   "schemas/composed-receipt-v1.schema.json",
   "schemas/composed-receipt-v2.cddl",
   "schemas/vectors/v2/composed-receipt.cbor.hex",
