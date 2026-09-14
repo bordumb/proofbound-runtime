@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -223,6 +224,65 @@ class VerifierPackagePreflightTests(unittest.TestCase):
                     '"binary": "pbr-verify"',
                     '"binary": "substituted"',
                 )
+            )
+
+    def test_independent_manifest_verifier_runs_as_release_workflow_command(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive = root / "proofbound-runtime-verify-0.2.0.crate"
+            archive_bytes = b"retained crate bytes"
+            archive.write_bytes(archive_bytes)
+            manifest_value = {
+                "artifacts": [
+                    {
+                        "name": archive.name,
+                        "sha256": hashlib.sha256(archive_bytes).digest(),
+                        "size": len(archive_bytes),
+                    }
+                ],
+                "binary": package.PACKAGE_BINARY,
+                "package": package.PACKAGE_NAME,
+                "schema": package.PACKAGE_MANIFEST_SCHEMA,
+                "source_revision": "1" * 40,
+                "supported_receipt_schemas": package.SUPPORTED_RECEIPT_SCHEMAS,
+                "version": "0.2.0",
+            }
+            manifest = root / "VERIFIER-PACKAGE-MANIFEST.cbor"
+            manifest.write_bytes(package._encode_cbor(manifest_value))
+            environment = dict(os.environ)
+            environment.pop("PYTHONPATH", None)
+            environment["PYTHONDONTWRITEBYTECODE"] = "1"
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    "tools/release/verify_verifier_package_manifest.py",
+                    "--manifest",
+                    str(manifest),
+                    "--archive",
+                    str(archive),
+                    "--cddl",
+                    str(ROOT / package.PACKAGE_MANIFEST_CDDL),
+                    "--expected-source-revision",
+                    "1" * 40,
+                    "--expected-version",
+                    "0.2.0",
+                ],
+                cwd=ROOT,
+                env=environment,
+                check=False,
+                stdin=subprocess.DEVNULL,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            self.assertEqual(
+                json.loads(completed.stdout),
+                {
+                    "accepted": True,
+                    "schema": "proofbound-runtime-verifier-package-manifest-check/1",
+                },
             )
 
     def test_attack_catalog_is_closed(self) -> None:

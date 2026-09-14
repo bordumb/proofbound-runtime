@@ -10,7 +10,12 @@ from pathlib import Path
 import re
 import sys
 
-from tools.ci.deterministic_cbor import CborError, decode_strict
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+if str(REPOSITORY_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPOSITORY_ROOT))
+
+# The release workflow executes this file directly from the repository root.
+from tools.ci.deterministic_cbor import CborError, decode_strict  # noqa: E402
 
 
 PACKAGE = "proofbound-runtime-verify"
