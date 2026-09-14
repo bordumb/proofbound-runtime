@@ -1,0 +1,17 @@
+schema = "proofbound-assumption/1"
+id = "PBR-BUNDLE-DISTRIBUTION-AX-012"
+statement = "The identified GitHub repository and release service, repository controls, DNS path, certificate-authority set, and TLS implementation preserve the requested public tag, release-state, and asset associations observed by the Runtime bundle consumer."
+category = "external-provider"
+owner = "Proofbound Runtime release maintainer"
+rationale = "The consumer verifies pinned byte digests and resolves the tag to the pinned commit, but GitHub supplies the tag object, immutable-release state, asset inventory, and public bytes. Runtime does not independently prove GitHub's service behavior or repository control identity."
+scope = "Only the hosted-distribution and immutable-release interpretation of PBR-DISTRIBUTION-016."
+affected_claims = ["PBR-DISTRIBUTION-016"]
+review_evidence = [
+  ".github/workflows/ci.yml",
+  "docs/specs/0014_public_compatibility_and_distribution.md",
+  "proofbound/toolchains/proofbound-tool-bundle-pin.json",
+  "tools/ci/install_proofbound_tool_bundle.py",
+]
+discharge_plan = "Add a separately trusted publisher identity and transparency record under RT-11. Retain the hosted-service premise for availability and any release-state fact that still comes only from GitHub."
+source_citation = "docs/specs/0014_public_compatibility_and_distribution.md#6-distribution-trust"
+status = "active"

@@ -81,17 +81,20 @@ Proofbound tool bundle. Its intended closure contains:
 - a closed pin parser that rejects duplicate keys, unknown fields,
   noncanonical bytes, invalid roles, and non-exact inventories;
 - anonymous re-reading of the hosted release ID, tag, target commit,
-  publication state, immutability state, and asset identities;
+  publication state, immutability state, and asset identities, plus independent
+  resolution of the tag object to the pinned source commit;
 - exact checks of the checksum set, publication manifest, selected platform
-  manifest, archive, and installer before installer execution;
+  manifest, archive, and installer before installer execution, including
+  byte-for-byte equality of the detached and embedded platform manifests;
 - an independent comparison between the selected detached manifest and every
   installed executable's name, size, digest, type, and executable mode; and
 - one isolated required Linux CI job that dogfoods the public bytes without
   placing them in the admitted evidence path.
 
 The evidence path mutates the pin form, release state, source and tag identity,
-asset inventory, manifest platform and binaries, checksum order and contents,
-each selected downloaded byte string, and one installed executable. The
+asset inventory, manifest carrier, metadata, payload, platform, and modes,
+checksum order and contents, each selected downloaded byte string, and one
+installed executable. The
 upstream public release is Proofbound release `388736918`, source `9512469`,
 Verify run `34899222179`, and bundle run `34900896450`.
 
@@ -99,7 +102,9 @@ This wave establishes distribution-consumer behavior only. It does not prove
 Proofbound correctness, independently authenticate GitHub or a publisher, or
 authorize the public bundle to produce Runtime evidence. That final cutover is
 a separate exact-source change after the dogfood wave passes review and hosted
-verification.
+verification. `PBR-BUNDLE-DISTRIBUTION-AX-012` retains the GitHub, repository
+control, DNS, and TLS premises. `PBR-BUNDLE-TOOLCHAIN-AX-013` retains the
+Python, digest, installer, runner, process, and filesystem premises.
 
 ## PBR-POLICY-002
 

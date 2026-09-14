@@ -124,11 +124,14 @@ existing receipt is reinterpreted.
 
 Runtime's admitted evidence path still compiles all required tools from exact
 Proofbound revision `1084e0d`. The current dogfood wave separately pins public
-immutable release `388736918`, validates its seven exact asset identities, and
-installs it only in an isolated required CI job. The public bytes do not yet
-run evidence units. The source-build cutover remains a separate reviewed wave.
-Runtime does not claim that the release channel or an adjacent checksum
-independently authenticates a publisher.
+immutable release `388736918`, resolves its tag to the pinned source, validates
+its seven exact asset identities, binds its embedded and detached manifests,
+and installs it only in an isolated required CI job. The public bytes do not
+yet run evidence units. The source-build cutover remains a separate reviewed
+wave. Claim-specific assumptions retain GitHub, repository controls, DNS, TLS,
+Python, digest, installer, runner, process, and filesystem roles. Runtime does
+not claim that the release channel or an adjacent checksum independently
+authenticates a publisher.
 
 ## Upstream handoff
 

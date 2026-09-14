@@ -105,19 +105,27 @@ The next claim-sized Runtime wave adds:
 - a canonical Runtime-owned pin with one exact public immutable release and
   seven exact asset identities;
 - closed validation of source, workflow, release, tag, target commit,
-  immutability, inventory, roles, digests, and byte sizes;
-- independent parsing of the publication and selected platform manifests;
+  resolved tag object, immutability, inventory, roles, digests, and byte sizes;
+- independent parsing of the publication and complete selected platform
+  manifest, with byte-for-byte equality between its detached and embedded
+  carriers;
 - verification of the checksum set, archive, installer, and every installed
   executable before a tool is used;
 - mutation cases for noncanonical pins, mutable releases, identity and
-  inventory substitution, every selected downloaded asset, and installed
-  executable substitution; and
+  tag-target substitution, manifest carrier, metadata, payload and mode
+  substitution, every selected downloaded asset, and installed executable
+  substitution; and
 - an isolated required Linux CI job that installs and executes the public
   bundle while the admitted source-build evidence path stays unchanged.
 
 This staged parity wave is not a compatibility period. It limits the
 supply-chain blast radius before a separate reviewed cutover removes the Git
 source build from protected CI and release production.
+
+The registered premises keep GitHub, repository controls, DNS, TLS, Python,
+the digest implementation, the pinned upstream installer, the hosted runner,
+process behavior, and filesystem behavior visible. The checks bind exact
+identities under those premises; they do not discharge them.
 
 ## Repository work
 

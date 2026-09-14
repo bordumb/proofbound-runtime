@@ -1,7 +1,9 @@
 import hashlib
+import io
 import json
 from pathlib import Path
 import subprocess
+import tarfile
 import tempfile
 import unittest
 from unittest import mock
@@ -16,6 +18,16 @@ def canonical(value: object) -> bytes:
     return (json.dumps(value, sort_keys=True, separators=(",", ":")) + "\n").encode()
 
 
+def archive_with_manifest(platform: str, manifest: bytes) -> bytes:
+    output = io.BytesIO()
+    root = f"proofbound-tools-{REVISION}-{platform}"
+    with tarfile.open(fileobj=output, mode="w:gz") as archive:
+        member = tarfile.TarInfo(f"{root}/{installer.EMBEDDED_MANIFEST_NAME}")
+        member.size = len(manifest)
+        archive.addfile(member, io.BytesIO(manifest))
+    return output.getvalue()
+
+
 def fixture() -> tuple[dict[str, object], dict[str, bytes]]:
     payloads: dict[str, bytes] = {}
     roles = installer._required_assets(REVISION)
@@ -24,17 +36,20 @@ def fixture() -> tuple[dict[str, object], dict[str, bytes]]:
     binary = b"binary"
     for platform in installer.PLATFORMS:
         manifest_name = f"proofbound-tools-{REVISION}-{platform}.manifest.json"
+        artifacts = []
+        for path in installer.BUNDLE_PAYLOAD_PATHS:
+            data = binary if path.startswith("bin/") else f"payload:{path}\n".encode()
+            artifacts.append(
+                {
+                    "executable": path.startswith("bin/"),
+                    "path": path,
+                    "sha256": f"sha256:{hashlib.sha256(data).hexdigest()}",
+                    "size_bytes": len(data),
+                }
+            )
         payloads[manifest_name] = canonical(
             {
-                "artifacts": [
-                    {
-                        "executable": True,
-                        "path": f"bin/{name}",
-                        "sha256": f"sha256:{hashlib.sha256(binary).hexdigest()}",
-                        "size_bytes": len(binary),
-                    }
-                    for name in installer.BINARY_NAMES
-                ],
+                "artifacts": artifacts,
                 "platform": platform,
                 "product_label": "0.1.0",
                 "rust_toolchain": "1.94.0",
@@ -42,6 +57,10 @@ def fixture() -> tuple[dict[str, object], dict[str, bytes]]:
                 "source_revision": REVISION,
                 "verification_run_id": 101,
             }
+        )
+        archive_name = f"proofbound-tools-{REVISION}-{platform}.tar.gz"
+        payloads[archive_name] = archive_with_manifest(
+            platform, payloads[manifest_name]
         )
     publication = {
         "assets": [],
@@ -113,6 +132,19 @@ def release(pin: dict[str, object]) -> dict[str, object]:
     }
 
 
+def tag_reference(revision: str = REVISION, kind: str = "commit") -> bytes:
+    return canonical(
+        {
+            "object": {"sha": revision, "type": kind},
+            "ref": f"refs/tags/proofbound-tools-{REVISION}",
+        }
+    )
+
+
+def annotated_tag(tag_digest: str, revision: str = REVISION) -> bytes:
+    return canonical({"object": {"sha": revision, "type": "commit"}, "sha": tag_digest})
+
+
 class PinTests(unittest.TestCase):
     def test_canonical_pin_and_upstream_records_are_closed(self) -> None:
         pin, payloads = fixture()
@@ -174,6 +206,31 @@ class PinTests(unittest.TestCase):
                 with self.assertRaises(installer.ToolBundleError):
                     installer.validate_release(attacked, pin)
 
+    def test_tag_resolution_accepts_exact_lightweight_and_annotated_tags(self) -> None:
+        pin, _ = fixture()
+        tag_digest = "2" * 40
+
+        def lightweight(_url: str, _limit: int) -> bytes:
+            return tag_reference()
+
+        installer.validate_tag_target(pin, lightweight)
+
+        def annotated(url: str, _limit: int) -> bytes:
+            return (
+                tag_reference(tag_digest, "tag")
+                if "/ref/tags/" in url
+                else annotated_tag(tag_digest)
+            )
+
+        installer.validate_tag_target(pin, annotated)
+
+    def test_tag_resolution_rejects_a_different_commit(self) -> None:
+        pin, _ = fixture()
+        with self.assertRaisesRegex(installer.ToolBundleError, "target differs"):
+            installer.validate_tag_target(
+                pin, lambda _url, _limit: tag_reference("3" * 40)
+            )
+
     def test_bundle_manifest_rejects_platform_and_binary_inventory_substitution(
         self,
     ) -> None:
@@ -182,15 +239,49 @@ class PinTests(unittest.TestCase):
         manifest = json.loads(payloads[name])
         records = installer.validate_bundle_manifest(manifest, pin, "linux-x86_64")
         self.assertEqual(tuple(records), installer.BINARY_NAMES)
-        for attack in ("platform", "binary"):
+        for attack in ("platform", "binary", "toolchain", "payload", "mode"):
             with self.subTest(attack=attack):
                 attacked = json.loads(json.dumps(manifest))
                 if attack == "platform":
                     attacked["platform"] = "linux-aarch64"
+                elif attack == "binary":
+                    binary = next(
+                        item
+                        for item in attacked["artifacts"]
+                        if item["path"].startswith("bin/")
+                    )
+                    binary["path"] = "bin/substitute"
+                elif attack == "toolchain":
+                    attacked["rust_toolchain"] = "nightly"
+                elif attack == "payload":
+                    attacked["artifacts"].pop(0)
                 else:
-                    attacked["artifacts"][0]["path"] = "bin/substitute"
+                    attacked["artifacts"][0]["executable"] = True
                 with self.assertRaises(installer.ToolBundleError):
                     installer.validate_bundle_manifest(attacked, pin, "linux-x86_64")
+
+    def test_detached_manifest_requires_canonical_carrier_and_archive_equality(
+        self,
+    ) -> None:
+        pin, payloads = fixture()
+        manifest_name = f"proofbound-tools-{REVISION}-linux-x86_64.manifest.json"
+        archive_name = f"proofbound-tools-{REVISION}-linux-x86_64.tar.gz"
+        manifest = payloads[manifest_name]
+        installer.validate_detached_manifest(manifest, pin, "linux-x86_64")
+        installer.validate_embedded_manifest(
+            payloads[archive_name], manifest, pin, "linux-x86_64"
+        )
+        with self.assertRaisesRegex(installer.ToolBundleError, "not canonical"):
+            installer.validate_detached_manifest(manifest + b" ", pin, "linux-x86_64")
+        changed = json.loads(manifest)
+        changed["source_revision"] = "4" * 40
+        with self.assertRaisesRegex(installer.ToolBundleError, "manifests differ"):
+            installer.validate_embedded_manifest(
+                payloads[archive_name],
+                canonical(changed),
+                pin,
+                "linux-x86_64",
+            )
 
     def test_checksums_reject_reordering_and_unpinned_names(self) -> None:
         pin, payloads = fixture()
@@ -213,6 +304,8 @@ class PinTests(unittest.TestCase):
         def fetch(url: str, _limit: int) -> bytes:
             if "/releases/303" in url:
                 return hosted
+            if "/git/ref/tags/" in url:
+                return tag_reference()
             return payloads[url.rsplit("/", 1)[1]]
 
         def fake_run(
@@ -251,6 +344,8 @@ class PinTests(unittest.TestCase):
                 def fetch(url: str, _limit: int) -> bytes:
                     if "/releases/303" in url:
                         return hosted
+                    if "/git/ref/tags/" in url:
+                        return tag_reference()
                     name = url.rsplit("/", 1)[1]
                     data = payloads[name]
                     return data + b"changed" if name == changed_name else data
@@ -276,6 +371,8 @@ class PinTests(unittest.TestCase):
         def fetch(url: str, _limit: int) -> bytes:
             if "/releases/303" in url:
                 return hosted
+            if "/git/ref/tags/" in url:
+                return tag_reference()
             return payloads[url.rsplit("/", 1)[1]]
 
         def fake_run(

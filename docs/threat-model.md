@@ -140,6 +140,16 @@ hostile replacement's behavior. Release reproduction does not consume this
 cache, and no Proofbound output, project compiler output, receipt, or release
 artifact is restored into a protected fresh gate.
 
+Public Proofbound bundle consumption additionally trusts the identified GitHub
+repository and release service, repository controls, DNS and TLS path, Python
+interpreter and standard library, cryptographic digest implementation, pinned
+upstream installer, hosted runner, process behavior, and filesystem. The
+consumer resolves the exact tag target, verifies the release and closed asset
+inventory, binds the embedded and detached manifests byte-for-byte, and checks
+installed executable identities before use. These checks constrain the
+observed bytes under the registered premises. They do not authenticate GitHub
+independently, prove the upstream tools, or remove the trusted roles.
+
 ## Versioned enforced boundary
 
 Both supported profiles require:

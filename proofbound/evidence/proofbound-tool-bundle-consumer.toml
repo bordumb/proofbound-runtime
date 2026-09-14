@@ -4,12 +4,18 @@ adapter = "independent-check"
 kind = "independent-check"
 claims = ["PBR-DISTRIBUTION-016"]
 tier = 1
-assumptions = []
+assumptions = [
+  "PBR-BUNDLE-DISTRIBUTION-AX-012",
+  "PBR-BUNDLE-TOOLCHAIN-AX-013",
+]
 expected_inventory = [
   "tool-bundle-pin-closed-canonical-form",
   "tool-bundle-hosted-release-identity",
   "tool-bundle-hosted-release-immutability",
+  "tool-bundle-tag-target-identity",
   "tool-bundle-exact-asset-inventory",
+  "tool-bundle-complete-manifest-domain",
+  "tool-bundle-embedded-detached-manifest-link",
   "tool-bundle-publication-manifest-linkage",
   "tool-bundle-checksum-order-and-identity",
   "tool-bundle-verify-before-execute",

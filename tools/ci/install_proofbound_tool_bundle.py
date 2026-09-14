@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -12,6 +13,7 @@ import re
 import stat
 import subprocess
 import sys
+import tarfile
 import tempfile
 from typing import Callable
 from urllib.parse import quote
@@ -35,13 +37,59 @@ BINARY_NAMES = (
     "proofbound-adapter-test",
     "proofbound-verify",
 )
+DOCUMENT_PATHS = (
+    "LICENSE",
+    "README.md",
+    "docs/guides/release-verification.md",
+)
+SCHEMA_PATHS = (
+    "schemas/README.md",
+    "schemas/adapter-observation.schema.json",
+    "schemas/adapter-protocol.schema.json",
+    "schemas/assumption.schema.json",
+    "schemas/checker-result.schema.json",
+    "schemas/claim.schema.json",
+    "schemas/closure.schema.json",
+    "schemas/demo-registry.schema.json",
+    "schemas/error.schema.json",
+    "schemas/evidence-unit.schema.json",
+    "schemas/evidence.schema.json",
+    "schemas/graph.schema.json",
+    "schemas/lean-expr-v1.cddl",
+    "schemas/model-check-unit.schema.json",
+    "schemas/mutation-registry.schema.json",
+    "schemas/observation-inputs.schema.json",
+    "schemas/policy.schema.json",
+    "schemas/project.schema.json",
+    "schemas/receipt.schema.json",
+    "schemas/report.schema.json",
+    "schemas/review.schema.json",
+    "schemas/tcb.schema.json",
+    "schemas/tool-bundle-manifest.schema.json",
+    "schemas/tool-bundle-publication-manifest.schema.json",
+    "schemas/translation-toolchain-lock.schema.json",
+    "schemas/translation-unit.schema.json",
+)
+BUNDLE_PAYLOAD_PATHS = tuple(
+    sorted(
+        (
+            *(f"bin/{name}" for name in BINARY_NAMES),
+            *DOCUMENT_PATHS,
+            *SCHEMA_PATHS,
+        )
+    )
+)
 REVISION = re.compile(r"[0-9a-f]{40}")
 DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
 ASSET_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,255}")
+PAYLOAD_PATH = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,4095}")
+TOOL_LABEL = re.compile(r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)")
 MAX_PIN_BYTES = 128 * 1024
 MAX_RELEASE_RECORD_BYTES = 8 * 1024 * 1024
 MAX_ASSET_BYTES = 512 * 1024 * 1024
 MAX_BUNDLE_ARTIFACTS = 4096
+MAX_TAG_DEPTH = 8
+EMBEDDED_MANIFEST_NAME = "TOOL-BUNDLE-MANIFEST.json"
 DEFAULT_PIN = (
     Path(__file__).resolve().parents[2]
     / "proofbound"
@@ -246,6 +294,56 @@ def validate_release(value: object, pin: dict[str, object]) -> None:
         raise ToolBundleError("hosted release asset identities differ")
 
 
+def _git_object(value: object, description: str) -> tuple[str, str]:
+    if not isinstance(value, dict) or not isinstance(value.get("object"), dict):
+        raise ToolBundleError(f"{description} omits its Git object")
+    item = value["object"]
+    kind = item.get("type")
+    digest = item.get("sha")
+    if (
+        kind not in {"commit", "tag"}
+        or not isinstance(digest, str)
+        or REVISION.fullmatch(digest) is None
+    ):
+        raise ToolBundleError(f"{description} Git object is invalid")
+    return kind, digest
+
+
+def validate_tag_target(
+    pin: dict[str, object], fetch: Callable[[str, int], bytes]
+) -> None:
+    """Resolve the hosted tag and require the exact pinned source commit."""
+
+    repository = str(pin["producer_repository"])
+    tag = str(pin["release_tag"])
+    root = f"https://api.github.com/repos/{repository}/git"
+    record = _decode_json(
+        fetch(f"{root}/ref/tags/{quote(tag, safe='')}", MAX_RELEASE_RECORD_BYTES),
+        "release tag reference",
+    )
+    if not isinstance(record, dict) or record.get("ref") != f"refs/tags/{tag}":
+        raise ToolBundleError("release tag reference identity differs")
+    kind, digest = _git_object(record, "release tag reference")
+    seen: set[str] = set()
+    for _ in range(MAX_TAG_DEPTH):
+        if kind == "commit":
+            if digest != pin["source_revision"]:
+                raise ToolBundleError("release tag target differs from the pin")
+            return
+        if digest in seen:
+            raise ToolBundleError("release tag chain contains a cycle")
+        seen.add(digest)
+        requested = digest
+        record = _decode_json(
+            fetch(f"{root}/tags/{requested}", MAX_RELEASE_RECORD_BYTES),
+            "annotated release tag",
+        )
+        if not isinstance(record, dict) or record.get("sha") != requested:
+            raise ToolBundleError("annotated release tag identity differs")
+        kind, digest = _git_object(record, "annotated release tag")
+    raise ToolBundleError("release tag chain is too deep")
+
+
 def validate_publication(value: object, pin: dict[str, object]) -> None:
     """Require the upstream publication manifest to equal the pin subset."""
 
@@ -302,8 +400,11 @@ def validate_bundle_manifest(
         or value["platform"] != platform
     ):
         raise ToolBundleError("bundle manifest identity differs")
-    if not isinstance(value["product_label"], str) or not isinstance(
-        value["rust_toolchain"], str
+    if (
+        not isinstance(value["product_label"], str)
+        or TOOL_LABEL.fullmatch(value["product_label"]) is None
+        or not isinstance(value["rust_toolchain"], str)
+        or TOOL_LABEL.fullmatch(value["rust_toolchain"]) is None
     ):
         raise ToolBundleError("bundle manifest metadata is malformed")
     artifacts = value["artifacts"]
@@ -313,6 +414,7 @@ def validate_bundle_manifest(
     ):
         raise ToolBundleError("bundle manifest artifact inventory is malformed")
     binaries: dict[str, dict[str, object]] = {}
+    paths: list[str] = []
     previous = ""
     for record in artifacts:
         if not isinstance(record, dict) or set(record) != {
@@ -328,8 +430,7 @@ def validate_bundle_manifest(
         executable = record["executable"]
         if (
             not isinstance(path, str)
-            or not path
-            or len(path.encode()) > 4096
+            or PAYLOAD_PATH.fullmatch(path) is None
             or path <= previous
             or "\\" in path
             or path.startswith("/")
@@ -347,15 +448,69 @@ def validate_bundle_manifest(
             raise ToolBundleError(
                 f"bundle manifest artifact metadata is invalid: {path}"
             )
+        if executable is not path.startswith("bin/"):
+            raise ToolBundleError(f"bundle manifest artifact mode differs: {path}")
         if path.startswith("bin/"):
             name = path.removeprefix("bin/")
-            if name not in BINARY_NAMES or executable is not True:
+            if name not in BINARY_NAMES:
                 raise ToolBundleError("bundle manifest binary inventory differs")
             binaries[name] = record
+        paths.append(path)
         previous = path
-    if tuple(binaries) != BINARY_NAMES:
-        raise ToolBundleError("bundle manifest binary inventory differs")
+    if tuple(paths) != BUNDLE_PAYLOAD_PATHS or tuple(binaries) != BINARY_NAMES:
+        raise ToolBundleError("bundle manifest payload inventory differs")
     return binaries
+
+
+def validate_detached_manifest(
+    data: bytes, pin: dict[str, object], platform: str
+) -> dict[str, dict[str, object]]:
+    """Require canonical bytes in the complete current manifest domain."""
+
+    value = _decode_json(data, "bundle manifest")
+    if _canonical_json(value) != data:
+        raise ToolBundleError("bundle manifest is not canonical JSON")
+    return validate_bundle_manifest(value, pin, platform)
+
+
+def validate_embedded_manifest(
+    archive_bytes: bytes,
+    detached_manifest_bytes: bytes,
+    pin: dict[str, object],
+    platform: str,
+) -> None:
+    """Require the archive's embedded manifest to equal the detached bytes."""
+
+    revision = str(pin["source_revision"])
+    expected = f"proofbound-tools-{revision}-{platform}/{EMBEDDED_MANIFEST_NAME}"
+    embedded: bytes | None = None
+    try:
+        with tarfile.open(fileobj=io.BytesIO(archive_bytes), mode="r|gz") as archive:
+            for index, member in enumerate(archive, start=1):
+                if index > MAX_BUNDLE_ARTIFACTS + 1:
+                    raise ToolBundleError(
+                        "bundle archive member inventory is too large"
+                    )
+                if member.name != expected:
+                    continue
+                if (
+                    embedded is not None
+                    or not member.isfile()
+                    or not 0 < member.size <= MAX_PIN_BYTES
+                ):
+                    raise ToolBundleError("embedded bundle manifest is invalid")
+                source = archive.extractfile(member)
+                if source is None:
+                    raise ToolBundleError("embedded bundle manifest cannot be read")
+                embedded = source.read(MAX_PIN_BYTES + 1)
+                if len(embedded) != member.size:
+                    raise ToolBundleError("embedded bundle manifest size differs")
+    except (EOFError, OSError, tarfile.TarError) as error:
+        raise ToolBundleError(f"cannot inspect bundle archive: {error}") from error
+    if embedded is None:
+        raise ToolBundleError("bundle archive omits its embedded manifest")
+    if embedded != detached_manifest_bytes:
+        raise ToolBundleError("embedded and detached bundle manifests differ")
 
 
 def _parse_checksums(data: bytes, pin: dict[str, object]) -> None:
@@ -436,6 +591,7 @@ def install(
         fetch(release_url, MAX_RELEASE_RECORD_BYTES), "release record"
     )
     validate_release(release, pin)
+    validate_tag_target(pin, fetch)
     tag = str(pin["release_tag"])
     public_root = f"https://github.com/{repository}/releases/download/{tag}"
     pin_assets = {item["name"]: item for item in pin["assets"]}
@@ -449,8 +605,8 @@ def install(
     manifest_name = f"proofbound-tools-{revision}-{platform}.manifest.json"
     archive_bytes = _checked_asset(archive_name, pin_assets, fetch, public_root)
     manifest_bytes = _checked_asset(manifest_name, pin_assets, fetch, public_root)
-    manifest = _decode_json(manifest_bytes, "bundle manifest")
-    binary_records = validate_bundle_manifest(manifest, pin, platform)
+    binary_records = validate_detached_manifest(manifest_bytes, pin, platform)
+    validate_embedded_manifest(archive_bytes, manifest_bytes, pin, platform)
     installer_bytes = _checked_asset(INSTALLER_NAME, pin_assets, fetch, public_root)
     with tempfile.TemporaryDirectory(prefix="proofbound-tools.") as temporary:
         root = Path(temporary)
