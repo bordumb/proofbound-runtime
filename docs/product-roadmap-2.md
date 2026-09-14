@@ -7,6 +7,8 @@
   reviewed Roadmap 1 source head is `d76f3b8`)
 - **Proofbound baseline consumed by Runtime:** `1084e0d` (merged to Proofbound
   `main` as `3a78873`)
+- **Proofbound distribution candidate:** PR 10 at `1ceb40f`; not merged or
+  consumed by Runtime
 - **Prerequisite:** [Product and delivery roadmap](product-roadmap.md)
   Milestones A through E, except where an epic below names a narrower
   prerequisite
@@ -37,6 +39,10 @@ registered claim, closed preflight, falsifiers, reproduction, local consumer,
 and release-retention path. Its local preflight, Rust, package, and targeted
 fresh-evidence checks pass. It has not received clean exact-head hosted evidence
 or independent acceptance, and it does not authorize registry publication.
+The generic Proofbound tool-bundle prerequisite is upstreamed as Proofbound PR
+10. Its complete local gate passes at exact head `1ceb40f`; merge, hosted
+mainline verification, both platform bundle candidates, and Runtime consumption
+remain open.
 RT-9 is blocked until RT-5 implements the accepted single-service network
 decision in production.
 
@@ -131,7 +137,7 @@ existing mechanism. This roadmap applies the same rule to every item.
 
 | Order | Epic | Hard dependency | Exit condition | Size |
 | ---: | --- | --- | --- | --- |
-| 0 | RT-7 prelaunch packaging and published crates | Version 2 schemas accepted; RT-3.5 SDKs stable | Selected crates are published under a current distribution contract, the verifier crate builds with no workspace dependency, and the release workflow proves crate bytes match the tagged source. | S |
+| 0 | RT-7 prelaunch packaging and published crates | Current plan and receipt schemas accepted; RT-3.5 SDKs stable | Selected crates are published under a current distribution contract, the verifier crate builds with no workspace dependency, and the release workflow proves crate bytes match the selected exact source. | S |
 | 1 | RT-8 trace-assisted plan drafting | RT-3.3 scaffold; RT-3.4 diagnostic-profile decision | A dynamic executable's draft plan can be produced from one observed diagnostic run; the diagnostic receipt is rejected by both verifiers and by acceptance with a typed reason; every generated entry names its provenance. | M |
 | 2 | RT-9 multi-service network allow-list | RT-5 shipped with one accepted mechanism; its ADR is accepted but production implementation remains open | Two or more declared services are reachable, every registered cross-service attack fails with its typed reason, and the receipt records the exact enforced service set. | M |
 | 3 | RT-10 Linux VM host profile | Milestone C; RT-6.3 benchmarks | A macOS or Windows developer reaches an independently verified receipt through maintained instructions, and an acceptance policy can accept or reject guest-produced receipts by identity. | L |
@@ -196,15 +202,16 @@ defines the native Runtime prelaunch distribution contract.
 - Flip `publish = false` only on the selected crates.
 - Keep exact dependency pins and the existing `cargo-deny` gate.
 - In the release workflow, run `cargo package`, compute the packaged tarball
-  digest, and compare its file list and bytes against the tagged source tree.
+  digest, and compare its file list and bytes against the selected exact source
+  tree.
   A mismatch fails the release.
 - Do not publish from a developer machine. Publication is a release-workflow
   step on the exact merge SHA.
 
 ### RT-7.4 Align the SDKs
 
-- The Python and TypeScript packages from RT-3.5 depend on published schema
-  versions, not on crate internals.
+- The Python and TypeScript packages from RT-3.5 identify the exact current
+  schema set, not crate internals.
 - Add a drift test that fails when a published crate's serialized form and the
   committed JSON schema disagree.
 
@@ -216,8 +223,9 @@ defines the native Runtime prelaunch distribution contract.
 - A publish from a non-release context is refused.
 
 **Done when:** a consumer can depend on the verifier and the pure core from
-the registry, reproduce the crate bytes from the tag, and read one document
-that identifies the exact current supported tuple.
+the selected distribution channel, reproduce the package bytes from the exact
+source revision, and read one document that identifies the exact current
+supported tuple.
 
 ## 6. Epic RT-8: trace-assisted plan drafting
 
@@ -645,8 +653,10 @@ first roadmap. These rules are added:
 1. Enumerate every new trusted role in the threat model before the first
    implementation PR. The tables in section 3 are the starting inventory, not
    the record.
-2. Do not change the meaning of any version 1 or version 2 receipt. Historical
-   receipts remain bound to their original subjects.
+2. Do not change the meaning of an existing schema identifier. A prelaunch
+   replacement can remove an older schema immediately, but it must use a new
+   identifier and update the complete current tuple. Historical receipts remain
+   bound to their original subjects.
 3. Make every distinguishing property typed. A diagnostic receipt, a
    guest-produced receipt, and a service-produced receipt are distinguishable
    by a field or a pinned identity, never by convention or file location.
@@ -681,7 +691,7 @@ No item in this roadmap may:
 - The current distribution contract is published.
 - The independent verifier and pure core are on the registry with
   reproducible bytes.
-- The SDKs depend on published schema versions.
+- The SDKs identify the exact current published schema set.
 - The current-integration manifest names every supported integration tuple
   without coordinating product releases. A Runtime-only tuple can ship before an
   optional Auths or Capsec profile.

@@ -1,8 +1,8 @@
 # RT-7 integration record: prelaunch packaging and distribution
 
-**Status:** RT-7.1 prelaunch distribution contract drafted; RT-7.2 verifier-package
-implementation locally validated; exact-head review and registry publication
-blocked
+**Status:** RT-7.1 prelaunch distribution contract drafted; Proofbound bundle
+prerequisite upstreamed in PR 10; RT-7.2 verifier-package implementation
+locally validated; exact-head review and distribution remain blocked
 
 **Primary owner:** Proofbound Runtime
 
@@ -19,8 +19,8 @@ blocked
 ## Product result
 
 A consumer can install the Runtime verifier and SDKs, select a tested
-cross-project identity tuple, and reproduce each package from its exact tagged
-source.
+cross-project identity tuple, and reproduce each package from its exact source
+revision.
 
 ## Current source audit
 
@@ -42,6 +42,21 @@ The 2026-09-13 source audit found:
 
 These are source facts, not package-registry observations or publication
 approval.
+
+## Proofbound prerequisite checkpoint
+
+[PBF-0013](../proofbound-feedback/pbf-0013-versioned-proofbound-tool-distribution.md)
+is upstreamed as Proofbound PR 10 at exact head
+`1ceb40f6bf426bff55960ec14de244b25978d8c2`. That head adds deterministic
+platform tool bundles, a closed manifest schema, a standalone fail-closed
+installer, and exact source and mainline-Verify identities. Its complete local
+12-stage Proofbound gate passed with zero assurance regressions.
+
+The prerequisite is not resolved until PR 10 merges and the exact merged
+revision produces successful `x86_64` and `aarch64` bundle candidates. Runtime
+continues to compile its pinned Proofbound revision until it can pin the exact
+upstream source revision, successful workflow run, archive digest, and manifest
+identity. A product label does not participate in that decision.
 
 ## RT-7.2 implementation checkpoint
 
@@ -99,7 +114,8 @@ authenticates a publisher before RT-11 selects an identity policy.
 
 - A platform tuple containing an unavailable package fails.
 - A supported native schema paired with an untested integration profile fails.
-- A package rebuilt from a tag with different bytes fails release comparison.
+- A package rebuilt from the selected source revision with different bytes
+  fails release comparison.
 - A consumer cannot silently replace one project's verifier with another
   executable identity.
 
@@ -109,7 +125,8 @@ The first RT-7 code pull request is limited to the independent verifier package:
 
 1. accept Specification 0014 through independent review;
 2. add a package preflight that rejects workspace-crate dependencies,
-   incomplete metadata, undeclared files, and source/tag inventory mismatch;
+   incomplete metadata, undeclared files, and source/package inventory
+   mismatch;
 3. make `proofbound-runtime-verify` independently packageable without changing
    verifier semantics;
 4. build it twice and compare exact package bytes;
@@ -122,8 +139,9 @@ exact-head hosted evidence, and registry evidence remain open. Registry
 publication stays blocked until they close.
 
 The slice does not publish to crates.io, change a receipt schema, modify the
-launcher, or select the pure producer crate surface. Registry publication is a
-later release event on an approved exact tag.
+launcher, or select the pure producer crate surface. Any later distribution
+event is bound to an approved exact mainline source and package identity;
+package labels are metadata only.
 
 ## Integration exit
 

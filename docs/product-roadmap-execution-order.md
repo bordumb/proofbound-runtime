@@ -132,6 +132,11 @@ The first independent-verifier package slice is implemented in source. Its
 local package, consumer, Rust, and targeted fresh-evidence checks pass. Its
 specification review, clean exact-head hosted evidence, exact-head review, and
 merge remain open. No registry publication step exists.
+The generic Proofbound tool-bundle prerequisite is upstreamed as Proofbound PR
+10 at exact head `1ceb40f`. Its complete local 12-stage gate passes with zero
+assurance regressions. It still requires merge, successful mainline Verify,
+both platform bundle candidates, and Runtime consumption of the exact bundle
+identity.
 This work does not retroactively enter the version 0.2 release candidate; the
 release/version decision must preserve the Phase 0 freeze rule.
 
