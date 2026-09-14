@@ -33,7 +33,7 @@ linkage does not attest a malicious host.
 ## Required behavior
 
 - The acceptance profile can require or reject one guest identity.
-- The platform compatibility tuple names the guest profile it supports.
+- The platform integration tuple names the guest profile it supports.
 - Host-to-guest receipt and commitment transport is an explicit trusted role.
 - Auths and Capsec integrations behave the same inside the guest and remain
   outside the Runtime launcher.

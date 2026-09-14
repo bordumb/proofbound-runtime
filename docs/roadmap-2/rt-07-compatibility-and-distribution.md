@@ -1,8 +1,9 @@
 # RT-7 integration record: prelaunch packaging and distribution
 
 **Status:** RT-7.1 prelaunch distribution contract drafted; Proofbound bundle
-prerequisite upstreamed in PR 10; RT-7.2 verifier-package implementation
-locally validated; exact-head review and distribution remain blocked
+prerequisite independently approved in PR 10; RT-7.2 verifier-package
+implementation blocker fixes in progress; exact-head review and distribution
+remain open
 
 **Primary owner:** Proofbound Runtime
 
@@ -47,10 +48,11 @@ approval.
 
 [PBF-0013](../proofbound-feedback/pbf-0013-versioned-proofbound-tool-distribution.md)
 is upstreamed as Proofbound PR 10 at exact head
-`1ceb40f6bf426bff55960ec14de244b25978d8c2`. That head adds deterministic
+`693976fea7e169fc84a3919113fd0a1e6a132544`. That head adds deterministic
 platform tool bundles, a closed manifest schema, a standalone fail-closed
-installer, and exact source and mainline-Verify identities. Its complete local
-12-stage Proofbound gate passed with zero assurance regressions.
+installer, and exact source and mainline-Verify identities. Its focused local
+tests and registered claims pass, and an independent exact-head review records
+`APPROVE` with no findings.
 
 The prerequisite is not resolved until PR 10 merges and the exact merged
 revision produces successful `x86_64` and `aarch64` bundle candidates. Runtime
@@ -63,25 +65,28 @@ identity. A product label does not participate in that decision.
 The first verifier-distribution slice now includes:
 
 - the registered `PBR-DISTRIBUTION-015` claim and package-toolchain premise;
-- a dependency-free, semantic-TOML package preflight with stable failure codes;
+- a dependency-free, semantic-TOML package preflight that admits one exact
+  package, target, dependency, and metadata surface with stable failure codes;
 - mutations for publication, metadata, workspace, path, target-specific, Git,
   alternate-registry, and workspace-patch dependencies; source inventory;
-  version; revision; archive inventory; packaged-source substitution; and byte
-  reproduction;
+  product label; revision; archive inventory; packaged-source, original
+  manifest, and VCS-identity substitution; and byte reproduction;
 - two isolated `cargo package` productions and exact byte comparison;
 - safe archive extraction, an unrelated temporary `cargo install`, and an
   executed version check;
-- a closed package manifest that records package, binary, supported receipt
-  schemas, source revision, digest, and size; and
+- a closed deterministic-CBOR package manifest that records package, binary,
+  supported receipt schemas, source revision, digest, and size, with JSON only
+  as a diagnostic projection; and
 - an exact-revision release job whose retained bytes join aggregate release
-  provenance.
+  provenance, with that join included in the registered evidence checker.
 
-The full preflight and Rust gates, the isolated package build, and the
-`PBR-DISTRIBUTION-015` fresh evidence unit pass in the working tree. The
-package check includes exact packaged-source comparison. These results are not
-an exact-head hosted observation. Specification 0014 still needs independent
-acceptance. A successful local package build is not registry dogfood, and the
-workflow contains no publication credentials or registry write step.
+The preflight falsifiers and aggregate-provenance checks pass in the working
+tree without invoking a package build. Earlier isolated package, Rust, and
+fresh-evidence checks passed before the current blocker fixes. The complete
+package and claim gates must run again at the final exact head. Specification
+0014 still needs independent acceptance. A successful local package build is
+not registry dogfood, and the workflow contains no publication credentials or
+registry write step.
 
 ## Repository work
 

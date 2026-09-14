@@ -12,9 +12,12 @@ import sys
 
 INVENTORY = [
     "verifier-package-preflight-attacks",
+    "verifier-package-archive-source-identity",
+    "verifier-package-deterministic-manifest",
     "verifier-package-reproduction",
     "verifier-package-consumer",
     "verifier-package-release-retention",
+    "verifier-package-aggregate-provenance",
 ]
 
 
@@ -28,7 +31,9 @@ def main() -> int:
             "-m",
             "unittest",
             "tools.ci.test_verifier_package",
+            "tools.ci.test_release_provenance",
             "tools.ci.test_release_workflow.ReleaseWorkflowTests.test_verifier_package_is_preflighted_reproduced_and_dogfooded",
+            "tools.ci.test_release_workflow.ReleaseWorkflowTests.test_release_provenance_joins_and_verifies_every_release_artifact",
         ],
         cwd=root,
         env=environment,

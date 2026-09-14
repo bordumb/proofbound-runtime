@@ -1,0 +1,18 @@
+verifier-package-manifest = {
+  "schema": "proofbound-runtime-verifier-package-manifest/1",
+  "source_revision": text .size (40..76),
+  "package": "proofbound-runtime-verify",
+  "binary": "pbr-verify",
+  "version": text .size (5..64),
+  "supported_receipt_schemas": [
+    "proofbound-runtime-receipt/1",
+    "proofbound-runtime-execution-receipt/2",
+  ],
+  "artifacts": [verifier-package-artifact],
+}
+
+verifier-package-artifact = {
+  "name": text .size (1..255),
+  "sha256": bytes .size 32,
+  "size": 1..18446744073709551615,
+}

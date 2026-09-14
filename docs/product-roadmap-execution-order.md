@@ -6,7 +6,8 @@
   promotion
 - **Current Runtime main baseline:** `83e8bbc`
 - **Current reviewed Roadmap 1 source head:** `d76f3b8`
-- **Current public release:** `v0.1.0`
+- **Lifecycle:** prelaunch; zero external users; package labels are tooling
+  metadata rather than compatibility promises
 
 This document is the durable dependency and decision order across the product
 roadmaps. It does not replace an epic, specification, architecture decision,
@@ -16,21 +17,18 @@ review updates it.
 
 ## 1. Current boundary
 
-Roadmap 1 source work is merged. The public release still trails the source.
-All Roadmap 2 exit conditions remain open. Roadmap 3 contains candidates, not
-scheduled implementation.
+Roadmap 1 source work is merged. All Roadmap 2 exit conditions remain open.
+Roadmap 3 contains candidates, not scheduled implementation.
 
-The immediate objective is to turn the merged version 0.2 source into an exact
-release, then remove the installability, first-run, and useful-network barriers
-in that order.
+The immediate objective is to admit one exact current `main` revision, then
+remove the installability, first-run, and useful-network barriers in that
+order. No version cut, compatibility layer, or migration window is a prelaunch
+dependency.
 
 ## 2. Delivery graph
 
 ```text
-Roadmap 1 source merged
-        |
-        v
-Release and externally validate version 0.2
+Roadmap 1 source merged and exact current main admitted
         |
         v
 RT-7 current distribution contract and published packages
@@ -74,36 +72,31 @@ two integration profiles + RT-11 --> RT-17 profile registry candidate
 measured Python or TypeScript drafting pain --> RT-18 analyzer candidate
 ```
 
-## 3. Phase 0: close and release version 0.2
+## 3. Phase 0: admit the current mainline foundation
 
-Version 0.2 is Roadmap 1 closure. It must not absorb new Roadmap 2 production
-behavior merely because that behavior is ready to begin.
+This phase closes Roadmap 1 assurance at one exact source identity. It does not
+create a release-number or compatibility dependency.
 
 Required steps:
 
-1. Select and record one exact version 0.2 release revision on `main`.
-2. Confirm the version and changelog describe only that revision.
-3. Run the complete release workflow on both native architectures.
-4. Inspect the exact release, SDK-package, native-evidence, assurance, and
+1. Merge the pinned ARM dependency correction after its exact-head gates pass.
+2. Select and record the resulting exact revision on `main`.
+3. Run the complete candidate workflow on both native architectures.
+4. Inspect the exact SDK-package, native-evidence, assurance, and
    composed-receipt artifacts.
-5. Obtain the required independent release approval.
-6. Create the immutable `v0.2.0` tag from the approved revision.
-7. Publish the checksummed Runtime, SDK, example, and assurance artifacts that
-   the reviewed workflow produced.
-8. Run the maintained install and external consumer workflows from published
-   artifacts.
-9. Record open registry-publication and adopter-dogfood obligations honestly.
+5. Obtain the required independent exact-source approval.
+6. Carry that exact source and artifact identity into RT-7.
+
+No tag, package-version increment, registry write, or compatibility promise is
+required to close this phase.
 
 ### Release freeze rule
 
-The recommended version 0.2 candidate is the already reviewed Roadmap 1 merge,
-not the Roadmap 2 documentation or RT-7 implementation that follows it. If the
-maintainer selects a later revision, every exact-head review and release gate
-must run again. A tag is never moved to absorb later work.
-
-Registry publication cannot be added retroactively to a tag whose exact source
-does not contain the accepted package and publication contract. Such work uses
-the next approved Runtime version.
+The selected foundation is the exact reviewed Roadmap 1 source plus required
+assurance corrections, not whichever branch has the newest product work. If
+the maintainer selects a later revision, every affected exact-head review and
+gate runs again. Product labels do not carry approval from one source identity
+to another.
 
 ## 4. Phase 1: RT-7 prelaunch distribution
 
@@ -117,7 +110,7 @@ Merge order:
 2. Select the public package set and close its registry dependency graph.
 3. Make the independent verifier packageable and publishable first.
 4. Prepare the selected pure crates and existing SDK packages.
-5. Add exact-tag package byte and file-list comparison.
+5. Add exact-source package byte and file-list comparison.
 6. Add registry publication only from the exact approved release workflow.
 7. Dogfood every package from an unrelated consumer repository.
 8. Publish the Runtime current-integration manifest.
@@ -133,12 +126,13 @@ local package, consumer, Rust, and targeted fresh-evidence checks pass. Its
 specification review, clean exact-head hosted evidence, exact-head review, and
 merge remain open. No registry publication step exists.
 The generic Proofbound tool-bundle prerequisite is upstreamed as Proofbound PR
-10 at exact head `1ceb40f`. Its complete local 12-stage gate passes with zero
-assurance regressions. It still requires merge, successful mainline Verify,
+10 at exact head `693976f`. Its focused local tests and registered claims pass,
+and its independent exact-head review records `APPROVE` with no findings. It
+still requires a successful hosted gate, merge, successful mainline Verify,
 both platform bundle candidates, and Runtime consumption of the exact bundle
 identity.
-This work does not retroactively enter the version 0.2 release candidate; the
-release/version decision must preserve the Phase 0 freeze rule.
+This work follows the admitted foundation as a separate exact-source wave. It
+does not require a version transition or preserve an older candidate surface.
 
 ## 5. Phase 2: RT-8 drafting
 
@@ -192,7 +186,8 @@ Then:
 - implement RT-9 only by extending the accepted RT-5 mechanism to a bounded
   non-empty service set.
 
-The first strategic reassessment occurs when version 0.2, RT-7, RT-8, RT-5,
+The first strategic reassessment occurs when the current foundation, RT-7,
+RT-8, RT-5,
 the LLM reference workload, and RT-9 are complete.
 
 ## 8. Demand-selected branches

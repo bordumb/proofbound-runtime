@@ -98,7 +98,7 @@ from byte equality.
 A cross-project reference names:
 
 - one closed identity role;
-- one protocol and schema version;
+- one protocol and closed schema identity;
 - the exact canonical object digest;
 - the digest algorithm;
 - the exact byte size; and
@@ -109,7 +109,7 @@ protocol's independent verifier decodes and validates those fields. The
 integration verifier compares only the decoded values explicitly registered by
 the integration profile.
 
-Unknown roles, schema versions, algorithms, owner namespaces, and duplicate
+Unknown roles, schema identities, algorithms, owner namespaces, and duplicate
 references fail closed. A path, URL, registry coordinate, branch name, or file
 name is not an object identity.
 
@@ -138,17 +138,17 @@ Auths execution receipt and cross-receipt linkage record
 Proofbound release receipt and Runtime composed receipt
               |
               v
-consumer compatibility check and acceptance policy
+consumer integration-profile check and acceptance policy
 ```
 
 A consumer performs these steps:
 
-1. Select an explicit compatibility profile.
+1. Select an explicit integration profile.
 2. Verify every native receipt with the independent verifier selected for its
    owner protocol.
 3. Verify every external commitment through its registered channel.
 4. Verify the typed cross-project references and the acyclic linkage graph.
-5. Compare only the cross-project fields named by the compatibility profile.
+5. Compare only the cross-project fields named by the integration profile.
 6. Retain every assumption, exclusion, trusted role, non-reuse reason, and
    weaker status from every input.
 7. Apply the consumer's acceptance policy.
@@ -174,9 +174,9 @@ facet being evaluated.
 ### 4.3 No universal receipt
 
 The platform MUST NOT introduce one universal receipt that re-encodes every
-product's semantics. It uses native receipts plus a small linkage record and a
-compatibility record. This keeps independent verifiers independent and lets
-each protocol evolve under its own version policy.
+product's semantics. It uses native receipts plus a small linkage record and an
+integration record. This keeps independent verifiers independent and lets each
+protocol retain its own meaning and exact identities.
 
 ## 5. Capsec-to-Runtime drafting profile
 
@@ -231,28 +231,27 @@ Generic evidence and composition features belong in Proofbound only after the
 Runtime feedback process demonstrates reuse. Linux, Auths, Capsec, and agent
 domain semantics stay outside Proofbound core.
 
-## 8. Compatibility model
+## 8. Integration selection model
 
-The products do not share one lockstep version. A platform compatibility
-record selects an explicit tuple containing:
+The products do not share a lockstep version or release train. A platform
+integration record selects an explicit tuple containing:
 
-- the integration-profile version;
-- each participating product version;
-- every native wire-schema version;
+- the integration-profile identity;
+- each participating product source and artifact identity;
+- every native wire-schema identity;
 - each verifier identity;
-- the accepted cross-project linkage-schema version;
+- the accepted cross-project linkage-schema identity;
 - the accepted signing and digest algorithms;
-- the required SDK surface versions; and
+- the required SDK package identities; and
 - any required host or guest profile identity.
 
-A missing tuple or unsupported combination fails closed. SemVer compatibility
-inside one product does not imply platform compatibility. A compatibility
-record authenticates nothing by itself; its distribution and signing policy
-are trust inputs.
+A missing tuple or unsupported combination fails closed. Product and package
+labels do not imply platform support. An integration record authenticates
+nothing by itself; its distribution and signing policy are trust inputs.
 
-The projects MAY release independently. Each release that changes an
-integration surface MUST update its tested compatibility matrix before it is
-described as platform-compatible.
+The projects MAY publish independently. Each source change that affects an
+integration surface MUST update the tested integration matrix before the tuple
+is described as supported.
 
 ## 9. SDK and service boundary
 
@@ -264,7 +263,7 @@ It MUST NOT:
 - hold Auths provider credentials in application code;
 - convert Capsec findings into authority without review;
 - treat a service response as receipt verification; or
-- hide the exact compatibility profile and verifier identities.
+- hide the exact integration profile and verifier identities.
 
 The first reference SDK can remain an example until two independent consumers
 need the same orchestration surface.
@@ -281,7 +280,7 @@ negative cases:
 - convert a Capsec finding directly into broader Runtime authority;
 - confuse an Auths provider name with a broader Runtime service identity;
 - substitute one product release while retaining another product's assurance;
-- downgrade one native schema while retaining the integration-profile version;
+- downgrade one native schema while retaining the integration-profile identity;
 - replace an independent verifier identity;
 - omit one inherited assumption or trusted role;
 - introduce a cycle in the linkage graph;
@@ -294,11 +293,11 @@ Each rejection has a stable typed reason owned by the layer that detects it.
 
 1. The repository that observes an integration need records the concrete case.
 2. Each semantic change is proposed in the repository that owns that meaning.
-3. Each affected repository reviews the shared vector and compatibility effect.
+3. Each affected repository reviews the shared vector and integration effect.
 4. The owner publishes canonical bytes and an independent verification path.
-5. The consuming repository pins the exact accepted version and vectors.
-6. The platform compatibility matrix changes only after every required project
-   release is available.
+5. The consuming repository pins the exact accepted identities and vectors.
+6. The platform integration matrix changes only after every required project
+   artifact is available.
 
 Acceptance of this document in Runtime does not accept it in Proofbound, Auths,
 or Capsec. Each project requires its own review record. The projects do not need
@@ -311,7 +310,7 @@ This integration contract is complete when:
 
 - all four projects accept the ownership and terminology tables or record an
   explicit narrower scope;
-- one versioned compatibility record identifies an accepted version tuple;
+- one closed integration record identifies an accepted exact-identity tuple;
 - independent verifiers validate every native receipt before linkage;
 - the cross-project attack corpus fails for the expected typed reasons;
 - one maintained reference workflow connects Capsec drafting, Auths

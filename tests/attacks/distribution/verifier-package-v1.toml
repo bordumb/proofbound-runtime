@@ -41,6 +41,11 @@ mutation = "add a workspace patch that substitutes the registry dependency graph
 expected = "package.manifest.dependency-source"
 
 [[case]]
+id = "manifest-surface-injection"
+mutation = "add an unregistered feature, target, build hook, or package metadata table"
+expected = "package.manifest.metadata-invalid"
+
+[[case]]
 id = "source-file-injection"
 mutation = "add an undeclared file below the verifier crate root"
 expected = "package.source.inventory-mismatch"
@@ -63,6 +68,16 @@ expected = "package.archive.inventory-mismatch"
 [[case]]
 id = "archive-source-substitution"
 mutation = "replace one retained verifier source member after package creation"
+expected = "package.archive.payload-mismatch"
+
+[[case]]
+id = "archive-manifest-substitution"
+mutation = "replace the retained original Cargo manifest after package creation"
+expected = "package.archive.payload-mismatch"
+
+[[case]]
+id = "archive-vcs-substitution"
+mutation = "replace the retained Cargo VCS revision or path after package creation"
 expected = "package.archive.payload-mismatch"
 
 [[case]]

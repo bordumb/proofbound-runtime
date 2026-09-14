@@ -25,7 +25,7 @@ A profile bundle can contain exact references to:
 - Capsec analyzer and optional source-observation mapping;
 - native SDK and verifier versions;
 - Proofbound release assurance and required evidence floors;
-- cross-project compatibility tuple;
+- cross-project integration tuple;
 - positive vectors and registered attacks; and
 - publisher envelope and registry inclusion proof.
 

@@ -74,7 +74,7 @@ The second round can promote a candidate only when:
 - a new user reaches a verified receipt without reading Runtime source;
 - every manual authority choice is visible;
 - no secret value enters a plan, receipt, log, fixture, or diagnostic;
-- a consumer can identify every native verifier and compatibility profile;
+- a consumer can identify every native verifier and integration profile;
 - the integrated chain preserves each product's weaker results and assumptions;
 - the adopter can name the operational or compliance value; and
 - the adopter agrees to repeat the workflow outside a maintainer-controlled

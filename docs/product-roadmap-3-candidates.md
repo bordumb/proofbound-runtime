@@ -32,7 +32,7 @@ Pre-plan seven ideas:
 Do not place all seven behind one platform release. Each opens only when its
 named Roadmap 2 dependency and adopter evidence exist. Runtime-only work can
 ship without Auths or Capsec. An integrated profile is supported only when its
-complete compatibility tuple and attack corpus pass.
+complete integration tuple and attack corpus pass.
 
 The [reference-workload validation plan](roadmap-3/reference-workload-validation.md)
 starts before these candidates. It determines which candidates receive product

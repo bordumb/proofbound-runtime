@@ -23,6 +23,7 @@ PACKAGE_DESCRIPTION = (
 )
 PACKAGE_BINARY = "pbr-verify"
 PACKAGE_MANIFEST_SCHEMA = "proofbound-runtime-verifier-package-manifest/1"
+PACKAGE_MANIFEST_CDDL = "schemas/verifier-package-manifest-v1.cddl"
 PREFLIGHT_SCHEMA = "proofbound-runtime-package-preflight/1"
 SUPPORTED_RECEIPT_SCHEMAS = [
     "proofbound-runtime-receipt/1",
@@ -66,7 +67,7 @@ SOURCE_REVISION_FILES = (
     "Cargo.toml",
     "VERSION",
     *(str(CRATE / name) for name in CRATE_REPOSITORY_FILES),
-    "schemas/verifier-package-manifest-v1.schema.json",
+    PACKAGE_MANIFEST_CDDL,
     "schemas/verifier-package-preflight-v1.schema.json",
     "tools/release/build_verifier_package.py",
 )
@@ -116,19 +117,33 @@ def _load_toml(path: Path) -> dict[str, object]:
         raise PackageError(FailureCode.IO, str(error)) from error
 
 
-def _nested(table: dict[str, object], path: str) -> object:
-    value: object = table
-    for component in path.split("."):
-        if not isinstance(value, dict) or component not in value:
-            raise PackageError(
-                FailureCode.MANIFEST_METADATA,
-                f"missing or invalid {path}",
-            )
-        value = value[component]
-    return value
-
-
 DEPENDENCY_TABLES = ("dependencies", "dev-dependencies", "build-dependencies")
+
+EXPECTED_MANIFEST_KEYS = {
+    "package",
+    "bin",
+    "dependencies",
+    "dev-dependencies",
+}
+EXPECTED_PACKAGE = {
+    "name": PACKAGE_NAME,
+    "description": PACKAGE_DESCRIPTION,
+    "version": {"workspace": True},
+    "edition": {"workspace": True},
+    "license": {"workspace": True},
+    "repository": {"workspace": True},
+    "rust-version": {"workspace": True},
+    "publish": ["crates-io"],
+    "readme": "README.md",
+    "include": ["README.md", "src/*.rs"],
+}
+EXPECTED_BINARIES = [{"name": PACKAGE_BINARY, "path": "src/main.rs"}]
+EXPECTED_DEPENDENCIES = {
+    "serde": {"workspace": True},
+    "serde_json": {"workspace": True},
+    "sha2": {"workspace": True},
+}
+EXPECTED_DEV_DEPENDENCIES = {"toml": {"workspace": True}}
 
 
 def _dependency_tables(
@@ -223,6 +238,34 @@ def _validate_dependencies(
                 )
 
 
+def _validate_manifest_surface(manifest: dict[str, object]) -> None:
+    if set(manifest) != EXPECTED_MANIFEST_KEYS:
+        raise PackageError(
+            FailureCode.MANIFEST_METADATA,
+            "the verifier manifest contains an unregistered top-level surface",
+        )
+    if manifest.get("package") != EXPECTED_PACKAGE:
+        raise PackageError(
+            FailureCode.MANIFEST_METADATA,
+            "the verifier package table differs from the closed contract",
+        )
+    if manifest.get("bin") != EXPECTED_BINARIES:
+        raise PackageError(
+            FailureCode.MANIFEST_METADATA,
+            "the verifier binary targets differ from the closed contract",
+        )
+    if manifest.get("dependencies") != EXPECTED_DEPENDENCIES:
+        raise PackageError(
+            FailureCode.MANIFEST_METADATA,
+            "the verifier dependencies differ from the closed contract",
+        )
+    if manifest.get("dev-dependencies") != EXPECTED_DEV_DEPENDENCIES:
+        raise PackageError(
+            FailureCode.MANIFEST_METADATA,
+            "the verifier development dependencies differ from the closed contract",
+        )
+
+
 def _actual_crate_files(crate: Path) -> tuple[str, ...]:
     actual: list[str] = []
     for path in crate.rglob("*"):
@@ -249,23 +292,6 @@ def preflight(repository: Path) -> str:
     workspace = _load_toml(workspace_path)
 
     package = _table(manifest.get("package"), "[package]")
-    required = {
-        "name": PACKAGE_NAME,
-        "description": PACKAGE_DESCRIPTION,
-        "version.workspace": True,
-        "edition.workspace": True,
-        "license.workspace": True,
-        "repository.workspace": True,
-        "rust-version.workspace": True,
-        "readme": "README.md",
-        "include": ["README.md", "src/*.rs"],
-    }
-    for key, expected in required.items():
-        if _nested(package, key) != expected:
-            raise PackageError(
-                FailureCode.MANIFEST_METADATA,
-                f"{key} does not match the public package contract",
-            )
     if package.get("publish") != ["crates-io"]:
         raise PackageError(
             FailureCode.PUBLICATION_DISABLED,
@@ -285,6 +311,7 @@ def preflight(repository: Path) -> str:
         )
 
     _validate_dependencies(manifest, workspace)
+    _validate_manifest_surface(manifest)
     actual = _actual_crate_files(repository / CRATE)
     expected = tuple(sorted(CRATE_REPOSITORY_FILES))
     if actual != expected:
@@ -325,6 +352,87 @@ def _expected_archive_inventory(repository: Path) -> list[str]:
     return expected
 
 
+def _archive_member_bytes(
+    archive: tarfile.TarFile,
+    archive_root: str,
+    relative: str,
+) -> bytes:
+    member = archive.extractfile(f"{archive_root}/{relative}")
+    if member is None:
+        raise PackageError(
+            FailureCode.PACKAGE_INVENTORY,
+            f"package member has no bytes: {relative}",
+        )
+    return member.read()
+
+
+def _git_head(repository: Path) -> str:
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=repository,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except OSError as error:
+        raise PackageError(FailureCode.IO, str(error)) from error
+    revision = result.stdout.strip()
+    if result.returncode != 0 or re.fullmatch(r"[0-9a-f]{40}", revision) is None:
+        raise PackageError(
+            FailureCode.PACKAGE_PAYLOAD,
+            "cannot identify the package Git revision",
+        )
+    return revision
+
+
+def _git_dirty(repository: Path) -> bool:
+    try:
+        result = subprocess.run(
+            [
+                "git",
+                "status",
+                "--porcelain=v1",
+                "--untracked-files=all",
+                "--",
+                CRATE.as_posix(),
+            ],
+            cwd=repository,
+            check=False,
+            capture_output=True,
+        )
+    except OSError as error:
+        raise PackageError(FailureCode.IO, str(error)) from error
+    if result.returncode != 0:
+        raise PackageError(
+            FailureCode.PACKAGE_PAYLOAD,
+            "cannot identify the package Git state",
+        )
+    return bool(result.stdout)
+
+
+def _validate_vcs_info(repository: Path, content: bytes) -> None:
+    try:
+        value = json.loads(content)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise PackageError(
+            FailureCode.PACKAGE_PAYLOAD,
+            "the package VCS information is invalid",
+        ) from error
+    expected = {
+        "git": {
+            "sha1": _git_head(repository),
+            "dirty": _git_dirty(repository),
+        },
+        "path_in_vcs": CRATE.as_posix(),
+    }
+    if value != expected:
+        raise PackageError(
+            FailureCode.PACKAGE_PAYLOAD,
+            "the package VCS information differs from the selected source",
+        )
+
+
 def _validate_archive(repository: Path, archive_path: Path) -> None:
     try:
         with tarfile.open(archive_path, "r:gz") as archive:
@@ -345,22 +453,32 @@ def _validate_archive(repository: Path, archive_path: Path) -> None:
                     FailureCode.PACKAGE_INVENTORY,
                     f"expected {expected!r}, observed {observed!r}",
                 )
-            for relative in PACKAGE_PAYLOAD_FILES:
-                member = archive.extractfile(f"{expected_root}/{relative}")
-                if member is None:
-                    raise PackageError(
-                        FailureCode.PACKAGE_INVENTORY,
-                        f"package member has no bytes: {relative}",
-                    )
+            retained_sources = {
+                "Cargo.toml.orig": repository / CRATE / "Cargo.toml",
+                **{
+                    relative: repository / CRATE / relative
+                    for relative in PACKAGE_PAYLOAD_FILES
+                },
+            }
+            for relative, source_path in retained_sources.items():
                 try:
-                    source = (repository / CRATE / relative).read_bytes()
+                    source = source_path.read_bytes()
                 except OSError as error:
                     raise PackageError(FailureCode.IO, str(error)) from error
-                if member.read() != source:
+                if _archive_member_bytes(archive, expected_root, relative) != source:
                     raise PackageError(
                         FailureCode.PACKAGE_PAYLOAD,
                         f"package member differs from source: {relative}",
                     )
+            if ".cargo_vcs_info.json" in expected:
+                _validate_vcs_info(
+                    repository,
+                    _archive_member_bytes(
+                        archive,
+                        expected_root,
+                        ".cargo_vcs_info.json",
+                    ),
+                )
     except (OSError, tarfile.TarError) as error:
         raise PackageError(FailureCode.PACKAGE_INVENTORY, str(error)) from error
 
@@ -463,7 +581,11 @@ def _dogfood(archive_path: Path, work: Path, version: str) -> None:
         )
     except OSError as error:
         raise PackageError(FailureCode.CONSUMER, str(error)) from error
-    if completed.returncode != 0 or completed.stdout != f"{PACKAGE_BINARY} {version}\n" or completed.stderr:
+    if (
+        completed.returncode != 0
+        or completed.stdout != f"{PACKAGE_BINARY} {version}\n"
+        or completed.stderr
+    ):
         raise PackageError(
             FailureCode.CONSUMER,
             "the installed verifier did not report the selected version",
@@ -477,6 +599,80 @@ def _write_exclusive(path: Path, data: bytes) -> None:
             destination.write(data)
     except OSError as error:
         raise PackageError(FailureCode.IO, str(error)) from error
+
+
+def _encode_cbor_argument(major: int, value: int) -> bytes:
+    if value < 24:
+        return bytes([(major << 5) | value])
+    for additional, width in ((24, 1), (25, 2), (26, 4), (27, 8)):
+        if value < 1 << (width * 8):
+            return bytes([(major << 5) | additional]) + value.to_bytes(width, "big")
+    raise PackageError(
+        FailureCode.PACKAGE_PAYLOAD,
+        "a verifier package manifest integer exceeds u64",
+    )
+
+
+def _encode_cbor(value: object) -> bytes:
+    if isinstance(value, bytes):
+        return _encode_cbor_argument(2, len(value)) + value
+    if isinstance(value, str):
+        payload = value.encode("utf-8")
+        return _encode_cbor_argument(3, len(payload)) + payload
+    if type(value) is int and 0 <= value < 1 << 64:
+        return _encode_cbor_argument(0, value)
+    if isinstance(value, list):
+        return _encode_cbor_argument(4, len(value)) + b"".join(
+            _encode_cbor(item) for item in value
+        )
+    if isinstance(value, dict):
+        if any(not isinstance(key, str) for key in value):
+            raise PackageError(
+                FailureCode.PACKAGE_PAYLOAD,
+                "a verifier package manifest map key is not text",
+            )
+        entries = sorted(
+            (_encode_cbor(key), _encode_cbor(item)) for key, item in value.items()
+        )
+        return _encode_cbor_argument(5, len(entries)) + b"".join(
+            key + item for key, item in entries
+        )
+    raise PackageError(
+        FailureCode.PACKAGE_PAYLOAD,
+        f"unsupported verifier package manifest value: {type(value).__name__}",
+    )
+
+
+def _manifest_projection(value: dict[str, object]) -> dict[str, object]:
+    artifacts = value["artifacts"]
+    if not isinstance(artifacts, list) or len(artifacts) != 1:
+        raise PackageError(
+            FailureCode.PACKAGE_PAYLOAD,
+            "the verifier package manifest artifact inventory is invalid",
+        )
+    artifact = artifacts[0]
+    if not isinstance(artifact, dict):
+        raise PackageError(
+            FailureCode.PACKAGE_PAYLOAD,
+            "the verifier package manifest artifact entry is invalid",
+        )
+    digest = artifact["sha256"]
+    size = artifact["size"]
+    if not isinstance(digest, bytes) or type(size) is not int:
+        raise PackageError(
+            FailureCode.PACKAGE_PAYLOAD,
+            "the verifier package manifest identity is invalid",
+        )
+    return {
+        **value,
+        "artifacts": [
+            {
+                **artifact,
+                "sha256": f"hex:{digest.hex()}",
+                "size": str(size),
+            }
+        ],
+    }
 
 
 def _tree_revision(repository: Path) -> str:
@@ -558,13 +754,20 @@ def build(
     except OSError as error:
         raise PackageError(FailureCode.IO, str(error)) from error
     with tempfile.TemporaryDirectory(prefix="verifier-package.", dir=target) as first:
-        with tempfile.TemporaryDirectory(prefix="verifier-package.", dir=target) as second:
+        with tempfile.TemporaryDirectory(
+            prefix="verifier-package.", dir=target
+        ) as second:
             first_bytes = _build_once(repository, Path(first), version)
             second_bytes = _build_once(repository, Path(second), version)
     if first_bytes != second_bytes:
         raise PackageError(
             FailureCode.REPRODUCTION,
             _archive_name(version),
+        )
+    if not first_bytes:
+        raise PackageError(
+            FailureCode.PACKAGE_PAYLOAD,
+            "the verifier package archive is empty",
         )
 
     archive_name = _archive_name(version)
@@ -575,7 +778,7 @@ def build(
     ) as consumer:
         _dogfood(archive_path, Path(consumer), version)
 
-    digest = hashlib.sha256(first_bytes).hexdigest()
+    digest = hashlib.sha256(first_bytes).digest()
     manifest = {
         "artifacts": [
             {"name": archive_name, "sha256": digest, "size": len(first_bytes)}
@@ -588,12 +791,21 @@ def build(
         "version": version,
     }
     _write_exclusive(
-        output / "VERIFIER-PACKAGE-MANIFEST.json",
-        json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode() + b"\n",
+        output / "VERIFIER-PACKAGE-MANIFEST.cbor",
+        _encode_cbor(manifest),
+    )
+    _write_exclusive(
+        output / "VERIFIER-PACKAGE-MANIFEST.projection.json",
+        json.dumps(
+            _manifest_projection(manifest),
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+        + b"\n",
     )
     _write_exclusive(
         output / "SHA256SUMS",
-        f"{digest}  {archive_name}\n".encode("ascii"),
+        f"{digest.hex()}  {archive_name}\n".encode("ascii"),
     )
 
 

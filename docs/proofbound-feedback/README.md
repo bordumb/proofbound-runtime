@@ -216,7 +216,7 @@ and superseded items in the table.
 | [PBF-0010](pbf-0010-translation-cache-state-exclusion.md) | Translation cache state exclusion | `workflow` | `blocking` | `resolved` | Version 0.1 release linkage | `proof-bound@585c0e0` |
 | [PBF-0011](pbf-0011-contextual-semantic-artifact-binding.md) | Contextual semantic artifact binding | `evidence-semantics` | `blocking` | `resolved` | Version 0.1 release linkage | `proof-bound` ADR 0022; `3ec98f5..70af5e6` |
 | [PBF-0012](pbf-0012-deterministic-parallel-evidence-scheduling.md) | Deterministic parallel evidence scheduling | `workflow` | `near-term` | `upstream-ready` | Milestone A | Not upstreamed |
-| [PBF-0013](pbf-0013-versioned-proofbound-tool-distribution.md) | Exact-identity Proofbound tool distribution | `workflow` | `near-term` | `upstreamed` | Milestone A | Proofbound PR 10, head `1ceb40f` |
+| [PBF-0013](pbf-0013-versioned-proofbound-tool-distribution.md) | Exact-identity Proofbound tool distribution | `workflow` | `near-term` | `upstreamed` | Milestone A | Proofbound PR 10, approved head `693976f`; hosted gate pending |
 
 ## Rules for agents
 

@@ -18,7 +18,7 @@ The product identifies these separate current surfaces:
 
 | Surface | Exact unit | Consumer |
 | --- | --- | --- |
-| Runtime product | Product label, source revision, and release tag | Operator |
+| Runtime product | Exact source revision and artifact digest; product label is metadata | Operator |
 | Execution plan | Closed schema identifier and canonical bytes | Plan producer and Runtime |
 | Execution receipt | Closed schema identifier and canonical bytes | Independent verifier |
 | Composed receipt | Closed schema identifier and canonical bytes | Composer and consumer |
@@ -40,6 +40,8 @@ The repository uses its existing version fields because package registries and
 build tools require them. Before launch, those fields do not promise semantic
 versioning or support for older interfaces. The exact source revision, schema
 identifier, package digest, and tested integration tuple are authoritative.
+Numeric suffixes in schema identifiers are closed security-type identities, not
+a product release or backward-compatibility policy.
 
 The project may replace an API, command, machine code, toolchain minimum, wire
 schema, or canonical encoding between prelaunch candidates. Each replacement
@@ -92,8 +94,8 @@ The first candidates are:
    closure and API surface pass review.
 
 The candidates do not become public merely because this draft names them.
-Package publication requires the selection record, package preflight, release
-approval, exact tag, and registry action.
+Package publication requires the selection record, package preflight, approval
+of one exact `main` revision, and an explicit registry action.
 
 The first verifier slice selects the existing
 `proofbound-runtime-verify` Cargo package. That package contains both the
@@ -157,8 +159,9 @@ approved commit on `main`.
 The first verifier slice uses the closed
 `proofbound-runtime-package-preflight/1` result and the closed
 `proofbound-runtime-verifier-package-manifest/1` artifact manifest. The
-manifest records the exact `.crate` identity and the two receipt schemas the
-verifier accepts. Stable `package.*` failure codes reject the registered
+authoritative manifest is deterministic CBOR and records the exact `.crate`
+identity and the two receipt schemas the verifier accepts. JSON is a diagnostic
+projection only. Stable `package.*` failure codes reject the registered
 preflight and production attacks before release retention.
 
 The verifier preflight parses the package and workspace manifests as TOML. It
@@ -170,11 +173,11 @@ default `crates.io` registry only.
 
 The workflow must:
 
-1. verify the exact requested revision and release state;
+1. verify the exact requested `main` revision and workflow identity;
 2. build each package twice in clean independent directories;
 3. require byte equality;
-4. compare the package file inventory and retained source bytes with the exact
-   tag;
+4. compare the package file inventory and retained source bytes with that exact
+   revision;
 5. reject undeclared generated, credential, local configuration, build output,
    or version-control files;
 6. record package name, version, digest, size, source revision, and schema
@@ -186,33 +189,31 @@ The workflow must:
    identities.
 
 Publication from a developer machine or a non-release workflow is unsupported.
-The workflow must not reuse a package version after a failed or partial
-publication.
+Package labels are tooling metadata. They do not select, approve, or identify
+the authoritative package bytes.
 
-## 8. Yank and correction policy
+## 8. Prelaunch replacement policy
 
-- Do not delete a released version when the registry supports yanking.
-- Yank only for a security defect, unusable package, legal requirement, or
-  incorrect immutable metadata that prevents safe use.
-- Record the reason, affected packages, affected schemas, safe replacement,
-  and date in the changelog or a linked advisory.
-- A yank does not erase historical receipt or artifact identity.
-- A fixed release uses a new version and new package bytes.
-- Never move or recreate a release tag to match a replacement package.
+No compatibility, deprecation, migration-window, or long-term-support policy is
+required before launch. An unpublished candidate may replace the previous
+candidate atomically. The replacement invalidates prior candidate approvals and
+must pass the complete current gate under its own exact identities. Registry
+correction and postlaunch compatibility policies are deferred until a launch
+decision identifies external users.
 
 ## 9. Current integration manifest
 
 Each Runtime release publishes a machine-readable current-integration record
 and a human rendering. The record names:
 
-- Runtime product and release revision;
-- public package versions and identities;
+- Runtime product source revision and artifact identity;
+- public package labels and exact package identities;
 - emitted and accepted plan schemas;
 - emitted and verified receipt schemas;
 - composed-receipt, acceptance-policy, and decision schemas;
-- machine-result schema and stable error vocabulary version;
+- machine-result schema and closed error vocabulary;
 - supported Rust, Python, Node.js, Linux, and architecture profiles;
-- required Proofbound tool and receipt versions; and
+- required Proofbound source, tool-artifact, and receipt-schema identities; and
 - accepted optional platform integration tuples.
 
 An absent tuple is unsupported, not implicitly compatible. The record is a
@@ -236,13 +237,12 @@ bounded observation for the tested identity tuple.
 - Change canonical bytes without changing the wire schema.
 - Change a public API without updating the exact current package tuple.
 - Raise a language minimum without updating package metadata and host checks.
-- Build package bytes whose inventory differs from the exact tag.
+- Build package bytes whose inventory differs from the exact selected revision.
 - Attempt publication from a non-release context.
-- Publish one package from an incomplete first-party version set.
+- Publish one package from an incomplete selected first-party package set.
 - Substitute registry bytes after release approval.
 - Select an unlisted platform integration tuple.
-- Replace the independent verifier with an unrecorded version.
-- Yank a package without a recorded reason and replacement.
+- Replace the independent verifier with an unrecorded executable identity.
 
 Each case fails with a stable release or integration reason before any
 consumer describes the combination as supported.
@@ -255,12 +255,13 @@ confirm:
 - the selected public package surface is smaller than the child security path;
 - verifier independence remains intact;
 - one schema identity cannot acquire different security meaning;
-- the release workflow, tag, package, and registry identities are distinct;
+- the release workflow, source revision, package, and registry identities are
+  distinct;
 - no checksum is presented as publisher authentication; and
 - Proofbound, Auths, and Capsec remain independently identified products.
 
 RT-7 is complete only when the selected packages are available from their
-registries, registry bytes match the approved exact-tag packages, unrelated
-consumers pass, and the published current-integration manifest describes the
-result. Support for older interfaces is not an RT-7 exit condition before
-launch.
+registries, registry bytes match the packages produced from the approved exact
+source revision, unrelated consumers pass, and the published current-integration
+manifest describes the result. Version migration and support for older
+interfaces are not RT-7 work before launch.

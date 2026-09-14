@@ -3,17 +3,21 @@
 - **Status:** planning; first-roadmap source foundation merged, all Roadmap 2
   exit conditions open
 - **Date:** 2026-09-13
-- **Runtime baseline:** `83e8bbc` on `main` (`v0.1.0` is `c78e189`; the
-  reviewed Roadmap 1 source head is `d76f3b8`)
+- **Runtime baseline:** current admitted `main`; exact source and artifact
+  identities control each implementation wave
 - **Proofbound baseline consumed by Runtime:** `1084e0d` (merged to Proofbound
   `main` as `3a78873`)
-- **Proofbound distribution candidate:** PR 10 at `1ceb40f`; not merged or
-  consumed by Runtime
+- **Proofbound distribution candidate:** PR 10 at `693976f`; independently
+  approved, hosted verification pending, not yet merged or consumed by Runtime
 - **Prerequisite:** [Product and delivery roadmap](product-roadmap.md)
   Milestones A through E, except where an epic below names a narrower
   prerequisite
 - **Delivery order:** [Product roadmap execution order](product-roadmap-execution-order.md)
 - **Planning horizon:** post-Milestone E product expansion
+- **Lifecycle rule:** prelaunch with zero external users; do not add version
+  migrations, compatibility layers, deprecation periods, or coordinated
+  release numbering. Replace current contracts atomically and re-run every
+  affected exact-identity gate.
 
 This roadmap takes the six items that the first roadmap deferred in its
 section 15 and orders them by the size of the trusted computing base change
@@ -24,7 +28,7 @@ threat-model, ADR, claim, and evidence changes before production code.
 
 ### Execution checkpoint
 
-As of 2026-09-13, Runtime main contains the version 2 memory and deterministic
+As of 2026-09-14, Runtime main contains the version 2 memory and deterministic
 CBOR wave, receipt composition and acceptance, a bounded static plan scaffold,
 typed prelaunch diagnostics, reproducible Rust, Python, and TypeScript SDK
 packages, the network-mechanism decision, and the performance baseline. These
@@ -40,9 +44,9 @@ and release-retention path. Its local preflight, Rust, package, and targeted
 fresh-evidence checks pass. It has not received clean exact-head hosted evidence
 or independent acceptance, and it does not authorize registry publication.
 The generic Proofbound tool-bundle prerequisite is upstreamed as Proofbound PR
-10. Its complete local gate passes at exact head `1ceb40f`; merge, hosted
-mainline verification, both platform bundle candidates, and Runtime consumption
-remain open.
+10. Its focused local gate and independent review pass at exact head
+`693976f`; hosted verification, merge, mainline verification, both platform
+bundle candidates, and Runtime consumption remain open.
 RT-9 is blocked until RT-5 implements the accepted single-service network
 decision in production.
 
@@ -117,7 +121,7 @@ share one universal receipt or coordinated product releases.
 | Hostname allow-list as a port-only rule | It is the exact substitution the RT-4.3 decision gate rejects. | Never. | Rejected permanently. Replaced by a multi-service extension of the RT-5 mechanism. |
 | macOS or Windows under the Linux label | No native equivalent of Landlock, seccomp, and cgroup v2 exists; a native profile would fork the assurance chain. | Milestone C install path and RT-6.3 setup-cost benchmarks exist. | Run the unchanged native Linux runtime inside an identified guest. Make the host profile distinguishable in the receipt. Add the hypervisor and guest image to the trusted computing base. |
 | Hosted receipt database | No consumer needed query or retention; a signature moves the trust anchor rather than removing it. | RT-2 acceptance has shipped and two consumers exist. | Signing and transparency ADR first. Then an append-only, content-addressed log with inclusion and consistency proofs. No query database. Hosting is a later operator role. |
-| Daemon or multi-tenant service | Long-lived state and multi-tenancy are version 1 non-goals; there was no measured need. | RT-6.3 benchmarks show setup cost dominates and one adopter runs repeated invocations. | ADR and new threat-model section. Single-tenant service that never reuses a boundary. Multi-tenancy is a separate decision whose default answer is one instance per tenant. |
+| Daemon or multi-tenant service | Long-lived state and multi-tenancy are initial-profile non-goals; there was no measured need. | RT-6.3 benchmarks show setup cost dominates and one adopter runs repeated invocations. | ADR and new threat-model section. Single-tenant service that never reuses a boundary. Multi-tenancy is a separate decision whose default answer is one instance per tenant. |
 
 ## 3. Trusted computing base delta
 
@@ -128,7 +132,7 @@ existing mechanism. This roadmap applies the same rule to every item.
 | --- | --- | --- | --- |
 | RT-7 crates | None in the production profile. The crate registry becomes a distribution trust input beside the GitHub release channel. | None. | Registry substitution of crate bytes. |
 | RT-8 trace-assisted drafting | None in the production profile. The diagnostic profile trusts its observer mechanism, which is enumerated in the diagnostic ADR. | A diagnostic receipt kind that is never reusable. No change to production receipts. | A program that behaves differently when observed. |
-| RT-9 multi-service network | None beyond the roles RT-5 already added, multiplied by service count. | A typed non-empty service set in the version 2 or later plan and receipt. | Cross-service confusion within the allowed set. |
+| RT-9 multi-service network | None beyond the roles RT-5 already added, multiplied by service count. | A typed non-empty service set in the current plan and receipt contracts. | Cross-service confusion within the allowed set. |
 | RT-10 VM host profile | Hypervisor, guest image, guest kernel, host-guest transport, and the host-side orchestration tool. | Guest identity must be distinguishable; decided in RT-10.1. | Malicious host operating system, which is treated the same way as host root: out of scope. |
 | RT-11 and RT-12 signing and log | Signing identity and key custody, log operator, and any witness set. | A signed envelope and inclusion proof retained beside the receipt. The receipt bytes do not change. | Equivocating log operator; compromised signing key. |
 | RT-13 execution service | Long-lived supervisor state, API authentication, and shared immutable caches. | An execution-service identity and session binding in the run result. | Malicious API client; co-tenant if multi-tenancy is ever accepted. |
@@ -147,8 +151,9 @@ existing mechanism. This roadmap applies the same rule to every item.
 | 7 | RT-13.5 multi-tenancy decision | Order 6 measured | An ADR accepts multi-tenancy with a co-tenant threat model or rejects it in favor of one instance per tenant. | M |
 
 Size is measured in this project's units. S is one claim wave with no schema
-version change. M is one or two claim waves with one schema version or one
-ADR. L is three or more claim waves with a new threat-model section.
+identity replacement. M is one or two claim waves with one schema identity
+replacement or one ADR. L is three or more claim waves with a new threat-model
+section.
 
 Orders express merge dependencies, not a ban on parallel investigation. The
 RT-11 ADR can be drafted while RT-8 and RT-9 are in progress, because it is a
@@ -345,7 +350,7 @@ than one service is allowed:
 - A convenience name such as an LLM provider preset is a reviewed bundle that
   expands to exact typed declarations before normalization. The plan identity
   binds the expansion, never the preset name alone.
-- A preset lives in a versioned, reviewed file. A changed preset is a changed
+- A preset lives in an identity-bound, reviewed file. A changed preset is a changed
   plan.
 
 **Done when:** one agent calls two declared services, every cross-service
@@ -377,8 +382,8 @@ Proofbound-release identities.
   orchestration tool.
 - Decide how a consumer distinguishes a guest-produced receipt. The candidates
   are a maintained guest kernel with a distinct recorded identity that
-  acceptance policy can pin, or an explicit host-profile field in a new plan
-  and receipt schema version. Do not rely on convention.
+  acceptance policy can pin, or an explicit host-profile field in replacement
+  plan and receipt schema identities. Do not rely on convention.
 - State the claim language: the native Linux boundary was installed inside an
   identified guest; the host operating system is a distribution and transport
   premise, not an enforcement mechanism. The phrase "macOS enforcement" does
@@ -581,12 +586,12 @@ account, and without trusting the operator.
 ## 11. Epic RT-13: execution service
 
 The first roadmap forbids a daemon without measured need and names long-lived
-state and multi-tenancy as version 1 non-goals. This epic opens only when the
+state and multi-tenancy as initial-profile non-goals. This epic opens only when the
 RT-6.3 benchmarks show that repeated setup cost dominates and one adopter runs
 repeated invocations. If the benchmarks do not show that, this epic stays
 closed and the record says so.
 The [RT-13 integration record](roadmap-2/rt-13-platform-execution-service.md)
-defines the Auths caller, Runtime service, compatibility profile, response
+defines the Auths caller, Runtime service, integration profile, response
 commitment, native verifier, and optional Capsec drafting boundaries. It keeps
 the per-execution launcher identical to the CLI path.
 
@@ -723,7 +728,7 @@ No item in this roadmap may:
 - The signing and transparency ADR is accepted.
 - A self-hosted log has two consumers and offline proof verification.
 - A consumer can export and verify the separate Auths, Runtime, and Proofbound
-  object closure plus its typed linkage and compatibility records.
+  object closure plus its typed linkage and integration records.
 
 ### Milestone K: service on measured need
 

@@ -22,7 +22,7 @@ The log stores or references separate content-addressed objects:
 - Auths decision and execution receipts;
 - Runtime plan, receipt, commitment, and linkage record;
 - Proofbound release and composed receipts;
-- compatibility record;
+- integration record;
 - detached signing envelopes; and
 - log checkpoints and proofs.
 
@@ -36,14 +36,14 @@ checkpoint.
 2. Verify inclusion and consistency proofs.
 3. Verify each native object with its owner verifier.
 4. Verify the typed linkage graph.
-5. Verify the selected compatibility tuple.
+5. Verify the selected integration tuple.
 6. Apply consumer acceptance policy.
 
 ## Additional falsifiers
 
 - Omit one native object while retaining its linkage reference.
 - Serve two inconsistent checkpoints without a detectable witness conflict.
-- Substitute the compatibility record after inclusion.
+- Substitute the integration record after inclusion.
 - Accept log time as trusted freshness without the required time policy.
 - Treat inclusion as authorization, execution, or Proofbound status.
 

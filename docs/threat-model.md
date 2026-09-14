@@ -105,6 +105,14 @@ Initial execution claims depend on:
 - filesystem identity and descriptor behavior;
 - the exact launcher and supervisor artifacts;
 - the Rust compiler, linker, standard library, and relevant dependencies;
+- the selected Python interpreter and standard library used by release and
+  assurance tools;
+- Cargo package and install semantics, including manifest normalization,
+  lockfile generation, file selection, and VCS metadata generation;
+- the tar and gzip implementations used to produce, parse, and extract package
+  archives;
+- release-tool filesystem operations and the host filesystem that retains
+  package and provenance bytes;
 - the cryptographic digest implementation used for identities; and
 - each exact executable, loader, runtime, and runtime library root granted to
   the child.

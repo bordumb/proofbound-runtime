@@ -25,7 +25,7 @@ an exported closure verify.
 - Rebuild an index from one pinned checkpoint and object closure.
 - Search typed non-secret fields such as project, release, plan, execution,
   service, workload, policy, outcome, and receipt eligibility identities.
-- Export native receipts, linkage records, compatibility records, envelopes,
+- Export native receipts, linkage records, integration records, envelopes,
   proofs, checkpoints, verifier identities, and required schemas.
 - Produce a deterministic export manifest with no-replace semantics.
 - Verify the export without an account, network connection, index, or log
@@ -38,7 +38,7 @@ or unregistered metadata by default.
 
 - omit an object from an export while retaining a dangling reference;
 - return a stale or fabricated query row;
-- substitute a checkpoint or compatibility record;
+- substitute a checkpoint or integration record;
 - redact an assumption or non-reuse reason;
 - merge two tenants' index results;
 - infer a trusted timestamp from index insertion time; and

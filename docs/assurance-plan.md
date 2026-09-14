@@ -1,7 +1,7 @@
 # Assurance plan
 
-This document records the completed evidence path for each load-bearing version
-0.2 claim. Claim manifests remain the source of truth for current admitted
+This document records the completed evidence path for each current load-bearing
+claim. Claim manifests remain the source of truth for admitted
 status, assumptions, exclusions, and exact evidence identities.
 
 ## Assurance summary
@@ -33,7 +33,7 @@ observations do not promote the four test-based claims to `ARTIFACT_BOUND`.
 The production subject is the independently installable
 `proofbound-runtime-verify` package. Its intended closure contains:
 
-- explicit public package metadata and a fixed package payload;
+- one exact public package, target, dependency, metadata, and source surface;
 - no path, Git, alternate-registry, workspace-patch, or Runtime workspace
   dependency;
 - a stable preflight failure vocabulary for metadata, dependency, inventory,
@@ -41,13 +41,17 @@ The production subject is the independently installable
   reproduction, and consumer failures;
 - two isolated package builds compared by exact bytes;
 - safe extraction and installation into an unrelated temporary consumer; and
-- one retained package manifest with exact source revision, artifact identity,
-  binary name, and supported receipt schemas.
+- exact comparison of retained source bytes, the original Cargo manifest, and
+  Cargo VCS identity;
+- one retained deterministic-CBOR package manifest with exact source revision,
+  artifact identity, binary name, and supported receipt schemas; and
+- checked inclusion of the verifier namespace in aggregate release provenance.
 
 The evidence path is:
 
-1. mutate explicit publication, required metadata, dependencies, source files,
-   product version, selected revision, archive members, and reproduction bytes;
+1. mutate explicit publication, manifest surfaces, dependencies, source files,
+   product label, selected revision, archive members, retained Cargo metadata,
+   and reproduction bytes;
 2. inspect the exact archive member inventory and compare retained package
    source bytes with the registered repository source;
 3. compare two independently produced `.crate` byte strings;

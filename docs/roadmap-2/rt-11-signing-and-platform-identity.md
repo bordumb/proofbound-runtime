@@ -39,7 +39,7 @@ the identity, how keys rotate or revoke, and what a consumer pins.
 - Auths signatures retain Auths meaning. Runtime does not reinterpret them as
   Runtime producer correctness.
 - Release signatures and execution signatures remain distinct.
-- A compatibility record names accepted envelopes and algorithms but does not
+- An integration record names accepted envelopes and algorithms but does not
   authenticate itself.
 
 ## Additional falsifiers

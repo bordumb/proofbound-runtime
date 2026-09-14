@@ -37,7 +37,7 @@ select the final closed wire values.
 - A report can suggest review items. It cannot add plan authority.
 - Runtime displays requirements absent from the plan, plan authority absent
   from requirements, and observed effects absent from requirements.
-- Unknown Capsec versions and stale source identities remain visible and
+- Unknown Capsec schema identities and stale source identities remain visible and
   unusable for automated comparison.
 - Network, environment, write-root, and resource-limit choices remain human
   decisions.

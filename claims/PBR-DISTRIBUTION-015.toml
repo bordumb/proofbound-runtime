@@ -1,8 +1,8 @@
 schema = "proofbound-claim/1"
 id = "PBR-DISTRIBUTION-015"
 title = "The independent verifier has a closed reproducible public package"
-statement = "The registered verifier package preflight admits only the explicit public metadata, source inventory, package payload, version, and crates.io-only non-Runtime dependency closure; release production builds that package twice to byte equality and installs the extracted package in an unrelated temporary consumer before retaining its identity."
-public_language = "The independent verifier crate rejects the registered metadata, dependency-source, inventory, packaged-source substitution, version, and reproduction attacks, and its local release package is byte-reproduced and installed outside the workspace. This is source and local-package evidence, not registry publication, registry-byte identity, publisher authentication, or proof of verifier semantics."
+statement = "The registered verifier package preflight admits only the exact public manifest surface, source inventory, package payload, Cargo-retained source identity, and crates.io-only non-Runtime dependency closure; release production builds that package twice to byte equality, installs the extracted package in an unrelated temporary consumer, and joins the exact package into aggregate release provenance before retaining its identity."
+public_language = "The independent verifier crate rejects the registered manifest-surface, dependency-source, inventory, packaged-source, Cargo-metadata, source-identity, and reproduction attacks. Its local release package is byte-reproduced, installed outside the workspace, and included in checked aggregate provenance. This is source and local-package evidence, not registry publication, registry-byte identity, publisher authentication, or proof of verifier semantics."
 subject = "package:proofbound-runtime-verify"
 profile = "ledger"
 tier = 1
@@ -35,14 +35,20 @@ source_roots = [
   "crates/proofbound-runtime-verify/src/",
   "crates/proofbound-runtime-verify/tests/",
   "docs/specs/0014_public_compatibility_and_distribution.md",
+  "docs/threat-model.md",
   "proofbound/evidence/verifier-package-contract.toml",
-  "schemas/verifier-package-manifest-v1.schema.json",
+  "schemas/release-provenance-v2.cddl",
+  "schemas/verifier-package-manifest-v1.cddl",
   "schemas/verifier-package-preflight-v1.schema.json",
   "tests/attacks/distribution/verifier-package-v1.toml",
   "tools/ci/ci.sh",
   "tools/ci/pre-commit.sh",
+  "tools/ci/deterministic_cbor.py",
+  "tools/ci/test_release_provenance.py",
   "tools/ci/test_release_workflow.py",
   "tools/ci/test_verifier_package.py",
+  "tools/release/build_provenance.py",
   "tools/release/build_verifier_package.py",
   "tools/release/check_verifier_package.py",
+  "tools/release/verify_provenance.py",
 ]

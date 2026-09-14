@@ -26,7 +26,7 @@ immutable setup artifacts.
 - A platform SDK can orchestrate these calls but cannot replace native
   verifiers.
 
-The service records its caller, service, Runtime release, compatibility profile,
+The service records its caller, service, Runtime release, integration profile,
 plan, execution, receipt, and response-channel identities as separate roles.
 
 ## Required behavior
@@ -46,7 +46,7 @@ plan, execution, receipt, and response-channel identities as separate roles.
 - Confuse two concurrent callers' commitments or receipts.
 - Reuse one Auths decision across two queued requests.
 - Substitute a cached artifact after authorization.
-- Change compatibility profiles between request and result.
+- Change integration profiles between request and result.
 - Restart the service while an execution or boundary survives.
 
 ## Integration exit
