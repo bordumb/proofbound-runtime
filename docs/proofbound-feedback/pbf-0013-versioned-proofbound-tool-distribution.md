@@ -145,7 +145,13 @@ complete local 12-stage gate passed at the initial implementation head. After
 review fixes, 33 focused tests and both registered claims passed at exact clean
 head `693976f`, and an independent exact-head review recorded `APPROVE` with no
 findings. The pull-request gate passed, the approved head merged as unsigned
-main commit `dd481a3`, and exact-main Verify run `34887427661` passed. Tool-bundle
-run `34889426459` is producing both platform candidates. Resolution remains
-open until both candidates pass and Runtime consumes a pinned bundle without
+main commit `dd481a3`, and exact-main Verify run `34887427661` passed. Both jobs
+in tool-bundle run `34889426459` passed. The retained archive digests are
+`c76795b24937f9091e9103bea7dcb4e0dd9369187e9f81d1bfe686a5bafda256`
+for `linux-x86_64` and
+`56ef5c8aebbbde488102b8d2bac6e3e712bba76e3dbf261187aedd83729528fe`
+for `linux-aarch64`; their manifest digests are respectively
+`895f07f68380f151ebed3533b464160dab545f8751f5dc1a9eeb21e7fe803783`
+and `cb8479bea4509c02b1318f2f671472e4292b9cf398bdc7e7098dfb6c0d8740f3`.
+Resolution remains open until Runtime consumes a pinned bundle without
 changing evidence meaning or `--fresh` behavior.

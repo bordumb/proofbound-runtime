@@ -4,8 +4,8 @@
 - **Date:** 2026-09-13
 - **Applies to:** Roadmap 1 release closure, Roadmap 2, and Roadmap 3 candidate
   promotion
-- **Current Runtime main baseline:** selected and recorded by Phase 0 after the
-  pending exact-main admission closes
+- **Current Runtime main candidate:** `3621655`; exact-main Verify run
+  `34889542484` is in progress
 - **Current reviewed Roadmap 1 source head:** `d76f3b8`
 - **Lifecycle:** prelaunch; zero external users; package labels are tooling
   metadata rather than compatibility promises
@@ -128,9 +128,9 @@ specification review, clean exact-head hosted evidence, exact-head review, and
 merge remain open. No registry publication step exists.
 The generic Proofbound tool-bundle source was independently approved at PR 10
 head `693976f`, passed its hosted gate, and merged as `dd481a3`. Exact-main
-Verify run `34887427661` passed. Tool-bundle run `34889426459` is producing both
-platform candidates. Runtime consumption of their exact source, workflow,
-archive, and manifest identities remains open.
+Verify run `34887427661` and both jobs in tool-bundle run `34889426459` passed.
+Runtime consumption of their exact source, workflow, archive, and manifest
+identities remains open.
 This work follows the admitted foundation as a separate exact-source wave. It
 does not require a version transition or preserve an older candidate surface.
 

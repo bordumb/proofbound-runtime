@@ -1,8 +1,8 @@
 # RT-7 integration record: prelaunch packaging and distribution
 
 **Status:** RT-7.1 prelaunch distribution contract drafted; the Proofbound
-bundle source is merged and verified; its two platform candidates are building;
-RT-7.2 verifier-package exact-head review and distribution remain open
+bundle source and both platform candidates are verified; RT-7.2
+verifier-package exact-head review and distribution remain open
 
 **Primary owner:** Proofbound Runtime
 
@@ -53,13 +53,22 @@ platform tool bundles, a closed manifest schema, a standalone fail-closed
 installer, and exact source and mainline-Verify identities. Exact-main Verify
 run `34887427661` passed.
 
-Tool-bundle run `34889426459` is producing the exact `x86_64` and `aarch64`
-candidates. The prerequisite is not resolved until both pass and Runtime pins
-the exact upstream source revision, successful workflow run, archive digest,
-and manifest identity. Runtime continues to compile its pinned Proofbound
-revision until that consumption change passes without changing evidence
-meaning or `--fresh` behavior. A product label does not participate in that
-decision.
+Both jobs in tool-bundle run `34889426459` passed. The `linux-x86_64` archive
+digest is `c76795b24937f9091e9103bea7dcb4e0dd9369187e9f81d1bfe686a5bafda256`
+and its manifest digest is
+`895f07f68380f151ebed3533b464160dab545f8751f5dc1a9eeb21e7fe803783`.
+The `linux-aarch64` archive digest is
+`56ef5c8aebbbde488102b8d2bac6e3e712bba76e3dbf261187aedd83729528fe`
+and its manifest digest is
+`cb8479bea4509c02b1318f2f671472e4292b9cf398bdc7e7098dfb6c0d8740f3`.
+Both manifests name source `dd481a3`, Verify run `34887427661`, and schema
+`proofbound-tool-bundle-manifest/1`; both retained checksum sets passed.
+
+The prerequisite is not resolved until Runtime pins and consumes those exact
+source, workflow, archive, and manifest identities. Runtime continues to
+compile its pinned Proofbound revision until that consumption change passes
+without changing evidence meaning or `--fresh` behavior. The product label
+does not participate in that decision.
 
 ## RT-7.2 implementation checkpoint
 

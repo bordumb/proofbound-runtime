@@ -8,7 +8,7 @@
 - **Proofbound baseline consumed by Runtime:** `1084e0d` (merged to Proofbound
   `main` as `3a78873`)
 - **Proofbound distribution source:** approved PR 10 head `693976f`, merged as
-  `dd481a3`, exact-main Verify passed; platform bundles are building and Runtime
+  `dd481a3`; exact-main Verify and both platform bundle jobs passed; Runtime
   consumption remains open
 - **Prerequisite:** [Product and delivery roadmap](product-roadmap.md)
   Milestones A through E, except where an epic below names a narrower
@@ -46,8 +46,8 @@ fresh-evidence checks pass. It has not received clean exact-head hosted evidence
 or independent acceptance, and it does not authorize registry publication.
 The generic Proofbound tool-bundle prerequisite was independently approved at
 PR 10 head `693976f`, passed hosted verification, merged as `dd481a3`, and
-passed exact-main Verify run `34887427661`. Tool-bundle run `34889426459` is
-producing both platform candidates. Runtime consumption remains open.
+passed exact-main Verify run `34887427661`. Both platform jobs in tool-bundle
+run `34889426459` passed. Runtime consumption remains open.
 RT-9 is blocked until RT-5 implements the accepted single-service network
 decision in production.
 
