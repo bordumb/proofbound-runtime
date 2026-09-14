@@ -53,7 +53,7 @@ The roadmap uses these sources:
 - the component boundaries in
   [Specification 0002](specs/0002_cli_surface.md) and the composition inputs
   in [Specification 0003](specs/0003_release_receipt_composition.md);
-- the draft ownership, terminology, identity, composition, and compatibility
+- the draft ownership, terminology, identity, composition, and integration
   rules in
   [Specification 0013](specs/0013_platform_integration_contract.md), with
   epic-specific mappings in the
@@ -82,7 +82,7 @@ network ADR accepts.
 
 The resulting order:
 
-1. Compatibility policy and published pure crates.
+1. Prelaunch packaging and published pure crates.
 2. Trace-assisted plan drafting under a distinct diagnostic profile.
 3. Multi-service network allow-list on the accepted mechanism.
 4. Linux VM host profile for macOS and Windows, labeled as such.
@@ -100,13 +100,13 @@ Proofbound continues to own assurance status, Auths continues to own
 authorization, and Capsec continues to own source-level capability
 observations. The projects compose native receipts and exact identities under
 [Specification 0013](specs/0013_platform_integration_contract.md). They do not
-share one universal receipt or one lockstep version.
+share one universal receipt or coordinated product releases.
 
 ## 2. Why each item was deferred, and what changes
 
 | Deferred item | Why the first roadmap deferred it | Required before start | Roadmap 2 decision |
 | --- | --- | --- | --- |
-| Published crates | No API and schema compatibility policy existed. | Version 2 plan and receipt schemas are accepted; RT-3.5 SDK work has settled the wire types. | Define the policy first. Publish only pure crates and the independent verifier. Never publish the launcher as a library. |
+| Published crates | No exact package, schema, and integration-identity contract existed. | Version 2 plan and receipt schemas are accepted; RT-3.5 SDK work has settled the wire types. | Define the current distribution contract first. Publish only pure crates and the independent verifier. Never publish the launcher as a library. |
 | Automatic policy inference | Authority generated from an arbitrary executed program would be labeled as inferred or safe. | RT-3.3 scaffold exists; RT-3.4 has decided whether a diagnostic profile is permitted. | Trace-assisted drafting under a distinct, non-reusable diagnostic profile. Every generated entry carries provenance. Write roots, environment names, limits, and network stay human choices. |
 | Hostname allow-list as a port-only rule | It is the exact substitution the RT-4.3 decision gate rejects. | Never. | Rejected permanently. Replaced by a multi-service extension of the RT-5 mechanism. |
 | macOS or Windows under the Linux label | No native equivalent of Landlock, seccomp, and cgroup v2 exists; a native profile would fork the assurance chain. | Milestone C install path and RT-6.3 setup-cost benchmarks exist. | Run the unchanged native Linux runtime inside an identified guest. Make the host profile distinguishable in the receipt. Add the hypervisor and guest image to the trusted computing base. |
@@ -131,7 +131,7 @@ existing mechanism. This roadmap applies the same rule to every item.
 
 | Order | Epic | Hard dependency | Exit condition | Size |
 | ---: | --- | --- | --- | --- |
-| 0 | RT-7 compatibility policy and published crates | Version 2 schemas accepted; RT-3.5 SDKs stable | Selected crates are published under a written policy, the verifier crate builds with no workspace dependency, and the release workflow proves crate bytes match the tagged source. | S |
+| 0 | RT-7 prelaunch packaging and published crates | Version 2 schemas accepted; RT-3.5 SDKs stable | Selected crates are published under a current distribution contract, the verifier crate builds with no workspace dependency, and the release workflow proves crate bytes match the tagged source. | S |
 | 1 | RT-8 trace-assisted plan drafting | RT-3.3 scaffold; RT-3.4 diagnostic-profile decision | A dynamic executable's draft plan can be produced from one observed diagnostic run; the diagnostic receipt is rejected by both verifiers and by acceptance with a typed reason; every generated entry names its provenance. | M |
 | 2 | RT-9 multi-service network allow-list | RT-5 shipped with one accepted mechanism; its ADR is accepted but production implementation remains open | Two or more declared services are reachable, every registered cross-service attack fails with its typed reason, and the receipt records the exact enforced service set. | M |
 | 3 | RT-10 Linux VM host profile | Milestone C; RT-6.3 benchmarks | A macOS or Windows developer reaches an independently verified receipt through maintained instructions, and an acceptance policy can accept or reject guest-produced receipts by identity. | L |
@@ -149,25 +149,24 @@ RT-11 ADR can be drafted while RT-8 and RT-9 are in progress, because it is a
 document. RT-10's guest image can be prototyped early, because it is a build
 artifact that does not touch the runtime.
 
-## 5. Epic RT-7: compatibility policy and published crates
+## 5. Epic RT-7: prelaunch packaging and published crates
 
-The first roadmap deferred publication until an API and schema compatibility
-policy existed. This epic writes that policy and publishes only the crates
-that can honor it. The
+The first roadmap deferred publication until package and schema identities were
+explicit. The product is prelaunch with no users, so this epic does not spend
+time on backward compatibility. It publishes only a closed current package set.
+The
 [RT-7 integration record](roadmap-2/rt-07-compatibility-and-distribution.md)
-defines how independently versioned Runtime, Proofbound, Auths, and Capsec
-releases enter a tested platform compatibility tuple without creating a
-lockstep release train. Draft
+defines how exact Runtime, Proofbound, Auths, and Capsec identities enter a
+tested platform tuple without coordinating their releases. Draft
 [Specification 0014](specs/0014_public_compatibility_and_distribution.md)
-defines the native Runtime compatibility and distribution contract.
+defines the native Runtime prelaunch distribution contract.
 
-### RT-7.1 Write the compatibility policy
+### RT-7.1 Write the current distribution contract
 
-- Adopt semantic versioning for every published crate. State the minimum
-  supported Rust version and how it changes.
-- Keep wire schemas closed and versioned as the first roadmap requires. A
-  crate minor version may add a schema version; it may not change an existing
-  one.
+- Treat package versions as required prelaunch labels, not compatibility
+  promises. Bind support to exact source, package, schema, and tool identities.
+- Keep wire schemas closed. Replace an identifier when bytes would otherwise
+  acquire new security meaning, then migrate the complete current tuple.
 - Version 2 and later wire objects are deterministic CBOR defined by CDDL
   under [ADR 0003](adr/0003-deterministic-cbor-wire-objects.md). Published
   crates ship the CDDL and golden vectors, and the JSON projection is
@@ -180,7 +179,8 @@ defines the native Runtime compatibility and distribution contract.
 - State that the crate registry is a distribution trust input, exactly as the
   GitHub release channel is today. A registry checksum names bytes; it does
   not authenticate a publisher until RT-11 selects one.
-- Define the yank policy. A yanked version is a public statement; record why.
+- Define the correction policy for any artifact that reaches a registry. Never
+  replace bytes under an existing artifact identity.
 
 ### RT-7.2 Publish the independent verifier first
 
@@ -211,14 +211,13 @@ defines the native Runtime compatibility and distribution contract.
 ### RT-7.5 Falsify
 
 - A crate that gains a workspace dependency fails the publish preflight.
-- A schema edit without a version bump fails the drift test.
-- A version downgrade in a consumer lockfile is rejected by the SDK's schema
-  check.
+- A schema meaning edit without a new schema identity fails the drift test.
+- A consumer selecting a package outside the exact current tuple is rejected.
 - A publish from a non-release context is refused.
 
 **Done when:** a consumer can depend on the verifier and the pure core from
 the registry, reproduce the crate bytes from the tag, and read one document
-that says what a version number promises.
+that identifies the exact current supported tuple.
 
 ## 6. Epic RT-8: trace-assisted plan drafting
 
@@ -662,7 +661,7 @@ first roadmap. These rules are added:
 7. Keep every foreign semantic decision with its owner protocol. Verify native
    objects first, then verify typed links, then apply consumer policy under
    [Specification 0013](specs/0013_platform_integration_contract.md).
-8. Publish a tested compatibility tuple before describing a combination of
+8. Publish a tested integration tuple before describing a combination of
    Runtime, Proofbound, Auths, Capsec, schemas, SDKs, and verifiers as one
    supported platform profile.
 
@@ -679,12 +678,12 @@ No item in this roadmap may:
 
 ### Milestone F: embeddable
 
-- The compatibility policy is published.
+- The current distribution contract is published.
 - The independent verifier and pure core are on the registry with
   reproducible bytes.
 - The SDKs depend on published schema versions.
-- The compatibility matrix names every supported integration tuple without
-  requiring lockstep product versions. A Runtime-only tuple can ship before an
+- The current-integration manifest names every supported integration tuple
+  without coordinating product releases. A Runtime-only tuple can ship before an
   optional Auths or Capsec profile.
 
 ### Milestone G: first run without a static binary

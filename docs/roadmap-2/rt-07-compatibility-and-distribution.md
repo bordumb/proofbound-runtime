@@ -1,16 +1,16 @@
-# RT-7 integration record: compatibility and distribution
+# RT-7 integration record: prelaunch packaging and distribution
 
-**Status:** RT-7.1 compatibility contract drafted; RT-7.2 verifier-package
+**Status:** RT-7.1 prelaunch distribution contract drafted; RT-7.2 verifier-package
 implementation locally validated; exact-head review and registry publication
 blocked
 
 **Primary owner:** Proofbound Runtime
 
-**Roadmap:** [Epic RT-7](../product-roadmap-2.md#5-epic-rt-7-compatibility-policy-and-published-crates)
+**Roadmap:** [Epic RT-7](../product-roadmap-2.md#5-epic-rt-7-prelaunch-packaging-and-published-crates)
 
 **Platform contract:** [Specification 0013](../specs/0013_platform_integration_contract.md)
 
-**Native compatibility contract:**
+**Native distribution contract:**
 [Specification 0014](../specs/0014_public_compatibility_and_distribution.md)
 
 **Delivery order:**
@@ -19,7 +19,7 @@ blocked
 ## Product result
 
 A consumer can install the Runtime verifier and SDKs, select a tested
-cross-project version tuple, and reproduce each package from its exact tagged
+cross-project identity tuple, and reproduce each package from its exact tagged
 source.
 
 ## Current source audit
@@ -38,7 +38,7 @@ The 2026-09-13 source audit found:
 - the release workflow now retains SDK and verifier packages in aggregate
   provenance but contains no registry publication or registry-byte retrieval
   step; and
-- no machine-readable Runtime compatibility matrix exists.
+- no machine-readable Runtime current-integration manifest exists.
 
 These are source facts, not package-registry observations or publication
 approval.
@@ -70,38 +70,38 @@ workflow contains no publication credentials or registry write step.
 
 ## Repository work
 
-- Proofbound Runtime owns its SemVer policy, public crate set, Python and npm
-  packages, package-byte reproduction, and Runtime compatibility matrix.
-- Proofbound owns its tool-bundle version and compatibility contract. Runtime
+- Proofbound Runtime owns its current public crate set, Python and npm
+  packages, package-byte reproduction, and current-integration manifest.
+- Proofbound owns its tool-bundle identity and distribution contract. Runtime
   consumes the result of feedback item PBF-0013 when it is available.
-- Auths and Capsec own their own package and wire compatibility policies. They
-  are peers in a platform compatibility tuple, not Runtime dependencies unless
+- Auths and Capsec own their own package and wire identities. They are peers in
+  a tested platform tuple, not Runtime dependencies unless
   a selected integration profile requires them.
 - Runtime-only publication does not wait for an optional Auths or Capsec
   profile. Each integration profile becomes supported only after its complete
-  version tuple passes the shared conformance corpus.
+  exact identity tuple passes the shared conformance corpus.
 
 ## Required contract
 
-The Runtime compatibility document must distinguish:
+The Runtime current-integration document must distinguish:
 
-- product version;
-- native plan and receipt schema versions;
-- SDK surface version;
-- verifier version and identity;
-- integration-profile version; and
-- tested platform compatibility tuples.
+- product source and artifact identity;
+- native plan and receipt schema identities;
+- SDK package identity;
+- verifier package and executable identity;
+- integration-profile identity; and
+- tested platform integration tuples.
 
-No package registry, adjacent checksum, tag name, or compatibility record
+No package registry, adjacent checksum, tag name, or integration record
 authenticates a publisher before RT-11 selects an identity policy.
 
 ## Additional falsifiers
 
-- A platform compatibility tuple containing an unavailable package fails.
+- A platform tuple containing an unavailable package fails.
 - A supported native schema paired with an untested integration profile fails.
 - A package rebuilt from a tag with different bytes fails release comparison.
 - A consumer cannot silently replace one project's verifier with another
-  version.
+  executable identity.
 
 ## First implementation slice
 
@@ -128,5 +128,7 @@ later release event on an approved exact tag.
 ## Integration exit
 
 RT-7 is platform-ready when all published Runtime packages identify their
-native schema support, the maintained compatibility matrix names tested
-cross-project combinations, and no product is forced into lockstep versioning.
+native schema support, the maintained current-integration manifest names tested
+cross-project combinations, and no product is forced into coordinated releases.
+Support for older interfaces is intentionally deferred until a launch-readiness
+decision identifies real external consumers.

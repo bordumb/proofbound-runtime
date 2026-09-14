@@ -33,7 +33,7 @@ Roadmap 1 source merged
 Release and externally validate version 0.2
         |
         v
-RT-7 compatibility policy and published packages
+RT-7 current distribution contract and published packages
         |
         +-------------------------------+
         |                               |
@@ -105,25 +105,26 @@ Registry publication cannot be added retroactively to a tag whose exact source
 does not contain the accepted package and publication contract. Such work uses
 the next approved Runtime version.
 
-## 4. Phase 1: RT-7 distribution
+## 4. Phase 1: RT-7 prelaunch distribution
 
 RT-7 is the first Roadmap 2 implementation epic. Its first claim-sized step is
 the draft
-[public compatibility and distribution contract](specs/0014_public_compatibility_and_distribution.md).
+[prelaunch packaging and distribution contract](specs/0014_public_compatibility_and_distribution.md).
 
 Merge order:
 
-1. Accept the compatibility and distribution specification.
+1. Accept the prelaunch packaging and distribution specification.
 2. Select the public package set and close its registry dependency graph.
 3. Make the independent verifier packageable and publishable first.
 4. Prepare the selected pure crates and existing SDK packages.
 5. Add exact-tag package byte and file-list comparison.
 6. Add registry publication only from the exact approved release workflow.
 7. Dogfood every package from an unrelated consumer repository.
-8. Publish the Runtime compatibility matrix.
+8. Publish the Runtime current-integration manifest.
 
 The Runtime-only package set ships before optional Auths or Capsec integration
-profiles. Platform compatibility remains an explicit version tuple.
+profiles. Platform support remains an explicit exact tuple. Maintaining older
+interfaces is not a prelaunch gate.
 
 ### Current RT-7 checkpoint
 

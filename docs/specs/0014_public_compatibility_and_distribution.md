@@ -1,95 +1,77 @@
-# Specification 0014: Public compatibility and distribution
+# Specification 0014: Prelaunch packaging and distribution
 
 - **Status:** draft for RT-7.1 review; no registry publication is authorized
-- **Date:** 2026-09-13
+- **Date:** 2026-09-14
 - **Applies to:** Proofbound Runtime product releases, public Rust crates,
   Python packages, npm packages, machine-readable CLI results, and Runtime wire
   schemas
 - **Roadmap:** RT-7
 
-This specification defines what a Proofbound Runtime version promises and how a
-public package relates to exact tagged source. It does not authenticate a
-publisher. RT-11 owns publisher and signing identity.
+This specification defines how a current Proofbound Runtime package relates to
+exact source. The product is prelaunch and has no external users. It makes no
+backward-compatibility promise. It does not authenticate a publisher. RT-11
+owns publisher and signing identity.
 
-## 1. Compatibility surfaces
+## 1. Current contract surfaces
 
-The product maintains separate compatibility surfaces:
+The product identifies these separate current surfaces:
 
-| Surface | Compatibility unit | Consumer |
+| Surface | Exact unit | Consumer |
 | --- | --- | --- |
-| Runtime product | Product semantic version and release tag | Operator |
+| Runtime product | Product label, source revision, and release tag | Operator |
 | Execution plan | Closed schema identifier and canonical bytes | Plan producer and Runtime |
 | Execution receipt | Closed schema identifier and canonical bytes | Independent verifier |
 | Composed receipt | Closed schema identifier and canonical bytes | Composer and consumer |
 | Acceptance policy and decision | Closed schema identifiers and canonical bytes | Policy author and acceptor |
 | Machine CLI result | Closed schema identifier and typed error or outcome vocabulary | SDK and automation |
-| Rust crate API | Crate name and semantic version | Rust compiler and downstream crate |
-| Python SDK API | Distribution name, import name, and semantic version | Python application |
-| TypeScript SDK API | npm package name, exported declarations, and semantic version | Node.js application |
-| Platform integration | Explicit tested version tuple under Specification 0013 | Integrated consumer |
+| Rust crate API | Crate name, source revision, and package digest | Rust compiler and downstream crate |
+| Python SDK API | Distribution name, source revision, and package digest | Python application |
+| TypeScript SDK API | npm package name, source revision, and package digest | Node.js application |
+| Platform integration | Explicit tested identity tuple under Specification 0013 | Integrated consumer |
 
-Compatibility on one surface does not imply compatibility on another. A valid
-Runtime plan does not imply that a particular SDK API is source-compatible. A
-compatible package set does not imply that an unlisted platform tuple is
-supported.
+Identity on one surface does not imply support on another. A valid Runtime plan
+does not imply that a particular SDK package belongs to the current tested
+tuple. An available package set does not imply that an unlisted platform tuple
+is supported.
 
-## 2. Version policy
+## 2. Prelaunch change policy
 
-Every public package uses Semantic Versioning. Before product version 1.0, the
-project still treats these changes as breaking:
+The repository uses its existing version fields because package registries and
+build tools require them. Before launch, those fields do not promise semantic
+versioning or support for older interfaces. The exact source revision, schema
+identifier, package digest, and tested integration tuple are authoritative.
 
-- removing or renaming a public type, function, field, command, flag, machine
-  code, or supported wire schema;
-- changing the meaning of an existing closed value;
-- accepting a broader authority for the same valid plan bytes;
-- changing canonical bytes for an existing valid wire object;
-- weakening verification, receipt eligibility, assumption retention, or
-  acceptance behavior; and
-- raising a required language or toolchain version outside the policy below.
+The project may replace an API, command, machine code, toolchain minimum, wire
+schema, or canonical encoding between prelaunch candidates. Each replacement
+must still:
 
-A breaking change requires a new minor version while the affected package is
-below 1.0 and a new major version after it reaches 1.0. The changelog and
-compatibility matrix must name every pre-1.0 breaking change explicitly. A
-patch release is never a breaking release. No released wire schema changes in
-place under any package version transition.
+- use a new schema identifier when old bytes could otherwise acquire new
+  security meaning;
+- update every producer, independent verifier, composer, policy consumer, SDK,
+  fixture, and conformance vector in one explicit migration;
+- invalidate stale evidence and tested integration tuples;
+- preserve the exact historical identity of any retained artifact; and
+- run the complete current-contract and adversarial corpus before publication.
 
-A minor package version MAY:
+The project supports only the current published candidate unless one document
+explicitly lists another tuple. Support promises, transition periods, and
+long-term support start only after a launch-readiness decision records that
+external consumers exist.
 
-- add a new public API without changing existing behavior;
-- add support for a new, separately identified wire schema;
-- add a new optional feature whose disabled state preserves existing behavior;
-  or
-- raise the minimum supported language or toolchain version as specified in
-  section 5.
-
-Before 1.0, a minor package version MAY also carry an explicitly documented
-breaking API change. Prefer a new API or schema beside the old one when that
-keeps the public surface small and unambiguous.
-
-A patch package version MAY correct behavior that violates the existing
-contract, strengthen rejection of input that the existing closed schema already
-forbids, improve diagnostics without changing stable machine codes, or repair
-packaging without changing the public API.
-
-A security correction MAY reject behavior accepted by an earlier
-implementation when that behavior contradicted the existing specification. The
-release notes must identify the correction and affected versions. It must not
-be described as a new breaking contract.
-
-## 3. Wire compatibility
+## 3. Wire identity
 
 - Every wire object has a closed schema identifier.
-- Released schema meaning and canonical bytes are immutable.
+- One schema identifier never acquires a different security meaning.
 - A new field, variant, algorithm, role, outcome, or error that changes the
   accepted closed domain requires a new schema identifier.
 - Producers emit only the current schema selected by their product release.
-- Verifiers identify each supported historical schema explicitly.
+- Verifiers identify each currently supported schema explicitly.
 - A verifier must not reinterpret an unknown schema as the newest known schema.
-- Removal of historical receipt verification requires a breaking verifier
-  release and an explicit retention-impact decision.
-- An executor may stop accepting an older plan schema only through a documented
-  product compatibility transition. Receipt verification and plan execution
-  support are separate promises.
+- A prelaunch migration may remove an older schema immediately. The migration
+  must update the complete current tuple and must not
+  reinterpret old bytes.
+- Receipt verification and plan execution support remain separate current
+  capabilities.
 
 JSON projections are views unless their specification explicitly makes them a
 wire authority. They do not replace deterministic CBOR inputs.
@@ -116,8 +98,8 @@ approval, exact tag, and registry action.
 The first verifier slice selects the existing
 `proofbound-runtime-verify` Cargo package. That package contains both the
 `pbr-verify` binary and its independent Rust library. Every exported library
-item is therefore part of the public Rust compatibility surface; publication
-does not treat the library as an internal implementation detail. The package
+item is therefore part of the current public Rust surface; publication does
+not treat the library as an internal implementation detail. The package
 does not expose producer, launcher, composer, or acceptance code. Its Cargo
 manifest admits only the `crates-io` registry. This selection constrains a
 future Cargo publication target; it does not authorize publication.
@@ -126,12 +108,12 @@ future Cargo publication target; it does not authorize publication.
 
 Before publishing `proofbound-runtime-core`, the review must decide whether its
 public contract should expose the binding and receipt crates. Every selected
-path dependency must become a published dependency with an explicit compatible
-version. A registry package cannot depend on an unpublished workspace path.
+path dependency must become a published dependency in the exact current
+package set. A registry package cannot depend on an unpublished workspace path.
 
 The selection review must prefer the smallest durable public surface. It can
 publish a narrower facade instead of the internal core when that avoids making
-implementation structure a permanent compatibility promise.
+implementation structure an unnecessary public dependency.
 
 ### 4.3 Components that are not libraries
 
@@ -143,20 +125,15 @@ installation, receipt verification, composition, or acceptance semantics.
 ## 5. Language and toolchain support
 
 - Each Rust crate declares `rust-version` and its enabled feature set.
-- Raising the Rust minimum supported version requires at least a minor crate
-  release and a changelog entry.
-- Python and Node.js minimum versions are public package metadata.
-- Raising a Python or Node.js minimum requires at least a minor package release
-  and a changelog entry.
-- A required platform, kernel, or architecture change is a Runtime product
-  compatibility decision, not only a package metadata edit.
-- The release workflow uses pinned build tools. A build-tool change does not
-  change the consumer minimum unless the public package metadata changes.
+- Python and Node.js minimum versions are explicit package metadata.
+- A prelaunch candidate may change a minimum immediately. The
+  current package metadata, tested tuple, and setup diagnostics change together.
+- The release workflow uses pinned build tools. Build-tool and consumer-tool
+  identities remain separate.
 
 All first-party Runtime packages produced for one Runtime release use the same
-product version until a later accepted policy permits independent package
-versions. This rule does not impose lockstep versions on Proofbound, Auths, or
-Capsec.
+product label. Exact source and package digests remain authoritative. Runtime,
+Proofbound, Auths, and Capsec do not coordinate release numbers.
 
 ## 6. Distribution trust
 
@@ -168,8 +145,8 @@ inputs. Before RT-11:
 - a registry checksum shows registry byte consistency; and
 - none of these facts authenticates a publisher by itself.
 
-Public documentation must state this limit. After RT-11, the compatibility
-policy can reference an accepted signing envelope and identity policy without
+Public documentation must state this limit. After RT-11, the distribution
+contract can reference an accepted signing envelope and identity policy without
 changing the native package bytes.
 
 ## 7. Release production
@@ -223,10 +200,10 @@ publication.
 - A fixed release uses a new version and new package bytes.
 - Never move or recreate a release tag to match a replacement package.
 
-## 9. Compatibility matrix
+## 9. Current integration manifest
 
-Each Runtime release publishes a machine-readable compatibility record and a
-human rendering. The record names:
+Each Runtime release publishes a machine-readable current-integration record
+and a human rendering. The record names:
 
 - Runtime product and release revision;
 - public package versions and identities;
@@ -246,28 +223,28 @@ distribution artifact and does not authenticate itself.
 - Provide one minimal consumer for each published package.
 - Test consumers from registry downloads, not workspace paths.
 - Keep verifier and producer examples separate.
-- Retain the exact dependency lock and compatibility record used by each
+- Retain the exact dependency lock and current-integration record used by each
   consumer test.
 - An unrelated repository must dogfood each package before RT-7 closes.
 
-Download count is not compatibility evidence. A passing consumer test is one
-bounded observation for the tested version tuple.
+Download count is not integration evidence. A passing consumer test is one
+bounded observation for the tested identity tuple.
 
 ## 11. Required falsifiers
 
 - Add a workspace-only dependency to a public crate.
 - Change canonical bytes without changing the wire schema.
-- Change a public API without the required version transition.
-- Raise a language minimum in a patch release.
+- Change a public API without updating the exact current package tuple.
+- Raise a language minimum without updating package metadata and host checks.
 - Build package bytes whose inventory differs from the exact tag.
 - Attempt publication from a non-release context.
 - Publish one package from an incomplete first-party version set.
 - Substitute registry bytes after release approval.
-- Select an unlisted platform compatibility tuple.
+- Select an unlisted platform integration tuple.
 - Replace the independent verifier with an unrecorded version.
 - Yank a package without a recorded reason and replacement.
 
-Each case fails with a stable release or compatibility reason before any
+Each case fails with a stable release or integration reason before any
 consumer describes the combination as supported.
 
 ## 12. Acceptance and completion
@@ -277,12 +254,13 @@ confirm:
 
 - the selected public package surface is smaller than the child security path;
 - verifier independence remains intact;
-- historical wire meaning cannot change in place;
+- one schema identity cannot acquire different security meaning;
 - the release workflow, tag, package, and registry identities are distinct;
 - no checksum is presented as publisher authentication; and
-- Proofbound, Auths, and Capsec remain independently versioned products.
+- Proofbound, Auths, and Capsec remain independently identified products.
 
 RT-7 is complete only when the selected packages are available from their
 registries, registry bytes match the approved exact-tag packages, unrelated
-consumers pass, and the published compatibility policy and matrix describe the
-result.
+consumers pass, and the published current-integration manifest describes the
+result. Support for older interfaces is not an RT-7 exit condition before
+launch.
