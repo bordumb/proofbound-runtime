@@ -269,6 +269,31 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  proofbound_public_bundle:
+    name: Public Proofbound bundle dogfood
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out the exact event head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.PBR_EXACT_SHA }}
+
+      - name: Confirm the exact event head
+        run: test "$(git rev-parse HEAD)" = "$PBR_EXACT_SHA"
+
+      - name: Install the exact public Proofbound bundle
+        run: >-
+          python3 tools/ci/install_proofbound_tool_bundle.py
+          --platform linux-x86_64
+          --destination "$RUNNER_TEMP/proofbound-public-tools"
+
+      - name: Execute the identity-checked public tools
+        run: |
+          "$RUNNER_TEMP/proofbound-public-tools/proofbound" --version
+          "$RUNNER_TEMP/proofbound-public-tools/proofbound-verify" --version
+
   fresh-evidence:
     name: Fresh Proofbound evidence (${{ matrix.shard }})
     needs:
@@ -492,15 +517,16 @@ jobs:
       - preflight
       - rust
       - formal
+      - proofbound_public_bundle
       - fresh-evidence
       - native
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Reject any incomplete or failed required lane
-        if: ${{ needs.preflight.result != 'success' || needs.rust.result != 'success' || needs.formal.result != 'success' || needs.fresh-evidence.result != 'success' || needs.native.result != 'success' }}
+        if: ${{ needs.preflight.result != 'success' || needs.rust.result != 'success' || needs.formal.result != 'success' || needs.proofbound_public_bundle.result != 'success' || needs.fresh-evidence.result != 'success' || needs.native.result != 'success' }}
         run: exit 1
 
       - name: Admit the exact successful partition
-        if: ${{ needs.preflight.result == 'success' && needs.rust.result == 'success' && needs.formal.result == 'success' && needs.fresh-evidence.result == 'success' && needs.native.result == 'success' }}
+        if: ${{ needs.preflight.result == 'success' && needs.rust.result == 'success' && needs.formal.result == 'success' && needs.proofbound_public_bundle.result == 'success' && needs.fresh-evidence.result == 'success' && needs.native.result == 'success' }}
         run: 'true'

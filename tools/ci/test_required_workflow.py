@@ -49,16 +49,45 @@ class RequiredWorkflowTests(unittest.TestCase):
         self.assertRegex(workflow, r"(?m)^  rust:\n")
         self.assertRegex(workflow, r"(?m)^  formal:\n")
         self.assertRegex(workflow, r"(?m)^  proofbound-tools:\n")
+        self.assertRegex(workflow, r"(?m)^  proofbound_public_bundle:\n")
         self.assertRegex(workflow, r"(?m)^  fresh-evidence:\n")
         self.assertRegex(workflow, r"(?m)^  native:\n")
         self.assertRegex(workflow, r"(?m)^  required:\n")
         self.assertGreaterEqual(workflow.count("needs: preflight"), 3)
         self.assertIn(
-            "needs:\n      - preflight\n      - rust\n      - formal\n      - fresh-evidence\n      - native", workflow
+            "needs:\n      - preflight\n      - rust\n      - formal\n"
+            "      - proofbound_public_bundle\n      - fresh-evidence\n      - native",
+            workflow,
         )
         self.assertIn("if: ${{ always() }}", workflow)
-        for result in ("preflight", "rust", "formal", "fresh-evidence", "native"):
+        for result in (
+            "preflight",
+            "rust",
+            "formal",
+            "proofbound_public_bundle",
+            "fresh-evidence",
+            "native",
+        ):
             self.assertIn(f'needs.{result}.result == \'success\'', workflow)
+
+    def test_public_tool_bundle_is_identity_checked_before_dogfood(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        job = workflow[
+            workflow.index("\n  proofbound_public_bundle:\n") : workflow.index(
+                "\n  fresh-evidence:\n"
+            )
+        ]
+
+        self.assertIn("name: Public Proofbound bundle dogfood", job)
+        self.assertIn("needs: preflight", job)
+        self.assertIn("install_proofbound_tool_bundle.py", job)
+        self.assertIn("--platform linux-x86_64", job)
+        self.assertIn('--destination "$RUNNER_TEMP/proofbound-public-tools"', job)
+        install = job.index("install_proofbound_tool_bundle.py")
+        self.assertGreater(job.index('proofbound" --version'), install)
+        self.assertGreater(job.index('proofbound-verify" --version'), install)
+        self.assertNotIn("cargo install", job)
+        self.assertNotIn("actions/download-artifact", job)
 
     def test_native_matrix_is_part_of_the_partition(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
@@ -372,13 +401,13 @@ class RequiredWorkflowTests(unittest.TestCase):
         exact_sha = "${{ github.event.pull_request.head.sha || github.sha }}"
 
         self.assertIn(f"PBR_EXACT_SHA: {exact_sha}", workflow)
-        self.assertEqual(workflow.count(f"uses: {CHECKOUT_ACTION}"), 6)
-        self.assertEqual(workflow.count("ref: ${{ env.PBR_EXACT_SHA }}"), 6)
+        self.assertEqual(workflow.count(f"uses: {CHECKOUT_ACTION}"), 7)
+        self.assertEqual(workflow.count("ref: ${{ env.PBR_EXACT_SHA }}"), 7)
         self.assertEqual(
             workflow.count(
                 'run: test "$(git rev-parse HEAD)" = "$PBR_EXACT_SHA"'
             ),
-            6,
+            7,
         )
         self.assertEqual(workflow.count("-${{ env.PBR_EXACT_SHA }}"), 8)
         self.assertNotIn('= "$GITHUB_SHA"', workflow)

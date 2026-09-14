@@ -1,0 +1,53 @@
+schema = "proofbound-evidence-unit/1"
+id = "proofbound-tool-bundle-consumer"
+adapter = "independent-check"
+kind = "independent-check"
+claims = ["PBR-DISTRIBUTION-016"]
+tier = 1
+assumptions = [
+  "PBR-BUNDLE-DISTRIBUTION-AX-012",
+  "PBR-BUNDLE-TOOLCHAIN-AX-013",
+]
+expected_inventory = [
+  "tool-bundle-pin-closed-canonical-form",
+  "tool-bundle-hosted-release-identity",
+  "tool-bundle-hosted-release-immutability",
+  "tool-bundle-tag-target-identity",
+  "tool-bundle-exact-asset-inventory",
+  "tool-bundle-complete-manifest-domain",
+  "tool-bundle-embedded-detached-manifest-link",
+  "tool-bundle-publication-manifest-linkage",
+  "tool-bundle-checksum-order-and-identity",
+  "tool-bundle-verify-before-execute",
+  "tool-bundle-ci-dogfood",
+]
+inputs = [
+  ".github/workflows/ci.yml",
+  "docs/proofbound-feedback/pbf-0013-versioned-proofbound-tool-distribution.md",
+  "docs/roadmap-2/rt-07-compatibility-and-distribution.md",
+  "docs/specs/0014_public_compatibility_and_distribution.md",
+  "proofbound/toolchains/proofbound-tool-bundle-pin.json",
+  "schemas/proofbound-tool-bundle-pin-v1.schema.json",
+  "tools/ci/check_proofbound_tool_bundle.py",
+  "tools/ci/ci.sh",
+  "tools/ci/install_proofbound_tool_bundle.py",
+  "tools/ci/manifests.sh",
+  "tools/ci/test_install_proofbound_tool_bundle.py",
+  "tools/ci/test_required_workflow.py",
+]
+outputs = []
+environment_allowlist = ["PATH"]
+
+[operation]
+type = "independent-check"
+checker = "tools/ci/check_proofbound_tool_bundle.py"
+arguments = []
+paths = [
+  ".github/workflows/ci.yml",
+  "proofbound/toolchains/proofbound-tool-bundle-pin.json",
+]
+
+[resource_budget]
+time_seconds = 30
+disk_bytes = 134217728
+memory_bytes = 536870912

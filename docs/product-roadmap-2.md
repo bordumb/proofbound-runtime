@@ -5,11 +5,10 @@
 - **Date:** 2026-09-13
 - **Runtime baseline:** current admitted `main`; exact source and artifact
   identities control each implementation wave
-- **Proofbound baseline consumed by Runtime:** `1084e0d` (merged to Proofbound
-  `main` as `3a78873`)
-- **Proofbound distribution source:** approved PR 10 head `693976f`, merged as
-  `dd481a3`; exact-main Verify and both platform bundle jobs passed; Runtime
-  consumption remains open
+- **Proofbound baseline consumed by Runtime evidence:** `1084e0d` (merged to
+  Proofbound `main` as `3a78873`) until the reviewed bundle cutover
+- **Proofbound distribution source:** `9512469`; exact-main Verify and public
+  immutable bundle run passed; Runtime's isolated bundle dogfood is active
 - **Prerequisite:** [Product and delivery roadmap](product-roadmap.md)
   Milestones A through E, except where an epic below names a narrower
   prerequisite
@@ -29,25 +28,26 @@ threat-model, ADR, claim, and evidence changes before production code.
 
 ### Execution checkpoint
 
-As of 2026-09-14, Runtime main contains the version 2 memory and deterministic
-CBOR wave, receipt composition and acceptance, a bounded static plan scaffold,
+As of 2026-09-14, Runtime main commit `7f989d3` contains the version 2 memory
+and deterministic CBOR wave, receipt composition and acceptance, a bounded
+static plan scaffold,
 typed prelaunch diagnostics, reproducible Rust, Python, and TypeScript SDK
 packages, the network-mechanism decision, and the performance baseline. These
 are prerequisites or partial foundations for RT-7, RT-8, RT-9, and RT-13. They
 do not close a Roadmap 2 exit condition. Registry publication, consumer
 dogfood, a diagnostic execution profile, production authenticated networking,
 the guest profile, the signing ADR, the receipt log, and the execution service
-remain open. RT-7.1 has started with draft
+remain open. RT-7.1 is governed by
 [Specification 0014](specs/0014_public_compatibility_and_distribution.md).
-The RT-7.2 verifier-package slice is implemented in the working tree with a
-registered claim, closed preflight, falsifiers, reproduction, local consumer,
-and release-retention path. Its local preflight, Rust, package, and targeted
-fresh-evidence checks pass. It has not received clean exact-head hosted evidence
-or independent acceptance, and it does not authorize registry publication.
-The generic Proofbound tool-bundle prerequisite was independently approved at
-PR 10 head `693976f`, passed hosted verification, merged as `dd481a3`, and
-passed exact-main Verify run `34887427661`. Both platform jobs in tool-bundle
-run `34889426459` passed. Runtime consumption remains open.
+The RT-7.2 verifier-package slice passed independent exact-head review and
+hosted verification, merged as unsigned Runtime commit `7f989d3`, and passed
+exact-main Verify run `34896209689`. It does not authorize registry
+publication. Proofbound's public bundle path passed independent review, merged
+as `9512469`, passed exact-main Verify run `34899222179`, and published
+immutable release `388736918` from bundle run `34900896450`. Runtime's current
+claim-sized wave pins that exact seven-asset release and exercises it in an
+isolated required CI job. The admitted evidence path stays on its exact source
+build until this dogfood wave passes and a separate cutover is reviewed.
 RT-9 is blocked until RT-5 implements the accepted single-service network
 decision in production.
 
@@ -178,7 +178,8 @@ defines the native Runtime prelaunch distribution contract.
 - Treat package versions as required prelaunch labels, not compatibility
   promises. Bind support to exact source, package, schema, and tool identities.
 - Keep wire schemas closed. Replace an identifier when bytes would otherwise
-  acquire new security meaning, then migrate the complete current tuple.
+  acquire new security meaning, then replace the complete current tuple
+  atomically.
 - Version 2 and later wire objects are deterministic CBOR defined by CDDL
   under [ADR 0003](adr/0003-deterministic-cbor-wire-objects.md). Published
   crates ship the CDDL and golden vectors, and the JSON projection is

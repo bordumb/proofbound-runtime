@@ -9,7 +9,9 @@
 - **Runtime milestone:** Milestone A: sustainable assurance development
 - **Proofbound target:** tool-bundle workflow, manifest schema, and installer
 - **Upstream record:** Proofbound PR 10 head `693976f` independently approved
-  and merged as `dd481a3`; exact mainline Verify run `34887427661` passed
+  and merged as `dd481a3`; Proofbound PR 12 reviewed subject `6072127` and
+  approval envelope `5f190e0` merged as `9512469`; exact-main Verify run
+  `34899222179` and immutable publication run `34900896450` passed
 - **Supersedes:** none
 - **Superseded by:** none
 
@@ -120,12 +122,16 @@ existing receipt is reinterpreted.
 
 ## Local treatment
 
-Runtime compiles all required tools from exact Proofbound revision `1084e0d`
-in every clean protected and release job, verifies that each executable is on
-the path, and retains Proofbound and toolchain identities in assurance
-metadata. It accepts the latency until the upstream bundle is merged and
-reproduced on both supported architectures. It does not use a mutable prebuilt
-tool or claim that an adjacent checksum authenticates a publisher.
+Runtime's admitted evidence path still compiles all required tools from exact
+Proofbound revision `1084e0d`. The current dogfood wave separately pins public
+immutable release `388736918`, resolves its tag to the pinned source, validates
+its seven exact asset identities, binds its embedded and detached manifests,
+and installs it only in an isolated required CI job. The public bytes do not
+yet run evidence units. The source-build cutover remains a separate reviewed
+wave. Claim-specific assumptions retain GitHub, repository controls, DNS, TLS,
+Python, digest, installer, runner, process, and filesystem roles. Runtime does
+not claim that the release channel or an adjacent checksum independently
+authenticates a publisher.
 
 ## Upstream handoff
 
@@ -135,7 +141,10 @@ tool or claim that an adjacent checksum authenticates a publisher.
 - **Specification or ADR:** `docs/specs/0004_tool_bundle_distribution.md`
 - **Commit or pull request:** Proofbound PR 10, approved head
   `693976fea7e169fc84a3919113fd0a1e6a132544`, merged to `main` as
-  `dd481a381913f7df1e7d89c261a0098a3f747995`
+  `dd481a381913f7df1e7d89c261a0098a3f747995`; Proofbound PR 12,
+  reviewed subject `607212759756acf6857ffe2072c2c05773f95adb`, approval
+  envelope `5f190e01cd6e9b1189d4c8538e7af2d09b4a1143`, merged as
+  `95124692b6b9383a265c8024f21bb964737f8b6b`
 
 ## Resolution
 
@@ -153,5 +162,11 @@ for `linux-x86_64` and
 for `linux-aarch64`; their manifest digests are respectively
 `895f07f68380f151ebed3533b464160dab545f8751f5dc1a9eeb21e7fe803783`
 and `cb8479bea4509c02b1318f2f671472e4292b9cf398bdc7e7098dfb6c0d8740f3`.
-Resolution remains open until Runtime consumes a pinned bundle without
-changing evidence meaning or `--fresh` behavior.
+Proofbound PR 12 added the draft-first public publication path, exact-source
+tag, closed seven-asset publication manifest, immutable-release gate, and
+anonymous retrieval check. Exact-main Verify run `34899222179` and
+bundle/publication run `34900896450` passed. Immutable public release
+`388736918` binds source `9512469`, verification run `34899222179`, and bundle
+run `34900896450`. Resolution remains open until Runtime's isolated dogfood and
+later source-build cutover pass without changing evidence meaning or `--fresh`
+behavior.

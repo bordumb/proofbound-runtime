@@ -1,8 +1,9 @@
 # RT-7 integration record: prelaunch packaging and distribution
 
-**Status:** RT-7.1 prelaunch distribution contract drafted; the Proofbound
-bundle source and both platform candidates are verified; RT-7.2
-verifier-package exact-head review and distribution remain open
+**Status:** RT-7.2 verifier package merged and admitted; the first public
+immutable Proofbound exact-source bundle is published; Runtime bundle dogfood
+is in progress; registry publication and the current-integration record remain
+open
 
 **Primary owner:** Proofbound Runtime
 
@@ -53,22 +54,23 @@ platform tool bundles, a closed manifest schema, a standalone fail-closed
 installer, and exact source and mainline-Verify identities. Exact-main Verify
 run `34887427661` passed.
 
-Both jobs in tool-bundle run `34889426459` passed. The `linux-x86_64` archive
-digest is `c76795b24937f9091e9103bea7dcb4e0dd9369187e9f81d1bfe686a5bafda256`
-and its manifest digest is
-`895f07f68380f151ebed3533b464160dab545f8751f5dc1a9eeb21e7fe803783`.
-The `linux-aarch64` archive digest is
-`56ef5c8aebbbde488102b8d2bac6e3e712bba76e3dbf261187aedd83729528fe`
-and its manifest digest is
-`cb8479bea4509c02b1318f2f671472e4292b9cf398bdc7e7098dfb6c0d8740f3`.
-Both manifests name source `dd481a3`, Verify run `34887427661`, and schema
-`proofbound-tool-bundle-manifest/1`; both retained checksum sets passed.
+Proofbound PR 12 then added the public immutable delivery boundary. Its exact
+reviewed subject is `6072127`, its approval-only envelope is `5f190e0`, and its
+unsigned merge is `9512469`. Exact-main Verify run `34899222179` passed.
+Tool-bundle run `34900896450` reproduced and dogfooded both Linux bundles,
+published release `388736918`, and anonymously re-downloaded and checked its
+closed seven-asset inventory. The release tag identifies the full source
+commit as `proofbound-tools-95124692b6b9383a265c8024f21bb964737f8b6b` and
+the release reports `immutable=true`.
 
-The prerequisite is not resolved until Runtime pins and consumes those exact
-source, workflow, archive, and manifest identities. Runtime continues to
-compile its pinned Proofbound revision until that consumption change passes
-without changing evidence meaning or `--fresh` behavior. The product label
-does not participate in that decision.
+Runtime's canonical pin records the exact release, source, verification,
+workflow, asset digest, and byte-size identities in
+`proofbound/toolchains/proofbound-tool-bundle-pin.json`. The first consumer
+wave installs those public bytes only in an isolated required dogfood job. It
+does not give the new path authority over evidence. Replacing the existing
+source-build path follows only after this wave passes independent review and
+exact-main hosted verification. The product label does not participate in
+selection.
 
 ## RT-7.2 implementation checkpoint
 
@@ -90,13 +92,40 @@ The first verifier-distribution slice now includes:
 - an exact-revision release job whose retained bytes join aggregate release
   provenance, with that join included in the registered evidence checker.
 
-The preflight falsifiers and aggregate-provenance checks pass in the working
-tree without invoking a package build. Earlier isolated package, Rust, and
-fresh-evidence checks passed before the current blocker fixes. The complete
-package and claim gates must run again at the final exact head. Specification
-0014 still needs independent acceptance. A successful local package build is
-not registry dogfood, and the workflow contains no publication credentials or
-registry write step.
+The slice passed independent exact-head review and its hosted gate, then merged
+as unsigned Runtime main commit `7f989d3`. Exact-main Verify run `34896209689`
+passed all lanes. Specification 0014 was included in that exact review. A
+successful local or hosted package build is not registry dogfood, and the
+workflow contains no registry publication credential or write step.
+
+## Public Proofbound bundle dogfood checkpoint
+
+The next claim-sized Runtime wave adds:
+
+- a canonical Runtime-owned pin with one exact public immutable release and
+  seven exact asset identities;
+- closed validation of source, workflow, release, tag, target commit,
+  resolved tag object, immutability, inventory, roles, digests, and byte sizes;
+- independent parsing of the publication and complete selected platform
+  manifest, with byte-for-byte equality between its detached and embedded
+  carriers;
+- verification of the checksum set, archive, installer, and every installed
+  executable before a tool is used;
+- mutation cases for noncanonical pins, mutable releases, identity and
+  tag-target substitution, manifest carrier, metadata, payload and mode
+  substitution, every selected downloaded asset, and installed executable
+  substitution; and
+- an isolated required Linux CI job that installs and executes the public
+  bundle while the admitted source-build evidence path stays unchanged.
+
+This staged parity wave is not a compatibility period. It limits the
+supply-chain blast radius before a separate reviewed cutover removes the Git
+source build from protected CI and release production.
+
+The registered premises keep GitHub, repository controls, DNS, TLS, Python,
+the digest implementation, the pinned upstream installer, the hosted runner,
+process behavior, and filesystem behavior visible. The checks bind exact
+identities under those premises; they do not discharge them.
 
 ## Repository work
 
@@ -149,9 +178,9 @@ The first RT-7 code pull request is limited to the independent verifier package:
 6. dogfood the local package from an unrelated temporary consumer before any
    registry publication is authorized.
 
-Items 2 through 6 are implemented and locally exercised. Item 1, clean
-exact-head hosted evidence, and registry evidence remain open. Registry
-publication stays blocked until they close.
+Items 1 through 6 passed exact-head review, hosted evidence, merge, and
+exact-main verification. Registry evidence remains open. Registry publication
+stays blocked until its explicit later gate closes.
 
 The slice does not publish to crates.io, change a receipt schema, modify the
 launcher, or select the pure producer crate surface. Any later distribution

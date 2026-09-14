@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bordumb/proofbound-runtime/schemas/proofbound-tool-bundle-pin-v1.schema.json",
+  "title": "Proofbound Runtime exact Proofbound tool-bundle pin",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "assets",
+    "bundle_workflow_run_id",
+    "producer_repository",
+    "release_id",
+    "release_tag",
+    "schema",
+    "source_revision",
+    "verification_run_id"
+  ],
+  "properties": {
+    "assets": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/asset" }
+    },
+    "bundle_workflow_run_id": { "type": "integer", "minimum": 1 },
+    "producer_repository": { "const": "bordumb/proof-bound" },
+    "release_id": { "type": "integer", "minimum": 1 },
+    "release_tag": {
+      "type": "string",
+      "pattern": "^proofbound-tools-[0-9a-f]{40}$"
+    },
+    "schema": { "const": "proofbound-runtime-proofbound-tool-pin/1" },
+    "source_revision": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "verification_run_id": { "type": "integer", "minimum": 1 }
+  },
+  "$defs": {
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "role", "sha256", "size_bytes"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,255}$"
+        },
+        "role": {
+          "enum": [
+            "archive",
+            "bundle-manifest",
+            "checksums",
+            "installer",
+            "publication-manifest"
+          ]
+        },
+        "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 536870912
+        }
+      }
+    }
+  }
+}
