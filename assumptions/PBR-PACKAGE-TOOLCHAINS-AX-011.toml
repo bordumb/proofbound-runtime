@@ -1,0 +1,22 @@
+schema = "proofbound-assumption/1"
+id = "PBR-PACKAGE-TOOLCHAINS-AX-011"
+statement = "The identified Python runtime, Cargo package and install commands, archive implementation, compiler, and filesystem preserve the registered verifier package preflight, reproduction, extraction, installation, and execution behavior."
+category = "compiler-tcb"
+owner = "Proofbound Runtime release maintainer"
+rationale = "The package evidence executes Python and Cargo tooling and observes their outputs. This repository does not prove those tools or the host filesystem."
+scope = "Only the package-production and unrelated-consumer interpretation of PBR-DISTRIBUTION-015."
+affected_claims = ["PBR-DISTRIBUTION-015"]
+review_evidence = [
+  ".github/workflows/ci.yml",
+  ".github/workflows/release.yml",
+  "Cargo.lock",
+  "rust-toolchain.toml",
+  "tools/release/build_provenance.py",
+  "tools/release/build_verifier_package.py",
+  "tools/release/check_verifier_package.py",
+  "tools/release/verify_verifier_package_manifest.py",
+  "tools/release/verify_provenance.py",
+]
+discharge_plan = "Pin exact release tools, reproduce the package in independent directories, retain the package bytes and source revision, and keep this premise visible after exact artifact binding."
+source_citation = "docs/specs/0014_public_compatibility_and_distribution.md#7-release-production"
+status = "active"

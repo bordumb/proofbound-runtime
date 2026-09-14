@@ -1,0 +1,71 @@
+schema = "proofbound-evidence-unit/1"
+id = "verifier-package-contract"
+adapter = "independent-check"
+kind = "independent-check"
+claims = ["PBR-DISTRIBUTION-015"]
+tier = 1
+assumptions = ["PBR-PACKAGE-TOOLCHAINS-AX-011"]
+expected_inventory = [
+  "verifier-package-preflight-attacks",
+  "verifier-package-archive-source-identity",
+  "verifier-package-deterministic-manifest",
+  "verifier-package-independent-manifest-verification",
+  "verifier-package-reproduction",
+  "verifier-package-consumer",
+  "verifier-package-release-retention",
+  "verifier-package-aggregate-provenance",
+]
+inputs = [
+  ".github/workflows/release.yml",
+  "Cargo.lock",
+  "Cargo.toml",
+  "VERSION",
+  "assumptions/PBR-PACKAGE-TOOLCHAINS-AX-011.toml",
+  "crates/proofbound-runtime-verify/Cargo.toml",
+  "crates/proofbound-runtime-verify/README.md",
+  "crates/proofbound-runtime-verify/src/attack_tests.rs",
+  "crates/proofbound-runtime-verify/src/canonical.rs",
+  "crates/proofbound-runtime-verify/src/cbor.rs",
+  "crates/proofbound-runtime-verify/src/commitment.rs",
+  "crates/proofbound-runtime-verify/src/decode.rs",
+  "crates/proofbound-runtime-verify/src/decode_v2.rs",
+  "crates/proofbound-runtime-verify/src/derive.rs",
+  "crates/proofbound-runtime-verify/src/error.rs",
+  "crates/proofbound-runtime-verify/src/identity.rs",
+  "crates/proofbound-runtime-verify/src/lib.rs",
+  "crates/proofbound-runtime-verify/src/main.rs",
+  "crates/proofbound-runtime-verify/src/test_support.rs",
+  "crates/proofbound-runtime-verify/tests/receipt_vectors.rs",
+  "docs/specs/0014_public_compatibility_and_distribution.md",
+  "docs/threat-model.md",
+  "schemas/release-provenance-v2.cddl",
+  "schemas/verifier-package-manifest-v1.cddl",
+  "schemas/verifier-package-preflight-v1.schema.json",
+  "tests/attacks/distribution/verifier-package-v1.toml",
+  "tools/ci/ci.sh",
+  "tools/ci/deterministic_cbor.py",
+  "tools/ci/pre-commit.sh",
+  "tools/ci/test_release_provenance.py",
+  "tools/ci/test_release_workflow.py",
+  "tools/ci/test_verifier_package.py",
+  "tools/release/build_provenance.py",
+  "tools/release/build_verifier_package.py",
+  "tools/release/check_verifier_package.py",
+  "tools/release/verify_verifier_package_manifest.py",
+  "tools/release/verify_provenance.py",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "independent-check"
+checker = "tools/release/check_verifier_package.py"
+arguments = []
+paths = [
+  "crates/proofbound-runtime-verify",
+]
+
+[resource_budget]
+time_seconds = 300
+disk_bytes = 2147483648
+memory_bytes = 2147483648

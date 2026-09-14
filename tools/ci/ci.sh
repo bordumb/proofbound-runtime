@@ -56,6 +56,8 @@ if selected "preflight"; then
   timed_unit acceptance-policy-compiler-tests python3 -m unittest tools.ci.test_acceptance_policy_compiler
   timed_unit plan-scaffold-contract-tests python3 -m unittest tools.ci.test_plan_scaffold_contract
   timed_unit sdk-contract-tests python3 -m unittest tools.ci.test_sdk_contract tools.ci.test_sdk_packages
+  timed_unit verifier-package-preflight python3 tools/release/build_verifier_package.py --check
+  timed_unit verifier-package-preflight-tests python3 -m unittest tools.ci.test_verifier_package.VerifierPackagePreflightTests
   timed_unit python-sdk-tests python3 -m unittest discover -s sdk/python/tests
   timed_unit typescript-sdk-tests node --experimental-strip-types --test sdk/typescript/tests/test.mjs
   timed_unit release-state-tests python3 -m unittest tools.release.test_validate_release_state
@@ -105,6 +107,7 @@ if selected "rust"; then
   timed_unit rust-check cargo check --workspace --all-targets --locked --offline
   timed_unit rust-clippy cargo clippy --workspace --all-targets --locked --offline -- -D warnings
   timed_unit rust-tests cargo test --workspace --locked --offline
+  timed_unit verifier-package-artifact-tests python3 -m unittest tools.ci.test_verifier_package.VerifierPackageArtifactTests
 
   printf '%s\n' '[6/9] independent authority conformance'
   timed_unit authority-conformance python3 tools/conformance/authority_reference.py

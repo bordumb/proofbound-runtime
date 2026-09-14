@@ -1,7 +1,7 @@
 # Assurance plan
 
-This document records the completed evidence path for each load-bearing version
-0.2 claim. Claim manifests remain the source of truth for current admitted
+This document records the completed evidence path for each current load-bearing
+claim. Claim manifests remain the source of truth for admitted
 status, assumptions, exclusions, and exact evidence identities.
 
 ## Assurance summary
@@ -22,10 +22,52 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-ACCEPT-012` | Tested/model-only on the development branch | Adopter policy decisions bind independently verified inputs; exact released acceptor observation and external Action dogfood remain open. |
 | `PBR-SCAFFOLD-013` | Tested/model-only on the development branch | Static ELF scaffolding is bounded diagnostic evidence, not a safe policy or a complete dynamic-load inventory. |
 | `PBR-SDK-014` | Tier 1, independently checked source and package contract | Rust, Python, and TypeScript SDKs preserve the separate-process boundary; registry publication and consumer dogfood remain open. |
+| `PBR-DISTRIBUTION-015` | Tier 1 evidence registered; final exact-head replay and release binding pending | The verifier package has a closed preflight, source-payload comparison, byte reproduction, local consumer, and release-retention path; no registry or publisher claim is admitted. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
 observations do not promote the four test-based claims to `ARTIFACT_BOUND`.
+
+## PBR-DISTRIBUTION-015
+
+The production subject is the independently installable
+`proofbound-runtime-verify` package. Its intended closure contains:
+
+- one exact public package, target, dependency, metadata, and source surface;
+- no path, Git, alternate-registry, workspace-patch, or Runtime workspace
+  dependency;
+- a stable preflight failure vocabulary for metadata, dependency, inventory,
+  dependency source, version, revision, archive inventory, archive payload,
+  reproduction, and consumer failures;
+- two isolated package builds compared by exact bytes;
+- safe extraction and installation into an unrelated temporary consumer;
+- exact comparison of retained source bytes, the original Cargo manifest, and
+  Cargo VCS identity;
+- one retained deterministic-CBOR package manifest with exact source revision,
+  artifact identity, binary name, and supported receipt schemas;
+- independent validation of the closed manifest, canonical carrier, selected
+  identities, and retained archive digest and size; and
+- checked inclusion of the verifier namespace in aggregate release provenance.
+
+The evidence path is:
+
+1. mutate explicit publication, manifest surfaces, dependencies, source files,
+   product label, selected revision, archive members, retained Cargo metadata,
+   and reproduction bytes;
+2. inspect the exact archive member inventory and compare retained package
+   source bytes with the registered repository source;
+3. compare two independently produced `.crate` byte strings;
+4. install the extracted package outside the workspace and execute
+   `pbr-verify --version`;
+5. decode and independently validate the canonical package manifest against
+   the selected source, package label, CDDL, and retained archive; and
+6. retain the package manifest and checksum in the exact-revision release
+   workflow and aggregate release provenance.
+
+This claim does not establish verifier semantics. `PBR-VERIFY-006` owns that
+behavior. It does not authenticate a publisher or assert registry-byte
+identity. Specification 0014 remains under review, clean exact-head evidence
+remains open, and registry publication remains blocked.
 
 ## PBR-POLICY-002
 

@@ -1,11 +1,14 @@
 [package]
 name = "proofbound-runtime-verify"
+description = "Independent execution-receipt verification for Proofbound Runtime"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-publish.workspace = true
+publish = ["crates-io"]
+readme = "README.md"
+include = ["README.md", "src/*.rs"]
 
 [[bin]]
 name = "pbr-verify"

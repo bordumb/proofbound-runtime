@@ -26,16 +26,18 @@ class ReleaseWorkflowTests(unittest.TestCase):
 
         self.assertIn("fetch-depth: 0", validation)
         self.assertIn("ref: ${{ env.PBR_RELEASE_REVISION }}", validation)
-        self.assertIn("[[ \"$PBR_RELEASE_REVISION\" =~ ^[0-9a-f]{40}$ ]]", validation)
+        self.assertIn('[[ "$PBR_RELEASE_REVISION" =~ ^[0-9a-f]{40}$ ]]', validation)
         self.assertIn(
             'test "$(git rev-parse HEAD)" = "$PBR_RELEASE_REVISION"', validation
         )
         self.assertIn(
-            "git merge-base --is-ancestor \"$PBR_RELEASE_REVISION\" origin/main",
+            'git merge-base --is-ancestor "$PBR_RELEASE_REVISION" origin/main',
             validation,
         )
 
-    def test_both_release_architectures_depend_on_validated_exact_revision(self) -> None:
+    def test_both_release_architectures_depend_on_validated_exact_revision(
+        self,
+    ) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
         release = workflow[workflow.index("\n  release:\n") :]
 
@@ -103,31 +105,69 @@ class ReleaseWorkflowTests(unittest.TestCase):
     def test_sdk_packages_are_reproduced_at_the_exact_release_revision(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
         sdk_job = workflow[
-            workflow.index("\n  sdk-release:\n") : workflow.index("\n  release:\n")
+            workflow.index("\n  sdk-release:\n") : workflow.index(
+                "\n  verifier-package-release:\n"
+            )
         ]
 
         self.assertIn("needs: validate-revision", sdk_job)
         self.assertIn("ref: ${{ env.PBR_RELEASE_REVISION }}", sdk_job)
-        self.assertIn(
-            'test "$(git rev-parse HEAD)" = "$PBR_RELEASE_REVISION"', sdk_job
-        )
+        self.assertIn('test "$(git rev-parse HEAD)" = "$PBR_RELEASE_REVISION"', sdk_job)
         self.assertIn("cargo fetch --locked", sdk_job)
         self.assertIn("python3 tools/release/build_sdks.py --output dist/sdk", sdk_job)
         self.assertIn("sha256sum --check SHA256SUMS", sdk_job)
         self.assertIn("name: proofbound-runtime-sdk-packages-", sdk_job)
         self.assertIn("path: dist/sdk/", sdk_job)
 
+    def test_verifier_package_is_preflighted_reproduced_and_dogfooded(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        verifier_job = workflow[
+            workflow.index("\n  verifier-package-release:\n") : workflow.index(
+                "\n  release:\n"
+            )
+        ]
+
+        self.assertIn("needs: validate-revision", verifier_job)
+        self.assertIn("ref: ${{ env.PBR_RELEASE_REVISION }}", verifier_job)
+        self.assertIn(
+            'test "$(git rev-parse HEAD)" = "$PBR_RELEASE_REVISION"',
+            verifier_job,
+        )
+        self.assertIn("cargo fetch --locked", verifier_job)
+        self.assertIn("build_verifier_package.py --check", verifier_job)
+        self.assertIn("--output dist/verifier", verifier_job)
+        self.assertIn('--expected-revision "$PBR_RELEASE_REVISION"', verifier_job)
+        self.assertIn("sha256sum --check SHA256SUMS", verifier_job)
+        self.assertIn("verify_verifier_package_manifest.py", verifier_job)
+        self.assertIn(
+            "--manifest dist/verifier/VERIFIER-PACKAGE-MANIFEST.cbor", verifier_job
+        )
+        self.assertIn(
+            '--expected-source-revision "$PBR_RELEASE_REVISION"', verifier_job
+        )
+        self.assertIn("name: proofbound-runtime-verifier-package-", verifier_job)
+        self.assertIn("path: dist/verifier/", verifier_job)
+
     def test_release_provenance_joins_and_verifies_every_release_artifact(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
         self.assertIn("\n  provenance:\n", workflow)
         provenance = workflow[workflow.index("\n  provenance:\n") :]
-        self.assertIn("needs: [sdk-release, release]", provenance)
+        self.assertIn(
+            "needs: [sdk-release, verifier-package-release, release]", provenance
+        )
         self.assertIn("proofbound-runtime-sdk-packages-", provenance)
+        self.assertIn("proofbound-runtime-verifier-package-", provenance)
         self.assertIn("proofbound-runtime-x86_64", provenance)
         self.assertIn("proofbound-runtime-aarch64", provenance)
         self.assertIn("tools/release/build_provenance.py", provenance)
         self.assertIn("tools/release/verify_provenance.py", provenance)
+        self.assertEqual(
+            provenance.count(
+                "--artifact-root verifier=dist/provenance-inputs/verifier"
+            ),
+            2,
+        )
         self.assertIn("release-provenance.cbor", provenance)
         self.assertIn("release-provenance.projection.json", provenance)
         self.assertIn("proofbound-runtime-release-provenance-", provenance)
@@ -155,8 +195,8 @@ class ReleaseWorkflowTests(unittest.TestCase):
             REPOSITORY_ROOT
             / "crates/proofbound-runtime-compose/tests/release_observation.rs"
         ).read_text(encoding="utf-8")
-        self.assertIn('execution-receipt.cbor', observation)
-        self.assertNotIn('execution-receipt.json', observation)
+        self.assertIn("execution-receipt.cbor", observation)
+        self.assertNotIn("execution-receipt.json", observation)
 
     def test_contextual_release_evidence_uses_the_v2_receipt_carrier(self) -> None:
         evidence_root = REPOSITORY_ROOT / "proofbound" / "evidence"

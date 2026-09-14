@@ -72,6 +72,56 @@ jobs:
           path: dist/sdk/
           if-no-files-found: error
 
+  verifier-package-release:
+    name: Reproduce and dogfood the verifier package
+    needs: validate-revision
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out the exact requested head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.PBR_RELEASE_REVISION }}
+          fetch-depth: 0
+
+      - name: Confirm the exact requested head
+        run: test "$(git rev-parse HEAD)" = "$PBR_RELEASE_REVISION"
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@fef00d40025f7fd8f1ec759cbbb0f577ddfc3133 # 1.94.0
+
+      - name: Populate the locked Cargo dependency cache
+        run: cargo fetch --locked
+
+      - name: Preflight the closed verifier package
+        run: python3 tools/release/build_verifier_package.py --check
+
+      - name: Reproduce and dogfood the exact verifier package
+        run: >-
+          python3 tools/release/build_verifier_package.py
+          --output dist/verifier
+          --expected-revision "$PBR_RELEASE_REVISION"
+
+      - name: Verify the verifier package checksum
+        working-directory: dist/verifier
+        run: sha256sum --check SHA256SUMS
+
+      - name: Independently verify the verifier package manifest
+        run: >-
+          python3 tools/release/verify_verifier_package_manifest.py
+          --manifest dist/verifier/VERIFIER-PACKAGE-MANIFEST.cbor
+          --archive "dist/verifier/proofbound-runtime-verify-$(cat VERSION).crate"
+          --cddl schemas/verifier-package-manifest-v1.cddl
+          --expected-source-revision "$PBR_RELEASE_REVISION"
+          --expected-version "$(cat VERSION)"
+
+      - name: Upload the reproduced verifier package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: proofbound-runtime-verifier-package-${{ env.PBR_RELEASE_REVISION }}
+          path: dist/verifier/
+          if-no-files-found: error
+
   release:
     name: Reproduce and seal release (${{ matrix.architecture }})
     needs: validate-revision
@@ -352,7 +402,7 @@ jobs:
 
   provenance:
     name: Seal aggregate release provenance
-    needs: [sdk-release, release]
+    needs: [sdk-release, verifier-package-release, release]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -369,6 +419,12 @@ jobs:
         with:
           name: proofbound-runtime-sdk-packages-${{ env.PBR_RELEASE_REVISION }}
           path: dist/provenance-inputs/sdk
+
+      - name: Download the reproduced verifier package
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: proofbound-runtime-verifier-package-${{ env.PBR_RELEASE_REVISION }}
+          path: dist/provenance-inputs/verifier
 
       - name: Download the x86-64 release chain
         uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
@@ -388,6 +444,7 @@ jobs:
           python3 tools/release/build_provenance.py \
             --revision "$PBR_RELEASE_REVISION" \
             --artifact-root sdk=dist/provenance-inputs/sdk \
+            --artifact-root verifier=dist/provenance-inputs/verifier \
             --artifact-root x86_64=dist/provenance-inputs/x86_64 \
             --artifact-root aarch64=dist/provenance-inputs/aarch64 \
             --output dist/provenance/release-provenance.cbor
@@ -395,6 +452,7 @@ jobs:
             --provenance dist/provenance/release-provenance.cbor \
             --expected-revision "$PBR_RELEASE_REVISION" \
             --artifact-root sdk=dist/provenance-inputs/sdk \
+            --artifact-root verifier=dist/provenance-inputs/verifier \
             --artifact-root x86_64=dist/provenance-inputs/x86_64 \
             --artifact-root aarch64=dist/provenance-inputs/aarch64 \
             --projection dist/provenance/release-provenance.projection.json

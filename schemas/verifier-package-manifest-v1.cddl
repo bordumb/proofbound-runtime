@@ -1,0 +1,22 @@
+verifier-package-manifest = {
+  "schema": "proofbound-runtime-verifier-package-manifest/1",
+  "source_revision": git-revision / tree-revision,
+  "package": "proofbound-runtime-verify",
+  "binary": "pbr-verify",
+  "version": package-label,
+  "supported_receipt_schemas": [
+    "proofbound-runtime-receipt/1",
+    "proofbound-runtime-execution-receipt/2",
+  ],
+  "artifacts": [verifier-package-artifact],
+}
+
+git-revision = (text .size 40) .regexp "[0-9a-f]{40}"
+tree-revision = (text .size 76) .regexp "tree-sha256:[0-9a-f]{64}"
+package-label = (text .size (5..64)) .regexp "[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?"
+
+verifier-package-artifact = {
+  "name": (text .size (37..96)) .regexp "proofbound-runtime-verify-[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?\\.crate",
+  "sha256": bytes .size 32,
+  "size": 1..18446744073709551615,
+}

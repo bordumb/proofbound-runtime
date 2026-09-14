@@ -1,9 +1,14 @@
 # Implementation plan
 
-This document is the durable work queue for the first useful Proofbound Runtime
-release. The normative requirements remain in
+This document is the durable work queue for the initial Proofbound Runtime
+foundation. The normative requirements remain in
 [`specs/0001_initial_spec.md`](specs/0001_initial_spec.md). This plan records
 dependency order, commit boundaries, and completion evidence.
+
+The initial implementation queue below is historical. The active order for
+prelaunch current-main assurance, Roadmap 2, and Roadmap 3 candidate promotion is the
+[product roadmap execution order](product-roadmap-execution-order.md). Do not
+append later product work to this initial queue.
 
 ## Working rules
 

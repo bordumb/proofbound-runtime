@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bordumb/proofbound-runtime/schemas/verifier-package-preflight-v1.schema.json",
+  "title": "Proofbound Runtime verifier package preflight version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["accepted", "package", "schema", "version"],
+  "properties": {
+    "accepted": { "const": true },
+    "package": { "const": "proofbound-runtime-verify" },
+    "schema": { "const": "proofbound-runtime-package-preflight/1" },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    }
+  }
+}
