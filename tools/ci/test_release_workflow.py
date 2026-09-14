@@ -53,6 +53,15 @@ class ReleaseWorkflowTests(unittest.TestCase):
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
         self.assertNotIn("cache-nix-action", workflow)
+        install_cbor = workflow.index("Install pinned independent CBOR encoder")
+        run_gate = workflow.index("Run the complete repository base gate")
+        self.assertLess(install_cbor, run_gate)
+        self.assertIn("python3 -m pip install", workflow[install_cbor:run_gate])
+        self.assertIn("--require-hashes", workflow[install_cbor:run_gate])
+        self.assertIn(
+            "--requirement tools/ci/requirements-wire-vectors.txt",
+            workflow[install_cbor:run_gate],
+        )
         self.assertIn("Build and byte-compare two release bundles", workflow)
         self.assertIn("Run the complete repository base gate", workflow)
         self.assertIn("Execute and verify the exact release binaries", workflow)
