@@ -85,6 +85,21 @@ class ReleaseWorkflowTests(unittest.TestCase):
             release_evidence,
         )
 
+    def test_cbor_requirement_covers_both_linux_release_architectures(self) -> None:
+        requirements = (
+            REPOSITORY_ROOT / "tools/ci/requirements-wire-vectors.txt"
+        ).read_text(encoding="utf-8")
+        linux_x86_64_digest = (
+            "sha256:4cd43d8fc374b31643b2830910f28177a606a7bc84975a62675dd3f2e320fc7b"
+        )
+        linux_aarch64_digest = (
+            "sha256:ae6c706ac1d85a0b3cb3395308fd0c4d55e3202b4760773675957e93cdff45fc"
+        )
+
+        self.assertIn("cbor2==5.9.0", requirements)
+        self.assertIn(linux_x86_64_digest, requirements)
+        self.assertIn(linux_aarch64_digest, requirements)
+
     def test_sdk_packages_are_reproduced_at_the_exact_release_revision(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
         sdk_job = workflow[
