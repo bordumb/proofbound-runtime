@@ -1,8 +1,8 @@
 schema = "proofbound-claim/1"
 id = "PBR-DISTRIBUTION-015"
 title = "The independent verifier has a closed reproducible public package"
-statement = "The registered verifier package preflight admits only the exact public manifest surface, source inventory, package payload, Cargo-retained source identity, and crates.io-only non-Runtime dependency closure; release production builds that package twice to byte equality, installs the extracted package in an unrelated temporary consumer, and joins the exact package into aggregate release provenance before retaining its identity."
-public_language = "The independent verifier crate rejects the registered manifest-surface, dependency-source, inventory, packaged-source, Cargo-metadata, source-identity, and reproduction attacks. Its local release package is byte-reproduced, installed outside the workspace, and included in checked aggregate provenance. This is source and local-package evidence, not registry publication, registry-byte identity, publisher authentication, or proof of verifier semantics."
+statement = "The registered verifier package preflight admits only the exact public manifest surface, source inventory, package payload, Cargo-retained source identity, and crates.io-only non-Runtime dependency closure; release production builds that package twice to byte equality, installs the extracted package in an unrelated temporary consumer, independently validates the closed deterministic-CBOR manifest against the retained archive and selected identities, and joins the exact package into aggregate release provenance before retaining its identity."
+public_language = "The independent verifier crate rejects the registered manifest-surface, dependency-source, inventory, packaged-source, Cargo-metadata, source-identity, manifest-carrier, and reproduction attacks. Its local release package is byte-reproduced, installed outside the workspace, independently checked against its closed manifest, and included in checked aggregate provenance. This is source and local-package evidence, not registry publication, registry-byte identity, publisher authentication, or proof of verifier semantics."
 subject = "package:proofbound-runtime-verify"
 profile = "ledger"
 tier = 1
@@ -50,5 +50,6 @@ source_roots = [
   "tools/release/build_provenance.py",
   "tools/release/build_verifier_package.py",
   "tools/release/check_verifier_package.py",
+  "tools/release/verify_verifier_package_manifest.py",
   "tools/release/verify_provenance.py",
 ]

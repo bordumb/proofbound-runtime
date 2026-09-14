@@ -7,8 +7,9 @@
   identities control each implementation wave
 - **Proofbound baseline consumed by Runtime:** `1084e0d` (merged to Proofbound
   `main` as `3a78873`)
-- **Proofbound distribution candidate:** PR 10 at `693976f`; independently
-  approved, hosted verification pending, not yet merged or consumed by Runtime
+- **Proofbound distribution source:** approved PR 10 head `693976f`, merged as
+  `dd481a3`, exact-main Verify passed; platform bundles are building and Runtime
+  consumption remains open
 - **Prerequisite:** [Product and delivery roadmap](product-roadmap.md)
   Milestones A through E, except where an epic below names a narrower
   prerequisite
@@ -43,10 +44,10 @@ registered claim, closed preflight, falsifiers, reproduction, local consumer,
 and release-retention path. Its local preflight, Rust, package, and targeted
 fresh-evidence checks pass. It has not received clean exact-head hosted evidence
 or independent acceptance, and it does not authorize registry publication.
-The generic Proofbound tool-bundle prerequisite is upstreamed as Proofbound PR
-10. Its focused local gate and independent review pass at exact head
-`693976f`; hosted verification, merge, mainline verification, both platform
-bundle candidates, and Runtime consumption remain open.
+The generic Proofbound tool-bundle prerequisite was independently approved at
+PR 10 head `693976f`, passed hosted verification, merged as `dd481a3`, and
+passed exact-main Verify run `34887427661`. Tool-bundle run `34889426459` is
+producing both platform candidates. Runtime consumption remains open.
 RT-9 is blocked until RT-5 implements the accepted single-service network
 decision in production.
 
@@ -319,9 +320,9 @@ defines the required identity-confusion attacks.
   identity kind the ADR accepted: a routing endpoint, a broker-enforced
   service, or an authenticated service identity. No entry is a bare string.
 - Keep `Deny` unchanged. Keep the single-service form valid as a set of one.
-- Version the plan, compiled policy, launcher protocol, receipt, run result,
-  verifier, composer, and acceptance-policy schemas together, as RT-5.1
-  requires.
+- Replace the plan, compiled policy, launcher protocol, receipt, run result,
+  verifier, composer, and acceptance-policy schema identities together, as
+  RT-5.1 requires. No transition surface is retained before launch.
 - Bound the set size. State the bound and its reason.
 
 ### RT-9.2 Add the cross-service attack corpus

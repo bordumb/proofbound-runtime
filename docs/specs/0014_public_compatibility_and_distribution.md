@@ -50,7 +50,7 @@ must still:
 - use a new schema identifier when old bytes could otherwise acquire new
   security meaning;
 - update every producer, independent verifier, composer, policy consumer, SDK,
-  fixture, and conformance vector in one explicit migration;
+  fixture, and conformance vector in one atomic replacement;
 - invalidate stale evidence and tested integration tuples;
 - preserve the exact historical identity of any retained artifact; and
 - run the complete current-contract and adversarial corpus before publication.
@@ -69,7 +69,7 @@ external consumers exist.
 - Producers emit only the current schema selected by their product release.
 - Verifiers identify each currently supported schema explicitly.
 - A verifier must not reinterpret an unknown schema as the newest known schema.
-- A prelaunch migration may remove an older schema immediately. The migration
+- A prelaunch replacement may remove an older schema immediately. The change
   must update the complete current tuple and must not
   reinterpret old bytes.
 - Receipt verification and plan execution support remain separate current

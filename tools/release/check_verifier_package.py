@@ -14,6 +14,7 @@ INVENTORY = [
     "verifier-package-preflight-attacks",
     "verifier-package-archive-source-identity",
     "verifier-package-deterministic-manifest",
+    "verifier-package-independent-manifest-verification",
     "verifier-package-reproduction",
     "verifier-package-consumer",
     "verifier-package-release-retention",

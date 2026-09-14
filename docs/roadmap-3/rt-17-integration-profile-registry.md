@@ -5,14 +5,14 @@
 **Primary owner:** each protocol owns its profile fields. A later ADR selects
 the registry operator and publisher policy.
 
-**Start gate:** RT-7 publishes the compatibility policy, RT-11 authenticates
-publishers, and two maintained integration profiles exist.
+**Start gate:** RT-7 publishes the current distribution contract, RT-11
+authenticates publishers, and two maintained integration profiles exist.
 
 ## Product outcome
 
 A user can select a reviewed provider or workload profile by name while the
-plan and receipt chain bind the exact expanded bytes, versions, identities, and
-qualification status.
+plan and receipt chain bind the exact expanded bytes, source and artifact
+identities, schema identities, and qualification status.
 
 ## Candidate bundle
 
@@ -23,7 +23,7 @@ A profile bundle can contain exact references to:
 - Runtime plan, service identity, transport, credential, limit, and acceptance
   profiles;
 - Capsec analyzer and optional source-observation mapping;
-- native SDK and verifier versions;
+- native SDK package and verifier executable identities;
 - Proofbound release assurance and required evidence floors;
 - cross-project integration tuple;
 - positive vectors and registered attacks; and
@@ -44,7 +44,7 @@ answer, or user-specific policy.
 ## Required attacks
 
 - mutate a bundle behind an unchanged name;
-- mix individually valid but untested product versions;
+- mix individually valid but untested product identity sets;
 - replace a provider adapter, verifier, or qualification record;
 - downgrade the attack corpus or assurance floor;
 - sign the bundle with a key valid for a different role;

@@ -91,7 +91,7 @@ as proof, or describing an unsupported platform as confined.
 Each trial records:
 
 - adopter and workload identity;
-- exact product and schema version tuple;
+- exact product source, artifact, and schema identity tuple;
 - host profile;
 - inputs and non-secret configuration;
 - measured values and failure reasons;

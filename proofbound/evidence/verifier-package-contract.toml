@@ -9,6 +9,7 @@ expected_inventory = [
   "verifier-package-preflight-attacks",
   "verifier-package-archive-source-identity",
   "verifier-package-deterministic-manifest",
+  "verifier-package-independent-manifest-verification",
   "verifier-package-reproduction",
   "verifier-package-consumer",
   "verifier-package-release-retention",
@@ -50,6 +51,7 @@ inputs = [
   "tools/release/build_provenance.py",
   "tools/release/build_verifier_package.py",
   "tools/release/check_verifier_package.py",
+  "tools/release/verify_verifier_package_manifest.py",
   "tools/release/verify_provenance.py",
 ]
 outputs = []

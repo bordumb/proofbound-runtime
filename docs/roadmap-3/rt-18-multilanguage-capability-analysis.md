@@ -18,8 +18,8 @@ analysis as complete authority inference.
 
 An observation envelope should identify:
 
-- language and language-version profile;
-- analyzer artifact and release identity;
+- language and runtime profile;
+- analyzer source and artifact identity;
 - exact source closure and dependency-lock identity;
 - configuration and enabled analysis depth;
 - bounded finding inventory with source locations;
@@ -45,7 +45,7 @@ semantics.
 - omit dynamically imported modules or native extensions;
 - hide network access behind reflection, subprocesses, macros, or FFI;
 - relabel incomplete analysis as complete;
-- mix analyzer versions under one report identity; and
+- mix analyzer artifacts under one report identity; and
 - broaden a Runtime draft automatically from a finding.
 
 ## Promotion gate

@@ -419,11 +419,11 @@ def _validate_vcs_info(repository: Path, content: bytes) -> None:
             FailureCode.PACKAGE_PAYLOAD,
             "the package VCS information is invalid",
         ) from error
+    expected_git: dict[str, object] = {"sha1": _git_head(repository)}
+    if _git_dirty(repository):
+        expected_git["dirty"] = True
     expected = {
-        "git": {
-            "sha1": _git_head(repository),
-            "dirty": _git_dirty(repository),
-        },
+        "git": expected_git,
         "path_in_vcs": CRATE.as_posix(),
     }
     if value != expected:

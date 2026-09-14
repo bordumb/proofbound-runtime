@@ -9,7 +9,7 @@ priority and promotion. The
 [product roadmap execution order](../product-roadmap-execution-order.md) owns
 the dependencies between active Roadmap 2 work and candidate promotion. The
 [platform integration contract](../specs/0013_platform_integration_contract.md)
-owns shared vocabulary, identities, composition, compatibility, and repository
+owns shared vocabulary, identities, composition, tested integration, and repository
 boundaries.
 
 | Candidate | Record | State |

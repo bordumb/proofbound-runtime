@@ -8,8 +8,8 @@
 - **Runtime claim:** `none`
 - **Runtime milestone:** Milestone A: sustainable assurance development
 - **Proofbound target:** tool-bundle workflow, manifest schema, and installer
-- **Upstream record:** Proofbound PR 10 at `693976f`; independently approved,
-  hosted verification and merge pending
+- **Upstream record:** Proofbound PR 10 head `693976f` independently approved
+  and merged as `dd481a3`; exact mainline Verify run `34887427661` passed
 - **Supersedes:** none
 - **Superseded by:** none
 
@@ -133,8 +133,9 @@ tool or claim that an adjacent checksum authenticates a publisher.
   standalone installer
 - **Issue:** none
 - **Specification or ADR:** `docs/specs/0004_tool_bundle_distribution.md`
-- **Commit or pull request:** Proofbound PR 10, exact head
-  `693976fea7e169fc84a3919113fd0a1e6a132544`
+- **Commit or pull request:** Proofbound PR 10, approved head
+  `693976fea7e169fc84a3919113fd0a1e6a132544`, merged to `main` as
+  `dd481a381913f7df1e7d89c261a0098a3f747995`
 
 ## Resolution
 
@@ -143,7 +144,8 @@ two Tier-0 claims, deterministic production checks, and hosted workflow. Its
 complete local 12-stage gate passed at the initial implementation head. After
 review fixes, 33 focused tests and both registered claims passed at exact clean
 head `693976f`, and an independent exact-head review recorded `APPROVE` with no
-findings. Resolution remains open until the PR's hosted gate passes, the PR
-merges, the exact merged revision produces both platform bundles after a
-successful mainline Verify run, and Runtime consumes a pinned bundle without
+findings. The pull-request gate passed, the approved head merged as unsigned
+main commit `dd481a3`, and exact-main Verify run `34887427661` passed. Tool-bundle
+run `34889426459` is producing both platform candidates. Resolution remains
+open until both candidates pass and Runtime consumes a pinned bundle without
 changing evidence meaning or `--fresh` behavior.

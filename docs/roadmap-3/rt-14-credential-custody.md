@@ -44,7 +44,7 @@ meaning.
 ## Required identities
 
 - Auths principal, workload, grant, profile, and connection alias;
-- credential-source and non-secret version identity;
+- credential-source and non-secret definition identity;
 - Runtime service or operation identity;
 - delivery mechanism and descriptor role;
 - execution and Runtime receipt identity; and

@@ -106,6 +106,15 @@ jobs:
         working-directory: dist/verifier
         run: sha256sum --check SHA256SUMS
 
+      - name: Independently verify the verifier package manifest
+        run: >-
+          python3 tools/release/verify_verifier_package_manifest.py
+          --manifest dist/verifier/VERIFIER-PACKAGE-MANIFEST.cbor
+          --archive "dist/verifier/proofbound-runtime-verify-$(cat VERSION).crate"
+          --cddl schemas/verifier-package-manifest-v1.cddl
+          --expected-source-revision "$PBR_RELEASE_REVISION"
+          --expected-version "$(cat VERSION)"
+
       - name: Upload the reproduced verifier package
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

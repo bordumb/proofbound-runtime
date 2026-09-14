@@ -14,6 +14,7 @@ review_evidence = [
   "tools/release/build_provenance.py",
   "tools/release/build_verifier_package.py",
   "tools/release/check_verifier_package.py",
+  "tools/release/verify_verifier_package_manifest.py",
   "tools/release/verify_provenance.py",
 ]
 discharge_plan = "Pin exact release tools, reproduce the package in independent directories, retain the package bytes and source revision, and keep this premise visible after exact artifact binding."

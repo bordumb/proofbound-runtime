@@ -1,9 +1,8 @@
 # RT-7 integration record: prelaunch packaging and distribution
 
-**Status:** RT-7.1 prelaunch distribution contract drafted; Proofbound bundle
-prerequisite independently approved in PR 10; RT-7.2 verifier-package
-implementation blocker fixes in progress; exact-head review and distribution
-remain open
+**Status:** RT-7.1 prelaunch distribution contract drafted; the Proofbound
+bundle source is merged and verified; its two platform candidates are building;
+RT-7.2 verifier-package exact-head review and distribution remain open
 
 **Primary owner:** Proofbound Runtime
 
@@ -47,18 +46,20 @@ approval.
 ## Proofbound prerequisite checkpoint
 
 [PBF-0013](../proofbound-feedback/pbf-0013-versioned-proofbound-tool-distribution.md)
-is upstreamed as Proofbound PR 10 at exact head
-`693976fea7e169fc84a3919113fd0a1e6a132544`. That head adds deterministic
+was independently approved at Proofbound PR 10 head
+`693976fea7e169fc84a3919113fd0a1e6a132544` and merged as
+`dd481a381913f7df1e7d89c261a0098a3f747995`. That source adds deterministic
 platform tool bundles, a closed manifest schema, a standalone fail-closed
-installer, and exact source and mainline-Verify identities. Its focused local
-tests and registered claims pass, and an independent exact-head review records
-`APPROVE` with no findings.
+installer, and exact source and mainline-Verify identities. Exact-main Verify
+run `34887427661` passed.
 
-The prerequisite is not resolved until PR 10 merges and the exact merged
-revision produces successful `x86_64` and `aarch64` bundle candidates. Runtime
-continues to compile its pinned Proofbound revision until it can pin the exact
-upstream source revision, successful workflow run, archive digest, and manifest
-identity. A product label does not participate in that decision.
+Tool-bundle run `34889426459` is producing the exact `x86_64` and `aarch64`
+candidates. The prerequisite is not resolved until both pass and Runtime pins
+the exact upstream source revision, successful workflow run, archive digest,
+and manifest identity. Runtime continues to compile its pinned Proofbound
+revision until that consumption change passes without changing evidence
+meaning or `--fresh` behavior. A product label does not participate in that
+decision.
 
 ## RT-7.2 implementation checkpoint
 

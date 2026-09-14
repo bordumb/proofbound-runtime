@@ -4,7 +4,8 @@
 - **Date:** 2026-09-13
 - **Applies to:** Roadmap 1 release closure, Roadmap 2, and Roadmap 3 candidate
   promotion
-- **Current Runtime main baseline:** `83e8bbc`
+- **Current Runtime main baseline:** selected and recorded by Phase 0 after the
+  pending exact-main admission closes
 - **Current reviewed Roadmap 1 source head:** `d76f3b8`
 - **Lifecycle:** prelaunch; zero external users; package labels are tooling
   metadata rather than compatibility promises
@@ -125,12 +126,11 @@ The first independent-verifier package slice is implemented in source. Its
 local package, consumer, Rust, and targeted fresh-evidence checks pass. Its
 specification review, clean exact-head hosted evidence, exact-head review, and
 merge remain open. No registry publication step exists.
-The generic Proofbound tool-bundle prerequisite is upstreamed as Proofbound PR
-10 at exact head `693976f`. Its focused local tests and registered claims pass,
-and its independent exact-head review records `APPROVE` with no findings. It
-still requires a successful hosted gate, merge, successful mainline Verify,
-both platform bundle candidates, and Runtime consumption of the exact bundle
-identity.
+The generic Proofbound tool-bundle source was independently approved at PR 10
+head `693976f`, passed its hosted gate, and merged as `dd481a3`. Exact-main
+Verify run `34887427661` passed. Tool-bundle run `34889426459` is producing both
+platform candidates. Runtime consumption of their exact source, workflow,
+archive, and manifest identities remains open.
 This work follows the admitted foundation as a separate exact-source wave. It
 does not require a version transition or preserve an older candidate surface.
 

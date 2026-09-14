@@ -10,8 +10,9 @@ authority-drift problem.
 
 ## Product outcome
 
-A team can review, approve, version, revoke, and audit machine authority without
-placing mutable control-plane state in the child security path.
+A team can review, approve, revise under a new content identity, revoke, and
+audit machine authority without placing mutable control-plane state in the
+child security path.
 
 ## Policy layers
 

@@ -22,7 +22,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-ACCEPT-012` | Tested/model-only on the development branch | Adopter policy decisions bind independently verified inputs; exact released acceptor observation and external Action dogfood remain open. |
 | `PBR-SCAFFOLD-013` | Tested/model-only on the development branch | Static ELF scaffolding is bounded diagnostic evidence, not a safe policy or a complete dynamic-load inventory. |
 | `PBR-SDK-014` | Tier 1, independently checked source and package contract | Rust, Python, and TypeScript SDKs preserve the separate-process boundary; registry publication and consumer dogfood remain open. |
-| `PBR-DISTRIBUTION-015` | Tier 1 verified in the working tree; exact release binding pending | The verifier package has a closed preflight, source-payload comparison, byte reproduction, local consumer, and release-retention path; no registry or publisher claim is admitted. |
+| `PBR-DISTRIBUTION-015` | Tier 1 evidence registered; final exact-head replay and release binding pending | The verifier package has a closed preflight, source-payload comparison, byte reproduction, local consumer, and release-retention path; no registry or publisher claim is admitted. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -40,11 +40,13 @@ The production subject is the independently installable
   dependency source, version, revision, archive inventory, archive payload,
   reproduction, and consumer failures;
 - two isolated package builds compared by exact bytes;
-- safe extraction and installation into an unrelated temporary consumer; and
+- safe extraction and installation into an unrelated temporary consumer;
 - exact comparison of retained source bytes, the original Cargo manifest, and
   Cargo VCS identity;
 - one retained deterministic-CBOR package manifest with exact source revision,
-  artifact identity, binary name, and supported receipt schemas; and
+  artifact identity, binary name, and supported receipt schemas;
+- independent validation of the closed manifest, canonical carrier, selected
+  identities, and retained archive digest and size; and
 - checked inclusion of the verifier namespace in aggregate release provenance.
 
 The evidence path is:
@@ -56,8 +58,10 @@ The evidence path is:
    source bytes with the registered repository source;
 3. compare two independently produced `.crate` byte strings;
 4. install the extracted package outside the workspace and execute
-   `pbr-verify --version`; and
-5. retain the package manifest and checksum in the exact-revision release
+   `pbr-verify --version`;
+5. decode and independently validate the canonical package manifest against
+   the selected source, package label, CDDL, and retained archive; and
+6. retain the package manifest and checksum in the exact-revision release
    workflow and aggregate release provenance.
 
 This claim does not establish verifier semantics. `PBR-VERIFY-006` owns that

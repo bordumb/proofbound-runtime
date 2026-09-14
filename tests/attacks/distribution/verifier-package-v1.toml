@@ -81,6 +81,21 @@ mutation = "replace the retained Cargo VCS revision or path after package creati
 expected = "package.archive.payload-mismatch"
 
 [[case]]
+id = "manifest-cddl-substitution"
+mutation = "change the closed CDDL field set or selected identity constants"
+expected = "independent manifest verification rejects CDDL drift"
+
+[[case]]
+id = "manifest-carrier-substitution"
+mutation = "append bytes or use another non-canonical CBOR representation"
+expected = "independent manifest verification rejects the carrier"
+
+[[case]]
+id = "manifest-identity-substitution"
+mutation = "replace a source, package, schema, archive, digest, or size identity"
+expected = "independent manifest verification rejects the semantic value"
+
+[[case]]
 id = "reproduction-drift"
 mutation = "return different verifier crate bytes from the two isolated builds"
 expected = "package.archive.reproduction-mismatch"

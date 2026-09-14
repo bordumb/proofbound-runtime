@@ -17,6 +17,7 @@ from unittest import mock
 
 from tools.ci.deterministic_cbor import decode_strict
 from tools.release import build_verifier_package as package
+from tools.release import verify_verifier_package_manifest as manifest_verifier
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -67,7 +68,7 @@ class VerifierPackagePreflightTests(unittest.TestCase):
                 elif relative == ".cargo_vcs_info.json":
                     content = json.dumps(
                         {
-                            "git": {"sha1": "1" * 40, "dirty": False},
+                            "git": {"sha1": "1" * 40},
                             "path_in_vcs": package.CRATE.as_posix(),
                         },
                         sort_keys=True,
@@ -84,9 +85,7 @@ class VerifierPackagePreflightTests(unittest.TestCase):
 
     def test_machine_manifests_have_closed_registered_schemas(self) -> None:
         cddl = (ROOT / package.PACKAGE_MANIFEST_CDDL).read_text(encoding="utf-8")
-        self.assertIn(f'"schema": "{package.PACKAGE_MANIFEST_SCHEMA}"', cddl)
-        self.assertIn('"sha256": bytes .size 32', cddl)
-        self.assertIn('"size": 1..18446744073709551615', cddl)
+        manifest_verifier.validate_cddl(cddl)
         schema = json.loads(
             (ROOT / "schemas/verifier-package-preflight-v1.schema.json").read_bytes()
         )
@@ -97,12 +96,13 @@ class VerifierPackagePreflightTests(unittest.TestCase):
         self.assertFalse(schema["additionalProperties"])
 
     def test_package_manifest_uses_deterministic_cbor(self) -> None:
+        archive = b"retained crate bytes"
         value = {
             "artifacts": [
                 {
                     "name": "proofbound-runtime-verify-0.2.0.crate",
-                    "sha256": bytes.fromhex("12" * 32),
-                    "size": 123,
+                    "sha256": hashlib.sha256(archive).digest(),
+                    "size": len(archive),
                 }
             ],
             "binary": package.PACKAGE_BINARY,
@@ -114,10 +114,116 @@ class VerifierPackagePreflightTests(unittest.TestCase):
         }
         encoded = package._encode_cbor(value)
         self.assertEqual(package._encode_cbor(value), encoded)
-        self.assertEqual(decode_strict(encoded), value)
+        decoded = decode_strict(encoded)
+        self.assertEqual(decoded, value)
+        manifest_verifier.validate_manifest(
+            decoded,
+            expected_source_revision="1" * 40,
+            expected_version="0.2.0",
+            archive_name="proofbound-runtime-verify-0.2.0.crate",
+            archive_bytes=archive,
+        )
         projection = package._manifest_projection(value)
-        self.assertEqual(projection["artifacts"][0]["sha256"], f"hex:{'12' * 32}")
-        self.assertEqual(projection["artifacts"][0]["size"], "123")
+        self.assertEqual(
+            projection["artifacts"][0]["sha256"],
+            f"hex:{hashlib.sha256(archive).hexdigest()}",
+        )
+        self.assertEqual(projection["artifacts"][0]["size"], str(len(archive)))
+
+    def test_independent_manifest_verifier_rejects_closed_contract_attacks(
+        self,
+    ) -> None:
+        archive = b"retained crate bytes"
+
+        def valid() -> dict[str, object]:
+            return {
+                "artifacts": [
+                    {
+                        "name": "proofbound-runtime-verify-0.2.0.crate",
+                        "sha256": hashlib.sha256(archive).digest(),
+                        "size": len(archive),
+                    }
+                ],
+                "binary": package.PACKAGE_BINARY,
+                "package": package.PACKAGE_NAME,
+                "schema": package.PACKAGE_MANIFEST_SCHEMA,
+                "source_revision": "1" * 40,
+                "supported_receipt_schemas": package.SUPPORTED_RECEIPT_SCHEMAS,
+                "version": "0.2.0",
+            }
+
+        cases: dict[str, object] = {}
+        unknown_field = valid()
+        unknown_field["unknown"] = "value"
+        cases["unknown-field"] = unknown_field
+        wrong_schema = valid()
+        wrong_schema["schema"] = "proofbound-runtime-verifier-package-manifest/2"
+        cases["wrong-schema"] = wrong_schema
+        uppercase_revision = valid()
+        uppercase_revision["source_revision"] = "A" * 40
+        cases["uppercase-revision"] = uppercase_revision
+        short_revision = valid()
+        short_revision["source_revision"] = "1" * 39
+        cases["short-revision"] = short_revision
+        wrong_receipt_schemas = valid()
+        wrong_receipt_schemas["supported_receipt_schemas"] = list(
+            reversed(package.SUPPORTED_RECEIPT_SCHEMAS)
+        )
+        cases["receipt-schema-order"] = wrong_receipt_schemas
+        wrong_archive_name = valid()
+        assert isinstance(wrong_archive_name["artifacts"], list)
+        wrong_archive_name["artifacts"][0]["name"] = "other.crate"
+        cases["archive-name"] = wrong_archive_name
+        wrong_digest = valid()
+        assert isinstance(wrong_digest["artifacts"], list)
+        wrong_digest["artifacts"][0]["sha256"] = bytes(32)
+        cases["archive-digest"] = wrong_digest
+        wrong_size = valid()
+        assert isinstance(wrong_size["artifacts"], list)
+        wrong_size["artifacts"][0]["size"] = len(archive) + 1
+        cases["archive-size"] = wrong_size
+
+        for name, value in cases.items():
+            with self.subTest(name=name):
+                encoded = package._encode_cbor(value)
+                decoded = decode_strict(encoded)
+                with self.assertRaises(manifest_verifier.ManifestError):
+                    manifest_verifier.validate_manifest(
+                        decoded,
+                        expected_source_revision="1" * 40,
+                        expected_version="0.2.0",
+                        archive_name="proofbound-runtime-verify-0.2.0.crate",
+                        archive_bytes=archive,
+                    )
+
+    def test_independent_manifest_verifier_rejects_noncanonical_carriers(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive = root / "proofbound-runtime-verify-0.2.0.crate"
+            archive.write_bytes(b"retained crate bytes")
+            manifest = root / "VERIFIER-PACKAGE-MANIFEST.cbor"
+            manifest.write_bytes(b"\xa0\x00")
+            cddl = root / "verifier-package-manifest-v1.cddl"
+            cddl.write_text(manifest_verifier.EXPECTED_CDDL, encoding="utf-8")
+            with self.assertRaises(manifest_verifier.ManifestError):
+                manifest_verifier.verify(
+                    manifest,
+                    archive,
+                    cddl,
+                    "1" * 40,
+                    "0.2.0",
+                )
+
+    def test_independent_manifest_verifier_rejects_cddl_drift(self) -> None:
+        with self.assertRaises(manifest_verifier.ManifestError):
+            manifest_verifier.validate_cddl(
+                manifest_verifier.EXPECTED_CDDL.replace(
+                    '"binary": "pbr-verify"',
+                    '"binary": "substituted"',
+                )
+            )
 
     def test_attack_catalog_is_closed(self) -> None:
         source = ATTACKS.read_text(encoding="utf-8")
@@ -145,6 +251,9 @@ class VerifierPackagePreflightTests(unittest.TestCase):
                 "archive-source-substitution",
                 "archive-manifest-substitution",
                 "archive-vcs-substitution",
+                "manifest-cddl-substitution",
+                "manifest-carrier-substitution",
+                "manifest-identity-substitution",
                 "reproduction-drift",
                 "unreviewed-registry-publication",
             ],
@@ -439,7 +548,7 @@ class VerifierPackagePreflightTests(unittest.TestCase):
                 {
                     ".cargo_vcs_info.json": json.dumps(
                         {
-                            "git": {"sha1": "2" * 40, "dirty": False},
+                            "git": {"sha1": "2" * 40},
                             "path_in_vcs": package.CRATE.as_posix(),
                         }
                     ).encode(),
@@ -464,6 +573,27 @@ class VerifierPackagePreflightTests(unittest.TestCase):
             with (
                 mock.patch.object(package, "_git_head", return_value="1" * 40),
                 mock.patch.object(package, "_git_dirty", return_value=False),
+            ):
+                package._validate_archive(root, archive_path)
+
+    def test_archive_dirty_vcs_identity_matches_selected_source(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self.fixture(directory)
+            (root / ".git").mkdir()
+            archive_path = self.write_archive(
+                root,
+                {
+                    ".cargo_vcs_info.json": json.dumps(
+                        {
+                            "git": {"sha1": "1" * 40, "dirty": True},
+                            "path_in_vcs": package.CRATE.as_posix(),
+                        }
+                    ).encode(),
+                },
+            )
+            with (
+                mock.patch.object(package, "_git_head", return_value="1" * 40),
+                mock.patch.object(package, "_git_dirty", return_value=True),
             ):
                 package._validate_archive(root, archive_path)
 
@@ -568,6 +698,13 @@ class VerifierPackageArtifactTests(unittest.TestCase):
             self.assertEqual(
                 (output / "SHA256SUMS").read_text(encoding="ascii"),
                 f"{digest}  {archive_name}\n",
+            )
+            manifest_verifier.verify(
+                output / "VERIFIER-PACKAGE-MANIFEST.cbor",
+                archive,
+                ROOT / package.PACKAGE_MANIFEST_CDDL,
+                manifest["source_revision"],
+                "0.2.0",
             )
             package._validate_archive(ROOT, archive)
 
