@@ -1,3 +1,6 @@
+# Hashes cover the CPython 3.12 Linux release hosts and the CPython 3.10
+# macOS development host.
 cbor2==5.9.0 \
     --hash=sha256:4cd43d8fc374b31643b2830910f28177a606a7bc84975a62675dd3f2e320fc7b \
-    --hash=sha256:55bea0dd9a7d354e35f4e5fe58ceab393e76962713749dc3a0a64a0e5d19545e
+    --hash=sha256:55bea0dd9a7d354e35f4e5fe58ceab393e76962713749dc3a0a64a0e5d19545e \
+    --hash=sha256:ae6c706ac1d85a0b3cb3395308fd0c4d55e3202b4760773675957e93cdff45fc
