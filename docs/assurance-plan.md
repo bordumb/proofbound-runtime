@@ -22,7 +22,8 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-ACCEPT-012` | Tested/model-only on the development branch | Adopter policy decisions bind independently verified inputs; exact released acceptor observation and external Action dogfood remain open. |
 | `PBR-SCAFFOLD-013` | Tested/model-only on the development branch | Static ELF scaffolding is bounded diagnostic evidence, not a safe policy or a complete dynamic-load inventory. |
 | `PBR-SDK-014` | Tier 1, independently checked source and package contract | Rust, Python, and TypeScript SDKs preserve the separate-process boundary; registry publication and consumer dogfood remain open. |
-| `PBR-DISTRIBUTION-015` | Tier 1 evidence registered; final exact-head replay and release binding pending | The verifier package has a closed preflight, source-payload comparison, byte reproduction, local consumer, and release-retention path; no registry or publisher claim is admitted. |
+| `PBR-DISTRIBUTION-015` | Tier 1 independently reviewed and admitted on exact Runtime main | The verifier package has a closed preflight, source-payload comparison, byte reproduction, local consumer, and release-retention path; no registry or publisher claim is admitted. |
+| `PBR-DISTRIBUTION-016` | Tier 1 isolated public-bundle dogfood pending exact-head hosted evidence | Runtime pins one immutable public Proofbound release and rejects identity, inventory, manifest, checksum, archive, installer, and installed-byte substitution before the later evidence-path cutover. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -66,8 +67,39 @@ The evidence path is:
 
 This claim does not establish verifier semantics. `PBR-VERIFY-006` owns that
 behavior. It does not authenticate a publisher or assert registry-byte
-identity. Specification 0014 remains under review, clean exact-head evidence
-remains open, and registry publication remains blocked.
+identity. The exact reviewed package source merged as Runtime commit `7f989d3`,
+and exact-main Verify run `34896209689` passed. Registry publication remains
+blocked.
+
+## PBR-DISTRIBUTION-016
+
+The production subject is Runtime's consumer for one exact public immutable
+Proofbound tool bundle. Its intended closure contains:
+
+- one canonical Runtime-owned pin for the exact upstream source, successful
+  verification run, producing bundle run, release ID, tag, and seven assets;
+- a closed pin parser that rejects duplicate keys, unknown fields,
+  noncanonical bytes, invalid roles, and non-exact inventories;
+- anonymous re-reading of the hosted release ID, tag, target commit,
+  publication state, immutability state, and asset identities;
+- exact checks of the checksum set, publication manifest, selected platform
+  manifest, archive, and installer before installer execution;
+- an independent comparison between the selected detached manifest and every
+  installed executable's name, size, digest, type, and executable mode; and
+- one isolated required Linux CI job that dogfoods the public bytes without
+  placing them in the admitted evidence path.
+
+The evidence path mutates the pin form, release state, source and tag identity,
+asset inventory, manifest platform and binaries, checksum order and contents,
+each selected downloaded byte string, and one installed executable. The
+upstream public release is Proofbound release `388736918`, source `9512469`,
+Verify run `34899222179`, and bundle run `34900896450`.
+
+This wave establishes distribution-consumer behavior only. It does not prove
+Proofbound correctness, independently authenticate GitHub or a publisher, or
+authorize the public bundle to produce Runtime evidence. That final cutover is
+a separate exact-source change after the dogfood wave passes review and hosted
+verification.
 
 ## PBR-POLICY-002
 

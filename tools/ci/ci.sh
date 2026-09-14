@@ -64,6 +64,8 @@ if selected "preflight"; then
   timed_unit timing-tests python3 -m unittest tools.ci.test_timing
   timed_unit timing-summary-tests python3 -m unittest tools.ci.test_summarize_timings
   timed_unit tool-cache-tests python3 -m unittest tools.ci.test_tool_cache
+  timed_unit proofbound-tool-bundle-pin python3 tools/ci/install_proofbound_tool_bundle.py --check
+  timed_unit proofbound-tool-bundle-tests python3 -m unittest tools.ci.test_install_proofbound_tool_bundle
   timed_unit lean-toolchain-tests python3 -m unittest tools.ci.test_lean_toolchain
   timed_unit wire-transition-tests python3 -m unittest tools.ci.test_wire_transition
   timed_unit wire-v2-vector-tests python3 -m unittest tools.ci.test_wire_v2_vectors
