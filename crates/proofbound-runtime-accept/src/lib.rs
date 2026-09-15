@@ -238,7 +238,7 @@ fn strict_by<'a, T>(values: &'a [T], key: impl Fn(&'a T) -> &'a str) -> bool {
 }
 
 /// Closed, stably ordered rejection reasons.
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum RejectionReason {
     PolicyIdentityMismatch,
@@ -280,38 +280,38 @@ impl RejectionReason {
     #[must_use]
     pub const fn all_codes() -> &'static [&'static str] {
         &[
-            "policy-identity-mismatch",
-            "release-verification-failed",
-            "execution-verification-failed",
-            "diagnostic-profile-not-reusable",
-            "input-verification-failed",
-            "composition-missing",
-            "execution-replay",
-            "execution-schema-mismatch",
-            "runtime-version-mismatch",
-            "platform-mismatch",
             "architecture-mismatch",
-            "plan-id-mismatch",
-            "executable-mismatch",
             "authority-mismatch",
-            "resource-mismatch",
-            "eligibility-mismatch",
-            "freshness-policy-unsupported",
-            "release-project-mismatch",
-            "release-revision-mismatch",
-            "release-payload-mismatch",
-            "release-context-mismatch",
-            "release-directory-mismatch",
-            "release-verifier-mismatch",
-            "claim-missing",
+            "claim-assumption-mismatch",
             "claim-formal-mismatch",
             "claim-linkage-mismatch",
-            "claim-assumption-mismatch",
+            "claim-missing",
             "claim-policy-mismatch",
+            "composition-missing",
+            "diagnostic-profile-not-reusable",
+            "eligibility-mismatch",
+            "executable-mismatch",
+            "execution-replay",
+            "execution-schema-mismatch",
+            "execution-verification-failed",
             "forbidden-assumption",
             "forbidden-exclusion",
             "forbidden-open-obligation",
             "forbidden-tcb-role",
+            "freshness-policy-unsupported",
+            "input-verification-failed",
+            "plan-id-mismatch",
+            "platform-mismatch",
+            "policy-identity-mismatch",
+            "release-context-mismatch",
+            "release-directory-mismatch",
+            "release-payload-mismatch",
+            "release-project-mismatch",
+            "release-revision-mismatch",
+            "release-verification-failed",
+            "release-verifier-mismatch",
+            "resource-mismatch",
+            "runtime-version-mismatch",
         ]
     }
 
@@ -351,6 +351,18 @@ impl RejectionReason {
             Self::ForbiddenOpenObligation => "forbidden-open-obligation",
             Self::ForbiddenTcbRole => "forbidden-tcb-role",
         }
+    }
+}
+
+impl Ord for RejectionReason {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+        self.as_str().as_bytes().cmp(other.as_str().as_bytes())
+    }
+}
+
+impl PartialOrd for RejectionReason {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
     }
 }
 
@@ -922,13 +934,13 @@ mod tests {
         assert_eq!(
             decision.reasons(),
             &[
-                RejectionReason::PolicyIdentityMismatch,
-                RejectionReason::PlanIdMismatch,
-                RejectionReason::ResourceMismatch,
-                RejectionReason::ReleaseDirectoryMismatch,
-                RejectionReason::ReleaseVerifierMismatch,
                 RejectionReason::ClaimFormalMismatch,
                 RejectionReason::ForbiddenAssumption,
+                RejectionReason::PlanIdMismatch,
+                RejectionReason::PolicyIdentityMismatch,
+                RejectionReason::ReleaseDirectoryMismatch,
+                RejectionReason::ReleaseVerifierMismatch,
+                RejectionReason::ResourceMismatch,
             ]
         );
     }
@@ -939,6 +951,9 @@ mod tests {
             toml::from_str(include_str!("../../../tests/attacks/acceptance/v1.toml"))
                 .expect("attack catalog is closed TOML");
         assert_eq!(catalog.schema, "proofbound-runtime-acceptance-attacks/1");
+        assert!(RejectionReason::all_codes()
+            .windows(2)
+            .all(|pair| pair[0].as_bytes() < pair[1].as_bytes()));
         assert_eq!(
             catalog
                 .cases

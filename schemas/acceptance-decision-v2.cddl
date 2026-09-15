@@ -26,20 +26,20 @@ input-role = "acceptance-policy" / "release-envelope" / "compiled-release" /
   "execution-verifier" / "composer" / "acceptor" / "execution-receipt" /
   "execution-verification"
 
-rejection-reason = "policy-identity-mismatch" /
-  "release-verification-failed" / "execution-verification-failed" /
-  "diagnostic-profile-not-reusable" /
-  "input-verification-failed" / "composition-missing" / "execution-replay" /
-  "execution-schema-mismatch" / "runtime-version-mismatch" /
-  "platform-mismatch" / "architecture-mismatch" / "plan-id-mismatch" /
-  "executable-mismatch" / "authority-mismatch" / "resource-mismatch" /
-  "eligibility-mismatch" / "freshness-policy-unsupported" /
-  "release-project-mismatch" / "release-revision-mismatch" /
-  "release-payload-mismatch" / "release-context-mismatch" /
-  "release-directory-mismatch" / "release-verifier-mismatch" /
-  "claim-missing" / "claim-formal-mismatch" / "claim-linkage-mismatch" /
-  "claim-assumption-mismatch" / "claim-policy-mismatch" /
+rejection-reason = "architecture-mismatch" / "authority-mismatch" /
+  "claim-assumption-mismatch" / "claim-formal-mismatch" /
+  "claim-linkage-mismatch" / "claim-missing" / "claim-policy-mismatch" /
+  "composition-missing" / "diagnostic-profile-not-reusable" /
+  "eligibility-mismatch" / "executable-mismatch" / "execution-replay" /
+  "execution-schema-mismatch" / "execution-verification-failed" /
   "forbidden-assumption" / "forbidden-exclusion" /
-  "forbidden-open-obligation" / "forbidden-tcb-role"
+  "forbidden-open-obligation" / "forbidden-tcb-role" /
+  "freshness-policy-unsupported" / "input-verification-failed" /
+  "plan-id-mismatch" / "platform-mismatch" / "policy-identity-mismatch" /
+  "release-context-mismatch" / "release-directory-mismatch" /
+  "release-payload-mismatch" / "release-project-mismatch" /
+  "release-revision-mismatch" / "release-verification-failed" /
+  "release-verifier-mismatch" / "resource-mismatch" /
+  "runtime-version-mismatch"
 
 uint64 = 0..18446744073709551615
