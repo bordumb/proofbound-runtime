@@ -1247,3 +1247,34 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 `9422165568fae0349a3d086fdfab8545d7f3b18a`. This approval-only envelope adds
 no reviewed production, workflow, schema, specification, claim, assumption,
 evidence, or test bytes.
+
+## RT-8 diagnostic-contract foundation approval after RT-7 rebase
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `acf8f24730857a6e7906336b570c61bec7213ab1`
+- **Reviewed head:** `d242b87b0b4b10fe3a86807a141e4c40a0470efc`
+- **Branch:** `codex/rt8-diagnostic-profile`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** No blocking findings.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the rebase preserves the previously approved RT-8
+implementation and introduces no new assurance or product-claim blocker. Every
+prior blocking finding remains resolved: the acceptance-decision v2 transition
+inventory and UTF-8 wire ordering; event operands and drift identities; exact
+Capsec identity binding and all three difference classes; narrowed composer and
+acceptance evidence language; complete dependency-free nested schema and vector
+validation; consistent completion spelling; and Unicode canonicalization
+agreement, including literal non-ASCII fixture bytes and lone-surrogate
+rejection.
+
+The status refresh accurately leaves final hosted admission, the live observer,
+and the plan-draft producer open. The approval applies only to the exact subject
+above. It does not claim that source-level tests prove kernel observation or
+that the RT-8 epic is complete.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`d242b87b0b4b10fe3a86807a141e4c40a0470efc`. This approval-only envelope adds
+no reviewed production, schema, specification, claim, assumption, evidence, or
+test bytes. Any later change to those bytes requires a new exact-head review.
