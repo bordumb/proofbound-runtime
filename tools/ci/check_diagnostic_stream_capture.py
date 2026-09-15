@@ -17,6 +17,7 @@ INVENTORY = [
     "diagnostic-stream-capture-exact-source",
     "diagnostic-stream-capture-fail-closed",
     "diagnostic-stream-capture-mutation-witnesses",
+    "diagnostic-stream-capture-terminal-deadline",
     "diagnostic-stream-capture-terminal-gating",
 ]
 

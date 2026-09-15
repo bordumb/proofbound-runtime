@@ -11,6 +11,7 @@ expected_inventory = [
   "diagnostic-stream-capture-exact-source",
   "diagnostic-stream-capture-fail-closed",
   "diagnostic-stream-capture-mutation-witnesses",
+  "diagnostic-stream-capture-terminal-deadline",
   "diagnostic-stream-capture-terminal-gating",
 ]
 inputs = [
@@ -24,6 +25,8 @@ inputs = [
   "crates/proofbound-runtime-core/src/authority.rs",
   "crates/proofbound-runtime-core/src/lib.rs",
   "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-receipt/Cargo.toml",
+  "crates/proofbound-runtime-receipt/src/lib.rs",
   "crates/proofbound-runtime-diagnose/Cargo.toml",
   "crates/proofbound-runtime-diagnose/src/artifact.rs",
   "crates/proofbound-runtime-diagnose/src/lib.rs",
@@ -56,6 +59,8 @@ paths = [
   "crates/proofbound-runtime-core/src/authority.rs",
   "crates/proofbound-runtime-core/src/lib.rs",
   "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-receipt/Cargo.toml",
+  "crates/proofbound-runtime-receipt/src/lib.rs",
   "crates/proofbound-runtime-diagnose/Cargo.toml",
   "crates/proofbound-runtime-diagnose/src/artifact.rs",
   "crates/proofbound-runtime-diagnose/src/lib.rs",

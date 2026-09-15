@@ -124,7 +124,9 @@ all object resolution explicitly unresolved. It passed exact-head Verify run
 `35018691928` and merged unsigned as `a89b92d`; exact-main verification is in
 progress. The dependent `PBR-OBSERVER-027` source wave adds independently
 bounded, cancellable, nonblocking stdout and stderr drains so pipe saturation
-cannot block on an unread stream; its review and hosted admission are open.
+cannot block on an unread stream, and terminal collection cancels and fails
+closed at a fixed monotonic deadline instead of waiting indefinitely; its
+re-review and hosted admission are open.
 Object resolution, command integration, the native attack corpus, and release
 binding remain open.
 The RT-7 current-integration source merged as `47c5ad2` and passed exact-main

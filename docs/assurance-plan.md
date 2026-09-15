@@ -750,8 +750,8 @@ publication to a released `pbr-diagnose` command.
 
 The current subject is the standard-stream owner inside the separate Linux
 diagnostic trace. The spawn transition takes both configured child pipes, makes
-them nonblocking, and starts one independently bounded, cancellable drain for
-each before it returns the spawned trace state. Each active drain retains no
+them nonblocking, and starts two independently bounded drains with one shared
+cancellation signal before it returns the spawned trace state. Each active drain retains no
 more than its declared prefix and continues reading after truncation until end
 of file. The exact stdout and stderr limits remain distinct.
 
@@ -762,14 +762,22 @@ protocol selects publication. A missing pipe, reader-thread creation failure,
 read failure, or join failure is typed and prevents publication. On abandoned
 states, declaration and drop order makes the child guard terminate and wait
 before cancellation and join of the outstanding drain handles. Nonblocking
-polling makes the cancellation path independent of pipe closure.
+polling makes the cancellation path independent of pipe closure. Terminal
+collection has a fixed monotonic deadline. An unfinished reader causes shared
+cancellation, joins both handles, and returns a typed timeout without publishing
+captures. Retaining the root pidfd for active-trace ownership and an exact raw
+terminal wait that reaps the root each disarm its retained numeric child cleanup
+guard. Active-trace destruction consequently terminates only through pidfds.
+Early setup destruction attempts child termination and wait; it does not claim
+that infallible drop cleanup is observable.
 
-The Rust tests cover independent limits plus exact, truncated, and zero-limit
-capture. The independent checker byte-pins the load-bearing spawn, reader,
-completion, drain, and adapter transitions. Its mutations remove one pipe,
-cross-wire a limit, stop reading at truncation, remove startup rollback, reverse
-drop order, weaken exact-tree completion, and move pure publication selection
-ahead of output collection. This is source evidence. Linux pipe behavior,
+The Rust tests cover independent limits plus exact, truncated, zero-limit, and
+terminal-timeout capture. The independent checker byte-pins the load-bearing
+spawn, reader, deadline, cancellation, raw-wait cleanup ownership, completion, drain, and adapter
+transitions. Its mutations remove one pipe, cross-wire a limit, stop reading at
+truncation, remove the terminal deadline, remove timeout cancellation, remove
+root-reap disarming, remove startup rollback, reverse drop order, weaken exact-tree completion, and move
+pure publication selection ahead of output collection. This is source evidence. Linux pipe behavior,
 scheduler progress, trace-tree truth, cgroup placement, wall-time enforcement,
 native pipe-saturation attacks, command integration, and release binding remain
 open. `PBR-DIAGNOSTIC-STREAM-AX-022` retains the ptrace terminal-reporting,

@@ -7,6 +7,8 @@ tier = 0
 expected_inventory = [
   "proofbound_runtime_linux::trace::tests::diagnostic_output_limits_keep_streams_independent",
   "proofbound_runtime_linux::trace::tests::diagnostic_stream_capture_drains_after_its_retained_prefix",
+  "proofbound_runtime_linux::trace::tests::diagnostic_stream_completion_cancels_at_its_terminal_deadline",
+  "proofbound_runtime_linux::trace::tests::traced_child_numeric_cleanup_disarms_for_pidfd_and_raw_reap",
 ]
 inputs = [
   "Cargo.lock",
@@ -19,6 +21,8 @@ inputs = [
   "crates/proofbound-runtime-core/src/authority.rs",
   "crates/proofbound-runtime-core/src/lib.rs",
   "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-receipt/Cargo.toml",
+  "crates/proofbound-runtime-receipt/src/lib.rs",
   "crates/proofbound-runtime-diagnose/Cargo.toml",
   "crates/proofbound-runtime-diagnose/src/artifact.rs",
   "crates/proofbound-runtime-diagnose/src/lib.rs",

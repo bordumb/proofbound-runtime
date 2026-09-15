@@ -1,9 +1,9 @@
 schema = "proofbound-claim/1"
 id = "PBR-OBSERVER-027"
 title = "Diagnostic standard streams drain concurrently within independent bounds"
-statement = "For the separate Linux diagnostic trace source API, successful child creation takes the exact configured stdout and stderr pipes, makes them nonblocking, and starts one independently cancellable concurrent drain for each before it returns the spawned trace state; each active drain retains at most its declared byte limit while continuing to read through end of file and records whether bytes were truncated; natural completion returns both captures only after the exact traced process tree is empty; forced termination returns both captures only after the exact tree drain succeeds; a missing pipe, nonblocking configuration failure, drain-thread creation failure, read failure, or join failure returns a closed error and prevents diagnostic publication; and early typestate destruction terminates and waits for the child, cancels the nonblocking drains, and joins them."
-public_language = "The separate diagnostic trace has source-level bounded, cancellable, concurrent stdout and stderr drains. Each nonblocking stream retains only its independent byte prefix, continues draining after truncation, and becomes available only after exact natural completion or successful forced tree drain. Registered Rust tests and an independent exact-source checker cover the bounded drain and fail-closed completion structure. They do not prove Linux pipe behavior, process-tree truth, cgroup placement, wall-time enforcement, command integration, or released-artifact behavior."
-subject = "rust:proofbound_runtime_linux::trace::TraceOutputCapture"
+statement = "For the separate Linux diagnostic trace, raw nonblocking operation, and adapter source path, successful child creation takes the exact configured stdout and stderr pipes, makes them nonblocking, and starts one concurrent drain for each with shared cancellation before it returns the spawned trace state; each active drain retains at most its declared byte limit while continuing to read through end of file and records whether bytes were truncated; natural completion returns both captures only after the exact traced process tree is empty; forced termination returns both captures only after the exact tree drain succeeds; terminal collection waits under one fixed monotonic deadline and, if either drain remains unfinished, cancels and joins both drains before it returns a closed timeout; retaining the root pidfd before active-trace ownership and a raw exact terminal wait that reaps the root each disarm the numeric child cleanup guard; a missing pipe, nonblocking configuration failure, drain-thread creation failure, read failure, join failure, or terminal timeout returns a closed error and prevents diagnostic publication; and early setup-state destruction attempts child termination and wait, while active-trace destruction terminates through retained pidfds, cancels the nonblocking drains, and joins them."
+public_language = "The separate diagnostic trace has source-level bounded concurrent stdout and stderr drains with shared cancellation. Each nonblocking stream retains only its independent byte prefix and continues draining after truncation. Captures become available only after exact natural completion or successful forced tree drain, and terminal collection has a fixed monotonic timeout that cancels both drains and fails closed. Retaining the root pidfd and an exact raw terminal wait that reaps the root each disarm later numeric child cleanup. Registered Rust tests and an independent exact-source checker cover the bounded drain, cleanup ownership, and fail-closed completion structure. They do not prove Linux pipe behavior, scheduler progress, process-tree truth, cgroup placement, wall-time enforcement, command integration, or released-artifact behavior."
+subject = "rust:proofbound_runtime_linux::trace+proofbound_runtime_linux::sys::set_nonblocking+proofbound_runtime_diagnose_linux::adapter"
 profile = "ledger"
 tier = 1
 evidence = [
@@ -17,7 +17,7 @@ assumptions = [
 open_obligations = [
   "Run the complete source, compilation, unit, and independent-check evidence in hosted exact-head verification before merge.",
   "Place the same stopped traced child in its prepared cgroup before target release, apply one absolute plan wall-time deadline, and couple cleanup failure to incomplete publication.",
-  "Exercise pipe saturation, asymmetric limits, read failure, timeout, forced drain, and descendant-held pipe descriptors on both supported native architectures.",
+  "Exercise pipe saturation, asymmetric limits, read failure, terminal stream timeout, forced drain, and descendant-held pipe descriptors on both supported native architectures.",
   "Connect both bounded captures to the separate pbr-diagnose command without treating diagnostic output as reusable production evidence.",
   "Bind the exact released diagnostic executable and observer mechanism identity before describing this collector as released.",
 ]
@@ -37,6 +37,8 @@ source_roots = [
   "crates/proofbound-runtime-core/src/authority.rs",
   "crates/proofbound-runtime-core/src/lib.rs",
   "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-receipt/Cargo.toml",
+  "crates/proofbound-runtime-receipt/src/lib.rs",
   "crates/proofbound-runtime-diagnose/Cargo.toml",
   "crates/proofbound-runtime-diagnose/src/artifact.rs",
   "crates/proofbound-runtime-diagnose/src/lib.rs",

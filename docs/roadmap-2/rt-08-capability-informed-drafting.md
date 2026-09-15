@@ -50,7 +50,8 @@ inventing object resolution. Its source and evidence are implemented and await
 independent review and hosted admission. The dependent `PBR-OBSERVER-027`
 source and evidence start independent bounded stdout and stderr drains before
 the spawned trace state returns, continue draining after a retained prefix is
-full, and gate publication on terminal collection. They also await independent
+full, and gate publication on fixed-deadline terminal collection that cancels
+and fails closed when either reader withholds completion. They also await independent
 review and hosted admission. Cgroup and wall-time coupling, object resolution,
 command integration, the native attack corpus, and release binding remain open.
 

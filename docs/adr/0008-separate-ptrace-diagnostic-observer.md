@@ -66,16 +66,24 @@ caller cannot supply a command, acknowledgement value, expected identity, or
 different release channel to advance the session.
 
 The trace session creates separate stdout and stderr pipes, makes both
-nonblocking, and starts one cancellable bounded reader for each immediately
+nonblocking, and starts one bounded reader for each with shared cancellation immediately
 after child creation. Each active reader retains only its independently
 declared prefix but continues reading to end of file so a target cannot block
 on a full pipe after the retained prefix is complete.
 The session exposes both captures only after exact natural tree completion or
 a successful forced tree drain. A missing pipe, reader-thread creation failure,
-read failure, or join failure prevents publication. When a trace typestate is
-abandoned, field ownership orders child termination and wait before cancellation
-and drain-thread join. Nonblocking reads make that cancellation bounded by the
-poll interval. This source order does not prove Linux pipe progress or
+read failure, or join failure prevents publication. Terminal collection uses a
+fixed monotonic deadline. If either reader remains unfinished, the session
+cancels and joins both readers and returns a typed timeout instead of waiting
+indefinitely. Once the trace retains the root pidfd for active ownership, it
+disarms the standard-library numeric child cleanup guard. A raw exact wait that
+reaps the root also records the guard as reaped before terminal collection.
+Active-trace destruction therefore terminates only through retained pidfds, and
+later cleanup cannot send a numeric-PID kill after reuse. When an earlier setup
+typestate is abandoned, field ownership orders an attempted child termination
+and wait before cancellation and drain-thread join. Nonblocking
+reads make that cancellation bounded by the poll interval under the registered
+scheduler and atomic-visibility premises. This source order does not prove Linux pipe progress or
 process-tree completeness.
 
 The separate diagnostic Linux crate presents one coupled adapter instead of

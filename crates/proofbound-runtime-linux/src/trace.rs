@@ -20,6 +20,7 @@ use crate::{
 };
 
 const TRACE_POLL_INTERVAL: Duration = Duration::from_millis(1);
+const TRACE_STREAM_FINISH_TIMEOUT: Duration = Duration::from_secs(5);
 const SIGNAL_STOP: i32 = 19;
 const SIGNAL_TRAP: i32 = 5;
 const SIGNAL_SYSCALL: i32 = SIGNAL_TRAP | 0x80;
@@ -201,7 +202,7 @@ impl PreparedTraceCommand<'_> {
             .command
             .spawn()
             .map_err(|_| TraceStartupError::SpawnFailed)?;
-        let mut child = TraceChild(child);
+        let mut child = TraceChild::new(child);
         let process = TraceProcessId::new(child.0.id())?;
         let streams = TraceStreamReaders::start(&mut child, self.output_limits)?;
         drop(self.launcher_channel);
@@ -297,12 +298,49 @@ pub fn prepare_traced_launcher<'descriptor>(
 }
 
 #[derive(Debug)]
-struct TraceChild(Child);
+struct TraceChild(Child, TraceChildCleanupState);
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum TraceChildCleanupState {
+    Live,
+    IdentityStableHandleOwned,
+    ReapedByTraceWait,
+}
+
+impl TraceChildCleanupState {
+    const fn requires_cleanup(self) -> bool {
+        matches!(self, Self::Live)
+    }
+
+    fn record_trace_wait_reap(&mut self) {
+        *self = Self::ReapedByTraceWait;
+    }
+
+    fn record_identity_stable_handle(&mut self) {
+        *self = Self::IdentityStableHandleOwned;
+    }
+}
 
 impl TraceChild {
+    const fn new(child: Child) -> Self {
+        Self(child, TraceChildCleanupState::Live)
+    }
+
+    fn disarm_after_trace_wait(&mut self) {
+        self.1.record_trace_wait_reap();
+    }
+
+    fn disarm_after_identity_stable_handle(&mut self) {
+        self.1.record_identity_stable_handle();
+    }
+
     fn terminate_and_wait(&mut self) {
+        if !self.1.requires_cleanup() {
+            return;
+        }
         let _ = self.0.kill();
         let _ = self.0.wait();
+        self.1.record_trace_wait_reap();
     }
 }
 
@@ -368,6 +406,23 @@ impl TraceStreamReaders {
     }
 
     fn finish(&mut self) -> Result<TraceOutputCapture, TraceObservationError> {
+        let deadline = Instant::now()
+            .checked_add(TRACE_STREAM_FINISH_TIMEOUT)
+            .ok_or(TraceObservationError::StreamDrainTimedOut)?;
+        self.finish_before(deadline)
+    }
+
+    fn finish_before(
+        &mut self,
+        deadline: Instant,
+    ) -> Result<TraceOutputCapture, TraceObservationError> {
+        while !self.capture_threads_finished() {
+            if Instant::now() >= deadline {
+                self.cancel_and_join();
+                return Err(TraceObservationError::StreamDrainTimedOut);
+            }
+            std::thread::sleep(TRACE_POLL_INTERVAL);
+        }
         let stdout = join_trace_capture(self.stdout.take());
         let stderr = join_trace_capture(self.stderr.take());
         Ok(TraceOutputCapture {
@@ -375,10 +430,18 @@ impl TraceStreamReaders {
             stderr: stderr?,
         })
     }
-}
 
-impl Drop for TraceStreamReaders {
-    fn drop(&mut self) {
+    fn capture_threads_finished(&self) -> bool {
+        self.stdout
+            .as_ref()
+            .is_none_or(std::thread::JoinHandle::is_finished)
+            && self
+                .stderr
+                .as_ref()
+                .is_none_or(std::thread::JoinHandle::is_finished)
+    }
+
+    fn cancel_and_join(&mut self) {
         self.cancellation.store(true, Ordering::Release);
         if let Some(stdout) = self.stdout.take() {
             let _ = stdout.join();
@@ -386,6 +449,12 @@ impl Drop for TraceStreamReaders {
         if let Some(stderr) = self.stderr.take() {
             let _ = stderr.join();
         }
+    }
+}
+
+impl Drop for TraceStreamReaders {
+    fn drop(&mut self) {
+        self.cancel_and_join();
     }
 }
 
@@ -469,6 +538,14 @@ struct TraceSession {
 impl TraceSession {
     fn finish_streams(&mut self) -> Result<TraceOutputCapture, TraceObservationError> {
         self.streams.finish()
+    }
+
+    fn record_root_reaped(&mut self) {
+        self._child.disarm_after_trace_wait();
+    }
+
+    fn record_root_identity_stable_handle(&mut self) {
+        self._child.disarm_after_identity_stable_handle();
     }
 }
 
@@ -644,6 +721,7 @@ impl TraceReady {
             let process_handle = crate::sys::trace_open_process_handle(root.get())
                 .map_err(|_| TraceStartupError::ProcessHandleFailed)?;
             crate::sys::trace_syscall(root.get()).map_err(|_| TraceStartupError::ResumeFailed)?;
+            self.session.record_root_identity_stable_handle();
             Ok(ActiveTrace {
                 session: self.session,
                 processes: BTreeMap::from([(root, TraceeState::observing(root))]),
@@ -1068,6 +1146,9 @@ impl ActiveTrace {
     ) -> Result<(), TraceObservationError> {
         if self.processes.remove(&process).is_none() {
             return Err(TraceObservationError::ProcessUnknown);
+        }
+        if process == self.session.process {
+            self.session.record_root_reaped();
         }
         self.remove_unused_process_handles();
         Ok(())
@@ -2228,6 +2309,8 @@ pub enum TraceObservationError {
     DrainTimedOut,
     /// One standard-stream drain failed or could not be joined.
     StreamReadFailed,
+    /// The standard-stream drains did not finish before their terminal deadline.
+    StreamDrainTimedOut,
 }
 
 impl TraceObservationError {
@@ -2262,6 +2345,7 @@ impl TraceObservationError {
             Self::DrainFailed => "diagnostic.trace.drain.failed",
             Self::DrainTimedOut => "diagnostic.trace.drain.timed-out",
             Self::StreamReadFailed => "diagnostic.trace.stream.read-failed",
+            Self::StreamDrainTimedOut => "diagnostic.trace.stream-drain.timed-out",
         }
     }
 }
@@ -2546,6 +2630,7 @@ mod tests {
             TraceObservationError::DrainFailed,
             TraceObservationError::DrainTimedOut,
             TraceObservationError::StreamReadFailed,
+            TraceObservationError::StreamDrainTimedOut,
         ]
         .map(TraceObservationError::code);
         codes.sort_unstable();
@@ -2583,6 +2668,51 @@ mod tests {
         let limits = TraceOutputLimits::new(OutputByteLimit::new(17), OutputByteLimit::new(29));
         assert_eq!(limits.stdout().get(), 17);
         assert_eq!(limits.stderr().get(), 29);
+    }
+
+    #[test]
+    fn traced_child_numeric_cleanup_disarms_for_pidfd_and_raw_reap() {
+        let mut state = TraceChildCleanupState::Live;
+        assert!(state.requires_cleanup());
+        state.record_identity_stable_handle();
+        assert_eq!(state, TraceChildCleanupState::IdentityStableHandleOwned);
+        assert!(!state.requires_cleanup());
+        state.record_trace_wait_reap();
+        assert_eq!(state, TraceChildCleanupState::ReapedByTraceWait);
+        assert!(!state.requires_cleanup());
+    }
+
+    #[test]
+    fn diagnostic_stream_completion_cancels_at_its_terminal_deadline() {
+        struct PendingReader;
+
+        impl io::Read for PendingReader {
+            fn read(&mut self, _buffer: &mut [u8]) -> io::Result<usize> {
+                Err(io::Error::from(io::ErrorKind::WouldBlock))
+            }
+        }
+
+        let cancellation = Arc::new(AtomicBool::new(false));
+        let stdout_cancellation = Arc::clone(&cancellation);
+        let stderr_cancellation = Arc::clone(&cancellation);
+        let stdout = std::thread::spawn(move || {
+            capture_trace_stream(PendingReader, OutputByteLimit::new(1), &stdout_cancellation)
+        });
+        let stderr = std::thread::spawn(move || {
+            capture_trace_stream(PendingReader, OutputByteLimit::new(1), &stderr_cancellation)
+        });
+        let mut readers = TraceStreamReaders {
+            stdout: Some(stdout),
+            stderr: Some(stderr),
+            cancellation,
+        };
+
+        assert_eq!(
+            readers.finish_before(Instant::now()),
+            Err(TraceObservationError::StreamDrainTimedOut)
+        );
+        assert!(readers.stdout.is_none());
+        assert!(readers.stderr.is_none());
     }
 
     #[cfg(target_os = "linux")]
