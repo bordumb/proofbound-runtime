@@ -2991,16 +2991,42 @@ the corrected exact subject receives independent review and hosted admission.
 - **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
   may use this subject.
 
-The review confirmed that the production redirect guard, canonical API origin,
-checkout-credential removal, isolated installer working directory and
-environment, workflow placement checks, and honest pending claim status close
-the four original blockers. One new blocking evidence defect remains: the
-redirect test calls the guard directly instead of reaching it through the
-production `_fetch` path. Removing the production guard would therefore leave
-the purported falsifier green.
+The review confirmed that original blockers one, two, and four are closed. The
+workflow-placement and installer environment and working-directory checks close
+part of original blocker three. Its redirect-leakage falsifier remains open:
+the test calls the guard directly instead of reaching it through the production
+`_fetch` path. Removing the production guard would therefore leave the
+purported falsifier green.
 
 The correction must drive a controlled redirect through `_fetch`, prove that
 the production opener installs the guard, prove that no redirected URL is
 opened, and use that production path to confirm that a public release-asset
 request carries no authorization header. The corrected exact head requires a
 new independent review.
+
+## RT-7 Proofbound metadata causal-falsifier review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `a89b92daa0a6f977c4a090b3f9a2e553fc94884d`
+- **Reviewed head:** `159311f2983f6139f2b4c1a87d9109e5c64b3436`
+- **Branch:** `codex/ci-proofbound-api-quota`
+- **Method:** Complete exact-range static security re-review. The reviewer
+  changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The production and evidence blocker from the preceding review is closed. The
+test now enters `_fetch`, confirms that it installs the credential redirect
+handler, proves that no redirect target is opened, and sends a public asset
+request through that same path without an authorization header. The canonical
+API origin, protected checkout isolation, installer working-directory and
+environment closure, workflow-placement falsifiers, and pending status for both
+affected distribution claims remain intact.
+
+One documentation blocker remains. The preceding review record inaccurately
+called the redirect falsifier gap new and said all four original blockers were
+closed. The initial review had included causal redirect coverage in blocker
+three. The history must state that original blockers one, two, and four were
+closed and that blocker three was only partially closed. The corrected exact
+head requires a new independent review.
