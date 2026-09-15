@@ -189,18 +189,14 @@ jobs:
           cargo install --locked just --version 1.46.0
           cargo install --locked cargo-deny --version 0.20.2
 
-      - name: Install pinned Proofbound tools
+      - name: Install the exact public Proofbound bundle
         run: >-
-          cargo install
-          --locked
-          --git https://github.com/bordumb/proof-bound
-          --rev 1084e0d1dc5685933b705d8844af5b123399e0b9
-          proofbound-cli
-          proofbound-verify
-          proofbound-adapter-aeneas
-          proofbound-adapter-test
-          proofbound-adapter-kani
-          proofbound-adapter-lean
+          python3 tools/ci/install_proofbound_tool_bundle.py
+          --platform linux-${{ matrix.architecture }}
+          --destination "$RUNNER_TEMP/proofbound-tools"
+
+      - name: Add the identity-checked public tools to PATH
+        run: echo "$RUNNER_TEMP/proofbound-tools" >> "$GITHUB_PATH"
 
       - name: Verify Proofbound executables
         run: |
@@ -210,6 +206,7 @@ jobs:
           command -v proofbound-adapter-test
           command -v proofbound-adapter-kani
           command -v proofbound-adapter-lean
+          command -v proofbound-adapter-node
 
       - name: Install pinned Kani verifier
         run: |

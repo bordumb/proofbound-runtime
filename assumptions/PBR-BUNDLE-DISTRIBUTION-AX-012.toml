@@ -4,10 +4,11 @@ statement = "The identified GitHub repository and release service, repository co
 category = "external-provider"
 owner = "Proofbound Runtime release maintainer"
 rationale = "The consumer verifies pinned byte digests and resolves the tag to the pinned commit, but GitHub supplies the tag object, immutable-release state, asset inventory, and public bytes. Runtime does not independently prove GitHub's service behavior or repository control identity."
-scope = "Only the hosted-distribution and immutable-release interpretation of PBR-DISTRIBUTION-016."
+scope = "Only the hosted-distribution and immutable-release interpretation of PBR-DISTRIBUTION-016, including protected evidence and release-production bundle retrieval."
 affected_claims = ["PBR-DISTRIBUTION-016"]
 review_evidence = [
   ".github/workflows/ci.yml",
+  ".github/workflows/release.yml",
   "docs/specs/0014_public_compatibility_and_distribution.md",
   "proofbound/toolchains/proofbound-tool-bundle-pin.json",
   "tools/ci/install_proofbound_tool_bundle.py",

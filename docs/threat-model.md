@@ -146,9 +146,11 @@ interpreter and standard library, cryptographic digest implementation, pinned
 upstream installer, hosted runner, process behavior, and filesystem. The
 consumer resolves the exact tag target, verifies the release and closed asset
 inventory, binds the embedded and detached manifests byte-for-byte, and checks
-installed executable identities before use. These checks constrain the
-observed bytes under the registered premises. They do not authenticate GitHub
-independently, prove the upstream tools, or remove the trusted roles.
+installed executable identities before use. Each protected evidence shard and
+release architecture performs this installation independently before it uses
+Proofbound. These checks constrain the observed bytes under the registered
+premises. They do not authenticate GitHub independently, prove the upstream
+tools, or remove the trusted roles.
 
 ## Versioned enforced boundary
 

@@ -1,8 +1,8 @@
 schema = "proofbound-claim/1"
 id = "PBR-DISTRIBUTION-016"
 title = "Runtime consumes one exact immutable Proofbound tool bundle"
-statement = "Under the registered distribution and toolchain premises, the Runtime consumer accepts one canonical pin for a public immutable Proofbound exact-source release, resolves the hosted tag to the pinned source, rechecks the exact release identity and closed asset inventory, binds the detached and embedded platform manifests, verifies every selected byte identity and publication link before execution, and dogfoods those pinned bytes in an isolated hosted CI job without giving them authority over Runtime evidence."
-public_language = "Under its registered GitHub, TLS, Python, installer, runner, process, filesystem, and digest premises, Runtime's Proofbound tool consumer rejects noncanonical pins, wrong tag targets, mutable or substituted releases, changed inventories, carriers, manifests, checksums, archives, installers, and installed executable bytes. An isolated hosted CI job installs and executes the exact public bundle identities committed in Runtime, while the existing evidence path remains unchanged during the parity wave. This is bounded distribution-consumer evidence; it does not authenticate GitHub independently or prove that the upstream build system produced correct behavior."
+statement = "Under the registered distribution and toolchain premises, the Runtime consumer accepts one canonical pin for a public immutable Proofbound exact-source release, resolves the hosted tag to the pinned source, rechecks the exact release identity and closed asset inventory, binds the detached and embedded platform manifests, verifies every selected byte identity and publication link before execution, and configures each protected Runtime evidence shard and release-production architecture to use only those verified bytes."
+public_language = "Under its registered GitHub, TLS, Python, installer, runner, process, filesystem, and digest premises, Runtime's Proofbound tool consumer rejects noncanonical pins, wrong tag targets, mutable or substituted releases, changed inventories, carriers, manifests, checksums, archives, installers, and installed executable bytes. The protected evidence and release workflows require each job to install the exact public bundle identity committed in Runtime before it executes Proofbound. This is bounded distribution-consumer and workflow evidence; it does not authenticate GitHub independently or prove that the upstream build system produced correct behavior."
 subject = "distribution:proofbound-tool-bundle"
 profile = "ledger"
 tier = 1
@@ -14,7 +14,7 @@ assumptions = [
   "PBR-BUNDLE-TOOLCHAIN-AX-013",
 ]
 open_obligations = [
-  "Replace cross-repository Proofbound source compilation in protected CI and release production only after the independently reviewed public-bundle dogfood wave passes at an exact Runtime main revision.",
+  "Confirm the protected evidence and release-production cutover through independent exact-head review and one successful exact-head hosted Verify run before recording this claim as complete.",
 ]
 out_of_scope = [
   "Correctness of the Proofbound binaries, pinned Proofbound installer, Rust compiler, GitHub Actions runner, GitHub release service, TLS implementation, Python interpreter, archive implementation, cryptographic digest implementation, filesystem, process implementation, or operating system.",
@@ -23,6 +23,7 @@ out_of_scope = [
 ]
 source_roots = [
   ".github/workflows/ci.yml",
+  ".github/workflows/release.yml",
   "assumptions/PBR-BUNDLE-DISTRIBUTION-AX-012.toml",
   "assumptions/PBR-BUNDLE-TOOLCHAIN-AX-013.toml",
   "claims/PBR-DISTRIBUTION-016.toml",
@@ -38,5 +39,6 @@ source_roots = [
   "tools/ci/install_proofbound_tool_bundle.py",
   "tools/ci/manifests.sh",
   "tools/ci/test_install_proofbound_tool_bundle.py",
+  "tools/ci/test_release_workflow.py",
   "tools/ci/test_required_workflow.py",
 ]

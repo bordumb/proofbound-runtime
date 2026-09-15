@@ -1,9 +1,8 @@
 # RT-7 integration record: prelaunch packaging and distribution
 
-**Status:** RT-7.2 verifier package merged and admitted; the first public
-immutable Proofbound exact-source bundle is published; Runtime bundle dogfood
-is in progress; registry publication and the current-integration record remain
-open
+**Status:** RT-7.2 verifier package and Runtime public-bundle dogfood merged and
+admitted; protected evidence and release cutover is in progress; registry
+publication and the current-integration record remain open
 
 **Primary owner:** Proofbound Runtime
 
@@ -66,11 +65,12 @@ the release reports `immutable=true`.
 Runtime's canonical pin records the exact release, source, verification,
 workflow, asset digest, and byte-size identities in
 `proofbound/toolchains/proofbound-tool-bundle-pin.json`. The first consumer
-wave installs those public bytes only in an isolated required dogfood job. It
-does not give the new path authority over evidence. Replacing the existing
-source-build path follows only after this wave passes independent review and
-exact-main hosted verification. The product label does not participate in
-selection.
+wave installed those public bytes only in an isolated required dogfood job. It
+passed independent review, merged as unsigned Runtime commit `f2a06de`, and
+passed exact-main Verify run `34908515545`. The current separate wave replaces
+the existing source-build path in protected evidence and release production.
+It remains open until its independent review and exact-head hosted gate pass.
+The product label does not participate in selection.
 
 ## RT-7.2 implementation checkpoint
 
@@ -98,9 +98,9 @@ passed all lanes. Specification 0014 was included in that exact review. A
 successful local or hosted package build is not registry dogfood, and the
 workflow contains no registry publication credential or write step.
 
-## Public Proofbound bundle dogfood checkpoint
+## Public Proofbound bundle and cutover checkpoint
 
-The next claim-sized Runtime wave adds:
+The admitted dogfood wave added:
 
 - a canonical Runtime-owned pin with one exact public immutable release and
   seven exact asset identities;
@@ -118,9 +118,13 @@ The next claim-sized Runtime wave adds:
 - an isolated required Linux CI job that installs and executes the public
   bundle while the admitted source-build evidence path stays unchanged.
 
-This staged parity wave is not a compatibility period. It limits the
-supply-chain blast radius before a separate reviewed cutover removes the Git
-source build from protected CI and release production.
+The dogfood wave was not a compatibility period. It limited the supply-chain
+blast radius before the current separate reviewed cutover. The cutover removes
+the Git source build and cross-job tool artifact from protected CI. Each fresh
+evidence shard installs and verifies the public bundle directly. Each release
+architecture selects its matching public platform bundle and verifies all
+seven executables before the base gate runs. The cutover is not admitted until
+independent review and exact-head hosted verification pass.
 
 The registered premises keep GitHub, repository controls, DNS, TLS, Python,
 the digest implementation, the pinned upstream installer, the hosted runner,

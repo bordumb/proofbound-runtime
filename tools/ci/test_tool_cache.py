@@ -28,7 +28,7 @@ class ExactToolCacheTests(unittest.TestCase):
         workflow = VERIFY_WORKFLOW.read_text(encoding="utf-8")
 
         formal_start = workflow.index("\n  formal:\n")
-        formal_end = workflow.index("\n  proofbound-tools:\n")
+        formal_end = workflow.index("\n  fresh-evidence:\n")
         evidence_start = workflow.index("\n  fresh-evidence:\n")
         native_start = workflow.index("\n  native:\n")
         jobs = (

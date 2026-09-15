@@ -21,7 +21,8 @@ INVENTORY = [
     "tool-bundle-publication-manifest-linkage",
     "tool-bundle-checksum-order-and-identity",
     "tool-bundle-verify-before-execute",
-    "tool-bundle-ci-dogfood",
+    "tool-bundle-protected-evidence-cutover",
+    "tool-bundle-release-production-cutover",
 ]
 
 
@@ -36,6 +37,7 @@ def main() -> int:
             "-m",
             "unittest",
             "tools.ci.test_install_proofbound_tool_bundle",
+            "tools.ci.test_release_workflow",
             "tools.ci.test_required_workflow",
         ],
     )

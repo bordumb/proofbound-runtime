@@ -4,7 +4,7 @@
 - **Priority:** `near-term`
 - **Kind:** `workflow`
 - **Created:** 2026-09-09
-- **Last updated:** 2026-09-14
+- **Last updated:** 2026-09-15
 - **Runtime claim:** `none`
 - **Runtime milestone:** Milestone A: sustainable assurance development
 - **Proofbound target:** tool-bundle workflow, manifest schema, and installer
@@ -122,16 +122,18 @@ existing receipt is reinterpreted.
 
 ## Local treatment
 
-Runtime's admitted evidence path still compiles all required tools from exact
-Proofbound revision `1084e0d`. The current dogfood wave separately pins public
-immutable release `388736918`, resolves its tag to the pinned source, validates
-its seven exact asset identities, binds its embedded and detached manifests,
-and installs it only in an isolated required CI job. The public bytes do not
-yet run evidence units. The source-build cutover remains a separate reviewed
-wave. Claim-specific assumptions retain GitHub, repository controls, DNS, TLS,
-Python, digest, installer, runner, process, and filesystem roles. Runtime does
-not claim that the release channel or an adjacent checksum independently
-authenticates a publisher.
+Runtime's isolated dogfood wave pins public immutable release `388736918`,
+resolves its tag to the pinned source, validates its seven exact asset
+identities, binds its embedded and detached manifests, and installs it in a
+required CI job. That wave passed independent review, merged as unsigned
+Runtime commit `f2a06de`, and passed exact-main Verify run `34908515545`.
+The current separate cutover makes every protected evidence shard and release
+architecture install and verify the selected platform bundle independently
+before Proofbound runs. The cutover claim remains open until independent
+exact-head review and hosted verification pass. Claim-specific assumptions
+retain GitHub, repository controls, DNS, TLS, Python, digest, installer,
+runner, process, and filesystem roles. Runtime does not claim that the release
+channel or an adjacent checksum independently authenticates a publisher.
 
 ## Upstream handoff
 
@@ -167,6 +169,8 @@ tag, closed seven-asset publication manifest, immutable-release gate, and
 anonymous retrieval check. Exact-main Verify run `34899222179` and
 bundle/publication run `34900896450` passed. Immutable public release
 `388736918` binds source `9512469`, verification run `34899222179`, and bundle
-run `34900896450`. Resolution remains open until Runtime's isolated dogfood and
-later source-build cutover pass without changing evidence meaning or `--fresh`
-behavior.
+run `34900896450`. Runtime's isolated dogfood merged as `f2a06de` after
+independent review and passed exact-main Verify run `34908515545`. Resolution
+remains open until the protected evidence and release-production cutover passes
+its own independent review and hosted gate without changing evidence meaning
+or `--fresh` behavior.

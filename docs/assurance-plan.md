@@ -23,7 +23,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-SCAFFOLD-013` | Tested/model-only on the development branch | Static ELF scaffolding is bounded diagnostic evidence, not a safe policy or a complete dynamic-load inventory. |
 | `PBR-SDK-014` | Tier 1, independently checked source and package contract | Rust, Python, and TypeScript SDKs preserve the separate-process boundary; registry publication and consumer dogfood remain open. |
 | `PBR-DISTRIBUTION-015` | Tier 1 independently reviewed and admitted on exact Runtime main | The verifier package has a closed preflight, source-payload comparison, byte reproduction, local consumer, and release-retention path; no registry or publisher claim is admitted. |
-| `PBR-DISTRIBUTION-016` | Tier 1 isolated public-bundle dogfood pending exact-head hosted evidence | Runtime pins one immutable public Proofbound release and rejects identity, inventory, manifest, checksum, archive, installer, and installed-byte substitution before the later evidence-path cutover. |
+| `PBR-DISTRIBUTION-016` | Tier 1 public-bundle consumer admitted; protected-path cutover pending exact-head review and hosted evidence | Runtime pins one immutable public Proofbound release and rejects identity, inventory, manifest, checksum, archive, installer, and installed-byte substitution. The proposed cutover makes every protected evidence and release job install that exact bundle independently. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -88,8 +88,11 @@ Proofbound tool bundle. Its intended closure contains:
   byte-for-byte equality of the detached and embedded platform manifests;
 - an independent comparison between the selected detached manifest and every
   installed executable's name, size, digest, type, and executable mode; and
-- one isolated required Linux CI job that dogfoods the public bytes without
-  placing them in the admitted evidence path.
+- one admitted isolated required Linux CI job that dogfoods the public bytes;
+  and
+- a separate cutover configuration that makes each protected evidence shard
+  and release architecture independently install the same verified public
+  bytes before Proofbound runs.
 
 The evidence path mutates the pin form, release state, source and tag identity,
 asset inventory, manifest carrier, metadata, payload, platform, and modes,
@@ -98,13 +101,16 @@ installed executable. The
 upstream public release is Proofbound release `388736918`, source `9512469`,
 Verify run `34899222179`, and bundle run `34900896450`.
 
-This wave establishes distribution-consumer behavior only. It does not prove
-Proofbound correctness, independently authenticate GitHub or a publisher, or
-authorize the public bundle to produce Runtime evidence. That final cutover is
-a separate exact-source change after the dogfood wave passes review and hosted
-verification. `PBR-BUNDLE-DISTRIBUTION-AX-012` retains the GitHub, repository
-control, DNS, and TLS premises. `PBR-BUNDLE-TOOLCHAIN-AX-013` retains the
-Python, digest, installer, runner, process, and filesystem premises.
+The isolated dogfood wave passed exact-head review and merged as Runtime
+commit `f2a06de`. Exact-main Verify run `34908515545` passed. The next
+exact-source wave removes cross-repository source compilation and redundant
+artifact transport from protected CI and release production. Its claim remains
+open until independent review and exact-head hosted verification exercise the
+new evidence path. This does not prove Proofbound correctness or independently
+authenticate GitHub or a publisher. `PBR-BUNDLE-DISTRIBUTION-AX-012` retains
+the GitHub, repository control, DNS, and TLS premises.
+`PBR-BUNDLE-TOOLCHAIN-AX-013` retains the Python, digest, installer, runner,
+process, and filesystem premises.
 
 ## PBR-POLICY-002
 

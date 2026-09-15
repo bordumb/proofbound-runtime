@@ -51,6 +51,38 @@ class ReleaseWorkflowTests(unittest.TestCase):
         )
         self.assertNotIn('= "$GITHUB_SHA"', release)
 
+    def test_release_uses_the_identity_checked_public_proofbound_bundle(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        release = workflow[workflow.index("\n  release:\n") : workflow.index(
+            "\n  provenance:\n"
+        )]
+
+        install = release.index("Install the exact public Proofbound bundle")
+        path = release.index("Add the identity-checked public tools to PATH")
+        verify = release.index("Verify Proofbound executables")
+        gate = release.index("Run the complete repository base gate")
+        self.assertLess(install, path)
+        self.assertLess(path, verify)
+        self.assertLess(verify, gate)
+        self.assertIn("install_proofbound_tool_bundle.py", release)
+        self.assertIn("--platform linux-${{ matrix.architecture }}", release)
+        self.assertIn('--destination "$RUNNER_TEMP/proofbound-tools"', release)
+        self.assertIn(
+            'echo "$RUNNER_TEMP/proofbound-tools" >> "$GITHUB_PATH"', release
+        )
+        for executable in (
+            "proofbound",
+            "proofbound-verify",
+            "proofbound-adapter-aeneas",
+            "proofbound-adapter-test",
+            "proofbound-adapter-kani",
+            "proofbound-adapter-lean",
+            "proofbound-adapter-node",
+        ):
+            self.assertIn(f"command -v {executable}", release)
+        self.assertNotIn("https://github.com/bordumb/proof-bound", release)
+        self.assertNotIn("--rev 1084e0d1dc5685933b705d8844af5b123399e0b9", release)
+
     def test_release_reproduction_remains_clean_and_uncached(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
