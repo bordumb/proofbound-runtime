@@ -112,6 +112,21 @@ channel. The child guard attempts to kill and reap the child when a state is
 abandoned. This source property does not prove the corresponding Linux effects,
 successful cleanup, or complete process-tree cleanup.
 
+The separate diagnostic Linux adapter is the supported composition surface for
+these trace-startup typestates. It validates the observation bounds before child
+creation. After the exact initial trace stop, each adapter state privately
+owns one matching trace typestate and one pure observer protocol. The exact
+spawned process identity seeds that protocol only after the same process reaches
+the stop. It records boundary readiness only after acknowledgement. The Linux
+option operation returns the exact installed bits through the trace typestate;
+the adapter must parse those bits through the closed pure option type before it
+records trace-option readiness. It authorizes release in the pure protocol
+before the same consuming transition releases target code. The adapter exposes
+process identity and read-only protocol state. It does not expose public owner
+fields, raw trace typestates, or mutable protocol access. This coupling is a
+source property and does not implement or prove the live process-tree event
+loop.
+
 ## 4. Observer contract
 
 The first observer mechanism identity is `linux-ptrace-syscall-v1`. It uses

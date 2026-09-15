@@ -9,8 +9,9 @@ exact-head hosted verification; exact-main run `34956564102` is in progress.
 A separate feature-gated Linux crate and non-copy trace-startup typestates are
 replayed on that dependency. It retains the earlier correction that binds its
 identified launcher, channel, identity-bound request, acknowledgement, and
-release into one private session. The live event loop, command integration,
-native attack corpus, and release binding remain open.
+release into one private session. The adapter is replayed on that trace stack
+and privately couples the effectful and pure setup states. The live event loop,
+command integration, native attack corpus, and release binding remain open.
 
 **Primary owner:** Proofbound Runtime
 
@@ -85,6 +86,13 @@ values without making a draft an authority object.
   release through that same channel. Public transitions do not accept
   substitute commands, protocol values, or channels, and public states expose
   no mutable child handle that could replace the guarded process.
+- The separate diagnostic adapter validates observation bounds before spawn.
+  After the exact initial trace stop, each non-copy adapter state privately
+  couples one trace typestate to the same pure protocol, seeded from that exact
+  stopped process. Boundary success precedes its pure record. Exact option bits
+  flow from the successful Linux installation through the closed pure validator
+  before option readiness advances; pure authorization precedes target release.
+  Public owner fields, raw trace states, and mutable protocol access are absent.
 - Automatic candidates require an explicit normalized project or runtime
   scope. System, home, and configured temporary roots remain open review
   items.

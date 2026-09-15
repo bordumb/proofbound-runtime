@@ -1,13 +1,16 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T11:21:37+01:00 (Europe/London, BST)
-- **Runtime baseline:** identity-bound exec-release merge `3557cc9`; exact-main
-  Verify run `34956564102` is in progress
-- **Active implementation wave:** separate feature-gated Linux trace-startup
-  typestates are independently approved at exact source head `a848b70`. The
-  approval-only record and hosted admission are next. The coupled adapter is
-  already being replayed onto that exact stack.
+- **Last updated:** 2026-09-15T12:38:42+01:00 (Europe/London, BST)
+- **Runtime baseline:** trace-startup merge `9395050`; its exact-main Verify run
+  `34962882198` is in progress. Identity-bound exec-release exact-main run
+  `34956564102` passed.
+- **Active implementation wave:** the coupled setup adapter is in PR 15. Its
+  hosted run reached the Rust lane and rejected two files formatted with the
+  wrong Rust edition. The edition-2024-only correction passed the focused
+  formatter, source contract, and independent exact-head re-review. The
+  approval-only commit is `e305fb0`. Current-main integration passed an
+  independent exact-head replay at `6579dac`; a new hosted run remains.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -146,13 +149,13 @@ manifest describes the supported tuple.
   launcher dependency graphs.
 - [x] Define a pure typed observer protocol that cannot release target code
   before attachment, boundary acknowledgement, and exact trace options.
-- [ ] Complete review and hosted admission of the identity-bound supervisor
+- [x] Complete review and hosted admission of the identity-bound supervisor
   exec release that lets the diagnostic adapter stop the acknowledged launcher
   and install exact trace options before target exec. Source implementation and
   registered falsifiers passed exact-head review and hosted verification, then
-  merged unsigned as `3557cc9`. Exact-main Verify run `34956564102` remains the
-  admission gate.
-- [ ] Complete independent review and hosted admission of the non-copy Linux
+  merged unsigned as `3557cc9`, then passed exact-main Verify run
+  `34956564102`.
+- [x] Complete independent review and hosted admission of the non-copy Linux
   trace-startup typestates. Source implementation and bounded contract checks
   are replayed on exact main `3557cc9`. The earlier exact review required the
   session channel, request, acknowledgement, and release to share one private
@@ -160,9 +163,35 @@ manifest describes the supported tuple.
   review found a public mutable-child replacement escape, a missing falsifier,
   and incomplete checker-assumption language. The following review found that
   the ownership-only private child field would fail the warnings-as-errors
-  gate. Those corrections are retained. Refreshed independent review approved
-  exact source head `a848b70`; its approval-only record, hosted admission, and
-  native effect evidence remain open.
+  gate. Those corrections passed refreshed independent review and complete
+  hosted verification, then merged unsigned as `9395050`. Exact-main Verify
+  run `34962882198` is in progress. Native effect evidence remains open under
+  the later live-observer claim waves.
+- [ ] Couple the approved trace-startup typestates to the pure observer protocol
+  in the separate diagnostic adapter. Validate bounds before spawn, move one
+  private pair after the exact initial stop, advance pure states only in the
+  declared effect order, and expose neither raw trace states nor mutable protocol
+  access. The initial exact review at `4ea747f` required stronger falsifiers for
+  private ownership and public escape paths, exact stopped-child identity flow,
+  and exact installed-option flow. The correction carries Linux-installed bits
+  through the closed pure validator and strengthens the registered source
+  checks. The first correction review then required a closed public API
+  allowlist and exact accessor bodies. The second correction adds both; exact
+  review found one remaining trait-implementation and public-enum gap. The third
+  correction exact-allowlists every implementation header and method, fixes the
+  error variants, and rejects source macros. Its review found one remaining
+  module-source redirection path. The fourth correction fixes the complete crate
+  root and rejects nested modules. Its review found a remaining Cargo workspace
+  dependency redirection path. The fifth correction pins the relevant member,
+  dependency, target, and pure module-selection sources. Its review found
+  conditional path redirection at both dependency crate roots. The sixth
+  correction byte-pins those roots and registers the Linux root. Independent
+  re-review approved exact source head `d0c2520`. Hosted verification then
+  rejected only edition-2021 import ordering before compilation. The
+  edition-2024-only correction passed independent exact-head re-review at
+  `176b10a`, followed by approval-only commit `e305fb0`. Current-main
+  integration passed independent replay at `6579dac`; a new hosted run remains
+  open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.

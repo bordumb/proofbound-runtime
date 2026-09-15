@@ -1960,6 +1960,291 @@ ownership-only role, and the structural falsifier must require that form.
 This verdict is not endorsed. The correction changes the exact subject and
 requires one more exact-head review.
 
+## RT-8 diagnostic trace-startup third correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `db31e0259bbe708fc8afd8288bb6445b1ad06235`
+- **Reviewed head:** `55f7c787bf2bcb1cd7469c72fe842c1217e5eea5`
+- **Branch:** `codex/rt8-ptrace-backend`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the ownership-only `_child` field preserves the
+exact `TraceChild` drop guard while avoiding the private-field dead-code warning,
+and that the structural checker requires both the field and its initialization.
+Every prior command, protocol, channel, identity, mutable-child, session,
+assumption, source-closure, raw-call, feature-isolation, ordering, and closed
+error finding remains resolved. Claims, evidence, specifications, ADRs,
+checklists, roadmap records, and rejection history remain consistent.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`55f7c787bf2bcb1cd7469c72fe842c1217e5eea5`. The following approval-only
+commit adds this record and changes no reviewed claim-subject bytes. Any later
+subject change, including a prerequisite rebase, requires a new exact-head
+review.
+
+## RT-8 diagnostic observer-adapter initial review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `98be91872a263b4c9f6683f4f028695372be7fdf`
+- **Reviewed head:** `4ea747f16d18c74c833d8196f8ff7b3477fc2ed3`
+- **Branch:** `codex/rt8-observer-adapter`
+- **Method:** Complete exact-range static review. The reviewer changed no files
+  and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The review confirmed that the implementation validates bounds before trace
+preparation, advances pure state only after each matching effect, authorizes
+pure release before target release, keeps diagnostic dependencies out of the
+production executables, and introduces no unsupported runtime or release
+claim.
+
+The review found two blocking evidence and coupling gaps. First, the structural
+checker accepted public state fields and rejected only three named mutable
+escape methods. A renamed accessor, a mutable return from the existing protocol
+accessor, or a differently spelled raw re-export could expose the privately
+owned protocol or trace typestate without failing the registered evidence.
+Second, the checker did not bind protocol construction to the exact spawned
+process or bind pure option readiness to the exact bits installed by the Linux
+operation. An unrelated process identifier, removal of the new spawned-process
+accessor, or drift between independently constructed pure and Linux option sets
+could pass.
+
+The correction must enforce exact private fields and non-escaping public
+signatures, scope identity checks to `SpawnedTrace`, carry the exact installed
+option bits through `TraceReady` and the closed pure validator, and include the
+raw Linux option source in the claim and evidence closures. This verdict is not
+endorsed. The correction changes the exact subject and requires independent
+re-review.
+
+## RT-8 diagnostic observer-adapter first correction review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `98be91872a263b4c9f6683f4f028695372be7fdf`
+- **Reviewed head:** `cc333cda8a5e09007fa22ee94c96a9ea4f6bfa8b`
+- **Branch:** `codex/rt8-observer-adapter`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The reviewer confirmed that the production implementation correctly binds
+bounds, stop ordering, private non-copy ownership, the Linux-installed option
+value, pure validation, release order, failure cleanup, source closure, and
+production dependency isolation. The first correction also closed the prior
+independent option reconstruction and broad accessor-name gaps.
+
+Two structural falsifier gaps remained. A wildcard public re-export, public
+type alias, public module, or unapproved opaque-return method could expose a raw
+owner without matching the raw-type deny-list. Also, the checker scoped the
+`SpawnedTrace::process` and `TraceReady::options` accessors but required only
+their signatures and field-name presence, not exact bodies that return the
+retained values. Correct signatures could therefore fabricate a process or
+option value while the evidence remained green.
+
+The correction must replace public-surface deny-lists with an exact allowlist,
+reject wildcard exports and public aliases or modules, and bind both accessor
+bodies to their exact retained fields. This verdict is not endorsed. The next
+correction changes the exact subject and requires another independent review.
+
+## RT-8 diagnostic observer-adapter second correction review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `98be91872a263b4c9f6683f4f028695372be7fdf`
+- **Reviewed head:** `d25edc4e9db08840b7c4f22ef72d9f83581bac1e`
+- **Branch:** `codex/rt8-observer-adapter`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The reviewer confirmed that the second correction exact-allowlists the declared
+public functions, types, and re-exports; rejects wildcard and alternate public
+declarations; binds both retained-field accessors to exact bodies; preserves
+the PID and installed-option flows; and leaves implementation ordering, source
+closure, production isolation, errors, cleanup, and claim scope correct.
+
+One public-surface gap remained. Trait implementation methods are public through
+their trait even though their source declarations do not contain `pub fn`. A
+new `Into<ActiveTrace>`, `Deref`, or `DerefMut` implementation could therefore
+expose a raw trace owner or mutable protocol while the declared-function
+allowlist stayed green. The public error enum variants were also not fixed by
+the allowlist.
+
+The correction must exact-allowlist every implementation header and method,
+fix the public error variant set, and reject source macros that could generate
+an uninspected public item. This verdict is not endorsed. The correction changes
+the exact subject and requires another independent review.
+
+## RT-8 diagnostic observer-adapter third correction review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `98be91872a263b4c9f6683f4f028695372be7fdf`
+- **Reviewed head:** `641fb4f1241b1077eb94cba0a437419352d38a90`
+- **Branch:** `codex/rt8-observer-adapter`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The reviewer confirmed that the third correction fixes all declared functions,
+trait methods, implementation headers, public types, error variants, fields,
+re-exports, attributes, derives, macro generation, retained-field accessors,
+and linked process and option flows. The current compiled source contains no
+raw-owner or mutable-protocol escape.
+
+One source-selection gap remained. The checker inspected `src/adapter.rs` but
+did not fix the private `mod adapter;` declaration in the crate root. A path
+attribute could redirect that module to an unregistered alternate source while
+the checker continued to approve the original file. A nested module declaration
+inside the registered adapter file could similarly compile uninspected trait
+implementations.
+
+The correction must fix the complete crate-root source, including its private
+module declaration and attributes, and reject any nested module declaration in
+the single-file adapter. This verdict is not endorsed. The correction changes
+the exact subject and requires another independent review.
+
+## RT-8 diagnostic observer-adapter fourth correction review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `98be91872a263b4c9f6683f4f028695372be7fdf`
+- **Reviewed head:** `748dca436fecc554c263e57a8ce73b34a1928f41`
+- **Branch:** `codex/rt8-observer-adapter`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The reviewer confirmed that the fourth correction fixes the diagnostic adapter
+crate root, private module declaration, member manifest, nested-module absence,
+and all prior API, trait, variant, attribute, macro, accessor, process, and
+option checks. The current exact source remains correctly coupled and closed.
+
+One Cargo source-selection gap remained. The pinned member manifest delegates
+its dependencies to the workspace, but the checker did not validate the root
+workspace member or dependency path mappings. The pure diagnostic and Linux
+dependency manifests also did not reject alternate library or build targets.
+A root or dependency-manifest change could therefore compile a compatible
+alternate crate while the checker continued to inspect the registered files.
+
+The correction must pin the relevant workspace member and dependency paths,
+pin the three member manifests against alternate targets, and register the pure
+diagnostic crate root used to select the observer module. This verdict is not
+endorsed. The correction changes the exact subject and requires another
+independent review.
+
+## RT-8 diagnostic observer-adapter fifth correction review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `98be91872a263b4c9f6683f4f028695372be7fdf`
+- **Reviewed head:** `81f92cd73d70394689cee1e238aadb550e1f42e6`
+- **Branch:** `codex/rt8-observer-adapter`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The reviewer confirmed that the fifth correction pins the relevant workspace
+members and dependency path maps, rejects replacement tables, fixes all three
+member manifests, registers the pure crate root, covers source-selection paths
+in the operation, and accurately accounts for Python TOML interpretation. All
+prior coupling and public-surface checks remain closed.
+
+One conditional module-selection gap remained. A `cfg_attr(..., path = ...)`
+on the unchanged pure observer declaration could redirect compilation while
+the literal checks passed. The Linux crate root was also absent from this
+evidence unit, so the same conditional path redirection could select an
+alternate trace implementation while the checker inspected the original trace
+and syscall sources.
+
+The correction must byte-pin both dependency crate roots and register the Linux
+crate root in this evidence unit's inputs and operation paths. This verdict is
+not endorsed. The correction changes the exact subject and requires another
+independent review.
+
+## RT-8 coupled observer adapter admitted-stack approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `a848b706b1c80b2394defda9f3d739b91a1770e5`
+- **Reviewed head:** `d0c2520efc8694ad0e909d8a2e911dc8e46ea375`
+- **Branch:** `codex/rt8-observer-adapter-v2`
+- **Method:** Complete exact-range static re-review after replay onto the
+  corrected trace-startup stack. The reviewer changed no files and ran no
+  builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that validated bounds precede trace preparation and
+spawn and that the pure protocol is seeded from the retained exact process only
+after its mandatory initial stop. Each later state privately moves one matching
+trace and protocol pair. Acknowledgement and option effects precede their pure
+records, while pure release authorization precedes the consuming effectful
+release. No raw trace owner or mutable retained protocol escapes.
+
+Exact installed option bits remain linked through the closed validator and
+pure transition. The independent checker fixes the complete public API,
+traits, implementations, variants, attributes, re-exports, retained-field
+accessors, Cargo mappings, manifests, and both dependency crate-root
+identities. Its wrapper and both repository gates retain that checker. Claim
+and evidence closures retain both crates, raw and safe trace sources,
+assumptions, and gate wiring while explicitly excluding Linux-effect truth,
+cleanup, live observation, tree drain, and release status. The replayed
+technical subject is byte-identical to the final prior correction.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`d0c2520efc8694ad0e909d8a2e911dc8e46ea375`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.
+
+## RT-8 coupled observer adapter edition correction review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `17bb2b4c38cfeb18e2c8d75c372e6c06d6dd2656`
+- **Reviewed head:** `e92732ee71881d1110a3566c539aaee3fc736ad1`
+- **Branch:** `codex/rt8-observer-adapter-v2`
+- **Method:** Exact-range static re-review of the hosted formatting correction
+  and its operational status update. The reviewer changed no files and ran no
+  builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The reviewer confirmed that the Rust source changes are edition-2024-only
+formatting corrections. They change no semantic behavior, security boundary,
+public API, claim, or evidence meaning. The focused source-contract checker and
+documentation update correctly match the formatted source.
+
+One documentation blocker remained. `docs/product-roadmap-2.md` still named
+`3557cc9` as the Runtime baseline, described exact-main run `34956564102` as in
+progress, and described trace startup as in review. The operational checklist
+correctly recorded that the exec-release run passed and trace startup merged as
+`9395050`. The roadmap therefore contradicted the current execution ledger.
+
+This verdict is not endorsed. The correction updates the roadmap to the exact
+merged identities and current run states and requires one exact re-review.
+
+## RT-8 coupled observer adapter edition correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `17bb2b4c38cfeb18e2c8d75c372e6c06d6dd2656`
+- **Reviewed head:** `176b10a075f4ea815d020be0d48a9b947584ecdd`
+- **Branch:** `codex/rt8-observer-adapter-v2`
+- **Method:** Complete exact-range static re-review after the documentation
+  correction. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the Rust source changes only reorder the same
+imports and re-exports under the repository's edition-2024 formatter. They
+change no names, visibility, types, control flow, ownership, security behavior,
+or public API. The focused checker matches the exact formatted bytes and public
+use order. The roadmap, operational checklist, and rejected-review record now
+agree on the exact merged identities and run states. The complete base-to-head
+range introduces no semantic, security, public-surface, or evidence regression.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`176b10a075f4ea815d020be0d48a9b947584ecdd`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.
+
 ## RT-8 diagnostic trace-startup admitted-base approval
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
@@ -1990,6 +2275,30 @@ historical review record.
 
 As maintainer, I endorse this independent `APPROVE` verdict for exact head
 `a848b706b1c80b2394defda9f3d739b91a1770e5`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.
+
+## RT-8 coupled observer adapter admitted-main replay approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `9395050b5c3a8e968d4e162bfdde1709e33e0989`
+- **Reviewed head:** `6579dacab85746b6d2eef0af06add803320815e1`
+- **Branch:** `codex/rt8-observer-adapter-v2`
+- **Method:** Narrow exact-range static replay review after current-main
+  integration. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed by direct tree comparison that the Rust, checker,
+claim, evidence, schema, and manifest subject is byte-identical to approved
+head `176b10a075f4ea815d020be0d48a9b947584ecdd`. Only the roadmap, checklist,
+and review ledger changed during main integration. The conflict resolution
+preserves the complete adapter review history and the admitted trace-startup
+approval while reporting the current main identity and pending hosted gate.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact merge
+head `6579dacab85746b6d2eef0af06add803320815e1`. The following approval-only
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, or test bytes. Any later subject change requires a new
 exact-head review.

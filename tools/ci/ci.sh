@@ -59,6 +59,7 @@ if selected "preflight"; then
   timed_unit diagnostic-artifact-producer-tests python3 -m unittest tools.ci.test_diagnostic_artifact_producer
   timed_unit diagnostic-observer-protocol-tests python3 -m unittest tools.ci.test_diagnostic_observer_protocol
   timed_unit diagnostic-trace-startup-tests python3 -m unittest tools.ci.test_diagnostic_trace_startup
+  timed_unit diagnostic-observer-adapter-tests python3 -m unittest tools.ci.test_diagnostic_observer_adapter
   timed_unit sdk-contract-tests python3 -m unittest tools.ci.test_sdk_contract tools.ci.test_sdk_packages
   timed_unit registry-package-tests python3 -m unittest tools.ci.test_registry_packages
   timed_unit verifier-package-preflight python3 tools/release/build_verifier_package.py --check

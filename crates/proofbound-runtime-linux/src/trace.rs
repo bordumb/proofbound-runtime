@@ -194,6 +194,12 @@ pub struct SpawnedTrace {
 }
 
 impl SpawnedTrace {
+    /// Returns the exact spawned process identifier.
+    #[must_use]
+    pub const fn process(&self) -> TraceProcessId {
+        self.session.process
+    }
+
     /// Waits for the exact post-exec trace stop of the spawned child.
     pub fn wait_for_initial_exec_stop(
         self,
@@ -307,10 +313,11 @@ impl AcknowledgedTraceStop {
     pub fn install_options(self) -> Result<TraceReady, TraceStartupError> {
         #[cfg(target_os = "linux")]
         {
-            crate::sys::install_diagnostic_trace_options(self.session.process.get())
+            let options = crate::sys::install_diagnostic_trace_options(self.session.process.get())
                 .map_err(|_| TraceStartupError::OptionsInstallFailed)?;
             Ok(TraceReady {
                 session: self.session,
+                options,
             })
         }
         #[cfg(not(target_os = "linux"))]
@@ -324,9 +331,16 @@ impl AcknowledgedTraceStop {
 #[derive(Debug)]
 pub struct TraceReady {
     session: TraceSession,
+    options: u32,
 }
 
 impl TraceReady {
+    /// Returns the exact option bits installed for this trace session.
+    #[must_use]
+    pub const fn options(&self) -> u32 {
+        self.options
+    }
+
     /// Sends the bound exec release and starts syscall-stop observation.
     pub fn release(self) -> Result<ActiveTrace, TraceStartupError> {
         self.session

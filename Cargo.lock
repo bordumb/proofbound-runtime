@@ -182,6 +182,7 @@ dependencies = [
 name = "proofbound-runtime-diagnose-linux"
 version = "0.2.0"
 dependencies = [
+ "proofbound-runtime-diagnose",
  "proofbound-runtime-linux",
 ]
 

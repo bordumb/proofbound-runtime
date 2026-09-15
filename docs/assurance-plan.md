@@ -29,6 +29,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-DRAFT-019` | Tier 1 bounded producer contract independently reviewed and admitted on exact Runtime main | The pure diagnostic artifact producer preserves non-reuse, provenance, explicit gaps, and mandatory human authority choices. It does not claim live observer coverage. |
 | `PBR-OBSERVER-020` | Tier 1 pure observer-protocol contract independently reviewed and admitted on exact Runtime main | The typed state machine orders diagnostic release, fixes exact process-tree trace options, bounds retained process and event state, and requires termination and explicit gaps after release failures. It does not claim that Linux observation is implemented. |
 | `PBR-OBSERVER-021` | Tier 1 trace-startup source contract; hosted admission pending | A separate feature-gated Linux API uses non-copy typestates to order initial trace ownership, launcher pause, exact boundary identity, exact options, release, and syscall-stop activation. Native ptrace behavior and complete observation remain open. |
+| `PBR-OBSERVER-022` | Tier 1 coupled observer-adapter source contract; exact review pending | The separate diagnostic adapter moves matching effectful trace and pure protocol states together without exposing either mutable owner. The live event loop and native effects remain open. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -485,6 +486,43 @@ claim. It does not establish Linux ptrace correctness, tracer-death behavior,
 successful process cleanup, process-tree coverage, syscall decoding,
 tracee-memory reads, or a complete diagnostic execution. Those properties
 require the next adapter, native attack, and release-binding waves.
+
+## PBR-OBSERVER-022
+
+The current subject is the separate diagnostic Linux adapter's setup surface.
+It replaces the crate's raw trace-typestate re-exports with one consuming set of
+adapter states. Observation bounds are validated before trace preparation and
+child creation. The exact spawned process identity seeds the pure protocol only
+after that process reaches its initial trace stop. Every later state owns one
+private effectful trace typestate and the same private pure observer protocol.
+The option-install operation returns the exact installed bits through the trace
+typestate; the adapter parses those bits through the closed pure type before it
+records option readiness. Public access is limited to process identity and
+immutable protocol status.
+
+The bounded evidence path checks that:
+
+1. bounds are validated before the exact trace session is prepared;
+2. the exact spawned process reaches its initial stop before that same process
+   identity seeds the pure protocol and attachment is recorded;
+3. every post-attachment adapter state privately owns the matching trace state
+   and one pure protocol without copy or clone derivation;
+4. acknowledgement completes before its pure state advances, and the exact
+   option bits returned after Linux installation pass the closed pure validator
+   before option readiness advances;
+5. pure release authorization precedes effectful target release in one
+   consuming transition;
+6. exact private field declarations, return types, and re-export checks prevent
+   public raw trace ownership or mutable protocol access; and
+7. neither production executable depends on the diagnostic adapter or pure
+   diagnostic crate.
+
+The independent checker inspects source and manifest structure. It does not
+execute the setup path. Hosted compilation can reject type or lint defects but
+does not establish Linux effect correctness. This claim does not implement or
+prove process-tree waits, child discovery, syscall entry and exit pairing,
+architecture decoding, tracee-memory reads, termination, tree-drain truth, or a
+complete diagnostic execution.
 
 ## Bounded-domain declaration guard
 
