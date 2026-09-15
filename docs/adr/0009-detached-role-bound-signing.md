@@ -107,6 +107,7 @@ runtime-signed-envelope = {
 }
 
 signature-binding = {
+  "envelope_schema": "proofbound-runtime/signed-envelope/1",
   "role": signing-role,
   "native_owner": tstr,
   "native_protocol": tstr,
@@ -132,26 +133,39 @@ The `role` is one of `runtime-release`, `runtime-guest-image`,
 `runtime-checkpoint-witness`. A new role requires a new schema or an explicitly
 accepted extension. Unknown roles fail closed.
 
-`native_owner`, `native_protocol`, and `native_schema` name the protocol that
-owns the payload meaning. `payload_digest` is SHA-256 over the exact detached
+`envelope_schema` is repeated inside the signed binding so an entry cannot move
+to another outer-envelope schema. `native_owner`, `native_protocol`, and
+`native_schema` name the protocol that owns the payload meaning.
+`payload_digest` is SHA-256 over the exact detached
 payload. `payload_size` is its exact byte length. `identity_policy` identifies
 the exact policy bytes that define acceptable signers, thresholds, identity
 evidence, status evidence, and trust roots. A policy label without an exact
 digest is insufficient.
 
 Signature entries are sorted by the deterministic encoding of their typed
-signer and key-state references. Duplicate signer or key-state entries fail
-closed. An empty signature list, unknown field, unknown algorithm, noncanonical
-encoding, embedded payload, or nonempty unprotected COSE header fails closed.
+signer and key-state references. Duplicate entries and two references that
+resolve to the same canonical key fail closed. An empty signature list,
+unknown field, unknown algorithm, noncanonical encoding, embedded payload, or
+unknown COSE header fails closed.
 
 ### Signature input
 
-Each entry contains a tagged `COSE_Sign1` object with:
+Each `cose_sign1` byte string contains exactly one deterministically encoded,
+tagged `COSE_Sign1` object. The tag is CBOR tag 18. The tagged value is an array
+of exactly four items with:
 
-- the protected `alg` header set to COSE `Ed25519` (`-19`);
+- a protected-header byte string whose decoded deterministic-CBOR map contains
+  exactly the `alg` header set to COSE `Ed25519` (`-19`);
 - the payload field set to CBOR `nil`;
 - an empty unprotected header map; and
-- no ambient or unauthenticated key identifier.
+- a 64-byte Ed25519 signature byte string.
+
+No other protected or unprotected header is accepted. In particular, `crit`,
+`content type`, and `kid` are absent. The signed Runtime binding owns content
+type and signer identity. The inner tag, array, protected-header byte string,
+protected map, empty unprotected map, `nil` payload, and signature encoding all
+must be deterministic CBOR. A decoder that can interpret a noncanonical inner
+object still rejects it.
 
 The detached payload is the exact native object bytes. The COSE external
 authenticated data is the deterministic CBOR encoding of:
@@ -165,10 +179,11 @@ authenticated data is the deterministic CBOR encoding of:
 ]
 ```
 
-This binds the role, native protocol, schema, payload identity, identity
-policy, asserted signer, and selected key state without changing or
-reserializing the native payload. An identity resolver treats the signer and
-key-state references as assertions until the signature and policy both pass.
+This binds the envelope schema, role, native protocol, native schema, payload
+identity, identity policy, asserted signer, and selected key state without
+changing or reserializing the native payload. An identity resolver treats the
+signer and key-state references as assertions until the signature and policy
+both pass.
 
 ### Verification order
 
@@ -178,8 +193,9 @@ A verifier performs these steps in order:
 2. Require canonical bytes and the exact closed envelope schema.
 3. Select the consumer-supplied identity policy by exact digest. Do not load a
    policy from a location controlled only by the carrier.
-4. Compare the native owner, protocol, schema, role, digest, and byte size with
-   the supplied payload and the consumer's expected use.
+4. Compare the envelope schema, native owner, protocol, native schema, role,
+   digest, and byte size with the supplied payload and the consumer's expected
+   use.
 5. Resolve each asserted signer and exact key state through the resolver named
    by the policy.
 6. Reconstruct the COSE signature input and verify the fully specified
@@ -207,9 +223,18 @@ native object as verified.
 | Checkpoint witness | Long-lived identity unique to one independently administered witness | Separate custody and persistent consistency state | Exact witness set, every witness identity, required threshold, and key state |
 
 The same underlying organization may control more than one role, but it must
-use distinct delegated identities and policy entries. Byte equality of keys or
-identifiers does not imply role equality. The first maintained profile rejects
-cross-role key reuse.
+use distinct delegated identities, keys, and policy entries. Byte equality of
+keys or identifiers does not imply role equality. The first maintained profile
+rejects cross-role key reuse.
+
+Identity resolution produces a canonical controller identity and canonical key
+identity for each entry. Two asserted references that resolve to the same key
+are aliases and fail closed. A policy groups entries by canonical controller,
+checks any controller-internal key threshold, and then counts that controller
+at most once toward a role threshold. This permits a KERI controller to satisfy
+its own multi-key threshold without letting aliases make one controller count
+as two witnesses. Witness administrative independence remains an explicit
+consumer-policy premise; cryptographic identifiers alone cannot prove it.
 
 ## Identity resolvers and candidate evaluation
 
@@ -268,10 +293,19 @@ mode.
 - A denied, cancelled, stale, mismatched, or ambiguous signer response fails
   closed. Runtime does not retry with another key without a new explicit
   request.
-- Rotation changes the key-state identity. It never mutates the meaning of an
-  older envelope.
-- Revocation and compromise cut-offs are acceptance-policy inputs. A carrier's
-  assertion of signing time is not trusted time.
+- Rotation changes the key-state identity. It never mutates the bytes or
+  original meaning of an older envelope, but it can change current acceptance.
+- The first maintained profile invalidates every envelope whose signing key is
+  retired, revoked, or declared compromised. It does not grandfather a
+  signature based on an asserted signing time.
+- A later historical-acceptance profile may retain an old envelope only when
+  an independent temporal statement committed to the exact envelope identity
+  before the applicable status event or compromise cut-off. That profile must
+  pin the temporal authority or witness-protected log, its exact statement and
+  checkpoint schemas, verifier identities, status ordering, and any required
+  trusted-time source. Without this complete evidence, historical acceptance
+  fails closed.
+- A carrier's signing-time or checkpoint-time assertion is not trusted time.
 - Offline verification retains the envelope, native payload, exact policy,
   trust roots, identity evidence, key-state evidence, status evidence, and
   verifier identities. Missing closure yields an incomplete result, not a
@@ -315,7 +349,10 @@ quorums are deferred until a separate decision states a fault model and proves
 that two accepted quorums intersect in at least one honest witness. A consumer
 pins the log identity, operator identity, complete witness set, signature
 policy, and an initial trusted checkpoint through a channel independent of the
-log operator.
+log operator. Resolution must produce `N` distinct canonical witness
+controllers and `N` disjoint accepted key identities. An alias cannot occupy
+two witness positions. Independent administration is a registered premise for
+each witness relation.
 
 An offline verifier checks:
 
@@ -361,15 +398,20 @@ path, and neither may import Auths authorization semantics into Runtime core.
 
 The implementation claim wave must include at least these negative cases:
 
-- substitute payload bytes, digest, size, native schema, role, or policy;
+- substitute the outer envelope schema, payload bytes, digest, size, native
+  schema, role, or policy;
 - replay an execution signature for another execution;
 - use a release signer as a guest-image, execution, log, or witness signer;
 - use an Auths action signer as a Runtime signer without explicit policy;
 - accept an unknown or deprecated algorithm, including COSE `EdDSA` `-8`;
-- accept an embedded payload, nonempty unprotected header, unknown field,
-  duplicate signer, noncanonical CBOR, or reordered signer set;
+- accept an embedded payload, nonempty or unknown header, unknown field,
+  duplicate entry, noncanonical outer or inner CBOR, or reordered signer set;
+- count two aliases of one canonical key or controller as distinct signatures
+  or witnesses;
 - resolve a KERI identity at a different, stale, rotated, revoked, truncated,
   or equivocating key state;
+- accept an old signature from a retired, revoked, or compromised key without
+  an independently verified temporal statement bound to the exact envelope;
 - trust a keyless certificate without the pinned issuer, subject, chain,
   status evidence, transparency material, or trusted-time policy;
 - present a producer self-signature as proof of observed effects;

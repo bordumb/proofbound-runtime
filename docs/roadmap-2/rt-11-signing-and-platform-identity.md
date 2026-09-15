@@ -44,11 +44,12 @@ the identity, how keys rotate or revoke, and what a consumer pins.
 - An integration record names accepted envelopes and algorithms but does not
   authenticate itself.
 
-ADR 0009 selects a deterministic-CBOR outer envelope with detached
-`COSE_Sign1` entries. Each signature authenticates the exact native payload and
-a role binding through COSE external authenticated data. The first algorithm
-is fully specified COSE Ed25519 (`-19`). Deprecated polymorphic EdDSA (`-8`)
-fails closed.
+ADR 0009 selects a deterministic-CBOR outer envelope with exact closed,
+detached `COSE_Sign1` entries. Each signature authenticates the envelope
+schema, exact native payload, identity policy, signer, key state, and role
+binding through COSE external authenticated data. The first algorithm is fully
+specified COSE Ed25519 (`-19`). Deprecated polymorphic EdDSA (`-8`) fails
+closed.
 
 ## Selected identity model
 
@@ -59,6 +60,11 @@ fails closed.
 - Auths is the first maintained identity-resolver integration. It verifies
   principal control and exact KERI state without moving Auths authorization or
   KERI event semantics into Runtime.
+- The first profile invalidates all envelopes from a retired, revoked, or
+  compromised key. Historical acceptance needs independently authenticated
+  temporal evidence bound to the exact envelope.
+- Thresholds count canonical resolved keys and controllers, not asserted
+  aliases. One controller cannot occupy two witness roles.
 - Source-control signing is outside the envelope contract. Git commits need
   not be signed.
 

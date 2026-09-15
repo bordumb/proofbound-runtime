@@ -144,14 +144,18 @@ consumer integration-profile check and acceptance policy
 A consumer performs these steps:
 
 1. Select an explicit integration profile.
-2. Verify every native receipt with the independent verifier selected for its
-   owner protocol.
-3. Verify every external commitment through its registered channel.
-4. Verify the typed cross-project references and the acyclic linkage graph.
-5. Compare only the cross-project fields named by the integration profile.
-6. Retain every assumption, exclusion, trusted role, non-reuse reason, and
+2. Perform only the bounded parsing needed to identify each native object's
+   closed protocol and schema. Do not accept its semantic claims yet.
+3. Authenticate each exact native byte commitment through its registered
+   independent channel or accepted role-bound signature profile.
+4. Verify every native object with the independent verifier selected for its
+   owner protocol and supply the authenticated commitment as required by that
+   protocol.
+5. Verify the typed cross-project references and the acyclic linkage graph.
+6. Compare only the cross-project fields named by the integration profile.
+7. Retain every assumption, exclusion, trusted role, non-reuse reason, and
    weaker status from every input.
-7. Apply the consumer's acceptance policy.
+8. Apply the consumer's acceptance policy.
 
 A failure at any step produces no partial platform acceptance. Individual
 native verification results remain reportable with their original meaning.
