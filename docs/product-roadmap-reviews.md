@@ -2131,3 +2131,31 @@ pin the three member manifests against alternate targets, and register the pure
 diagnostic crate root used to select the observer module. This verdict is not
 endorsed. The correction changes the exact subject and requires another
 independent review.
+
+## RT-8 diagnostic observer-adapter fifth correction review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `98be91872a263b4c9f6683f4f028695372be7fdf`
+- **Reviewed head:** `81f92cd73d70394689cee1e238aadb550e1f42e6`
+- **Branch:** `codex/rt8-observer-adapter`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The reviewer confirmed that the fifth correction pins the relevant workspace
+members and dependency path maps, rejects replacement tables, fixes all three
+member manifests, registers the pure crate root, covers source-selection paths
+in the operation, and accurately accounts for Python TOML interpretation. All
+prior coupling and public-surface checks remain closed.
+
+One conditional module-selection gap remained. A `cfg_attr(..., path = ...)`
+on the unchanged pure observer declaration could redirect compilation while
+the literal checks passed. The Linux crate root was also absent from this
+evidence unit, so the same conditional path redirection could select an
+alternate trace implementation while the checker inspected the original trace
+and syscall sources.
+
+The correction must byte-pin both dependency crate roots and register the Linux
+crate root in this evidence unit's inputs and operation paths. This verdict is
+not endorsed. The correction changes the exact subject and requires another
+independent review.

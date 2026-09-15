@@ -1,3 +1,4 @@
+import hashlib
 import re
 import unittest
 from pathlib import Path
@@ -160,6 +161,13 @@ libc.workspace = true
 serde.workspace = true
 toml.workspace = true
 """
+
+EXPECTED_DIAGNOSE_LIB_SHA256 = (
+    "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de"
+)
+EXPECTED_LINUX_LIB_SHA256 = (
+    "822a838859d01a182f2286af73d32f07ebbca96347fd9df13207803eb1faf1de"
+)
 
 
 class DiagnosticObserverAdapterContractTests(unittest.TestCase):
@@ -379,6 +387,15 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
         self.assertEqual(ADAPTER_MANIFEST.read_text(), EXPECTED_ADAPTER_MANIFEST)
         self.assertEqual(DIAGNOSE_MANIFEST.read_text(), EXPECTED_DIAGNOSE_MANIFEST)
         self.assertEqual(LINUX_MANIFEST.read_text(), EXPECTED_LINUX_MANIFEST)
+        self.assertEqual(
+            hashlib.sha256(DIAGNOSE_LIB.read_bytes()).hexdigest(),
+            EXPECTED_DIAGNOSE_LIB_SHA256,
+        )
+        linux_lib = ROOT / "crates/proofbound-runtime-linux/src/lib.rs"
+        self.assertEqual(
+            hashlib.sha256(linux_lib.read_bytes()).hexdigest(),
+            EXPECTED_LINUX_LIB_SHA256,
+        )
 
         root_manifest = ROOT_MANIFEST.read_text()
         root_config = tomllib.loads(root_manifest)
@@ -397,9 +414,6 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
             self.assertEqual(workspace["dependencies"][dependency], {"path": path})
         self.assertNotRegex(root_manifest, r"(?m)^\[(?:patch|replace)(?:\.|\])")
 
-        self.assertEqual(self.diagnose_lib.count("pub mod artifact;"), 1)
-        self.assertEqual(self.diagnose_lib.count("pub mod observer;"), 1)
-        self.assertNotIn("#[path", self.diagnose_lib)
         spawned_trace = implementation(self.trace, "SpawnedTrace")
         self.assertIn(
             "pubconstfnprocess(&self)->TraceProcessId{self.session.process}",
