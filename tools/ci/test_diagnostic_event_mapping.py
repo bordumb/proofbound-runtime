@@ -17,6 +17,7 @@ LIB = ROOT / "crates/proofbound-runtime-diagnose-linux/src/lib.rs"
 MANIFEST = ROOT / "crates/proofbound-runtime-diagnose-linux/Cargo.toml"
 CORE_MANIFEST = ROOT / "crates/proofbound-runtime-core/Cargo.toml"
 CORE_DIAGNOSTIC = ROOT / "crates/proofbound-runtime-core/src/diagnostic.rs"
+CORE_LIB = ROOT / "crates/proofbound-runtime-core/src/lib.rs"
 CORE_RECEIPT = ROOT / "crates/proofbound-runtime-core/src/receipt.rs"
 DIAGNOSE_MANIFEST = ROOT / "crates/proofbound-runtime-diagnose/Cargo.toml"
 DIAGNOSE_LIB = ROOT / "crates/proofbound-runtime-diagnose/src/lib.rs"
@@ -145,9 +146,10 @@ EXPECTED_BODIES = {
 }
 EXPECTED_FILES = {
     "artifact": "ad7cce45d286623dcfd55c21189cb7d58e29f1943960d0a061d6f85c2640baa3",
-    "claim": "e3a324ce603ca6440d21d569c1fb805d24de20f1191a25758278c818f4cc0f4c",
-    "contract-evidence": "1cd2dc41e40726ff08a527e17697880185e7073da8fa32aa895139a1317e7e2c",
+    "claim": "ad703e8f87b620838974f7a1f8530b2ca1d37b18a22423b7d2820a2a702a0205",
+    "contract-evidence": "84852872175ba02a3c936e52f4513f2ff04a0229b4b83f57b90870f5a0d26097",
     "core-diagnostic": "e0a3f1e3204c5dc5b3b152e6432737e90bf5af93f5024a4e6f1d1c25a4f42918",
+    "core-lib": "2039d8c789844cddaaabbf432a0a6ef465f77300577f3b57922d7bcbcc930450",
     "core-manifest": "0d22823a1d4f397fb58693c7d9fe7498969ce242b5da0f372d8cc8f55f960b9b",
     "core-receipt": "fc27edf189014a49af8af380902fe90b12cbbd71a2b49301064b589c8a4c4024",
     "decode-assumption": "0a71deec98c2cb281170fe85d911eb6dba5947161e8130554b5b922f47457847",
@@ -163,7 +165,7 @@ EXPECTED_FILES = {
     "root-manifest": "1ea75287f62129c6b15038b0c45df42e616fc4c92e59e61bc03358746fd5d7d6",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
     "trace": "d014751e6af13aa9c829aa67ab58953423a04a5ea4cfa1032a7d1150e15f1e7d",
-    "unit-evidence": "1a046691b447830c74dcf77cb9b41d10e09a6b8e2e400744727ca05abb04c5e4",
+    "unit-evidence": "c1628a6afa1a191c17c71debd3a8e4f224e31e406f6c280b5ccb1e03371bfa92",
 }
 
 
@@ -221,6 +223,7 @@ class DiagnosticEventMappingContractTests(unittest.TestCase):
             "claim": CLAIM,
             "contract-evidence": CONTRACT_EVIDENCE,
             "core-diagnostic": CORE_DIAGNOSTIC,
+            "core-lib": CORE_LIB,
             "core-manifest": CORE_MANIFEST,
             "core-receipt": CORE_RECEIPT,
             "decode-assumption": DECODE_ASSUMPTION,
