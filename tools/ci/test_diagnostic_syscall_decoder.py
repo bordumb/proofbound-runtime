@@ -64,6 +64,7 @@ EXPECTED_LOAD_BEARING_BODIES = {
     "observer-protocol-new": "dd85162d9b12bbbe1f0a17b5a08a8ecb083f5b3ace9e2cde59805d9e3dbeb685",
     "path-limit": "a1f57b2d41134fd23d07262bec9cb74cc859e9386675809369068105b04e7623",
     "prepare-observer": "d3438925f307cb01df411fa2007009ee71b140b754736a86e9c397ab6c793b65",
+    "prepared-observer-spawn": "c38122828f9b03054a7ac29ab4b5d2a3f26bf6e6d6261315da1be5273fdcbf56",
     "raw-syscall-info-layout": "f8cdd24d2d33c79a783ddda369d93ede67a96849b1fcef460487b2cf08b75399",
     "raw-read": "0330210e9d4092a932240580c2f161a42374ac625cc28c89510f7a13ca44b5be",
     "router": "5d7181dc73c1a5f99ee30e5787fdf27dede851ba882fd989a451ea91b9a03b66",
@@ -75,8 +76,10 @@ EXPECTED_LOAD_BEARING_BODIES = {
     "syscall-info-parser": "796f463adb9db22ebf211f25ff7d0097f86ab49f9d240a62319161dc3f91af5e",
     "tracee-string-read": "54fec5ee2c46ba8bd614c0da4e769b311ca6ff65637e7685be6e086369f7189c",
     "trace-next-event": "7c367d988aca81e12e6fa970c51e6c647b82edb2a3bacdaaaf35a605d94b0cfc",
+    "trace-ready-release": "459f5de6e67249caf60ef07890d1516e0ee556dd6b754f9d6f1dd1dfa10c66e3",
     "uapi-i64-reader": "62197020cc4c5b8faac0c4f44c81291f12e7986681a3e7c08080ef7be4e0f938",
     "uapi-u64-reader": "aa2b02fd921a14e0fb178214da9ea0183bddde4b7d5d3b2305cffe9abe5ca63e",
+    "wait-observation-router": "e88d13c007109d64a62c74501cf5b5c5df11617156d17f0e587e25d5828cb6b5",
     "u32-argument": "9a611e944f835a154c65dc1745c111c20a12d97323954af68e80fee6e74d391e",
     "x86-64-table": "64ecbc45be34c91cbbd7e12bbfb1bab005186d0b4cbbd47554a8fd2a9af16dcc",
 }
@@ -145,6 +148,7 @@ def assert_load_bearing_bodies(
         "observer-protocol-new": body_sha256(observer, "pub fn new(\n        root"),
         "path-limit": body_sha256(observer, "pub const fn path_byte_limit"),
         "prepare-observer": body_sha256(adapter, "pub fn prepare_observer"),
+        "prepared-observer-spawn": body_sha256(adapter, "pub fn spawn(self)"),
         "raw-syscall-info-layout": body_sha256(
             sys,
             '#[cfg(feature = "diagnostic-observer")]\n#[repr(C)]\nstruct RawSyscallInfo',
@@ -159,8 +163,12 @@ def assert_load_bearing_bodies(
         "syscall-info-parser": body_sha256(sys, "fn decode_trace_syscall_stop"),
         "tracee-string-read": body_sha256(trace, "fn read_tracee_string"),
         "trace-next-event": body_sha256(trace, "pub fn next_event(\n        &mut self"),
+        "trace-ready-release": body_sha256(
+            trace, "pub fn release(\n        self,\n        process_limit"
+        ),
         "uapi-i64-reader": body_sha256(sys, "fn trace_read_i64"),
         "uapi-u64-reader": body_sha256(sys, "fn trace_read_u64"),
+        "wait-observation-router": body_sha256(trace, "fn handle_wait_observation"),
         "u32-argument": body_sha256(trace, "fn trace_u32_argument"),
         "x86-64-table": body_sha256(trace, "fn decode_x86_64_syscall"),
     }
@@ -360,6 +368,17 @@ class DiagnosticSyscallDecoderContractTests(unittest.TestCase):
                 self.observer,
                 self.artifact,
             ),
+            "syscall-stop routing bypassed": (
+                self.trace.replace(
+                    "self.handle_syscall_stop(reported)",
+                    "Ok(WaitDecision::Continue)",
+                    1,
+                ),
+                self.sys,
+                self.adapter,
+                self.observer,
+                self.artifact,
+            ),
             "x86 open renumbered": (
                 self.trace.replace("open: Some(2)", "open: Some(3)", 1),
                 self.sys,
@@ -447,6 +466,17 @@ class DiagnosticSyscallDecoderContractTests(unittest.TestCase):
                 self.observer,
                 self.artifact,
             ),
+            "trace release capture limits substituted": (
+                self.trace.replace(
+                    "                capture_limits,",
+                    "                capture_limits: TraceCaptureLimits::new(1_048_576, 4096, 1_048_576).unwrap(),",
+                    1,
+                ),
+                self.sys,
+                self.adapter,
+                self.observer,
+                self.artifact,
+            ),
             "payload pointer substituted": (
                 self.trace.replace("address: arguments[4]", "address: arguments[1]", 1),
                 self.sys,
@@ -490,6 +520,17 @@ class DiagnosticSyscallDecoderContractTests(unittest.TestCase):
                 self.trace,
                 self.sys,
                 self.adapter.replace(".validate()", ".clone()", 1),
+                self.observer,
+                self.artifact,
+            ),
+            "observer spawn bounds substituted": (
+                self.trace,
+                self.sys,
+                self.adapter.replace(
+                    "bounds: self.bounds",
+                    "bounds: ObservationBounds { path_bytes: 1_048_576, socket_address_bytes: 4096, tracee_string_bytes: 1_048_576, ..self.bounds }",
+                    1,
+                ),
                 self.observer,
                 self.artifact,
             ),

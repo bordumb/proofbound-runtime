@@ -644,7 +644,8 @@ The Rust tests cover architecture-qualified table selection, unknown
 architecture rejection, x32 rejection, bound constructors, the closed error
 vocabulary, and compilation of the selected adapter release and drain paths.
 The independent checker byte-pins the compiler and crate-selection closure;
-the adapter release and drain transition; the trace event loop, entry handler,
+the adapter prepare, spawn, release, and drain transitions; the trace startup
+release, event loop, wait-observation router, entry handler,
 bound constructor, router, both architecture tables, width and byte-order
 helpers, supported-family decoder, syscall-information fetch and exact parser,
 bounded readers, and raw read operation. Its mutation witnesses cover the
