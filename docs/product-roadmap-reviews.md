@@ -1278,3 +1278,32 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 `d242b87b0b4b10fe3a86807a141e4c40a0470efc`. This approval-only envelope adds
 no reviewed production, schema, specification, claim, assumption, evidence, or
 test bytes. Any later change to those bytes requires a new exact-head review.
+
+## RT-8 diagnostic-contract approval after hosted-gate corrections
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `acf8f24730857a6e7906336b570c61bec7213ab1`
+- **Reviewed head:** `253b33d64ca3d812f5d2b1a347edb64ba0ac8075`
+- **Branch:** `codex/rt8-diagnostic-profile`
+- **Method:** Narrow exact-head static re-review. The reviewer changed no files
+  and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+Hosted verification found two declaration-only defects at the preceding
+approval envelope. The reviewer confirmed that the correction changes exactly
+three subject files. `PBR-DRAFT-017` now has the Tier 1 ceiling required by its
+independent-check evidence kind. The assurance summary records the same bounded
+Tier 1 meaning without claiming a released observer or producer. The acceptance
+test assertion changes only to canonical Rust formatting and keeps identical
+ordering semantics.
+
+The intervening `35ebd79fc132d802299af9f206320beb1294d366` commit records only
+the prior exact-head approval. No security behavior, schema, diagnostic
+contract, or evidence meaning changed beyond the required claim-ceiling
+correction. No new blocker was found.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`253b33d64ca3d812f5d2b1a347edb64ba0ac8075`. This approval-only envelope adds
+no reviewed production, schema, specification, claim, assumption, evidence, or
+test bytes. Any later subject change requires a new exact-head review.
