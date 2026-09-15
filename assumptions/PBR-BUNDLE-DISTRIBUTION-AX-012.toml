@@ -1,9 +1,9 @@
 schema = "proofbound-assumption/1"
 id = "PBR-BUNDLE-DISTRIBUTION-AX-012"
-statement = "The identified GitHub repository and release service, repository controls, DNS path, certificate-authority set, and TLS implementation preserve the requested public tag, release-state, and asset associations observed by the Runtime bundle consumer."
+statement = "The identified GitHub repository and release service, repository controls, workflow-scoped read-only API credential, DNS path, certificate-authority set, and TLS implementation preserve the requested public tag, release-state, and asset associations observed by the Runtime bundle consumer."
 category = "external-provider"
 owner = "Proofbound Runtime release maintainer"
-rationale = "The consumer verifies pinned byte digests and resolves the tag to the pinned commit, but GitHub supplies the tag object, immutable-release state, asset inventory, and public bytes. Runtime does not independently prove GitHub's service behavior or repository control identity."
+rationale = "The consumer verifies pinned byte digests and resolves the tag to the pinned commit, but GitHub supplies authenticated API metadata and anonymous public asset bytes. Runtime does not independently prove GitHub's service behavior, workflow-token behavior, or repository control identity."
 scope = "Only the hosted-distribution and immutable-release interpretation of PBR-DISTRIBUTION-016, including protected evidence and release-production bundle retrieval, and the inherited Proofbound identity interpretation in PBR-DISTRIBUTION-025."
 affected_claims = ["PBR-DISTRIBUTION-016", "PBR-DISTRIBUTION-025"]
 review_evidence = [

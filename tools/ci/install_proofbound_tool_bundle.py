@@ -16,7 +16,7 @@ import sys
 import tarfile
 import tempfile
 from typing import Callable
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 from urllib.request import Request, urlopen
 
 
@@ -539,13 +539,23 @@ def _parse_checksums(data: bytes, pin: dict[str, object]) -> None:
         raise ToolBundleError("published checksums differ from the pin")
 
 
+def _request_headers(url: str) -> dict[str, str]:
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "proofbound-runtime-ci",
+    }
+    token = os.environ.get("GITHUB_TOKEN")
+    if token and urlsplit(url).hostname == "api.github.com":
+        if token != token.strip() or any(character in token for character in "\0\n\r"):
+            raise ToolBundleError("GitHub API credential is malformed")
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
 def _fetch(url: str, limit: int) -> bytes:
     request = Request(
         url,
-        headers={
-            "Accept": "application/vnd.github+json",
-            "User-Agent": "proofbound-runtime-ci",
-        },
+        headers=_request_headers(url),
     )
     try:
         with urlopen(request, timeout=30) as response:

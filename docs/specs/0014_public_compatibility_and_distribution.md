@@ -176,8 +176,10 @@ The workflow must:
 
 1. verify the exact requested `main` revision and workflow identity;
 2. install the exact platform-specific public Proofbound bundle from the
-   Runtime-owned canonical pin, verify its hosted release and byte identities,
-   and reject any incomplete tool inventory before Proofbound runs;
+   Runtime-owned canonical pin, use the job's read-only workflow credential
+   only for GitHub API metadata, download release assets without that
+   credential, verify hosted release and byte identities, and reject any
+   incomplete tool inventory before Proofbound runs;
 3. build each package twice in clean independent directories;
 4. require byte equality;
 5. compare the package file inventory and retained source bytes with that exact

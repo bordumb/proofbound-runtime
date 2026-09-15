@@ -209,6 +209,8 @@ jobs:
           cargo install --locked cargo-deny --version 0.20.2
 
       - name: Install the exact public Proofbound bundle
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: >-
           python3 tools/ci/install_proofbound_tool_bundle.py
           --platform linux-${{ matrix.architecture }}

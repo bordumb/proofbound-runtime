@@ -299,6 +299,8 @@ jobs:
           test "$(aeneas -version)" = "aeneas 3a8586fa"
 
       - name: Install the exact public Proofbound bundle
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: >-
           python3 tools/ci/install_proofbound_tool_bundle.py
           --platform linux-x86_64

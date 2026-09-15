@@ -135,6 +135,12 @@ the digest implementation, the pinned upstream installer, the hosted runner,
 process behavior, and filesystem behavior visible. The checks bind exact
 identities under those premises; they do not discharge them.
 
+Each protected job supplies its workflow-scoped read-only credential only to
+GitHub API metadata requests. Release assets remain public downloads without
+that credential and retain exact pin, size, digest, manifest, and installed-byte
+checks. This avoids shared anonymous API quotas without converting the public
+asset path into a credential-dependent distribution claim.
+
 ## Registry publication implementation checkpoint
 
 The admitted claim-sized wave selects only the independent verifier, Rust SDK,

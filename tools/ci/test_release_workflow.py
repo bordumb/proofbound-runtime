@@ -291,6 +291,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("install_proofbound_tool_bundle.py", release)
         self.assertIn("--platform linux-${{ matrix.architecture }}", release)
         self.assertIn('--destination "$RUNNER_TEMP/proofbound-tools"', release)
+        self.assertEqual(release.count("GITHUB_TOKEN: ${{ github.token }}"), 1)
         self.assertIn('echo "$RUNNER_TEMP/proofbound-tools" >> "$GITHUB_PATH"', release)
         for executable in (
             "proofbound",

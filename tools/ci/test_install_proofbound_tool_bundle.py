@@ -146,6 +146,28 @@ def annotated_tag(tag_digest: str, revision: str = REVISION) -> bytes:
 
 
 class PinTests(unittest.TestCase):
+    def test_api_credential_is_scoped_to_github_metadata(self) -> None:
+        with mock.patch.dict(
+            installer.os.environ, {"GITHUB_TOKEN": "fixture-credential"}
+        ):
+            api_headers = installer._request_headers(
+                "https://api.github.com/repos/bordumb/proof-bound/releases/1"
+            )
+            asset_headers = installer._request_headers(
+                "https://github.com/bordumb/proof-bound/releases/download/tag/asset"
+            )
+        self.assertEqual(api_headers["Authorization"], "Bearer fixture-credential")
+        self.assertNotIn("Authorization", asset_headers)
+
+    def test_api_credential_rejects_header_injection(self) -> None:
+        with mock.patch.dict(
+            installer.os.environ, {"GITHUB_TOKEN": "fixture\ncredential"}
+        ):
+            with self.assertRaisesRegex(installer.ToolBundleError, "malformed"):
+                installer._request_headers(
+                    "https://api.github.com/repos/example/release"
+                )
+
     def test_canonical_pin_and_upstream_records_are_closed(self) -> None:
         pin, payloads = fixture()
         with tempfile.TemporaryDirectory() as temporary:
