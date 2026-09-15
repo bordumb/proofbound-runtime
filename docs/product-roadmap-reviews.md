@@ -1455,3 +1455,30 @@ before removing each target field independently.
 
 This verdict is not endorsed. The falsifier correction requires a separate
 commit and exact-head re-review.
+
+## RT-8 diagnostic artifact producer final approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `cb52c5115d73c72aebad51c4c0f4a301068d8479`
+- **Reviewed head:** `07c1b13e89560a9e0df95cdc0da7e1404f62531e`
+- **Branch:** `codex/rt8-observer`
+- **Method:** Exact-range static re-review. The reviewer changed no files and
+  ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that each kernel-selected schema mutation now uses the
+declared successful-outcome wire fields and independently removes either path
+or symlink evidence. Each rejection is therefore caused by the intended rule.
+All earlier blockers remain closed: locked dependency synchronization,
+one-way count-gap semantics, natural-capacity and overflow cases for all count
+bounds, complete reusable-path evidence in Rust and schema, bounded streaming
+encoding, aggregate claim identity, exact Capsec identities, redaction,
+normalized scoped paths, and discriminating system, home, and temporary-root
+exclusions.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`07c1b13e89560a9e0df95cdc0da7e1404f62531e`. The following approval-only
+commit adds no reviewed production, schema, specification, claim, assumption,
+evidence, or test bytes. Any later subject change requires a new exact-head
+review.
