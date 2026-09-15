@@ -423,8 +423,15 @@ impl TraceStreamReaders {
             }
             std::thread::sleep(TRACE_POLL_INTERVAL);
         }
+        if Instant::now() >= deadline {
+            self.cancel_and_join();
+            return Err(TraceObservationError::StreamDrainTimedOut);
+        }
         let stdout = join_trace_capture(self.stdout.take());
         let stderr = join_trace_capture(self.stderr.take());
+        if Instant::now() >= deadline {
+            return Err(TraceObservationError::StreamDrainTimedOut);
+        }
         Ok(TraceOutputCapture {
             stdout: stdout?,
             stderr: stderr?,

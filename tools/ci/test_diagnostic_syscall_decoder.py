@@ -21,7 +21,9 @@ DIAGNOSE_LINUX_MANIFEST = ROOT / "crates/proofbound-runtime-diagnose-linux/Cargo
 DIAGNOSE_LINUX_LIB = ROOT / "crates/proofbound-runtime-diagnose-linux/src/lib.rs"
 CLAIM = ROOT / "claims/PBR-OBSERVER-025.toml"
 DECODER_EVIDENCE = ROOT / "proofbound/evidence/diagnostic-syscall-decoder-contract.toml"
-ADAPTER_EVIDENCE = ROOT / "proofbound/evidence/diagnostic-observer-adapter-contract.toml"
+ADAPTER_EVIDENCE = (
+    ROOT / "proofbound/evidence/diagnostic-observer-adapter-contract.toml"
+)
 ADAPTER_COMPILE_EVIDENCE = (
     ROOT / "proofbound/evidence/diagnostic-syscall-decoder-adapter.toml"
 )
@@ -76,7 +78,7 @@ EXPECTED_LOAD_BEARING_BODIES = {
     "syscall-info-parser": "796f463adb9db22ebf211f25ff7d0097f86ab49f9d240a62319161dc3f91af5e",
     "tracee-string-read": "54fec5ee2c46ba8bd614c0da4e769b311ca6ff65637e7685be6e086369f7189c",
     "trace-next-event": "5a281f37642e52df2bc1a5187c3ee7ff741f2e751a4f977fcc70b0e44b9c59f2",
-    "trace-ready-release": "459f5de6e67249caf60ef07890d1516e0ee556dd6b754f9d6f1dd1dfa10c66e3",
+    "trace-ready-release": "df095da595cfa93125993d6697f0989faecbf1dae1b9d1d4b5fc3f0c09cdebaa",
     "uapi-i64-reader": "62197020cc4c5b8faac0c4f44c81291f12e7986681a3e7c08080ef7be4e0f938",
     "uapi-u64-reader": "aa2b02fd921a14e0fb178214da9ea0183bddde4b7d5d3b2305cffe9abe5ca63e",
     "wait-observation-router": "6197d2734de504cd1419cf47fad0457c0edb91d4f198666a09e4d3e3792f1257",
@@ -129,7 +131,9 @@ def assert_load_bearing_bodies(
 ) -> None:
     actual = {
         "adapter-release": body_sha256(adapter, "pub fn release(self)"),
-        "adapter-next-event": body_sha256(adapter, "pub fn next_event(\n        mut self"),
+        "adapter-next-event": body_sha256(
+            adapter, "pub fn next_event(\n        mut self"
+        ),
         "aarch64-table": body_sha256(trace, "fn decode_aarch64_syscall"),
         "capture": body_sha256(trace, "fn capture_syscall_invocation"),
         "capture-path-limit-accessor": body_sha256(trace, "const fn path_bytes(self)"),
@@ -185,9 +189,13 @@ def assert_source_closure() -> None:
         "claim": hashlib.sha256(CLAIM.read_bytes()).hexdigest(),
         "decoder-evidence": hashlib.sha256(DECODER_EVIDENCE.read_bytes()).hexdigest(),
         "diagnose-lib": hashlib.sha256(DIAGNOSE_LIB.read_bytes()).hexdigest(),
-        "diagnose-linux-lib": hashlib.sha256(DIAGNOSE_LINUX_LIB.read_bytes()).hexdigest(),
+        "diagnose-linux-lib": hashlib.sha256(
+            DIAGNOSE_LINUX_LIB.read_bytes()
+        ).hexdigest(),
         "diagnose-manifest": hashlib.sha256(DIAGNOSE_MANIFEST.read_bytes()).hexdigest(),
-        "diagnose-linux-manifest": hashlib.sha256(DIAGNOSE_LINUX_MANIFEST.read_bytes()).hexdigest(),
+        "diagnose-linux-manifest": hashlib.sha256(
+            DIAGNOSE_LINUX_MANIFEST.read_bytes()
+        ).hexdigest(),
         "linux-manifest": hashlib.sha256(LINUX_MANIFEST.read_bytes()).hexdigest(),
         "linux-lib": hashlib.sha256(LINUX_LIB.read_bytes()).hexdigest(),
         "lock": hashlib.sha256(LOCK.read_bytes()).hexdigest(),
@@ -212,7 +220,9 @@ def assert_decoder_contract(
     prepare = implementation(adapter, "pub fn prepare_observer")
     protocol_new = implementation(observer, "pub fn new(\n        root")
 
-    if entry.index("capture_syscall_invocation") > entry.index("trace_syscall(process.get())"):
+    if entry.index("capture_syscall_invocation") > entry.index(
+        "trace_syscall(process.get())"
+    ):
         raise AssertionError("operand capture must precede tracee resume")
     for required in [
         "AUDIT_ARCH_X86_64",
@@ -279,13 +289,19 @@ def assert_decoder_contract(
     prepare_compact = re.sub(r"\s+", "", prepare)
     protocol_new_compact = re.sub(r"\s+", "", protocol_new)
     if "bounds.validate()" not in prepare_compact:
-        raise AssertionError("observation bounds must validate before trace preparation")
+        raise AssertionError(
+            "observation bounds must validate before trace preparation"
+        )
     if prepare_compact.index("bounds.validate()") > prepare_compact.index(
         "prepare_traced_launcher"
     ):
-        raise AssertionError("observation bounds must validate before trace preparation")
+        raise AssertionError(
+            "observation bounds must validate before trace preparation"
+        )
     if "bounds.validate()" not in protocol_new_compact:
-        raise AssertionError("pure observer construction must revalidate observation bounds")
+        raise AssertionError(
+            "pure observer construction must revalidate observation bounds"
+        )
     for required in [
         "available > core::mem::size_of::<RawSyscallInfo>()",
         "information.reserved != 0",
@@ -301,13 +317,18 @@ def assert_decoder_contract(
         raise AssertionError("send payload length is not retained")
     sendto = decode[decode.index("number == syscalls.sendto") :]
     sendto = sendto[: sendto.index("} else if number == syscalls.clone")]
-    if "address: arguments[4]" not in sendto or "address_bytes: arguments[5]" not in sendto:
+    if (
+        "address: arguments[4]" not in sendto
+        or "address_bytes: arguments[5]" not in sendto
+    ):
         raise AssertionError("sendto address operands are not selected")
     if "arguments[1]" in sendto:
         raise AssertionError("sendto payload pointer must never be consumed")
     for forbidden in ["process_vm_writev", "PTRACE_POKEDATA", "ptrace(PTRACE_POKE"]:
         if forbidden in trace or forbidden in sys:
-            raise AssertionError(f"write-capable trace operation is forbidden: {forbidden}")
+            raise AssertionError(
+                f"write-capable trace operation is forbidden: {forbidden}"
+            )
     assert_load_bearing_constants(trace, sys)
     assert_load_bearing_bodies(trace, sys, adapter, observer, artifact)
 
@@ -344,7 +365,11 @@ class DiagnosticSyscallDecoderContractTests(unittest.TestCase):
         ]:
             self.assertIn(required, adapter)
         observer = OBSERVER.read_text()
-        for required in ["self.bounds.path_bytes", "self.bounds.socket_address_bytes", "self.bounds.tracee_string_bytes"]:
+        for required in [
+            "self.bounds.path_bytes",
+            "self.bounds.socket_address_bytes",
+            "self.bounds.tracee_string_bytes",
+        ]:
             self.assertIn(required, observer)
 
     def test_load_bearing_decoder_bodies_are_exact(self):
@@ -554,7 +579,11 @@ class DiagnosticSyscallDecoderContractTests(unittest.TestCase):
             ),
             "ptrace syscall-info request changed": (
                 self.trace,
-                self.sys.replace("PTRACE_GET_SYSCALL_INFO: libc::c_uint = 0x420e", "PTRACE_GET_SYSCALL_INFO: libc::c_uint = 0x420f", 1),
+                self.sys.replace(
+                    "PTRACE_GET_SYSCALL_INFO: libc::c_uint = 0x420e",
+                    "PTRACE_GET_SYSCALL_INFO: libc::c_uint = 0x420f",
+                    1,
+                ),
                 self.adapter,
                 self.observer,
                 self.artifact,
@@ -569,7 +598,7 @@ class DiagnosticSyscallDecoderContractTests(unittest.TestCase):
             "syscall-info C layout removed": (
                 self.trace,
                 self.sys.replace(
-                    '#[repr(C)]\nstruct RawSyscallInfo',
+                    "#[repr(C)]\nstruct RawSyscallInfo",
                     "struct RawSyscallInfo",
                     1,
                 ),
