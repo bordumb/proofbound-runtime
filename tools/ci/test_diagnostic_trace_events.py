@@ -71,8 +71,10 @@ class DiagnosticTraceEventContractTests(unittest.TestCase):
         self.assertIn("trace_process_creation_event(event)", active)
         self.assertLess(
             register.index("trace_open_process_handle"),
-            register.index("self.processes"),
+            register.index(".insert(child"),
         )
+        self.assertIn("self.process_limit.drain_capacity()", register)
+        self.assertIn("ProcessCapacityExceeded", register)
         self.assertIn("read_thread_group_id(child)", register)
         self.assertIn("reconcile_exec_processes(&mut self.processes", reconcile)
         self.assertIn("ifreported!=requested", reconcile_compact)
@@ -95,7 +97,7 @@ class DiagnosticTraceEventContractTests(unittest.TestCase):
             self.trace,
             "fn nonleader_exec_preserves_pending_syscall_until_exit_pair",
         )
-        self.assertIn(".get(&process)", wait)
+        self.assertIn(".get(&change.survivor)", wait)
         self.assertIn("state.pending", wait)
         self.assertNotIn("state.pending.take()", wait)
         self.assertIn("reconcile_exec_processes", regression)

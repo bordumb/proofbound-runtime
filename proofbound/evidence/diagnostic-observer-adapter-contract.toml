@@ -2,10 +2,13 @@ schema = "proofbound-evidence-unit/1"
 id = "diagnostic-observer-adapter-contract"
 adapter = "independent-check"
 kind = "independent-check"
-claims = ["PBR-OBSERVER-022"]
+claims = ["PBR-OBSERVER-022", "PBR-OBSERVER-024"]
 tier = 0
 expected_inventory = [
   "diagnostic-observer-adapter-bound-inputs",
+  "diagnostic-observer-adapter-drain-coupling",
+  "diagnostic-observer-adapter-event-coupling",
+  "diagnostic-observer-adapter-process-capacity",
   "diagnostic-observer-adapter-production-separation",
   "diagnostic-observer-adapter-state-continuity",
   "diagnostic-observer-adapter-transition-order",
@@ -13,7 +16,9 @@ expected_inventory = [
 inputs = [
   "Cargo.lock",
   "Cargo.toml",
+  "assumptions/PBR-DIAGNOSTIC-TRACE-AX-016.toml",
   "claims/PBR-OBSERVER-022.toml",
+  "claims/PBR-OBSERVER-024.toml",
   "crates/proofbound-runtime-cli/Cargo.toml",
   "crates/proofbound-runtime-diagnose/Cargo.toml",
   "crates/proofbound-runtime-diagnose/src/artifact.rs",

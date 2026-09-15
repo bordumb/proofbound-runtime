@@ -1,17 +1,21 @@
 //! Couples diagnostic trace setup to the pure observer protocol.
 
 use core::fmt;
+use std::collections::BTreeSet;
 use std::num::NonZeroU32;
 use std::os::fd::BorrowedFd;
 
 use proofbound_runtime_diagnose::artifact::ObservationBounds;
 use proofbound_runtime_diagnose::observer::{
-    DiagnosticProcessId, DiagnosticTraceOptions, ObserverProtocol, ObserverProtocolError,
+    DiagnosticProcessId, DiagnosticTraceOptions, ObserverDirective, ObserverProtocol,
+    ObserverProtocolError, ProcessCreationKind,
 };
 use proofbound_runtime_linux::{
-    prepare_traced_launcher, AcknowledgedTraceStop, ActiveTrace, Architecture, BoundaryRunning,
+    AcknowledgedTraceStop, ActiveTrace, ActiveTraceEvent, Architecture, BoundaryRunning,
     InitialExecStop, InstallRequest, LauncherPause, PreparedTraceCommand, ResolvedFile,
-    SpawnedTrace, TraceDeadline, TraceProcessId, TraceReady, TraceStartupError,
+    SpawnedTrace, TraceDeadline, TraceDrainObservation, TraceObservationError,
+    TraceProcessCreationKind, TraceProcessId, TraceProcessLimit, TraceReady, TraceStartupError,
+    prepare_traced_launcher,
 };
 
 /// Contains a validated observer request before child creation.
@@ -174,9 +178,10 @@ pub struct ReadyObserver {
 impl ReadyObserver {
     /// Authorizes release in the pure protocol before it releases target code.
     pub fn release(self) -> Result<ActiveObserver, ObserverAdapterError> {
+        let process_limit = TraceProcessLimit::new(self.protocol.process_limit())?;
         let mut protocol = self.protocol;
         protocol.release_target()?;
-        let trace = self.trace.release()?;
+        let trace = self.trace.release(process_limit)?;
         Ok(ActiveObserver { trace, protocol })
     }
 }
@@ -200,6 +205,251 @@ impl ActiveObserver {
     pub const fn protocol(&self) -> &ObserverProtocol {
         &self.protocol
     }
+
+    /// Consumes one exact trace event and advances the pure protocol.
+    pub fn next_event(
+        mut self,
+        deadline: TraceDeadline,
+    ) -> Result<ActiveObserverStep, ObserverAdapterError> {
+        let event = match self.trace.next_event(deadline) {
+            Ok(event) => event,
+            Err(error) => {
+                let directive = self.protocol.record_observer_failure()?;
+                if directive != ObserverDirective::TerminateAndDrain {
+                    return Err(ObserverAdapterError::Protocol(
+                        ObserverProtocolError::TransitionInvalid,
+                    ));
+                }
+                return Ok(ActiveObserverStep::Drain {
+                    observer: DrainingObserver {
+                        trace: self.trace,
+                        protocol: self.protocol,
+                        untracked_processes: BTreeSet::new(),
+                    },
+                    observation: ObserverObservation::Failure(error),
+                });
+            }
+        };
+
+        let mut untracked_processes = BTreeSet::new();
+        let directive = match &event {
+            ActiveTraceEvent::SyscallCompleted { process, .. } => {
+                self.protocol.record_event(diagnostic_process(*process)?)?
+            }
+            ActiveTraceEvent::ProcessCreated {
+                parent,
+                child,
+                kind,
+            } => {
+                let parent = diagnostic_process(*parent)?;
+                let child = diagnostic_process(*child)?;
+                let directive =
+                    self.protocol
+                        .discover_child(parent, child, process_creation_kind(*kind))?;
+                if !self.protocol.tracks_process(child) {
+                    untracked_processes.insert(child);
+                }
+                if directive == ObserverDirective::Continue {
+                    self.protocol.record_event(parent)?
+                } else {
+                    directive
+                }
+            }
+            ActiveTraceEvent::ImageReplaced {
+                former_process,
+                process,
+                superseded_processes,
+                ..
+            } => {
+                let former = diagnostic_process(*former_process)?;
+                let survivor = diagnostic_process(*process)?;
+                let superseded = superseded_processes
+                    .iter()
+                    .copied()
+                    .map(diagnostic_process)
+                    .collect::<Result<Vec<_>, _>>()?;
+                let directive = self.protocol.record_exec(former, survivor, &superseded)?;
+                if directive == ObserverDirective::Continue {
+                    self.protocol.record_event(survivor)?
+                } else {
+                    directive
+                }
+            }
+            ActiveTraceEvent::ProcessExited { process, .. } => self
+                .protocol
+                .record_process_exit(diagnostic_process(*process)?)?,
+            ActiveTraceEvent::UnexpectedStop { process, .. } => self
+                .protocol
+                .record_unexpected_stop(diagnostic_process(*process)?)?,
+        };
+
+        if directive == ObserverDirective::TerminateAndDrain {
+            return Ok(ActiveObserverStep::Drain {
+                observer: DrainingObserver {
+                    trace: self.trace,
+                    protocol: self.protocol,
+                    untracked_processes,
+                },
+                observation: ObserverObservation::Event(event),
+            });
+        }
+        if directive != ObserverDirective::Continue {
+            return Err(ObserverAdapterError::Protocol(
+                ObserverProtocolError::TransitionInvalid,
+            ));
+        }
+        if self.trace.is_drained() {
+            let publication = self.protocol.finish()?;
+            return Ok(ActiveObserverStep::Complete {
+                observer: CompletedObserver {
+                    protocol: self.protocol,
+                    publication,
+                },
+                event,
+            });
+        }
+        Ok(ActiveObserverStep::Continue {
+            observer: self,
+            event,
+        })
+    }
+}
+
+/// Identifies one coupled observation or effectful observer failure.
+#[derive(Debug, Eq, PartialEq)]
+pub enum ObserverObservation {
+    /// One complete effectful trace event.
+    Event(ActiveTraceEvent),
+    /// One trace failure that forced termination and drain.
+    Failure(TraceObservationError),
+}
+
+/// Selects the only legal state after one active observation step.
+#[derive(Debug)]
+pub enum ActiveObserverStep {
+    /// Observation can continue with the returned stopped event already recorded.
+    Continue {
+        /// The coupled observer for the next consuming step.
+        observer: ActiveObserver,
+        /// The complete event recorded by the pure protocol.
+        event: ActiveTraceEvent,
+    },
+    /// Observation must terminate and drain before any publication decision.
+    Drain {
+        /// The coupled observer that can only drain.
+        observer: DrainingObserver,
+        /// The event or failure that selected drain.
+        observation: ObserverObservation,
+    },
+    /// Natural process-tree completion selected a publication decision.
+    Complete {
+        /// The terminal pure observer state.
+        observer: CompletedObserver,
+        /// The terminal event recorded by the pure protocol.
+        event: ActiveTraceEvent,
+    },
+}
+
+/// Owns one observer after a pure termination directive.
+#[derive(Debug)]
+pub struct DrainingObserver {
+    trace: ActiveTrace,
+    protocol: ObserverProtocol,
+    untracked_processes: BTreeSet<DiagnosticProcessId>,
+}
+
+impl DrainingObserver {
+    /// Terminates the exact trace tree and completes the pure drain protocol.
+    pub fn finish(
+        mut self,
+        deadline: TraceDeadline,
+    ) -> Result<CompletedObserver, ObserverAdapterError> {
+        let report = self.trace.terminate_and_drain(deadline)?;
+        for observation in report.observations() {
+            match observation {
+                TraceDrainObservation::ProcessCreated {
+                    parent,
+                    child,
+                    kind,
+                } => {
+                    let parent = diagnostic_process(*parent)?;
+                    let child = diagnostic_process(*child)?;
+                    self.protocol
+                        .discover_child(parent, child, process_creation_kind(*kind))?;
+                    if !self.protocol.tracks_process(child) {
+                        self.untracked_processes.insert(child);
+                    }
+                }
+                TraceDrainObservation::ImageReplaced {
+                    former_process,
+                    process,
+                    superseded_processes,
+                } => {
+                    let former = diagnostic_process(*former_process)?;
+                    let survivor = diagnostic_process(*process)?;
+                    let superseded = superseded_processes
+                        .iter()
+                        .copied()
+                        .map(diagnostic_process)
+                        .collect::<Result<Vec<_>, _>>()?;
+                    self.protocol.record_exec(former, survivor, &superseded)?;
+                }
+                TraceDrainObservation::ProcessExited { process, .. } => {
+                    let process = diagnostic_process(*process)?;
+                    if self.untracked_processes.remove(&process) {
+                        continue;
+                    }
+                    self.protocol.record_process_exit(process)?;
+                }
+            }
+        }
+        if !self.untracked_processes.is_empty() {
+            return Err(ObserverAdapterError::Protocol(
+                ObserverProtocolError::ProcessTreeChanged,
+            ));
+        }
+        self.protocol.confirm_tree_drained()?;
+        let publication = self.protocol.finish()?;
+        Ok(CompletedObserver {
+            protocol: self.protocol,
+            publication,
+        })
+    }
+}
+
+/// Contains one terminal diagnostic publication decision.
+#[derive(Debug)]
+pub struct CompletedObserver {
+    protocol: ObserverProtocol,
+    publication: ObserverDirective,
+}
+
+impl CompletedObserver {
+    /// Borrows the terminal pure protocol state.
+    #[must_use]
+    pub const fn protocol(&self) -> &ObserverProtocol {
+        &self.protocol
+    }
+
+    /// Returns the pure complete or incomplete publication directive.
+    #[must_use]
+    pub const fn publication(&self) -> ObserverDirective {
+        self.publication
+    }
+}
+
+fn diagnostic_process(
+    process: TraceProcessId,
+) -> Result<DiagnosticProcessId, ObserverAdapterError> {
+    DiagnosticProcessId::new(process.get()).map_err(ObserverAdapterError::Protocol)
+}
+
+const fn process_creation_kind(kind: TraceProcessCreationKind) -> ProcessCreationKind {
+    match kind {
+        TraceProcessCreationKind::Clone => ProcessCreationKind::Clone,
+        TraceProcessCreationKind::Fork => ProcessCreationKind::Fork,
+        TraceProcessCreationKind::Vfork => ProcessCreationKind::Vfork,
+    }
 }
 
 /// Identifies one fail-closed adapter setup error.
@@ -209,6 +459,8 @@ pub enum ObserverAdapterError {
     BoundsInvalid,
     /// The Linux trace-startup operation failed.
     Trace(TraceStartupError),
+    /// Active trace observation or drain failed.
+    Observation(TraceObservationError),
     /// The pure observer protocol rejected a transition.
     Protocol(ObserverProtocolError),
 }
@@ -220,6 +472,7 @@ impl ObserverAdapterError {
         match self {
             Self::BoundsInvalid => "diagnostic.observer-adapter.bounds-invalid",
             Self::Trace(error) => error.code(),
+            Self::Observation(error) => error.code(),
             Self::Protocol(error) => error.code(),
         }
     }
@@ -228,6 +481,12 @@ impl ObserverAdapterError {
 impl From<TraceStartupError> for ObserverAdapterError {
     fn from(error: TraceStartupError) -> Self {
         Self::Trace(error)
+    }
+}
+
+impl From<TraceObservationError> for ObserverAdapterError {
+    fn from(error: TraceObservationError) -> Self {
+        Self::Observation(error)
     }
 }
 

@@ -5,15 +5,18 @@ closed schemas, source-level production non-reuse, the pure diagnostic artifact
 producer, and the pure observer protocol are merged through Runtime `b04382d`.
 Exact-main Verify run `34946613122` passed. The identity-bound launcher
 exec-release prerequisite for race-free trace setup merged as `3557cc9` after
-exact-head hosted verification; exact-main run `34956564102` is in progress.
+exact-head hosted verification; exact-main run `34956564102` passed.
 The separate feature-gated Linux trace-startup source is independently approved
 and in hosted PR 14. The adapter that privately couples the effectful and pure
 setup states is independently approved at exact source head `d0c2520` and is in
 PR 15. The following active-trace source adds exact-set waits, process-creation
 and exec identity validation, paired syscall stops, and validated pidfd
-termination. Its effectful process-map bound, live adapter event coupling,
-decoding, command integration, native attack corpus, and release binding remain
-open.
+termination. Its exact correction is independently approved in PR 16. The next
+source wave passes the validated process bound into the effectful trace,
+consumes complete events into the matching pure protocol, and makes successful
+effectful drain reconciliation precede pure tree-empty acknowledgement.
+Decoding, command integration, the native attack corpus, and release binding
+remain open.
 
 **Primary owner:** Proofbound Runtime
 
@@ -98,9 +101,16 @@ values without making a draft an authority object.
 - The active trace polls only its private known tracee set. It registers a
   ptrace-created child and identity-stable thread-group handle before its
   stopped parent resumes, pairs syscall entry and exit information across exec
-  events, reconciles leader and non-leader exec identity replacement, and holds each returned nonterminal
-  event stopped until the next request. Observation failure requires drain.
-  Termination uses retained pidfds and cannot target a reused numeric PID.
+  events, reconciles leader and non-leader exec identity replacement, and holds
+  each returned nonterminal event stopped until the next request. Observation
+  failure requires drain. Termination uses retained pidfds and cannot target a
+  reused numeric PID.
+- The same consuming adapter state maps each live event into its matching pure
+  transition. It passes the validated lifetime process bound to the effectful
+  trace before release, retains overflow identities outside the bounded pure
+  ledger, and exposes only a drain state after any failure or bound directive.
+  A successful effectful empty-tree report and an empty overflow set must both
+  precede pure tree-drain acknowledgement and publication selection.
 - Automatic candidates require an explicit normalized project or runtime
   scope. System, home, and configured temporary roots remain open review
   items.

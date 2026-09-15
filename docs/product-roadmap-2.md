@@ -1,12 +1,12 @@
 # Proofbound Runtime product roadmap 2: deferred capabilities
 
 - **Status:** implementation; RT-7 publication routes and the RT-8 diagnostic
-  contract, artifact producer, and pure observer protocol are merged, external
-  registry publication remains open, and the RT-8 exec-release prerequisite is
-  in ordered admission; all complete Roadmap 2 epic exits remain open
+  contract, artifact producer, pure observer protocol, and exec-release
+  prerequisite are merged; external registry publication and every complete
+  Roadmap 2 epic exit remain open
 - **Date:** 2026-09-13
-- **Runtime baseline:** `3557cc9` on `main`; its exact-main Verify run
-  `34956564102` is in progress
+- **Runtime baseline:** `3557cc9` on `main`; exact-main Verify run
+  `34956564102` passed
 - **Proofbound baseline consumed by Runtime evidence:** public immutable bundle
   for source `9512469`; protected-path cutover merged as Runtime `4a0cfdb` and
   passed exact-main Verify run `34918706960`
@@ -71,13 +71,16 @@ witnesses. The corrected exact source passed independent review and complete
 hosted run `34942545372`, merged unsigned as `b04382d`, and passed exact-main
 Verify run `34946613122`. The identity-bound exec-release prerequisite passed
 exact-head hosted verification and merged unsigned as `3557cc9`; exact-main
-run `34956564102` is in progress. Trace startup is independently approved and
+run `34956564102` passed. Trace startup is independently approved and
 in hosted PR 14. Its coupled adapter is independently approved at exact source
 head `d0c2520` and is in PR 15. The following active-trace source adds exact-set
-waits, paired syscall stops, process-tree identity handling, and validated
-pidfd-directed termination. Its effectful process-map bound, live adapter event
-coupling, syscall decoding, command integration, native attack corpus, and
-release binding remain open.
+waits, paired syscall stops across exec, process-tree identity handling, and
+validated pidfd-directed termination; its exact correction is independently
+approved in PR 16. The next source wave passes the validated process bound into
+the trace, consumes each complete event into the same pure protocol, and
+orders successful effectful drain before the pure tree-empty acknowledgement.
+Syscall decoding, command integration, the native attack corpus, and release
+binding remain open.
 
 RT-9 is blocked until RT-5 implements the accepted single-service network
 decision in production.

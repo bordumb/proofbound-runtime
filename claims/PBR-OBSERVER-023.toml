@@ -18,7 +18,7 @@ assumptions = [
 ]
 open_obligations = [
   "Run the complete source, compile, and unit evidence in hosted exact-head verification before merge.",
-  "Connect complete trace events and drain acknowledgement to the pure observer protocol without exposing mutable trace ownership.",
+  "Preserve exact trace ownership while PBR-OBSERVER-024 couples complete events and drain acknowledgement to the pure observer protocol.",
   "Bind the effectful tracee map to the validated observation and execution process bounds before live adapter or command release.",
   "Implement and falsify architecture-qualified syscall decoding and bounded tracee-memory reads.",
   "Exercise clone, fork, vfork, multithreaded exec, signal, timeout, PID reuse pressure, and exact drain on both supported native architectures.",
@@ -40,6 +40,7 @@ source_roots = [
   "claims/PBR-OBSERVER-021.toml",
   "claims/PBR-OBSERVER-022.toml",
   "claims/PBR-OBSERVER-023.toml",
+  "claims/PBR-OBSERVER-024.toml",
   "crates/proofbound-runtime-linux/Cargo.toml",
   "crates/proofbound-runtime-linux/src/lib.rs",
   "crates/proofbound-runtime-linux/src/sys.rs",

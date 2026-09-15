@@ -92,6 +92,14 @@ observed overflow or unknown process is not added to the bounded retained
 ledger. Its existence invalidates any earlier tree-drain acknowledgement and
 blocks publication until the adapter confirms the tree is empty again.
 
+The effectful trace receives that validated process bound before target
+release. When every retained creator can have at most one process-creation
+event pending while stopped, the exact drain set is bounded by twice the
+declared process count. An attempt to exceed that closed drain capacity fails
+the observer and makes publication ineligible. This capacity argument depends
+on the registered Linux ptrace stop premise; native adversarial evidence must
+test it on each supported architecture.
+
 The Linux implementation keeps its effectful observer in a separate crate.
 That crate alone enables the diagnostic observer feature on the Linux boundary
 crate. The production CLI uses the default empty feature set. The safe startup
@@ -316,6 +324,12 @@ value tests. `PBR-DIAGNOSTIC-TRACE-AX-016` retains the Linux ptrace, exact-wait,
 procfs thread-group, pidfd, signal, and terminal-reporting premises. Native
 adversarial evidence on both architectures is required before Runtime claims
 that the effectful observer retains or drains a complete process tree.
+
+`PBR-OBSERVER-024` checks the source-level coupling between complete live trace
+events, the bounded pure protocol, overflow identity retention, the drain-only
+typestate, and the ordering of an effectful empty-tree report before a pure
+tree-empty acknowledgement. It does not strengthen the Linux premise or make
+the diagnostic executable a released artifact.
 
 RT-8 closes only after one maintained dynamic workload displays all available
 provenance classes, requires human completion, passes the independent

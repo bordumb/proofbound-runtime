@@ -184,6 +184,18 @@ impl ObserverProtocol {
         self.processes.len()
     }
 
+    /// Returns the declared lifetime process limit.
+    #[must_use]
+    pub const fn process_limit(&self) -> u64 {
+        self.bounds.process_count
+    }
+
+    /// Reports whether one process identity is retained for terminal drain.
+    #[must_use]
+    pub fn tracks_process(&self, process: DiagnosticProcessId) -> bool {
+        self.processes.contains_key(&process)
+    }
+
     /// Records ptrace ownership of the initially stopped root process.
     pub fn attach_root(&mut self) -> Result<ObserverDirective, ObserverProtocolError> {
         self.require_state(ObserverProtocolState::Prepared)?;
@@ -283,6 +295,46 @@ impl ObserverProtocol {
         observation.events += 1;
         self.total_events += 1;
         Ok(ObserverDirective::Continue)
+    }
+
+    /// Reconciles one successful exec identity transition.
+    pub fn record_exec(
+        &mut self,
+        former: DiagnosticProcessId,
+        survivor: DiagnosticProcessId,
+        superseded: &[DiagnosticProcessId],
+    ) -> Result<ObserverDirective, ObserverProtocolError> {
+        self.require_observing()?;
+        let survivor_is_replaced = superseded.contains(&survivor);
+        let identities_are_closed = self.processes.contains_key(&former)
+            && !superseded.contains(&former)
+            && superseded
+                .iter()
+                .all(|process| self.processes.contains_key(process))
+            && superseded
+                .iter()
+                .enumerate()
+                .all(|(index, process)| !superseded[..index].contains(process))
+            && ((former == survivor && !survivor_is_replaced)
+                || (former != survivor && survivor_is_replaced));
+        if !identities_are_closed {
+            return self.stop_with_gap(DiagnosticGap::ObserverFailed);
+        }
+        let observation = self
+            .processes
+            .remove(&former)
+            .ok_or(ObserverProtocolError::ProcessTreeChanged)?;
+        for process in superseded {
+            self.processes.remove(process);
+        }
+        self.processes.insert(survivor, observation);
+        self.seen_processes.insert(survivor);
+        if self.state == ObserverProtocolState::Draining {
+            self.tree_drain_confirmed = false;
+            Ok(ObserverDirective::TerminateAndDrain)
+        } else {
+            Ok(ObserverDirective::Continue)
+        }
     }
 
     /// Records the terminal wait result for one tracked process.
@@ -694,6 +746,44 @@ mod tests {
         );
         protocol.confirm_tree_drained().expect("tree drained");
         assert_eq!(protocol.finish(), Ok(ObserverDirective::PublishIncomplete));
+    }
+
+    #[test]
+    fn exec_identity_replacement_is_atomic_and_closed() {
+        let root = DiagnosticProcessId::new(10).expect("root");
+        let former = DiagnosticProcessId::new(11).expect("former");
+        let sibling = DiagnosticProcessId::new(12).expect("sibling");
+        let mut protocol = released();
+        protocol
+            .discover_child(root, former, ProcessCreationKind::Clone)
+            .expect("former child");
+        protocol
+            .discover_child(root, sibling, ProcessCreationKind::Clone)
+            .expect("sibling child");
+        protocol.record_event(former).expect("former event");
+
+        assert_eq!(
+            protocol.record_exec(former, root, &[root, sibling]),
+            Ok(ObserverDirective::Continue)
+        );
+        assert!(protocol.tracks_process(root));
+        assert!(!protocol.tracks_process(former));
+        assert!(!protocol.tracks_process(sibling));
+        assert_eq!(protocol.active_processes(), 1);
+        assert_eq!(protocol.record_event(root), Ok(ObserverDirective::Continue));
+
+        let mut invalid = released();
+        assert_eq!(
+            invalid.record_exec(root, former, &[]),
+            Ok(ObserverDirective::TerminateAndDrain)
+        );
+        assert_eq!(invalid.state(), ObserverProtocolState::Draining);
+        assert_eq!(
+            invalid.gaps().collect::<Vec<_>>(),
+            vec![DiagnosticGap::ObserverFailed]
+        );
+        assert!(invalid.tracks_process(root));
+        assert!(!invalid.tracks_process(former));
     }
 
     #[test]

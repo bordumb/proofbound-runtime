@@ -2,13 +2,14 @@ schema = "proofbound-evidence-unit/1"
 id = "diagnostic-observer-protocol"
 adapter = "rust-test"
 kind = "example-test"
-claims = ["PBR-OBSERVER-020"]
+claims = ["PBR-OBSERVER-020", "PBR-OBSERVER-024"]
 tier = 0
 expected_inventory = [
   "proofbound_runtime_diagnose::observer::tests::collection_bounds_require_termination_and_explicit_gaps",
   "proofbound_runtime_diagnose::observer::tests::complete_tree_requires_every_terminal_wait_result",
   "proofbound_runtime_diagnose::observer::tests::drain_tracks_children_until_the_process_bound",
   "proofbound_runtime_diagnose::observer::tests::each_collection_bound_has_one_exact_gap",
+  "proofbound_runtime_diagnose::observer::tests::exec_identity_replacement_is_atomic_and_closed",
   "proofbound_runtime_diagnose::observer::tests::failures_keep_pre_release_and_post_release_publication_distinct",
   "proofbound_runtime_diagnose::observer::tests::invalid_inputs_duplicates_and_terminal_reuse_fail_closed",
   "proofbound_runtime_diagnose::observer::tests::later_observation_invalidates_a_tree_drain_confirmation",

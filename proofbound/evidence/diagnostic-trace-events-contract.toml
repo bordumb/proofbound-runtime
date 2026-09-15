@@ -2,7 +2,7 @@ schema = "proofbound-evidence-unit/1"
 id = "diagnostic-trace-events-contract"
 adapter = "independent-check"
 kind = "independent-check"
-claims = ["PBR-OBSERVER-023"]
+claims = ["PBR-OBSERVER-023", "PBR-OBSERVER-024"]
 tier = 0
 expected_inventory = [
   "diagnostic-trace-events-exact-waits",
@@ -19,6 +19,7 @@ inputs = [
   "assumptions/PBR-LINUX-AX-001.toml",
   "assumptions/PBR-TOOLCHAIN-AX-003.toml",
   "claims/PBR-OBSERVER-023.toml",
+  "claims/PBR-OBSERVER-024.toml",
   "crates/proofbound-runtime-linux/Cargo.toml",
   "crates/proofbound-runtime-linux/src/lib.rs",
   "crates/proofbound-runtime-linux/src/sys.rs",

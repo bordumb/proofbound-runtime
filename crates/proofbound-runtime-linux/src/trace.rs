@@ -20,6 +20,7 @@ const TRACE_POLL_INTERVAL: Duration = Duration::from_millis(1);
 const SIGNAL_STOP: i32 = 19;
 const SIGNAL_TRAP: i32 = 5;
 const SIGNAL_SYSCALL: i32 = SIGNAL_TRAP | 0x80;
+const MAX_TRACE_PROCESS_LIMIT: u32 = 4096;
 
 /// Identifies one Linux process that can enter the trace protocol.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -38,6 +39,34 @@ impl TraceProcessId {
     #[must_use]
     pub const fn get(self) -> u32 {
         self.0.get()
+    }
+}
+
+/// Contains the maximum retained process count for one active trace.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TraceProcessLimit(NonZeroU32);
+
+impl TraceProcessLimit {
+    /// Creates one nonzero diagnostic process limit.
+    pub const fn new(value: u64) -> Result<Self, TraceStartupError> {
+        if value == 0 || value > MAX_TRACE_PROCESS_LIMIT as u64 {
+            return Err(TraceStartupError::ProcessLimitInvalid);
+        }
+        match NonZeroU32::new(value as u32) {
+            Some(value) => Ok(Self(value)),
+            None => Err(TraceStartupError::ProcessLimitInvalid),
+        }
+    }
+
+    /// Returns the maximum retained process count.
+    #[must_use]
+    pub const fn get(self) -> u32 {
+        self.0.get()
+    }
+
+    #[cfg(target_os = "linux")]
+    const fn drain_capacity(self) -> usize {
+        self.0.get() as usize * 2
     }
 }
 
@@ -326,6 +355,7 @@ impl AcknowledgedTraceStop {
         }
         #[cfg(not(target_os = "linux"))]
         {
+            let _ = process_limit;
             Err(TraceStartupError::UnsupportedOperatingSystem)
         }
     }
@@ -346,7 +376,10 @@ impl TraceReady {
     }
 
     /// Sends the bound exec release and starts syscall-stop observation.
-    pub fn release(self) -> Result<ActiveTrace, TraceStartupError> {
+    pub fn release(
+        self,
+        process_limit: TraceProcessLimit,
+    ) -> Result<ActiveTrace, TraceStartupError> {
         self.session
             .channel
             .send(&LauncherMessage::ExecRelease(ExecRelease::new(
@@ -365,6 +398,7 @@ impl TraceReady {
                 process_handles: BTreeMap::from([(root, process_handle)]),
                 held_process: None,
                 must_drain: false,
+                process_limit,
             })
         }
         #[cfg(not(target_os = "linux"))]
@@ -382,6 +416,7 @@ pub struct ActiveTrace {
     process_handles: BTreeMap<TraceProcessId, OwnedFd>,
     held_process: Option<TraceProcessId>,
     must_drain: bool,
+    process_limit: TraceProcessLimit,
 }
 
 impl ActiveTrace {
@@ -449,10 +484,11 @@ impl ActiveTrace {
     pub fn terminate_and_drain(
         mut self,
         deadline: TraceDeadline,
-    ) -> Result<(), TraceObservationError> {
+    ) -> Result<TraceDrainReport, TraceObservationError> {
         self.held_process = None;
         self.must_drain = true;
         self.signal_all_process_groups();
+        let mut observations = Vec::new();
         while !self.processes.is_empty() {
             let mut observed = false;
             let processes = self.processes.keys().copied().collect::<Vec<_>>();
@@ -466,10 +502,12 @@ impl ActiveTrace {
                     Err(_) => return Err(TraceObservationError::DrainFailed),
                 };
                 observed = true;
-                self.handle_drain_observation(requested, observation)?;
+                if let Some(observation) = self.handle_drain_observation(requested, observation)? {
+                    observations.push(observation);
+                }
             }
             if self.processes.is_empty() {
-                return Ok(());
+                return Ok(TraceDrainReport { observations });
             }
             if deadline.expired() {
                 return Err(TraceObservationError::DrainTimedOut);
@@ -478,7 +516,7 @@ impl ActiveTrace {
                 std::thread::sleep(TRACE_POLL_INTERVAL);
             }
         }
-        Ok(())
+        Ok(TraceDrainReport { observations })
     }
 
     #[cfg(target_os = "linux")]
@@ -497,11 +535,16 @@ impl ActiveTrace {
             crate::sys::TraceWaitStatus::Stopped { signal, event }
                 if signal == SIGNAL_TRAP && crate::sys::trace_event_is_exec(event) =>
             {
-                let process = self.reconcile_exec_identity(requested, reported)?;
-                let invocation = self.processes.get(&process).and_then(|state| state.pending);
-                self.held_process = Some(process);
+                let change = self.reconcile_exec_identity(requested, reported)?;
+                let invocation = self
+                    .processes
+                    .get(&change.survivor)
+                    .and_then(|state| state.pending);
+                self.held_process = Some(change.survivor);
                 Ok(WaitDecision::Event(ActiveTraceEvent::ImageReplaced {
-                    process,
+                    former_process: change.former,
+                    process: change.survivor,
+                    superseded_processes: change.superseded,
                     invocation,
                 }))
             }
@@ -530,7 +573,10 @@ impl ActiveTrace {
                     }
                     None => return Err(TraceObservationError::EventMessageInvalid),
                 };
-                self.register_child(child)?;
+                let capacity_exceeded = self.register_child(child)?;
+                if capacity_exceeded {
+                    self.must_drain = true;
+                }
                 self.held_process = Some(reported);
                 Ok(WaitDecision::Event(ActiveTraceEvent::ProcessCreated {
                     parent: reported,
@@ -641,7 +687,11 @@ impl ActiveTrace {
     }
 
     #[cfg(target_os = "linux")]
-    fn register_child(&mut self, child: TraceProcessId) -> Result<(), TraceObservationError> {
+    fn register_child(&mut self, child: TraceProcessId) -> Result<bool, TraceObservationError> {
+        if self.processes.len() >= self.process_limit.drain_capacity() {
+            return Err(TraceObservationError::ProcessCapacityExceeded);
+        }
+        let capacity_exceeded = self.processes.len() >= self.process_limit.get() as usize;
         let thread_group = read_thread_group_id(child)?;
         if let std::collections::btree_map::Entry::Vacant(entry) =
             self.process_handles.entry(thread_group)
@@ -652,7 +702,7 @@ impl ActiveTrace {
         }
         self.processes
             .insert(child, TraceeState::awaiting_stop(thread_group));
-        Ok(())
+        Ok(capacity_exceeded)
     }
 
     #[cfg(target_os = "linux")]
@@ -660,21 +710,21 @@ impl ActiveTrace {
         &mut self,
         requested: TraceProcessId,
         reported: TraceProcessId,
-    ) -> Result<TraceProcessId, TraceObservationError> {
+    ) -> Result<ExecIdentityChange, TraceObservationError> {
         let former = crate::sys::trace_event_process(reported.get())
             .map_err(|_| TraceObservationError::EventMessageInvalid)
             .and_then(|value| {
                 TraceProcessId::new(value)
                     .map_err(|_| TraceObservationError::ProcessIdentityInvalid)
             })?;
-        let process = reconcile_exec_processes(&mut self.processes, requested, reported, former)?;
+        let change = reconcile_exec_processes(&mut self.processes, requested, reported, former)?;
         if !self.process_handles.contains_key(&reported) {
             let handle = crate::sys::trace_open_process_handle(reported.get())
                 .map_err(|_| TraceObservationError::ProcessHandleFailed)?;
             self.process_handles.insert(reported, handle);
         }
         self.remove_unused_process_handles();
-        Ok(process)
+        Ok(change)
     }
 
     #[cfg(target_os = "linux")]
@@ -703,7 +753,7 @@ impl ActiveTrace {
         &mut self,
         requested: TraceProcessId,
         observation: crate::sys::TraceWaitObservation,
-    ) -> Result<(), TraceObservationError> {
+    ) -> Result<Option<TraceDrainObservation>, TraceObservationError> {
         let reported = TraceProcessId::new(observation.process_id)
             .map_err(|_| TraceObservationError::ProcessIdentityInvalid)?;
         if reported != requested {
@@ -713,8 +763,13 @@ impl ActiveTrace {
             crate::sys::TraceWaitStatus::Stopped { signal, event }
                 if signal == SIGNAL_TRAP && crate::sys::trace_event_is_exec(event) =>
             {
-                let process = self.reconcile_exec_identity(requested, reported)?;
-                self.signal_process(process)?;
+                let change = self.reconcile_exec_identity(requested, reported)?;
+                self.signal_process(change.survivor)?;
+                return Ok(Some(TraceDrainObservation::ImageReplaced {
+                    former_process: change.former,
+                    process: change.survivor,
+                    superseded_processes: change.superseded,
+                }));
             }
             crate::sys::TraceWaitStatus::Stopped { signal, event }
                 if signal == SIGNAL_TRAP
@@ -727,20 +782,50 @@ impl ActiveTrace {
                             .map_err(|_| TraceObservationError::ProcessIdentityInvalid)
                     })?;
                 if !self.processes.contains_key(&child) {
-                    self.register_child(child)?;
+                    let _ = self.register_child(child)?;
                 }
                 self.signal_process(child)?;
                 self.signal_process(reported)?;
+                let kind = match crate::sys::trace_process_creation_event(event) {
+                    Some(crate::sys::TraceProcessCreationEvent::Clone) => {
+                        TraceProcessCreationKind::Clone
+                    }
+                    Some(crate::sys::TraceProcessCreationEvent::Fork) => {
+                        TraceProcessCreationKind::Fork
+                    }
+                    Some(crate::sys::TraceProcessCreationEvent::Vfork) => {
+                        TraceProcessCreationKind::Vfork
+                    }
+                    None => return Err(TraceObservationError::EventMessageInvalid),
+                };
+                return Ok(Some(TraceDrainObservation::ProcessCreated {
+                    parent: reported,
+                    child,
+                    kind,
+                }));
             }
             crate::sys::TraceWaitStatus::Stopped { .. } => {
                 self.signal_process(reported)?;
             }
             crate::sys::TraceWaitStatus::Exited { .. }
             | crate::sys::TraceWaitStatus::Signaled { .. } => {
+                let termination = match observation.status {
+                    crate::sys::TraceWaitStatus::Exited { code } => TraceTermination::Exit(code),
+                    crate::sys::TraceWaitStatus::Signaled { signal } => {
+                        TraceTermination::Signal(signal)
+                    }
+                    crate::sys::TraceWaitStatus::Stopped { .. } => {
+                        return Err(TraceObservationError::DrainFailed);
+                    }
+                };
                 self.record_terminal_process(reported)?;
+                return Ok(Some(TraceDrainObservation::ProcessExited {
+                    process: reported,
+                    termination,
+                }));
             }
         }
-        Ok(())
+        Ok(None)
     }
 
     #[cfg(target_os = "linux")]
@@ -811,6 +896,14 @@ struct TraceeState {
     pending: Option<TraceSyscallInvocation>,
 }
 
+#[cfg(target_os = "linux")]
+#[derive(Debug, Eq, PartialEq)]
+struct ExecIdentityChange {
+    former: TraceProcessId,
+    survivor: TraceProcessId,
+    superseded: Vec<TraceProcessId>,
+}
+
 impl TraceeState {
     const fn observing(thread_group: TraceProcessId) -> Self {
         Self {
@@ -835,7 +928,7 @@ fn reconcile_exec_processes(
     requested: TraceProcessId,
     reported: TraceProcessId,
     former: TraceProcessId,
-) -> Result<TraceProcessId, TraceObservationError> {
+) -> Result<ExecIdentityChange, TraceObservationError> {
     if reported != requested {
         return Err(TraceObservationError::ProcessIdentityChanged);
     }
@@ -858,19 +951,67 @@ fn reconcile_exec_processes(
         .iter()
         .filter_map(|(process, state)| (state.thread_group == reported).then_some(*process))
         .collect::<Vec<_>>();
-    for process in replaced_threads {
-        processes.remove(&process);
+    for process in &replaced_threads {
+        processes.remove(process);
     }
     exec_state.thread_group = reported;
     exec_state.awaiting_initial_stop = false;
     processes.insert(reported, exec_state);
-    Ok(reported)
+    Ok(ExecIdentityChange {
+        former,
+        survivor: reported,
+        superseded: replaced_threads,
+    })
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 enum WaitDecision {
     Continue,
     Event(ActiveTraceEvent),
+}
+
+/// Contains one process-tree observation collected during exact drain.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum TraceDrainObservation {
+    /// A pending creation event added a stopped child during drain.
+    ProcessCreated {
+        /// The stopped parent tracee.
+        parent: TraceProcessId,
+        /// The stopped child tracee.
+        child: TraceProcessId,
+        /// The process-creation event kind.
+        kind: TraceProcessCreationKind,
+    },
+    /// A pending exec event changed the retained process identities.
+    ImageReplaced {
+        /// The pre-exec tracee identity.
+        former_process: TraceProcessId,
+        /// The post-exec tracee identity.
+        process: TraceProcessId,
+        /// Thread identities removed by the successful exec.
+        superseded_processes: Vec<TraceProcessId>,
+    },
+    /// One exact terminal wait removed a retained tracee.
+    ProcessExited {
+        /// The terminated tracee identity.
+        process: TraceProcessId,
+        /// The exact terminal status class.
+        termination: TraceTermination,
+    },
+}
+
+/// Contains every terminal observation from one successful exact drain.
+#[derive(Debug, Eq, PartialEq)]
+pub struct TraceDrainReport {
+    observations: Vec<TraceDrainObservation>,
+}
+
+impl TraceDrainReport {
+    /// Returns the drain observations in collection order.
+    #[must_use]
+    pub fn observations(&self) -> &[TraceDrainObservation] {
+        &self.observations
+    }
 }
 
 /// Identifies how one traced process created another tracee.
@@ -936,7 +1077,7 @@ pub enum TraceTermination {
 }
 
 /// Contains one complete process-tree event from an active trace.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ActiveTraceEvent {
     /// One system call reached entry and exit stops.
     SyscallCompleted {
@@ -960,8 +1101,12 @@ pub enum ActiveTraceEvent {
     },
     /// One tracee replaced its executable image.
     ImageReplaced {
+        /// The pre-exec tracee identity.
+        former_process: TraceProcessId,
         /// The post-exec tracee identity.
         process: TraceProcessId,
+        /// Thread identities removed by the successful exec.
+        superseded_processes: Vec<TraceProcessId>,
         /// The pending system-call entry when it was available.
         invocation: Option<TraceSyscallInvocation>,
     },
@@ -996,6 +1141,8 @@ pub enum TraceObservationError {
     ProcessIdentityChanged,
     /// One new child reused a live process identity.
     ProcessIdentityDuplicate,
+    /// The retained process set exceeded its closed drain capacity.
+    ProcessCapacityExceeded,
     /// An event referred to a process outside the exact known tree.
     ProcessUnknown,
     /// A new child reached a syscall stop before its mandatory initial stop.
@@ -1032,6 +1179,7 @@ impl TraceObservationError {
             Self::ProcessIdentityInvalid => "diagnostic.trace.process-identity.invalid",
             Self::ProcessIdentityChanged => "diagnostic.trace.process-identity.changed",
             Self::ProcessIdentityDuplicate => "diagnostic.trace.process-identity.duplicate",
+            Self::ProcessCapacityExceeded => "diagnostic.trace.process-capacity.exceeded",
             Self::ProcessUnknown => "diagnostic.trace.process.unknown",
             Self::InitialStopMissing => "diagnostic.trace.initial-stop.missing",
             Self::WaitFailed => "diagnostic.trace.event-wait.failed",
@@ -1134,6 +1282,8 @@ pub enum TraceStartupError {
     UnsupportedOperatingSystem,
     /// A process identifier is outside the Linux positive PID range.
     ProcessIdInvalid,
+    /// The retained process limit is zero or exceeds the diagnostic maximum.
+    ProcessLimitInvalid,
     /// The absolute trace deadline is zero or cannot be represented.
     DeadlineInvalid,
     /// An inherited descriptor is standard, invalid, or duplicated.
@@ -1183,6 +1333,7 @@ impl TraceStartupError {
         match self {
             Self::UnsupportedOperatingSystem => "diagnostic.trace.os.unsupported",
             Self::ProcessIdInvalid => "diagnostic.trace.process-id.invalid",
+            Self::ProcessLimitInvalid => "diagnostic.trace.process-limit.invalid",
             Self::DeadlineInvalid => "diagnostic.trace.deadline.invalid",
             Self::DescriptorSetInvalid => "diagnostic.trace.descriptor-set.invalid",
             Self::LauncherIdentityInvalid => "diagnostic.trace.launcher-identity.invalid",
@@ -1229,6 +1380,14 @@ mod tests {
             TraceProcessId::new(i32::MAX as u32 + 1),
             Err(TraceStartupError::ProcessIdInvalid)
         );
+        assert_eq!(
+            TraceProcessLimit::new(0),
+            Err(TraceStartupError::ProcessLimitInvalid)
+        );
+        assert_eq!(
+            TraceProcessLimit::new(u64::from(MAX_TRACE_PROCESS_LIMIT) + 1),
+            Err(TraceStartupError::ProcessLimitInvalid)
+        );
         assert!(matches!(
             TraceDeadline::after(Duration::ZERO),
             Err(TraceStartupError::DeadlineInvalid)
@@ -1236,6 +1395,7 @@ mod tests {
         let mut codes = [
             TraceStartupError::UnsupportedOperatingSystem,
             TraceStartupError::ProcessIdInvalid,
+            TraceStartupError::ProcessLimitInvalid,
             TraceStartupError::DeadlineInvalid,
             TraceStartupError::DescriptorSetInvalid,
             TraceStartupError::LauncherIdentityInvalid,
@@ -1270,6 +1430,7 @@ mod tests {
             TraceObservationError::ProcessIdentityInvalid,
             TraceObservationError::ProcessIdentityChanged,
             TraceObservationError::ProcessIdentityDuplicate,
+            TraceObservationError::ProcessCapacityExceeded,
             TraceObservationError::ProcessUnknown,
             TraceObservationError::InitialStopMissing,
             TraceObservationError::WaitFailed,
@@ -1339,7 +1500,11 @@ mod tests {
 
         assert_eq!(
             reconcile_exec_processes(&mut processes, leader, leader, former),
-            Ok(leader)
+            Ok(ExecIdentityChange {
+                former,
+                survivor: leader,
+                superseded: vec![leader, sibling],
+            })
         );
         assert_eq!(processes.len(), 2);
         assert!(!processes.contains_key(&former));
@@ -1354,9 +1519,11 @@ mod tests {
                 .and_then(|state| state.pending.take()),
             Some(invocation)
         );
-        assert!(processes
-            .get(&leader)
-            .is_some_and(|state| state.pending.is_none()));
+        assert!(
+            processes
+                .get(&leader)
+                .is_some_and(|state| state.pending.is_none())
+        );
         assert!(processes.contains_key(&unrelated));
     }
 

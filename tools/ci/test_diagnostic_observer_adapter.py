@@ -31,6 +31,20 @@ def implementation(source: str, type_name: str) -> str:
     return source[start:] if next_impl == -1 else source[start:next_impl]
 
 
+def function_implementation(source: str, signature: str) -> str:
+    start = source.index(signature)
+    brace = source.index("{", start)
+    depth = 0
+    for index in range(brace, len(source)):
+        if source[index] == "{":
+            depth += 1
+        elif source[index] == "}":
+            depth -= 1
+            if depth == 0:
+                return source[start : index + 1]
+    raise AssertionError(f"unterminated function: {signature}")
+
+
 def structure(source: str, type_name: str) -> str:
     start = source.index(f"pub struct {type_name}")
     end = source.index("\n}", start)
@@ -88,6 +102,12 @@ EXPECTED_PUBLIC_FUNCTIONS = [
     "pubfnrelease(self)->Result<ActiveObserver,ObserverAdapterError>",
     "pubconstfnroot(&self)->TraceProcessId",
     "pubconstfnprotocol(&self)->&ObserverProtocol",
+    "pubfnnext_event(mutself,deadline:TraceDeadline,)"
+    "->Result<ActiveObserverStep,ObserverAdapterError>",
+    "pubfnfinish(mutself,deadline:TraceDeadline,)"
+    "->Result<CompletedObserver,ObserverAdapterError>",
+    "pubconstfnprotocol(&self)->&ObserverProtocol",
+    "pubconstfnpublication(&self)->ObserverDirective",
     "pubconstfncode(self)->&'staticstr",
 ]
 
@@ -98,11 +118,14 @@ EXPECTED_ADAPTER_LIB = """#![deny(unsafe_code)]
 mod adapter;
 
 pub use adapter::{
-    prepare_observer, AcknowledgedObserver, ActiveObserver, BoundaryRunningObserver,
-    InitialObserver, LauncherPausedObserver, ObserverAdapterError, PreparedObserver, ReadyObserver,
-    SpawnedObserver,
+    AcknowledgedObserver, ActiveObserver, ActiveObserverStep, BoundaryRunningObserver,
+    CompletedObserver, DrainingObserver, InitialObserver, LauncherPausedObserver,
+    ObserverAdapterError, ObserverObservation, PreparedObserver, ReadyObserver, SpawnedObserver,
+    prepare_observer,
 };
-pub use proofbound_runtime_linux::{TraceDeadline, TraceProcessId};
+pub use proofbound_runtime_linux::{
+    ActiveTraceEvent, TraceDeadline, TraceObservationError, TraceProcessId,
+};
 """
 
 EXPECTED_ADAPTER_MANIFEST = """[package]
@@ -166,7 +189,7 @@ EXPECTED_DIAGNOSE_LIB_SHA256 = (
     "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de"
 )
 EXPECTED_LINUX_LIB_SHA256 = (
-    "714a2eb269eb20e315ddefb33c068ddda2fce0c9477a673c990e613c3715feb8"
+    "863d7384a627b52b1bd8aa1a7dbbfc3a3dab2ea6ac956adbd733b05beac8ad20"
 )
 
 
@@ -220,14 +243,33 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
             self.assertNotIn("Clone", derive, state)
 
         self.assertEqual(
+            private_fields(self.adapter, "DrainingObserver"),
+            [
+                "trace: ActiveTrace,",
+                "protocol: ObserverProtocol,",
+                "untracked_processes: BTreeSet<DiagnosticProcessId>,",
+            ],
+        )
+        self.assertEqual(
+            private_fields(self.adapter, "CompletedObserver"),
+            ["protocol: ObserverProtocol,", "publication: ObserverDirective,"],
+        )
+
+        self.assertEqual(
             public_function_signatures(self.adapter),
             EXPECTED_PUBLIC_FUNCTIONS,
         )
         self.assertEqual(
             all_function_signatures(self.adapter),
-            EXPECTED_PUBLIC_FUNCTIONS
+            EXPECTED_PUBLIC_FUNCTIONS[:-1]
             + [
+                "fndiagnostic_process(process:TraceProcessId,)"
+                "->Result<DiagnosticProcessId,ObserverAdapterError>",
+                "constfnprocess_creation_kind(kind:TraceProcessCreationKind)"
+                "->ProcessCreationKind",
+                EXPECTED_PUBLIC_FUNCTIONS[-1],
                 "fnfrom(error:TraceStartupError)->Self",
+                "fnfrom(error:TraceObservationError)->Self",
                 "fnfrom(error:ObserverProtocolError)->Self",
                 "fnfmt(&self,formatter:&mutfmt::Formatter<'_>)->fmt::Result",
             ],
@@ -244,6 +286,10 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
                 "AcknowledgedObserver",
                 "ReadyObserver",
                 "ActiveObserver",
+                "ObserverObservation",
+                "ActiveObserverStep",
+                "DrainingObserver",
+                "CompletedObserver",
                 "ObserverAdapterError",
             ],
         )
@@ -274,6 +320,12 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
                 "#[derive(Debug)]",
                 "#[must_use]",
                 "#[must_use]",
+                "#[derive(Debug, Eq, PartialEq)]",
+                "#[derive(Debug)]",
+                "#[derive(Debug)]",
+                "#[derive(Debug)]",
+                "#[must_use]",
+                "#[must_use]",
                 "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
                 "#[must_use]",
             ],
@@ -294,8 +346,11 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
                 "AcknowledgedObserver",
                 "ReadyObserver",
                 "ActiveObserver",
+                "DrainingObserver",
+                "CompletedObserver",
                 "ObserverAdapterError",
                 "From<TraceStartupError>forObserverAdapterError",
+                "From<TraceObservationError>forObserverAdapterError",
                 "From<ObserverProtocolError>forObserverAdapterError",
                 "fmt::DisplayforObserverAdapterError",
                 "std::error::ErrorforObserverAdapterError",
@@ -312,6 +367,7 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
             [
                 "BoundsInvalid,",
                 "Trace(TraceStartupError),",
+                "Observation(TraceObservationError),",
                 "Protocol(ObserverProtocolError),",
             ],
         )
@@ -356,8 +412,75 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
         self.assertNotIn("DiagnosticTraceOptions::required()", self.adapter)
 
         ready = implementation(self.adapter, "ReadyObserver")
+        self.assertLess(ready.index("TraceProcessLimit::new"), ready.index("release_target"))
         self.assertLess(ready.index("release_target"), ready.index("self.trace.release"))
+        self.assertIn("self.trace.release(process_limit)", ready)
         self.assertIn("Ok(ActiveObserver { trace, protocol })", ready)
+
+    def test_live_events_advance_the_same_protocol_or_move_to_drain(self):
+        active = implementation(self.adapter, "ActiveObserver")
+        compact_active = compact(active)
+        self.assertIn("let event = match self.trace.next_event(deadline)", active)
+        self.assertIn("self.protocol.record_observer_failure()?", active)
+        for variant in [
+            "ActiveTraceEvent::SyscallCompleted",
+            "ActiveTraceEvent::ProcessCreated",
+            "ActiveTraceEvent::ImageReplaced",
+            "ActiveTraceEvent::ProcessExited",
+            "ActiveTraceEvent::UnexpectedStop",
+        ]:
+            self.assertIn(variant, active)
+        self.assertIn("self.protocol.discover_child", compact_active)
+        self.assertIn("self.protocol.record_exec", compact_active)
+        self.assertIn("self.protocol.record_process_exit", compact_active)
+        self.assertIn("self.protocol.record_unexpected_stop", compact_active)
+        self.assertIn("self.protocol.record_event", compact_active)
+        self.assertIn("if self.trace.is_drained()", active)
+        self.assertLess(
+            active.index("if self.trace.is_drained()"),
+            active.index("let publication = self.protocol.finish()?"),
+        )
+        self.assertIn("ActiveObserverStep::Continue", active)
+        self.assertIn("ActiveObserverStep::Drain", active)
+        self.assertIn("ActiveObserverStep::Complete", active)
+        self.assertNotIn("self.trace.clone()", active)
+        self.assertNotIn("self.protocol.clone()", active)
+
+    def test_drain_replays_tree_changes_before_empty_acknowledgement(self):
+        draining = implementation(self.adapter, "DrainingObserver")
+        self.assertIn("self.trace.terminate_and_drain(deadline)?", draining)
+        for variant in [
+            "TraceDrainObservation::ProcessCreated",
+            "TraceDrainObservation::ImageReplaced",
+            "TraceDrainObservation::ProcessExited",
+        ]:
+            self.assertIn(variant, draining)
+        self.assertIn("self.protocol.discover_child", compact(draining))
+        self.assertIn("self.protocol.record_exec", compact(draining))
+        self.assertIn("self.protocol.record_process_exit", compact(draining))
+        self.assertLess(
+            draining.index("if !self.untracked_processes.is_empty()"),
+            draining.index("self.protocol.confirm_tree_drained()?"),
+        )
+        self.assertLess(
+            draining.index("self.protocol.confirm_tree_drained()?"),
+            draining.index("let publication = self.protocol.finish()?"),
+        )
+
+    def test_effectful_process_state_uses_the_validated_lifetime_bound(self):
+        ready = implementation(self.adapter, "ReadyObserver")
+        limit = implementation(self.trace, "TraceProcessLimit")
+        register = function_implementation(self.trace, "fn register_child")
+        active = implementation(self.trace, "ActiveTrace")
+        self.assertIn("TraceProcessLimit::new(self.protocol.process_limit())", ready)
+        self.assertIn("value > MAX_TRACE_PROCESS_LIMIT as u64", limit)
+        self.assertLess(
+            register.index("self.processes.len() >= self.process_limit.drain_capacity()"),
+            register.index("read_thread_group_id(child)"),
+        )
+        self.assertIn("self.processes.len() >= self.process_limit.get() as usize", register)
+        self.assertIn("self.must_drain = true", active)
+        self.assertIn("TraceObservationError::ProcessCapacityExceeded", register)
 
     def test_adapter_is_separate_and_hides_raw_trace_typestates(self):
         self.assertNotIn("unsafe", self.adapter)
@@ -369,10 +492,13 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
         self.assertEqual(
             public_uses,
             [
-                "pubuseadapter::{prepare_observer,AcknowledgedObserver,ActiveObserver,"
-                "BoundaryRunningObserver,InitialObserver,LauncherPausedObserver,"
-                "ObserverAdapterError,PreparedObserver,ReadyObserver,SpawnedObserver,};",
-                "pubuseproofbound_runtime_linux::{TraceDeadline,TraceProcessId};",
+                "pubuseadapter::{AcknowledgedObserver,ActiveObserver,ActiveObserverStep,"
+                "BoundaryRunningObserver,CompletedObserver,"
+                "DrainingObserver,InitialObserver,LauncherPausedObserver,ObserverAdapterError,"
+                "ObserverObservation,PreparedObserver,ReadyObserver,SpawnedObserver,"
+                "prepare_observer,};",
+                "pubuseproofbound_runtime_linux::{ActiveTraceEvent,TraceDeadline,"
+                "TraceObservationError,TraceProcessId,};",
             ],
         )
         self.assertNotIn("*", "".join(public_uses))

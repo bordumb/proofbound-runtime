@@ -2,7 +2,7 @@ schema = "proofbound-evidence-unit/1"
 id = "diagnostic-trace-startup"
 adapter = "rust-test"
 kind = "example-test"
-claims = ["PBR-OBSERVER-021", "PBR-OBSERVER-023"]
+claims = ["PBR-OBSERVER-021", "PBR-OBSERVER-023", "PBR-OBSERVER-024"]
 tier = 0
 expected_inventory = [
   "proofbound_runtime_linux::trace::tests::process_ids_deadlines_and_error_codes_are_closed",
