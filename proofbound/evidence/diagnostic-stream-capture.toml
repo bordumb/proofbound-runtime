@@ -42,9 +42,9 @@ environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
 type = "cargo-test"
 package = "proofbound-runtime-linux"
 manifest = "Cargo.toml"
-targets = ["--lib", "--features", "diagnostic-observer"]
+targets = ["--lib"]
 paths = []
-arguments = []
+arguments = ["--features=diagnostic-observer"]
 
 [resource_budget]
 time_seconds = 120

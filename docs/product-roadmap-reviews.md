@@ -3115,3 +3115,23 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes no reviewed production,
 specification, claim, assumption, evidence, checker, or source-closure bytes.
 Fresh hosted verification remains required before merge.
+
+## RT-8 diagnostic stream hosted evidence-unit rejection
+
+- **Reviewed base:** `a89b92daa0a6f977c4a090b3f9a2e553fc94884d`
+- **Rejected head:** `c43cfda5215bc7001ec8bd07bbbb99e08b657cca`
+- **GitHub run:** `35028768824`
+- **Failed job:** `Fresh Proofbound evidence (ledger)` (`104582862292`)
+- **Observed on:** 2026-09-15
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **WITHDRAWN**. The preceding source approval does
+  not authorize the invalid evidence-unit subject for merge.
+
+Proofbound rejected `diagnostic-stream-capture` with `PB-TEST-1004` because its
+Cargo target-selector list contained `--features`. Proofbound permits only the
+closed Cargo target selectors in that field. The correction retains `--lib` as
+the target selector and moves the required diagnostic feature into the typed
+Cargo argument `--features=diagnostic-observer`, matching the already admitted
+trace-startup evidence-unit form. The correction changes registered evidence
+bytes and therefore requires a new exact-head independent review and fresh
+hosted verification.
