@@ -55,7 +55,7 @@ EXPECTED_LOAD_BEARING_BODIES = {
     "capture-path-limit-accessor": "e21f1d9a95771bd5e2a3c7d36ed6bfe6879d2d2c9ab17433a40cf5e15e94ce5a",
     "capture-socket-limit-accessor": "6d26b9a042b9d673d7d97730366d4930038c522e7cc625b8aab3292015421dc6",
     "capture-string-limit-accessor": "163cf7392109e73f6f014975fadce6ade1ba70c8e62b11163bb7f0bc0170da68",
-    "entry-order": "61c86cd672019c110cae4efbccf25eac1b22e0df4a6b927468b7bf7b8ac803fa",
+    "entry-order": "e469b502d1007238d87058127b3638aec7427f3d5e5cf5594456d9653399acbf",
     "exact-read": "4e4099b351e973ff312431159f64eac771b748820e5ec2d06daaaf6816efa452",
     "i32-argument": "48640c1efe3c88ce6281053cbc2385160faa326f92713f81c2874fe6210a243c",
     "little-endian-reader": "8669e2dac5832ba4dd7eb1708f3992af050868ab67fd791661c005957203cadd",
@@ -75,11 +75,11 @@ EXPECTED_LOAD_BEARING_BODIES = {
     "syscall-info-fetch": "0b5e52f129fc45db01bd022959e42237ae68f7c44aff9f0b483a278546bb8084",
     "syscall-info-parser": "796f463adb9db22ebf211f25ff7d0097f86ab49f9d240a62319161dc3f91af5e",
     "tracee-string-read": "54fec5ee2c46ba8bd614c0da4e769b311ca6ff65637e7685be6e086369f7189c",
-    "trace-next-event": "7c367d988aca81e12e6fa970c51e6c647b82edb2a3bacdaaaf35a605d94b0cfc",
+    "trace-next-event": "5a281f37642e52df2bc1a5187c3ee7ff741f2e751a4f977fcc70b0e44b9c59f2",
     "trace-ready-release": "459f5de6e67249caf60ef07890d1516e0ee556dd6b754f9d6f1dd1dfa10c66e3",
     "uapi-i64-reader": "62197020cc4c5b8faac0c4f44c81291f12e7986681a3e7c08080ef7be4e0f938",
     "uapi-u64-reader": "aa2b02fd921a14e0fb178214da9ea0183bddde4b7d5d3b2305cffe9abe5ca63e",
-    "wait-observation-router": "e88d13c007109d64a62c74501cf5b5c5df11617156d17f0e587e25d5828cb6b5",
+    "wait-observation-router": "6197d2734de504cd1419cf47fad0457c0edb91d4f198666a09e4d3e3792f1257",
     "u32-argument": "9a611e944f835a154c65dc1745c111c20a12d97323954af68e80fee6e74d391e",
     "x86-64-table": "64ecbc45be34c91cbbd7e12bbfb1bab005186d0b4cbbd47554a8fd2a9af16dcc",
 }
@@ -371,7 +371,7 @@ class DiagnosticSyscallDecoderContractTests(unittest.TestCase):
             "syscall-stop routing bypassed": (
                 self.trace.replace(
                     "self.handle_syscall_stop(reported)",
-                    "Ok(WaitDecision::Continue)",
+                    "Ok(None)",
                     1,
                 ),
                 self.sys,

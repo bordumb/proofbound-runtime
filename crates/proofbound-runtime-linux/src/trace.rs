@@ -526,8 +526,8 @@ impl ActiveTrace {
                     }
                 };
                 match self.handle_wait_observation(requested, observation) {
-                    Ok(WaitDecision::Continue) => continue,
-                    Ok(WaitDecision::Event(event)) => return Ok(event),
+                    Ok(None) => continue,
+                    Ok(Some(event)) => return Ok(event),
                     Err(error) => {
                         self.must_drain = true;
                         return Err(error);
@@ -618,7 +618,7 @@ impl ActiveTrace {
         &mut self,
         requested: TraceProcessId,
         observation: crate::sys::TraceWaitObservation,
-    ) -> Result<WaitDecision, TraceObservationError> {
+    ) -> Result<Option<ActiveTraceEvent>, TraceObservationError> {
         let reported = TraceProcessId::new(observation.process_id)
             .map_err(|_| TraceObservationError::ProcessIdentityInvalid)?;
         if reported != requested {
@@ -640,7 +640,7 @@ impl ActiveTrace {
                             Some(PendingTraceSyscall::Ignored) | None => None,
                         });
                 self.held_process = Some(change.survivor);
-                Ok(WaitDecision::Event(ActiveTraceEvent::ImageReplaced {
+                Ok(Some(ActiveTraceEvent::ImageReplaced {
                     former_process: change.former,
                     process: change.survivor,
                     superseded_processes: change.superseded,
@@ -679,7 +679,7 @@ impl ActiveTrace {
                     self.must_drain = true;
                 }
                 self.held_process = Some(reported);
-                Ok(WaitDecision::Event(ActiveTraceEvent::ProcessCreated {
+                Ok(Some(ActiveTraceEvent::ProcessCreated {
                     parent: reported,
                     child,
                     kind,
@@ -705,11 +705,11 @@ impl ActiveTrace {
                 state.awaiting_initial_stop = false;
                 crate::sys::trace_syscall(reported.get())
                     .map_err(|_| TraceObservationError::ResumeFailed)?;
-                Ok(WaitDecision::Continue)
+                Ok(None)
             }
             crate::sys::TraceWaitStatus::Stopped { signal, event } => {
                 self.must_drain = true;
-                Ok(WaitDecision::Event(ActiveTraceEvent::UnexpectedStop {
+                Ok(Some(ActiveTraceEvent::UnexpectedStop {
                     process: reported,
                     signal,
                     event,
@@ -717,14 +717,14 @@ impl ActiveTrace {
             }
             crate::sys::TraceWaitStatus::Exited { code } => {
                 self.record_terminal_process(reported)?;
-                Ok(WaitDecision::Event(ActiveTraceEvent::ProcessExited {
+                Ok(Some(ActiveTraceEvent::ProcessExited {
                     process: reported,
                     termination: TraceTermination::Exit(code),
                 }))
             }
             crate::sys::TraceWaitStatus::Signaled { signal } => {
                 self.record_terminal_process(reported)?;
-                Ok(WaitDecision::Event(ActiveTraceEvent::ProcessExited {
+                Ok(Some(ActiveTraceEvent::ProcessExited {
                     process: reported,
                     termination: TraceTermination::Signal(signal),
                 }))
@@ -736,7 +736,7 @@ impl ActiveTrace {
     fn handle_syscall_stop(
         &mut self,
         process: TraceProcessId,
-    ) -> Result<WaitDecision, TraceObservationError> {
+    ) -> Result<Option<ActiveTraceEvent>, TraceObservationError> {
         if self
             .processes
             .get(&process)
@@ -777,7 +777,7 @@ impl ActiveTrace {
                     .pending = Some(pending);
                 crate::sys::trace_syscall(process.get())
                     .map_err(|_| TraceObservationError::ResumeFailed)?;
-                Ok(WaitDecision::Continue)
+                Ok(None)
             }
             crate::sys::TraceSyscallStop::Exit { result, is_error } => {
                 let pending = self
@@ -790,7 +790,7 @@ impl ActiveTrace {
                 match pending {
                     PendingTraceSyscall::Captured(invocation) => {
                         self.held_process = Some(process);
-                        Ok(WaitDecision::Event(ActiveTraceEvent::SyscallCompleted {
+                        Ok(Some(ActiveTraceEvent::SyscallCompleted {
                             process,
                             invocation,
                             result,
@@ -800,7 +800,7 @@ impl ActiveTrace {
                     PendingTraceSyscall::Ignored => {
                         crate::sys::trace_syscall(process.get())
                             .map_err(|_| TraceObservationError::ResumeFailed)?;
-                        Ok(WaitDecision::Continue)
+                        Ok(None)
                     }
                 }
             }
@@ -1636,12 +1636,6 @@ fn reconcile_exec_processes(
         survivor: reported,
         superseded: replaced_threads,
     })
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-enum WaitDecision {
-    Continue,
-    Event(ActiveTraceEvent),
 }
 
 /// Contains one process-tree observation collected during exact drain.

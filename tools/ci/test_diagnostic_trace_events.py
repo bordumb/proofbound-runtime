@@ -28,10 +28,10 @@ def body_sha256(source: str, signature: str) -> str:
 
 
 EXPECTED_LOAD_BEARING_BODIES = {
-    "active-next-event": "7c367d988aca81e12e6fa970c51e6c647b82edb2a3bacdaaaf35a605d94b0cfc",
+    "active-next-event": "5a281f37642e52df2bc1a5187c3ee7ff741f2e751a4f977fcc70b0e44b9c59f2",
     "active-drain": "62659a1112bba90d37df808430b41097415df6ad2d0849dda65999310c486229",
     "active-complete-drain": "745c353bb08f35c76e390fb67f252af94510f24873ad616b92db52c9e371863f",
-    "active-wait-observation": "e88d13c007109d64a62c74501cf5b5c5df11617156d17f0e587e25d5828cb6b5",
+    "active-wait-observation": "6197d2734de504cd1419cf47fad0457c0edb91d4f198666a09e4d3e3792f1257",
     "active-drain-observation": "dceb35ed4c886eb36161331cf7106b07145a37d67e6714e359531e8fee06a7c9",
     "active-register-child": "e749a7f47624f313ba624ca850657240f2c0558e2f3b0b1544566b734eb6f3aa",
 }
@@ -90,6 +90,15 @@ class DiagnosticTraceEventContractTests(unittest.TestCase):
             "TraceSyscallStop::Exit",
         ]:
             self.assertIn(required, self.sys)
+
+    def test_private_wait_decision_has_no_large_custom_enum_or_heap_box(self):
+        active = implementation(self.trace, "impl ActiveTrace")
+        wait = implementation(active, "fn handle_wait_observation")
+        syscall = implementation(active, "fn handle_syscall_stop")
+        self.assertIn("Result<Option<ActiveTraceEvent>, TraceObservationError>", wait)
+        self.assertIn("Result<Option<ActiveTraceEvent>, TraceObservationError>", syscall)
+        self.assertNotIn("WaitDecision", active)
+        self.assertNotIn("Box<ActiveTraceEvent>", active)
 
     def test_process_tree_registers_children_and_reconciles_exec_identity(self):
         active = implementation(self.trace, "impl ActiveTrace")
