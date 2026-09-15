@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bordumb/proofbound-runtime/schemas/registry-observations-v1.schema.json",
+  "title": "Proofbound Runtime registry observations version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["observations", "schema", "source_revision", "version"],
+  "properties": {
+    "observations": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "prefixItems": [
+        { "$ref": "#/$defs/rust_sdk" },
+        { "$ref": "#/$defs/typescript_sdk" },
+        { "$ref": "#/$defs/python_sdk" },
+        { "$ref": "#/$defs/verifier" }
+      ],
+      "items": false
+    },
+    "schema": {
+      "const": "proofbound-runtime-registry-observations/1"
+    },
+    "source_revision": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    }
+  },
+  "$defs": {
+    "rust_sdk": {
+      "$ref": "#/$defs/observation",
+      "properties": {
+        "artifact": { "pattern": "^proofbound-runtime-sdk-[0-9]+\\.[0-9]+\\.[0-9]+\\.crate$" },
+        "ecosystem": { "const": "crates.io" },
+        "package": { "const": "proofbound-runtime-sdk" },
+        "url": { "pattern": "^https://static\\.crates\\.io/crates/proofbound-runtime-sdk/" }
+      }
+    },
+    "typescript_sdk": {
+      "$ref": "#/$defs/observation",
+      "properties": {
+        "artifact": { "pattern": "^proofbound-runtime-sdk-[0-9]+\\.[0-9]+\\.[0-9]+\\.tgz$" },
+        "ecosystem": { "const": "npm" },
+        "package": { "const": "@proofbound/runtime-sdk" },
+        "url": { "pattern": "^https://registry\\.npmjs\\.org/" }
+      }
+    },
+    "python_sdk": {
+      "$ref": "#/$defs/observation",
+      "properties": {
+        "artifact": { "pattern": "^proofbound_runtime_sdk-[0-9]+\\.[0-9]+\\.[0-9]+-py3-none-any\\.whl$" },
+        "ecosystem": { "const": "pypi" },
+        "package": { "const": "proofbound-runtime-sdk" },
+        "url": { "pattern": "^https://files\\.pythonhosted\\.org/" }
+      }
+    },
+    "verifier": {
+      "$ref": "#/$defs/observation",
+      "properties": {
+        "artifact": { "pattern": "^proofbound-runtime-verify-[0-9]+\\.[0-9]+\\.[0-9]+\\.crate$" },
+        "ecosystem": { "const": "crates.io" },
+        "package": { "const": "proofbound-runtime-verify" },
+        "url": { "pattern": "^https://static\\.crates\\.io/crates/proofbound-runtime-verify/" }
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact", "ecosystem", "package", "sha256", "size_bytes", "url"],
+      "properties": {
+        "artifact": { "type": "string" },
+        "ecosystem": { "type": "string" },
+        "package": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^hex:[0-9a-f]{64}$" },
+        "size_bytes": { "type": "integer", "minimum": 1 },
+        "url": { "type": "string" }
+      }
+    }
+  }
+}

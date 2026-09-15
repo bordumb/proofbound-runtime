@@ -1165,3 +1165,85 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 `1084e0d1dc5685933b705d8844af5b123399e0b9`. No later production, schema,
 specification, documentation, or evidence byte may be included without a new
 exact-head review.
+
+## RT-7 registry-publication independent approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `4a0cfdb19d436f05b1c0391e0d5050b9eb0fd584`
+- **Reviewed head:** `cf55085378d5d71ec12b1ec4b471217cc7331900`
+- **Branch:** `codex/rt7-registry-publication`
+- **Method:** Complete exact-range static review only. No files were modified
+  and no builds or tests were run by the reviewer.
+- **Findings:** No P0, P1, or P2 findings.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the workflow is default-off, validates one exact
+mainline revision, waits for aggregate provenance, and serializes the four
+protected publishers before observation. Cargo and npm publication explicitly
+select their intended registries. Static Cargo credentials exist only in the
+two Rust publish steps. PyPI and npm receive only job-scoped OIDC authority.
+Checkout credentials are not persisted into Rust publication or registry
+observation.
+
+The observer rejects an invalid initial endpoint before opening it and rejects
+every redirect before a follow-up request can occur. It closes local manifest
+roots and entries, validates the version and selected file names, prevents path
+selection, requires positive sizes and exact digests, and compares all four
+downloaded byte strings with the approved artifacts. The regression corpus
+covers substitution, duplicate JSON members, unopened redirect targets,
+endpoint credentials, ports, fragments, revision drift, and manifest-surface
+and version mutations. The observation schema closes the object and ordered
+four-entry inventory.
+
+`PBR-DISTRIBUTION-018` limits the result to a protected workflow and bounded
+evidence. It does not claim that publication, external configuration,
+publisher authentication, or RT-7 completion has occurred. Cargo, SDK,
+registry, GitHub, transport, runtime, and filesystem premises are explicit and
+bound into the sole evidence closure, including `rust-toolchain.toml`.
+
+Residual non-blocking assumptions and obligations remain explicit. The
+protected environment, scoped crates.io token, and exact PyPI and npm trusted
+publisher records require external configuration. GitHub, registries, DNS,
+TLS, package clients, runtimes, and filesystem behavior remain trusted
+premises. Publication is not atomic, and registry availability or propagation
+can make observation fail after partial publication. The hosted exact-head
+gate, protected publication run, retained observations, unrelated-consumer
+checks, and current-integration manifest remain open. Rust publication
+repackages after the compared reproduction step; the Cargo premise and later
+anonymous exact-byte comparison state that boundary honestly.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`cf55085378d5d71ec12b1ec4b471217cc7331900`. This approval-only envelope adds
+no reviewed production, schema, specification, claim, or evidence bytes. Any
+later change to those bytes requires a new exact-head review.
+
+## RT-7 registry-publication approval after workflow-count correction
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `4a0cfdb19d436f05b1c0391e0d5050b9eb0fd584`
+- **Reviewed head:** `9422165568fae0349a3d086fdfab8545d7f3b18a`
+- **Branch:** `codex/rt7-registry-publication`
+- **Method:** Static inspection only; no builds, preflight wrapper, or tests
+  were run by the reviewer.
+- **Findings:** No P0, P1, or P2 findings.
+- **Verdict:** **APPROVE**
+
+Hosted preflight showed that the two new registry Rust publisher jobs added two
+uses of the pinned Rust toolchain action while the global workflow invariant
+still expected nine. The reviewer confirmed that the direct child of the prior
+approval envelope changes only `tools/ci/test_required_workflow.py`, increasing
+that exact count from 9 to 11. The exact branch range contains precisely two
+new uses, and all 11 uses retain the same exact 40-character action pin.
+
+The only other post-subject change is the accurate approval record above. No
+production, workflow, schema, specification, claim, assumption, or evidence
+bytes changed after `cf55085378d5d71ec12b1ec4b471217cc7331900`.
+All prior conclusions about default-off publication, exact-source and
+provenance ordering, protected environments, registry selection, credential
+isolation, redirect and endpoint closure, manifest and schema closure,
+exact-byte observation, and residual assumptions remain valid.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`9422165568fae0349a3d086fdfab8545d7f3b18a`. This approval-only envelope adds
+no reviewed production, workflow, schema, specification, claim, assumption,
+evidence, or test bytes.

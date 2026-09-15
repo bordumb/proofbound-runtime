@@ -1,0 +1,17 @@
+schema = "proofbound-assumption/1"
+id = "PBR-REGISTRY-DISTRIBUTION-AX-014"
+statement = "The identified crates.io, PyPI, npm, GitHub Actions, DNS, certificate-authority, and TLS services preserve the configured workflow identity, package-name association, registry metadata, and package bytes observed by the Runtime release workflow."
+category = "external-provider"
+owner = "Proofbound Runtime release maintainer"
+rationale = "The workflow compares anonymously retrieved bytes with exact approved packages, but external registries and GitHub supply publisher authentication, name ownership, metadata, availability, and transport. Runtime does not independently prove those services or identities."
+scope = "Only registry publication and anonymous retrieval observations for PBR-DISTRIBUTION-018."
+affected_claims = ["PBR-DISTRIBUTION-018"]
+review_evidence = [
+  ".github/workflows/release.yml",
+  "docs/specs/0014_public_compatibility_and_distribution.md",
+  "docs/threat-model.md",
+  "tools/release/verify_registry_packages.py",
+]
+discharge_plan = "Use the RT-11 publisher identity and transparency decision when accepted. Retain the external-service premise for registry availability and service behavior."
+source_citation = "docs/specs/0014_public_compatibility_and_distribution.md#6-distribution-trust"
+status = "active"

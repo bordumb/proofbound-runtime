@@ -1,0 +1,55 @@
+schema = "proofbound-claim/1"
+id = "PBR-DISTRIBUTION-018"
+title = "Selected packages publish only through the protected exact-source workflow"
+statement = "Under the registered external-registry, package-toolchain, and SDK-toolchain premises, the release workflow publishes the selected verifier, Rust SDK, Python SDK, and TypeScript SDK packages only after explicit opt-in, exact-mainline validation, complete release provenance, and protected-environment approval; isolates registry credentials by publisher; reproduces Rust upload inputs against the approved artifacts; and anonymously retrieves all four registry artifacts for exact byte comparison."
+public_language = "Runtime has an opt-in protected release path for its independent verifier and three SDK packages. The registered source checks require one exact mainline revision, ordered isolated publishers, exact Rust upload-input reproduction, and anonymous byte comparison after publication. This is workflow and bounded test evidence only: no package is described as published until an exact protected run and registry observations exist, and registry or workflow identity is not independently authenticated."
+subject = "workflow:.github/workflows/release.yml#selected-package-publication"
+profile = "ledger"
+tier = 1
+evidence = ["independent-check:registry-publication-contract"]
+assumptions = [
+  "PBR-PACKAGE-TOOLCHAINS-AX-011",
+  "PBR-REGISTRY-DISTRIBUTION-AX-014",
+  "PBR-SDK-TOOLCHAINS-AX-010",
+]
+open_obligations = [
+  "Configure the protected GitHub release environment, a scoped crates.io token, and the exact PyPI and npm trusted-publisher identities outside the repository.",
+  "Pass independent exact-head review and the complete exact-head hosted Verify gate before merging the publication route.",
+  "Run the protected publication path for one exact approved mainline revision and retain all four successful anonymous registry observations.",
+  "Exercise every selected registry package from an unrelated consumer and publish the exact current-integration manifest before closing RT-7.",
+]
+out_of_scope = [
+  "A claim that any selected package is currently published or that external registry configuration exists.",
+  "Correctness, availability, or independent identity of GitHub Actions, crates.io, PyPI, npm, DNS, TLS, package clients, language runtimes, or the operating system.",
+  "Publisher authentication, signing, transparency, revocation, rollback prevention, compatibility, or long-term package support.",
+  "Atomic publication across independent registries. The current manifest remains unpublished until the complete selected set is observed.",
+]
+source_roots = [
+  ".github/workflows/release.yml",
+  "Cargo.lock",
+  "Cargo.toml",
+  "VERSION",
+  "assumptions/PBR-PACKAGE-TOOLCHAINS-AX-011.toml",
+  "assumptions/PBR-REGISTRY-DISTRIBUTION-AX-014.toml",
+  "assumptions/PBR-SDK-TOOLCHAINS-AX-010.toml",
+  "claims/PBR-DISTRIBUTION-018.toml",
+  "crates/proofbound-runtime-sdk/Cargo.toml",
+  "crates/proofbound-runtime-verify/Cargo.toml",
+  "docs/roadmap-2/rt-07-compatibility-and-distribution.md",
+  "docs/specs/0014_public_compatibility_and_distribution.md",
+  "docs/threat-model.md",
+  "proofbound/evidence/registry-publication-contract.toml",
+  "rust-toolchain.toml",
+  "schemas/registry-observations-v1.schema.json",
+  "sdk/python/pyproject.toml",
+  "sdk/typescript/package.json",
+  "tools/ci/check_registry_publication.py",
+  "tools/ci/ci.sh",
+  "tools/ci/pre-commit.sh",
+  "tools/ci/test_registry_packages.py",
+  "tools/ci/test_release_workflow.py",
+  "tools/ci/test_verifier_package.py",
+  "tools/release/build_sdks.py",
+  "tools/release/build_verifier_package.py",
+  "tools/release/verify_registry_packages.py",
+]

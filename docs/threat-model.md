@@ -152,6 +152,16 @@ Proofbound. These checks constrain the observed bytes under the registered
 premises. They do not authenticate GitHub independently, prove the upstream
 tools, or remove the trusted roles.
 
+Selected package publication additionally trusts GitHub Actions environment
+protection, the scoped crates.io token, the PyPI and npm OIDC trusted-publisher
+records, the three registries, DNS, TLS, and the pinned package clients. The
+release workflow limits publication to one explicit exact-mainline request
+after complete release provenance. It reproduces the Rust upload inputs and
+anonymously compares all four downloaded registry artifacts with the approved
+bytes. These observations do not prove registry service behavior, publisher
+identity, account custody, availability, or atomic publication across the
+independent registries. RT-11 owns any later signing and transparency claim.
+
 ## Versioned enforced boundary
 
 Both supported profiles require:

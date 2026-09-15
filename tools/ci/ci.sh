@@ -56,6 +56,7 @@ if selected "preflight"; then
   timed_unit acceptance-policy-compiler-tests python3 -m unittest tools.ci.test_acceptance_policy_compiler
   timed_unit plan-scaffold-contract-tests python3 -m unittest tools.ci.test_plan_scaffold_contract
   timed_unit sdk-contract-tests python3 -m unittest tools.ci.test_sdk_contract tools.ci.test_sdk_packages
+  timed_unit registry-package-tests python3 -m unittest tools.ci.test_registry_packages
   timed_unit verifier-package-preflight python3 tools/release/build_verifier_package.py --check
   timed_unit verifier-package-preflight-tests python3 -m unittest tools.ci.test_verifier_package.VerifierPackagePreflightTests
   timed_unit python-sdk-tests python3 -m unittest discover -s sdk/python/tests

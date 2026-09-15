@@ -1,6 +1,7 @@
 # Specification 0014: Prelaunch packaging and distribution
 
-- **Status:** draft for RT-7.1 review; no registry publication is authorized
+- **Status:** accepted for claim-sized implementation; registry publication
+  still requires protected external configuration and an exact approved run
 - **Date:** 2026-09-14
 - **Applies to:** Proofbound Runtime product releases, public Rust crates,
   Python packages, npm packages, machine-readable CLI results, and Runtime wire
@@ -93,7 +94,7 @@ The first candidates are:
 5. selected pure producer crates only after their complete public dependency
    closure and API surface pass review.
 
-The candidates do not become public merely because this draft names them.
+The candidates do not become public merely because this specification names them.
 Package publication requires the selection record, package preflight, approval
 of one exact `main` revision, and an explicit registry action.
 
@@ -252,8 +253,7 @@ consumer describes the combination as supported.
 
 ## 12. Acceptance and completion
 
-This draft requires independent review before acceptance. Acceptance must
-confirm:
+The accepted contract requires each implementation wave to confirm:
 
 - the selected public package surface is smaller than the child security path;
 - verifier independence remains intact;
