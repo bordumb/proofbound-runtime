@@ -39,6 +39,7 @@ source_roots = [
   "docs/specs/0014_public_compatibility_and_distribution.md",
   "docs/threat-model.md",
   "proofbound/evidence/registry-publication-contract.toml",
+  "rust-toolchain.toml",
   "schemas/registry-observations-v1.schema.json",
   "sdk/python/pyproject.toml",
   "sdk/typescript/package.json",
