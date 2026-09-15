@@ -200,12 +200,20 @@ npm does not accept a trusted-publisher configuration for a package that does
 not yet exist. The first `@proofbound/runtime-sdk` upload therefore has one
 separate bootstrap route in the same protected exact-source workflow. The
 route is disabled by default, requires the general publication input, checks
-that the anonymous package endpoint returns exactly `404` before the
-token-bearing step, and exposes a shortest-lived external bootstrap token only
-to that step. The selected package metadata contains no npm publish lifecycle
-hook that could consume that environment, and both npm publication routes use
-`--ignore-scripts`. The bootstrap cannot run after the package endpoint returns
-`200`.
+that the anonymous package endpoint returns exactly `404` immediately before
+the token-bearing step, and exposes a shortest-lived external bootstrap token
+only to that step. The selected package metadata contains no npm publish
+lifecycle hook that could consume that environment, and both npm publication
+routes use `--ignore-scripts`. The normal route requires an immediate `200`
+observation.
+
+The anonymous observation is a route selector, not a statement of package
+absence. A private or restricted package can be hidden from anonymous access,
+and registry state can change between the observation and publication. The
+release maintainer must inspect the package through the authenticated scope
+before approving bootstrap. The registry can still accept this version after
+another version appears in that interval. Final exact-byte observation remains
+mandatory and no current tuple exists if the sequence is ambiguous.
 
 After the first accepted upload, the release maintainer must configure the
 exact npm OIDC trusted publisher, delete the GitHub bootstrap secret, revoke

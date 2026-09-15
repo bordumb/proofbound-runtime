@@ -146,7 +146,8 @@ observer are now merged. The deterministic-CBOR current-integration producer
 and independent verifier passed independent review at source `a81e259` and are
 replayed on current main under `PBR-DISTRIBUTION-025`. Current npm registry
 rules exposed a missing first-publication route, so the active wave also adds
-an absence-gated one-time bootstrap token and mandatory transition to OIDC.
+an immediate-`404`-gated one-time bootstrap token and mandatory transition to
+OIDC. That status does not prove package absence or lock registry state.
 Exact-head review and hosted verification remain open.
 External registry configuration, publication, anonymous observations, and
 unrelated consumer dogfood remain separate completion gates.

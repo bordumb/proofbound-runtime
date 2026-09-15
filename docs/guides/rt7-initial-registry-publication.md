@@ -12,11 +12,13 @@ or verify. It does not authorize a release. The release maintainer must still
 select one independently approved exact commit on `main`, approve the protected
 environment deployment, and inspect the retained registry observations.
 
-The initial package names are currently absent from crates.io, PyPI, and npm.
-PyPI can create a project through a pending trusted publisher. npm cannot attach
-a trusted publisher until the package already exists. The first npm upload
-therefore uses one separately selected, absence-gated token path. Every later
-npm upload uses OIDC and rejects that bootstrap selection.
+The public package endpoints returned `404` on 2026-09-15. That observation is
+not proof of ownership or hidden npm state. PyPI can create a project through a
+pending trusted publisher. npm cannot attach a trusted publisher until the
+package already exists. The first npm upload
+therefore uses one separately selected, immediate-`404`-gated token path. That
+status is not proof of absence. Every later npm upload uses OIDC and rejects
+that bootstrap selection.
 
 Authoritative external instructions:
 
@@ -72,9 +74,11 @@ from the exact protected workflow and then becomes the normal publisher.
 ## 4. Prepare the one-time npm bootstrap
 
 Confirm control of the `@proofbound` npm scope and enable two-factor
-authentication on the publishing account. Because
-`@proofbound/runtime-sdk` does not yet exist, npm cannot accept an OIDC trusted
-publisher for it.
+authentication on the publishing account. Inspect the package through that
+authenticated account and confirm that no public, private, or restricted
+`@proofbound/runtime-sdk` package exists. Record this external review; an
+anonymous `404` cannot establish it. Because no package is intended to exist,
+npm cannot yet accept an OIDC trusted publisher for it.
 
 Create the shortest-lived granular token that can perform the initial public
 write in the `@proofbound` scope and can complete non-interactive publication
@@ -86,13 +90,19 @@ The workflow uses this secret only when both conditions hold:
 
 - `publish_packages` is `true`; and
 - `bootstrap_npm_package` is `true` while the anonymous npm package endpoint
-  returns exactly `404`.
+  has just returned exactly `404`.
 
 Any other package state, redirect, timeout, or HTTP result fails closed before
 the token-bearing step. The source check also requires the exact package script
 inventory to contain no npm publish lifecycle hook that could inherit the
-token. Both npm publish commands also disable lifecycle scripts. A race in
-which another publisher creates the package causes npm to reject the upload.
+token. Both npm publish commands also disable lifecycle scripts.
+
+The `404` is only a route-selection observation. It does not reveal a private
+or restricted package and does not lock npm state. Another authorized scope
+publisher can create the package after the check; npm can still accept this
+version if only a different version exists. The final observer must therefore
+verify the exact accepted bytes, and an unexpected or ambiguous package state
+blocks the current tuple.
 
 ## 5. Dispatch the first protected run
 

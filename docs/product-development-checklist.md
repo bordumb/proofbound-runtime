@@ -118,9 +118,10 @@ Review history:
   workflow, behind the protected `package-publish` environment.
 - [x] Detect the npm first-publication constraint. Add a separately selected,
   default-off route that fails unless general publication is active and the
-  anonymous package endpoint returns exactly `404`; expose the one-time token
-  only to that step and reject npm publish lifecycle hooks. Require `200` and
-  OIDC on the normal route.
+  anonymous package endpoint has just returned exactly `404`; expose the
+  one-time token only to that step and reject npm publish lifecycle hooks.
+  Require an immediate `200` and OIDC on the normal route. Retain that neither
+  status proves absence or excludes hidden state or a registry race.
 - [x] Document the external environment, PyPI pending publisher, npm bootstrap,
   immediate token revocation, npm OIDC transition, and retained evidence in the
   [initial registry publication guide](guides/rt7-initial-registry-publication.md).

@@ -134,12 +134,12 @@ contains:
 - a crates.io token exposed only to each Rust publisher step;
 - a PyPI pending trusted publisher;
 - an independently selected, default-off npm first-publication input that is
-  valid only while the package endpoint returns exactly `404`;
+  selected only after an immediate anonymous `404` observation;
 - a one-time npm bootstrap token exposed only to that initial publish step;
 - an exact selected npm script inventory with no publish lifecycle hook and
   `--ignore-scripts` on both publication routes;
 - a normal npm OIDC route that requires the package endpoint to return exactly
-  `200` and has no bootstrap-token reference;
+  `200` immediately before publication and has no bootstrap-token reference;
 - exact reproduction of each Rust upload input against its approved retained
   artifact; and
 - anonymous retrieval and exact byte comparison of all four registry
@@ -153,7 +153,8 @@ publisher, npm scope control, the bootstrap token and its revocation, and the
 post-bootstrap npm OIDC record remain explicit external obligations. Partial
 publication can occur because the registries do not provide one atomic
 transaction; the current-integration manifest must remain absent until the
-complete selected set passes anonymous observation.
+complete selected set passes anonymous observation. The npm status probe does
+not prove package absence, reveal a private package, or lock registry state.
 
 ## PBR-DISTRIBUTION-025
 

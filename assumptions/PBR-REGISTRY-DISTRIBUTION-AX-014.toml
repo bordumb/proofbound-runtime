@@ -1,9 +1,9 @@
 schema = "proofbound-assumption/1"
 id = "PBR-REGISTRY-DISTRIBUTION-AX-014"
-statement = "The identified crates.io, PyPI, npm, GitHub Actions, DNS, certificate-authority, and TLS services preserve the configured workflow identity, package-name association, registry metadata, and package bytes observed by the Runtime release workflow; npm also enforces absence for the one-time token bootstrap and the configured OIDC identity after that package exists."
+statement = "The identified crates.io, PyPI, npm, GitHub Actions, DNS, certificate-authority, and TLS services preserve the configured workflow identity, package-name association, registry metadata, endpoint status, publication result, and package bytes observed by the Runtime release workflow; npm also validates the configured OIDC identity after the package is externally prepared for trusted publishing."
 category = "external-provider"
 owner = "Proofbound Runtime release maintainer"
-rationale = "The workflow compares anonymously retrieved bytes with exact approved packages, but external registries and GitHub supply publisher authentication, name ownership, metadata, availability, and transport. npm requires a credentialed first publication before it can bind an OIDC trusted publisher. Runtime checks the anonymous package state before selecting that route but does not independently prove the registry, token scope, revocation, or identity services."
+rationale = "The workflow compares anonymously retrieved bytes with exact approved packages, but external registries and GitHub supply publisher authentication, name ownership, metadata, availability, and transport. npm requires a credentialed first publication before it can bind an OIDC trusted publisher. Runtime checks one anonymous endpoint status before selecting that route. A 404 does not prove absence, exclude a hidden package, or lock the registry state. Runtime also does not independently prove the registry, token scope, revocation, or identity services."
 scope = "Only registry publication and anonymous retrieval observations for PBR-DISTRIBUTION-018 and their current-integration interpretation for PBR-DISTRIBUTION-025."
 affected_claims = ["PBR-DISTRIBUTION-018", "PBR-DISTRIBUTION-025"]
 review_evidence = [
