@@ -1354,9 +1354,11 @@ mod tests {
                 .and_then(|state| state.pending.take()),
             Some(invocation)
         );
-        assert!(processes
-            .get(&leader)
-            .is_some_and(|state| state.pending.is_none()));
+        assert!(
+            processes
+                .get(&leader)
+                .is_some_and(|state| state.pending.is_none())
+        );
         assert!(processes.contains_key(&unrelated));
     }
 
