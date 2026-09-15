@@ -2502,3 +2502,42 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, or test bytes. Any later subject change requires a new
 exact-head review.
+
+## RT-8 architecture-qualified syscall decoder approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `b2cb4b9bf10398ca5559dc476c492c3bd6d46c0b`
+- **Reviewed head:** `5d82dcd2ea8137a3ff8e1d4de9d2fd986521c6f0`
+- **Branch:** `codex/rt8-syscall-decoder`
+- **Method:** Complete exact-range static review after review corrections and
+  replay onto admitted main. The reviewer changed no files and ran no builds or
+  tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed the closed x86_64 and aarch64 syscall tables, x32 and
+unknown-architecture rejection, exact Linux syscall-information layout and
+operation sizes, native scalar reads, and pre-resume operand capture. Three
+independent limits bound retained paths, socket addresses, and tracee strings.
+The raw effect reads tracee memory only. It completes partial reads or fails.
+The `sendto` path retains payload length but never reads payload bytes.
+
+The exact evidence closure pins the compiler and crate selection, pure bound
+validation, every bound-propagation transition, trace release, wait routing,
+decoder routing and tables, syscall-information fetch and parser, scalar and
+operand readers, the raw read operation, and the complete C-layout declaration.
+Causal mutations cover routing bypass, bound widening and swapping, ABI and
+architecture substitution, truncated and extended forms, payload substitution,
+and a write-capable raw operation. The diagnostic feature remains absent from
+the production launcher path. Native ABI validation, artifact mapping, command
+integration, native attacks, and release binding remain explicit obligations.
+
+The reviewer also confirmed that the status correction records exact-head run
+`34973401808` as passed and combined active event-and-drain main `b2cb4b9` as
+admitted. Only the decoder identity remains pending hosted admission.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`5d82dcd2ea8137a3ff8e1d4de9d2fd986521c6f0`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.
