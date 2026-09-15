@@ -1,7 +1,7 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T13:32:04+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T13:40:05+01:00 (Europe/London, BST)
 - **Runtime baseline:** coupled setup adapter merged as `d34eab1`; exact-main
   Verify run `34969409215` is queued. Trace-startup exact-main run `34962882198`
   and identity-bound exec-release exact-main run `34956564102` passed.
@@ -162,9 +162,9 @@ manifest describes the supported tuple.
   the ownership-only private child field would fail the warnings-as-errors
   gate. Those corrections passed refreshed independent review and complete
   hosted verification, then merged unsigned as `9395050`. Exact-main Verify
-  run `34962882198` is in progress. Native effect evidence remains open under
+  run `34962882198` passed. Native effect evidence remains open under
   the later live-observer claim waves.
-- [ ] Couple the approved trace-startup typestates to the pure observer protocol
+- [x] Couple the approved trace-startup typestates to the pure observer protocol
   in the separate diagnostic adapter. Validate bounds before spawn, move one
   private pair after the exact initial stop, advance pure states only in the
   declared effect order, and expose neither raw trace states nor mutable protocol

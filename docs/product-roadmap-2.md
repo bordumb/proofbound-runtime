@@ -6,9 +6,10 @@
   trace-startup prerequisites are merged; all complete Roadmap 2 epic exits
   remain open
 - **Date:** 2026-09-13
-- **Runtime baseline:** trace-startup merge `9395050` on `main`; its exact-main
-  Verify run `34962882198` is in progress. Identity-bound exec-release
-  exact-main run `34956564102` passed.
+- **Runtime baseline:** coupled observer adapter merge `d34eab1` on `main`; its
+  exact-main Verify run `34969409215` is queued. Trace-startup exact-main run
+  `34962882198` and identity-bound exec-release exact-main run `34956564102`
+  passed.
 - **Proofbound baseline consumed by Runtime evidence:** public immutable bundle
   for source `9512469`; protected-path cutover merged as Runtime `4a0cfdb` and
   passed exact-main Verify run `34918706960`
