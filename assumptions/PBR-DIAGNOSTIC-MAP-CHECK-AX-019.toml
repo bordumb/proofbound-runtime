@@ -1,0 +1,17 @@
+schema = "proofbound-assumption/1"
+id = "PBR-DIAGNOSTIC-MAP-CHECK-AX-019"
+statement = "The identified Rust compiler and standard library preserve the registered trace-to-artifact mapping behavior, and the identified Python interpreter, hashing, string, regular-expression, subprocess, and filesystem operations preserve the independent mapping source check."
+category = "compiler-tcb"
+owner = "Proofbound Runtime release maintainer"
+rationale = "Rust tests and an independent Python checker can reject registered source defects, but this repository does not prove the compiler, standard library, interpreter, hashing implementation, subprocess runner, or filesystem used to produce that evidence."
+scope = "Only the source, test, and independent-check interpretation of PBR-OBSERVER-026. It does not establish the Linux ABI, ptrace event truth, tracee-memory stability, object resolution, complete diagnostic execution, or released-artifact behavior."
+affected_claims = ["PBR-OBSERVER-026"]
+review_evidence = [
+  "rust-toolchain.toml",
+  "crates/proofbound-runtime-diagnose-linux/src/mapping.rs",
+  "tools/ci/check_diagnostic_event_mapping.py",
+  "tools/ci/test_diagnostic_event_mapping.py",
+]
+discharge_plan = "Retain the compiler and checker premise. Narrow it through exact tool identities, independent implementation review, native fixtures, command integration, and exact released-artifact observations."
+source_citation = "docs/specs/0015_diagnostic_execution_and_plan_drafting.md#9-evidence-meaning"
+status = "active"

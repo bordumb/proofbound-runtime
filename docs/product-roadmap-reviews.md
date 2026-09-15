@@ -2895,3 +2895,56 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes no reviewed protocol design,
 schema, specification, threat-model, falsifier, or identity-policy bytes. Any
 later design-subject change requires a new exact-head review.
+
+## RT-8 diagnostic event-mapping initial review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `08b8dbe5c9c5b0147f957647268d28f463b0e899`
+- **Reviewed head:** `9645f801226b5b18c3071b2faab7a95ba60e0a82`
+- **Branch:** `codex/rt8-diagnostic-command`
+- **Method:** Complete exact-range static security and product review. The
+  reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The mapping behavior itself was closed and fail-safe for architecture, class,
+operands, outcomes, UTF-8 paths, retained exec entries, unresolved object
+resolution, and sequence overflow. Production dependency separation and the
+RT-7, RT-8, and RT-11 status records were also consistent.
+
+The blocker was an incomplete exact-source closure. The mapper imports
+`Architecture` and `ObservationResolution` through the Runtime core crate
+root, but `crates/proofbound-runtime-core/src/lib.rs` was absent from the claim,
+both evidence inventories, and the independent checker's exact-file inventory.
+A crate-root re-export change could therefore change the types consumed by the
+reviewed mapper without invalidating its registered source identity. The
+correction must add and exact-pin that crate root throughout those surfaces,
+then receive a new exact-head review.
+
+## RT-8 diagnostic event-mapping correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `08b8dbe5c9c5b0147f957647268d28f463b0e899`
+- **Reviewed head:** `6d2439e39c35d545a2b8d0824e0724e5353310e3`
+- **Branch:** `codex/rt8-diagnostic-command`
+- **Method:** Complete exact-range static security re-review of the source-root
+  correction. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that `crates/proofbound-runtime-core/src/lib.rs` is now
+present in the `PBR-OBSERVER-026` claim roots, both evidence input inventories,
+the independent-check operation paths, and the checker's exact-file inventory
+with its exact SHA-256 identity. The mapping implementation and the other
+production and Proof-Driven Development subject files are unchanged from the
+initial review. The recorded `REQUEST CHANGES` entry accurately preserves its
+exact identities, non-endorsement, sole blocker, and required correction. No
+new security, semantic, evidence, dependency-separation, or status blocker was
+introduced. Hosted exact-head admission remains open.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`08b8dbe5c9c5b0147f957647268d28f463b0e899..6d2439e39c35d545a2b8d0824e0724e5353310e3`.
+The following approval-only commit changes no reviewed production,
+specification, claim, assumption, evidence, checker, or source-closure bytes.
+Any later subject change requires a new exact-head review.
