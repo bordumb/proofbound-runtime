@@ -53,7 +53,7 @@ runtime-artifact = {
   "role": "runtime-bundle" / "acceptor",
   "artifact": text .size (1..255),
   "sha256": bytes .size 32,
-  "size_bytes": uint .gt 0,
+  "size_bytes": positive-u64,
 }
 
 runtime-executable = {
@@ -62,7 +62,7 @@ runtime-executable = {
   "target": "aarch64-unknown-linux-gnu" / "x86_64-unknown-linux-gnu",
   "name": "pbr" / "pbr-native-launcher" / "pbr-verify" / "pbr-compose",
   "sha256": bytes .size 32,
-  "size_bytes": uint .gt 0,
+  "size_bytes": positive-u64,
 }
 
 registry-package = {
@@ -71,7 +71,7 @@ registry-package = {
   "version": text .size (1..64),
   "artifact": text .size (1..255),
   "sha256": bytes .size 32,
-  "size_bytes": uint .gt 0,
+  "size_bytes": positive-u64,
   "source_url": text .size (1..4096),
 }
 
@@ -96,10 +96,10 @@ platform-profile = {
 proofbound-identity = {
   "producer_repository": "bordumb/proof-bound",
   "source_revision": bytes .size 20,
-  "release_id": uint .gt 0,
+  "release_id": positive-u64,
   "release_tag": text .size (1..255),
-  "verification_run_id": uint .gt 0,
-  "bundle_workflow_run_id": uint .gt 0,
+  "verification_run_id": positive-u64,
+  "bundle_workflow_run_id": positive-u64,
   "assets": [
     proofbound-asset,
     proofbound-asset,
@@ -120,5 +120,7 @@ proofbound-asset = {
   "name": text .size (1..256),
   "role": "archive" / "bundle-manifest" / "checksums" / "installer" / "publication-manifest",
   "sha256": bytes .size 32,
-  "size_bytes": uint .gt 0,
+  "size_bytes": positive-u64,
 }
+
+positive-u64 = 1..18446744073709551615
