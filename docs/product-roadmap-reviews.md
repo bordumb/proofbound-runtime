@@ -2018,3 +2018,32 @@ option bits through `TraceReady` and the closed pure validator, and include the
 raw Linux option source in the claim and evidence closures. This verdict is not
 endorsed. The correction changes the exact subject and requires independent
 re-review.
+
+## RT-8 diagnostic observer-adapter first correction review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `98be91872a263b4c9f6683f4f028695372be7fdf`
+- **Reviewed head:** `cc333cda8a5e09007fa22ee94c96a9ea4f6bfa8b`
+- **Branch:** `codex/rt8-observer-adapter`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The reviewer confirmed that the production implementation correctly binds
+bounds, stop ordering, private non-copy ownership, the Linux-installed option
+value, pure validation, release order, failure cleanup, source closure, and
+production dependency isolation. The first correction also closed the prior
+independent option reconstruction and broad accessor-name gaps.
+
+Two structural falsifier gaps remained. A wildcard public re-export, public
+type alias, public module, or unapproved opaque-return method could expose a raw
+owner without matching the raw-type deny-list. Also, the checker scoped the
+`SpawnedTrace::process` and `TraceReady::options` accessors but required only
+their signatures and field-name presence, not exact bodies that return the
+retained values. Correct signatures could therefore fabricate a process or
+option value while the evidence remained green.
+
+The correction must replace public-surface deny-lists with an exact allowlist,
+reject wildcard exports and public aliases or modules, and bind both accessor
+bodies to their exact retained fields. This verdict is not endorsed. The next
+correction changes the exact subject and requires another independent review.

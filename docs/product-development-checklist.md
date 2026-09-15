@@ -169,7 +169,9 @@ manifest describes the supported tuple.
   private ownership and public escape paths, exact stopped-child identity flow,
   and exact installed-option flow. The correction carries Linux-installed bits
   through the closed pure validator and strengthens the registered source
-  checks; exact re-review remains open.
+  checks. The first correction review then required a closed public API
+  allowlist and exact accessor bodies. The second correction adds both; exact
+  re-review remains open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.

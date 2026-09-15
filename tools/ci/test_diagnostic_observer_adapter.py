@@ -36,6 +36,13 @@ def private_fields(source: str, type_name: str) -> list[str]:
     return [line.strip() for line in body.splitlines() if ":" in line]
 
 
+def public_function_signatures(source: str) -> list[str]:
+    return [
+        compact(signature[:-1])
+        for signature in re.findall(r"pub\s+(?:const\s+)?fn\s+[^\{]+\{", source)
+    ]
+
+
 class DiagnosticObserverAdapterContractTests(unittest.TestCase):
     def setUp(self):
         self.adapter = ADAPTER.read_text()
@@ -84,24 +91,51 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
             self.assertNotIn("Copy", derive, state)
             self.assertNotIn("Clone", derive, state)
 
-        public_signatures = re.findall(
-            r"pub\s+(?:const\s+)?fn\s+[^\{]+\{", self.adapter
+        self.assertEqual(
+            public_function_signatures(self.adapter),
+            [
+                "pubfnprepare_observer<'descriptor>(launcher:&'descriptorResolvedFile,"
+                "request:InstallRequest,inherited_descriptors:&[BorrowedFd<'descriptor>],"
+                "architecture:Architecture,landlock_abi:NonZeroU32,bounds:ObservationBounds,)"
+                "->Result<PreparedObserver<'descriptor>,ObserverAdapterError>",
+                "pubfnspawn(self)->Result<SpawnedObserver,ObserverAdapterError>",
+                "pubconstfnprocess(&self)->TraceProcessId",
+                "pubfnwait_for_initial_exec_stop(self,deadline:TraceDeadline,)"
+                "->Result<InitialObserver,ObserverAdapterError>",
+                "pubfncontinue_to_launcher_pause(self,deadline:TraceDeadline,)"
+                "->Result<LauncherPausedObserver,ObserverAdapterError>",
+                "pubconstfnprocess(&self)->TraceProcessId",
+                "pubfncontinue_for_boundary(self)"
+                "->Result<BoundaryRunningObserver,ObserverAdapterError>",
+                "pubfnreceive_acknowledgement_and_stop(self,deadline:TraceDeadline,)"
+                "->Result<AcknowledgedObserver,ObserverAdapterError>",
+                "pubfninstall_options(self)->Result<ReadyObserver,ObserverAdapterError>",
+                "pubfnrelease(self)->Result<ActiveObserver,ObserverAdapterError>",
+                "pubconstfnroot(&self)->TraceProcessId",
+                "pubconstfnprotocol(&self)->&ObserverProtocol",
+                "pubconstfncode(self)->&'staticstr",
+            ],
         )
-        for signature in public_signatures:
-            self.assertNotRegex(signature, r"->\s*&\s*mut\b")
-            self.assertNotRegex(
-                signature,
-                r"->[^\{]*(?:PreparedTraceCommand|SpawnedTrace|InitialExecStop|"
-                r"LauncherPause|BoundaryRunning|AcknowledgedTraceStop|TraceReady|"
-                r"ActiveTrace)(?:\s|,|>|\{)",
-            )
-            if "ObserverProtocol" in signature:
-                self.assertIn("-> &ObserverProtocol", signature)
-        active = implementation(self.adapter, "ActiveObserver")
-        self.assertIn(
-            "pub const fn protocol(&self) -> &ObserverProtocol",
-            active,
+        public_types = re.findall(r"\bpub\s+(?:struct|enum)\s+([A-Za-z_][A-Za-z0-9_]*)", self.adapter)
+        self.assertEqual(
+            public_types,
+            [
+                "PreparedObserver",
+                "SpawnedObserver",
+                "InitialObserver",
+                "LauncherPausedObserver",
+                "BoundaryRunningObserver",
+                "AcknowledgedObserver",
+                "ReadyObserver",
+                "ActiveObserver",
+                "ObserverAdapterError",
+            ],
         )
+        self.assertNotRegex(
+            self.adapter,
+            r"\bpub\s+(?:use|type|mod|trait|static|union|unsafe|async|extern)\b",
+        )
+        self.assertNotRegex(self.adapter, r"\bpub\s+const\s+(?!fn\b)")
         self.assertNotIn("&mut ObserverProtocol", self.adapter)
 
     def test_effects_and_pure_transitions_have_one_closed_order(self):
@@ -148,28 +182,29 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
 
     def test_adapter_is_separate_and_hides_raw_trace_typestates(self):
         self.assertNotIn("unsafe", self.adapter)
-        public_uses = "\n".join(
-            re.findall(r"pub use [^;]+;", self.adapter_lib, re.DOTALL)
+        public_uses = [
+            compact(statement)
+            for statement in re.findall(r"pub use [^;]+;", self.adapter_lib, re.DOTALL)
+        ]
+        self.assertEqual(
+            public_uses,
+            [
+                "pubuseadapter::{prepare_observer,AcknowledgedObserver,ActiveObserver,"
+                "BoundaryRunningObserver,InitialObserver,LauncherPausedObserver,"
+                "ObserverAdapterError,PreparedObserver,ReadyObserver,SpawnedObserver,};",
+                "pubuseproofbound_runtime_linux::{TraceDeadline,TraceProcessId};",
+            ],
         )
-        public_use_identifiers = set(re.findall(r"[A-Za-z_][A-Za-z0-9_]*", public_uses))
-        for raw_type in [
-            "prepare_traced_launcher",
-            "AcknowledgedTraceStop",
-            "ActiveTrace",
-            "BoundaryRunning",
-            "InitialExecStop",
-            "LauncherPause",
-            "PreparedTraceCommand",
-            "SpawnedTrace",
-            "TraceReady",
-            "TraceStartupError",
-        ]:
-            self.assertNotIn(raw_type, public_use_identifiers)
+        self.assertNotIn("*", "".join(public_uses))
+        self.assertNotRegex(
+            self.adapter_lib,
+            r"\bpub\s+(?:mod|type|trait|struct|enum|fn|const|static)\b",
+        )
         self.assertIn("proofbound-runtime-diagnose.workspace = true", ADAPTER_MANIFEST.read_text())
         spawned_trace = implementation(self.trace, "SpawnedTrace")
         self.assertIn(
-            "pub const fn process(&self) -> TraceProcessId",
-            spawned_trace,
+            "pubconstfnprocess(&self)->TraceProcessId{self.session.process}",
+            compact(spawned_trace),
         )
         self.assertNotIn("-> &mut Child", self.trace)
         for manifest in PRODUCTION_MANIFESTS:
@@ -198,8 +233,10 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
             ["session: TraceSession,", "options: u32,"],
         )
         ready_trace = implementation(self.trace, "TraceReady")
-        self.assertIn("pub const fn options(&self) -> u32", ready_trace)
-        self.assertIn("self.options", ready_trace)
+        self.assertIn(
+            "pubconstfnoptions(&self)->u32{self.options}",
+            compact(ready_trace),
+        )
 
 
 if __name__ == "__main__":
