@@ -1401,3 +1401,33 @@ selection. It found six remaining blocking clusters:
 
 This verdict is not endorsed. The findings require another separate correction
 subject and exact-head review before the producer branch can proceed.
+
+## RT-8 diagnostic artifact producer second correction re-review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `cb52c5115d73c72aebad51c4c0f4a301068d8479`
+- **Reviewed head:** `75b3f62d115cb01b7c7e8fac1842a76b128dc24d`
+- **Branch:** `codex/rt8-observer`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The re-review confirmed that the count-gap meaning is now one-way, reusable
+path resolutions require complete path and symlink evidence, redacted targets
+remain closed, bounded encoding is incremental, the aggregate producer is the
+exact claim subject, Capsec mutations cover all registered identities and
+incomplete reports, and the new source and evidence files are registered.
+
+It found three remaining blocking boundaries:
+
+1. the diagnose manifest's direct `serde` dependency was absent from its
+   `Cargo.lock` package entry;
+2. natural exact-capacity completion was not isolated for the per-process and
+   process-count branches; and
+3. the missing path and symlink evidence mutation covered only stable
+   candidates, while the configured-home test used a path already excluded by
+   the independent system-root rule.
+
+This verdict is not endorsed. A separate correction must synchronize the
+locked graph and add discriminating falsifiers for all three boundaries before
+another exact-head review.

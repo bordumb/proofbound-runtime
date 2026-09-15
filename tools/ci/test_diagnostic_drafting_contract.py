@@ -296,6 +296,16 @@ class DiagnosticDraftingContractTests(unittest.TestCase):
             _matches(incomplete_stable_path, diagnostic_schema, diagnostic_schema)
         )
 
+        for missing_field in ["path", "symlink_hops"]:
+            incomplete_kernel_path = json.loads(json.dumps(diagnostic))
+            incomplete_kernel_path["events"][0]["outcome"] = {"returned": 3}
+            incomplete_kernel_path["events"][0]["resolution"] = "kernel-selected"
+            incomplete_kernel_path["events"][0]["object_before"] = None
+            incomplete_kernel_path["events"][0]["operands"][missing_field] = None
+            self.assertFalse(
+                _matches(incomplete_kernel_path, diagnostic_schema, diagnostic_schema)
+            )
+
         capsec_candidate = json.loads(json.dumps(draft))
         capsec_candidate["candidates"] = [
             {

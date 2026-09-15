@@ -70,7 +70,7 @@ mod tests {
                 path_scope: Some(
                     DraftPathScope::new(
                         ["/workspace".to_owned()],
-                        "/home/fixture".to_owned(),
+                        "/workspace/user-home".to_owned(),
                         ["/workspace/.tmp".to_owned()],
                     )
                     .expect("fixture path scope"),

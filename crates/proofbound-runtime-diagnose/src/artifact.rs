@@ -1543,6 +1543,23 @@ pub(crate) mod tests {
         naturally_at_capacity.gaps.clear();
         assert!(DiagnosticReceipt::construct(naturally_at_capacity).is_ok());
 
+        let mut naturally_at_per_process_capacity = fixture_parts();
+        naturally_at_per_process_capacity.bounds.event_count = 3;
+        naturally_at_per_process_capacity
+            .bounds
+            .event_count_per_process = 2;
+        naturally_at_per_process_capacity.completion = DiagnosticCompletion::Complete;
+        naturally_at_per_process_capacity.gaps.clear();
+        assert!(DiagnosticReceipt::construct(naturally_at_per_process_capacity).is_ok());
+
+        let mut naturally_at_process_capacity = fixture_parts();
+        naturally_at_process_capacity.bounds.event_count = 3;
+        naturally_at_process_capacity.bounds.event_count_per_process = 3;
+        naturally_at_process_capacity.bounds.process_count = 1;
+        naturally_at_process_capacity.completion = DiagnosticCompletion::Complete;
+        naturally_at_process_capacity.gaps.clear();
+        assert!(DiagnosticReceipt::construct(naturally_at_process_capacity).is_ok());
+
         let mut total_overflow = fixture_parts();
         total_overflow.bounds.event_count = 1;
         assert_eq!(
@@ -1663,44 +1680,58 @@ pub(crate) mod tests {
 
         let object =
             ObservedObjectIdentity::new(8, 1, 42, 0o100644, 7).expect("fixture object identity");
-        for operands in [
-            ObservationOperands::Path {
-                buffer_bytes: None,
-                directory_fd: None,
-                flags: Some(0),
-                mask: None,
-                mode: None,
-                path: None,
-                resolve: None,
-                symlink_hops: Some(0),
-            },
-            ObservationOperands::Path {
-                buffer_bytes: None,
-                directory_fd: None,
-                flags: Some(0),
-                mask: None,
-                mode: None,
-                path: Some("config".to_owned()),
-                resolve: None,
-                symlink_hops: None,
-            },
+        for resolution in [
+            ObservationResolution::StableCandidate,
+            ObservationResolution::KernelSelected,
         ] {
-            let incomplete_path = DiagnosticEvent::new(
-                0,
-                1000,
-                Architecture::X86_64,
-                DiagnosticEventClass::Open,
-                operands,
-                ObservationOutcome::Failed(13),
-                ObservationResolution::StableCandidate,
-                Some("/workspace/config".to_owned()),
-                Some(object.clone()),
-                Some(object.clone()),
-            );
-            assert_eq!(
-                incomplete_path,
-                Err(DiagnosticArtifactError::ResolutionInvalid)
-            );
+            for operands in [
+                ObservationOperands::Path {
+                    buffer_bytes: None,
+                    directory_fd: None,
+                    flags: Some(0),
+                    mask: None,
+                    mode: None,
+                    path: None,
+                    resolve: None,
+                    symlink_hops: Some(0),
+                },
+                ObservationOperands::Path {
+                    buffer_bytes: None,
+                    directory_fd: None,
+                    flags: Some(0),
+                    mask: None,
+                    mode: None,
+                    path: Some("config".to_owned()),
+                    resolve: None,
+                    symlink_hops: None,
+                },
+            ] {
+                let (outcome, object_before) = match resolution {
+                    ObservationResolution::StableCandidate => {
+                        (ObservationOutcome::Failed(13), Some(object.clone()))
+                    }
+                    ObservationResolution::KernelSelected => {
+                        (ObservationOutcome::Returned(3), None)
+                    }
+                    _ => unreachable!("fixture reusable resolution"),
+                };
+                let incomplete_path = DiagnosticEvent::new(
+                    0,
+                    1000,
+                    Architecture::X86_64,
+                    DiagnosticEventClass::Open,
+                    operands,
+                    outcome,
+                    resolution,
+                    Some("/workspace/config".to_owned()),
+                    object_before,
+                    Some(object.clone()),
+                );
+                assert_eq!(
+                    incomplete_path,
+                    Err(DiagnosticArtifactError::ResolutionInvalid)
+                );
+            }
         }
         let traversal = DiagnosticEvent::new(
             0,

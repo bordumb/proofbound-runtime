@@ -847,7 +847,7 @@ mod tests {
     fn fixture_scope() -> DraftPathScope {
         DraftPathScope::new(
             ["/workspace".to_owned()],
-            "/home/fixture".to_owned(),
+            "/workspace/user-home".to_owned(),
             ["/workspace/.tmp".to_owned()],
         )
         .expect("fixture path scope")
@@ -943,7 +943,7 @@ mod tests {
         assert_eq!(
             DraftPathScope::new(
                 ["/workspace/../etc".to_owned()],
-                "/home/fixture".to_owned(),
+                "/workspace/user-home".to_owned(),
                 Vec::new(),
             ),
             Err(DraftError::PathScopeInvalid)
@@ -954,13 +954,13 @@ mod tests {
     fn path_scope_excludes_nested_system_home_and_temporary_roots() {
         for candidate in [
             "/usr/local/project",
-            "/home/fixture/project",
+            "/workspace/user-home/project",
             "/workspace/.tmp/project",
         ] {
             assert_eq!(
                 DraftPathScope::new(
                     [candidate.to_owned()],
-                    "/home/fixture".to_owned(),
+                    "/workspace/user-home".to_owned(),
                     ["/workspace/.tmp".to_owned()],
                 ),
                 Err(DraftError::PathScopeInvalid)
@@ -968,7 +968,7 @@ mod tests {
         }
         let scope = fixture_scope();
         assert!(!scope.allows("/usr/local/lib/runtime.so"));
-        assert!(!scope.allows("/home/fixture/.ssh/config"));
+        assert!(!scope.allows("/workspace/user-home/.ssh/config"));
         assert!(!scope.allows("/workspace/.tmp/cache"));
         assert!(scope.allows("/workspace/project/config"));
     }

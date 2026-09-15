@@ -149,6 +149,17 @@ class DiagnosticArtifactProducerContractTests(unittest.TestCase):
         ]["properties"]
         self.assertEqual(stable_path["path"], {"type": "string"})
         self.assertEqual(stable_path["symlink_hops"], {"type": "integer"})
+        kernel_rule = next(
+            rule
+            for rule in schema["$defs"]["event"]["allOf"]
+            if rule.get("if", {}).get("properties", {}).get("resolution")
+            == {"const": "kernel-selected"}
+        )
+        kernel_path = kernel_rule["then"]["properties"]["operands"]["allOf"][
+            1
+        ]["properties"]
+        self.assertEqual(kernel_path["path"], {"type": "string"})
+        self.assertEqual(kernel_path["symlink_hops"], {"type": "integer"})
         for guard in [
             "retains_redacted_target",
             "has_complete_path_observation",

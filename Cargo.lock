@@ -173,6 +173,7 @@ name = "proofbound-runtime-diagnose"
 version = "0.2.0"
 dependencies = [
  "proofbound-runtime-core",
+ "serde",
  "serde_json",
  "sha2",
 ]
