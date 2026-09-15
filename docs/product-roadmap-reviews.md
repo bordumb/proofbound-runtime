@@ -2047,3 +2047,31 @@ The correction must replace public-surface deny-lists with an exact allowlist,
 reject wildcard exports and public aliases or modules, and bind both accessor
 bodies to their exact retained fields. This verdict is not endorsed. The next
 correction changes the exact subject and requires another independent review.
+
+## RT-8 diagnostic observer-adapter second correction review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `98be91872a263b4c9f6683f4f028695372be7fdf`
+- **Reviewed head:** `d25edc4e9db08840b7c4f22ef72d9f83581bac1e`
+- **Branch:** `codex/rt8-observer-adapter`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The reviewer confirmed that the second correction exact-allowlists the declared
+public functions, types, and re-exports; rejects wildcard and alternate public
+declarations; binds both retained-field accessors to exact bodies; preserves
+the PID and installed-option flows; and leaves implementation ordering, source
+closure, production isolation, errors, cleanup, and claim scope correct.
+
+One public-surface gap remained. Trait implementation methods are public through
+their trait even though their source declarations do not contain `pub fn`. A
+new `Into<ActiveTrace>`, `Deref`, or `DerefMut` implementation could therefore
+expose a raw trace owner or mutable protocol while the declared-function
+allowlist stayed green. The public error enum variants were also not fixed by
+the allowlist.
+
+The correction must exact-allowlist every implementation header and method,
+fix the public error variant set, and reject source macros that could generate
+an uninspected public item. This verdict is not endorsed. The correction changes
+the exact subject and requires another independent review.

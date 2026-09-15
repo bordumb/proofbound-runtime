@@ -27,6 +27,12 @@ def structure(source: str, type_name: str) -> str:
     return source[start:end]
 
 
+def enum_structure(source: str, type_name: str) -> str:
+    start = source.index(f"pub enum {type_name}")
+    end = source.index("\n}", start)
+    return source[start:end]
+
+
 def compact(source: str) -> str:
     return re.sub(r"\s+", "", source)
 
@@ -41,6 +47,39 @@ def public_function_signatures(source: str) -> list[str]:
         compact(signature[:-1])
         for signature in re.findall(r"pub\s+(?:const\s+)?fn\s+[^\{]+\{", source)
     ]
+
+
+def all_function_signatures(source: str) -> list[str]:
+    return [
+        compact(signature[:-1])
+        for signature in re.findall(
+            r"(?m)^\s*((?:pub\s+)?(?:const\s+)?fn\s+[^\{]+\{)", source
+        )
+    ]
+
+
+EXPECTED_PUBLIC_FUNCTIONS = [
+    "pubfnprepare_observer<'descriptor>(launcher:&'descriptorResolvedFile,"
+    "request:InstallRequest,inherited_descriptors:&[BorrowedFd<'descriptor>],"
+    "architecture:Architecture,landlock_abi:NonZeroU32,bounds:ObservationBounds,)"
+    "->Result<PreparedObserver<'descriptor>,ObserverAdapterError>",
+    "pubfnspawn(self)->Result<SpawnedObserver,ObserverAdapterError>",
+    "pubconstfnprocess(&self)->TraceProcessId",
+    "pubfnwait_for_initial_exec_stop(self,deadline:TraceDeadline,)"
+    "->Result<InitialObserver,ObserverAdapterError>",
+    "pubfncontinue_to_launcher_pause(self,deadline:TraceDeadline,)"
+    "->Result<LauncherPausedObserver,ObserverAdapterError>",
+    "pubconstfnprocess(&self)->TraceProcessId",
+    "pubfncontinue_for_boundary(self)"
+    "->Result<BoundaryRunningObserver,ObserverAdapterError>",
+    "pubfnreceive_acknowledgement_and_stop(self,deadline:TraceDeadline,)"
+    "->Result<AcknowledgedObserver,ObserverAdapterError>",
+    "pubfninstall_options(self)->Result<ReadyObserver,ObserverAdapterError>",
+    "pubfnrelease(self)->Result<ActiveObserver,ObserverAdapterError>",
+    "pubconstfnroot(&self)->TraceProcessId",
+    "pubconstfnprotocol(&self)->&ObserverProtocol",
+    "pubconstfncode(self)->&'staticstr",
+]
 
 
 class DiagnosticObserverAdapterContractTests(unittest.TestCase):
@@ -93,27 +132,15 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
 
         self.assertEqual(
             public_function_signatures(self.adapter),
-            [
-                "pubfnprepare_observer<'descriptor>(launcher:&'descriptorResolvedFile,"
-                "request:InstallRequest,inherited_descriptors:&[BorrowedFd<'descriptor>],"
-                "architecture:Architecture,landlock_abi:NonZeroU32,bounds:ObservationBounds,)"
-                "->Result<PreparedObserver<'descriptor>,ObserverAdapterError>",
-                "pubfnspawn(self)->Result<SpawnedObserver,ObserverAdapterError>",
-                "pubconstfnprocess(&self)->TraceProcessId",
-                "pubfnwait_for_initial_exec_stop(self,deadline:TraceDeadline,)"
-                "->Result<InitialObserver,ObserverAdapterError>",
-                "pubfncontinue_to_launcher_pause(self,deadline:TraceDeadline,)"
-                "->Result<LauncherPausedObserver,ObserverAdapterError>",
-                "pubconstfnprocess(&self)->TraceProcessId",
-                "pubfncontinue_for_boundary(self)"
-                "->Result<BoundaryRunningObserver,ObserverAdapterError>",
-                "pubfnreceive_acknowledgement_and_stop(self,deadline:TraceDeadline,)"
-                "->Result<AcknowledgedObserver,ObserverAdapterError>",
-                "pubfninstall_options(self)->Result<ReadyObserver,ObserverAdapterError>",
-                "pubfnrelease(self)->Result<ActiveObserver,ObserverAdapterError>",
-                "pubconstfnroot(&self)->TraceProcessId",
-                "pubconstfnprotocol(&self)->&ObserverProtocol",
-                "pubconstfncode(self)->&'staticstr",
+            EXPECTED_PUBLIC_FUNCTIONS,
+        )
+        self.assertEqual(
+            all_function_signatures(self.adapter),
+            EXPECTED_PUBLIC_FUNCTIONS
+            + [
+                "fnfrom(error:TraceStartupError)->Self",
+                "fnfrom(error:ObserverProtocolError)->Self",
+                "fnfmt(&self,formatter:&mutfmt::Formatter<'_>)->fmt::Result",
             ],
         )
         public_types = re.findall(r"\bpub\s+(?:struct|enum)\s+([A-Za-z_][A-Za-z0-9_]*)", self.adapter)
@@ -136,6 +163,68 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
             r"\bpub\s+(?:use|type|mod|trait|static|union|unsafe|async|extern)\b",
         )
         self.assertNotRegex(self.adapter, r"\bpub\s+const\s+(?!fn\b)")
+        self.assertNotIn("macro_rules!", self.adapter)
+        self.assertNotIn("#[macro_export]", self.adapter)
+        self.assertNotRegex(
+            self.adapter,
+            r"\b[A-Za-z_][A-Za-z0-9_]*!\s*[\(\{\[]",
+        )
+        self.assertEqual(
+            re.findall(r"#\[[^\]]+\]", self.adapter),
+            [
+                "#[derive(Debug)]",
+                "#[derive(Debug)]",
+                "#[must_use]",
+                "#[derive(Debug)]",
+                "#[derive(Debug)]",
+                "#[must_use]",
+                "#[derive(Debug)]",
+                "#[derive(Debug)]",
+                "#[derive(Debug)]",
+                "#[derive(Debug)]",
+                "#[must_use]",
+                "#[must_use]",
+                "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
+                "#[must_use]",
+            ],
+        )
+
+        implementation_headers = [
+            compact(header)
+            for header in re.findall(r"(?m)^impl\s+([^\{]+)\{", self.adapter)
+        ]
+        self.assertEqual(
+            implementation_headers,
+            [
+                "PreparedObserver<'_>",
+                "SpawnedObserver",
+                "InitialObserver",
+                "LauncherPausedObserver",
+                "BoundaryRunningObserver",
+                "AcknowledgedObserver",
+                "ReadyObserver",
+                "ActiveObserver",
+                "ObserverAdapterError",
+                "From<TraceStartupError>forObserverAdapterError",
+                "From<ObserverProtocolError>forObserverAdapterError",
+                "fmt::DisplayforObserverAdapterError",
+                "std::error::ErrorforObserverAdapterError",
+            ],
+        )
+        error_body = enum_structure(self.adapter, "ObserverAdapterError").split("{", 1)[1]
+        error_variants = [
+            line.strip()
+            for line in error_body.splitlines()
+            if line.strip() and not line.strip().startswith("///")
+        ]
+        self.assertEqual(
+            error_variants,
+            [
+                "BoundsInvalid,",
+                "Trace(TraceStartupError),",
+                "Protocol(ObserverProtocolError),",
+            ],
+        )
         self.assertNotIn("&mut ObserverProtocol", self.adapter)
 
     def test_effects_and_pure_transitions_have_one_closed_order(self):
@@ -198,7 +287,11 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
         self.assertNotIn("*", "".join(public_uses))
         self.assertNotRegex(
             self.adapter_lib,
-            r"\bpub\s+(?:mod|type|trait|struct|enum|fn|const|static)\b",
+            r"\bpub\s+(?:mod|type|trait|struct|enum|fn|const|static|macro)\b",
+        )
+        self.assertNotRegex(
+            self.adapter_lib,
+            r"\b[A-Za-z_][A-Za-z0-9_]*!\s*[\(\{\[]",
         )
         self.assertIn("proofbound-runtime-diagnose.workspace = true", ADAPTER_MANIFEST.read_text())
         spawned_trace = implementation(self.trace, "SpawnedTrace")

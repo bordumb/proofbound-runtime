@@ -171,7 +171,9 @@ manifest describes the supported tuple.
   through the closed pure validator and strengthens the registered source
   checks. The first correction review then required a closed public API
   allowlist and exact accessor bodies. The second correction adds both; exact
-  re-review remains open.
+  review found one remaining trait-implementation and public-enum gap. The third
+  correction exact-allowlists every implementation header and method, fixes the
+  error variants, and rejects source macros; exact re-review remains open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.
