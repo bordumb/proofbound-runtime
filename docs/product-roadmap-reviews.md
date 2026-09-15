@@ -3040,3 +3040,33 @@ assurance table and RT-7 integration record also still called the admitted
 The correction must narrow cleanup language to attempted early-state cleanup
 and record their merge `47c5ad2` plus passed exact-main run `35006872460` before
 another exact-head review.
+
+## RT-8 diagnostic stream final admitted-base approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `a89b92daa0a6f977c4a090b3f9a2e553fc94884d`
+- **Reviewed head:** `1c46800bccc6f99a99b08b0cadc462d16ed3742b`
+- **Branch:** `codex/rt8-diagnostic-streams`
+- **Method:** Complete exact-range static security and documentation re-review.
+  The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the documentation-only correction limits child
+termination and wait to an attempt by abandoned early setup states and retains
+pidfd-only active destruction. The admitted RT-7 source, external publication
+gaps, admitted event mapper, and pending stream wave now have consistent status.
+The production, claim, assumption, evidence, and checker bytes remain unchanged
+from corrected head `2755a58ba610b104297f0db81301656c8e4e2d30`.
+
+All earlier security findings remain closed: independently bounded drains with
+shared cancellation; fixed-deadline cancellation and joins; rejection of
+late-ready and post-join completion; setup and active raw-reap disarming;
+pidfd-owned active cleanup; aggregate source closure; accurate best-effort
+language; and synchronized exact fingerprints. No new blocker was found.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`a89b92daa0a6f977c4a090b3f9a2e553fc94884d..1c46800bccc6f99a99b08b0cadc462d16ed3742b`.
+The following approval-only commit changes no reviewed production,
+specification, claim, assumption, evidence, checker, or source-closure bytes.
+Any later subject change requires a new exact-head review.
