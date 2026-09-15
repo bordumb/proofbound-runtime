@@ -11,9 +11,8 @@ evidence = [
   "independent-check:diagnostic-syscall-decoder-contract",
 ]
 assumptions = [
-  "PBR-DIAGNOSTIC-CONTRACT-AX-015",
+  "PBR-DIAGNOSTIC-DECODE-CHECK-AX-018",
   "PBR-DIAGNOSTIC-DECODE-AX-017",
-  "PBR-TOOLCHAIN-AX-003",
 ]
 open_obligations = [
   "Run the complete source, compilation, unit, and independent-check evidence in hosted exact-head verification before merge.",
@@ -30,9 +29,8 @@ out_of_scope = [
 source_roots = [
   "Cargo.lock",
   "Cargo.toml",
-  "assumptions/PBR-DIAGNOSTIC-CONTRACT-AX-015.toml",
+  "assumptions/PBR-DIAGNOSTIC-DECODE-CHECK-AX-018.toml",
   "assumptions/PBR-DIAGNOSTIC-DECODE-AX-017.toml",
-  "assumptions/PBR-TOOLCHAIN-AX-003.toml",
   "claims/PBR-OBSERVER-025.toml",
   "crates/proofbound-runtime-diagnose/src/artifact.rs",
   "crates/proofbound-runtime-diagnose/src/observer.rs",

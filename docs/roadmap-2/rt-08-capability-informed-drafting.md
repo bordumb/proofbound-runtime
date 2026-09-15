@@ -13,7 +13,9 @@ hosted run `34964466007`. The active-trace event approval in PR 16 remains
 historical because the live event-and-drain wave changes the same source. That
 corrected wave at exact source `af9f77d` passed independent exact-head review
 and is pending approval-only recording, admitted-stack replay, hosted
-verification, and merge. It passes the validated process bound into the effectful trace, consumes
+verification, and merge. Its approval is recorded in the current local stack,
+but the following decoder changes the same source identities and requires a
+combined exact review. It passes the validated process bound into the effectful trace, consumes
 complete events into the matching pure protocol, permanently rejects an
 unreconciled process tree, and makes successful effectful drain reconciliation
 precede pure tree-empty acknowledgement. Its first exact review requested five
@@ -21,7 +23,7 @@ corrections; the combined correction closed them and received an explicit
 `APPROVE`.
 The architecture-qualified syscall decoder and bounded entry-time operand
 capture are implemented locally under `PBR-OBSERVER-025`; exact review and
-hosted admission remain open. Artifact mapping, command integration, the native
+hosted admission of the combined current sources remain open. Artifact mapping, command integration, the native
 attack corpus, and release binding remain open.
 
 **Primary owner:** Proofbound Runtime

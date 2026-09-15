@@ -84,7 +84,7 @@ pub struct TraceCaptureLimits {
 }
 
 impl TraceCaptureLimits {
-    /// Creates nonzero path and socket-address limits in bytes.
+    /// Creates nonzero path, socket-address, and tracee-string limits in bytes.
     pub const fn new(
         path_bytes: u64,
         socket_address_bytes: u64,

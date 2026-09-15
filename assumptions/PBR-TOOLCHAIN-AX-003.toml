@@ -27,7 +27,6 @@ affected_claims = [
   "PBR-OBSERVER-022",
   "PBR-OBSERVER-023",
   "PBR-OBSERVER-024",
-  "PBR-OBSERVER-025",
 ]
 review_evidence = [
   "rust-toolchain.toml",

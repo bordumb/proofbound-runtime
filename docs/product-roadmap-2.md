@@ -77,7 +77,9 @@ head `8ab66e5` in hosted run `34964466007`. The active-trace approval in PR 16
 remains historical because the following live event-and-drain wave changes the
 same source. Corrected exact source `af9f77d` passed independent exact-head
 review and is pending approval-only recording, admitted-stack replay, hosted
-verification, and merge. That wave passes the validated process bound into the trace,
+verification, and merge. Its approval is recorded in the current local stack,
+but the following decoder changes the same source identities and requires a
+combined exact review. That wave passes the validated process bound into the trace,
 consumes each complete event into the same pure protocol, permanently rejects
 an unreconciled process tree, and orders successful effectful drain before the
 pure tree-empty acknowledgement. Its first exact review requested five
@@ -85,7 +87,7 @@ corrections; the combined correction closed them and received an explicit
 `APPROVE`.
 The architecture-qualified syscall decoder and bounded entry-time operand
 capture are implemented locally under `PBR-OBSERVER-025`; exact review and
-hosted admission remain open. Artifact mapping, command integration, the native
+hosted admission of the combined current sources remain open. Artifact mapping, command integration, the native
 attack corpus, and release binding remain open.
 
 RT-9 is blocked until RT-5 implements the accepted single-service network

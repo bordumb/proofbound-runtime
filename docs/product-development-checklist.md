@@ -1,18 +1,18 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T13:02:02+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T13:29:21+01:00 (Europe/London, BST)
 - **Runtime baseline:** trace-startup merge `9395050`; exact-main Verify run
   `34962882198` is in progress
 - **Active implementation wave:** the coupled setup adapter is at admitted-main
   head `8ab66e5` in PR 15 and hosted run `34964466007` is in progress. The live
-  event-and-drain correction at `af9f77d` passed independent exact-head review.
-  Its approval-only commit, admitted-stack replay, hosted gate, and merge remain
-  pending.
-- **Following implementation batch:** architecture-qualified syscall decoding
-  and bounded operand capture are implemented locally as `PBR-OBSERVER-025`.
-  Exact review, hosted admission, artifact mapping, and native attacks remain
-  open.
+  event-and-drain correction at `af9f77d` passed independent exact-head review,
+  and its approval is recorded in the current local stack. The following
+  decoder batch changes the same trace, adapter, and observer sources, so the
+  combined current identity is pending exact review and hosted admission.
+- **Current implementation batch:** architecture-qualified syscall decoding and
+  bounded operand capture are implemented locally as `PBR-OBSERVER-025`.
+  Artifact mapping and native attacks remain open after this batch.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -209,8 +209,9 @@ manifest describes the supported tuple.
   permanently blocks publication after an unreconciled tree, byte-pins the
   load-bearing bodies with five mutation classes, restores typed unsupported
   paths, closes assumption links, and marks every changed exact subject pending.
-  Approval-only recording, admitted-stack replay, and hosted admission remain
-  open.
+  The `af9f77d` approval is recorded. The following decoder changes the same
+  exact sources, so combined exact review, admitted-stack replay, and hosted
+  admission remain open.
 - [ ] Admit architecture-qualified syscall decoding and bounded operand capture.
   The current source has separate x86_64 and aarch64 tables, rejects x32 and
   unsupported registered forms, captures path and socket-address bytes before
