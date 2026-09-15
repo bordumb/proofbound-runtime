@@ -1704,7 +1704,7 @@ pub enum TraceProcessCreationKind {
 pub enum TraceSyscallClass {
     /// A `bind` operation.
     Bind,
-    /// A `clone`, `clone3`, `fork`, or `vfork` operation.
+    /// A `clone` or `clone3` operation.
     Clone,
     /// A `connect` operation.
     Connect,
