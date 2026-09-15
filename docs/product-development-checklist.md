@@ -147,10 +147,15 @@ Review history:
   change in the following approval-only commit.
 - [ ] Publish from one exact approved `main` revision using registry
   credentials supplied through the release environment.
-- [ ] Configure the protected `package-publish` environment, PyPI pending
-  publisher, scoped crates.io token, and one-time npm bootstrap token. After the
-  first npm upload, configure its exact trusted publisher, delete the GitHub
-  secret, and revoke the token before any later release.
+- [x] Configure the protected `package-publish` GitHub environment with a
+  custom `main`-only deployment policy, required reviewer `bordumb`, disabled
+  administrator bypass, and self-review prevention disabled because the
+  repository has no second collaborator. This is an observed external setting,
+  not an independent approval or a frozen state.
+- [ ] Configure the PyPI pending publisher, scoped crates.io token, and one-time
+  npm bootstrap token. After the first npm upload, configure its exact trusted
+  publisher, delete the GitHub secret, and revoke the token before any later
+  release.
 - [ ] Retrieve each registry artifact anonymously and compare its exact bytes
   or registered package identity with the approved artifact.
 - [ ] Exercise each package from an unrelated consumer repository or other
