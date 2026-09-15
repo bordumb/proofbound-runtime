@@ -84,7 +84,8 @@ handling, and validated pidfd-directed termination. It remains byte-identical
 to independently approved source `c20f6e3`; its admitted-main replay at
 `1db68a6` was also independently approved, and approval-only head `c4b88c1` is
 not admitted alone: run `34970508987` failed only on the two Rust lints fixed by
-the following reviewed batch. The following event-and-drain source `af9f77d` passed
+the following reviewed batch. The following event-and-drain source `af9f77d`
+passed
 independent exact-head review before this restack. It passes the validated
 process bound into the trace, consumes each complete event into the same pure
 protocol, permanently rejects an unreconciled process tree, and orders a

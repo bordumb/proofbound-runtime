@@ -2472,3 +2472,33 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, or test bytes. Any later subject change requires a new
 exact-head review.
+
+## RT-8 live event-and-drain Rust-lint correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `a048f5e7b823243ce567623e6199975ffe5b54e4`
+- **Reviewed head:** `a3f56b567da7b1cf09bbf2aff02836af2591cada`
+- **Branch:** `codex/rt8-event-adapter`
+- **Method:** Narrow exact-range static re-review after the hosted Rust-lint
+  failure. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the collapsed resume condition preserves
+short-circuiting, consumes the same held process once, and retains the
+fail-closed drain-before-error behavior. The vacant-entry rewrite preserves
+the prior handle lookup, open, insert, and failure paths. The focused checker
+pins the corrected exact function body, and all other pinned identities remain
+unchanged.
+
+The operational documents accurately record hosted run `34972072843` as
+failed in the Rust lane and then cancelled. The assurance summary correctly
+withholds current exact-source approval from the affected observer claims
+until this review is recorded. The correction changes no claim, assumption,
+evidence-manifest, public-API, or security semantics.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`a3f56b567da7b1cf09bbf2aff02836af2591cada`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.

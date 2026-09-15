@@ -224,15 +224,17 @@ manifest describes the supported tuple.
   permanently blocks publication after an unreconciled tree, byte-pins the
   load-bearing bodies with five mutation classes, restores typed unsupported
   paths, closes assumption links, and marks every changed exact subject pending.
-  The `af9f77d` approval and the restacked `45b1c91` approval are recorded;
-  approval-only head `a048f5e` is in hosted verification. The following decoder
-  changes the same exact sources, so combined exact review and hosted admission
-  remain open.
+  The `af9f77d`, restacked `45b1c91`, and lint-corrected `a3f56b5` approvals are
+  recorded. Combined approval-only head `9f82afa` is in replacement Verify run
+  `34973401808`. The following decoder changes the same exact sources, so
+  combined exact review and hosted admission remain open.
 - [ ] Admit architecture-qualified syscall decoding and bounded operand capture.
   The current source has separate x86_64 and aarch64 tables, rejects x32 and
   unsupported registered forms, captures path and socket-address bytes before
   resume under three independent limits, completes partial reads or fails, and
-  never reads payload bytes. Exact review and hosted admission remain open.
+  never reads payload bytes. The raw parser rejects nonzero reserved and flags
+  fields and all non-exact syscall-information sizes. Exact review and hosted
+  admission remain open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.
