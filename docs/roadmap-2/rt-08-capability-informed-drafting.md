@@ -42,13 +42,15 @@ values without making a draft an authority object.
 
 ## Required behavior
 
-- Capsec reports are optional, content-identified, and bound to exact source.
+- Capsec reports are optional and usable only when their schema, source,
+  analyzer, and report identities match the selected integration profile.
 - Runtime parses Capsec output outside the pure authority core.
 - A report can suggest review items. It cannot add plan authority.
 - Runtime displays requirements absent from the plan, plan authority absent
   from requirements, and observed effects absent from requirements.
-- Unknown Capsec schema identities and stale source identities remain visible and
-  unusable for automated comparison.
+- Unknown Capsec schema identities, stale source identities, and mismatched
+  analyzer or report identities remain visible and unusable for automated
+  comparison.
 - Network, environment, write-root, and resource-limit choices remain human
   decisions.
 - The observer is a separate ptrace-based diagnostic executable. Production
@@ -57,6 +59,9 @@ values without making a draft an authority object.
   the production verifier, composer, or acceptance policy.
 - The pure producer accepts validated observations. It cannot observe a
   process, install a boundary, or add production authority.
+- Automatic candidates require an explicit normalized project or runtime
+  scope. System, home, and configured temporary roots remain open review
+  items.
 
 ## Additional falsifiers
 

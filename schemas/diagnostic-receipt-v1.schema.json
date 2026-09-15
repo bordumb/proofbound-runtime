@@ -211,7 +211,8 @@
         "mask",
         "mode",
         "path",
-        "resolve"
+        "resolve",
+        "symlink_hops"
       ],
       "properties": {
         "buffer_bytes": {"type": ["integer", "null"], "minimum": 0},
@@ -225,7 +226,12 @@
         "mask": {"type": ["integer", "null"], "minimum": 0},
         "mode": {"type": ["integer", "null"], "minimum": 0},
         "path": {"type": ["string", "null"], "maxLength": 1048576},
-        "resolve": {"type": ["integer", "null"], "minimum": 0}
+        "resolve": {"type": ["integer", "null"], "minimum": 0},
+        "symlink_hops": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 40
+        }
       }
     },
     "processOperands": {
@@ -356,6 +362,37 @@
               "object_after": {"$ref": "#/$defs/objectIdentity"},
               "resolved_path": {"type": "string", "maxLength": 1048576},
               "result": {"type": "integer", "minimum": 0}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {"resolution": {"const": "redacted"}},
+            "required": ["resolution"]
+          },
+          "then": {
+            "properties": {
+              "object_after": {"type": "null"},
+              "object_before": {"type": "null"},
+              "operands": {
+                "oneOf": [
+                  {
+                    "allOf": [
+                      {"$ref": "#/$defs/pathOperands"},
+                      {"properties": {"path": {"type": "null"}}}
+                    ]
+                  },
+                  {"$ref": "#/$defs/processOperands"},
+                  {
+                    "allOf": [
+                      {"$ref": "#/$defs/socketAddressOperands"},
+                      {"properties": {"address": {"type": "null"}}}
+                    ]
+                  },
+                  {"$ref": "#/$defs/socketCreateOperands"}
+                ]
+              },
+              "resolved_path": {"type": "null"}
             }
           }
         }

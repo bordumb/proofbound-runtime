@@ -8,6 +8,9 @@ ROOT = Path(__file__).resolve().parents[2]
 RECEIPT_VECTOR = ROOT / "schemas/vectors/diagnostic/diagnostic-receipt.json"
 DRAFT_VECTOR = ROOT / "schemas/vectors/diagnostic/plan-draft.json"
 DIAGNOSE_MANIFEST = ROOT / "crates/proofbound-runtime-diagnose/Cargo.toml"
+ARTIFACT_SOURCE = ROOT / "crates/proofbound-runtime-diagnose/src/artifact.rs"
+DRAFT_SOURCE = ROOT / "crates/proofbound-runtime-diagnose/src/draft.rs"
+DIAGNOSTIC_SCHEMA = ROOT / "schemas/diagnostic-receipt-v1.schema.json"
 PRODUCTION_MANIFESTS = [
     ROOT / "crates/proofbound-runtime-cli/Cargo.toml",
     ROOT / "crates/proofbound-runtime-linux/Cargo.toml",
@@ -26,6 +29,8 @@ class DiagnosticArtifactProducerContractTests(unittest.TestCase):
         self.draft_bytes = DRAFT_VECTOR.read_bytes().removesuffix(b"\n")
         self.receipt = json.loads(self.receipt_bytes)
         self.draft = json.loads(self.draft_bytes)
+        self.artifact_source = ARTIFACT_SOURCE.read_text()
+        self.draft_source = DRAFT_SOURCE.read_text()
 
     def test_canonical_vectors_bind_one_exact_non_reusable_projection(self):
         self.assertEqual(self.receipt_bytes, canonical_json(self.receipt))
@@ -40,6 +45,10 @@ class DiagnosticArtifactProducerContractTests(unittest.TestCase):
         self.assertEqual(
             self.draft["seed_plan"], self.receipt["seed_plan"]["sha256"]
         )
+        self.assertEqual(
+            len(self.receipt["events"]), self.receipt["bounds"]["event_count"]
+        )
+        self.assertIn("event-limit", self.receipt["gaps"])
         for field in ["arguments", "environment_names", "gaps"]:
             self.assertEqual(self.draft[field], self.receipt[field])
 
@@ -98,6 +107,48 @@ class DiagnosticArtifactProducerContractTests(unittest.TestCase):
         for path in PRODUCTION_MANIFESTS:
             manifest = path.read_text()
             self.assertNotIn("proofbound-runtime-diagnose", manifest, path)
+
+    def test_redaction_paths_bounds_and_capsec_are_closed_in_source(self):
+        schema = json.loads(DIAGNOSTIC_SCHEMA.read_text())
+        path_operands = schema["$defs"]["pathOperands"]
+        self.assertIn("symlink_hops", path_operands["required"])
+        self.assertEqual(
+            path_operands["properties"]["symlink_hops"]["maximum"], 40
+        )
+        redacted_rule = next(
+            rule
+            for rule in schema["$defs"]["event"]["allOf"]
+            if rule.get("if", {}).get("properties", {}).get("resolution")
+            == {"const": "redacted"}
+        )
+        redacted_operands = redacted_rule["then"]["properties"]["operands"][
+            "oneOf"
+        ]
+        self.assertIn(
+            {"properties": {"path": {"type": "null"}}},
+            redacted_operands[0]["allOf"],
+        )
+        self.assertIn(
+            {"properties": {"address": {"type": "null"}}},
+            redacted_operands[2]["allOf"],
+        )
+        for guard in [
+            "retains_redacted_target",
+            "is_normalized_absolute_path",
+            "SymlinkBoundExceeded",
+            "event_limit_reached",
+            "per_process_limit_reached",
+            "process_limit_reached",
+        ]:
+            self.assertIn(guard, self.artifact_source)
+        for guard in [
+            "observation.report != profile.report",
+            "DraftPathScope",
+            "is_system_path",
+            "receipt.output_bound()",
+            "OutputBoundExceeded",
+        ]:
+            self.assertIn(guard, self.draft_source)
 
 
 if __name__ == "__main__":

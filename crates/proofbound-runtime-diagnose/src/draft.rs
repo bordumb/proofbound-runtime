@@ -8,6 +8,7 @@ use serde_json::{Value, json};
 
 use crate::artifact::{
     DiagnosticEvent, DiagnosticEventClass, DiagnosticGap, DiagnosticReceipt, ObservationOutcome,
+    is_normalized_absolute_path,
 };
 
 /// Identifies the plan-draft schema.
@@ -73,6 +74,58 @@ impl DraftInput {
     }
 }
 
+/// Restricts automatic candidates to reviewed project or runtime closures.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DraftPathScope {
+    candidate_roots: BTreeSet<String>,
+    excluded_roots: BTreeSet<String>,
+}
+
+impl DraftPathScope {
+    /// Creates one exact candidate scope with explicit home and temporary roots.
+    pub fn new(
+        candidate_roots: impl IntoIterator<Item = String>,
+        home_directory: String,
+        temporary_roots: impl IntoIterator<Item = String>,
+    ) -> Result<Self, DraftError> {
+        let candidate_roots = canonical_path_set(candidate_roots, false)?;
+        if candidate_roots.is_empty() {
+            return Err(DraftError::PathScopeInvalid);
+        }
+        validate_absolute_path(&home_directory)?;
+        if home_directory == "/" {
+            return Err(DraftError::PathScopeInvalid);
+        }
+        let mut excluded_roots = canonical_path_set(temporary_roots, true)?;
+        excluded_roots.insert(home_directory);
+        if candidate_roots.iter().any(|root| {
+            is_system_path(root)
+                || excluded_roots
+                    .iter()
+                    .any(|excluded| path_is_within(root, excluded))
+        }) {
+            return Err(DraftError::PathScopeInvalid);
+        }
+        Ok(Self {
+            candidate_roots,
+            excluded_roots,
+        })
+    }
+
+    fn allows(&self, path: &str) -> bool {
+        is_normalized_absolute_path(path)
+            && !is_system_path(path)
+            && !self
+                .excluded_roots
+                .iter()
+                .any(|root| path_is_within(path, root))
+            && self
+                .candidate_roots
+                .iter()
+                .any(|root| path_is_within(path, root))
+    }
+}
+
 /// Identifies whether a Capsec report can participate in comparison.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub enum CapsecUsability {
@@ -109,6 +162,7 @@ pub struct CapsecIntegrationProfile {
     schema_identity: String,
     source: ContentIdentity,
     analyzer: ContentIdentity,
+    report: ContentIdentity,
 }
 
 impl CapsecIntegrationProfile {
@@ -117,6 +171,7 @@ impl CapsecIntegrationProfile {
         schema_identity: impl Into<String>,
         source: ContentIdentity,
         analyzer: ContentIdentity,
+        report: ContentIdentity,
     ) -> Result<Self, DraftError> {
         let schema_identity = schema_identity.into();
         if !valid_schema_identity(&schema_identity) {
@@ -126,6 +181,7 @@ impl CapsecIntegrationProfile {
             schema_identity,
             source,
             analyzer,
+            report,
         })
     }
 }
@@ -189,6 +245,8 @@ impl CapsecInput {
             CapsecUsability::SourceStale
         } else if observation.analyzer != profile.analyzer {
             CapsecUsability::AnalyzerUnknown
+        } else if observation.report != profile.report {
+            CapsecUsability::ReportInvalid
         } else if !observation.structurally_valid {
             CapsecUsability::ReportInvalid
         } else if !observation.complete {
@@ -397,6 +455,8 @@ pub struct PlanDraftInputs {
     pub capsec: Option<CapsecInput>,
     /// Retains typed comparison results.
     pub differences: Vec<DraftDifference>,
+    /// Restricts automatic candidates to explicit reviewed roots.
+    pub path_scope: Option<DraftPathScope>,
 }
 
 /// Contains canonical bytes for one reviewable non-policy plan draft.
@@ -477,7 +537,11 @@ pub fn build_plan_draft(
         if validate_absolute_path(path).is_err() || event.class().is_network() {
             continue;
         }
-        if is_broad_root(path) {
+        if inputs
+            .path_scope
+            .as_ref()
+            .is_none_or(|scope| !scope.allows(path))
+        {
             broad_root_count += 1;
             open_items.insert(OpenItem::new(
                 OpenItemCode::ObservationUnresolved,
@@ -551,6 +615,9 @@ pub fn build_plan_draft(
         "static_scaffold": inputs.static_scaffold.map(|digest| format!("sha256:{}", digest.to_hex())),
     });
     let bytes = serde_json::to_vec(&value).map_err(|_| DraftError::CanonicalEncodingFailed)?;
+    if bytes.len() as u64 > receipt.output_bound() {
+        return Err(DraftError::OutputBoundExceeded);
+    }
     Ok(PlanDraft { bytes })
 }
 
@@ -567,6 +634,10 @@ pub enum DraftError {
     DifferenceInvalid,
     /// A draft collection exceeds the schema bound.
     CollectionBoundExceeded,
+    /// Candidate path scope is absent or invalid.
+    PathScopeInvalid,
+    /// Canonical draft output exceeds the diagnostic output bound.
+    OutputBoundExceeded,
     /// Canonical JSON encoding failed.
     CanonicalEncodingFailed,
 }
@@ -581,6 +652,8 @@ impl DraftError {
             Self::CapsecProvenanceInvalid => "diagnostic.draft.capsec-provenance-invalid",
             Self::DifferenceInvalid => "diagnostic.draft.difference-invalid",
             Self::CollectionBoundExceeded => "diagnostic.draft.collection-bound-exceeded",
+            Self::PathScopeInvalid => "diagnostic.draft.path-scope-invalid",
+            Self::OutputBoundExceeded => "diagnostic.draft.output-bound-exceeded",
             Self::CanonicalEncodingFailed => "diagnostic.draft.canonical-json-failed",
         }
     }
@@ -667,28 +740,43 @@ fn path_event_can_write(event: &DiagnosticEvent) -> bool {
 }
 
 fn validate_absolute_path(path: &str) -> Result<(), DraftError> {
-    if !path.starts_with('/') || path.as_bytes().contains(&0) || path.as_bytes().len() > 1_048_576 {
+    if !is_normalized_absolute_path(path) || path.as_bytes().len() > 1_048_576 {
         return Err(DraftError::InputInvalid);
     }
     Ok(())
 }
 
-fn is_broad_root(path: &str) -> bool {
-    matches!(
-        path,
-        "/" | "/bin"
-            | "/etc"
-            | "/home"
-            | "/lib"
-            | "/lib64"
-            | "/opt"
-            | "/root"
-            | "/sbin"
-            | "/tmp"
-            | "/usr"
-            | "/var"
-            | "/var/tmp"
-    )
+fn canonical_path_set(
+    paths: impl IntoIterator<Item = String>,
+    allow_root: bool,
+) -> Result<BTreeSet<String>, DraftError> {
+    let paths = paths.into_iter().collect::<BTreeSet<_>>();
+    if paths.len() > 256
+        || paths
+            .iter()
+            .any(|path| validate_absolute_path(path).is_err() || (!allow_root && path == "/"))
+    {
+        return Err(DraftError::PathScopeInvalid);
+    }
+    Ok(paths)
+}
+
+fn path_is_within(path: &str, root: &str) -> bool {
+    path == root
+        || (root != "/"
+            && path
+                .strip_prefix(root)
+                .is_some_and(|suffix| suffix.starts_with('/')))
+        || root == "/"
+}
+
+fn is_system_path(path: &str) -> bool {
+    [
+        "/bin", "/boot", "/dev", "/etc", "/home", "/lib", "/lib64", "/media", "/mnt", "/opt",
+        "/proc", "/root", "/run", "/sbin", "/srv", "/sys", "/tmp", "/usr", "/var",
+    ]
+    .into_iter()
+    .any(|root| path_is_within(path, root))
 }
 
 fn valid_schema_identity(value: &str) -> bool {
@@ -712,11 +800,20 @@ mod tests {
     use super::*;
     use crate::artifact::tests::fixture_receipt;
     use crate::artifact::{
-        Architecture, DiagnosticArtifactIdentity, DiagnosticArtifactRole, DiagnosticCompletion,
-        DiagnosticEvent, DiagnosticPlatform, DiagnosticReceiptParts, DiagnosticTcbEntry,
-        DiagnosticTcbRole, FileMode, ObservationBounds, ObservationOperands,
-        ObservedObjectIdentity,
+        DiagnosticArtifactIdentity, DiagnosticArtifactRole, DiagnosticEvent, DiagnosticPlatform,
+        DiagnosticReceiptParts, DiagnosticTcbEntry, DiagnosticTcbRole, ObservationBounds,
+        ObservationOperands, ObservedObjectIdentity,
     };
+    use proofbound_runtime_core::{Architecture, DiagnosticCompletion, ExecutionId, FileMode};
+
+    fn fixture_scope() -> DraftPathScope {
+        DraftPathScope::new(
+            ["/workspace".to_owned()],
+            "/home/fixture".to_owned(),
+            ["/workspace/.tmp".to_owned()],
+        )
+        .expect("fixture path scope")
+    }
 
     #[test]
     fn broad_roots_are_excluded_from_automatic_candidates() {
@@ -735,8 +832,9 @@ mod tests {
                 mode: None,
                 path: Some("/".to_owned()),
                 resolve: None,
+                symlink_hops: Some(0),
             },
-            ObservationOutcome::Returned(3),
+            ObservationOutcome::Failed(13),
             ObservationResolution::StableCandidate,
             Some("/".to_owned()),
             Some(object.clone()),
@@ -753,7 +851,7 @@ mod tests {
             .expect("fixture artifact")
         };
         let receipt = crate::artifact::DiagnosticReceipt::construct(DiagnosticReceiptParts {
-            execution_id: proofbound_runtime_core::ExecutionId::from_bytes([0x42; 16])
+            execution_id: ExecutionId::from_bytes([0x42; 16])
                 .expect("fixture execution identifier"),
             seed_plan: artifact(DiagnosticArtifactRole::ExecutionPlan, 0x44, 4, 0o644),
             target: artifact(DiagnosticArtifactRole::RuntimeExecutable, 0x55, 5, 0o755),
@@ -769,7 +867,7 @@ mod tests {
                 event_count_per_process: 8,
                 output_bytes: 1_048_576,
                 path_bytes: 4096,
-                process_count: 1,
+                process_count: 2,
                 socket_address_bytes: 128,
                 symlink_hops: 40,
                 tracee_string_bytes: 4096,
@@ -804,6 +902,14 @@ mod tests {
                 .iter()
                 .any(|item| item["code"] == "observation-unresolved")
         );
+        assert_eq!(
+            DraftPathScope::new(
+                ["/workspace/../etc".to_owned()],
+                "/home/fixture".to_owned(),
+                Vec::new(),
+            ),
+            Err(DraftError::PathScopeInvalid)
+        );
     }
 
     #[test]
@@ -834,8 +940,14 @@ mod tests {
 
     #[test]
     fn draft_preserves_provenance_and_network_non_grant() {
-        let draft = build_plan_draft(&fixture_receipt(), PlanDraftInputs::default())
-            .expect("fixture draft");
+        let draft = build_plan_draft(
+            &fixture_receipt(),
+            PlanDraftInputs {
+                path_scope: Some(fixture_scope()),
+                ..PlanDraftInputs::default()
+            },
+        )
+        .expect("fixture draft");
         assert_eq!(
             draft.as_bytes(),
             include_bytes!("../../../schemas/vectors/diagnostic/plan-draft.json")
@@ -873,23 +985,40 @@ mod tests {
     fn capsec_usability_is_derived_from_exact_identities() {
         let expected_source = ContentIdentity::new(Sha256Digest::from_bytes([1; 32]), 10);
         let expected_analyzer = ContentIdentity::new(Sha256Digest::from_bytes([2; 32]), 20);
-        let report = ContentIdentity::new(Sha256Digest::from_bytes([3; 32]), 30);
-        let profile =
-            CapsecIntegrationProfile::new("capsec-report/1", expected_source, expected_analyzer)
-                .expect("Capsec profile");
+        let expected_report = ContentIdentity::new(Sha256Digest::from_bytes([3; 32]), 30);
+        let profile = CapsecIntegrationProfile::new(
+            "capsec-report/1",
+            expected_source,
+            expected_analyzer,
+            expected_report,
+        )
+        .expect("Capsec profile");
         let stale = CapsecInput::evaluate(
             &profile,
             CapsecReportObservation::new(
                 "capsec-report/1",
                 ContentIdentity::new(Sha256Digest::from_bytes([4; 32]), 10),
                 expected_analyzer,
-                report,
+                expected_report,
                 true,
                 true,
             )
             .expect("stale observation"),
         );
         assert_eq!(stale.usability(), CapsecUsability::SourceStale);
+        let wrong_report = CapsecInput::evaluate(
+            &profile,
+            CapsecReportObservation::new(
+                "capsec-report/1",
+                expected_source,
+                expected_analyzer,
+                ContentIdentity::new(Sha256Digest::from_bytes([9; 32]), 30),
+                true,
+                true,
+            )
+            .expect("wrong-report observation"),
+        );
+        assert_eq!(wrong_report.usability(), CapsecUsability::ReportInvalid);
         let difference = DraftDifference::new(
             DifferenceClass::RuntimeObservationWithoutRequirement,
             "/workspace/config",
@@ -907,6 +1036,28 @@ mod tests {
                 }
             ),
             Err(DraftError::CapsecProvenanceInvalid)
+        );
+    }
+
+    #[test]
+    fn draft_output_is_bounded_by_the_diagnostic_receipt() {
+        let difference = DraftDifference::new(
+            DifferenceClass::RuntimeObservationWithoutRequirement,
+            "/workspace/config",
+            "x".repeat(1_048_576),
+            [DraftProvenance::DiagnosticRuntimeObservation],
+        )
+        .expect("maximum-size difference");
+        assert_eq!(
+            build_plan_draft(
+                &fixture_receipt(),
+                PlanDraftInputs {
+                    differences: vec![difference],
+                    path_scope: Some(fixture_scope()),
+                    ..PlanDraftInputs::default()
+                },
+            ),
+            Err(DraftError::OutputBoundExceeded)
         );
     }
 }

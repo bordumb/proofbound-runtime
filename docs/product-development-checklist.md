@@ -1,14 +1,14 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T04:53:46+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T05:20:04+01:00 (Europe/London, BST)
 - **Runtime baseline:** unsigned RT-7 registry-publication merge `acf8f24`;
   exact-main Verify run `34924535451` is pending, so `4a0cfdb` remains the
   latest admitted identity
 - **Active implementation wave:** RT-8 contract and diagnostic non-reuse on
   `codex/rt8-diagnostic-profile`, followed by the pure artifact producer on
-  stacked branch `codex/rt8-observer`; foundation hosted admission and producer
-  independent review remain open
+  stacked branch `codex/rt8-observer`; foundation hosted admission and the
+  producer correction re-review remain open
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -151,8 +151,9 @@ manifest describes the supported tuple.
   provenance-tagged draft entries without granting plan authority.
 - [x] Keep network, environment, write roots, and resource limits as explicit
   human decisions.
-- [x] Accept optional Capsec observations only when their schema, source, and
-  analyzer identities match; retain missing or incomplete coverage visibly.
+- [x] Accept optional Capsec observations only when their schema, source,
+  analyzer, and report identities match; retain missing or incomplete coverage
+  visibly.
 - [ ] Run the adversarial corpus for stale source, symlink redirection,
   observation-sensitive behavior, missing events, and attempted provenance
   relabeling.

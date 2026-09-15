@@ -1,9 +1,9 @@
 schema = "proofbound-claim/1"
 id = "PBR-DRAFT-019"
 title = "Diagnostic artifact construction cannot grant plan authority"
-statement = "For validated bounded diagnostic observations, the pure diagnostic artifact producer emits canonical non-reusable diagnostic receipt bytes and a plan draft whose suggestions retain their exact provenance, whose network and unresolved observations remain open items, and whose write roots, environment names, resource limits, and network mode remain mandatory human choices."
-public_language = "Runtime has a pure producer for closed diagnostic receipt and plan-draft objects. Registered tests cover canonical encoding, completion and gap consistency, event bounds and ordering, conservative path suggestions, mandatory human choices, network non-grant, unresolved observations, and provenance retention. This is bounded source evidence. It does not establish ptrace coverage, kernel correctness, plan safety, or production receipt reuse."
-subject = "rust:proofbound_runtime_diagnose::artifact::build_plan_draft"
+statement = "For validated bounded diagnostic observations, the pure diagnostic artifact producer emits canonical non-reusable diagnostic receipt bytes and a size-bounded plan draft whose suggestions stay within explicit normalized candidate roots, exclude system, home, and temporary roots, retain exact provenance, keep network and unresolved observations open, require exact Capsec schema, source, analyzer, and report identities, and leave write roots, environment names, resource limits, and network mode as mandatory human choices."
+public_language = "Runtime has a pure producer for closed diagnostic receipt and plan-draft objects. Registered tests cover canonical encoding, count-bound and gap consistency, ordering, redaction, normalized scoped paths, output size, exact Capsec identity usability, mandatory human choices, network non-grant, unresolved observations, and provenance retention. This is bounded source evidence. It does not establish ptrace coverage, kernel correctness, plan safety, or production receipt reuse."
+subject = "rust:proofbound_runtime_diagnose::draft::build_plan_draft"
 profile = "ledger"
 tier = 1
 evidence = [
@@ -11,6 +11,7 @@ evidence = [
   "example-test:diagnostic-artifact-producer",
 ]
 assumptions = [
+  "PBR-DIAGNOSTIC-CONTRACT-AX-015",
   "PBR-TOOLCHAIN-AX-003",
 ]
 open_obligations = [
@@ -28,9 +29,15 @@ out_of_scope = [
 source_roots = [
   "Cargo.lock",
   "Cargo.toml",
+  "assumptions/PBR-DIAGNOSTIC-CONTRACT-AX-015.toml",
   "assumptions/PBR-TOOLCHAIN-AX-003.toml",
   "claims/PBR-DRAFT-017.toml",
   "claims/PBR-DRAFT-019.toml",
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/diagnostic.rs",
+  "crates/proofbound-runtime-core/src/identity.rs",
+  "crates/proofbound-runtime-core/src/lib.rs",
+  "crates/proofbound-runtime-core/src/receipt.rs",
   "crates/proofbound-runtime-diagnose/Cargo.toml",
   "crates/proofbound-runtime-diagnose/src/artifact.rs",
   "crates/proofbound-runtime-diagnose/src/draft.rs",
@@ -40,6 +47,7 @@ source_roots = [
   "docs/product-development-checklist.md",
   "docs/product-roadmap-2.md",
   "docs/roadmap-2/rt-08-capability-informed-drafting.md",
+  "docs/specs/0013_platform_integration_contract.md",
   "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",
   "proofbound/evidence/diagnostic-artifact-producer-contract.toml",
   "proofbound/evidence/diagnostic-artifact-producer.toml",

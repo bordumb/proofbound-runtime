@@ -477,6 +477,8 @@ pub enum ObservationOperands {
         path: Option<String>,
         /// Contains `openat2` resolution flags when applicable.
         resolve: Option<u64>,
+        /// Contains the followed symlink count when resolution observed it.
+        symlink_hops: Option<u64>,
     },
     /// Contains operands for one process-creation operation.
     ProcessCreate {
@@ -531,14 +533,33 @@ impl ObservationOperands {
         }
     }
 
+    const fn retains_redacted_target(&self) -> bool {
+        match self {
+            Self::Path { path, .. } => path.is_some(),
+            Self::SocketAddress { address, .. } => address.is_some(),
+            Self::ProcessCreate { .. } | Self::SocketCreate { .. } => false,
+        }
+    }
+
     fn validate_bounds(&self, bounds: ObservationBounds) -> Result<(), DiagnosticArtifactError> {
         match self {
-            Self::Path { path, .. } => {
+            Self::Path {
+                path, symlink_hops, ..
+            } => {
                 if path
                     .as_ref()
                     .is_some_and(|value| value.as_bytes().len() as u64 > bounds.path_bytes)
                 {
                     return Err(DiagnosticArtifactError::PathBoundExceeded);
+                }
+                if path
+                    .as_ref()
+                    .is_some_and(|value| value.as_bytes().len() as u64 > bounds.tracee_string_bytes)
+                {
+                    return Err(DiagnosticArtifactError::TraceeStringBoundExceeded);
+                }
+                if symlink_hops.is_some_and(|value| value > bounds.symlink_hops) {
+                    return Err(DiagnosticArtifactError::SymlinkBoundExceeded);
                 }
             }
             Self::SocketAddress { address, .. } => {
@@ -564,6 +585,7 @@ impl ObservationOperands {
                 mode,
                 path,
                 resolve,
+                symlink_hops,
             } => json!({
                 "buffer_bytes": buffer_bytes,
                 "directory_fd": directory_fd,
@@ -573,6 +595,7 @@ impl ObservationOperands {
                 "mode": mode,
                 "path": path,
                 "resolve": resolve,
+                "symlink_hops": symlink_hops,
             }),
             Self::ProcessCreate { flags } => json!({
                 "flags": flags,
@@ -683,7 +706,7 @@ impl DiagnosticEvent {
                 if resolved_path.is_some()
                     || object_before.is_some()
                     || object_after.is_some()
-                    || operands.path().is_some()
+                    || operands.retains_redacted_target()
                 {
                     return Err(DiagnosticArtifactError::ResolutionInvalid);
                 }
@@ -691,7 +714,7 @@ impl DiagnosticEvent {
         }
         if resolved_path
             .as_ref()
-            .is_some_and(|path| !path.starts_with('/') || path.as_bytes().contains(&0))
+            .is_some_and(|path| !is_normalized_absolute_path(path))
         {
             return Err(DiagnosticArtifactError::ResolutionInvalid);
         }
@@ -892,6 +915,7 @@ pub struct DiagnosticReceipt {
     environment_names: Vec<String>,
     events: Vec<DiagnosticEvent>,
     gaps: Vec<DiagnosticGap>,
+    output_bound: u64,
 }
 
 impl DiagnosticReceipt {
@@ -905,9 +929,14 @@ impl DiagnosticReceipt {
         let bounds = parts.bounds.validate()?;
         validate_arguments(&parts.arguments)?;
         parts.environment_names = canonical_environment_names(parts.environment_names)?;
-        validate_events(&parts.events, bounds, parts.platform.architecture())?;
         parts.gaps.sort_unstable_by_key(|gap| gap.as_str());
         parts.gaps.dedup();
+        validate_events(
+            &parts.events,
+            bounds,
+            parts.platform.architecture(),
+            &parts.gaps,
+        )?;
         if parts.gaps.len() > 64
             || matches!(parts.completion, DiagnosticCompletion::Complete) != parts.gaps.is_empty()
         {
@@ -969,6 +998,7 @@ impl DiagnosticReceipt {
             environment_names: parts.environment_names,
             events: parts.events,
             gaps: parts.gaps,
+            output_bound: bounds.output_bytes,
         })
     }
 
@@ -1013,6 +1043,12 @@ impl DiagnosticReceipt {
     pub fn gaps(&self) -> &[DiagnosticGap] {
         &self.gaps
     }
+
+    /// Returns the maximum canonical diagnostic artifact size in bytes.
+    #[must_use]
+    pub const fn output_bound(&self) -> u64 {
+        self.output_bound
+    }
 }
 
 /// Identifies invalid diagnostic artifact construction.
@@ -1040,6 +1076,10 @@ pub enum DiagnosticArtifactError {
     ProcessBoundExceeded,
     /// One observed path exceeds its bound.
     PathBoundExceeded,
+    /// One resolution exceeds the symlink-hop bound.
+    SymlinkBoundExceeded,
+    /// One retained tracee string exceeds its byte bound.
+    TraceeStringBoundExceeded,
     /// One socket address is invalid.
     SocketAddressInvalid,
     /// One socket address exceeds its bound.
@@ -1076,6 +1116,8 @@ impl DiagnosticArtifactError {
             Self::EventBoundExceeded => "diagnostic.event.bound-exceeded",
             Self::ProcessBoundExceeded => "diagnostic.process.bound-exceeded",
             Self::PathBoundExceeded => "diagnostic.path.bound-exceeded",
+            Self::SymlinkBoundExceeded => "diagnostic.symlink.bound-exceeded",
+            Self::TraceeStringBoundExceeded => "diagnostic.tracee-string.bound-exceeded",
             Self::SocketAddressInvalid => "diagnostic.socket-address.invalid",
             Self::SocketAddressBoundExceeded => "diagnostic.socket-address.bound-exceeded",
             Self::OutcomeInvalid => "diagnostic.outcome.invalid",
@@ -1145,6 +1187,7 @@ fn validate_events(
     events: &[DiagnosticEvent],
     bounds: ObservationBounds,
     architecture: Architecture,
+    gaps: &[DiagnosticGap],
 ) -> Result<(), DiagnosticArtifactError> {
     if events.len() as u64 > bounds.event_count {
         return Err(DiagnosticArtifactError::EventBoundExceeded);
@@ -1169,7 +1212,34 @@ fn validate_events(
     if processes.len() as u64 > bounds.process_count {
         return Err(DiagnosticArtifactError::ProcessBoundExceeded);
     }
+    let event_limit_reached = events.len() as u64 == bounds.event_count;
+    let per_process_limit_reached = processes
+        .values()
+        .any(|count| *count == bounds.event_count_per_process);
+    let process_limit_reached = processes.len() as u64 == bounds.process_count;
+    if gaps.contains(&DiagnosticGap::EventLimit) != event_limit_reached
+        || gaps.contains(&DiagnosticGap::EventPerProcessLimit) != per_process_limit_reached
+        || gaps.contains(&DiagnosticGap::ProcessLimit) != process_limit_reached
+    {
+        return Err(DiagnosticArtifactError::CompletionInvalid);
+    }
     Ok(())
+}
+
+pub(crate) fn is_normalized_absolute_path(path: &str) -> bool {
+    let bytes = path.as_bytes();
+    if bytes.first() != Some(&b'/')
+        || bytes.contains(&0)
+        || (bytes.len() > 1 && bytes.last() == Some(&b'/'))
+        || path.contains("//")
+    {
+        return false;
+    }
+    path == "/"
+        || path
+            .split('/')
+            .skip(1)
+            .all(|component| !component.is_empty() && component != "." && component != "..")
 }
 
 fn validate_tcb(entries: &[DiagnosticTcbEntry]) -> Result<(), DiagnosticArtifactError> {
@@ -1241,7 +1311,7 @@ pub(crate) mod tests {
         .expect("fixture artifact")
     }
 
-    pub(crate) fn fixture_receipt() -> DiagnosticReceipt {
+    fn fixture_parts() -> DiagnosticReceiptParts {
         let object =
             ObservedObjectIdentity::new(8, 1, 42, 0o100644, 7).expect("fixture object identity");
         let path_event = DiagnosticEvent::new(
@@ -1257,6 +1327,7 @@ pub(crate) mod tests {
                 mode: None,
                 path: Some("config".to_owned()),
                 resolve: None,
+                symlink_hops: Some(0),
             },
             ObservationOutcome::Failed(13),
             ObservationResolution::StableCandidate,
@@ -1301,7 +1372,7 @@ pub(crate) mod tests {
             DiagnosticTcbEntry::new(role, identity).expect("fixture trusted role")
         })
         .collect();
-        DiagnosticReceipt::construct(DiagnosticReceiptParts {
+        DiagnosticReceiptParts {
             execution_id: ExecutionId::from_bytes([
                 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x46, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd,
                 0xee, 0xff,
@@ -1317,7 +1388,7 @@ pub(crate) mod tests {
             arguments: vec!["--fixture".to_owned(), "π".to_owned()],
             environment_names: vec!["LANG".to_owned()],
             bounds: ObservationBounds {
-                event_count: 1024,
+                event_count: 2,
                 event_count_per_process: 256,
                 output_bytes: 1_048_576,
                 path_bytes: 4096,
@@ -1331,8 +1402,11 @@ pub(crate) mod tests {
             gaps: vec![DiagnosticGap::EventLimit],
             trusted_computing_base,
             assumptions: vec!["PBR-HOST-AX-002".to_owned()],
-        })
-        .expect("fixture receipt")
+        }
+    }
+
+    pub(crate) fn fixture_receipt() -> DiagnosticReceipt {
+        DiagnosticReceipt::construct(fixture_parts()).expect("fixture receipt")
     }
 
     #[test]
@@ -1354,6 +1428,7 @@ pub(crate) mod tests {
                 mode: None,
                 path: None,
                 resolve: None,
+                symlink_hops: None,
             },
             ObservationOutcome::Returned(3),
             ObservationResolution::Unresolved,
@@ -1380,6 +1455,7 @@ pub(crate) mod tests {
                 mode: None,
                 path: Some("candidate".to_owned()),
                 resolve: None,
+                symlink_hops: Some(0),
             },
             ObservationOutcome::Failed(13),
             ObservationResolution::StableCandidate,
@@ -1388,6 +1464,119 @@ pub(crate) mod tests {
             Some(drift_after),
         );
         assert_eq!(drift, Err(DiagnosticArtifactError::ResolutionInvalid));
+    }
+
+    #[test]
+    fn receipt_constructor_rejects_bound_and_gap_inconsistency() {
+        let mut inconsistent_gap = fixture_parts();
+        inconsistent_gap.bounds.event_count = 3;
+        assert_eq!(
+            DiagnosticReceipt::construct(inconsistent_gap),
+            Err(DiagnosticArtifactError::CompletionInvalid)
+        );
+
+        let mut wrong_order = fixture_parts();
+        wrong_order.events[0].sequence = 2;
+        assert_eq!(
+            DiagnosticReceipt::construct(wrong_order),
+            Err(DiagnosticArtifactError::EventOrderInvalid)
+        );
+
+        let mut symlink_overflow = fixture_parts();
+        symlink_overflow.bounds.symlink_hops = 1;
+        let ObservationOperands::Path { symlink_hops, .. } =
+            &mut symlink_overflow.events[0].operands
+        else {
+            panic!("fixture path operands")
+        };
+        *symlink_hops = Some(2);
+        assert_eq!(
+            DiagnosticReceipt::construct(symlink_overflow),
+            Err(DiagnosticArtifactError::SymlinkBoundExceeded)
+        );
+
+        let mut path_overflow = fixture_parts();
+        path_overflow.bounds.path_bytes = 5;
+        assert_eq!(
+            DiagnosticReceipt::construct(path_overflow),
+            Err(DiagnosticArtifactError::PathBoundExceeded)
+        );
+
+        let mut string_overflow = fixture_parts();
+        string_overflow.bounds.tracee_string_bytes = 5;
+        assert_eq!(
+            DiagnosticReceipt::construct(string_overflow),
+            Err(DiagnosticArtifactError::TraceeStringBoundExceeded)
+        );
+
+        let mut socket_overflow = fixture_parts();
+        socket_overflow.bounds.socket_address_bytes = 8;
+        assert_eq!(
+            DiagnosticReceipt::construct(socket_overflow),
+            Err(DiagnosticArtifactError::SocketAddressBoundExceeded)
+        );
+
+        let mut output_overflow = fixture_parts();
+        output_overflow.bounds.output_bytes = 1024;
+        assert_eq!(
+            DiagnosticReceipt::construct(output_overflow),
+            Err(DiagnosticArtifactError::OutputBoundExceeded)
+        );
+    }
+
+    #[test]
+    fn redaction_and_path_normalization_fail_closed() {
+        let redacted_socket = DiagnosticEvent::new(
+            0,
+            1000,
+            Architecture::X86_64,
+            DiagnosticEventClass::Connect,
+            ObservationOperands::SocketAddress {
+                address: Some(
+                    ObservedSocketAddress::new(
+                        SocketAddressFamily::Inet,
+                        vec![2, 0, 1, 187, 127, 0, 0, 1],
+                    )
+                    .expect("fixture socket address"),
+                ),
+                descriptor: 3,
+                payload_bytes: None,
+            },
+            ObservationOutcome::Failed(1),
+            ObservationResolution::Redacted,
+            None,
+            None,
+            None,
+        );
+        assert_eq!(
+            redacted_socket,
+            Err(DiagnosticArtifactError::ResolutionInvalid)
+        );
+
+        let object =
+            ObservedObjectIdentity::new(8, 1, 42, 0o100644, 7).expect("fixture object identity");
+        let traversal = DiagnosticEvent::new(
+            0,
+            1000,
+            Architecture::X86_64,
+            DiagnosticEventClass::Open,
+            ObservationOperands::Path {
+                buffer_bytes: None,
+                directory_fd: None,
+                flags: Some(0),
+                mask: None,
+                mode: None,
+                path: Some("../etc".to_owned()),
+                resolve: None,
+                symlink_hops: Some(1),
+            },
+            ObservationOutcome::Failed(13),
+            ObservationResolution::StableCandidate,
+            Some("/workspace/../etc".to_owned()),
+            Some(object.clone()),
+            Some(object),
+        );
+        assert_eq!(traversal, Err(DiagnosticArtifactError::ResolutionInvalid));
     }
 
     #[test]

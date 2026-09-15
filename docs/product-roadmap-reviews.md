@@ -1339,3 +1339,33 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 adds no reviewed production, schema, specification, claim, assumption,
 evidence, or test bytes. Any later subject change requires a new exact-head
 review.
+
+## RT-8 diagnostic artifact producer initial review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `cb52c5115d73c72aebad51c4c0f4a301068d8479`
+- **Reviewed head:** `ed9c6ca105748b409fe85a243975c51c80ccdb51`
+- **Branch:** `codex/rt8-observer`
+- **Method:** Exact-head static review. The reviewer changed no files and ran
+  no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The review found seven blocking clusters:
+
+1. the registered Rust evidence imported private re-exports and one broad-root
+   fixture constructed an invalid outcome and resolution pair;
+2. Capsec usability did not bind the selected report identity;
+3. a redacted socket event could retain raw address bytes;
+4. absolute-path validation admitted traversal-shaped values and candidate
+   selection did not require an explicit project or runtime scope or exclude
+   nested system, home, and configured temporary roots;
+5. tracee-string, symlink, count-gap, and draft-output bounds were incomplete;
+6. the claim named the wrong Rust subject and omitted imported core sources,
+   Specification 0013, and the Python/JSON/filesystem checker assumption; and
+7. public evidence language described negative coverage that the registered
+   falsifiers did not yet contain.
+
+Architecture separation, fixed `safe_policy: false` and `reusable: false`,
+mandatory human authority choices, network non-grant, and production-consumer
+non-reuse remained intact. The producer cannot proceed until each blocker is
+corrected in a separate subject and re-reviewed at its exact head.
