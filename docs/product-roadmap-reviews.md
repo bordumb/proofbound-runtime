@@ -3011,3 +3011,32 @@ already reviewed, verified, and merged event mapper and RT-7 bootstrap work as
 pending. The correction must disarm cleanup in both setup terminal branches,
 add a causal checker mutation, use the accurate normative wording, and align
 the execution status before another exact-head review.
+
+## RT-8 diagnostic stream setup-reap correction re-review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `a89b92daa0a6f977c4a090b3f9a2e553fc94884d`
+- **Reviewed head:** `2755a58ba610b104297f0db81301656c8e4e2d30`
+- **Branch:** `codex/rt8-diagnostic-streams`
+- **Method:** Complete exact-range static security and status re-review. The
+  reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The reviewer confirmed that both exited and signaled setup-wait branches now
+disarm numeric child cleanup before returning, all three setup transitions pass
+the owned session mutably, and the checker pins and mutates that exact helper.
+The fixed terminal deadline, late-completion rejection, shared cancellation,
+source closure, and mapper/stream fingerprints remained coherent. Specification
+0015 and the PBR-OBSERVER-026 and PBR-OBSERVER-027 execution status were also
+corrected.
+
+Two documentation blockers remained. The stream section of the assurance plan
+still described all abandoned states as making the child guard terminate and
+wait, despite pidfd-only active cleanup and ignored early drop errors. The
+assurance table and RT-7 integration record also still called the admitted
+`PBR-DISTRIBUTION-018` and `PBR-DISTRIBUTION-025` sources active or pending.
+The correction must narrow cleanup language to attempted early-state cleanup
+and record their merge `47c5ad2` plus passed exact-main run `35006872460` before
+another exact-head review.

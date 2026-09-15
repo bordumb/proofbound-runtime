@@ -1,9 +1,9 @@
 # RT-7 integration record: prelaunch packaging and distribution
 
 **Status:** package, public Proofbound bundle, and protected cutover contracts
-are admitted. The current-integration and one-time npm bootstrap correction
-wave is active; external registry publication and consumer observations remain
-open
+are admitted. The current-integration and one-time npm bootstrap source merged
+unsigned as `47c5ad2` and passed exact-main Verify run `35006872460`; external
+registry publication and consumer observations remain open
 
 **Primary owner:** Proofbound Runtime
 
@@ -144,7 +144,7 @@ for complete release provenance and the protected `package-publish`
 environment. Rust publication uses a scoped crates.io token only in its two
 Rust publisher steps. PyPI uses a pending workflow-specific OIDC trusted
 publisher. npm requires the package to exist before it can bind a trusted
-publisher, so the active correction adds one separately selected initial-token
+publisher, so the admitted source adds one separately selected initial-token
 route. It requires an immediate anonymous `404` before the token-bearing step,
 rejects a package with any publish lifecycle hook, and disables lifecycle
 scripts for both routes. That status does not prove absence or exclude a hidden
@@ -171,7 +171,7 @@ has been observed.
 
 ## Current-integration source checkpoint
 
-The active `PBR-DISTRIBUTION-025` wave adds the missing exact-tuple boundary:
+The admitted `PBR-DISTRIBUTION-025` source adds the exact-tuple boundary:
 
 - `proofbound-runtime-current-integration/1` is a closed deterministic-CBOR
   record with a committed CDDL contract;

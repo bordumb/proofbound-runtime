@@ -24,8 +24,8 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-SDK-014` | Tier 1, independently checked source and package contract | Rust, Python, and TypeScript SDKs preserve the separate-process boundary; registry publication and consumer dogfood remain open. |
 | `PBR-DISTRIBUTION-015` | Tier 1 independently reviewed and admitted on exact Runtime main | The verifier package has a closed preflight, source-payload comparison, byte reproduction, local consumer, and release-retention path; no registry or publisher claim is admitted. |
 | `PBR-DISTRIBUTION-016` | Tier 1 public-bundle consumer independently reviewed and admitted on exact Runtime main | Runtime pins one immutable public Proofbound release and rejects identity, inventory, manifest, checksum, archive, installer, and installed-byte substitution. Every protected evidence and release job installs that exact bundle independently. |
-| `PBR-DISTRIBUTION-018` | Tier 1 npm-bootstrap correction pending exact review | Publication is explicit, exact-source, protected, ordered, and credential-isolated. The active correction adds the missing one-time npm bootstrap gate; external configuration and observations remain open. |
-| `PBR-DISTRIBUTION-025` | Tier 1 implementation previously approved at `a81e259`; registry-route dependency changed and exact re-review is required | A deterministic-CBOR producer and independent verifier close one Runtime-only integration tuple after complete registry observation. No tuple is published until an exact protected run retains it. |
+| `PBR-DISTRIBUTION-018` | Tier 1 protected publication routes admitted on exact Runtime main `47c5ad2` | Publication is explicit, exact-source, protected, ordered, and credential-isolated. The one-time npm bootstrap route and its fail-closed cutover are admitted; external registry configuration, publication, and observations remain open. |
+| `PBR-DISTRIBUTION-025` | Tier 1 current-integration source admitted on exact Runtime main `47c5ad2` | A deterministic-CBOR producer and independent verifier close one Runtime-only integration tuple after complete registry observation. Exact-main Verify run `35006872460` passed. No tuple is published until an exact protected run retains it. |
 | `PBR-DRAFT-017` | Tier 1 bounded contract and source-level non-reuse checks | Closed diagnostic vocabulary and schemas are registered, and verifier, composer, and acceptor paths reject diagnostic receipt reuse. The live observer remains open. |
 | `PBR-DRAFT-019` | Tier 1 bounded producer contract independently reviewed and admitted on exact Runtime main | The pure diagnostic artifact producer preserves non-reuse, provenance, explicit gaps, and mandatory human authority choices. It does not claim live observer coverage. |
 | `PBR-OBSERVER-020` | Tier 1 decoder identity admitted on exact Runtime main `4783896` | The complete decoder subject passed exact-head run `34992273744` and exact-main run `34997195939`. |
@@ -760,8 +760,8 @@ exactly empty. Forced termination adds them to its report only after the exact
 tree drain succeeds. The coupled adapter obtains the captures before the pure
 protocol selects publication. A missing pipe, reader-thread creation failure,
 read failure, or join failure is typed and prevents publication. On abandoned
-states, declaration and drop order makes the child guard terminate and wait
-before cancellation and join of the outstanding drain handles. Nonblocking
+early setup states, declaration and drop order makes the child guard attempt
+termination and wait before cancellation and join of the outstanding drain handles. Nonblocking
 polling makes the cancellation path independent of pipe closure. Terminal
 collection has a fixed monotonic deadline. An unfinished reader causes shared
 cancellation, joins both handles, and returns a typed timeout without publishing
