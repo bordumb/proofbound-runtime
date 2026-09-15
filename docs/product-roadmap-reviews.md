@@ -1845,3 +1845,34 @@ The correction must update current roadmap and assurance status while retaining
 the accurate historical hosted rejection and correction records. This verdict
 is not endorsed. The correction changes the exact subject and requires another
 independent review.
+
+## RT-8 launcher exec-release gate admitted-base correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `b04382d290924cefe588bb1fbce3830b62db171e`
+- **Reviewed head:** `0d46bb5f1cd58cd1bb4cceee15d2ae149b521d8c`
+- **Branch:** `codex/rt8-linux-observer`
+- **Method:** Complete exact-range static re-review after status correction. The
+  reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the current roadmap, assurance table, checklist,
+and historical review records now agree on admitted base `b04382d`, passed
+exact-main run `34946613122`, the merged pure observer protocol, and the
+exec-release gate as the current admission wave.
+
+All production code, schemas, specifications, claims, evidence, and security
+documentation remain equivalent to the previously approved implementation.
+`ExecRelease` owns exact execution, policy, and cgroup identity verification.
+Missing, malformed, oversized, out-of-order, wrong-variant, and substituted
+release messages fail closed. Boundary installation, acknowledgement, release,
+final executable revalidation, and descriptor-relative exec remain ordered.
+The post-seccomp channel read and one-byte oversize sentinel remain present.
+Diagnostic observer code remains outside the production launcher path.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`0d46bb5f1cd58cd1bb4cceee15d2ae149b521d8c`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, test, or current-status bytes. Any later subject change
+requires a new exact-head review.
