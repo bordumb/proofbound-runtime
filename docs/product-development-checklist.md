@@ -1,11 +1,10 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T17:56:20+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T18:27:09+01:00 (Europe/London, BST)
 - **Runtime baseline:** the architecture-qualified decoder passed complete
   exact-head Verify run `34992273744` at approval-only head `db95947` and
-  merged unsigned as `4783896`. Exact-main Verify run `34997195939` is in
-  progress.
+  merged unsigned as `4783896`. Exact-main Verify run `34997195939` passed.
 - **Active implementation wave:** the `PBR-DISTRIBUTION-025`
   current-integration source passed independent review at exact subject
   `a81e259`. Its four unsigned commits are replayed on Runtime main with the
@@ -229,7 +228,7 @@ manifest describes the supported tuple.
   re-review approved exact source head `d0c2520`. Its edition correction and
   admitted-main replay were separately approved, hosted run `34964466007`
   passed, and the adapter merged as `d34eab1`.
-- [ ] Admit the active trace event source. The implementation polls only its
+- [x] Admit the active trace event source. The implementation polls only its
   private exact tracee set, registers ptrace children before parent resume,
   pairs syscall entry and exit information across exec events, reconciles
   leader and non-leader exec, and
@@ -241,8 +240,8 @@ manifest describes the supported tuple.
   at `1db68a6` also passed independent review. The combined correction passed
   exact-head run `34973401808` at `9f82afa` and merged unsigned as `b2cb4b9`.
   The following decoder batch passed complete exact-head run `34992273744` and
-  merged unsigned as `4783896`; exact-main run `34997195939` is in progress.
-- [ ] Admit live event-and-drain coupling. Exact source `af9f77d` passed
+  merged unsigned as `4783896`; exact-main run `34997195939` passed.
+- [x] Admit live event-and-drain coupling. Exact source `af9f77d` passed
   independent review with an explicit `APPROVE`. The adapter passes the validated
   lifetime process bound to the effectful trace before release, consumes each
   trace event into the same pure protocol, retains overflow identities outside
@@ -260,8 +259,8 @@ manifest describes the supported tuple.
   failed in the unrelated network experiment ready-file check before the
   required lanes started. The following decoder changes to the same exact
   sources passed complete exact-head run `34992273744` and merged unsigned as
-  `4783896`; exact-main run `34997195939` is in progress.
-- [ ] Admit architecture-qualified syscall decoding and bounded operand capture.
+  `4783896`; exact-main run `34997195939` passed.
+- [x] Admit architecture-qualified syscall decoding and bounded operand capture.
   The current source has separate x86_64 and aarch64 tables, rejects x32 and
   unsupported registered forms, captures path and socket-address bytes before
   resume under three independent limits, completes partial reads or fails, and
@@ -277,7 +276,7 @@ manifest describes the supported tuple.
   correction boxes only that terminal event, and independent re-review approved
   exact head `fbd2d66`. Approval-only head `db95947` passed complete hosted run
   `34992273744` and merged unsigned as `4783896`; exact-main run `34997195939`
-  is in progress.
+  passed.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.

@@ -8,8 +8,8 @@
   registry publication and every complete Roadmap 2 epic exit remain open.
 - **Date:** 2026-09-15
 - **Runtime baseline:** architecture-qualified diagnostic decoder merge
-  `4783896` on `main`; exact-head Verify run `34992273744` passed and
-  exact-main Verify run `34997195939` is in progress.
+  `4783896` on `main`; exact-head Verify run `34992273744` and exact-main
+  Verify run `34997195939` passed.
 - **Proofbound baseline consumed by Runtime evidence:** public immutable bundle
   for source `9512469`; protected-path cutover merged as Runtime `4a0cfdb` and
   passed exact-main Verify run `34918706960`
@@ -117,7 +117,7 @@ public adapter observation enum. The current correction boxes only the terminal
 drain-selection event and adds no boxing allocation to the normal trace path.
 Exact re-review approved head `fbd2d66`; approval-only head `db95947` passed
 complete exact-head run `34992273744` and merged unsigned as `4783896`.
-Exact-main Verify run `34997195939` is in progress. Artifact
+Exact-main Verify run `34997195939` passed. Artifact
 mapping, command integration, the native attack corpus, and release binding
 remain open.
 RT-9 is blocked until RT-5 implements the accepted single-service network

@@ -28,12 +28,12 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-DISTRIBUTION-025` | Tier 1 implementation previously approved at `a81e259`; registry-route dependency changed and exact re-review is required | A deterministic-CBOR producer and independent verifier close one Runtime-only integration tuple after complete registry observation. No tuple is published until an exact protected run retains it. |
 | `PBR-DRAFT-017` | Tier 1 bounded contract and source-level non-reuse checks | Closed diagnostic vocabulary and schemas are registered, and verifier, composer, and acceptor paths reject diagnostic receipt reuse. The live observer remains open. |
 | `PBR-DRAFT-019` | Tier 1 bounded producer contract independently reviewed and admitted on exact Runtime main | The pure diagnostic artifact producer preserves non-reuse, provenance, explicit gaps, and mandatory human authority choices. It does not claim live observer coverage. |
-| `PBR-OBSERVER-020` | Tier 1 decoder identity merged as `4783896`; exact-main admission pending | The complete decoder subject passed exact-head run `34992273744`. Exact-main run `34997195939` is in progress. |
-| `PBR-OBSERVER-021` | Tier 1 decoder identity merged as `4783896`; exact-main admission pending | The shared trace source passed exact-head run `34992273744`. Exact-main run `34997195939` is in progress. |
-| `PBR-OBSERVER-022` | Tier 1 decoder identity merged as `4783896`; exact-main admission pending | The adapter derives capture limits from the same validated protocol and passed exact-head run `34992273744`. Exact-main run `34997195939` is in progress. |
-| `PBR-OBSERVER-023` | Tier 1 decoder identity merged as `4783896`; exact-main admission pending | Entry-time operand capture passed exact-head run `34992273744`. Exact-main run `34997195939` is in progress. |
-| `PBR-OBSERVER-024` | Tier 1 decoder identity merged as `4783896`; exact-main admission pending | The shared trace, adapter, and observer sources passed exact-head run `34992273744`. Exact-main run `34997195939` is in progress. |
-| `PBR-OBSERVER-025` | Tier 1 syscall-decoder source merged as `4783896`; exact-main admission pending | Approval-only head `db95947` passed complete exact-head run `34992273744`. Exact-main run `34997195939` is in progress. Kernel ABI truth, memory stability, native attacks, and artifact mapping remain open. |
+| `PBR-OBSERVER-020` | Tier 1 decoder identity admitted on exact Runtime main `4783896` | The complete decoder subject passed exact-head run `34992273744` and exact-main run `34997195939`. |
+| `PBR-OBSERVER-021` | Tier 1 decoder identity admitted on exact Runtime main `4783896` | The shared trace source passed exact-head run `34992273744` and exact-main run `34997195939`. |
+| `PBR-OBSERVER-022` | Tier 1 decoder identity admitted on exact Runtime main `4783896` | The adapter derives capture limits from the same validated protocol and passed exact-head run `34992273744` and exact-main run `34997195939`. |
+| `PBR-OBSERVER-023` | Tier 1 decoder identity admitted on exact Runtime main `4783896` | Entry-time operand capture passed exact-head run `34992273744` and exact-main run `34997195939`. |
+| `PBR-OBSERVER-024` | Tier 1 decoder identity admitted on exact Runtime main `4783896` | The shared trace, adapter, and observer sources passed exact-head run `34992273744` and exact-main run `34997195939`. |
+| `PBR-OBSERVER-025` | Tier 1 syscall-decoder source admitted on exact Runtime main `4783896` | Approval-only head `db95947` passed complete exact-head run `34992273744`; exact-main run `34997195939` also passed. Kernel ABI truth, memory stability, native attacks, and artifact mapping remain open. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -713,7 +713,7 @@ selects terminal drain. It adds no boxing allocation to normal continue,
 natural-completion, or trace-wait events. The affected exact-body checks are
 refreshed. Independent re-review approved exact head `fbd2d66`. Approval-only
 head `db95947` passed complete exact-head run `34992273744` and merged unsigned
-as `4783896`. Exact-main Verify run `34997195939` is in progress.
+as `4783896`. Exact-main Verify run `34997195939` passed.
 
 ## Bounded-domain declaration guard
 

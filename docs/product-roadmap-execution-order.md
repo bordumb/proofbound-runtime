@@ -4,8 +4,8 @@
 - **Date:** 2026-09-15
 - **Applies to:** Roadmap 1 release closure, Roadmap 2, and Roadmap 3 candidate
   promotion
-- **Current Runtime main candidate:** `4783896`; exact-head Verify run
-  `34992273744` passed and exact-main Verify run `34997195939` is in progress
+- **Current Runtime main:** `4783896`; exact-head Verify run `34992273744` and
+  exact-main Verify run `34997195939` passed
 - **Current reviewed Roadmap 1 source head:** `d76f3b8`
 - **Lifecycle:** prelaunch; zero external users; package labels are tooling
   metadata rather than compatibility promises
@@ -19,7 +19,7 @@ review updates it.
 ## 1. Current boundary
 
 Roadmap 1 source work is merged. Runtime main `4783896` also contains the
-reviewed RT-8 decoder; exact-main admission run `34997195939` is in progress.
+reviewed and exact-main-admitted RT-8 decoder; run `34997195939` passed.
 Roadmap 2 delivery is active; no complete Roadmap 2 epic has closed. Roadmap 3
 contains candidates, not scheduled implementation.
 
