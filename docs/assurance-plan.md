@@ -136,7 +136,8 @@ contains:
 - an independently selected, default-off npm first-publication input that is
   valid only while the package endpoint returns exactly `404`;
 - a one-time npm bootstrap token exposed only to that initial publish step;
-- an exact selected npm script inventory with no publish lifecycle hook;
+- an exact selected npm script inventory with no publish lifecycle hook and
+  `--ignore-scripts` on both publication routes;
 - a normal npm OIDC route that requires the package endpoint to return exactly
   `200` and has no bootstrap-token reference;
 - exact reproduction of each Rust upload input against its approved retained

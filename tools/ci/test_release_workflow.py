@@ -72,6 +72,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("inputs.bootstrap_npm_package != true", typescript)
         self.assertEqual(typescript.count("secrets.NPM_INITIAL_PUBLISH_TOKEN"), 1)
         self.assertEqual(typescript.count("NODE_AUTH_TOKEN"), 3)
+        self.assertEqual(typescript.count("--ignore-scripts"), 2)
         self.assertIn("--provenance", typescript)
         self.assertIn("npm-bootstrap.npmrc", typescript)
         package = json.loads(

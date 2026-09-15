@@ -203,8 +203,9 @@ route is disabled by default, requires the general publication input, checks
 that the anonymous package endpoint returns exactly `404` before the
 token-bearing step, and exposes a shortest-lived external bootstrap token only
 to that step. The selected package metadata contains no npm publish lifecycle
-hook that could consume that environment. The bootstrap cannot run after the
-package endpoint returns `200`.
+hook that could consume that environment, and both npm publication routes use
+`--ignore-scripts`. The bootstrap cannot run after the package endpoint returns
+`200`.
 
 After the first accepted upload, the release maintainer must configure the
 exact npm OIDC trusted publisher, delete the GitHub bootstrap secret, revoke

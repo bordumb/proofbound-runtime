@@ -146,8 +146,9 @@ Rust publisher steps. PyPI uses a pending workflow-specific OIDC trusted
 publisher. npm requires the package to exist before it can bind a trusted
 publisher, so the active correction adds one separately selected initial-token
 route. It checks the anonymous package endpoint for exact absence before the
-token-bearing step and rejects a package with any publish lifecycle hook. The
-normal npm route requires the package to exist and uses only OIDC. The
+token-bearing step, rejects a package with any publish lifecycle hook, and
+disables lifecycle scripts for both routes. The normal npm route requires the
+package to exist and uses only OIDC. The
 observation job has no registry credential. Its read-only
 checkout credential is removed before it makes anonymous registry requests.
 

@@ -675,6 +675,7 @@ jobs:
           NPM_CONFIG_USERCONFIG="$npm_config" npm publish \
             dist/sdk/proofbound-runtime-sdk-*.tgz \
             --access public \
+            --ignore-scripts \
             --provenance \
             --registry https://registry.npmjs.org
 
@@ -683,6 +684,7 @@ jobs:
         run: |
           npm publish dist/sdk/proofbound-runtime-sdk-*.tgz \
             --access public \
+            --ignore-scripts \
             --provenance \
             --registry https://registry.npmjs.org
 

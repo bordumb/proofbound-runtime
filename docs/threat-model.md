@@ -160,8 +160,8 @@ clients. npm cannot bind that OIDC identity until the package exists. The
 release workflow therefore requires a separate default-off bootstrap input and
 an exact anonymous `404` observation before it exposes the token to the first
 npm publish step. The registered package metadata has no publish lifecycle
-hook that could inherit the token. The normal route requires `200` and has no
-token reference.
+hook that could inherit the token, and the publish command disables lifecycle
+scripts. The normal route requires `200` and has no token reference.
 
 The release workflow limits publication to one explicit exact-mainline request
 after complete release provenance. It reproduces the Rust upload inputs and
