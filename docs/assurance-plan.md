@@ -173,13 +173,15 @@ The production subject is the launcher and supervisor protocol that gates
 - the private typed launcher protocol;
 - privilege removal and `no_new_privs` installation;
 - Landlock and seccomp installation;
-- boundary acknowledgement bound to the compiled-policy identity; and
+- boundary acknowledgement and supervisor exec release bound to the
+  compiled-policy identity; and
 - the final `execve` handoff.
 
 The evidence path is:
 
 1. protocol-state tests that reject every invalid transition;
-2. acknowledgement omission, truncation, forgery, and substitution attacks;
+2. acknowledgement and exec-release omission, truncation, forgery, and
+   substitution attacks;
 3. native Linux tests that observe each required boundary before child code;
 4. denial tests for undeclared filesystem, network, environment, descriptor,
    and process authority;

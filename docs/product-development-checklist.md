@@ -1,13 +1,13 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T08:30:46+01:00 (Europe/London, BST)
-- **Runtime baseline:** RT-8 diagnostic artifact producer merge `4ecb871`;
-  exact-main Verify run `34936505855` passed
-- **Active implementation wave:** pure observer protocol PR 12 passed every
-  implementation lane, but hosted run `34937458920` rejected one obsolete named
-  Cargo test target in its evidence manifest. The selector correction and a
-  source-level regression check are in progress before exact-head re-review.
+- **Last updated:** 2026-09-15T09:59:58+01:00 (Europe/London, BST)
+- **Runtime baseline:** pure observer protocol merge `b04382d`; exact-main
+  Verify run `34946613122` passed
+- **Active implementation wave:** the identity-bound exec-release gate is
+  rebasing onto the admitted pure observer protocol before refreshed exact-head
+  review. Trace startup and the coupled adapter are approved on the following
+  stack but remain behind this prerequisite.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -144,6 +144,10 @@ manifest describes the supported tuple.
   launcher dependency graphs.
 - [x] Define a pure typed observer protocol that cannot release target code
   before attachment, boundary acknowledgement, and exact trace options.
+- [ ] Complete review and hosted admission of the identity-bound supervisor
+  exec release that lets the diagnostic adapter stop the acknowledged launcher
+  and install exact trace options before target exec. Source implementation and
+  registered falsifiers exist on the current stacked wave.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.

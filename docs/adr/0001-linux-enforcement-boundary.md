@@ -33,7 +33,8 @@ The supported boundary uses:
 - a new allow-listed environment;
 - closure of undeclared file descriptors;
 - exact executable, ELF interpreter, runtime, and loader identities; and
-- a supervisor-to-launcher acknowledgement bound to the compiled policy.
+- a launcher acknowledgement followed by a supervisor exec release, both
+  bound to the compiled policy.
 
 The runtime consumes an explicitly identified cgroup v2 delegation root. That
 root is an empty inner node with the required controllers already enabled, and
@@ -45,8 +46,9 @@ hierarchy owned by an unrelated manager.
 The supervisor creates the fresh output root and an execution cgroup below the
 delegation root. It starts the launcher in a paused state, places it in the
 execution cgroup, and supplies the validated compiled policy through a private
-channel. The launcher installs every remaining restriction before it calls
-`execve`.
+channel. The launcher installs every remaining restriction and acknowledges
+the boundary. It calls `execve` only after it verifies the supervisor's
+identity-bound release.
 
 The Landlock ruleset handles file reads globally. Linux opens a selected native
 executable internally with both read and execute intent, so the exact-file rule

@@ -339,15 +339,10 @@ pub(crate) fn send_packet(descriptor: RawFd, bytes: &[u8]) -> io::Result<()> {
 
 pub(crate) fn receive_packet(descriptor: RawFd, buffer: &mut [u8]) -> io::Result<usize> {
     // SAFETY: `buffer` remains writable for the call and `descriptor` is
-    // borrowed by the caller. MSG_TRUNC makes an oversized packet observable.
-    let received = unsafe {
-        libc::recv(
-            descriptor,
-            buffer.as_mut_ptr().cast(),
-            buffer.len(),
-            libc::MSG_TRUNC,
-        )
-    };
+    // borrowed by the caller. The caller supplies one extra byte so a packet
+    // above its bound remains observable. `read` stays available after the
+    // launcher installs the deny-network seccomp filter.
+    let received = unsafe { libc::read(descriptor, buffer.as_mut_ptr().cast(), buffer.len()) };
     if received < 0 {
         Err(io::Error::last_os_error())
     } else {

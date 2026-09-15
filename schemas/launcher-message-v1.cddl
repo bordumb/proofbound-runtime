@@ -7,7 +7,11 @@
 ; registered 1 MiB implementation limit. Both endpoints use close-on-exec
 ; descriptors. The launcher closes its endpoint before the child exec handoff.
 
-launcher-message = install-request / boundary-installed / launcher-failure
+launcher-message =
+  install-request /
+  boundary-installed /
+  exec-release /
+  launcher-failure
 
 install-request = {
   "schema": "proofbound-runtime-launcher-install/1",
@@ -31,6 +35,14 @@ boundary-installed = {
   "policy_id": sha256-identity,
   "cgroup_id": cgroup-identity,
   "state": "installed"
+}
+
+exec-release = {
+  "schema": "proofbound-runtime-launcher-exec-release/1",
+  "execution_id": execution-id,
+  "policy_id": sha256-identity,
+  "cgroup_id": cgroup-identity,
+  "state": "released"
 }
 
 launcher-failure = {

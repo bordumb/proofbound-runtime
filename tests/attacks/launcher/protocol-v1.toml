@@ -61,6 +61,26 @@ mutation = "exec-without-acknowledgement"
 expected_error = "launcher.sequence.acknowledgement-missing"
 
 [[cases]]
+id = "exec-release-omission"
+mutation = "exec-after-acknowledgement-without-supervisor-release"
+expected_error = "launcher.sequence.exec-release-missing"
+
+[[cases]]
+id = "exec-release-execution-substitution"
+mutation = "substitute-execution-id-in-exec-release"
+expected_error = "launcher.identity.execution-mismatch"
+
+[[cases]]
+id = "exec-release-policy-substitution"
+mutation = "substitute-policy-id-in-exec-release"
+expected_error = "launcher.identity.policy-mismatch"
+
+[[cases]]
+id = "exec-release-cgroup-substitution"
+mutation = "substitute-cgroup-id-in-exec-release"
+expected_error = "launcher.identity.cgroup-mismatch"
+
+[[cases]]
 id = "executable-closure-substitution"
 mutation = "replace-exact-read-execute-rule-with-execute-only-rule"
 expected_error = "launcher.protocol.malformed"
