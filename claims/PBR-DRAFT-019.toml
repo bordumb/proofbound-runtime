@@ -1,9 +1,9 @@
 schema = "proofbound-claim/1"
 id = "PBR-DRAFT-019"
 title = "Diagnostic artifact construction cannot grant plan authority"
-statement = "For validated bounded diagnostic observations, the pure diagnostic artifact producer emits canonical non-reusable diagnostic receipt bytes and a size-bounded plan draft whose suggestions stay within explicit normalized candidate roots, exclude system, home, and temporary roots, retain exact provenance, keep network and unresolved observations open, require exact Capsec schema, source, analyzer, and report identities, and leave write roots, environment names, resource limits, and network mode as mandatory human choices."
-public_language = "Runtime has a pure producer for closed diagnostic receipt and plan-draft objects. Registered tests cover canonical encoding, count-bound and gap consistency, ordering, redaction, normalized scoped paths, output size, exact Capsec identity usability, mandatory human choices, network non-grant, unresolved observations, and provenance retention. This is bounded source evidence. It does not establish ptrace coverage, kernel correctness, plan safety, or production receipt reuse."
-subject = "rust:proofbound_runtime_diagnose::draft::build_plan_draft"
+statement = "For validated bounded diagnostic observations, the pure diagnostic artifact producer streams canonical non-reusable diagnostic receipt bytes and a plan draft within the declared output bound; suggestions stay within explicit normalized candidate roots, exclude system, home, and temporary roots, retain exact provenance, keep network and unresolved observations open, require exact Capsec schema, source, analyzer, and report identities, and leave write roots, environment names, resource limits, and network mode as mandatory human choices."
+public_language = "Runtime has one pure aggregate producer for closed diagnostic receipt and plan-draft objects. Registered tests cover bounded streaming canonical encoding, exact-capacity and overflow gap semantics, ordering, required stable-path evidence, redaction, normalized scoped paths, exact Capsec identity usability, mandatory human choices, network non-grant, unresolved observations, and provenance retention. This is bounded source evidence. It does not establish ptrace coverage, kernel correctness, plan safety, or production receipt reuse."
+subject = "rust:proofbound_runtime_diagnose::producer::build_diagnostic_artifacts"
 profile = "ledger"
 tier = 1
 evidence = [
@@ -40,8 +40,10 @@ source_roots = [
   "crates/proofbound-runtime-core/src/receipt.rs",
   "crates/proofbound-runtime-diagnose/Cargo.toml",
   "crates/proofbound-runtime-diagnose/src/artifact.rs",
+  "crates/proofbound-runtime-diagnose/src/canonical.rs",
   "crates/proofbound-runtime-diagnose/src/draft.rs",
   "crates/proofbound-runtime-diagnose/src/lib.rs",
+  "crates/proofbound-runtime-diagnose/src/producer.rs",
   "docs/adr/0008-separate-ptrace-diagnostic-observer.md",
   "docs/assurance-plan.md",
   "docs/product-development-checklist.md",

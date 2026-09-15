@@ -9,8 +9,11 @@ RECEIPT_VECTOR = ROOT / "schemas/vectors/diagnostic/diagnostic-receipt.json"
 DRAFT_VECTOR = ROOT / "schemas/vectors/diagnostic/plan-draft.json"
 DIAGNOSE_MANIFEST = ROOT / "crates/proofbound-runtime-diagnose/Cargo.toml"
 ARTIFACT_SOURCE = ROOT / "crates/proofbound-runtime-diagnose/src/artifact.rs"
+CANONICAL_SOURCE = ROOT / "crates/proofbound-runtime-diagnose/src/canonical.rs"
 DRAFT_SOURCE = ROOT / "crates/proofbound-runtime-diagnose/src/draft.rs"
+PRODUCER_SOURCE = ROOT / "crates/proofbound-runtime-diagnose/src/producer.rs"
 DIAGNOSTIC_SCHEMA = ROOT / "schemas/diagnostic-receipt-v1.schema.json"
+CLAIM = ROOT / "claims/PBR-DRAFT-019.toml"
 PRODUCTION_MANIFESTS = [
     ROOT / "crates/proofbound-runtime-cli/Cargo.toml",
     ROOT / "crates/proofbound-runtime-linux/Cargo.toml",
@@ -30,7 +33,10 @@ class DiagnosticArtifactProducerContractTests(unittest.TestCase):
         self.receipt = json.loads(self.receipt_bytes)
         self.draft = json.loads(self.draft_bytes)
         self.artifact_source = ARTIFACT_SOURCE.read_text()
+        self.canonical_source = CANONICAL_SOURCE.read_text()
         self.draft_source = DRAFT_SOURCE.read_text()
+        self.producer_source = PRODUCER_SOURCE.read_text()
+        self.claim_source = CLAIM.read_text()
 
     def test_canonical_vectors_bind_one_exact_non_reusable_projection(self):
         self.assertEqual(self.receipt_bytes, canonical_json(self.receipt))
@@ -132,8 +138,20 @@ class DiagnosticArtifactProducerContractTests(unittest.TestCase):
             {"properties": {"address": {"type": "null"}}},
             redacted_operands[2]["allOf"],
         )
+        stable_rule = next(
+            rule
+            for rule in schema["$defs"]["event"]["allOf"]
+            if rule.get("if", {}).get("properties", {}).get("resolution")
+            == {"const": "stable-candidate"}
+        )
+        stable_path = stable_rule["then"]["properties"]["operands"]["allOf"][
+            1
+        ]["properties"]
+        self.assertEqual(stable_path["path"], {"type": "string"})
+        self.assertEqual(stable_path["symlink_hops"], {"type": "integer"})
         for guard in [
             "retains_redacted_target",
+            "has_complete_path_observation",
             "is_normalized_absolute_path",
             "SymlinkBoundExceeded",
             "event_limit_reached",
@@ -149,6 +167,21 @@ class DiagnosticArtifactProducerContractTests(unittest.TestCase):
             "OutputBoundExceeded",
         ]:
             self.assertIn(guard, self.draft_source)
+
+    def test_aggregate_subject_streams_both_outputs_through_a_bounded_writer(self):
+        self.assertIn(
+            'subject = "rust:proofbound_runtime_diagnose::producer::build_diagnostic_artifacts"',
+            self.claim_source,
+        )
+        self.assertIn("build_diagnostic_artifacts", self.producer_source)
+        self.assertIn("DiagnosticReceipt::construct", self.producer_source)
+        self.assertIn("build_plan_draft", self.producer_source)
+        self.assertIn("impl Write for BoundedCanonicalJson", self.canonical_source)
+        self.assertIn("next_length > self.limit", self.canonical_source)
+        self.assertIn("BoundedCanonicalJson::new", self.artifact_source)
+        self.assertIn("BoundedCanonicalJson::new", self.draft_source)
+        self.assertNotIn("collect::<Vec<Value>>", self.artifact_source)
+        self.assertNotIn("collect::<Vec<Value>>", self.draft_source)
 
 
 if __name__ == "__main__":

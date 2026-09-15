@@ -7,4 +7,6 @@
 //! observations. Production Runtime components do not depend on this crate.
 
 pub mod artifact;
+mod canonical;
 pub mod draft;
+pub mod producer;

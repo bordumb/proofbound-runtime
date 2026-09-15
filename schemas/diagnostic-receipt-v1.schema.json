@@ -347,6 +347,17 @@
               "error": {"type": "integer", "minimum": 1},
               "object_after": {"$ref": "#/$defs/objectIdentity"},
               "object_before": {"$ref": "#/$defs/objectIdentity"},
+              "operands": {
+                "allOf": [
+                  {"$ref": "#/$defs/pathOperands"},
+                  {
+                    "properties": {
+                      "path": {"type": "string"},
+                      "symlink_hops": {"type": "integer"}
+                    }
+                  }
+                ]
+              },
               "resolved_path": {"type": "string", "maxLength": 1048576},
               "result": {"type": "null"}
             }
@@ -360,6 +371,17 @@
           "then": {
             "properties": {
               "object_after": {"$ref": "#/$defs/objectIdentity"},
+              "operands": {
+                "allOf": [
+                  {"$ref": "#/$defs/pathOperands"},
+                  {
+                    "properties": {
+                      "path": {"type": "string"},
+                      "symlink_hops": {"type": "integer"}
+                    }
+                  }
+                ]
+              },
               "resolved_path": {"type": "string", "maxLength": 1048576},
               "result": {"type": "integer", "minimum": 0}
             }

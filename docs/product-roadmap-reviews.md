@@ -1369,3 +1369,35 @@ Architecture separation, fixed `safe_policy: false` and `reusable: false`,
 mandatory human authority choices, network non-grant, and production-consumer
 non-reuse remained intact. The producer cannot proceed until each blocker is
 corrected in a separate subject and re-reviewed at its exact head.
+
+## RT-8 diagnostic artifact producer first correction re-review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `cb52c5115d73c72aebad51c4c0f4a301068d8479`
+- **Reviewed head:** `2c0d86aea8386358c9694a381d5ac94885c9e297`
+- **Branch:** `codex/rt8-observer`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The re-review confirmed closure of the private-import and invalid-fixture
+failures, exact Capsec report identity, redacted socket and path payloads in
+both producer and schema, and normalized explicitly scoped candidate
+selection. It found six remaining blocking clusters:
+
+1. exact event or process capacity incorrectly forced a coverage gap even when
+   the run ended naturally without omission;
+2. a stable candidate could omit both its supplied path and symlink-hop
+   evidence;
+3. output bounds were checked after construction of potentially enormous
+   complete JSON values instead of during encoding;
+4. direct `str.as_bytes().len()` expressions would fail the required Clippy
+   warnings-as-errors gate;
+5. the claim subject named only plan-draft construction while claiming both
+   receipt and draft production; and
+6. registered falsifiers did not yet cover process and per-process bounds, all
+   four Capsec identities and incomplete reports, or nested system, home, and
+   configured temporary roots.
+
+This verdict is not endorsed. The findings require another separate correction
+subject and exact-head review before the producer branch can proceed.

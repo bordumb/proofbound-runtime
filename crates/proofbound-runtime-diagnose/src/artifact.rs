@@ -9,6 +9,8 @@ use proofbound_runtime_core::{
 use serde_json::{Value, json};
 use sha2::{Digest as _, Sha256};
 
+use crate::canonical::{BoundedCanonicalJson, CanonicalWriteError};
+
 /// Identifies the diagnostic receipt schema.
 pub const DIAGNOSTIC_RECEIPT_SCHEMA: &str = "proofbound-runtime-diagnostic-receipt/1";
 
@@ -108,7 +110,7 @@ impl DiagnosticPlatform {
     ) -> Result<Self, DiagnosticArtifactError> {
         let kernel_release = kernel_release.into();
         if kernel_release.is_empty()
-            || kernel_release.as_bytes().len() > 256
+            || kernel_release.len() > 256
             || !(3..=11).contains(&landlock_abi)
         {
             return Err(DiagnosticArtifactError::PlatformInvalid);
@@ -541,6 +543,17 @@ impl ObservationOperands {
         }
     }
 
+    const fn has_complete_path_observation(&self) -> bool {
+        matches!(
+            self,
+            Self::Path {
+                path: Some(_),
+                symlink_hops: Some(_),
+                ..
+            }
+        )
+    }
+
     fn validate_bounds(&self, bounds: ObservationBounds) -> Result<(), DiagnosticArtifactError> {
         match self {
             Self::Path {
@@ -548,13 +561,13 @@ impl ObservationOperands {
             } => {
                 if path
                     .as_ref()
-                    .is_some_and(|value| value.as_bytes().len() as u64 > bounds.path_bytes)
+                    .is_some_and(|value| value.len() as u64 > bounds.path_bytes)
                 {
                     return Err(DiagnosticArtifactError::PathBoundExceeded);
                 }
                 if path
                     .as_ref()
-                    .is_some_and(|value| value.as_bytes().len() as u64 > bounds.tracee_string_bytes)
+                    .is_some_and(|value| value.len() as u64 > bounds.tracee_string_bytes)
                 {
                     return Err(DiagnosticArtifactError::TraceeStringBoundExceeded);
                 }
@@ -682,7 +695,7 @@ impl DiagnosticEvent {
                 if !matches!(outcome, ObservationOutcome::Returned(_))
                     || resolved_path.is_none()
                     || object_after.is_none()
-                    || operands.kind() != OperandKind::Path
+                    || !operands.has_complete_path_observation()
                 {
                     return Err(DiagnosticArtifactError::ResolutionInvalid);
                 }
@@ -692,7 +705,7 @@ impl DiagnosticEvent {
                     || resolved_path.is_none()
                     || object_before.is_none()
                     || object_before != object_after
-                    || operands.kind() != OperandKind::Path
+                    || !operands.has_complete_path_observation()
                 {
                     return Err(DiagnosticArtifactError::ResolutionInvalid);
                 }
@@ -779,7 +792,7 @@ impl DiagnosticEvent {
         if self
             .resolved_path
             .as_ref()
-            .is_some_and(|value| value.as_bytes().len() as u64 > bounds.path_bytes)
+            .is_some_and(|value| value.len() as u64 > bounds.path_bytes)
         {
             return Err(DiagnosticArtifactError::PathBoundExceeded);
         }
@@ -860,7 +873,7 @@ impl DiagnosticTcbEntry {
         identity: impl Into<String>,
     ) -> Result<Self, DiagnosticArtifactError> {
         let identity = identity.into();
-        if identity.is_empty() || identity.as_bytes().len() > 512 {
+        if identity.is_empty() || identity.len() > 512 {
             return Err(DiagnosticArtifactError::TrustedRoleInvalid);
         }
         Ok(Self { role, identity })
@@ -946,49 +959,8 @@ impl DiagnosticReceipt {
         validate_tcb(&parts.trusted_computing_base)?;
         parts.assumptions = canonical_nonempty_text_set(parts.assumptions, 64, 256)?;
 
-        let events = parts
-            .events
-            .iter()
-            .map(DiagnosticEvent::to_value)
-            .collect::<Vec<_>>();
-        let gaps = parts
-            .gaps
-            .iter()
-            .map(|gap| gap.as_str())
-            .collect::<Vec<_>>();
-        let tcb = parts
-            .trusted_computing_base
-            .iter()
-            .map(DiagnosticTcbEntry::to_value)
-            .collect::<Vec<_>>();
         let seed_plan_digest = parts.seed_plan.digest();
-        let value = json!({
-            "arguments": parts.arguments,
-            "assumptions": parts.assumptions,
-            "bounds": bounds.to_value(),
-            "completion": parts.completion.as_str(),
-            "environment_names": parts.environment_names,
-            "events": events,
-            "execution_id": parts.execution_id.to_text(),
-            "execution_profile": "diagnostic",
-            "gaps": gaps,
-            "launcher": parts.launcher.to_value(),
-            "mechanism": "linux-ptrace-syscall-v1",
-            "observer": parts.observer.to_value(),
-            "platform": parts.platform.to_value(),
-            "reusable": false,
-            "runtime": parts.runtime.to_value(),
-            "safe_policy": false,
-            "schema": DIAGNOSTIC_RECEIPT_SCHEMA,
-            "seed_plan": parts.seed_plan.to_value(),
-            "target": parts.target.to_value(),
-            "trusted_computing_base": tcb,
-        });
-        let bytes = serde_json::to_vec(&value)
-            .map_err(|_| DiagnosticArtifactError::CanonicalEncodingFailed)?;
-        if bytes.len() as u64 > bounds.output_bytes {
-            return Err(DiagnosticArtifactError::OutputBoundExceeded);
-        }
+        let bytes = encode_receipt(&parts, bounds)?;
         let commitment = sha256(&bytes);
         Ok(Self {
             bytes,
@@ -1048,6 +1020,97 @@ impl DiagnosticReceipt {
     #[must_use]
     pub const fn output_bound(&self) -> u64 {
         self.output_bound
+    }
+}
+
+fn encode_receipt(
+    parts: &DiagnosticReceiptParts,
+    bounds: ObservationBounds,
+) -> Result<Vec<u8>, DiagnosticArtifactError> {
+    let mut output = BoundedCanonicalJson::new(bounds.output_bytes).map_err(map_write_error)?;
+    output.raw(b"{\"arguments\":").map_err(map_write_error)?;
+    output.value(&parts.arguments).map_err(map_write_error)?;
+    output.raw(b",\"assumptions\":").map_err(map_write_error)?;
+    output.value(&parts.assumptions).map_err(map_write_error)?;
+    output.raw(b",\"bounds\":").map_err(map_write_error)?;
+    output.value(&bounds.to_value()).map_err(map_write_error)?;
+    output.raw(b",\"completion\":").map_err(map_write_error)?;
+    output
+        .value(parts.completion.as_str())
+        .map_err(map_write_error)?;
+    output
+        .raw(b",\"environment_names\":")
+        .map_err(map_write_error)?;
+    output
+        .value(&parts.environment_names)
+        .map_err(map_write_error)?;
+    output.raw(b",\"events\":").map_err(map_write_error)?;
+    output
+        .sequence(parts.events.iter().map(DiagnosticEvent::to_value))
+        .map_err(map_write_error)?;
+    output.raw(b",\"execution_id\":").map_err(map_write_error)?;
+    output
+        .value(&parts.execution_id.to_text())
+        .map_err(map_write_error)?;
+    output
+        .raw(b",\"execution_profile\":\"diagnostic\",\"gaps\":")
+        .map_err(map_write_error)?;
+    output
+        .sequence(parts.gaps.iter().map(|gap| gap.as_str()))
+        .map_err(map_write_error)?;
+    output.raw(b",\"launcher\":").map_err(map_write_error)?;
+    output
+        .value(&parts.launcher.to_value())
+        .map_err(map_write_error)?;
+    output
+        .raw(b",\"mechanism\":\"linux-ptrace-syscall-v1\",\"observer\":")
+        .map_err(map_write_error)?;
+    output
+        .value(&parts.observer.to_value())
+        .map_err(map_write_error)?;
+    output.raw(b",\"platform\":").map_err(map_write_error)?;
+    output
+        .value(&parts.platform.to_value())
+        .map_err(map_write_error)?;
+    output
+        .raw(b",\"reusable\":false,\"runtime\":")
+        .map_err(map_write_error)?;
+    output
+        .value(&parts.runtime.to_value())
+        .map_err(map_write_error)?;
+    output
+        .raw(b",\"safe_policy\":false,\"schema\":")
+        .map_err(map_write_error)?;
+    output
+        .value(DIAGNOSTIC_RECEIPT_SCHEMA)
+        .map_err(map_write_error)?;
+    output.raw(b",\"seed_plan\":").map_err(map_write_error)?;
+    output
+        .value(&parts.seed_plan.to_value())
+        .map_err(map_write_error)?;
+    output.raw(b",\"target\":").map_err(map_write_error)?;
+    output
+        .value(&parts.target.to_value())
+        .map_err(map_write_error)?;
+    output
+        .raw(b",\"trusted_computing_base\":")
+        .map_err(map_write_error)?;
+    output
+        .sequence(
+            parts
+                .trusted_computing_base
+                .iter()
+                .map(DiagnosticTcbEntry::to_value),
+        )
+        .map_err(map_write_error)?;
+    output.raw(b"}").map_err(map_write_error)?;
+    Ok(output.finish())
+}
+
+fn map_write_error(error: CanonicalWriteError) -> DiagnosticArtifactError {
+    match error {
+        CanonicalWriteError::BoundExceeded => DiagnosticArtifactError::OutputBoundExceeded,
+        CanonicalWriteError::EncodingFailed => DiagnosticArtifactError::CanonicalEncodingFailed,
     }
 }
 
@@ -1153,7 +1216,7 @@ fn validate_arguments(arguments: &[String]) -> Result<(), DiagnosticArtifactErro
     if arguments.len() > 256
         || arguments
             .iter()
-            .any(|value| value.as_bytes().len() > 65_536 || value.as_bytes().contains(&0))
+            .any(|value| value.len() > 65_536 || value.as_bytes().contains(&0))
     {
         return Err(DiagnosticArtifactError::ArgumentInvalid);
     }
@@ -1217,9 +1280,9 @@ fn validate_events(
         .values()
         .any(|count| *count == bounds.event_count_per_process);
     let process_limit_reached = processes.len() as u64 == bounds.process_count;
-    if gaps.contains(&DiagnosticGap::EventLimit) != event_limit_reached
-        || gaps.contains(&DiagnosticGap::EventPerProcessLimit) != per_process_limit_reached
-        || gaps.contains(&DiagnosticGap::ProcessLimit) != process_limit_reached
+    if (gaps.contains(&DiagnosticGap::EventLimit) && !event_limit_reached)
+        || (gaps.contains(&DiagnosticGap::EventPerProcessLimit) && !per_process_limit_reached)
+        || (gaps.contains(&DiagnosticGap::ProcessLimit) && !process_limit_reached)
     {
         return Err(DiagnosticArtifactError::CompletionInvalid);
     }
@@ -1266,7 +1329,7 @@ fn canonical_nonempty_text_set(
         || output.len() > maximum_count
         || output
             .iter()
-            .any(|value| value.is_empty() || value.as_bytes().len() > maximum_bytes)
+            .any(|value| value.is_empty() || value.len() > maximum_bytes)
     {
         return Err(DiagnosticArtifactError::AssumptionInvalid);
     }
@@ -1311,7 +1374,7 @@ pub(crate) mod tests {
         .expect("fixture artifact")
     }
 
-    fn fixture_parts() -> DiagnosticReceiptParts {
+    pub(crate) fn fixture_parts() -> DiagnosticReceiptParts {
         let object =
             ObservedObjectIdentity::new(8, 1, 42, 0o100644, 7).expect("fixture object identity");
         let path_event = DiagnosticEvent::new(
@@ -1475,6 +1538,51 @@ pub(crate) mod tests {
             Err(DiagnosticArtifactError::CompletionInvalid)
         );
 
+        let mut naturally_at_capacity = fixture_parts();
+        naturally_at_capacity.completion = DiagnosticCompletion::Complete;
+        naturally_at_capacity.gaps.clear();
+        assert!(DiagnosticReceipt::construct(naturally_at_capacity).is_ok());
+
+        let mut total_overflow = fixture_parts();
+        total_overflow.bounds.event_count = 1;
+        assert_eq!(
+            DiagnosticReceipt::construct(total_overflow),
+            Err(DiagnosticArtifactError::EventBoundExceeded)
+        );
+
+        let mut per_process_overflow = fixture_parts();
+        per_process_overflow.bounds.event_count_per_process = 1;
+        assert_eq!(
+            DiagnosticReceipt::construct(per_process_overflow),
+            Err(DiagnosticArtifactError::EventBoundExceeded)
+        );
+
+        let mut process_overflow = fixture_parts();
+        process_overflow.events[1].process = 1001;
+        process_overflow.bounds.process_count = 1;
+        assert_eq!(
+            DiagnosticReceipt::construct(process_overflow),
+            Err(DiagnosticArtifactError::ProcessBoundExceeded)
+        );
+
+        let mut per_process_gap_without_exhaustion = fixture_parts();
+        per_process_gap_without_exhaustion
+            .gaps
+            .push(DiagnosticGap::EventPerProcessLimit);
+        assert_eq!(
+            DiagnosticReceipt::construct(per_process_gap_without_exhaustion),
+            Err(DiagnosticArtifactError::CompletionInvalid)
+        );
+
+        let mut process_gap_without_exhaustion = fixture_parts();
+        process_gap_without_exhaustion
+            .gaps
+            .push(DiagnosticGap::ProcessLimit);
+        assert_eq!(
+            DiagnosticReceipt::construct(process_gap_without_exhaustion),
+            Err(DiagnosticArtifactError::CompletionInvalid)
+        );
+
         let mut wrong_order = fixture_parts();
         wrong_order.events[0].sequence = 2;
         assert_eq!(
@@ -1555,6 +1663,45 @@ pub(crate) mod tests {
 
         let object =
             ObservedObjectIdentity::new(8, 1, 42, 0o100644, 7).expect("fixture object identity");
+        for operands in [
+            ObservationOperands::Path {
+                buffer_bytes: None,
+                directory_fd: None,
+                flags: Some(0),
+                mask: None,
+                mode: None,
+                path: None,
+                resolve: None,
+                symlink_hops: Some(0),
+            },
+            ObservationOperands::Path {
+                buffer_bytes: None,
+                directory_fd: None,
+                flags: Some(0),
+                mask: None,
+                mode: None,
+                path: Some("config".to_owned()),
+                resolve: None,
+                symlink_hops: None,
+            },
+        ] {
+            let incomplete_path = DiagnosticEvent::new(
+                0,
+                1000,
+                Architecture::X86_64,
+                DiagnosticEventClass::Open,
+                operands,
+                ObservationOutcome::Failed(13),
+                ObservationResolution::StableCandidate,
+                Some("/workspace/config".to_owned()),
+                Some(object.clone()),
+                Some(object.clone()),
+            );
+            assert_eq!(
+                incomplete_path,
+                Err(DiagnosticArtifactError::ResolutionInvalid)
+            );
+        }
         let traversal = DiagnosticEvent::new(
             0,
             1000,

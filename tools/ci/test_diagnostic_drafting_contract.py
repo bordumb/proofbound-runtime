@@ -285,6 +285,17 @@ class DiagnosticDraftingContractTests(unittest.TestCase):
         redacted_socket["events"][1]["operands"]["address"] = None
         _validate(redacted_socket, diagnostic_schema, diagnostic_schema)
 
+        incomplete_stable_path = json.loads(json.dumps(diagnostic))
+        incomplete_stable_path["events"][0]["operands"]["path"] = None
+        self.assertFalse(
+            _matches(incomplete_stable_path, diagnostic_schema, diagnostic_schema)
+        )
+        incomplete_stable_path = json.loads(json.dumps(diagnostic))
+        incomplete_stable_path["events"][0]["operands"]["symlink_hops"] = None
+        self.assertFalse(
+            _matches(incomplete_stable_path, diagnostic_schema, diagnostic_schema)
+        )
+
         capsec_candidate = json.loads(json.dumps(draft))
         capsec_candidate["candidates"] = [
             {

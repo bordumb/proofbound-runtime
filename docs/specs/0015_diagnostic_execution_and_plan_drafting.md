@@ -101,8 +101,10 @@ never read or recorded.
 
 The implementation fixes bounds for total processes, total events, events per
 process, tracee string bytes, path bytes, symlink hops, socket-address bytes,
-and output bytes. Reaching any bound emits its exact gap and stops collecting
-that class. Silent truncation is forbidden.
+and output bytes. Exhausting a bound while another item remains emits its exact
+gap and stops collecting that class. A run that ends naturally with a count
+equal to its bound does not claim a gap. A declared count gap is valid only
+when the retained count equals the bound. Silent truncation is forbidden.
 
 ## 5. Diagnostic receipt
 
@@ -124,6 +126,10 @@ duplicate-free canonical JSON object with these required top-level members:
 The receipt is a diagnostic accountability record. Its SHA-256 commitment can
 identify exact bytes, but neither the bytes nor the commitment are accepted by
 the production receipt verifier.
+
+The producer applies `bounds.output_bytes` while it encodes the canonical
+receipt. It does not first allocate a complete receipt-sized JSON value and
+check its size afterward. A bound failure publishes no partial object.
 
 ## 6. Draft report
 
@@ -168,6 +174,11 @@ carry `capsec-source-observation` only when that result is `usable`. The draft
 also carries a closed `differences` list with the three comparison classes from
 Specification 0013. These entries are review information and cannot grant
 authority.
+
+The same bounded streaming rule applies to the plan draft. The producer stops
+with the typed output-bound error before it retains bytes beyond the declared
+limit. A caller-supplied large comparison collection cannot cause construction
+of one complete unbounded JSON value before this check.
 
 ## 7. Mandatory rejection
 

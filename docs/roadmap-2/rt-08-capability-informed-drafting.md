@@ -59,6 +59,9 @@ values without making a draft an authority object.
   the production verifier, composer, or acceptance policy.
 - The pure producer accepts validated observations. It cannot observe a
   process, install a boundary, or add production authority.
+- One aggregate producer owns receipt and plan-draft construction. It streams
+  both canonical objects through the declared output bound instead of
+  materializing an unbounded complete JSON tree.
 - Automatic candidates require an explicit normalized project or runtime
   scope. System, home, and configured temporary roots remain open review
   items.

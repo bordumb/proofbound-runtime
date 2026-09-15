@@ -10,6 +10,7 @@ use crate::artifact::{
     DiagnosticEvent, DiagnosticEventClass, DiagnosticGap, DiagnosticReceipt, ObservationOutcome,
     is_normalized_absolute_path,
 };
+use crate::canonical::{BoundedCanonicalJson, CanonicalWriteError};
 
 /// Identifies the plan-draft schema.
 pub const PLAN_DRAFT_SCHEMA: &str = "proofbound-runtime-plan-draft/1";
@@ -325,8 +326,8 @@ impl DraftDifference {
         let provenance = provenance.into_iter().collect::<BTreeSet<_>>();
         if subject.is_empty()
             || detail.is_empty()
-            || subject.as_bytes().len() > 1_048_576
-            || detail.as_bytes().len() > 1_048_576
+            || subject.len() > 1_048_576
+            || detail.len() > 1_048_576
             || provenance.is_empty()
             || provenance.len() > 5
         {
@@ -580,45 +581,82 @@ pub fn build_plan_draft(
         return Err(DraftError::CollectionBoundExceeded);
     }
 
-    let candidates = candidates
-        .iter()
-        .map(DraftCandidate::to_value)
-        .collect::<Vec<_>>();
-    let open_items = open_items
-        .iter()
-        .map(OpenItem::to_value)
-        .collect::<Vec<_>>();
-    let gaps = receipt
-        .gaps()
-        .iter()
-        .map(|gap| gap.as_str())
-        .collect::<Vec<_>>();
-    let value = json!({
-        "arguments": receipt.arguments(),
-        "breadth": {
+    let mut output = BoundedCanonicalJson::new(receipt.output_bound()).map_err(map_write_error)?;
+    output.raw(b"{\"arguments\":").map_err(map_write_error)?;
+    output.value(receipt.arguments()).map_err(map_write_error)?;
+    output.raw(b",\"breadth\":").map_err(map_write_error)?;
+    output
+        .value(&json!({
             "broad_roots": broad_root_count,
             "denials": denial_count,
             "suggested_roots": candidates.len(),
             "unresolved_events": unresolved_count,
-        },
-        "candidates": candidates,
-        "capsec": inputs.capsec.as_ref().map(CapsecInput::to_value),
-        "diagnostic_receipt_commitment": format!("sha256:{}", receipt.commitment().to_hex()),
-        "differences": inputs.differences.iter().map(DraftDifference::to_value).collect::<Vec<_>>(),
-        "environment_names": receipt.environment_names(),
-        "gaps": gaps,
-        "inputs": inputs.inputs.iter().map(DraftInput::to_value).collect::<Vec<_>>(),
-        "open_items": open_items,
-        "safe_policy": false,
-        "schema": PLAN_DRAFT_SCHEMA,
-        "seed_plan": format!("sha256:{}", receipt.seed_plan_digest().to_hex()),
-        "static_scaffold": inputs.static_scaffold.map(|digest| format!("sha256:{}", digest.to_hex())),
-    });
-    let bytes = serde_json::to_vec(&value).map_err(|_| DraftError::CanonicalEncodingFailed)?;
-    if bytes.len() as u64 > receipt.output_bound() {
-        return Err(DraftError::OutputBoundExceeded);
-    }
+        }))
+        .map_err(map_write_error)?;
+    output.raw(b",\"candidates\":").map_err(map_write_error)?;
+    output
+        .sequence(candidates.iter().map(DraftCandidate::to_value))
+        .map_err(map_write_error)?;
+    output.raw(b",\"capsec\":").map_err(map_write_error)?;
+    output
+        .value(&inputs.capsec.as_ref().map(CapsecInput::to_value))
+        .map_err(map_write_error)?;
+    output
+        .raw(b",\"diagnostic_receipt_commitment\":")
+        .map_err(map_write_error)?;
+    output
+        .value(&format!("sha256:{}", receipt.commitment().to_hex()))
+        .map_err(map_write_error)?;
+    output.raw(b",\"differences\":").map_err(map_write_error)?;
+    output
+        .sequence(inputs.differences.iter().map(DraftDifference::to_value))
+        .map_err(map_write_error)?;
+    output
+        .raw(b",\"environment_names\":")
+        .map_err(map_write_error)?;
+    output
+        .value(receipt.environment_names())
+        .map_err(map_write_error)?;
+    output.raw(b",\"gaps\":").map_err(map_write_error)?;
+    output
+        .sequence(receipt.gaps().iter().map(|gap| gap.as_str()))
+        .map_err(map_write_error)?;
+    output.raw(b",\"inputs\":").map_err(map_write_error)?;
+    output
+        .sequence(inputs.inputs.iter().map(DraftInput::to_value))
+        .map_err(map_write_error)?;
+    output.raw(b",\"open_items\":").map_err(map_write_error)?;
+    output
+        .sequence(open_items.iter().map(OpenItem::to_value))
+        .map_err(map_write_error)?;
+    output
+        .raw(b",\"safe_policy\":false,\"schema\":")
+        .map_err(map_write_error)?;
+    output.value(PLAN_DRAFT_SCHEMA).map_err(map_write_error)?;
+    output.raw(b",\"seed_plan\":").map_err(map_write_error)?;
+    output
+        .value(&format!("sha256:{}", receipt.seed_plan_digest().to_hex()))
+        .map_err(map_write_error)?;
+    output
+        .raw(b",\"static_scaffold\":")
+        .map_err(map_write_error)?;
+    output
+        .value(
+            &inputs
+                .static_scaffold
+                .map(|digest| format!("sha256:{}", digest.to_hex())),
+        )
+        .map_err(map_write_error)?;
+    output.raw(b"}").map_err(map_write_error)?;
+    let bytes = output.finish();
     Ok(PlanDraft { bytes })
+}
+
+fn map_write_error(error: CanonicalWriteError) -> DraftError {
+    match error {
+        CanonicalWriteError::BoundExceeded => DraftError::OutputBoundExceeded,
+        CanonicalWriteError::EncodingFailed => DraftError::CanonicalEncodingFailed,
+    }
 }
 
 /// Identifies invalid plan-draft construction.
@@ -740,7 +778,7 @@ fn path_event_can_write(event: &DiagnosticEvent) -> bool {
 }
 
 fn validate_absolute_path(path: &str) -> Result<(), DraftError> {
-    if !is_normalized_absolute_path(path) || path.as_bytes().len() > 1_048_576 {
+    if !is_normalized_absolute_path(path) || path.len() > 1_048_576 {
         return Err(DraftError::InputInvalid);
     }
     Ok(())
@@ -784,7 +822,7 @@ fn valid_schema_identity(value: &str) -> bool {
         return false;
     };
     !name.is_empty()
-        && value.as_bytes().len() <= 256
+        && value.len() <= 256
         && name.as_bytes().iter().enumerate().all(|(index, byte)| {
             byte.is_ascii_lowercase()
                 || byte.is_ascii_digit()
@@ -913,6 +951,29 @@ mod tests {
     }
 
     #[test]
+    fn path_scope_excludes_nested_system_home_and_temporary_roots() {
+        for candidate in [
+            "/usr/local/project",
+            "/home/fixture/project",
+            "/workspace/.tmp/project",
+        ] {
+            assert_eq!(
+                DraftPathScope::new(
+                    [candidate.to_owned()],
+                    "/home/fixture".to_owned(),
+                    ["/workspace/.tmp".to_owned()],
+                ),
+                Err(DraftError::PathScopeInvalid)
+            );
+        }
+        let scope = fixture_scope();
+        assert!(!scope.allows("/usr/local/lib/runtime.so"));
+        assert!(!scope.allows("/home/fixture/.ssh/config"));
+        assert!(!scope.allows("/workspace/.tmp/cache"));
+        assert!(scope.allows("/workspace/project/config"));
+    }
+
+    #[test]
     fn draft_keeps_authority_choices_open() {
         let draft = build_plan_draft(&fixture_receipt(), PlanDraftInputs::default())
             .expect("fixture draft");
@@ -1019,6 +1080,58 @@ mod tests {
             .expect("wrong-report observation"),
         );
         assert_eq!(wrong_report.usability(), CapsecUsability::ReportInvalid);
+        let wrong_schema = CapsecInput::evaluate(
+            &profile,
+            CapsecReportObservation::new(
+                "other-report/1",
+                expected_source,
+                expected_analyzer,
+                expected_report,
+                true,
+                true,
+            )
+            .expect("wrong-schema observation"),
+        );
+        assert_eq!(wrong_schema.usability(), CapsecUsability::SchemaUnknown);
+        let wrong_analyzer = CapsecInput::evaluate(
+            &profile,
+            CapsecReportObservation::new(
+                "capsec-report/1",
+                expected_source,
+                ContentIdentity::new(Sha256Digest::from_bytes([8; 32]), 20),
+                expected_report,
+                true,
+                true,
+            )
+            .expect("wrong-analyzer observation"),
+        );
+        assert_eq!(wrong_analyzer.usability(), CapsecUsability::AnalyzerUnknown);
+        let incomplete = CapsecInput::evaluate(
+            &profile,
+            CapsecReportObservation::new(
+                "capsec-report/1",
+                expected_source,
+                expected_analyzer,
+                expected_report,
+                true,
+                false,
+            )
+            .expect("incomplete observation"),
+        );
+        assert_eq!(incomplete.usability(), CapsecUsability::Incomplete);
+        let usable = CapsecInput::evaluate(
+            &profile,
+            CapsecReportObservation::new(
+                "capsec-report/1",
+                expected_source,
+                expected_analyzer,
+                expected_report,
+                true,
+                true,
+            )
+            .expect("usable observation"),
+        );
+        assert_eq!(usable.usability(), CapsecUsability::Usable);
         let difference = DraftDifference::new(
             DifferenceClass::RuntimeObservationWithoutRequirement,
             "/workspace/config",

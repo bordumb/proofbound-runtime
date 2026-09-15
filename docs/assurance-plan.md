@@ -372,8 +372,10 @@ obligations.
 
 ## PBR-DRAFT-019
 
-The production subject is the pure constructor that turns already validated,
-bounded diagnostic observations into the two distinct RT-8 artifacts. The
+The production subject is the pure aggregate constructor that turns already
+validated, bounded diagnostic observations into the two distinct RT-8
+artifacts. Both objects stream through one fixed byte limit during encoding;
+the producer does not first materialize an unbounded complete JSON tree. The
 constructor cannot install a boundary, observe a process, or grant plan
 authority. Its diagnostic receipt is always non-reusable. Its plan draft keeps
 network attempts and unresolved observations open, restricts candidates to
@@ -384,12 +386,14 @@ schema, source, analyzer, and report identities.
 
 The initial evidence path must falsify event and per-process bounds, sequence
 ordering, result and error exclusivity, resolution and identity consistency,
-completion and gap consistency, path and symlink bounds, redacted target
-leakage, non-normalized or out-of-scope paths, draft output overflow, all four
-Capsec identities, network-to-authority conversion, missing human choices,
-provenance relabeling, noncanonical JSON, and drift from both registered schema
-vectors. The independent checker must also confirm that neither the production
-CLI nor the native launcher depends on the diagnostic producer.
+completion and one-way gap consistency, natural exact-capacity completion,
+path and symlink evidence and bounds, redacted target leakage, non-normalized
+or out-of-scope paths, streaming output overflow, all four Capsec identities
+and incomplete reports, network-to-authority conversion, missing human
+choices, provenance relabeling, noncanonical JSON, and drift from both
+registered schema vectors. The independent checker must also confirm that
+neither the production CLI nor the native launcher depends on the diagnostic
+producer.
 
 This claim starts at Tier 1 because its independent checker has a Tier 1
 minimum. It does not establish that a ptrace observer sees
