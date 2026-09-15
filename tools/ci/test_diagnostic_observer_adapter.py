@@ -98,9 +98,9 @@ EXPECTED_ADAPTER_LIB = """#![deny(unsafe_code)]
 mod adapter;
 
 pub use adapter::{
-    prepare_observer, AcknowledgedObserver, ActiveObserver, BoundaryRunningObserver,
-    InitialObserver, LauncherPausedObserver, ObserverAdapterError, PreparedObserver, ReadyObserver,
-    SpawnedObserver,
+    AcknowledgedObserver, ActiveObserver, BoundaryRunningObserver, InitialObserver,
+    LauncherPausedObserver, ObserverAdapterError, PreparedObserver, ReadyObserver, SpawnedObserver,
+    prepare_observer,
 };
 pub use proofbound_runtime_linux::{TraceDeadline, TraceProcessId};
 """
@@ -369,9 +369,9 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
         self.assertEqual(
             public_uses,
             [
-                "pubuseadapter::{prepare_observer,AcknowledgedObserver,ActiveObserver,"
-                "BoundaryRunningObserver,InitialObserver,LauncherPausedObserver,"
-                "ObserverAdapterError,PreparedObserver,ReadyObserver,SpawnedObserver,};",
+                "pubuseadapter::{AcknowledgedObserver,ActiveObserver,BoundaryRunningObserver,"
+                "InitialObserver,LauncherPausedObserver,ObserverAdapterError,PreparedObserver,"
+                "ReadyObserver,SpawnedObserver,prepare_observer,};",
                 "pubuseproofbound_runtime_linux::{TraceDeadline,TraceProcessId};",
             ],
         )
