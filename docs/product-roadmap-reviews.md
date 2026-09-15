@@ -2446,3 +2446,29 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, or test bytes. Any later subject change requires a new
 exact-head review.
+
+## RT-8 live event-and-drain admitted-stack replay approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `c4b88c1958c6a492d6aeca70848de2fef34bd432`
+- **Reviewed head:** `45b1c91445be42f31a005761c4b7e86400865bc2`
+- **Branch:** `codex/rt8-event-adapter`
+- **Method:** Exact-range static replay review after integration with the
+  active-trace approval stack. The reviewer changed no files and ran no builds
+  or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed by direct tree comparison that production Rust, claims,
+assumptions, evidence manifests, independent checkers, and regression tests are
+byte-identical to approved source `af9f77d988f12184b944d32181e065388cafe2f1`.
+The two status corrections use admitted dependency baseline `d34eab1`, retain
+the passed prerequisite runs, record active-trace head `c4b88c1` as still in
+hosted verification, acknowledge the already-recorded `af9f77d` approval, and
+keep event-and-drain hosted admission and merge open.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`45b1c91445be42f31a005761c4b7e86400865bc2`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.
