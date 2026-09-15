@@ -78,9 +78,9 @@ exact-head review and complete hosted verification, merged unsigned as
 `9395050`, and is in exact-main run `34962882198`. Its coupled adapter passed
 independent source review; hosted verification rejected only two
 edition-2021-formatted import orders before compilation. The edition-2024-only
-correction and current-state ledger correction are in exact re-review. The live
-event loop, command integration, native attack corpus, and release binding
-remain open.
+correction and current-state ledger correction passed exact re-review at
+`176b10a`; a new hosted run remains. The live event loop, command integration,
+native attack corpus, and release binding remain open.
 RT-9 is blocked until RT-5 implements the accepted single-service network
 decision in production.
 

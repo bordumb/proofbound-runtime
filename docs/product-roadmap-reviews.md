@@ -2219,3 +2219,28 @@ correctly recorded that the exec-release run passed and trace startup merged as
 
 This verdict is not endorsed. The correction updates the roadmap to the exact
 merged identities and current run states and requires one exact re-review.
+
+## RT-8 coupled observer adapter edition correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `17bb2b4c38cfeb18e2c8d75c372e6c06d6dd2656`
+- **Reviewed head:** `176b10a075f4ea815d020be0d48a9b947584ecdd`
+- **Branch:** `codex/rt8-observer-adapter-v2`
+- **Method:** Complete exact-range static re-review after the documentation
+  correction. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the Rust source changes only reorder the same
+imports and re-exports under the repository's edition-2024 formatter. They
+change no names, visibility, types, control flow, ownership, security behavior,
+or public API. The focused checker matches the exact formatted bytes and public
+use order. The roadmap, operational checklist, and rejected-review record now
+agree on the exact merged identities and run states. The complete base-to-head
+range introduces no semantic, security, public-surface, or evidence regression.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`176b10a075f4ea815d020be0d48a9b947584ecdd`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.
