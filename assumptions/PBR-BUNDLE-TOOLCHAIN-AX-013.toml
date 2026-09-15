@@ -4,8 +4,8 @@ statement = "The identified Python interpreter and standard library, cryptograph
 category = "compiler-tcb"
 owner = "Proofbound Runtime release maintainer"
 rationale = "The consumer and its evidence execute Python networking, JSON, hashing, archive, filesystem, and subprocess behavior, then execute an exact upstream installer. Protected evidence and release jobs depend on runner, workflow, process, and filesystem behavior to preserve the verified installed bytes through execution."
-scope = "Only the consumer, installed-byte, protected-evidence, and release-production interpretation of PBR-DISTRIBUTION-016."
-affected_claims = ["PBR-DISTRIBUTION-016"]
+scope = "Only the consumer, installed-byte, protected-evidence, and release-production interpretation of PBR-DISTRIBUTION-016 and the current-integration producer and verifier interpretation of PBR-DISTRIBUTION-025."
+affected_claims = ["PBR-DISTRIBUTION-016", "PBR-DISTRIBUTION-025"]
 review_evidence = [
   ".github/workflows/ci.yml",
   ".github/workflows/release.yml",
@@ -14,6 +14,8 @@ review_evidence = [
   "tools/ci/install_proofbound_tool_bundle.py",
   "tools/ci/test_install_proofbound_tool_bundle.py",
   "tools/ci/test_release_workflow.py",
+  "tools/release/build_current_integration.py",
+  "tools/release/verify_current_integration.py",
 ]
 discharge_plan = "Pin executable tool identities where practical, retain every remaining runtime and host premise, and add an independent implementation only when its assurance value exceeds the added trusted surface."
 source_citation = "docs/threat-model.md#trusted-computing-base"

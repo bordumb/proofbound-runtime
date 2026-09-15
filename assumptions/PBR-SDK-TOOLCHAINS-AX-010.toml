@@ -4,8 +4,8 @@ statement = "The identified Python, Node.js, npm, wheel, and pinned publisher-ac
 category = "compiler-tcb"
 owner = "Proofbound Runtime release maintainer"
 rationale = "Golden equality, rejection tests, process-boundary tests, and package reproduction execute through language runtimes and standard libraries whose implementations are not proved by this repository."
-scope = "Only the source-level interpretation of the Python and TypeScript SDK evidence for PBR-SDK-014 and their production, publication, and observation paths for PBR-DISTRIBUTION-018."
-affected_claims = ["PBR-DISTRIBUTION-018", "PBR-SDK-014"]
+scope = "Only the source-level interpretation of the Python and TypeScript SDK evidence for PBR-SDK-014, their production, publication, and observation paths for PBR-DISTRIBUTION-018, and their current-integration vocabulary for PBR-DISTRIBUTION-025."
+affected_claims = ["PBR-DISTRIBUTION-018", "PBR-DISTRIBUTION-025", "PBR-SDK-014"]
 review_evidence = [
   ".github/workflows/ci.yml",
   ".github/workflows/release.yml",
@@ -16,6 +16,8 @@ review_evidence = [
   "tools/ci/ci.sh",
   "tools/release/build_sdks.py",
   "tools/release/verify_registry_packages.py",
+  "tools/release/build_current_integration.py",
+  "tools/release/verify_current_integration.py",
 ]
 discharge_plan = "Pin exact release tool identities, reproduce both package artifacts in isolated builders, and retain the runtime premise even after their artifact bytes are bound."
 source_citation = "docs/specs/0012_plan_sdks.md#packaging-and-evidence"

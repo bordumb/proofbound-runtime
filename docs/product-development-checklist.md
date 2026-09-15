@@ -128,15 +128,26 @@ Review history:
   demonstrated consumer.
 - [x] Add opt-in registry publication only to the exact approved release
   workflow, behind the protected `package-publish` environment.
+- [x] Implement the closed deterministic-CBOR current-integration producer,
+  independently owned verifier, JSON projection, and human rendering as the
+  `PBR-DISTRIBUTION-025` source wave.
+- [x] Make current-integration production depend on complete anonymous
+  observation of all four registry packages and exact identity of both Runtime
+  artifacts on both supported Linux architectures.
+- [x] Read each closed Runtime release manifest and bind all eight embedded
+  executable identities, including both independent verifier binaries.
+- [x] Record emitted and accepted Runtime schemas, all three closed SDK error
+  vocabularies, the exact Proofbound tool and receipt identities, and an empty
+  optional-integration inventory.
 - [ ] Publish from one exact approved `main` revision using registry
   credentials supplied through the release environment.
 - [ ] Retrieve each registry artifact anonymously and compare its exact bytes
   or registered package identity with the approved artifact.
 - [ ] Exercise each package from an unrelated consumer repository or other
   independently controlled consumer environment.
-- [ ] Publish the machine-readable current-integration manifest and human
-  rendering with exact Runtime, Proofbound, package, schema, verifier,
-  platform, and optional integration-profile identities.
+- [ ] Retain and publish the machine-readable current-integration record and
+  its human rendering from the successful exact protected registry run. The
+  source implementation alone does not check this item.
 - [ ] Record registry and consumer observations without interpreting a checksum
   or package label as publisher authentication.
 

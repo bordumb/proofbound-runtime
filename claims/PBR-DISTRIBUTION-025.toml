@@ -1,0 +1,64 @@
+schema = "proofbound-claim/1"
+id = "PBR-DISTRIBUTION-025"
+title = "The current integration record closes one exact supported tuple"
+statement = "Under the registered package, SDK, registry, Proofbound-bundle, and toolchain premises, the release workflow produces a deterministic-CBOR current-integration record only after all selected registry packages pass anonymous exact-byte observation; binds that record to one exact Runtime source revision, four Runtime artifacts, the eight embedded Runtime executable identities, four public packages, the current wire schemas and closed SDK error vocabularies, two Linux architecture profiles, and one exact Proofbound source, tool, and receipt-schema identity; admits no optional integration tuple; and independently verifies the record against every input before publishing its machine and human renderings."
+public_language = "Runtime has a fail-closed producer and independent verifier for one exact current integration tuple. The protected release path can retain the record only after all four selected registry packages are anonymously observed and matched, and the record also names exact Runtime artifacts and embedded executables, schemas, SDK errors, platforms, and Proofbound identities. This is bounded source and workflow evidence: no current tuple is described as published until an exact protected run produces and retains it, and its digests do not authenticate a publisher."
+subject = "workflow:.github/workflows/release.yml#current-integration"
+profile = "ledger"
+tier = 1
+evidence = ["independent-check:current-integration-contract"]
+assumptions = [
+  "PBR-BUNDLE-DISTRIBUTION-AX-012",
+  "PBR-BUNDLE-TOOLCHAIN-AX-013",
+  "PBR-PACKAGE-TOOLCHAINS-AX-011",
+  "PBR-REGISTRY-DISTRIBUTION-AX-014",
+  "PBR-SDK-TOOLCHAINS-AX-010",
+]
+open_obligations = [
+  "Pass independent exact-head review and the complete exact-head hosted Verify gate before merging the current-integration route.",
+  "Configure the protected publication environment, publish all four selected packages from one exact mainline revision, and retain its successful registry observations and current-integration artifacts.",
+  "Exercise every selected registry package from an unrelated consumer before closing RT-7.",
+]
+out_of_scope = [
+  "A claim that any selected registry package, current-integration record, or human rendering has already been published.",
+  "Publisher authentication, signing, transparency, revocation, rollback prevention, registry availability, compatibility, or long-term support.",
+  "Support for Auths, Capsec, a guest, a service, or any other optional tuple while optional_integrations is empty.",
+  "Correctness of Python, cryptographic digest implementations, filesystems, release artifacts, Proofbound tools, GitHub Actions, registries, DNS, TLS, or package clients.",
+]
+source_roots = [
+  ".github/workflows/release.yml",
+  "Cargo.toml",
+  "VERSION",
+  "assumptions/PBR-BUNDLE-DISTRIBUTION-AX-012.toml",
+  "assumptions/PBR-BUNDLE-TOOLCHAIN-AX-013.toml",
+  "assumptions/PBR-PACKAGE-TOOLCHAINS-AX-011.toml",
+  "assumptions/PBR-REGISTRY-DISTRIBUTION-AX-014.toml",
+  "assumptions/PBR-SDK-TOOLCHAINS-AX-010.toml",
+  "claims/PBR-DISTRIBUTION-025.toml",
+  "crates/proofbound-runtime-accept/src/lib.rs",
+  "crates/proofbound-runtime-compose/src/lib.rs",
+  "crates/proofbound-runtime-core/src/plan.rs",
+  "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-core/src/run_result.rs",
+  "crates/proofbound-runtime-sdk/src/lib.rs",
+  "crates/proofbound-runtime-verify/src/decode.rs",
+  "crates/proofbound-runtime-verify/src/decode_v2.rs",
+  "docs/roadmap-2/rt-07-compatibility-and-distribution.md",
+  "docs/specs/0014_public_compatibility_and_distribution.md",
+  "docs/threat-model.md",
+  "proofbound/evidence/current-integration-contract.toml",
+  "proofbound/toolchains/proofbound-tool-bundle-pin.json",
+  "schemas/current-integration-v1.cddl",
+  "schemas/registry-observations-v1.schema.json",
+  "sdk/python/pyproject.toml",
+  "sdk/python/proofbound_runtime/__init__.py",
+  "sdk/typescript/package.json",
+  "sdk/typescript/src/index.ts",
+  "tools/ci/check_current_integration.py",
+  "tools/ci/ci.sh",
+  "tools/ci/pre-commit.sh",
+  "tools/ci/test_current_integration.py",
+  "tools/ci/test_release_workflow.py",
+  "tools/release/build_current_integration.py",
+  "tools/release/verify_current_integration.py",
+]

@@ -26,6 +26,7 @@ python3 -m unittest tools.ci.test_diagnostic_syscall_decoder
 python3 -m unittest tools.ci.test_diagnostic_observer_adapter
 python3 -m unittest tools.ci.test_sdk_contract tools.ci.test_sdk_packages
 python3 -m unittest tools.ci.test_registry_packages
+python3 -m unittest tools.ci.test_current_integration
 python3 tools/release/build_verifier_package.py --check
 python3 -m unittest tools.ci.test_verifier_package.VerifierPackagePreflightTests
 python3 -m unittest discover -s sdk/python/tests

@@ -223,6 +223,53 @@ and a human rendering. The record names:
 An absent tuple is unsupported, not implicitly compatible. The record is a
 distribution artifact and does not authenticate itself.
 
+### 9.1 Current carrier and closed identity
+
+The machine record is deterministic CBOR with schema
+`proofbound-runtime-current-integration/1`. Its closed CDDL is
+`schemas/current-integration-v1.cddl`. The JSON projection and Markdown
+document are views. They are not verification inputs and have no independent
+commitment meaning.
+
+The current Runtime-only record contains exactly:
+
+- the exact Runtime source revision and product label;
+- the release bundle and separate acceptor artifact identity for both
+  `linux/aarch64` and `linux/x86_64`, plus the exact four executable identities
+  read and checked from each bundle's closed release manifest;
+- the exact four selected registry package observations;
+- separate emitted and accepted schema inventories for plans, execution
+  receipts, composed receipts, acceptance policies, acceptance decisions, and
+  machine run results;
+- the minimum Rust, Python, and Node.js versions and the complete stable SDK
+  error-code vocabulary for each language;
+- the two supported Linux target triples;
+- the complete pinned Proofbound tool-bundle identity and the exact Proofbound
+  release-envelope, verification-report, and compiled-release schemas; and
+- an empty optional-integration inventory.
+
+The record does not infer compatibility from a package label, target name, or
+newer schema number. An optional Auths, Capsec, guest, service, or other
+profile remains unsupported until its exact typed tuple replaces the empty
+inventory in a separately reviewed schema wave.
+
+### 9.2 Production order
+
+The release workflow builds the current-integration record only after all four
+selected packages pass anonymous registry retrieval and exact-byte comparison.
+The producer consumes the closed registry observation, the four Runtime
+artifact files, and the canonical Runtime-owned Proofbound pin. A separately
+owned decoder and semantic validator then compares the record with every input
+before either projection is retained.
+
+Partial registry publication, an incomplete Runtime artifact inventory, a
+changed SDK error vocabulary, a different source revision, a substituted
+Proofbound pin, a noncanonical carrier, an unknown member, or an unlisted
+optional tuple prevents publication of the record. The source implementation
+does not establish that this release path has run. A tuple becomes current
+only when the exact protected workflow retains its successful registry
+observations and current-integration artifacts.
+
 ## 10. Consumer support
 
 - Provide one minimal consumer for each published package.

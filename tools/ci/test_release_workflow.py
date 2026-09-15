@@ -58,6 +58,44 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("persist-credentials: false", observation)
         self.assertNotIn("CARGO_REGISTRY_TOKEN", observation)
 
+    def test_current_integration_requires_complete_anonymous_observation(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        observation = workflow[workflow.index("\n  observe-registry-packages:\n") :]
+
+        registry = observation.index(
+            "Anonymously retrieve and compare exact registry bytes"
+        )
+        build = observation.index(
+            "Build and independently verify the current integration tuple"
+        )
+        upload = observation.index("Upload the exact current integration tuple")
+        self.assertLess(registry, build)
+        self.assertLess(build, upload)
+        self.assertIn("build_current_integration.py", observation[build:upload])
+        self.assertIn("verify_current_integration.py", observation[build:upload])
+        self.assertEqual(
+            observation.count("path: dist/current-integration-inputs/"), 2
+        )
+        self.assertIn("name: proofbound-runtime-x86_64", observation)
+        self.assertIn("name: proofbound-runtime-aarch64", observation)
+        self.assertIn(
+            "--registry-observations dist/registry/registry-observations.json",
+            observation[build:upload],
+        )
+        self.assertEqual(
+            observation[build:upload].count("--runtime-artifact"), 8
+        )
+        self.assertEqual(
+            observation[build:upload].count(
+                "--proofbound-pin proofbound/toolchains/"
+                "proofbound-tool-bundle-pin.json"
+            ),
+            2,
+        )
+        self.assertIn("--projection dist/current-integration/", observation)
+        self.assertIn("--rendering dist/current-integration/", observation)
+        self.assertNotIn("CARGO_REGISTRY_TOKEN", observation)
+
     def test_preflight_rejects_non_sha_and_non_mainline_revisions(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("\n  validate-revision:\n", workflow)

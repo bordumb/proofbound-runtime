@@ -653,6 +653,18 @@ jobs:
           name: proofbound-runtime-verifier-package-${{ env.PBR_RELEASE_REVISION }}
           path: dist/verifier
 
+      - name: Download the approved x86-64 release chain
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: proofbound-runtime-x86_64
+          path: dist/current-integration-inputs/x86_64
+
+      - name: Download the approved AArch64 release chain
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: proofbound-runtime-aarch64
+          path: dist/current-integration-inputs/aarch64
+
       - name: Anonymously retrieve and compare exact registry bytes
         run: >-
           python3 tools/release/verify_registry_packages.py
@@ -661,9 +673,41 @@ jobs:
           --expected-revision "$PBR_RELEASE_REVISION"
           --output dist/registry/registry-observations.json
 
+      - name: Build and independently verify the current integration tuple
+        run: |
+          version="$(cat VERSION)"
+          mkdir -p dist/current-integration
+          python3 tools/release/build_current_integration.py \
+            --revision "$PBR_RELEASE_REVISION" \
+            --registry-observations dist/registry/registry-observations.json \
+            --runtime-artifact "aarch64:runtime-bundle=dist/current-integration-inputs/aarch64/runtime/proofbound-runtime-v${version}-aarch64-unknown-linux-gnu.tar.gz" \
+            --runtime-artifact "aarch64:acceptor=dist/current-integration-inputs/aarch64/runtime/pbr-accept-v${version}-aarch64-unknown-linux-gnu" \
+            --runtime-artifact "x86_64:runtime-bundle=dist/current-integration-inputs/x86_64/runtime/proofbound-runtime-v${version}-x86_64-unknown-linux-gnu.tar.gz" \
+            --runtime-artifact "x86_64:acceptor=dist/current-integration-inputs/x86_64/runtime/pbr-accept-v${version}-x86_64-unknown-linux-gnu" \
+            --proofbound-pin proofbound/toolchains/proofbound-tool-bundle-pin.json \
+            --output dist/current-integration/current-integration.cbor
+          python3 tools/release/verify_current_integration.py \
+            --record dist/current-integration/current-integration.cbor \
+            --expected-revision "$PBR_RELEASE_REVISION" \
+            --registry-observations dist/registry/registry-observations.json \
+            --runtime-artifact "aarch64:runtime-bundle=dist/current-integration-inputs/aarch64/runtime/proofbound-runtime-v${version}-aarch64-unknown-linux-gnu.tar.gz" \
+            --runtime-artifact "aarch64:acceptor=dist/current-integration-inputs/aarch64/runtime/pbr-accept-v${version}-aarch64-unknown-linux-gnu" \
+            --runtime-artifact "x86_64:runtime-bundle=dist/current-integration-inputs/x86_64/runtime/proofbound-runtime-v${version}-x86_64-unknown-linux-gnu.tar.gz" \
+            --runtime-artifact "x86_64:acceptor=dist/current-integration-inputs/x86_64/runtime/pbr-accept-v${version}-x86_64-unknown-linux-gnu" \
+            --proofbound-pin proofbound/toolchains/proofbound-tool-bundle-pin.json \
+            --projection dist/current-integration/current-integration.projection.json \
+            --rendering dist/current-integration/CURRENT-INTEGRATION.md
+
       - name: Upload the registry observations
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: proofbound-runtime-registry-observations-${{ env.PBR_RELEASE_REVISION }}
           path: dist/registry/
+          if-no-files-found: error
+
+      - name: Upload the exact current integration tuple
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: proofbound-runtime-current-integration-${{ env.PBR_RELEASE_REVISION }}
+          path: dist/current-integration/
           if-no-files-found: error

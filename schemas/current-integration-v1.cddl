@@ -1,0 +1,124 @@
+current-integration-v1 = {
+  "schema": "proofbound-runtime-current-integration/1",
+  "runtime": runtime-identity,
+  "packages": [
+    registry-package,
+    registry-package,
+    registry-package,
+    registry-package,
+  ],
+  "schema_profiles": [
+    schema-profile,
+    schema-profile,
+    schema-profile,
+    schema-profile,
+    schema-profile,
+    schema-profile,
+  ],
+  "language_profiles": [
+    language-profile,
+    language-profile,
+    language-profile,
+  ],
+  "platform_profiles": [platform-profile, platform-profile],
+  "proofbound": proofbound-identity,
+  "optional_integrations": [],
+}
+
+runtime-identity = {
+  "source_revision": bytes .size 20,
+  "product_label": text .size (1..64),
+  "artifacts": [
+    runtime-artifact,
+    runtime-artifact,
+    runtime-artifact,
+    runtime-artifact,
+  ],
+  "executables": [
+    runtime-executable,
+    runtime-executable,
+    runtime-executable,
+    runtime-executable,
+    runtime-executable,
+    runtime-executable,
+    runtime-executable,
+    runtime-executable,
+  ],
+}
+
+runtime-artifact = {
+  "operating_system": "linux",
+  "architecture": "aarch64" / "x86_64",
+  "target": "aarch64-unknown-linux-gnu" / "x86_64-unknown-linux-gnu",
+  "role": "runtime-bundle" / "acceptor",
+  "artifact": text .size (1..255),
+  "sha256": bytes .size 32,
+  "size_bytes": uint .gt 0,
+}
+
+runtime-executable = {
+  "operating_system": "linux",
+  "architecture": "aarch64" / "x86_64",
+  "target": "aarch64-unknown-linux-gnu" / "x86_64-unknown-linux-gnu",
+  "name": "pbr" / "pbr-native-launcher" / "pbr-verify" / "pbr-compose",
+  "sha256": bytes .size 32,
+  "size_bytes": uint .gt 0,
+}
+
+registry-package = {
+  "ecosystem": "crates.io" / "npm" / "pypi",
+  "package": text .size (1..255),
+  "version": text .size (1..64),
+  "artifact": text .size (1..255),
+  "sha256": bytes .size 32,
+  "size_bytes": uint .gt 0,
+  "source_url": text .size (1..4096),
+}
+
+schema-profile = {
+  "surface": text .size (1..64),
+  "emitted": [* text .size (1..255)],
+  "accepted": [+ text .size (1..255)],
+}
+
+language-profile = {
+  "language": "rust" / "python" / "node",
+  "minimum_version": text .size (1..64),
+  "error_codes": [+ text .size (1..255)],
+}
+
+platform-profile = {
+  "operating_system": "linux",
+  "architecture": "aarch64" / "x86_64",
+  "target": "aarch64-unknown-linux-gnu" / "x86_64-unknown-linux-gnu",
+}
+
+proofbound-identity = {
+  "producer_repository": "bordumb/proof-bound",
+  "source_revision": bytes .size 20,
+  "release_id": uint .gt 0,
+  "release_tag": text .size (1..255),
+  "verification_run_id": uint .gt 0,
+  "bundle_workflow_run_id": uint .gt 0,
+  "assets": [
+    proofbound-asset,
+    proofbound-asset,
+    proofbound-asset,
+    proofbound-asset,
+    proofbound-asset,
+    proofbound-asset,
+    proofbound-asset,
+  ],
+  "receipt_schemas": [
+    "proofbound-release-envelope/7",
+    "proofbound-verification-report/3",
+    "proofbound-compiled-release/7",
+  ],
+}
+
+proofbound-asset = {
+  "name": text .size (1..256),
+  "role": "archive" / "bundle-manifest" / "checksums" / "installer" / "publication-manifest",
+  "sha256": bytes .size 32,
+  "size_bytes": uint .gt 0,
+}

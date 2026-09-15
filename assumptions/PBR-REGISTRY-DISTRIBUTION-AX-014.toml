@@ -4,13 +4,14 @@ statement = "The identified crates.io, PyPI, npm, GitHub Actions, DNS, certifica
 category = "external-provider"
 owner = "Proofbound Runtime release maintainer"
 rationale = "The workflow compares anonymously retrieved bytes with exact approved packages, but external registries and GitHub supply publisher authentication, name ownership, metadata, availability, and transport. Runtime does not independently prove those services or identities."
-scope = "Only registry publication and anonymous retrieval observations for PBR-DISTRIBUTION-018."
-affected_claims = ["PBR-DISTRIBUTION-018"]
+scope = "Only registry publication and anonymous retrieval observations for PBR-DISTRIBUTION-018 and their current-integration interpretation for PBR-DISTRIBUTION-025."
+affected_claims = ["PBR-DISTRIBUTION-018", "PBR-DISTRIBUTION-025"]
 review_evidence = [
   ".github/workflows/release.yml",
   "docs/specs/0014_public_compatibility_and_distribution.md",
   "docs/threat-model.md",
   "tools/release/verify_registry_packages.py",
+  "tools/release/verify_current_integration.py",
 ]
 discharge_plan = "Use the RT-11 publisher identity and transparency decision when accepted. Retain the external-service premise for registry availability and service behavior."
 source_citation = "docs/specs/0014_public_compatibility_and_distribution.md#6-distribution-trust"

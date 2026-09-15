@@ -4,8 +4,8 @@ statement = "The identified Python runtime, Cargo package, publish, and install 
 category = "compiler-tcb"
 owner = "Proofbound Runtime release maintainer"
 rationale = "The package evidence and publication path execute Python and Cargo tooling and observe their outputs. This repository does not prove those tools, their registry clients, or the host filesystem."
-scope = "Only the verifier package-production and unrelated-consumer interpretation of PBR-DISTRIBUTION-015 and the Rust package production, publication, and observation paths for PBR-DISTRIBUTION-018."
-affected_claims = ["PBR-DISTRIBUTION-015", "PBR-DISTRIBUTION-018"]
+scope = "Only the verifier package-production and unrelated-consumer interpretation of PBR-DISTRIBUTION-015, the Rust package production, publication, and observation paths for PBR-DISTRIBUTION-018, and the current-integration producer and verifier interpretation of PBR-DISTRIBUTION-025."
+affected_claims = ["PBR-DISTRIBUTION-015", "PBR-DISTRIBUTION-018", "PBR-DISTRIBUTION-025"]
 review_evidence = [
   ".github/workflows/ci.yml",
   ".github/workflows/release.yml",
@@ -18,6 +18,8 @@ review_evidence = [
   "tools/release/verify_verifier_package_manifest.py",
   "tools/release/verify_provenance.py",
   "tools/release/verify_registry_packages.py",
+  "tools/release/build_current_integration.py",
+  "tools/release/verify_current_integration.py",
 ]
 discharge_plan = "Pin exact release tools, reproduce the package in independent directories, retain the package bytes and source revision, and keep this premise visible after exact artifact binding."
 source_citation = "docs/specs/0014_public_compatibility_and_distribution.md#7-release-production"

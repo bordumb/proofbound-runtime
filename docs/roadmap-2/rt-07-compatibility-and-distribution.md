@@ -1,8 +1,8 @@
 # RT-7 integration record: prelaunch packaging and distribution
 
-**Status:** RT-7.2 verifier package and Runtime public-bundle dogfood admitted;
-protected evidence and release cutover merged with exact-main verification
-pending; registry publication and the current-integration record remain open
+**Status:** package, public Proofbound bundle, protected cutover, and opt-in
+registry-route contracts are admitted; the current-integration source wave is
+active; external registry publication and consumer observations remain open
 
 **Primary owner:** Proofbound Runtime
 
@@ -24,7 +24,7 @@ revision.
 
 ## Current source audit
 
-The 2026-09-13 source audit found:
+The 2026-09-15 source audit found:
 
 - `proofbound-runtime-sdk` explicitly permits publication, has no unpublished
   Runtime dependency, and is already built twice and byte-compared by the
@@ -35,10 +35,11 @@ The 2026-09-13 source audit found:
   payload, and no workspace-crate dependency;
 - `proofbound-runtime-core` inherits `publish = false` and depends on the
   unpublished binding and receipt crates through workspace paths;
-- the release workflow now retains SDK and verifier packages in aggregate
-  provenance but contains no registry publication or registry-byte retrieval
-  step; and
-- no machine-readable Runtime current-integration manifest exists.
+- the release workflow retains SDK and verifier packages in aggregate
+  provenance and has a default-off protected registry publication route with
+  anonymous exact-byte retrieval; and
+- no protected run has published the selected packages or retained a
+  current-integration record.
 
 These are source facts, not package-registry observations or publication
 approval.
@@ -71,7 +72,7 @@ passed exact-main Verify run `34908515545`. The separate cutover replaced the
 existing source-build path in protected evidence and release production. It
 passed independent review at production subject `9d0cbb2`, passed exact-head
 Verify run `34915891330` at approval-envelope head `515fcbc`, and merged
-unsigned as `4a0cfdb`. Exact-main run `34918706960` remains the admission gate.
+unsigned as `4a0cfdb`. Exact-main run `34918706960` passed.
 The product label does not participate in selection.
 
 ## RT-7.2 implementation checkpoint
@@ -125,8 +126,8 @@ blast radius before the separate reviewed cutover. The cutover removes the Git
 source build and cross-job tool artifact from protected CI. Each fresh
 evidence shard installs and verifies the public bundle directly. Each release
 architecture selects its matching public platform bundle and verifies all
-seven executables before the base gate runs. The exact-head gates passed and
-the unsigned merge is awaiting its exact-main result.
+seven executables before the base gate runs. The exact-head and exact-main
+gates passed.
 
 The registered premises keep GitHub, repository controls, DNS, TLS, Python,
 the digest implementation, the pinned upstream installer, the hosted runner,
@@ -135,7 +136,7 @@ identities under those premises; they do not discharge them.
 
 ## Registry publication implementation checkpoint
 
-The next claim-sized wave selects only the independent verifier, Rust SDK,
+The admitted claim-sized wave selects only the independent verifier, Rust SDK,
 Python SDK, and TypeScript SDK. The exact release workflow has an explicit
 `publish_packages` input whose default is false. A publish request still waits
 for complete release provenance and the protected `package-publish`
@@ -146,16 +147,45 @@ checkout credential is removed before it makes anonymous registry requests.
 
 The four publishers run in the selected order. The Rust jobs reproduce their
 upload inputs from the exact checked-out mainline source and compare those
-bytes with the approved release artifacts. After the last publisher, an
-registry-credential-free job retrieves all four public artifacts, constrains registry
-metadata and download hosts, and compares downloaded bytes with the approved
-artifacts. A canonical registry-observation record is retained only after all
+bytes with the approved release artifacts. After the last publisher, a
+registry-credential-free job retrieves all four public artifacts, constrains
+registry metadata and download hosts, and compares the downloaded bytes with
+the approved artifacts. A canonical registry-observation record is retained only after all
 four comparisons pass.
 
 Repository code does not configure registry ownership, GitHub environment
 protection, OIDC trusted-publisher records, or the crates.io token. It does not
 claim an atomic transaction across registries. The current-integration
 manifest stays unpublished until the complete selected set has been observed.
+
+## Current-integration source checkpoint
+
+The active `PBR-DISTRIBUTION-025` wave adds the missing exact-tuple boundary:
+
+- `proofbound-runtime-current-integration/1` is a closed deterministic-CBOR
+  record with a committed CDDL contract;
+- its Runtime inventory contains the release bundle and separate acceptor for
+  both supported Linux architectures, plus the exact `pbr`, launcher,
+  `pbr-verify`, and composer identities checked inside each bundle;
+- its package inventory comes only from the complete four-package anonymous
+  registry observation for the same exact source;
+- its schema profiles separate emitted from accepted plan, receipt,
+  composition, policy, decision, and machine-result schemas;
+- its Rust, Python, and Node.js profiles include the exact minimum version and
+  complete source-checked SDK error vocabulary;
+- its Proofbound identity includes the exact source, public bundle release,
+  seven tool assets, and three composed-release schema identities;
+- its optional-integration inventory is empty, so no Auths, Capsec, guest, or
+  service tuple is implied; and
+- an independently implemented decoder and semantic validator compares every
+  recorded identity with the registry observation, Runtime files, and
+  Runtime-owned Proofbound pin before producing JSON and Markdown views.
+
+The release workflow cannot create this record before the registry observer
+succeeds. Source checks and a passing review establish only that this
+fail-closed route exists. The record does not become the published current
+tuple until one protected exact-mainline release retains it after external
+registry publication.
 
 ## Repository work
 
@@ -175,9 +205,10 @@ manifest stays unpublished until the complete selected set has been observed.
 The Runtime current-integration document must distinguish:
 
 - product source and artifact identity;
-- native plan and receipt schema identities;
-- SDK package identity;
-- verifier package and executable identity;
+- emitted and accepted native plan, receipt, composition, acceptance, and
+  machine-result schema identities;
+- SDK package identity, minimum language versions, and closed SDK errors;
+- verifier package and exact bundled executable identity;
 - integration-profile identity; and
 - tested platform integration tuples.
 

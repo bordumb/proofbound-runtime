@@ -113,8 +113,10 @@ Merge order:
 4. Prepare the selected pure crates and existing SDK packages.
 5. Add exact-source package byte and file-list comparison.
 6. Add registry publication only from the exact approved release workflow.
-7. Dogfood every package from an unrelated consumer repository.
-8. Publish the Runtime current-integration manifest.
+7. Implement and independently verify the Runtime current-integration record.
+8. Publish and anonymously observe every selected package.
+9. Dogfood every package from an unrelated consumer repository.
+10. Retain the current-integration record from that exact successful release.
 
 The Runtime-only package set ships before optional Auths or Capsec integration
 profiles. Platform support remains an explicit exact tuple. Maintaining older
@@ -124,8 +126,7 @@ interfaces is not a prelaunch gate.
 
 The first independent-verifier package slice passed independent exact-head
 review, hosted verification, and merged to Runtime `main` as `7f989d3`.
-Exact-main Verify run `34896209689` passed. No registry publication step
-exists.
+Exact-main Verify run `34896209689` passed.
 The generic Proofbound tool-bundle source was independently approved at PR 10
 head `693976f`, passed its hosted gate, and merged as `dd481a3`. Exact-main
 Verify run `34887427661` and both jobs in tool-bundle run `34889426459` passed.
@@ -139,9 +140,12 @@ merged as Runtime `f2a06de`, and passed exact-main Verify run `34908515545`.
 The protected-path cutover passed independent review at production subject
 `9d0cbb2`, passed exact-head Verify run `34915891330` at approval-envelope head
 `515fcbc`, and merged unsigned as `4a0cfdb`. Exact-main Verify run
-`34918706960` is pending. The next isolated RT-7 wave adds an explicit,
-protected registry route and anonymous exact-byte retrieval; it does not claim
-that registry publication or external configuration has occurred.
+`34918706960` passed. The protected registry route and anonymous exact-byte
+observer are now merged. The next isolated source wave adds the
+deterministic-CBOR current-integration producer and independent verifier; its
+implementation is active under `PBR-DISTRIBUTION-025`.
+External registry configuration, publication, anonymous observations, and
+unrelated consumer dogfood remain separate completion gates.
 This work follows the admitted foundation as a separate exact-source wave. It
 does not require a version transition or preserve an older candidate surface.
 

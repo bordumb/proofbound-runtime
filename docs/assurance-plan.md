@@ -25,6 +25,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-DISTRIBUTION-015` | Tier 1 independently reviewed and admitted on exact Runtime main | The verifier package has a closed preflight, source-payload comparison, byte reproduction, local consumer, and release-retention path; no registry or publisher claim is admitted. |
 | `PBR-DISTRIBUTION-016` | Tier 1 public-bundle consumer independently reviewed and admitted on exact Runtime main | Runtime pins one immutable public Proofbound release and rejects identity, inventory, manifest, checksum, archive, installer, and installed-byte substitution. Every protected evidence and release job installs that exact bundle independently. |
 | `PBR-DISTRIBUTION-018` | Tier 1 workflow and registry-observer contract | Publication is explicit, exact-source, protected, ordered, and credential-isolated. Anonymous exact-byte registry observations and external registry setup remain open. |
+| `PBR-DISTRIBUTION-025` | Tier 1 source contract pending exact review and hosted admission | A deterministic-CBOR producer and independent verifier close one Runtime-only integration tuple after complete registry observation. No tuple is published until an exact protected run retains it. |
 | `PBR-DRAFT-017` | Tier 1 bounded contract and source-level non-reuse checks | Closed diagnostic vocabulary and schemas are registered, and verifier, composer, and acceptor paths reject diagnostic receipt reuse. The live observer remains open. |
 | `PBR-DRAFT-019` | Tier 1 bounded producer contract independently reviewed and admitted on exact Runtime main | The pure diagnostic artifact producer preserves non-reuse, provenance, explicit gaps, and mandatory human authority choices. It does not claim live observer coverage. |
 | `PBR-OBSERVER-020` | Tier 1 admitted through active event-and-drain main `b2cb4b9`; current decoder identity pending | The admitted event-and-drain sources passed exact-head run `34973401808`. The decoder batch changes the observer source to expose validated capture limits, so only that new exact identity is pending review and hosted admission. |
@@ -113,8 +114,8 @@ Verify run `34899222179`, and bundle run `34900896450`.
 The isolated dogfood wave passed exact-head review and merged as Runtime
 commit `f2a06de`. Exact-main Verify run `34908515545` passed. The protected
 cutover passed independent review and exact-head Verify run `34915891330`,
-then merged unsigned as `4a0cfdb`. Exact-main Verify run `34918706960` remains
-the admission gate. This does not prove Proofbound correctness or independently
+then merged unsigned as `4a0cfdb`. Exact-main Verify run `34918706960` passed.
+This does not prove Proofbound correctness or independently
 authenticate GitHub or a publisher. `PBR-BUNDLE-DISTRIBUTION-AX-012` retains
 the GitHub, repository control, DNS, and TLS premises.
 `PBR-BUNDLE-TOOLCHAIN-AX-013` retains the Python, digest, installer, runner,
@@ -145,6 +146,42 @@ trusted-publisher records remain explicit external obligations. Partial
 publication can occur because the registries do not provide one atomic
 transaction; the current-integration manifest must remain absent until the
 complete selected set passes anonymous observation.
+
+## PBR-DISTRIBUTION-025
+
+The subject is the current-integration producer, independently owned verifier,
+and their placement after the anonymous registry observer in the exact-source
+release workflow. Its current closure contains:
+
+- one deterministic-CBOR record with a closed CDDL and no unknown-member or
+  noncanonical fallback;
+- exact identity of one Runtime source revision, both supported Linux release
+  bundles, both separate acceptor artifacts, and all eight embedded executable
+  identities;
+- all four registry package observations for that same source revision;
+- separate emitted and accepted schema profiles for plans, receipts,
+  composition, acceptance, and machine results;
+- source-checked Rust, Python, and Node.js minimums and closed SDK error-code
+  inventories;
+- both explicit Linux target profiles;
+- the complete exact Proofbound source, public tool-bundle, and composed-release
+  schema identities; and
+- an empty optional-integration inventory that implies no Auths, Capsec, guest,
+  service, or other support.
+
+The independent verifier shares no decoder or semantic table with the producer.
+It re-derives the complete expected record from the registry observation,
+Runtime artifact files, and canonical Proofbound pin before it emits the JSON
+and Markdown views. The bounded evidence substitutes artifacts and record
+members and an embedded verifier, removes a registry observation, injects an
+unknown member, supplies a noncanonical carrier, compares every SDK error
+vocabulary with source, and checks workflow ordering.
+
+This source wave does not publish a package or current tuple. External registry
+configuration and behavior, package and SDK tools, Proofbound distribution,
+Python, hashing, filesystems, and hosted workflow behavior remain explicit
+premises. RT-7 still requires one successful protected publication and
+anonymous observation plus unrelated consumer dogfood.
 
 ## PBR-POLICY-002
 

@@ -2,16 +2,14 @@
 
 - **Status:** implementation; RT-7 publication routes and the RT-8 diagnostic
   contract, artifact producer, observer protocol, trace startup, active event
-  source, and event-and-drain coupling are merged. External registry
-  publication, the decoder admission, and every complete Roadmap 2 epic exit
-  remain open.
-- **Date:** 2026-09-13
-- **Runtime baseline:** combined active trace and event-and-drain merge
-  `b2cb4b9` on `main`; exact-head Verify run `34973401808` passed. Exact-main
-  run `34978365970` failed before required lanes started in an unrelated
-  network-experiment ready-file check. Coupled-adapter run `34969409215`,
-  trace-startup run `34962882198`, and identity-bound exec-release run
-  `34956564102` passed.
+  source, event-and-drain coupling, and architecture-qualified decoder are
+  merged. The current-integration source wave is independently approved and
+  is being replayed on admitted main. External registry publication and every
+  complete Roadmap 2 epic exit remain open.
+- **Date:** 2026-09-15
+- **Runtime baseline:** architecture-qualified diagnostic decoder merge
+  `4783896` on `main`; exact-head Verify run `34992273744` passed and
+  exact-main Verify run `34997195939` is in progress.
 - **Proofbound baseline consumed by Runtime evidence:** public immutable bundle
   for source `9512469`; protected-path cutover merged as Runtime `4a0cfdb` and
   passed exact-main Verify run `34918706960`
@@ -63,8 +61,11 @@ unsigned as `acf8f24`; exact-main Verify run `34924535451` passed after a
 rate-limit-only retry. The
 protected GitHub `package-publish` environment, registry credentials or trusted
 publishers, anonymous retrieval observations, external consumer dogfood, and
-current-integration manifest remain open. No registry package is yet described
-as published. The RT-8 diagnostic contract, observer decision, closed schemas,
+publication of a current-integration record remain open. The
+`PBR-DISTRIBUTION-025` source wave adds the fail-closed deterministic-CBOR
+producer and independent verifier, but cannot claim that an external tuple was
+published. No registry package is yet described as published. The RT-8
+diagnostic contract, observer decision, closed schemas,
 and source-level production non-reuse checks passed complete hosted
 verification and merged as `edf87bb`; exact-main Verify run `34929775221`
 passed. The pure diagnostic receipt and plan-draft producer
@@ -291,12 +292,37 @@ defines the native Runtime prelaunch distribution contract.
 - Add a drift test that fails when a published crate's serialized form and the
   committed JSON schema disagree.
 
-### RT-7.5 Falsify
+### RT-7.5 Publish one exact current integration tuple
+
+- Produce `proofbound-runtime-current-integration/1` as deterministic CBOR
+  only after all selected registry packages pass anonymous exact-byte
+  observation for the same source revision.
+- Record both Linux release bundles, both separate acceptors, all eight
+  embedded Runtime executable identities, all four package identities, emitted
+  and accepted Runtime schemas, minimum language versions, closed SDK error
+  vocabularies, exact Proofbound tool and receipt identities, and explicit
+  optional integration tuples.
+- Start with an empty optional-integration inventory. Auths, Capsec, guest,
+  service, and other profiles remain unsupported until their exact typed tuple
+  passes a separate integration wave.
+- Independently decode and compare the record with every input before
+  retaining its JSON and Markdown views. State in the human view that digests
+  name bytes and do not authenticate a publisher.
+
+The normative carrier, order, and trust limits are in
+[Specification 0014, section 9](specs/0014_public_compatibility_and_distribution.md#9-current-integration-manifest).
+The concrete source and external-release split is tracked in the
+[RT-7 integration record](roadmap-2/rt-07-compatibility-and-distribution.md#current-integration-source-checkpoint).
+
+### RT-7.6 Falsify
 
 - A crate that gains a workspace dependency fails the publish preflight.
 - A schema meaning edit without a new schema identity fails the drift test.
 - A consumer selecting a package outside the exact current tuple is rejected.
 - A publish from a non-release context is refused.
+- A partial registry observation, changed Runtime artifact or embedded
+  executable, stale SDK error code, substituted Proofbound pin, unknown field,
+  or noncanonical CBOR record prevents publication of the current tuple.
 
 **Done when:** a consumer can depend on the verifier and the pure core from
 the selected distribution channel, reproduce the package bytes from the exact
