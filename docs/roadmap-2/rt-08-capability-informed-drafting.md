@@ -66,7 +66,8 @@ values without making a draft an authority object.
   materializing an unbounded complete JSON tree.
 - A pure observer protocol orders attachment, boundary acknowledgement, exact
   trace options, target release, bounded collection, termination, drain, and
-  publication eligibility before the Linux adapter exists.
+  publication eligibility before the Linux adapter exists. Terminated runs
+  require a separate tree-empty acknowledgement before publication.
 - Automatic candidates require an explicit normalized project or runtime
   scope. System, home, and configured temporary roots remain open review
   items.

@@ -58,6 +58,8 @@ class DiagnosticObserverProtocolContractTests(unittest.TestCase):
             "ObserverDirective::TerminateAndPublishNothing",
             "ObserverDirective::TerminateAndDrain",
             "ProcessTreeChanged",
+            "TreeDrainNotConfirmed",
+            "confirm_tree_drained",
             "per_process_exhausted",
             "total_exhausted",
         ]:

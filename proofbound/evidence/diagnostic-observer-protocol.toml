@@ -11,6 +11,7 @@ expected_inventory = [
   "proofbound_runtime_diagnose::observer::tests::each_collection_bound_has_one_exact_gap",
   "proofbound_runtime_diagnose::observer::tests::failures_keep_pre_release_and_post_release_publication_distinct",
   "proofbound_runtime_diagnose::observer::tests::invalid_inputs_duplicates_and_terminal_reuse_fail_closed",
+  "proofbound_runtime_diagnose::observer::tests::later_observation_invalidates_a_tree_drain_confirmation",
   "proofbound_runtime_diagnose::observer::tests::natural_exact_capacity_completion_adds_no_gap",
   "proofbound_runtime_diagnose::observer::tests::target_release_requires_boundary_and_exact_trace_options",
   "proofbound_runtime_diagnose::observer::tests::total_process_and_event_bounds_do_not_reset_during_drain",

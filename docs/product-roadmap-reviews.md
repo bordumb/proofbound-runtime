@@ -1567,3 +1567,27 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, or test bytes. Any later subject change requires a new
 exact-head review.
+
+## RT-8 pure observer protocol initial review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `97cdb4f219df90582fc7f729f5d446926d274c30`
+- **Reviewed head:** `e59259dd29915ed5f352b5d27e83b506e5f78f59`
+- **Branch:** `codex/rt8-observer-protocol`
+- **Method:** Exact-range static review. The reviewer changed no files and ran
+  no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The review found one fail-closed drain cluster. A process first observed after
+the lifetime process bound, or through an unknown-process event, entered drain
+without a retained wait obligation. `finish` checked only the bounded process
+map, so it could authorize incomplete publication while that observed process
+was still live. A duplicate child notification returned an error without
+poisoning the released state, which allowed the test path to continue to a
+complete result.
+
+The bounded observation ledger must remain bounded, but publication after any
+termination directive must also require an independently represented complete
+tree-drain condition. Duplicate child discovery must irreversibly enter the
+same terminate-and-drain path and prevent complete publication. This verdict
+is not endorsed; the correction requires a separate exact subject and review.

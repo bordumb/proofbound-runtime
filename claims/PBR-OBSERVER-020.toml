@@ -1,8 +1,8 @@
 schema = "proofbound-claim/1"
 id = "PBR-OBSERVER-020"
 title = "Diagnostic target release requires an ordered bounded observer protocol"
-statement = "For the pure diagnostic observer protocol, target release is impossible until ptrace ownership, production-boundary acknowledgement, and the exact closed process-tree trace options are recorded in order; after release, unknown children, unexpected stops, observer failure, or collection-bound exhaustion require termination and retain an explicit gap; and artifact completion is impossible until every tracked process has a terminal wait result."
-public_language = "Runtime has a pure state machine for the diagnostic observer lifecycle and process-tree collection bounds. Registered tests cover release ordering, the exact trace-option set, child discovery, complete drain, natural capacity, isolated and simultaneous process and event overflow, unknown stops, and pre-release versus post-release failure precedence. This is bounded source evidence. It does not establish that ptrace calls, syscall decoding, process termination, or native Linux observation are implemented or correct."
+statement = "For the pure diagnostic observer protocol, target release is impossible until ptrace ownership, production-boundary acknowledgement, and the exact closed process-tree trace options are recorded in order; after release, unknown children, duplicate child discovery, unexpected stops, observer failure, or collection-bound exhaustion irreversibly require termination and retain an explicit gap; and artifact completion is impossible until every retained process has a terminal wait result and the adapter confirms that a terminated child tree is empty."
+public_language = "Runtime has a pure state machine for the diagnostic observer lifecycle and process-tree collection bounds. Registered tests cover release ordering, the exact trace-option set, child discovery, complete drain, natural capacity, isolated and simultaneous process and event overflow, duplicate and unknown processes, invalidated drain confirmation, and pre-release versus post-release failure precedence. This is bounded source evidence. It requires but does not prove the future Linux adapter's tree-empty acknowledgement. It does not establish that ptrace calls, syscall decoding, process termination, or native Linux observation are implemented or correct."
 subject = "rust:proofbound_runtime_diagnose::observer::ObserverProtocol"
 profile = "ledger"
 tier = 1
@@ -17,12 +17,14 @@ assumptions = [
 open_obligations = [
   "Run the complete observer-protocol corpus in hosted exact-head verification before merge.",
   "Implement the safe Linux adapter over raw ptrace, wait, tracee-memory, and process-control calls without linking observer code into production executables.",
+  "Make the Linux adapter derive tree-drain confirmation from identified wait and cgroup state, and falsify a forged or premature acknowledgement.",
   "Implement architecture-qualified syscall decoding and exact operand capture for the closed diagnostic event set.",
   "Execute process-tree, race, overflow, symlink, observation-sensitive, and failure-path attacks on both supported native architectures.",
   "Bind exact released pbr-diagnose artifacts before describing the observer as released.",
 ]
 out_of_scope = [
   "Correctness of Linux ptrace, wait, process termination, or procfs behavior.",
+  "Truth of a tree-drain acknowledgement supplied by the future effectful adapter.",
   "A claim that the current source state executes or observes a child process.",
   "Completeness, transparency, or non-interference of diagnostic observation.",
   "Production execution, production receipt construction, or production receipt acceptance.",

@@ -144,7 +144,8 @@ manifest describes the supported tuple.
 - [x] Define a pure typed observer protocol that cannot release target code
   before attachment, boundary acknowledgement, and exact trace options.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
-  on attempted overflow, and require complete drain before publication.
+  on attempted overflow, and require terminal waits plus a separate tree-empty
+  acknowledgement before publication.
 - [x] Produce a distinct diagnostic receipt that is always non-reusable from
   validated, bounded observations.
 - [x] Make the independent verifier, composer, and acceptance policy reject a

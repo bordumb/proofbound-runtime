@@ -105,7 +105,7 @@ pub enum ObserverProtocolState {
 pub enum ObserverDirective {
     /// Continue the ordered observer protocol.
     Continue,
-    /// Terminate the process tree and drain every observed process.
+    /// Terminate the process tree and confirm that the tree is empty.
     TerminateAndDrain,
     /// Publish a complete diagnostic result.
     PublishComplete,
@@ -130,6 +130,7 @@ pub struct ObserverProtocol {
     seen_processes: BTreeSet<DiagnosticProcessId>,
     total_events: u64,
     gaps: BTreeSet<DiagnosticGap>,
+    tree_drain_confirmed: bool,
 }
 
 impl ObserverProtocol {
@@ -149,6 +150,7 @@ impl ObserverProtocol {
             seen_processes: BTreeSet::from([root]),
             total_events: 0,
             gaps: BTreeSet::new(),
+            tree_drain_confirmed: false,
         })
     }
 
@@ -228,7 +230,7 @@ impl ObserverProtocol {
             return self.stop_with_gap(DiagnosticGap::ChildLost);
         }
         if self.seen_processes.contains(&child) {
-            return Err(ObserverProtocolError::ProcessDuplicate);
+            return self.stop_with_gap(DiagnosticGap::ObserverFailed);
         }
         if self.seen_processes.len() as u64 >= self.bounds.process_count {
             return self.stop_with_gap(DiagnosticGap::ProcessLimit);
@@ -237,6 +239,7 @@ impl ObserverProtocol {
         self.processes
             .insert(child, ProcessObservation { events: 0 });
         if self.state == ObserverProtocolState::Draining {
+            self.tree_drain_confirmed = false;
             Ok(ObserverDirective::TerminateAndDrain)
         } else {
             Ok(ObserverDirective::Continue)
@@ -253,6 +256,7 @@ impl ObserverProtocol {
             return self.stop_with_gap(DiagnosticGap::ChildLost);
         }
         if self.state == ObserverProtocolState::Draining {
+            self.tree_drain_confirmed = false;
             return Ok(ObserverDirective::TerminateAndDrain);
         }
         let process_events = self
@@ -269,6 +273,7 @@ impl ObserverProtocol {
                 self.gaps.insert(DiagnosticGap::EventLimit);
             }
             self.state = ObserverProtocolState::Draining;
+            self.tree_drain_confirmed = false;
             return Ok(ObserverDirective::TerminateAndDrain);
         }
         let observation = self
@@ -331,11 +336,24 @@ impl ObserverProtocol {
         }
     }
 
-    /// Completes observation only after every tracked process is drained.
+    /// Records that termination left no process in the diagnostic child tree.
+    pub fn confirm_tree_drained(&mut self) -> Result<ObserverDirective, ObserverProtocolError> {
+        self.require_state(ObserverProtocolState::Draining)?;
+        if !self.processes.is_empty() {
+            return Err(ObserverProtocolError::ProcessTreeNotDrained);
+        }
+        self.tree_drain_confirmed = true;
+        Ok(ObserverDirective::Continue)
+    }
+
+    /// Completes observation only after every required drain is confirmed.
     pub fn finish(&mut self) -> Result<ObserverDirective, ObserverProtocolError> {
         self.require_observing()?;
         if !self.processes.is_empty() {
             return Err(ObserverProtocolError::ProcessTreeNotDrained);
+        }
+        if self.state == ObserverProtocolState::Draining && !self.tree_drain_confirmed {
+            return Err(ObserverProtocolError::TreeDrainNotConfirmed);
         }
         if self.gaps.is_empty() {
             self.state = ObserverProtocolState::Complete;
@@ -385,6 +403,7 @@ impl ObserverProtocol {
     ) -> Result<ObserverDirective, ObserverProtocolError> {
         self.gaps.insert(gap);
         self.state = ObserverProtocolState::Draining;
+        self.tree_drain_confirmed = false;
         Ok(ObserverDirective::TerminateAndDrain)
     }
 }
@@ -396,8 +415,6 @@ pub enum ObserverProtocolError {
     BoundsInvalid,
     /// A process identifier is zero.
     ProcessIdInvalid,
-    /// A process identifier is already tracked.
-    ProcessDuplicate,
     /// The process tree changed during one pure transition.
     ProcessTreeChanged,
     /// The lifecycle transition is out of order.
@@ -406,6 +423,8 @@ pub enum ObserverProtocolError {
     TraceOptionsInvalid,
     /// One or more tracked processes have no terminal wait result.
     ProcessTreeNotDrained,
+    /// The adapter has not confirmed an empty child tree after termination.
+    TreeDrainNotConfirmed,
     /// The protocol already reached a terminal state.
     ProtocolTerminal,
 }
@@ -417,11 +436,11 @@ impl ObserverProtocolError {
         match self {
             Self::BoundsInvalid => "diagnostic.observer.bounds-invalid",
             Self::ProcessIdInvalid => "diagnostic.observer.process-id-invalid",
-            Self::ProcessDuplicate => "diagnostic.observer.process-duplicate",
             Self::ProcessTreeChanged => "diagnostic.observer.process-tree-changed",
             Self::TransitionInvalid => "diagnostic.observer.transition-invalid",
             Self::TraceOptionsInvalid => "diagnostic.observer.trace-options-invalid",
             Self::ProcessTreeNotDrained => "diagnostic.observer.process-tree-not-drained",
+            Self::TreeDrainNotConfirmed => "diagnostic.observer.tree-drain-not-confirmed",
             Self::ProtocolTerminal => "diagnostic.observer.protocol-terminal",
         }
     }
@@ -563,6 +582,14 @@ mod tests {
             protocol.record_process_exit(root),
             Ok(ObserverDirective::TerminateAndDrain)
         );
+        assert_eq!(
+            protocol.finish(),
+            Err(ObserverProtocolError::TreeDrainNotConfirmed)
+        );
+        assert_eq!(
+            protocol.confirm_tree_drained(),
+            Ok(ObserverDirective::Continue)
+        );
         assert_eq!(protocol.finish(), Ok(ObserverDirective::PublishIncomplete));
     }
 
@@ -665,6 +692,31 @@ mod tests {
             protocol.record_process_exit(child),
             Ok(ObserverDirective::TerminateAndDrain)
         );
+        protocol.confirm_tree_drained().expect("tree drained");
+        assert_eq!(protocol.finish(), Ok(ObserverDirective::PublishIncomplete));
+    }
+
+    #[test]
+    fn later_observation_invalidates_a_tree_drain_confirmation() {
+        let root = DiagnosticProcessId::new(10).unwrap();
+        let overflow_child = DiagnosticProcessId::new(11).unwrap();
+        let mut limited = bounds();
+        limited.process_count = 1;
+        let mut protocol = released_with_bounds(limited);
+        protocol
+            .discover_child(root, overflow_child, ProcessCreationKind::Fork)
+            .expect("process overflow");
+        protocol.record_process_exit(root).expect("root exit");
+        protocol.confirm_tree_drained().expect("tree drained");
+        assert_eq!(
+            protocol.record_unexpected_stop(overflow_child),
+            Ok(ObserverDirective::TerminateAndDrain)
+        );
+        assert_eq!(
+            protocol.finish(),
+            Err(ObserverProtocolError::TreeDrainNotConfirmed)
+        );
+        protocol.confirm_tree_drained().expect("tree drained again");
         assert_eq!(protocol.finish(), Ok(ObserverDirective::PublishIncomplete));
     }
 
@@ -776,11 +828,24 @@ mod tests {
             .expect("child");
         assert_eq!(
             protocol.discover_child(root, child, ProcessCreationKind::Vfork),
-            Err(ObserverProtocolError::ProcessDuplicate)
+            Ok(ObserverDirective::TerminateAndDrain)
+        );
+        assert_eq!(
+            protocol.gaps().collect::<Vec<_>>(),
+            vec![DiagnosticGap::ObserverFailed]
+        );
+        assert_eq!(
+            protocol.confirm_tree_drained(),
+            Err(ObserverProtocolError::ProcessTreeNotDrained)
         );
         protocol.record_process_exit(child).expect("child exit");
         protocol.record_process_exit(root).expect("root exit");
-        protocol.finish().expect("complete");
+        assert_eq!(
+            protocol.finish(),
+            Err(ObserverProtocolError::TreeDrainNotConfirmed)
+        );
+        protocol.confirm_tree_drained().expect("tree drained");
+        assert_eq!(protocol.finish(), Ok(ObserverDirective::PublishIncomplete));
         assert_eq!(
             protocol.record_event(root),
             Err(ObserverProtocolError::ProtocolTerminal)

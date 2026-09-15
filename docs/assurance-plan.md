@@ -416,8 +416,8 @@ The bounded evidence path checks that:
    gaps only when another item arrives after the bound is full;
 3. natural completion at each exact capacity remains complete;
 4. draining never resumes collection, retains newly discovered children only
-   within the process bound, and cannot finish before all tracked processes
-   have terminal wait results;
+   within the process bound, and cannot finish before all retained processes
+   have terminal wait results and the adapter confirms an empty child tree;
 5. duplicate processes, unknown children, unexpected stops, observer failure,
    invalid identifiers, invalid bounds, and terminal-state reuse fail closed;
    and
@@ -428,7 +428,8 @@ The setup-failure directive requires termination of the stopped child tree and
 publishes no artifact. A post-release failure requires termination and may
 publish only an incomplete diagnostic result after drain. This claim does not
 establish correctness of ptrace, wait handling, syscall decoding, tracee-memory
-reads, process termination, or the future Linux adapter.
+reads, process termination, the tree-empty acknowledgement, or the future Linux
+adapter.
 
 ## Bounded-domain declaration guard
 

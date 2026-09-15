@@ -54,8 +54,10 @@ unexpected stop marks the diagnostic result incomplete. It never causes the
 production receipt path to accept weaker evidence.
 
 A pure protocol owns release order, lifetime process and event accounting,
-gap accumulation, drain eligibility, and publication eligibility. The Linux
-adapter owns ptrace, wait, memory-read, signal, and process-cleanup effects.
+gap accumulation, drain ordering, and publication eligibility. It requires a
+closed tree-empty acknowledgement after it directs termination. The Linux
+adapter owns ptrace, wait, memory-read, signal, process-cleanup, and the truth
+of that acknowledgement.
 This separation lets the ordered decisions receive bounded source evidence
 without presenting effectful Linux behavior as proved.
 

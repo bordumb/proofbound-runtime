@@ -75,14 +75,20 @@ complete, incomplete, and failed-before-release. A setup failure directs the
 adapter to terminate the stopped tree and publish nothing. A post-release gap
 directs the adapter to terminate and drain the tree. The protocol permits
 complete or incomplete publication only after every retained process has a
-terminal wait result.
+terminal wait result. After a termination directive, incomplete publication
+also requires an adapter acknowledgement that the complete child tree is
+empty. The pure protocol orders and requires this acknowledgement. It does not
+establish that the effectful observation is true.
 
 The root process counts against the lifetime process bound. An exited process
 does not release a process slot for later reuse. Reaching an event or process
 capacity naturally does not create a gap. An attempted item after capacity
 creates the exact gap and starts drain. During drain, the protocol collects no
 more events. It retains a newly discovered child only while the lifetime
-process bound permits that state, and it continues to direct termination.
+process bound permits that state, and it continues to direct termination. An
+observed overflow or unknown process is not added to the bounded retained
+ledger. Its existence invalidates any earlier tree-drain acknowledgement and
+blocks publication until the adapter confirms the tree is empty again.
 
 ## 4. Observer contract
 
