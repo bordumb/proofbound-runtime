@@ -65,6 +65,16 @@ the acknowledgement internally and sends the release on that same channel. A
 caller cannot supply a command, acknowledgement value, expected identity, or
 different release channel to advance the session.
 
+The separate diagnostic Linux crate presents one coupled adapter instead of
+re-exporting the raw trace typestates. It validates observation bounds before
+spawn. After the exact initial trace stop, every consuming adapter transition
+moves one private trace typestate and one pure protocol. Effectful boundary and
+option success precede their pure records. Pure release authorization precedes
+the effectful release. The public surface provides process identity and
+read-only protocol status, but no raw trace state or mutable protocol handle.
+The future event loop extends the active coupled state rather than splitting
+these owners.
+
 The observer follows the complete child tree with the closed clone, fork,
 vfork, and exec options. It records only the syscall families defined by the
 diagnostic specification. Every count, string read, process, event, and output

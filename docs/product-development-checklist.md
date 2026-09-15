@@ -5,8 +5,8 @@
 - **Runtime baseline:** identity-bound exec-release merge `3557cc9`; exact-main
   Verify run `34956564102` is in progress
 - **Active implementation wave:** separate feature-gated Linux trace-startup
-  typestates are being replayed onto the admitted dependency stack. The coupled
-  adapter follows after exact-head review and hosted admission.
+  typestates are in refreshed exact-head review. The coupled adapter is replayed
+  on that stack and will receive its own review after trace-startup admission.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -161,6 +161,12 @@ manifest describes the supported tuple.
   the ownership-only private child field would fail the warnings-as-errors
   gate. Those corrections are retained; refreshed review, hosted admission,
   and native effect evidence remain open.
+- [ ] Couple the approved trace-startup typestates to the pure observer protocol
+  in the separate diagnostic adapter. Validate bounds before spawn, move one
+  private pair after the exact initial stop, advance pure states only in the
+  declared effect order, and expose neither raw trace states nor mutable protocol
+  access. Source implementation and focused source checks are complete under
+  `PBR-OBSERVER-022`; exact review is pending.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.

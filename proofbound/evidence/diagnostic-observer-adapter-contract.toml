@@ -1,0 +1,44 @@
+schema = "proofbound-evidence-unit/1"
+id = "diagnostic-observer-adapter-contract"
+adapter = "independent-check"
+kind = "independent-check"
+claims = ["PBR-OBSERVER-022"]
+tier = 0
+expected_inventory = [
+  "diagnostic-observer-adapter-bound-inputs",
+  "diagnostic-observer-adapter-production-separation",
+  "diagnostic-observer-adapter-state-continuity",
+  "diagnostic-observer-adapter-transition-order",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "claims/PBR-OBSERVER-022.toml",
+  "crates/proofbound-runtime-cli/Cargo.toml",
+  "crates/proofbound-runtime-diagnose/Cargo.toml",
+  "crates/proofbound-runtime-diagnose/src/artifact.rs",
+  "crates/proofbound-runtime-diagnose/src/observer.rs",
+  "crates/proofbound-runtime-diagnose-linux/Cargo.toml",
+  "crates/proofbound-runtime-diagnose-linux/src/adapter.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/Cargo.toml",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+  "tools/ci/check_diagnostic_observer_adapter.py",
+  "tools/ci/test_diagnostic_observer_adapter.py",
+]
+outputs = []
+environment_allowlist = ["PATH"]
+
+[operation]
+type = "independent-check"
+checker = "tools/ci/check_diagnostic_observer_adapter.py"
+arguments = []
+paths = [
+  "crates/proofbound-runtime-diagnose-linux/src/adapter.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+]
+
+[resource_budget]
+time_seconds = 30
+disk_bytes = 134217728
+memory_bytes = 536870912

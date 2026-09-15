@@ -9,4 +9,5 @@ rust-version.workspace = true
 publish = false
 
 [dependencies]
+proofbound-runtime-diagnose.workspace = true
 proofbound-runtime-linux = { workspace = true, features = ["diagnostic-observer"] }

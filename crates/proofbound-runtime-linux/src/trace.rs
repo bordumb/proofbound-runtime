@@ -194,6 +194,12 @@ pub struct SpawnedTrace {
 }
 
 impl SpawnedTrace {
+    /// Returns the exact spawned process identifier.
+    #[must_use]
+    pub const fn process(&self) -> TraceProcessId {
+        self.session.process
+    }
+
     /// Waits for the exact post-exec trace stop of the spawned child.
     pub fn wait_for_initial_exec_stop(
         self,

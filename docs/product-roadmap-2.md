@@ -5,8 +5,8 @@
   registry publication remains open, and the RT-8 exec-release prerequisite is
   in ordered admission; all complete Roadmap 2 epic exits remain open
 - **Date:** 2026-09-13
-- **Runtime baseline:** `b04382d` on `main`; pure observer protocol exact-main
-  Verify run `34946613122` passed
+- **Runtime baseline:** `3557cc9` on `main`; its exact-main Verify run
+  `34956564102` is in progress
 - **Proofbound baseline consumed by Runtime evidence:** public immutable bundle
   for source `9512469`; protected-path cutover merged as Runtime `4a0cfdb` and
   passed exact-main Verify run `34918706960`
@@ -31,7 +31,7 @@ threat-model, ADR, claim, and evidence changes before production code.
 
 ### Execution checkpoint
 
-As of 2026-09-15, Runtime main commit `b04382d` contains the version 2 memory
+As of 2026-09-15, Runtime main commit `3557cc9` contains the version 2 memory
 and deterministic CBOR wave, receipt composition and acceptance, a bounded
 static plan scaffold,
 typed prelaunch diagnostics, reproducible Rust, Python, and TypeScript SDK
@@ -69,9 +69,11 @@ The pure ordered observer protocol's first hosted attempt rejected a named
 Cargo test selector that the strict Proofbound adapter reserves for mutation
 witnesses. The corrected exact source passed independent review and complete
 hosted run `34942545372`, merged unsigned as `b04382d`, and passed exact-main
-Verify run `34946613122`. The identity-bound exec-release prerequisite is the
-current admission wave. The live ptrace adapter, command integration, native
-attack corpus, and release binding remain open.
+Verify run `34946613122`. The identity-bound exec-release prerequisite passed
+exact-head hosted verification and merged unsigned as `3557cc9`; exact-main
+run `34956564102` is in progress. Trace startup is in refreshed review, and its
+coupled adapter is replayed on the following stack. The live event loop,
+command integration, native attack corpus, and release binding remain open.
 RT-9 is blocked until RT-5 implements the accepted single-service network
 decision in production.
 
