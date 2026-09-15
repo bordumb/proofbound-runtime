@@ -6,6 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 DIAGNOSTIC_SCHEMA = ROOT / "schemas/diagnostic-receipt-v1.schema.json"
 DRAFT_SCHEMA = ROOT / "schemas/plan-draft-v1.schema.json"
+ACCEPTANCE_SCHEMA = ROOT / "schemas/acceptance-decision-v2.cddl"
 DIAGNOSTIC_VECTOR = ROOT / "schemas/vectors/diagnostic/diagnostic-receipt.json"
 DRAFT_VECTOR = ROOT / "schemas/vectors/diagnostic/plan-draft.json"
 
@@ -126,10 +127,15 @@ class DiagnosticDraftingContractTests(unittest.TestCase):
         composer = (ROOT / "crates/proofbound-runtime-compose/src/main.rs").read_text()
         acceptor = (ROOT / "crates/proofbound-runtime-accept/src/main.rs").read_text()
         acceptance = (ROOT / "crates/proofbound-runtime-accept/src/lib.rs").read_text()
+        acceptance_schema = ACCEPTANCE_SCHEMA.read_text()
         self.assertIn("profile.diagnostic.not-reusable", verifier)
         self.assertIn("profile.diagnostic.not-reusable", composer)
         self.assertIn("profile.diagnostic.not-reusable", acceptor)
         self.assertIn("diagnostic-profile-not-reusable", acceptance)
+        self.assertIn('"proofbound-runtime-acceptance-decision/2"', acceptance_schema)
+        self.assertIn('"diagnostic-profile-not-reusable"', acceptance_schema)
+        self.assertNotIn("proofbound-runtime-acceptance-decision/1", acceptance)
+        self.assertNotIn("proofbound-runtime-acceptance-decision/1", acceptance_schema)
 
     @staticmethod
     def _closed_object(pairs):
