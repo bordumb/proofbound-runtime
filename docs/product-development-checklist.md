@@ -175,7 +175,10 @@ manifest describes the supported tuple.
   correction exact-allowlists every implementation header and method, fixes the
   error variants, and rejects source macros. Its review found one remaining
   module-source redirection path. The fourth correction fixes the complete crate
-  root and rejects nested modules; exact re-review remains open.
+  root and rejects nested modules. Its review found a remaining Cargo workspace
+  dependency redirection path. The fifth correction pins the relevant member,
+  dependency, target, and pure module-selection sources; exact re-review remains
+  open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.

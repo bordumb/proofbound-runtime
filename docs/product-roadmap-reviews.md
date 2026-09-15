@@ -2103,3 +2103,31 @@ The correction must fix the complete crate-root source, including its private
 module declaration and attributes, and reject any nested module declaration in
 the single-file adapter. This verdict is not endorsed. The correction changes
 the exact subject and requires another independent review.
+
+## RT-8 diagnostic observer-adapter fourth correction review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `98be91872a263b4c9f6683f4f028695372be7fdf`
+- **Reviewed head:** `748dca436fecc554c263e57a8ce73b34a1928f41`
+- **Branch:** `codex/rt8-observer-adapter`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The reviewer confirmed that the fourth correction fixes the diagnostic adapter
+crate root, private module declaration, member manifest, nested-module absence,
+and all prior API, trait, variant, attribute, macro, accessor, process, and
+option checks. The current exact source remains correctly coupled and closed.
+
+One Cargo source-selection gap remained. The pinned member manifest delegates
+its dependencies to the workspace, but the checker did not validate the root
+workspace member or dependency path mappings. The pure diagnostic and Linux
+dependency manifests also did not reject alternate library or build targets.
+A root or dependency-manifest change could therefore compile a compatible
+alternate crate while the checker continued to inspect the registered files.
+
+The correction must pin the relevant workspace member and dependency paths,
+pin the three member manifests against alternate targets, and register the pure
+diagnostic crate root used to select the observer module. This verdict is not
+endorsed. The correction changes the exact subject and requires another
+independent review.

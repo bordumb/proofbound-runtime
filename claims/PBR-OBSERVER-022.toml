@@ -36,6 +36,7 @@ source_roots = [
   "crates/proofbound-runtime-cli/Cargo.toml",
   "crates/proofbound-runtime-diagnose/Cargo.toml",
   "crates/proofbound-runtime-diagnose/src/artifact.rs",
+  "crates/proofbound-runtime-diagnose/src/lib.rs",
   "crates/proofbound-runtime-diagnose/src/observer.rs",
   "crates/proofbound-runtime-diagnose-linux/Cargo.toml",
   "crates/proofbound-runtime-diagnose-linux/src/adapter.rs",

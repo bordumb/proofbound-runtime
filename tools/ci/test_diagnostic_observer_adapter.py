@@ -2,13 +2,22 @@ import re
 import unittest
 from pathlib import Path
 
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - Python 3.10 evidence host
+    import tomli as tomllib
+
 
 ROOT = Path(__file__).resolve().parents[2]
+ROOT_MANIFEST = ROOT / "Cargo.toml"
 ADAPTER = ROOT / "crates/proofbound-runtime-diagnose-linux/src/adapter.rs"
 ADAPTER_LIB = ROOT / "crates/proofbound-runtime-diagnose-linux/src/lib.rs"
 ADAPTER_MANIFEST = ROOT / "crates/proofbound-runtime-diagnose-linux/Cargo.toml"
+DIAGNOSE_LIB = ROOT / "crates/proofbound-runtime-diagnose/src/lib.rs"
+DIAGNOSE_MANIFEST = ROOT / "crates/proofbound-runtime-diagnose/Cargo.toml"
 TRACE = ROOT / "crates/proofbound-runtime-linux/src/trace.rs"
 SYS = ROOT / "crates/proofbound-runtime-linux/src/sys.rs"
+LINUX_MANIFEST = ROOT / "crates/proofbound-runtime-linux/Cargo.toml"
 PRODUCTION_MANIFESTS = [
     ROOT / "crates/proofbound-runtime-cli/Cargo.toml",
     ROOT / "crates/proofbound-runtime-linux/Cargo.toml",
@@ -110,11 +119,54 @@ proofbound-runtime-diagnose.workspace = true
 proofbound-runtime-linux = { workspace = true, features = ["diagnostic-observer"] }
 """
 
+EXPECTED_DIAGNOSE_MANIFEST = """[package]
+name = "proofbound-runtime-diagnose"
+description = "Non-production diagnostic artifact construction for Proofbound Runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+proofbound-runtime-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+"""
+
+EXPECTED_LINUX_MANIFEST = """[package]
+name = "proofbound-runtime-linux"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[features]
+default = []
+diagnostic-observer = []
+
+[dependencies]
+proofbound-runtime-core.workspace = true
+sha2.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc.workspace = true
+
+[dev-dependencies]
+serde.workspace = true
+toml.workspace = true
+"""
+
 
 class DiagnosticObserverAdapterContractTests(unittest.TestCase):
     def setUp(self):
         self.adapter = ADAPTER.read_text()
         self.adapter_lib = ADAPTER_LIB.read_text()
+        self.diagnose_lib = DIAGNOSE_LIB.read_text()
         self.trace = TRACE.read_text()
         self.sys = SYS.read_text()
 
@@ -325,6 +377,29 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
             r"\b[A-Za-z_][A-Za-z0-9_]*!\s*[\(\{\[]",
         )
         self.assertEqual(ADAPTER_MANIFEST.read_text(), EXPECTED_ADAPTER_MANIFEST)
+        self.assertEqual(DIAGNOSE_MANIFEST.read_text(), EXPECTED_DIAGNOSE_MANIFEST)
+        self.assertEqual(LINUX_MANIFEST.read_text(), EXPECTED_LINUX_MANIFEST)
+
+        root_manifest = ROOT_MANIFEST.read_text()
+        root_config = tomllib.loads(root_manifest)
+        workspace = root_config["workspace"]
+        for member in [
+            "crates/proofbound-runtime-diagnose",
+            "crates/proofbound-runtime-diagnose-linux",
+            "crates/proofbound-runtime-linux",
+        ]:
+            self.assertIn(member, workspace["members"])
+        for dependency, path in {
+            "proofbound-runtime-diagnose": "crates/proofbound-runtime-diagnose",
+            "proofbound-runtime-diagnose-linux": "crates/proofbound-runtime-diagnose-linux",
+            "proofbound-runtime-linux": "crates/proofbound-runtime-linux",
+        }.items():
+            self.assertEqual(workspace["dependencies"][dependency], {"path": path})
+        self.assertNotRegex(root_manifest, r"(?m)^\[(?:patch|replace)(?:\.|\])")
+
+        self.assertEqual(self.diagnose_lib.count("pub mod artifact;"), 1)
+        self.assertEqual(self.diagnose_lib.count("pub mod observer;"), 1)
+        self.assertNotIn("#[path", self.diagnose_lib)
         spawned_trace = implementation(self.trace, "SpawnedTrace")
         self.assertIn(
             "pubconstfnprocess(&self)->TraceProcessId{self.session.process}",
