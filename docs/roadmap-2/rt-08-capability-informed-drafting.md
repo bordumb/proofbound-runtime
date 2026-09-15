@@ -11,11 +11,14 @@ exact-main run `34962882198` is in progress. The adapter that privately couples
 the effectful and pure setup states is at admitted-main PR 15 head `8ab66e5` in
 hosted run `34964466007`. The active-trace event approval in PR 16 remains
 historical because the live event-and-drain wave changes the same source. That
-wave passes the validated process bound into the effectful trace, consumes
+corrected wave at exact source `af9f77d` passed independent exact-head review
+and is pending approval-only recording, admitted-stack replay, hosted
+verification, and merge. It passes the validated process bound into the effectful trace, consumes
 complete events into the matching pure protocol, permanently rejects an
 unreconciled process tree, and makes successful effectful drain reconciliation
-precede pure tree-empty acknowledgement. Its first exact review requested
-corrections; the combined correction is pending exact re-review.
+precede pure tree-empty acknowledgement. Its first exact review requested five
+corrections; the combined correction closed them and received an explicit
+`APPROVE`.
 The architecture-qualified syscall decoder and bounded entry-time operand
 capture are implemented locally under `PBR-OBSERVER-025`; exact review and
 hosted admission remain open. Artifact mapping, command integration, the native

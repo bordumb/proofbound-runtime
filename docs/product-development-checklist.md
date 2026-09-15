@@ -1,15 +1,14 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T12:48:53+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T13:02:02+01:00 (Europe/London, BST)
 - **Runtime baseline:** trace-startup merge `9395050`; exact-main Verify run
   `34962882198` is in progress
 - **Active implementation wave:** the coupled setup adapter is at admitted-main
-  head `8ab66e5` in PR 15 and hosted run `34964466007` is in progress. The prior
-  active-trace event source approval at `c20f6e3` remains historical because the
-  live event-and-drain batch changes the same exact source. Its first review of
-  head `4af215a` requested five corrections; one combined correction is in
-  exact re-review preparation.
+  head `8ab66e5` in PR 15 and hosted run `34964466007` is in progress. The live
+  event-and-drain correction at `af9f77d` passed independent exact-head review.
+  Its approval-only commit, admitted-stack replay, hosted gate, and merge remain
+  pending.
 - **Following implementation batch:** architecture-qualified syscall decoding
   and bounded operand capture are implemented locally as `PBR-OBSERVER-025`.
   Exact review, hosted admission, artifact mapping, and native attacks remain
@@ -198,7 +197,8 @@ manifest describes the supported tuple.
   found incorrect syscall-pair retention and non-leader exec identity checks;
   exact re-review approved corrected head `c20f6e3`. Hosted verification remains
   open.
-- [ ] Admit live event-and-drain coupling. The adapter passes the validated
+- [ ] Admit live event-and-drain coupling. Exact source `af9f77d` passed
+  independent review with an explicit `APPROVE`. The adapter passes the validated
   lifetime process bound to the effectful trace before release, consumes each
   trace event into the same pure protocol, retains overflow identities outside
   the bounded ledger, and requires a successful exact drain before the pure
@@ -209,7 +209,8 @@ manifest describes the supported tuple.
   permanently blocks publication after an unreconciled tree, byte-pins the
   load-bearing bodies with five mutation classes, restores typed unsupported
   paths, closes assumption links, and marks every changed exact subject pending.
-  Exact re-review and hosted admission remain open.
+  Approval-only recording, admitted-stack replay, and hosted admission remain
+  open.
 - [ ] Admit architecture-qualified syscall decoding and bounded operand capture.
   The current source has separate x86_64 and aarch64 tables, rejects x32 and
   unsupported registered forms, captures path and socket-address bytes before
