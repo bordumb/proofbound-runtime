@@ -2281,3 +2281,31 @@ load-bearing checks and mutation witnesses, close the reciprocal assumption
 links, restore typed unsupported-platform compilation, and mark every changed
 exact subject pending. The correction changes the exact subject and requires
 another independent review.
+
+## RT-8 live event-and-drain coupling correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `c93d900cfeace7d2151b819ad9725dcb3c4eddd9`
+- **Reviewed head:** `af9f77d988f12184b944d32181e065388cafe2f1`
+- **Branch:** `codex/rt8-event-adapter`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that all five prior blockers are closed. A registration,
+identity, capacity, thread-group, or retained-handle failure now permanently
+marks the trace tree unreconciled and prevents either complete or incomplete
+publication. Exact source-body checks and executable mutations cover omitted
+registration, false empty reporting, omitted drain reporting, premature
+overflow clearing, and replay bypass. The three missing assumptions now link
+reciprocally to `PBR-OBSERVER-024`. Non-Linux code returns closed typed
+unsupported-platform errors. The assurance summary no longer transfers prior
+approval across changed source identities.
+
+The reviewer found no new blocker in the correction. As maintainer, I endorse
+this independent `APPROVE` verdict for exact head
+`af9f77d988f12184b944d32181e065388cafe2f1`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. An admitted-stack replay, hosted evidence,
+and merge are still required before this source is described as admitted.

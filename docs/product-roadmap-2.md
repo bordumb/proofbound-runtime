@@ -75,11 +75,14 @@ run `34956564102` passed. Trace startup merged as `9395050`; exact-main run
 `34962882198` is in progress. Its coupled adapter is at admitted-main PR 15
 head `8ab66e5` in hosted run `34964466007`. The active-trace approval in PR 16
 remains historical because the following live event-and-drain wave changes the
-same source. That wave passes the validated process bound into the trace,
+same source. Corrected exact source `af9f77d` passed independent exact-head
+review and is pending approval-only recording, admitted-stack replay, hosted
+verification, and merge. That wave passes the validated process bound into the trace,
 consumes each complete event into the same pure protocol, permanently rejects
 an unreconciled process tree, and orders successful effectful drain before the
-pure tree-empty acknowledgement. Its first exact review requested corrections;
-the combined correction is pending exact re-review.
+pure tree-empty acknowledgement. Its first exact review requested five
+corrections; the combined correction closed them and received an explicit
+`APPROVE`.
 Syscall decoding, command integration, the native attack corpus, and release
 binding remain open.
 
