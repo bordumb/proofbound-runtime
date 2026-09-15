@@ -2562,3 +2562,27 @@ exact-body checkers pin the corrected next-event, wait-router, and syscall-stop
 bodies, and a source regression rejects restoration of the large enum or a
 boxed event. The focused source-contract tests pass. Independent exact-head
 re-review and replacement hosted admission remain required.
+
+## RT-8 hosted-lint correction initial re-review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `b2cb4b9bf10398ca5559dc476c492c3bd6d46c0b`
+- **Reviewed head:** `1750ef40fbb75efa80ae7734938dddeff6a730c0`
+- **Branch:** `codex/rt8-syscall-decoder`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The hosted-lint correction is sound. `Option<ActiveTraceEvent>` preserves every
+continue-or-event branch, adds no per-event heap allocation, and leaves the
+previously approved decoder semantics intact. Both affected checkers refresh
+the three changed exact-body identities, the syscall-routing mutation now uses
+`Ok(None)`, and the new regression rejects restoration of `WaitDecision` or a
+boxed event.
+
+The remaining blocker is one stale sentence in the active-trace checklist
+entry. It says exact-main run `34978365970` is in progress, while the same
+document correctly records that the run failed before required lanes started
+because the unrelated network experiment missed its ready-file observation.
+The correction aligns that sentence. This verdict is not endorsed. The exact
+corrected head requires independent re-review.

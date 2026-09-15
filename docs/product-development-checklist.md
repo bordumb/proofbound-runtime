@@ -214,7 +214,8 @@ manifest describes the supported tuple.
   exact re-review approved corrected head `c20f6e3`. Its admitted-main replay
   at `1db68a6` also passed independent review. The combined correction passed
   exact-head run `34973401808` at `9f82afa` and merged unsigned as `b2cb4b9`;
-  exact-main run `34978365970` is in progress.
+  exact-main run `34978365970` failed before required lanes started because the
+  unrelated network experiment missed its bounded ready-file observation.
 - [ ] Admit live event-and-drain coupling. Exact source `af9f77d` passed
   independent review with an explicit `APPROVE`. The adapter passes the validated
   lifetime process bound to the effectful trace before release, consumes each
