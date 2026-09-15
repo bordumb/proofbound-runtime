@@ -91,19 +91,19 @@ fn reject_diagnostic_profile(input: &[u8]) -> Result<(), VerifyError> {
     if input.first() != Some(&b'{') {
         return Ok(());
     }
-    canonical::reject_duplicate_keys(input)?;
     let value: serde_json::Value = serde_json::from_slice(input)
         .map_err(|_| CanonicalError::Decode(DecodeError::MalformedJson))?;
+    if value.get("schema").and_then(serde_json::Value::as_str)
+        != Some("proofbound-runtime-diagnostic-receipt/1")
+    {
+        return Ok(());
+    }
+    canonical::reject_duplicate_keys(input)?;
     let encoded = serde_json::to_vec(&value).map_err(|_| CanonicalError::BytesMismatch)?;
     if encoded != input {
         return Err(CanonicalError::BytesMismatch.into());
     }
-    if value.get("schema").and_then(serde_json::Value::as_str)
-        == Some("proofbound-runtime-diagnostic-receipt/1")
-    {
-        return Err(VerifyError::DiagnosticProfileNotReusable);
-    }
-    Ok(())
+    Err(VerifyError::DiagnosticProfileNotReusable)
 }
 
 #[cfg(test)]
