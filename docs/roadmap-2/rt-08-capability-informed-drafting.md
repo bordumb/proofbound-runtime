@@ -168,6 +168,35 @@ values without making a draft an authority object.
 - A missing Capsec report does not weaken Runtime's production boundary.
 - A diagnostic observation cannot be relabeled as a Capsec declaration.
 
+## Remaining implementation order
+
+Complete RT-8 in these claim-sized waves:
+
+1. Admit `PBR-OBSERVER-026`, which maps complete trace events into unresolved
+   diagnostic artifact events.
+2. Give the trace session a bounded concurrent stdout and stderr collector.
+   Retain the same stopped child, place it in the prepared cgroup before target
+   release, apply the plan wall-time limit, and make every collection or cleanup
+   failure select drain. This must precede the command because unread launcher
+   pipes can otherwise block a target before the observer reaches completion.
+3. Resolve a successful descriptor or executable only from the still-stopped
+   tracee. Resolve a denied path only as a bounded stable candidate with before
+   and after identities. Preserve races and unsupported forms as explicit gaps.
+4. Add the separate `pbr-diagnose` command. Reuse the seed plan's exact
+   production authority, publish neither output before release, and publish the
+   diagnostic receipt and draft with the existing no-replace durability model.
+5. Run the registered native attack corpus on x86_64 and aarch64, including
+   pipe saturation, wall-time expiry, process-tree races, observation-sensitive
+   behavior, path drift, malformed operands, and publication interruption.
+6. Add the exact diagnostic executable to release provenance and artifact
+   inspection. Finish with one maintained dynamic workload that displays every
+   available provenance class, requires human completion, and produces no
+   reusable production evidence.
+
+Do not merge waves 2 through 6 into one review subject. Each wave changes a
+different security boundary and must retain its own exact-head review and
+hosted admission before the next dependent wave is called complete.
+
 ## Integration exit
 
 RT-8 is platform-ready when one maintained dynamic workload displays all

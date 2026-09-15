@@ -292,6 +292,17 @@ manifest describes the supported tuple.
   version 1 path, artifact inconsistency, or sequence overflow. Source,
   registered Rust tests, independent checks, and mutation witnesses are
   implemented; independent review and hosted exact-head admission remain open.
+- [ ] Add bounded concurrent stdout and stderr collection to the traced session
+  before command integration. Keep the same stopped child, place it in the
+  prepared cgroup, enforce wall time, and make stream or cleanup failure select
+  drain. A command without this wave can deadlock when a target fills a pipe.
+- [ ] Add stopped-tracee filesystem object resolution. Successful descriptor or
+  executable results may become `kernel-selected`; denied paths may become
+  `stable-candidate` only after bounded before-and-after identity checks. Races
+  and unsupported forms remain explicit gaps.
+- [ ] Add the separate `pbr-diagnose` command with strict seed-plan reuse,
+  fail-closed pre-release setup, and no-replace publication of the diagnostic
+  receipt and plan draft.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.
