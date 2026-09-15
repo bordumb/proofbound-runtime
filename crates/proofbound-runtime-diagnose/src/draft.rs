@@ -7,7 +7,7 @@ use proofbound_runtime_core::{DraftProvenance, ObservationResolution, Sha256Dige
 use serde_json::{Value, json};
 
 use crate::artifact::{
-    DiagnosticEvent, DiagnosticEventClass, DiagnosticGap, DiagnosticReceipt, ObservationOutcome,
+    DiagnosticEvent, DiagnosticEventClass, DiagnosticReceipt, ObservationOutcome,
     is_normalized_absolute_path,
 };
 use crate::canonical::{BoundedCanonicalJson, CanonicalWriteError};
@@ -246,9 +246,7 @@ impl CapsecInput {
             CapsecUsability::SourceStale
         } else if observation.analyzer != profile.analyzer {
             CapsecUsability::AnalyzerUnknown
-        } else if observation.report != profile.report {
-            CapsecUsability::ReportInvalid
-        } else if !observation.structurally_valid {
+        } else if observation.report != profile.report || !observation.structurally_valid {
             CapsecUsability::ReportInvalid
         } else if !observation.complete {
             CapsecUsability::Incomplete
@@ -801,11 +799,10 @@ fn canonical_path_set(
 
 fn path_is_within(path: &str, root: &str) -> bool {
     path == root
-        || (root != "/"
-            && path
-                .strip_prefix(root)
-                .is_some_and(|suffix| suffix.starts_with('/')))
         || root == "/"
+        || path
+            .strip_prefix(root)
+            .is_some_and(|suffix| suffix.starts_with('/'))
 }
 
 fn is_system_path(path: &str) -> bool {
@@ -838,9 +835,9 @@ mod tests {
     use super::*;
     use crate::artifact::tests::fixture_receipt;
     use crate::artifact::{
-        DiagnosticArtifactIdentity, DiagnosticArtifactRole, DiagnosticEvent, DiagnosticPlatform,
-        DiagnosticReceiptParts, DiagnosticTcbEntry, DiagnosticTcbRole, ObservationBounds,
-        ObservationOperands, ObservedObjectIdentity,
+        DiagnosticArtifactIdentity, DiagnosticArtifactRole, DiagnosticEvent, DiagnosticGap,
+        DiagnosticPlatform, DiagnosticReceiptParts, DiagnosticTcbEntry, DiagnosticTcbRole,
+        ObservationBounds, ObservationOperands, ObservedObjectIdentity,
     };
     use proofbound_runtime_core::{Architecture, DiagnosticCompletion, ExecutionId, FileMode};
 
@@ -889,8 +886,11 @@ mod tests {
             .expect("fixture artifact")
         };
         let receipt = crate::artifact::DiagnosticReceipt::construct(DiagnosticReceiptParts {
-            execution_id: ExecutionId::from_bytes([0x42; 16])
-                .expect("fixture execution identifier"),
+            execution_id: ExecutionId::from_bytes([
+                0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x46, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd,
+                0xee, 0xff,
+            ])
+            .expect("fixture execution identifier"),
             seed_plan: artifact(DiagnosticArtifactRole::ExecutionPlan, 0x44, 4, 0o644),
             target: artifact(DiagnosticArtifactRole::RuntimeExecutable, 0x55, 5, 0o755),
             runtime: artifact(DiagnosticArtifactRole::RuntimeBinary, 0x11, 1, 0o755),

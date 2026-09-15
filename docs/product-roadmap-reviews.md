@@ -1482,3 +1482,22 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 commit adds no reviewed production, schema, specification, claim, assumption,
 evidence, or test bytes. Any later subject change requires a new exact-head
 review.
+
+## RT-8 diagnostic artifact producer hosted correction
+
+Hosted Verify run `34930489605` tested approval envelope
+`7154acd69cc95ffabd8fcace3ac2de216fe00023`. Both native boundary lanes passed,
+but the Rust and ledger lanes found three source defects:
+
+1. `DiagnosticGap` was imported into non-test draft code but used only by the
+   test module, which failed the warnings-as-errors gate;
+2. adjacent Capsec report-identity and structural-validity branches returned
+   the same result and failed the Clippy identical-branch gate; and
+3. the broad-root Rust evidence fixture used bytes that were not a valid typed
+   execution identifier, so the registered test failed before reaching its
+   path-scope assertion.
+
+Clippy also required the path-containment Boolean expression to use its direct
+equivalent form. These corrections do not change the reviewed authority,
+schema, producer, or receipt meaning, but they change the exact subject and
+therefore require a new independent exact-head review.

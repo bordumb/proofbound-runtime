@@ -1,13 +1,13 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T05:51:02+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T06:04:44+01:00 (Europe/London, BST)
 - **Runtime baseline:** RT-8 diagnostic-contract foundation merge `edf87bb`;
   exact-main Verify run `34929775221` is in progress, while the complete
   exact-head Verify run `34927183354` passed before merge
-- **Active implementation wave:** the pure RT-8 artifact producer on stacked
-  branch `codex/rt8-observer`; exact head `07c1b13` is independently approved
-  and the approval-only envelope awaits hosted verification
+- **Active implementation wave:** RT-8 producer PR 11 passed both native lanes;
+  hosted Rust and ledger findings are isolated in a source correction that
+  requires a new independent exact-head review
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
