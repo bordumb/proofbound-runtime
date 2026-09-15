@@ -2948,3 +2948,33 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes no reviewed production,
 specification, claim, assumption, evidence, checker, or source-closure bytes.
 Any later subject change requires a new exact-head review.
+
+## RT-7 Proofbound metadata credential initial review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `a89b92daa0a6f977c4a090b3f9a2e553fc94884d`
+- **Reviewed head:** `4a6df5236ec64881af1ade5fed832e003b11c805`
+- **Branch:** `codex/ci-proofbound-api-quota`
+- **Method:** Complete exact-range static security review. The reviewer changed
+  no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review found four blocking defects. First, the default HTTP redirect
+handler could forward the GitHub API authorization header before the final URL
+scheme check. Second, the protected evidence and release checkout steps kept
+their repository credentials while the upstream installer inherited the
+repository working directory. Third, the falsifiers did not causally reject
+redirect leakage, job-level token movement, persisted checkout credentials,
+or installer environment and working-directory widening. Fourth, the claim,
+assumption, assurance plan, and RT-7 record transferred the earlier anonymous
+consumer's admission to a changed credential-bearing subject.
+
+The correction must reject every credential-bearing redirect, admit only the
+canonical HTTPS GitHub API origin, remove persisted checkout credentials from
+each protected bundle job, and run the upstream installer in its extracted
+temporary directory with a closed environment. It must add causal falsifiers
+for those boundaries and retain `4a0cfdb` only as the historical admission.
+`PBR-DISTRIBUTION-016` and inherited `PBR-DISTRIBUTION-025` remain pending until
+the corrected exact subject receives independent review and hosted admission.

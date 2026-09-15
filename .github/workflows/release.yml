@@ -162,6 +162,7 @@ jobs:
         with:
           ref: ${{ env.PBR_RELEASE_REVISION }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Confirm the exact requested head
         run: test "$(git rev-parse HEAD)" = "$PBR_RELEASE_REVISION"

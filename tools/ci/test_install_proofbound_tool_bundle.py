@@ -168,6 +168,44 @@ class PinTests(unittest.TestCase):
                     "https://api.github.com/repos/example/release"
                 )
 
+    def test_api_credential_rejects_noncanonical_origin(self) -> None:
+        with mock.patch.dict(
+            installer.os.environ, {"GITHUB_TOKEN": "fixture-credential"}
+        ):
+            for url in (
+                "http://api.github.com/repos/example/release",
+                "https://api.github.com:443/repos/example/release",
+            ):
+                with self.subTest(url=url):
+                    with self.assertRaisesRegex(
+                        installer.ToolBundleError, "origin is invalid"
+                    ):
+                        installer._request_headers(url)
+
+    def test_api_credential_rejects_every_redirect(self) -> None:
+        request = installer.Request(
+            "https://api.github.com/repos/example/release",
+            headers={"Authorization": "Bearer fixture-credential"},
+        )
+        handler = installer._CredentialRedirectHandler()
+        for target in (
+            "https://api.github.com/repos/example/other-release",
+            "https://example.invalid/capture",
+            "http://api.github.com/repos/example/release",
+        ):
+            with self.subTest(target=target):
+                with self.assertRaisesRegex(
+                    installer.ToolBundleError, "request redirected"
+                ):
+                    handler.redirect_request(
+                        request,
+                        None,
+                        302,
+                        "Found",
+                        {},
+                        target,
+                    )
+
     def test_canonical_pin_and_upstream_records_are_closed(self) -> None:
         pin, payloads = fixture()
         with tempfile.TemporaryDirectory() as temporary:
@@ -331,8 +369,12 @@ class PinTests(unittest.TestCase):
             return payloads[url.rsplit("/", 1)[1]]
 
         def fake_run(
-            command: list[str], **_kwargs: object
+            command: list[str], **kwargs: object
         ) -> subprocess.CompletedProcess:
+            self.assertEqual(
+                kwargs["env"], {"PATH": installer.os.environ.get("PATH", "")}
+            )
+            self.assertEqual(Path(kwargs["cwd"]), Path(command[1]).parent)
             destination = Path(command[command.index("--destination") + 1])
             destination.mkdir()
             for name in installer.BINARY_NAMES:

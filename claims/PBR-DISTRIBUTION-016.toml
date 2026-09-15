@@ -14,7 +14,7 @@ assumptions = [
   "PBR-BUNDLE-TOOLCHAIN-AX-013",
 ]
 open_obligations = [
-  "Confirm the protected evidence and release-production cutover through independent exact-head review and one successful exact-head hosted Verify run before recording this claim as complete.",
+  "Pass independent exact-head review and one complete exact-head hosted Verify run for the workflow-credential-scoping correction. Do not transfer the historical admission at Runtime main 4a0cfdb to the changed claim or assumption identities.",
 ]
 out_of_scope = [
   "Correctness of the Proofbound binaries, pinned Proofbound installer, Rust compiler, GitHub Actions runner, GitHub release service, TLS implementation, Python interpreter, archive implementation, cryptographic digest implementation, filesystem, process implementation, or operating system.",

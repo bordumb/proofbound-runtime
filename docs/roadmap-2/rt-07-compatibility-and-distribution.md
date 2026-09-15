@@ -1,9 +1,10 @@
 # RT-7 integration record: prelaunch packaging and distribution
 
-**Status:** package, public Proofbound bundle, and protected cutover contracts
-are admitted. The current-integration and one-time npm bootstrap correction
-wave is active; external registry publication and consumer observations remain
-open
+**Status:** package and the historical anonymous public Proofbound bundle
+cutover are admitted. The bundle metadata credential-scoping correction,
+current-integration replay, and one-time npm bootstrap correction are pending
+exact review and hosted admission. External registry publication and consumer
+observations remain open
 
 **Primary owner:** Proofbound Runtime
 
@@ -135,11 +136,13 @@ the digest implementation, the pinned upstream installer, the hosted runner,
 process behavior, and filesystem behavior visible. The checks bind exact
 identities under those premises; they do not discharge them.
 
-Each protected job supplies its workflow-scoped read-only credential only to
-GitHub API metadata requests. Release assets remain public downloads without
-that credential and retain exact pin, size, digest, manifest, and installed-byte
-checks. This avoids shared anonymous API quotas without converting the public
-asset path into a credential-dependent distribution claim.
+The active credential-scoping correction makes each protected job supply its
+workflow-scoped read-only credential only to GitHub API metadata requests.
+Release assets remain public downloads without that credential and retain exact
+pin, size, digest, manifest, and installed-byte checks. The correction avoids
+shared anonymous API quotas without converting the public asset path into a
+credential-dependent distribution claim. It is not admitted until independent
+exact-head review and a complete hosted Verify run pass.
 
 ## Registry publication implementation checkpoint
 

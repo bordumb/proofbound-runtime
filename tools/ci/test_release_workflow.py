@@ -7,6 +7,27 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = REPOSITORY_ROOT / ".github" / "workflows" / "release.yml"
 
 
+def _release_job(workflow: str) -> str:
+    return workflow[
+        workflow.index("\n  release:\n") : workflow.index("\n  provenance:\n")
+    ]
+
+
+def _assert_bundle_credential_boundary(job: str) -> None:
+    checkout_end = job.index("      - name: Confirm the exact requested head\n")
+    checkout = job[:checkout_end]
+    assert "persist-credentials: false" in checkout
+
+    install_start = job.index(
+        "      - name: Install the exact public Proofbound bundle\n"
+    )
+    install_end = job.index("      - name:", install_start + 8)
+    install = job[install_start:install_end]
+    credential = "GITHUB_TOKEN: ${{ github.token }}"
+    assert job.count(credential) == 1
+    assert install.count(credential) == 1
+
+
 class ReleaseWorkflowTests(unittest.TestCase):
     def _npm_publication_blocks(self, workflow: str) -> tuple[str, str, str, str]:
         job_start = workflow.index("\n  publish-typescript-sdk:\n")
@@ -277,10 +298,9 @@ class ReleaseWorkflowTests(unittest.TestCase):
 
     def test_release_uses_the_identity_checked_public_proofbound_bundle(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        release = workflow[
-            workflow.index("\n  release:\n") : workflow.index("\n  provenance:\n")
-        ]
+        release = _release_job(workflow)
 
+        _assert_bundle_credential_boundary(release)
         install = release.index("Install the exact public Proofbound bundle")
         path = release.index("Add the identity-checked public tools to PATH")
         verify = release.index("Verify Proofbound executables")
@@ -305,6 +325,31 @@ class ReleaseWorkflowTests(unittest.TestCase):
             self.assertIn(f"command -v {executable}", release)
         self.assertNotIn("https://github.com/bordumb/proof-bound", release)
         self.assertNotIn("--rev 1084e0d1dc5685933b705d8844af5b123399e0b9", release)
+
+    def test_release_bundle_credential_boundary_mutations_fail_closed(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        release = _release_job(workflow)
+        credential = "          GITHUB_TOKEN: ${{ github.token }}\n"
+
+        mutations = {
+            "checkout credential persisted": release.replace(
+                "          persist-credentials: false\n", "", 1
+            ),
+            "credential moved to job": release.replace(credential, "", 1).replace(
+                "    steps:\n",
+                "    env:\n"
+                "      GITHUB_TOKEN: ${{ github.token }}\n"
+                "    steps:\n",
+                1,
+            ),
+            "credential duplicated": release.replace(
+                credential, credential * 2, 1
+            ),
+        }
+        for name, mutation in mutations.items():
+            with self.subTest(name=name):
+                with self.assertRaises(AssertionError):
+                    _assert_bundle_credential_boundary(mutation)
 
     def test_release_reproduction_remains_clean_and_uncached(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
