@@ -34,7 +34,7 @@ threat-model, ADR, claim, and evidence changes before production code.
 
 ### Execution checkpoint
 
-As of 2026-09-15, Runtime main commit `b2cb4b9` contains the version 2 memory
+As of 2026-09-15, Runtime main commit `4783896` contains the version 2 memory
 and deterministic CBOR wave, receipt composition and acceptance, a bounded
 static plan scaffold,
 typed prelaunch diagnostics, reproducible Rust, Python, and TypeScript SDK
@@ -114,8 +114,9 @@ passed preflight, formal, both native lanes, and all fresh-evidence lanes except
 one anonymous GitHub rate-limit failure, but Rust lint found a separate large
 public adapter observation enum. The current correction boxes only the terminal
 drain-selection event and adds no boxing allocation to the normal trace path.
-Exact re-review approved head `fbd2d66`; the following approval-only record and
-replacement hosted admission remain open. Artifact
+Exact re-review approved head `fbd2d66`; approval-only head `db95947` passed
+complete exact-head run `34992273744` and merged unsigned as `4783896`.
+Exact-main Verify run `34997195939` is in progress. Artifact
 mapping, command integration, the native attack corpus, and release binding
 remain open.
 RT-9 is blocked until RT-5 implements the accepted single-service network

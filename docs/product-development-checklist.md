@@ -1,34 +1,20 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T17:00:11+01:00 (Europe/London, BST)
-- **Runtime baseline:** the combined active trace and event-drain batch passed
-  exact-head Verify run `34973401808` at `9f82afa` and merged unsigned as
-  `b2cb4b9`. Exact-main run `34978365970` failed before the required lanes
-  started because the unrelated network experiment missed its bounded ready-file
-  observation. The coupled setup
-  adapter exact-main run `34969409215`, trace-startup run `34962882198`, and
-  identity-bound exec-release run `34956564102` passed.
-- **Active implementation wave:** active trace and event-and-drain coupling are
-  merged together as `b2cb4b9`. The earlier `c4b88c1` run `34970508987`
-  failed only on two Rust lints fixed by the combined reviewed batch and is
-  superseded by the green `9f82afa` run. The decoder series is restacked on
-  exact main with no content conflict. Its independently approved exact source
-  `5d82dcd` and approval-only head `858bfb9` then failed hosted run
-  `34979197795` only on a large private enum lint. Correction `5d479bd` removes
-  that enum without adding per-event allocation and refreshes the exact source
-  guards. Independent re-review approved exact head `b027ddd`; approval-only
-  head `4f66fc4` reached run `34988148920`. Rust lint found a separate large
-  public adapter observation enum, while the receipt evidence lane hit anonymous
-  GitHub rate exhaustion. The current correction boxes only the one terminal
-  drain-selection event. Exact re-review approved head `fbd2d66`; the following
-  approval-only record precedes another hosted run.
-- **Current implementation batch:** architecture-qualified syscall decoding and
-  bounded operand capture are implemented locally as `PBR-OBSERVER-025`. The
-  exact aggregate subject, compiler and crate-selection closure, adapter build
-  evidence, all load-bearing decoder bodies, and the zero-reserved exact-size
-  syscall-information parser are now registered in response to independent
-  review. Artifact mapping and native attacks remain open after this batch.
+- **Last updated:** 2026-09-15T17:56:20+01:00 (Europe/London, BST)
+- **Runtime baseline:** the architecture-qualified decoder passed complete
+  exact-head Verify run `34992273744` at approval-only head `db95947` and
+  merged unsigned as `4783896`. Exact-main Verify run `34997195939` is in
+  progress.
+- **Active implementation wave:** the `PBR-DISTRIBUTION-025`
+  current-integration source passed independent review at exact subject
+  `a81e259`. Its four unsigned commits are replayed on Runtime main with the
+  approved implementation, schema, claim, evidence, and tests preserved.
+  Focused static replay checks pass; admitted-main review is pending.
+- **Current implementation batch:** close RT-7's machine-readable supported
+  tuple before external publication. Registry configuration, protected
+  publication, anonymous observations, unrelated consumer dogfood, and a
+  retained current-integration artifact remain external completion gates.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -238,9 +224,9 @@ manifest describes the supported tuple.
   found incorrect syscall-pair retention and non-leader exec identity checks;
   exact re-review approved corrected head `c20f6e3`. Its admitted-main replay
   at `1db68a6` also passed independent review. The combined correction passed
-  exact-head run `34973401808` at `9f82afa` and merged unsigned as `b2cb4b9`;
-  exact-main run `34978365970` failed before required lanes started because the
-  unrelated network experiment missed its bounded ready-file observation.
+  exact-head run `34973401808` at `9f82afa` and merged unsigned as `b2cb4b9`.
+  The following decoder batch passed complete exact-head run `34992273744` and
+  merged unsigned as `4783896`; exact-main run `34997195939` is in progress.
 - [ ] Admit live event-and-drain coupling. Exact source `af9f77d` passed
   independent review with an explicit `APPROVE`. The adapter passes the validated
   lifetime process bound to the effectful trace before release, consumes each
@@ -257,8 +243,9 @@ manifest describes the supported tuple.
   recorded. Combined approval-only head `9f82afa` passed replacement Verify run
   `34973401808` and merged unsigned as `b2cb4b9`; exact-main run `34978365970`
   failed in the unrelated network experiment ready-file check before the
-  required lanes started. The following decoder changes the same exact sources,
-  so its exact review and hosted admission remain open.
+  required lanes started. The following decoder changes to the same exact
+  sources passed complete exact-head run `34992273744` and merged unsigned as
+  `4783896`; exact-main run `34997195939` is in progress.
 - [ ] Admit architecture-qualified syscall decoding and bounded operand capture.
   The current source has separate x86_64 and aarch64 tables, rejects x32 and
   unsupported registered forms, captures path and socket-address bytes before
@@ -273,8 +260,9 @@ manifest describes the supported tuple.
   approved exact head `b027ddd`. Replacement run `34988148920` found a second
   large enum in the adapter's terminal drain observation. The current narrow
   correction boxes only that terminal event, and independent re-review approved
-  exact head `fbd2d66`. The following approval-only record and replacement
-  hosted admission remain open.
+  exact head `fbd2d66`. Approval-only head `db95947` passed complete hosted run
+  `34992273744` and merged unsigned as `4783896`; exact-main run `34997195939`
+  is in progress.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.

@@ -21,8 +21,9 @@ ready-file check. The merged source passes the validated process
 bound into the effectful trace, consumes complete events into the matching
 pure protocol, permanently
 rejects an unreconciled process tree, and makes successful effectful drain
-reconciliation precede pure tree-empty acknowledgement. Only the following
-decoder identity remains pending review and hosted admission.
+reconciliation precede pure tree-empty acknowledgement. The following decoder
+identity passed exact-head review and hosted verification and is merged on
+current main; exact-main admission remains in progress.
 The architecture-qualified syscall decoder and bounded entry-time operand
 capture are implemented locally under `PBR-OBSERVER-025`. The exact aggregate
 subject, compiler and crate-selection closure, adapter build evidence, and all
@@ -41,10 +42,10 @@ blocked by anonymous GitHub API rate exhaustion, and Rust lint found a separate
 large public adapter observation enum. The current correction boxes only the
 single event that selects terminal drain; normal trace waits and continuing
 events receive no new boxing allocation. Independent exact-head re-review
-approved head `fbd2d66`; the following approval-only record changes no reviewed
-source. Replacement hosted admission remains open. Artifact mapping, command
-integration, the native attack corpus,
-and release binding remain open.
+approved head `fbd2d66`; approval-only head `db95947` passed complete
+exact-head run `34992273744` and merged unsigned as `4783896`. Exact-main run
+`34997195939` is in progress. Artifact mapping, command integration, the
+native attack corpus, and release binding remain open.
 
 **Primary owner:** Proofbound Runtime
 

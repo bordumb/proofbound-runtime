@@ -4,8 +4,8 @@
 - **Date:** 2026-09-15
 - **Applies to:** Roadmap 1 release closure, Roadmap 2, and Roadmap 3 candidate
   promotion
-- **Current admitted Runtime main:** `7f989d3`; exact-main Verify run
-  `34896209689` passed
+- **Current Runtime main candidate:** `4783896`; exact-head Verify run
+  `34992273744` passed and exact-main Verify run `34997195939` is in progress
 - **Current reviewed Roadmap 1 source head:** `d76f3b8`
 - **Lifecycle:** prelaunch; zero external users; package labels are tooling
   metadata rather than compatibility promises
@@ -18,9 +18,10 @@ review updates it.
 
 ## 1. Current boundary
 
-Roadmap 1 source work is merged and admitted at exact Runtime main commit
-`7f989d3`. Roadmap 2 delivery is active; no complete Roadmap 2 epic has closed.
-Roadmap 3 contains candidates, not scheduled implementation.
+Roadmap 1 source work is merged. Runtime main `4783896` also contains the
+reviewed RT-8 decoder; exact-main admission run `34997195939` is in progress.
+Roadmap 2 delivery is active; no complete Roadmap 2 epic has closed. Roadmap 3
+contains candidates, not scheduled implementation.
 
 The immediate objective is to finish RT-7 distribution, then remove the
 first-run and useful-network barriers in that order. No version cut,
@@ -141,9 +142,10 @@ The protected-path cutover passed independent review at production subject
 `9d0cbb2`, passed exact-head Verify run `34915891330` at approval-envelope head
 `515fcbc`, and merged unsigned as `4a0cfdb`. Exact-main Verify run
 `34918706960` passed. The protected registry route and anonymous exact-byte
-observer are now merged. The next isolated source wave adds the
-deterministic-CBOR current-integration producer and independent verifier; its
-implementation is active under `PBR-DISTRIBUTION-025`.
+observer are now merged. The deterministic-CBOR current-integration producer
+and independent verifier passed independent review at source `a81e259` and are
+replayed on current main under `PBR-DISTRIBUTION-025`; admitted-main review and
+hosted verification remain open.
 External registry configuration, publication, anonymous observations, and
 unrelated consumer dogfood remain separate completion gates.
 This work follows the admitted foundation as a separate exact-source wave. It

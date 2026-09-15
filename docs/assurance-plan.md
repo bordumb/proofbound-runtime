@@ -25,15 +25,15 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-DISTRIBUTION-015` | Tier 1 independently reviewed and admitted on exact Runtime main | The verifier package has a closed preflight, source-payload comparison, byte reproduction, local consumer, and release-retention path; no registry or publisher claim is admitted. |
 | `PBR-DISTRIBUTION-016` | Tier 1 public-bundle consumer independently reviewed and admitted on exact Runtime main | Runtime pins one immutable public Proofbound release and rejects identity, inventory, manifest, checksum, archive, installer, and installed-byte substitution. Every protected evidence and release job installs that exact bundle independently. |
 | `PBR-DISTRIBUTION-018` | Tier 1 workflow and registry-observer contract | Publication is explicit, exact-source, protected, ordered, and credential-isolated. Anonymous exact-byte registry observations and external registry setup remain open. |
-| `PBR-DISTRIBUTION-025` | Tier 1 source contract independently approved at `a81e259`; admitted-main replay and hosted admission pending | A deterministic-CBOR producer and independent verifier close one Runtime-only integration tuple after complete registry observation. No tuple is published until an exact protected run retains it. |
+| `PBR-DISTRIBUTION-025` | Tier 1 source contract independently approved at `a81e259`; replayed review and hosted admission pending | A deterministic-CBOR producer and independent verifier close one Runtime-only integration tuple after complete registry observation. No tuple is published until an exact protected run retains it. |
 | `PBR-DRAFT-017` | Tier 1 bounded contract and source-level non-reuse checks | Closed diagnostic vocabulary and schemas are registered, and verifier, composer, and acceptor paths reject diagnostic receipt reuse. The live observer remains open. |
 | `PBR-DRAFT-019` | Tier 1 bounded producer contract independently reviewed and admitted on exact Runtime main | The pure diagnostic artifact producer preserves non-reuse, provenance, explicit gaps, and mandatory human authority choices. It does not claim live observer coverage. |
-| `PBR-OBSERVER-020` | Tier 1 admitted through active event-and-drain main `b2cb4b9`; current decoder identity pending | The admitted event-and-drain sources passed exact-head run `34973401808`. The decoder batch changes the observer source to expose validated capture limits, so only that new exact identity is pending review and hosted admission. |
-| `PBR-OBSERVER-021` | Tier 1 admitted through active event-and-drain main `b2cb4b9`; current decoder identity pending | The admitted event-and-drain sources passed exact-head run `34973401808`. The decoder batch changes the shared trace source, so only that new exact identity is pending review and hosted admission. |
-| `PBR-OBSERVER-022` | Tier 1 admitted through active event-and-drain main `b2cb4b9`; current decoder identity pending | The admitted adapter coupling passed exact-head run `34973401808`. The decoder batch changes the adapter release transition to derive capture limits from the same validated protocol, so only that identity is pending. |
-| `PBR-OBSERVER-023` | Tier 1 active-trace source admitted on main `b2cb4b9`; current decoder identity pending | The active event source and drain coupling passed exact-head run `34973401808`. The decoder batch changes `ActiveTrace` to decode and capture operands at entry, so only that identity is pending. |
-| `PBR-OBSERVER-024` | Tier 1 event-and-drain coupling admitted on main `b2cb4b9`; current decoder identity pending | The combined correction passed exact-head run `34973401808` and merged. The decoder changes shared trace, adapter, and observer sources, so only the new exact identity is pending review and hosted admission. |
-| `PBR-OBSERVER-025` | Tier 1 syscall-decoder source implementation independently approved; replacement hosted admission pending | Exact source `fbd2d66` closes the second hosted large-enum lint by adding one box only for the terminal drain-selection event; it adds no boxing allocation to normal wait, continue, or natural-completion events. Run `34988148920` otherwise passed formal, native, and all non-rate-limited evidence lanes. Kernel ABI truth, memory stability, native attacks, and artifact mapping remain open. |
+| `PBR-OBSERVER-020` | Tier 1 decoder identity merged as `4783896`; exact-main admission pending | The complete decoder subject passed exact-head run `34992273744`. Exact-main run `34997195939` is in progress. |
+| `PBR-OBSERVER-021` | Tier 1 decoder identity merged as `4783896`; exact-main admission pending | The shared trace source passed exact-head run `34992273744`. Exact-main run `34997195939` is in progress. |
+| `PBR-OBSERVER-022` | Tier 1 decoder identity merged as `4783896`; exact-main admission pending | The adapter derives capture limits from the same validated protocol and passed exact-head run `34992273744`. Exact-main run `34997195939` is in progress. |
+| `PBR-OBSERVER-023` | Tier 1 decoder identity merged as `4783896`; exact-main admission pending | Entry-time operand capture passed exact-head run `34992273744`. Exact-main run `34997195939` is in progress. |
+| `PBR-OBSERVER-024` | Tier 1 decoder identity merged as `4783896`; exact-main admission pending | The shared trace, adapter, and observer sources passed exact-head run `34992273744`. Exact-main run `34997195939` is in progress. |
+| `PBR-OBSERVER-025` | Tier 1 syscall-decoder source merged as `4783896`; exact-main admission pending | Approval-only head `db95947` passed complete exact-head run `34992273744`. Exact-main run `34997195939` is in progress. Kernel ABI truth, memory stability, native attacks, and artifact mapping remain open. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -702,8 +702,9 @@ The Rust lane exposed a distinct large-enum lint in the adapter's public drain
 observation. The current correction uses one boxed event only when an event
 selects terminal drain. It adds no boxing allocation to normal continue,
 natural-completion, or trace-wait events. The affected exact-body checks are
-refreshed. Independent re-review approved exact head `fbd2d66`. The following
-approval-only record and replacement hosted admission remain open.
+refreshed. Independent re-review approved exact head `fbd2d66`. Approval-only
+head `db95947` passed complete exact-head run `34992273744` and merged unsigned
+as `4783896`. Exact-main Verify run `34997195939` is in progress.
 
 ## Bounded-domain declaration guard
 
