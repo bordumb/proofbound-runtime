@@ -27,6 +27,21 @@ class DiagnosticDraftingContractTests(unittest.TestCase):
         self.assertIn(receipt["completion"], {"complete", "incomplete"})
         self.assertEqual(receipt["mechanism"], "linux-ptrace-syscall-v1")
 
+        draft = json.loads(DRAFT_VECTOR.read_bytes())
+        self.assertEqual(draft["arguments"], receipt["arguments"])
+        self.assertEqual(draft["environment_names"], receipt["environment_names"])
+        self.assertEqual(draft["inputs"], [])
+        self.assertIsNone(draft["static_scaffold"])
+        self.assertEqual(
+            {item["code"] for item in draft["open_items"]},
+            {
+                "choose-environment",
+                "choose-limits",
+                "choose-network-mode",
+                "choose-write-roots",
+            },
+        )
+
     def test_schemas_are_closed_and_fix_every_security_discriminant(self):
         diagnostic = json.loads(DIAGNOSTIC_SCHEMA.read_bytes())
         draft = json.loads(DRAFT_SCHEMA.read_bytes())
@@ -46,6 +61,20 @@ class DiagnosticDraftingContractTests(unittest.TestCase):
             diagnostic["properties"]["mechanism"]["const"],
             "linux-ptrace-syscall-v1",
         )
+        expected_roles = {
+            "launcher": "launcher-binary",
+            "observer": "diagnostic-observer",
+            "runtime": "runtime-binary",
+            "seed_plan": "execution-plan",
+            "target": "runtime-executable",
+        }
+        for field, role in expected_roles.items():
+            self.assertEqual(
+                diagnostic["properties"][field]["allOf"][1]["properties"]["role"]["const"],
+                role,
+            )
+        self.assertEqual(len(diagnostic["$defs"]["event"]["oneOf"]), 2)
+        self.assertEqual(len(diagnostic["allOf"]), 2)
         self.assertEqual(
             draft["properties"]["schema"]["const"],
             "proofbound-runtime-plan-draft/1",
@@ -59,6 +88,26 @@ class DiagnosticDraftingContractTests(unittest.TestCase):
                 "platform-required-closure",
                 "static-executable-closure",
             },
+        )
+        self.assertTrue(
+            {"arguments", "environment_names", "inputs", "static_scaffold"}
+            <= set(draft["required"])
+        )
+        mandatory = {
+            item["$ref"]
+            for item in draft["properties"]["open_items"]["allOf"]
+        }
+        self.assertEqual(
+            mandatory,
+            {
+                "#/$defs/chooseEnvironment",
+                "#/$defs/chooseLimits",
+                "#/$defs/chooseNetwork",
+                "#/$defs/chooseWriteRoots",
+            },
+        )
+        self.assertEqual(
+            draft["properties"]["gaps"]["items"], {"$ref": "#/$defs/gap"}
         )
 
     def test_production_entry_points_have_no_diagnostic_observer_dependency(self):

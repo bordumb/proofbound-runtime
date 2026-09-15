@@ -5,20 +5,47 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "arguments",
     "breadth",
     "candidates",
     "diagnostic_receipt_commitment",
+    "environment_names",
     "gaps",
+    "inputs",
     "open_items",
     "safe_policy",
     "schema",
-    "seed_plan"
+    "seed_plan",
+    "static_scaffold"
   ],
   "properties": {
     "schema": {"const": "proofbound-runtime-plan-draft/1"},
     "safe_policy": {"const": false},
     "diagnostic_receipt_commitment": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
     "seed_plan": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "static_scaffold": {
+      "oneOf": [
+        {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        {"type": "null"}
+      ]
+    },
+    "arguments": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {"type": "string", "maxLength": 65536}
+    },
+    "environment_names": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$", "maxLength": 256}
+    },
+    "inputs": {
+      "type": "array",
+      "maxItems": 65536,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/input"}
+    },
     "candidates": {
       "type": "array",
       "maxItems": 1048576,
@@ -28,6 +55,12 @@
       "type": "array",
       "minItems": 4,
       "maxItems": 1048576,
+      "allOf": [
+        {"$ref": "#/$defs/chooseEnvironment"},
+        {"$ref": "#/$defs/chooseLimits"},
+        {"$ref": "#/$defs/chooseNetwork"},
+        {"$ref": "#/$defs/chooseWriteRoots"}
+      ],
       "items": {"$ref": "#/$defs/openItem"}
     },
     "breadth": {
@@ -45,10 +78,77 @@
       "type": "array",
       "maxItems": 64,
       "uniqueItems": true,
-      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+      "items": {"$ref": "#/$defs/gap"}
     }
   },
   "$defs": {
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "path", "role", "sha256", "size_bytes"],
+      "properties": {
+        "mode": {"type": "string", "pattern": "^[0-7]{4}$"},
+        "path": {"type": "string", "pattern": "^/", "maxLength": 1048576},
+        "role": {"const": "project-input"},
+        "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "size_bytes": {"type": "integer", "minimum": 0}
+      }
+    },
+    "gap": {
+      "enum": [
+        "architecture-unsupported",
+        "child-lost",
+        "event-limit",
+        "event-per-process-limit",
+        "identity-drift",
+        "observer-failed",
+        "output-limit",
+        "path-limit",
+        "process-limit",
+        "socket-address-limit",
+        "string-limit",
+        "symlink-limit",
+        "syscall-unsupported",
+        "tracee-memory-read-failed",
+        "unexpected-stop"
+      ]
+    },
+    "chooseEnvironment": {
+      "contains": {
+        "type": "object",
+        "properties": {"code": {"const": "choose-environment"}},
+        "required": ["code"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "chooseLimits": {
+      "contains": {
+        "type": "object",
+        "properties": {"code": {"const": "choose-limits"}},
+        "required": ["code"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "chooseNetwork": {
+      "contains": {
+        "type": "object",
+        "properties": {"code": {"const": "choose-network-mode"}},
+        "required": ["code"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "chooseWriteRoots": {
+      "contains": {
+        "type": "object",
+        "properties": {"code": {"const": "choose-write-roots"}},
+        "required": ["code"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
     "provenance": {
       "enum": [
         "capsec-source-observation",

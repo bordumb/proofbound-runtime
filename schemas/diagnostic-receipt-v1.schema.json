@@ -4,6 +4,22 @@
   "title": "Proofbound Runtime diagnostic receipt version 1",
   "type": "object",
   "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {"completion": {"const": "complete"}},
+        "required": ["completion"]
+      },
+      "then": {"properties": {"gaps": {"maxItems": 0}}}
+    },
+    {
+      "if": {
+        "properties": {"completion": {"const": "incomplete"}},
+        "required": ["completion"]
+      },
+      "then": {"properties": {"gaps": {"minItems": 1}}}
+    }
+  ],
   "required": [
     "arguments",
     "assumptions",
@@ -35,11 +51,36 @@
       "type": "string",
       "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
     },
-    "seed_plan": {"$ref": "#/$defs/artifact"},
-    "target": {"$ref": "#/$defs/artifact"},
-    "runtime": {"$ref": "#/$defs/artifact"},
-    "launcher": {"$ref": "#/$defs/artifact"},
-    "observer": {"$ref": "#/$defs/artifact"},
+    "seed_plan": {
+      "allOf": [
+        {"$ref": "#/$defs/artifact"},
+        {"properties": {"role": {"const": "execution-plan"}}}
+      ]
+    },
+    "target": {
+      "allOf": [
+        {"$ref": "#/$defs/artifact"},
+        {"properties": {"role": {"const": "runtime-executable"}}}
+      ]
+    },
+    "runtime": {
+      "allOf": [
+        {"$ref": "#/$defs/artifact"},
+        {"properties": {"role": {"const": "runtime-binary"}}}
+      ]
+    },
+    "launcher": {
+      "allOf": [
+        {"$ref": "#/$defs/artifact"},
+        {"properties": {"role": {"const": "launcher-binary"}}}
+      ]
+    },
+    "observer": {
+      "allOf": [
+        {"$ref": "#/$defs/artifact"},
+        {"properties": {"role": {"const": "diagnostic-observer"}}}
+      ]
+    },
     "platform": {
       "type": "object",
       "additionalProperties": false,
@@ -129,13 +170,27 @@
           ]
         },
         "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
-        "size_bytes": {"type": "integer", "minimum": 0},
+        "size_bytes": {"type": "integer", "minimum": 1},
         "mode": {"type": "string", "pattern": "^[0-7]{4}$"}
       }
     },
     "event": {
       "type": "object",
       "additionalProperties": false,
+      "oneOf": [
+        {
+          "properties": {
+            "error": {"type": "null"},
+            "result": {"type": "integer"}
+          }
+        },
+        {
+          "properties": {
+            "error": {"type": "integer", "minimum": 1},
+            "result": {"type": "null"}
+          }
+        }
+      ],
       "required": ["architecture", "class", "error", "path", "process", "resolution", "result", "sequence"],
       "properties": {
         "sequence": {"type": "integer", "minimum": 0},
