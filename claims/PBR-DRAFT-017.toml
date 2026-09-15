@@ -57,7 +57,7 @@ source_roots = [
   "proofbound/evidence/diagnostic-schema-contract.toml",
   "proofbound/evidence/diagnostic-verifier-cli-non-reuse.toml",
   "proofbound/evidence/diagnostic-verifier-non-reuse.toml",
-  "schemas/acceptance-decision-v1.cddl",
+  "schemas/acceptance-decision-v2.cddl",
   "schemas/diagnostic-receipt-v1.schema.json",
   "schemas/plan-draft-v1.schema.json",
   "schemas/vectors/diagnostic/diagnostic-receipt.json",

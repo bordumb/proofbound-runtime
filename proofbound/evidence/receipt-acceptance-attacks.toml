@@ -22,7 +22,7 @@ inputs = [
   "crates/proofbound-runtime-accept/src/lib.rs",
   "crates/proofbound-runtime-compose/src/lib.rs",
   "crates/proofbound-runtime-verify/src/decode.rs",
-  "schemas/acceptance-decision-v1.cddl",
+  "schemas/acceptance-decision-v2.cddl",
   "schemas/acceptance-policy-v1.cddl",
   "schemas/vectors/v2/acceptance-decision.cbor.hex",
   "schemas/vectors/v2/acceptance-policy.cbor.hex",

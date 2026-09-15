@@ -17,8 +17,11 @@ objects. This specification therefore fixes the bytes before implementation.
 
 The policy schema is `proofbound-runtime-acceptance-policy/1` and its closed
 CDDL is `schemas/acceptance-policy-v1.cddl`. The decision schema is
-`proofbound-runtime-acceptance-decision/1` and its closed CDDL is
-`schemas/acceptance-decision-v1.cddl`. Both use deterministic CBOR under RFC
+`proofbound-runtime-acceptance-decision/2` and its closed CDDL is
+`schemas/acceptance-decision-v2.cddl`. Decision version 2 replaces the
+prelaunch version 1 contract. It adds the closed
+`diagnostic-profile-not-reusable` rejection reason. No decoder accepts both
+decision versions. Both objects use deterministic CBOR under RFC
 8949 section 4.2.1, definite lengths, shortest integer and length encodings,
 text-only map keys ordered by their encoded bytes, and no tags or floating
 point values. Unknown, duplicate, or out-of-order fields fail closed.
@@ -34,7 +37,7 @@ SHA-256("proofbound-runtime-acceptance-policy/1" || 0x00 || policy_bytes)
 
 The decision identity is SHA-256 over the same deterministic decision encoding
 with `decision_id` omitted, prefixed by
-`"proofbound-runtime-acceptance-decision/1" || 0x00`.
+`"proofbound-runtime-acceptance-decision/2" || 0x00`.
 
 ## Policy semantics
 

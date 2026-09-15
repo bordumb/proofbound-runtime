@@ -21,7 +21,7 @@ inputs = [
   "crates/proofbound-runtime-linux/src/bin/pbr-native-launcher.rs",
   "crates/proofbound-runtime-verify/src/error.rs",
   "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",
-  "schemas/acceptance-decision-v1.cddl",
+  "schemas/acceptance-decision-v2.cddl",
   "schemas/diagnostic-receipt-v1.schema.json",
   "schemas/plan-draft-v1.schema.json",
   "schemas/vectors/diagnostic/diagnostic-receipt.json",

@@ -1,9 +1,9 @@
-; Proofbound Runtime acceptance decision version 1.
+; Proofbound Runtime acceptance decision version 2.
 ; This is a closed text-key deterministic-CBOR contract under RFC 8949
 ; section 4.2.1. A JSON rendering is descriptive and never verification input.
 
-acceptance-decision-v1 = {
-  "schema": "proofbound-runtime-acceptance-decision/1",
+acceptance-decision-v2 = {
+  "schema": "proofbound-runtime-acceptance-decision/2",
   "status": "accepted" / "rejected",
   "inputs": [+ input-artifact],
   "reasons": [* rejection-reason],

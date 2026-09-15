@@ -13,9 +13,9 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 const POLICY_SCHEMA: &str = "proofbound-runtime-acceptance-policy/1";
-const DECISION_SCHEMA: &str = "proofbound-runtime-acceptance-decision/1";
+const DECISION_SCHEMA: &str = "proofbound-runtime-acceptance-decision/2";
 const POLICY_DOMAIN: &[u8] = b"proofbound-runtime-acceptance-policy/1\0";
-const DECISION_DOMAIN: &[u8] = b"proofbound-runtime-acceptance-decision/1\0";
+const DECISION_DOMAIN: &[u8] = b"proofbound-runtime-acceptance-decision/2\0";
 
 /// A malformed or semantically invalid acceptance input.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

@@ -11,7 +11,7 @@ inputs = [
   "crates/proofbound-runtime-accept/Cargo.toml",
   "crates/proofbound-runtime-accept/src/lib.rs",
   "crates/proofbound-runtime-accept/src/main.rs",
-  "schemas/acceptance-decision-v1.cddl",
+  "schemas/acceptance-decision-v2.cddl",
 ]
 outputs = []
 environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
