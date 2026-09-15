@@ -1,0 +1,211 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://proofbound.dev/runtime/diagnostic-receipt-v1.schema.json",
+  "title": "Proofbound Runtime diagnostic receipt version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "arguments",
+    "assumptions",
+    "bounds",
+    "completion",
+    "environment_names",
+    "events",
+    "execution_id",
+    "execution_profile",
+    "gaps",
+    "launcher",
+    "mechanism",
+    "observer",
+    "platform",
+    "reusable",
+    "runtime",
+    "safe_policy",
+    "schema",
+    "seed_plan",
+    "target",
+    "trusted_computing_base"
+  ],
+  "properties": {
+    "schema": {"const": "proofbound-runtime-diagnostic-receipt/1"},
+    "execution_profile": {"const": "diagnostic"},
+    "safe_policy": {"const": false},
+    "reusable": {"const": false},
+    "execution_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "seed_plan": {"$ref": "#/$defs/artifact"},
+    "target": {"$ref": "#/$defs/artifact"},
+    "runtime": {"$ref": "#/$defs/artifact"},
+    "launcher": {"$ref": "#/$defs/artifact"},
+    "observer": {"$ref": "#/$defs/artifact"},
+    "platform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["architecture", "kernel_release", "landlock_abi", "operating_system"],
+      "properties": {
+        "operating_system": {"const": "linux"},
+        "architecture": {"enum": ["aarch64", "x86_64"]},
+        "kernel_release": {"type": "string", "minLength": 1, "maxLength": 256},
+        "landlock_abi": {"type": "integer", "minimum": 3, "maximum": 11}
+      }
+    },
+    "mechanism": {"const": "linux-ptrace-syscall-v1"},
+    "arguments": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {"type": "string", "maxLength": 65536}
+    },
+    "environment_names": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$", "maxLength": 256}
+    },
+    "bounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_count",
+        "event_count_per_process",
+        "output_bytes",
+        "path_bytes",
+        "process_count",
+        "socket_address_bytes",
+        "symlink_hops",
+        "tracee_string_bytes"
+      ],
+      "properties": {
+        "event_count": {"type": "integer", "minimum": 1, "maximum": 1048576},
+        "event_count_per_process": {"type": "integer", "minimum": 1, "maximum": 1048576},
+        "output_bytes": {"type": "integer", "minimum": 1024, "maximum": 67108864},
+        "path_bytes": {"type": "integer", "minimum": 1, "maximum": 1048576},
+        "process_count": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "socket_address_bytes": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "symlink_hops": {"type": "integer", "minimum": 1, "maximum": 40},
+        "tracee_string_bytes": {"type": "integer", "minimum": 1, "maximum": 1048576}
+      }
+    },
+    "events": {
+      "type": "array",
+      "maxItems": 1048576,
+      "items": {"$ref": "#/$defs/event"}
+    },
+    "completion": {"enum": ["complete", "incomplete"]},
+    "gaps": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/gap"}
+    },
+    "trusted_computing_base": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {"$ref": "#/$defs/tcb"}
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "role", "sha256", "size_bytes"],
+      "properties": {
+        "role": {
+          "enum": [
+            "diagnostic-observer",
+            "execution-plan",
+            "launcher-binary",
+            "runtime-binary",
+            "runtime-executable"
+          ]
+        },
+        "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "size_bytes": {"type": "integer", "minimum": 0},
+        "mode": {"type": "string", "pattern": "^[0-7]{4}$"}
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["architecture", "class", "error", "path", "process", "resolution", "result", "sequence"],
+      "properties": {
+        "sequence": {"type": "integer", "minimum": 0},
+        "process": {"type": "integer", "minimum": 1},
+        "architecture": {"enum": ["aarch64", "x86_64"]},
+        "class": {
+          "enum": [
+            "bind",
+            "clone",
+            "connect",
+            "creat",
+            "execve",
+            "execveat",
+            "fork",
+            "newfstatat",
+            "open",
+            "openat",
+            "openat2",
+            "readlink",
+            "readlinkat",
+            "sendto",
+            "socket",
+            "statx",
+            "vfork"
+          ]
+        },
+        "path": {"type": ["string", "null"], "maxLength": 1048576},
+        "resolution": {
+          "enum": ["kernel-selected", "redacted", "stable-candidate", "unresolved"]
+        },
+        "result": {"type": ["integer", "null"]},
+        "error": {"type": ["integer", "null"], "minimum": 1}
+      }
+    },
+    "gap": {
+      "enum": [
+        "architecture-unsupported",
+        "child-lost",
+        "event-limit",
+        "event-per-process-limit",
+        "identity-drift",
+        "observer-failed",
+        "output-limit",
+        "path-limit",
+        "process-limit",
+        "socket-address-limit",
+        "string-limit",
+        "symlink-limit",
+        "syscall-unsupported",
+        "tracee-memory-read-failed",
+        "unexpected-stop"
+      ]
+    },
+    "tcb": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity", "role"],
+      "properties": {
+        "identity": {"type": "string", "minLength": 1, "maxLength": 512},
+        "role": {
+          "enum": [
+            "diagnostic-observer",
+            "filesystem",
+            "hardware",
+            "linux-kernel",
+            "runtime-launcher",
+            "runtime-supervisor"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,11 +1,12 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T03:00:38+01:00 (Europe/London, BST)
-- **Runtime baseline:** unsigned RT-7 merge `4a0cfdb`; exact-main Verify run
-  `34918706960` is pending, so `f2a06de` remains the latest admitted identity
-- **Active implementation wave:** RT-7 registry publication contract on
-  `codex/rt7-registry-publication`
+- **Last updated:** 2026-09-15T04:22:00+01:00 (Europe/London, BST)
+- **Runtime baseline:** unsigned RT-7 registry-publication merge `acf8f24`;
+  exact-main Verify run `34924535451` is pending, so `4a0cfdb` remains the
+  latest admitted identity
+- **Active implementation wave:** RT-8 contract and diagnostic non-reuse on
+  `codex/rt8-diagnostic-profile`
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -81,7 +82,7 @@ implementation remain behind their recorded demand gates.
   subject.
 - [x] Push once and pass the complete hosted exact-head Verify gate at
   `515fcbc` in run `34915891330`.
-- [ ] Merge unsigned and pass the exact-main Verify gate.
+- [x] Merge unsigned as `4a0cfdb` and pass exact-main Verify run `34918706960`.
 - [ ] Close `PBR-DISTRIBUTION-016` only after the review and hosted evidence
   above exist.
 
@@ -133,7 +134,7 @@ manifest describes the supported tuple.
 
 ### Remaining claim waves
 
-- [ ] Accept an ADR and specification for a distinct diagnostic execution
+- [x] Accept an ADR and specification for a distinct diagnostic execution
   profile and observer mechanism.
 - [ ] Define closed diagnostic-profile, observation, provenance, and failure
   types without changing production-receipt meaning.

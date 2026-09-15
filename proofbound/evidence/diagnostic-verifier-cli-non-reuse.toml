@@ -1,0 +1,29 @@
+schema = "proofbound-evidence-unit/1"
+id = "diagnostic-verifier-cli-non-reuse"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-DRAFT-017"]
+tier = 0
+expected_inventory = [
+  "pbr-verify::tests::diagnostic_receipt_has_a_distinct_non_reuse_failure",
+]
+inputs = [
+  "crates/proofbound-runtime-verify/Cargo.toml",
+  "crates/proofbound-runtime-verify/src/main.rs",
+  "schemas/vectors/diagnostic/diagnostic-receipt.json",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-verify"
+manifest = "Cargo.toml"
+targets = ["--bin=pbr-verify"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

@@ -258,11 +258,10 @@ can identify review differences but can never grant Runtime authority.
 - A diagnostic run installs the same Landlock, seccomp, and cgroup boundary as
   a production run for the declared plan, and adds an observer. It does not
   weaken the boundary to let the program succeed.
-- Decide the observer mechanism in an ADR. Candidates are Landlock audit
-  records where the running kernel provides them, seccomp user notification
-  for denied syscalls, and `ptrace`. Each expands the diagnostic profile's
-  trusted computing base and is recorded as such. None enters the production
-  profile.
+- Use the separate ptrace observer selected by
+  [ADR 0008](adr/0008-separate-ptrace-diagnostic-observer.md). It expands only
+  the diagnostic trusted computing base. No observer code or entry point enters
+  the production profile.
 - A diagnostic receipt has its own schema and is never reusable. Both
   verifiers and `pbr-accept` reject it with a stable typed reason.
 

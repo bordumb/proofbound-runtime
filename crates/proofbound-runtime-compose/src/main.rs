@@ -526,6 +526,24 @@ mod tests {
     }
 
     #[test]
+    fn diagnostic_non_reuse_reason_is_propagated_without_composition() {
+        use std::os::unix::process::ExitStatusExt as _;
+
+        let error = validate_process_output(
+            Output {
+                status: std::process::ExitStatus::from_raw(7 << 8),
+                stdout: Vec::new(),
+                stderr: b"pbr-verify: profile.diagnostic.not-reusable\n".to_vec(),
+            },
+            "composition.execution.verification-failed",
+            true,
+        )
+        .expect_err("diagnostic receipt cannot compose");
+        assert_eq!(error.exit_code, VERIFICATION_FAILED);
+        assert_eq!(error.code, "profile.diagnostic.not-reusable");
+    }
+
+    #[test]
     fn proofbound_verifier_receives_exact_observation_inputs() {
         let directory = std::env::temp_dir().join(format!(
             "proofbound-runtime-compose-verifier-test-{}",

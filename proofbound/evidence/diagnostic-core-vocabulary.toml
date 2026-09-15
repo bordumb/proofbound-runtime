@@ -1,0 +1,32 @@
+schema = "proofbound-evidence-unit/1"
+id = "diagnostic-core-vocabulary"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-DRAFT-017"]
+tier = 0
+expected_inventory = [
+  "proofbound_runtime_core::diagnostic::tests::closed_diagnostic_vocabulary_round_trips",
+  "proofbound_runtime_core::diagnostic::tests::unknown_diagnostic_vocabulary_fails_closed",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/diagnostic.rs",
+  "crates/proofbound-runtime-core/src/lib.rs",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-core"
+manifest = "Cargo.toml"
+targets = ["--lib"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

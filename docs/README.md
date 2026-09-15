@@ -82,6 +82,9 @@ The document type determines its authority.
 - [Specification 0014](specs/0014_public_compatibility_and_distribution.md)
   drafts RT-7's public version, package, registry, compatibility-matrix, and
   consumer-support contract. It does not authorize publication.
+- [Specification 0015](specs/0015_diagnostic_execution_and_plan_drafting.md)
+  defines RT-8's separate ptrace diagnostic profile, bounded observation,
+  provenance-preserving plan draft, and mandatory production non-reuse.
 
 Normative product or wire behavior belongs in `docs/specs/`. A specification
 revision requires explicit review because it can change claim meaning.
@@ -122,6 +125,7 @@ NOT silently broaden or narrow it.
 - [ADR 0001: Linux enforcement boundary](adr/0001-linux-enforcement-boundary.md)
 - [ADR 0002: External receipt commitment](adr/0002-external-receipt-commitment.md)
 - [ADR 0003: Deterministic CBOR for committed wire objects](adr/0003-deterministic-cbor-wire-objects.md)
+- [ADR 0008: Separate ptrace diagnostic observer](adr/0008-separate-ptrace-diagnostic-observer.md)
 
 Accepted trust-boundary and architecture decisions belong in `docs/adr/`.
 ADRs explain why a decision exists and what would justify revisiting it.

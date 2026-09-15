@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://proofbound.dev/runtime/plan-draft-v1.schema.json",
+  "title": "Proofbound Runtime reviewable plan draft version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "breadth",
+    "candidates",
+    "diagnostic_receipt_commitment",
+    "gaps",
+    "open_items",
+    "safe_policy",
+    "schema",
+    "seed_plan"
+  ],
+  "properties": {
+    "schema": {"const": "proofbound-runtime-plan-draft/1"},
+    "safe_policy": {"const": false},
+    "diagnostic_receipt_commitment": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "seed_plan": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "candidates": {
+      "type": "array",
+      "maxItems": 1048576,
+      "items": {"$ref": "#/$defs/candidate"}
+    },
+    "open_items": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 1048576,
+      "items": {"$ref": "#/$defs/openItem"}
+    },
+    "breadth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["broad_roots", "denials", "suggested_roots", "unresolved_events"],
+      "properties": {
+        "broad_roots": {"type": "integer", "minimum": 0},
+        "denials": {"type": "integer", "minimum": 0},
+        "suggested_roots": {"type": "integer", "minimum": 0},
+        "unresolved_events": {"type": "integer", "minimum": 0}
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    }
+  },
+  "$defs": {
+    "provenance": {
+      "enum": [
+        "capsec-source-observation",
+        "diagnostic-runtime-observation",
+        "human-authored",
+        "platform-required-closure",
+        "static-executable-closure"
+      ]
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "path", "provenance"],
+      "properties": {
+        "kind": {"enum": ["execute", "read", "runtime-library"]},
+        "path": {"type": "string", "pattern": "^/", "maxLength": 1048576},
+        "provenance": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/provenance"}
+        }
+      }
+    },
+    "openItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "detail", "provenance"],
+      "properties": {
+        "code": {
+          "enum": [
+            "capsec-incomplete",
+            "capsec-schema-unknown",
+            "capsec-source-stale",
+            "choose-environment",
+            "choose-limits",
+            "choose-network-mode",
+            "choose-write-roots",
+            "diagnostic-gap",
+            "network-attempt",
+            "observation-unresolved"
+          ]
+        },
+        "detail": {"type": "string", "minLength": 1, "maxLength": 1048576},
+        "provenance": {"$ref": "#/$defs/provenance"}
+      }
+    }
+  }
+}

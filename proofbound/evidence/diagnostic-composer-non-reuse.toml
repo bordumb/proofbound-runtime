@@ -1,0 +1,28 @@
+schema = "proofbound-evidence-unit/1"
+id = "diagnostic-composer-non-reuse"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-DRAFT-017"]
+tier = 0
+expected_inventory = [
+  "pbr-compose::tests::diagnostic_non_reuse_reason_is_propagated_without_composition",
+]
+inputs = [
+  "crates/proofbound-runtime-compose/Cargo.toml",
+  "crates/proofbound-runtime-compose/src/main.rs",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-compose"
+manifest = "Cargo.toml"
+targets = ["--bin=pbr-compose"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

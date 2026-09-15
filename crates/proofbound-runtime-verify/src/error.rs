@@ -7,6 +7,8 @@ use crate::{CanonicalError, CommitmentError, ValidationError};
 /// Identifies one failure from the complete independent verifier pipeline.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum VerifyError {
+    /// The input is a non-reusable diagnostic-profile receipt.
+    DiagnosticProfileNotReusable,
     /// Canonical decoding or byte validation failed.
     Canonical(CanonicalError),
     /// The trusted expected commitment does not match the receipt bytes.
@@ -20,6 +22,7 @@ impl VerifyError {
     #[must_use]
     pub const fn code(self) -> &'static str {
         match self {
+            Self::DiagnosticProfileNotReusable => "profile.diagnostic.not-reusable",
             Self::Canonical(error) => error.code(),
             Self::Commitment(error) => error.code(),
             Self::Validation(error) => error.code(),
@@ -42,6 +45,7 @@ impl fmt::Display for VerifyError {
 impl std::error::Error for VerifyError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
+            Self::DiagnosticProfileNotReusable => None,
             Self::Canonical(error) => Some(error),
             Self::Commitment(error) => Some(error),
             Self::Validation(error) => Some(error),

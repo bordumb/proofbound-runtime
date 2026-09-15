@@ -1,0 +1,211 @@
+# Specification 0015: Diagnostic execution and plan drafting
+
+- **Status:** accepted for claim-sized implementation
+- **Date:** 2026-09-15
+- **Applies to:** `pbr-diagnose` and RT-8 drafting artifacts
+- **Roadmap:** RT-8
+- **Decision:** [ADR 0008](../adr/0008-separate-ptrace-diagnostic-observer.md)
+
+## 1. Purpose and non-claims
+
+The diagnostic profile helps a person prepare a Runtime execution plan for one
+identified program and one observed input path. It does not infer a safe plan,
+grant authority, prove behavioral completeness, or create reusable execution
+evidence.
+
+The diagnostic profile executes target code. It is distinct from the read-only
+`pbr plan scaffold` command and from the production `pbr run` command.
+
+## 2. Closed profile and command
+
+`ExecutionProfile` has exactly two values:
+
+- `production`; and
+- `diagnostic`.
+
+The profile is an invocation property. It is not added to an existing plan or
+production receipt schema. `pbr run` always selects `production`.
+`pbr-diagnose` always selects `diagnostic`.
+
+The first command is:
+
+```text
+pbr-diagnose --plan SEED_PLAN --receipt ABSENT_RECEIPT --draft ABSENT_DRAFT
+```
+
+The seed plan must already pass the normal strict plan parser and `plan check`.
+It supplies the only authority available during the observed execution. The
+diagnostic supervisor does not add a path, environment name, descriptor,
+process allowance, resource allowance, or network authority when the target
+encounters a denial.
+
+Both output paths must be absent regular-file candidates outside the child
+write authority. Publication uses the existing no-replace durability pattern.
+A partial observer result may be published only when it is structurally valid,
+states `complete: false`, and lists the exact gaps. Setup failure before target
+release publishes neither output.
+
+## 3. Boundary order
+
+The diagnostic launch protocol performs these transitions:
+
+1. strictly parse and normalize the seed plan;
+2. probe all production and diagnostic host requirements;
+3. identify all declared artifacts and output targets;
+4. create the bounded cgroup and launcher channel;
+5. create the stopped launcher process and establish ptrace ownership;
+6. install and read back the normal Landlock, seccomp, cgroup, descriptor, and
+   environment boundary;
+7. require the launcher's ready acknowledgement;
+8. enable the closed process-tree trace options;
+9. release target code;
+10. observe bounded events without changing target behavior;
+11. drain the child tree and resource observations;
+12. construct and publish the diagnostic receipt and draft; and
+13. remove the cgroup through the existing cleanup contract.
+
+Failure at steps 1 through 8 starts no target code. A ptrace detach, unknown
+stop, lost child, or observer failure after step 9 terminates the execution,
+marks the result incomplete where publication remains possible, and never
+falls back to unobserved execution.
+
+## 4. Observer contract
+
+The first observer mechanism identity is `linux-ptrace-syscall-v1`. It uses
+`PTRACE_GET_SYSCALL_INFO` and follows clone, fork, vfork, and exec events. The
+closed initial event set is:
+
+- `open`, `openat`, and `openat2`;
+- `creat`;
+- `execve` and `execveat`;
+- `statx`, `newfstatat`, `readlink`, and `readlinkat`;
+- `connect`, `bind`, `sendto`, and socket creation; and
+- process creation and image replacement events needed to retain tree
+  coverage.
+
+An event records the architecture, process identity, monotonically increasing
+sequence, syscall class, supplied operands within the read bound, result or
+error, and one closed resolution state. The states are:
+
+- `kernel-selected`: a successful returned descriptor or executed image names
+  the kernel-selected object while the tracee is stopped;
+- `stable-candidate`: the supervisor resolved a denied operand and observed no
+  identity drift across its bounded check;
+- `unresolved`: resolution was impossible or ambiguous; and
+- `redacted`: the value is outside the safe diagnostic output policy.
+
+Only `kernel-selected` describes the target actually selected by the traced
+syscall. A `stable-candidate` remains advisory. Secret environment values,
+request bodies, response bodies, file contents, and credential material are
+never read or recorded.
+
+The implementation fixes bounds for total processes, total events, events per
+process, tracee string bytes, path bytes, symlink hops, socket-address bytes,
+and output bytes. Reaching any bound emits its exact gap and stops collecting
+that class. Silent truncation is forbidden.
+
+## 5. Diagnostic receipt
+
+The receipt schema is `proofbound-runtime-diagnostic-receipt/1`. It is one
+duplicate-free canonical JSON object with these required top-level members:
+
+- `schema` with the exact schema identity;
+- `execution_profile` equal to `diagnostic`;
+- `safe_policy` equal to `false`;
+- `reusable` equal to `false`;
+- exact diagnostic execution, seed-plan, target, Runtime, launcher, observer,
+  platform, and mechanism identities;
+- the arguments and registered environment names that selected the path;
+- declared observation bounds;
+- ordered observation events;
+- a closed completion state and sorted gap set; and
+- the diagnostic trusted-computing-base roles and assumptions.
+
+The receipt is a diagnostic accountability record. Its SHA-256 commitment can
+identify exact bytes, but neither the bytes nor the commitment are accepted by
+the production receipt verifier.
+
+## 6. Draft report
+
+The draft schema is `proofbound-runtime-plan-draft/1`. It is duplicate-free
+canonical JSON and contains `safe_policy: false`. Every candidate item has one
+or more of these closed provenance values:
+
+- `human-authored`;
+- `static-executable-closure`;
+- `diagnostic-runtime-observation`;
+- `capsec-source-observation`; and
+- `platform-required-closure`.
+
+The draft may suggest a read root, executable, loader, or runtime library when
+the observation supplies an exact target and the collapse rule is safe. It
+must not automatically create a write root or network rule. It must not add an
+environment name or resource limit. These remain open human choices.
+
+Path collapse finds the narrowest common ancestor within one registered
+project or runtime closure. It never collapses to `/`, a home directory, a
+system directory, `/tmp`, `/var/tmp`, or another configured temporary root.
+When no permitted collapse exists, individual paths remain visible.
+
+Every draft retains:
+
+- the exact diagnostic receipt commitment;
+- the seed plan and optional static scaffold identities;
+- the arguments, registered environment names, and identified inputs;
+- counts of suggested roots, broad roots, unresolved events, and denials;
+- every gap from the diagnostic receipt; and
+- open choices for write roots, environment names, limits, and network mode.
+
+An optional Capsec report is usable for comparison only when its closed schema,
+source identity, analyzer identity, and report identity match the selected
+integration profile. A missing, stale, unknown, or incomplete report remains a
+visible open item. Capsec observations never become Runtime authority.
+
+## 7. Mandatory rejection
+
+The production consumers recognize the diagnostic schema only to reject it.
+They do not decode diagnostic events or trust the diagnostic producer.
+
+- `pbr-verify` exits with the verification-failure class and
+  `profile.diagnostic.not-reusable`.
+- `pbr-compose` propagates the same stable reason and produces no composed
+  receipt.
+- `pbr-accept` produces a rejected decision with reason
+  `diagnostic-profile-not-reusable` and no composition identity.
+- `pbr plan check` and `pbr run` reject both diagnostic artifacts as invalid
+  plans.
+
+Changing the schema string cannot turn a diagnostic object into a production
+receipt because the production schema is closed and independently decoded.
+
+## 8. Required falsifiers
+
+The registered corpus includes:
+
+- diagnostic receipt substitution into verify, compose, accept, plan check,
+  and run;
+- diagnostic schema relabeling and duplicate schema members;
+- observer source linked into either production executable;
+- a target that detects ptrace and changes behavior;
+- event, process, string, path, symlink, socket-address, and output overflow;
+- clone, fork, vfork, exec, and short-lived child races;
+- successful and denied open operations;
+- a stable symlink to a system directory and a concurrently changed symlink;
+- relative paths under a changed working directory and directory descriptor;
+- unknown syscall and architecture values;
+- direct network attempts that produce open decisions and no authority;
+- stale Capsec source, unknown Capsec schema, incomplete Capsec coverage, and
+  attempted provenance relabeling; and
+- a draft with each mandatory human choice absent.
+
+## 9. Evidence meaning
+
+Passing evidence establishes only the behavior of the registered bounded
+fixtures on the identified implementations and platforms. It does not prove
+complete observation, equivalent behavior without ptrace, correctness of the
+Linux kernel, absence of unobserved effects, or safety of a completed plan.
+
+RT-8 closes only after one maintained dynamic workload displays all available
+provenance classes, requires human completion, passes the independent
+non-reuse checks, and runs the native attack corpus on both supported
+architectures.

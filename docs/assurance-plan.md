@@ -25,6 +25,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-DISTRIBUTION-015` | Tier 1 independently reviewed and admitted on exact Runtime main | The verifier package has a closed preflight, source-payload comparison, byte reproduction, local consumer, and release-retention path; no registry or publisher claim is admitted. |
 | `PBR-DISTRIBUTION-016` | Tier 1 public-bundle consumer merged; exact-main admission pending | Runtime pins one immutable public Proofbound release and rejects identity, inventory, manifest, checksum, archive, installer, and installed-byte substitution. Every protected evidence and release job installs that exact bundle independently. |
 | `PBR-DISTRIBUTION-018` | Tier 1 workflow and registry-observer contract | Publication is explicit, exact-source, protected, ordered, and credential-isolated. Anonymous exact-byte registry observations and external registry setup remain open. |
+| `PBR-DRAFT-017` | Tier 0 contract and source-level non-reuse tests | Closed diagnostic vocabulary and schemas are registered, and verifier, composer, and acceptor paths reject diagnostic receipt reuse. The live observer and draft producer remain open. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -333,6 +334,31 @@ The claim remains `TESTED` and `MODEL_ONLY`. It does not infer a denial from a
 child exit code, child stderr, host logs, or kernel audit text. Specification
 0009 and an exact release artifact remain open review and publication
 obligations.
+
+## PBR-DRAFT-017
+
+The current subject is the closed diagnostic vocabulary and the production
+consumer non-reuse boundary. It fixes exactly two execution profiles, one
+observer mechanism, five provenance classes, four resolution classes, and two
+completion states. Separate closed JSON schemas describe a diagnostic receipt
+and a non-policy draft.
+
+The bounded evidence path checks that:
+
+1. unknown profile, mechanism, provenance, resolution, and completion values
+   fail closed;
+2. the independent verifier recognizes a canonical diagnostic receipt only to
+   reject it with `profile.diagnostic.not-reusable` before commitment or
+   production receipt decoding;
+3. the composer propagates the same reason and produces no composition;
+4. the acceptance CLI maps that verifier result to the closed
+   `diagnostic-profile-not-reusable` decision reason; and
+5. the production CLI and native launcher manifests contain no diagnostic
+   observer dependency.
+
+This claim does not say that `pbr-diagnose` exists. The ptrace observer,
+diagnostic producer, plan-draft builder, Capsec comparison, native attack
+corpus, and exact artifact binding remain explicit obligations.
 
 ## Bounded-domain declaration guard
 

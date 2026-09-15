@@ -1,0 +1,31 @@
+schema = "proofbound-evidence-unit/1"
+id = "diagnostic-verifier-non-reuse"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-DRAFT-017"]
+tier = 0
+expected_inventory = [
+  "proofbound_runtime_verify::verification_tests::diagnostic_profile_is_rejected_before_commitment_or_receipt_decoding",
+]
+inputs = [
+  "crates/proofbound-runtime-verify/Cargo.toml",
+  "crates/proofbound-runtime-verify/src/canonical.rs",
+  "crates/proofbound-runtime-verify/src/error.rs",
+  "crates/proofbound-runtime-verify/src/lib.rs",
+  "schemas/vectors/diagnostic/diagnostic-receipt.json",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-verify"
+manifest = "Cargo.toml"
+targets = ["--lib"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824
