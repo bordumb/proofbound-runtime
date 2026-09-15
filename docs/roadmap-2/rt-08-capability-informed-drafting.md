@@ -1,8 +1,9 @@
 # RT-8 integration record: capability-informed drafting
 
 **Status:** static scaffold and prelaunch diagnostics merged; diagnostic
-profile and observer contracts accepted; typed artifacts and live observation
-remain in implementation
+contracts, closed schemas, and source-level production non-reuse are
+implemented on `codex/rt8-diagnostic-profile`; final review and hosted
+admission are pending, and the live observer and draft producer remain open
 
 **Primary owner:** Proofbound Runtime
 

@@ -1,12 +1,13 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T04:22:00+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T04:23:08+01:00 (Europe/London, BST)
 - **Runtime baseline:** unsigned RT-7 registry-publication merge `acf8f24`;
   exact-main Verify run `34924535451` is pending, so `4a0cfdb` remains the
   latest admitted identity
 - **Active implementation wave:** RT-8 contract and diagnostic non-reuse on
-  `codex/rt8-diagnostic-profile`
+  `codex/rt8-diagnostic-profile`; the rebased source-only foundation is
+  complete and final exact-head review and hosted admission remain open
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
