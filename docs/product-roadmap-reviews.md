@@ -2502,3 +2502,195 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, or test bytes. Any later subject change requires a new
 exact-head review.
+
+## RT-8 architecture-qualified syscall decoder approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `b2cb4b9bf10398ca5559dc476c492c3bd6d46c0b`
+- **Reviewed head:** `5d82dcd2ea8137a3ff8e1d4de9d2fd986521c6f0`
+- **Branch:** `codex/rt8-syscall-decoder`
+- **Method:** Complete exact-range static review after review corrections and
+  replay onto admitted main. The reviewer changed no files and ran no builds or
+  tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed the closed x86_64 and aarch64 syscall tables, x32 and
+unknown-architecture rejection, exact Linux syscall-information layout and
+operation sizes, native scalar reads, and pre-resume operand capture. Three
+independent limits bound retained paths, socket addresses, and tracee strings.
+The raw effect reads tracee memory only. It completes partial reads or fails.
+The `sendto` path retains payload length but never reads payload bytes.
+
+The exact evidence closure pins the compiler and crate selection, pure bound
+validation, every bound-propagation transition, trace release, wait routing,
+decoder routing and tables, syscall-information fetch and parser, scalar and
+operand readers, the raw read operation, and the complete C-layout declaration.
+Causal mutations cover routing bypass, bound widening and swapping, ABI and
+architecture substitution, truncated and extended forms, payload substitution,
+and a write-capable raw operation. The diagnostic feature remains absent from
+the production launcher path. Native ABI validation, artifact mapping, command
+integration, native attacks, and release binding remain explicit obligations.
+
+The reviewer also confirmed that the status correction records exact-head run
+`34973401808` as passed and combined active event-and-drain main `b2cb4b9` as
+admitted. Only the decoder identity remains pending hosted admission.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`5d82dcd2ea8137a3ff8e1d4de9d2fd986521c6f0`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.
+
+## RT-8 architecture-qualified syscall decoder hosted rejection
+
+- **Hosted run:** `34979197795`
+- **Exact head:** `858bfb9b39540c36dc652875a6228a7da8501305`
+- **Branch:** `codex/rt8-syscall-decoder`
+- **Result:** **REJECTED**
+
+The formal model, both native Linux lanes, and every fresh Proofbound evidence
+lane passed. The Rust lane rejected the private `WaitDecision` enum because its
+event variant was at least 224 bytes while its continue variant carried no
+data. The final assurance gate therefore failed. No decoder behavior is
+admitted at this head.
+
+Correction `5d479bd60cb3487100633b40ee04a8c1f1c42ce2` removes the redundant
+private enum and represents the same continue-or-event decision as
+`Option<ActiveTraceEvent>`. It does not allocate each event on the heap. Both
+exact-body checkers pin the corrected next-event, wait-router, and syscall-stop
+bodies, and a source regression rejects restoration of the large enum or a
+boxed event in the trace wait path. The focused source-contract tests pass.
+Independent exact-head re-review and replacement hosted admission remain
+required.
+
+## RT-8 hosted-lint correction initial re-review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `b2cb4b9bf10398ca5559dc476c492c3bd6d46c0b`
+- **Reviewed head:** `1750ef40fbb75efa80ae7734938dddeff6a730c0`
+- **Branch:** `codex/rt8-syscall-decoder`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The hosted-lint correction is sound. `Option<ActiveTraceEvent>` preserves every
+continue-or-event branch, adds no per-event heap allocation, and leaves the
+previously approved decoder semantics intact. Both affected checkers refresh
+the three changed exact-body identities, the syscall-routing mutation now uses
+`Ok(None)`, and the new regression rejects restoration of `WaitDecision` or a
+boxed event.
+
+The remaining blocker is one stale sentence in the active-trace checklist
+entry. It says exact-main run `34978365970` is in progress, while the same
+document correctly records that the run failed before required lanes started
+because the unrelated network experiment missed its ready-file observation.
+The correction aligns that sentence. This verdict is not endorsed. The exact
+corrected head requires independent re-review.
+
+## RT-8 hosted-lint correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `b2cb4b9bf10398ca5559dc476c492c3bd6d46c0b`
+- **Reviewed head:** `b027dddcd600170917ceba313b27adb644a06d5a`
+- **Branch:** `codex/rt8-syscall-decoder`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the stale checklist sentence now records exact-main
+run `34978365970` as failing before required lanes because of the unrelated
+ready-file observation. The previous `REQUEST CHANGES` record accurately names
+the reviewed identities, blocker, and non-endorsement.
+
+The final correction after `1750ef4` changes only that checklist sentence and
+the review record. Production code, claims, evidence, and checkers are
+unchanged. The `Option<ActiveTraceEvent>` correction therefore preserves every
+previously approved continue-or-event branch, adds no per-event allocation,
+refreshes all three affected exact-body guards, and retains the causal routing
+mutation.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`b027dddcd600170917ceba313b27adb644a06d5a`. The following approval-only commit
+changes no reviewed production, claim, evidence, or checker bytes. Any later
+subject change requires a new exact-head review.
+
+## RT-8 decoder replacement hosted rejection
+
+- **Hosted run:** `34988148920`
+- **Exact head:** `4f66fc40e09ea2caecb7c8896950ab8c9fa02d3b`
+- **Branch:** `codex/rt8-syscall-decoder`
+- **Result:** **REJECTED**
+
+Preflight, the formal lane, both native Linux lanes, and the authority,
+binding, policy, and ledger fresh-evidence lanes passed. The receipt evidence
+lane failed before evidence execution because anonymous GitHub release access
+returned HTTP 403 for rate exhaustion. That external retrieval failure is not
+a decoder finding.
+
+The Rust lane found a second large-enum lint in the public adapter's
+`ObserverObservation`. Its event variant held the 224-byte
+`ActiveTraceEvent` inline while its failure variant carried a small closed
+error. The approved `Option<ActiveTraceEvent>` correction remains sound and
+adds no boxing allocation to the normal wait path, but this separate adapter type means
+exact head `4f66fc4` is not admitted.
+
+The narrow correction boxes only the single event retained when that event
+selects terminal drain. Continue and natural-completion events remain inline in
+`ActiveObserverStep`, and the effectful trace wait loop remains
+`Option<ActiveTraceEvent>`. The adapter and aggregate decoder checkers pin the
+changed `next_event` body, and a regression requires exactly one
+`Box::new(event)` in the drain-selection path. Independent exact-head re-review
+and replacement hosted admission are required.
+
+## RT-8 terminal-observation lint correction initial re-review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `b2cb4b9bf10398ca5559dc476c492c3bd6d46c0b`
+- **Reviewed head:** `2eec428fd78fe1e65e081e2944c00a69ba078a4c`
+- **Branch:** `codex/rt8-syscall-decoder`
+- **Method:** Complete exact-range static re-review after hosted run
+  `34988148920`. The reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The implementation correction is sound. Boxing the event variant closes the
+public large-enum lint, and the one `Box::new(event)` is reached only after the
+pure protocol selects terminal drain. Continue and natural-completion events
+remain inline. Both affected exact-body guards and the regression that fixes
+the boxed shape and single construction site are current. The run result and
+separate anonymous GitHub rate-limit failure are recorded accurately.
+
+The blocker is documentation precision. Three status summaries describe the
+normal trace or continuing path as allocation-free. The new boxing allocation
+is absent from those paths, but pre-existing process-snapshot and
+image-replacement conversions can allocate there. The correction must say
+that this change adds no boxing allocation to the normal path. This verdict is
+not endorsed. The exact corrected head requires independent re-review.
+
+## RT-8 terminal-observation lint correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `b2cb4b9bf10398ca5559dc476c492c3bd6d46c0b`
+- **Reviewed head:** `fbd2d6679bfc609759783d9b54275ead3acd9731`
+- **Branch:** `codex/rt8-syscall-decoder`
+- **Method:** Complete exact-range static re-review after the allocation-language
+  correction. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the corrected documents say only that this change
+adds no boxing allocation outside terminal drain. They no longer describe the
+pre-existing wait or continuation paths as entirely allocation-free. The prior
+`REQUEST CHANGES` record accurately names its exact identities, implementation
+conclusion, documentation blocker, and non-endorsement.
+
+Production, claim, assumption, evidence, and checker bytes are unchanged from
+`2eec428fd78fe1e65e081e2944c00a69ba078a4c`. The boxed terminal observation
+closes the hosted large-enum lint and remains confined to one precisely guarded
+drain-selection construction site.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`fbd2d6679bfc609759783d9b54275ead3acd9731`. The following approval-only commit
+changes no reviewed production, claim, assumption, evidence, or checker bytes.
+Any later subject change requires a new exact-head review.

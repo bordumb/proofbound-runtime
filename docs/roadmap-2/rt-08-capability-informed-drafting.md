@@ -2,27 +2,49 @@
 
 **Status:** static scaffold, prelaunch diagnostics, diagnostic contracts,
 closed schemas, source-level production non-reuse, the pure diagnostic artifact
-producer, and the pure observer protocol are merged through Runtime `b04382d`.
-Exact-main Verify run `34946613122` passed. The identity-bound launcher
+producer, and the pure observer protocol are admitted. The identity-bound launcher
 exec-release prerequisite for race-free trace setup merged as `3557cc9` after
 exact-head hosted verification; exact-main run `34956564102` passed.
 The separate feature-gated Linux trace-startup source merged as `9395050` and
-exact-main run `34962882198` passed. The adapter that privately couples the
-effectful and pure setup states passed hosted run `34964466007`, merged as
-`d34eab1`, and has exact-main run `34969409215` in progress. The active-trace
-admitted-main replay at `1db68a6` passed independent review; approval-only head
-`c4b88c1` is in hosted verification. Event-and-drain source `af9f77d` and
-restacked head `45b1c91` passed independent review. Hosted run `34972072843`
-rejected two warnings-as-errors in the shared trace source and was cancelled.
-The lint-only correction and refreshed exact-body checker require narrow exact
-re-review; hosted admission and merge remain open. The wave passes the
-validated process bound into the effectful trace, consumes complete events into
-the matching pure protocol, permanently rejects an unreconciled process tree,
-and makes successful effectful drain reconciliation precede pure tree-empty
-acknowledgement. Its first exact review requested five corrections; the combined
-correction closed them and received an explicit `APPROVE`.
-Decoding, command integration, the native attack corpus, and release binding
-remain open.
+exact-main run `34962882198` passed. The coupled adapter passed hosted run
+`34964466007`, merged as `d34eab1`, and passed exact-main run `34969409215`.
+Active-trace approval-only head `c4b88c1` is not admitted alone: run
+`34970508987` failed only on the two Rust lints corrected by the following
+reviewed batch.
+The event-and-drain correction at `af9f77d` and its restacked exact head
+`45b1c91` passed independent review. Its behavior-preserving Rust-lint
+correction `a3f56b5` also passed exact review. Approval-only head `9f82afa`
+passed replacement Verify run `34973401808`, and the combined active event and
+drain series merged unsigned as Runtime `b2cb4b9`. Exact-main run `34978365970`
+failed before required lanes started in an unrelated network-experiment
+ready-file check. The merged source passes the validated process
+bound into the effectful trace, consumes complete events into the matching
+pure protocol, permanently
+rejects an unreconciled process tree, and makes successful effectful drain
+reconciliation precede pure tree-empty acknowledgement. Only the following
+decoder identity remains pending review and hosted admission.
+The architecture-qualified syscall decoder and bounded entry-time operand
+capture are implemented locally under `PBR-OBSERVER-025`. The exact aggregate
+subject, compiler and crate-selection closure, adapter build evidence, and all
+load-bearing decoder bodies are registered in response to independent review.
+The raw syscall-information parser also rejects nonzero reserved or flags
+fields and any non-exact operation size, so a future UAPI extension fails
+closed. Independently approved source `5d82dcd` and approval-only head
+`858bfb9` reached hosted run `34979197795`; the formal, native, and all
+fresh-evidence lanes passed, but the Rust lane rejected a large private enum.
+Correction `5d479bd` uses the existing optional event state directly, adds no
+per-event allocation, and refreshes the exact-body guards. Independent
+re-review approved exact head `b027ddd`; approval-only head `4f66fc4` then
+reached replacement run `34988148920`. Preflight, formal, both native lanes,
+and all non-rate-limited fresh-evidence lanes passed. The receipt lane was
+blocked by anonymous GitHub API rate exhaustion, and Rust lint found a separate
+large public adapter observation enum. The current correction boxes only the
+single event that selects terminal drain; normal trace waits and continuing
+events receive no new boxing allocation. Independent exact-head re-review
+approved head `fbd2d66`; the following approval-only record changes no reviewed
+source. Replacement hosted admission remains open. Artifact mapping, command
+integration, the native attack corpus,
+and release binding remain open.
 
 **Primary owner:** Proofbound Runtime
 
@@ -119,6 +141,11 @@ values without making a draft an authority object.
   precede pure tree-drain acknowledgement and publication selection.
   Process-creation message, identity, capacity, thread-group, or handle failures
   permanently prevent a successful effectful empty-tree report.
+- The active trace chooses a closed x86_64 or aarch64 decoder from the Linux
+  audit architecture before it interprets a syscall number. It rejects x32 and
+  unsupported registered forms. It captures bounded path and socket-address
+  operands before resume, completes partial read-only tracee-memory reads or
+  fails, and retains only the `sendto` payload length, never payload bytes.
 - Automatic candidates require an explicit normalized project or runtime
   scope. System, home, and configured temporary roots remain open review
   items.

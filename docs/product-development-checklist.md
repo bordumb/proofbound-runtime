@@ -1,17 +1,34 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T14:04:57+01:00 (Europe/London, BST)
-- **Runtime baseline:** coupled setup adapter merged as `d34eab1`; exact-main
-  Verify run `34969409215` is in progress. Trace-startup exact-main run
-  `34962882198` and identity-bound exec-release exact-main run `34956564102`
-  passed.
-- **Active implementation wave:** the active-trace admitted-main replay at
-  `1db68a6` is independently approved; approval-only head `c4b88c1` is in hosted
-  verification. Event-and-drain restack `45b1c91` is independently approved.
-  Hosted run `34972072843` exposed two warnings-as-errors in the trace source
-  and was cancelled after the Rust lane failed. The behavior-preserving lint
-  correction and exact checker refresh are pending one narrow re-review.
+- **Last updated:** 2026-09-15T17:00:11+01:00 (Europe/London, BST)
+- **Runtime baseline:** the combined active trace and event-drain batch passed
+  exact-head Verify run `34973401808` at `9f82afa` and merged unsigned as
+  `b2cb4b9`. Exact-main run `34978365970` failed before the required lanes
+  started because the unrelated network experiment missed its bounded ready-file
+  observation. The coupled setup
+  adapter exact-main run `34969409215`, trace-startup run `34962882198`, and
+  identity-bound exec-release run `34956564102` passed.
+- **Active implementation wave:** active trace and event-and-drain coupling are
+  merged together as `b2cb4b9`. The earlier `c4b88c1` run `34970508987`
+  failed only on two Rust lints fixed by the combined reviewed batch and is
+  superseded by the green `9f82afa` run. The decoder series is restacked on
+  exact main with no content conflict. Its independently approved exact source
+  `5d82dcd` and approval-only head `858bfb9` then failed hosted run
+  `34979197795` only on a large private enum lint. Correction `5d479bd` removes
+  that enum without adding per-event allocation and refreshes the exact source
+  guards. Independent re-review approved exact head `b027ddd`; approval-only
+  head `4f66fc4` reached run `34988148920`. Rust lint found a separate large
+  public adapter observation enum, while the receipt evidence lane hit anonymous
+  GitHub rate exhaustion. The current correction boxes only the one terminal
+  drain-selection event. Exact re-review approved head `fbd2d66`; the following
+  approval-only record precedes another hosted run.
+- **Current implementation batch:** architecture-qualified syscall decoding and
+  bounded operand capture are implemented locally as `PBR-OBSERVER-025`. The
+  exact aggregate subject, compiler and crate-selection closure, adapter build
+  evidence, all load-bearing decoder bodies, and the zero-reserved exact-size
+  syscall-information parser are now registered in response to independent
+  review. Artifact mapping and native attacks remain open after this batch.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -199,8 +216,10 @@ manifest describes the supported tuple.
   event coupling, and native attack evidence open. The first independent review
   found incorrect syscall-pair retention and non-leader exec identity checks;
   exact re-review approved corrected head `c20f6e3`. Its admitted-main replay
-  at `1db68a6` also passed independent review; approval-only head `c4b88c1` is
-  in hosted verification.
+  at `1db68a6` also passed independent review. The combined correction passed
+  exact-head run `34973401808` at `9f82afa` and merged unsigned as `b2cb4b9`;
+  exact-main run `34978365970` failed before required lanes started because the
+  unrelated network experiment missed its bounded ready-file observation.
 - [ ] Admit live event-and-drain coupling. Exact source `af9f77d` passed
   independent review with an explicit `APPROVE`. The adapter passes the validated
   lifetime process bound to the effectful trace before release, consumes each
@@ -213,9 +232,28 @@ manifest describes the supported tuple.
   permanently blocks publication after an unreconciled tree, byte-pins the
   load-bearing bodies with five mutation classes, restores typed unsupported
   paths, closes assumption links, and marks every changed exact subject pending.
-  Its approval and restacked approval are recorded. Hosted run `34972072843`
-  rejected two lint forms. Their behavior-preserving correction is pending
-  exact re-review before a replacement hosted run.
+  The `af9f77d`, restacked `45b1c91`, and lint-corrected `a3f56b5` approvals are
+  recorded. Combined approval-only head `9f82afa` passed replacement Verify run
+  `34973401808` and merged unsigned as `b2cb4b9`; exact-main run `34978365970`
+  failed in the unrelated network experiment ready-file check before the
+  required lanes started. The following decoder changes the same exact sources,
+  so its exact review and hosted admission remain open.
+- [ ] Admit architecture-qualified syscall decoding and bounded operand capture.
+  The current source has separate x86_64 and aarch64 tables, rejects x32 and
+  unsupported registered forms, captures path and socket-address bytes before
+  resume under three independent limits, completes partial reads or fails, and
+  never reads payload bytes. The raw parser rejects nonzero reserved and flags
+  fields and all non-exact syscall-information sizes. Independently approved
+  source `5d82dcd` and approval-only head `858bfb9` reached hosted run
+  `34979197795`; every formal, native, and fresh-evidence lane passed, but the
+  Rust lane rejected a large private enum. Correction `5d479bd` represents the
+  same continue-or-event state as `Option<ActiveTraceEvent>`, avoids heap
+  allocation, and refreshes both exact-body checkers. Independent re-review
+  approved exact head `b027ddd`. Replacement run `34988148920` found a second
+  large enum in the adapter's terminal drain observation. The current narrow
+  correction boxes only that terminal event, and independent re-review approved
+  exact head `fbd2d66`. The following approval-only record and replacement
+  hosted admission remain open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.

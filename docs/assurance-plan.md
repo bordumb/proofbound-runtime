@@ -27,11 +27,12 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-DISTRIBUTION-018` | Tier 1 workflow and registry-observer contract | Publication is explicit, exact-source, protected, ordered, and credential-isolated. Anonymous exact-byte registry observations and external registry setup remain open. |
 | `PBR-DRAFT-017` | Tier 1 bounded contract and source-level non-reuse checks | Closed diagnostic vocabulary and schemas are registered, and verifier, composer, and acceptor paths reject diagnostic receipt reuse. The live observer remains open. |
 | `PBR-DRAFT-019` | Tier 1 bounded producer contract independently reviewed and admitted on exact Runtime main | The pure diagnostic artifact producer preserves non-reuse, provenance, explicit gaps, and mandatory human authority choices. It does not claim live observer coverage. |
-| `PBR-OBSERVER-020` | Tier 1 current exact source independently approved; hosted admission pending | Exact source `af9f77d` preserves the pure observer contract while coupling it to the live adapter. Prior admitted identities remain history; hosted evidence and merge do not yet transfer. |
-| `PBR-OBSERVER-021` | Tier 1 trace-startup baseline admitted; current lint-only trace source pending exact review | Hosted compilation rejected two warnings-as-errors in the shared trace source. The correction preserves behavior but changes the exact source identity. Native ptrace behavior and complete observation remain open. |
-| `PBR-OBSERVER-022` | Tier 1 coupled-adapter baseline admitted; current lint-only trace source pending exact review | The adapter behavior is unchanged. Its claim closure includes the corrected shared trace source, so the current exact subject requires replay review. |
-| `PBR-OBSERVER-023` | Tier 1 active-trace source correction pending exact review | The correction collapses one resume check and uses the vacant-entry API for one process handle without changing the fail-closed decisions. Kernel effects and decoding remain open. |
-| `PBR-OBSERVER-024` | Tier 1 live event-and-drain correction pending exact review | The approved coupling behavior is unchanged, but its claim closure includes the corrected trace source and refreshed exact-body checker. Hosted admission remains open. |
+| `PBR-OBSERVER-020` | Tier 1 admitted through active event-and-drain main `b2cb4b9`; current decoder identity pending | The admitted event-and-drain sources passed exact-head run `34973401808`. The decoder batch changes the observer source to expose validated capture limits, so only that new exact identity is pending review and hosted admission. |
+| `PBR-OBSERVER-021` | Tier 1 admitted through active event-and-drain main `b2cb4b9`; current decoder identity pending | The admitted event-and-drain sources passed exact-head run `34973401808`. The decoder batch changes the shared trace source, so only that new exact identity is pending review and hosted admission. |
+| `PBR-OBSERVER-022` | Tier 1 admitted through active event-and-drain main `b2cb4b9`; current decoder identity pending | The admitted adapter coupling passed exact-head run `34973401808`. The decoder batch changes the adapter release transition to derive capture limits from the same validated protocol, so only that identity is pending. |
+| `PBR-OBSERVER-023` | Tier 1 active-trace source admitted on main `b2cb4b9`; current decoder identity pending | The active event source and drain coupling passed exact-head run `34973401808`. The decoder batch changes `ActiveTrace` to decode and capture operands at entry, so only that identity is pending. |
+| `PBR-OBSERVER-024` | Tier 1 event-and-drain coupling admitted on main `b2cb4b9`; current decoder identity pending | The combined correction passed exact-head run `34973401808` and merged. The decoder changes shared trace, adapter, and observer sources, so only the new exact identity is pending review and hosted admission. |
+| `PBR-OBSERVER-025` | Tier 1 syscall-decoder source implementation independently approved; replacement hosted admission pending | Exact source `fbd2d66` closes the second hosted large-enum lint by adding one box only for the terminal drain-selection event; it adds no boxing allocation to normal wait, continue, or natural-completion events. Run `34988148920` otherwise passed formal, native, and all non-rate-limited evidence lanes. Kernel ABI truth, memory stability, native attacks, and artifact mapping remain open. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -612,6 +613,60 @@ and source selection. This is a source contract. It does not establish Linux eve
 completeness, correct syscall meaning, tracee-memory reads, exact native cleanup,
 or a released diagnostic executable. Those obligations remain explicit under
 PBR-DIAGNOSTIC-TRACE-AX-016 and the RT-8 native evidence wave.
+
+## PBR-OBSERVER-025
+
+The current aggregate subject joins the pure observer bound accessors, the
+Linux adapter's bound derivation and irreversible failure-to-drain transition,
+the active trace's pre-resume entry capture, architecture router, closed
+tables, argument helpers, and bounded readers, and the raw read-only process
+memory operation. It selects one closed table from the Linux audit architecture
+before it interprets a syscall number. The table contains only the filesystem,
+socket, process-creation, and execution families registered by Specification
+0015 for x86_64 and aarch64. It rejects x32, unknown architectures, and
+unsupported `openat2` or `clone3` structure forms.
+
+The raw syscall-information parser names the current Linux reserved and flags
+fields. Both must be zero. It rejects a return larger than its supplied buffer
+and accepts only the exact operation-specific byte count for none, entry, exit,
+or seccomp data. A future extension therefore becomes a typed diagnostic
+failure and drain obligation until Runtime registers its meaning.
+
+The trace captures a registered operand before it resumes the stopped tracee.
+Path strings must terminate within the tracee-string read bound and fit the
+independent retained-path bound. Socket addresses must fit their independent
+bound. The raw module performs only `process_vm_readv`; the safe trace module
+completes a partial read or returns a typed failure. `sendto` retains a payload
+length but never reads the payload pointer or bytes. Other unregistered syscall
+numbers resume without producing a retained event.
+
+The Rust tests cover architecture-qualified table selection, unknown
+architecture rejection, x32 rejection, bound constructors, the closed error
+vocabulary, and compilation of the selected adapter release and drain paths.
+The independent checker byte-pins the compiler and crate-selection closure;
+the adapter prepare, spawn, release, and drain transitions; the trace startup
+release, event loop, wait-observation router, entry handler,
+bound constructor, router, both architecture tables, width and byte-order
+helpers, supported-family decoder, syscall-information fetch and exact parser,
+bounded readers, and raw read operation. Its mutation witnesses cover the
+router, architecture numbers, x32 rejection, argument width, byte order,
+reserved and flags fields, truncated and extended operation sizes, each operand
+bound, adapter limit wiring, payload pointer selection, and raw read-only
+operation. These source checks do not prove the Linux ABI, `process_vm_readv`,
+memory stability, or event completeness.
+`PBR-DIAGNOSTIC-DECODE-AX-017` retains those premises. Native decoder fixtures,
+artifact mapping, object resolution, command integration, and release binding
+remain open.
+
+Replacement hosted run `34988148920` passed preflight, formal, both native,
+and every fresh-evidence lane except the receipt lane, whose anonymous
+Proofbound release request hit GitHub's rate limit before evidence execution.
+The Rust lane exposed a distinct large-enum lint in the adapter's public drain
+observation. The current correction uses one boxed event only when an event
+selects terminal drain. It adds no boxing allocation to normal continue,
+natural-completion, or trace-wait events. The affected exact-body checks are
+refreshed. Independent re-review approved exact head `fbd2d66`. The following
+approval-only record and replacement hosted admission remain open.
 
 ## Bounded-domain declaration guard
 

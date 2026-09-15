@@ -1,15 +1,17 @@
 # Proofbound Runtime product roadmap 2: deferred capabilities
 
 - **Status:** implementation; RT-7 publication routes and the RT-8 diagnostic
-  contract, artifact producer, and pure observer protocol are merged, external
-  registry publication remains open, and the RT-8 exec-release and
-  trace-startup prerequisites are merged; all complete Roadmap 2 epic exits
-  remain open
+  contract, artifact producer, observer protocol, trace startup, active event
+  source, and event-and-drain coupling are merged. External registry
+  publication, the decoder admission, and every complete Roadmap 2 epic exit
+  remain open.
 - **Date:** 2026-09-13
-- **Runtime baseline:** coupled observer adapter merge `d34eab1` on `main`; its
-  exact-main Verify run `34969409215` is in progress. Trace-startup exact-main run
-  `34962882198` and identity-bound exec-release exact-main run `34956564102`
-  passed.
+- **Runtime baseline:** combined active trace and event-and-drain merge
+  `b2cb4b9` on `main`; exact-head Verify run `34973401808` passed. Exact-main
+  run `34978365970` failed before required lanes started in an unrelated
+  network-experiment ready-file check. Coupled-adapter run `34969409215`,
+  trace-startup run `34962882198`, and identity-bound exec-release run
+  `34956564102` passed.
 - **Proofbound baseline consumed by Runtime evidence:** public immutable bundle
   for source `9512469`; protected-path cutover merged as Runtime `4a0cfdb` and
   passed exact-main Verify run `34918706960`
@@ -34,14 +36,14 @@ threat-model, ADR, claim, and evidence changes before production code.
 
 ### Execution checkpoint
 
-As of 2026-09-15, Runtime main commit `d34eab1` contains the version 2 memory
+As of 2026-09-15, Runtime main commit `b2cb4b9` contains the version 2 memory
 and deterministic CBOR wave, receipt composition and acceptance, a bounded
 static plan scaffold,
 typed prelaunch diagnostics, reproducible Rust, Python, and TypeScript SDK
 packages, the network-mechanism decision, the performance baseline, and the
 pure RT-8 observer protocol. These are prerequisites or partial foundations
 for RT-7, RT-8, RT-9, and RT-13. They do not close a Roadmap 2 exit condition.
-Registry publication, consumer dogfood, the live diagnostic observer,
+Registry publication, consumer dogfood, the complete diagnostic planner,
 production authenticated networking, the guest profile, the signing ADR, the
 receipt log, and the execution service remain open. RT-7.1 is governed by
 [Specification 0014](specs/0014_public_compatibility_and_distribution.md).
@@ -78,20 +80,43 @@ exact-main run `34956564102`. The trace-startup prerequisite passed independent
 exact-head review and complete hosted verification, merged unsigned as
 `9395050`, and exact-main run `34962882198` passed. Its coupled adapter passed
 independent review and complete hosted run `34964466007`, then merged unsigned
-as `d34eab1`; exact-main run `34969409215` is in progress. The following active-trace
+as `d34eab1`; exact-main run `34969409215` passed. The following active-trace
 source adds exact-set waits, paired syscall stops, process-tree identity
 handling, and validated pidfd-directed termination. It remains byte-identical
 to independently approved source `c20f6e3`; its admitted-main replay at
 `1db68a6` was also independently approved, and approval-only head `c4b88c1` is
-in hosted verification. Event-and-drain restack `45b1c91` passed independent
-review. Hosted run `34972072843` then rejected two warnings-as-errors in the
-shared trace source and was cancelled. The lint-only correction and refreshed
-exact-body checker are pending narrow exact re-review. The wave passes the
-validated process bound into the trace, consumes each complete event into the
-same pure protocol, permanently rejects an unreconciled process tree, and
-orders a successful effectful drain before the pure tree-empty acknowledgement.
-Hosted admission remains open. Syscall decoding, command integration, the
-native attack corpus, and release binding remain open.
+not admitted alone: run `34970508987` failed only on the two Rust lints fixed by
+the following reviewed batch. The following event-and-drain source `af9f77d`
+passed
+independent exact-head review before this restack. It passes the validated
+process bound into the trace, consumes each complete event into the same pure
+protocol, permanently rejects an unreconciled process tree, and orders a
+successful effectful drain before the pure tree-empty acknowledgement. Restacked
+head `45b1c91` passed exact replay review. The behavior-preserving Rust-lint
+correction `a3f56b5` also passed exact review. Approval-only head `9f82afa`
+passed replacement Verify run `34973401808`, then the combined series merged
+unsigned as `b2cb4b9`; exact-main run `34978365970` failed before the required
+lanes started because the unrelated network experiment missed its bounded
+ready-file observation. The
+following decoder changes these shared sources again. Its architecture-qualified tables and bounded
+entry-time operand capture are implemented under `PBR-OBSERVER-025`; the exact
+aggregate subject, compiler and crate-selection closure, adapter build
+evidence, all load-bearing decoder bodies, and the zero-reserved exact-size
+syscall-information parser are registered. Independently approved source
+`5d82dcd` and approval-only head `858bfb9` reached hosted run `34979197795`.
+Every formal, native, and fresh-evidence lane passed, but the Rust lane rejected
+a large private enum. Correction `5d479bd` replaces that private state with
+`Option<ActiveTraceEvent>` without per-event allocation and refreshes both exact
+source guards. Independent re-review approved exact head `b027ddd`; the
+approval-only head `4f66fc4` reached replacement run `34988148920`. That run
+passed preflight, formal, both native lanes, and all fresh-evidence lanes except
+one anonymous GitHub rate-limit failure, but Rust lint found a separate large
+public adapter observation enum. The current correction boxes only the terminal
+drain-selection event and adds no boxing allocation to the normal trace path.
+Exact re-review approved head `fbd2d66`; the following approval-only record and
+replacement hosted admission remain open. Artifact
+mapping, command integration, the native attack corpus, and release binding
+remain open.
 RT-9 is blocked until RT-5 implements the accepted single-service network
 decision in production.
 
@@ -305,6 +330,10 @@ can identify review differences but can never grant Runtime authority.
 
 ### RT-8.2 Turn observations into a draft
 
+- Decode only the registered x86_64 and aarch64 syscall families. Capture path
+  and socket-address operands before resume under independent limits. Reject
+  unsupported ABI forms and read failures. Record payload length when needed,
+  but never read payload bytes.
 - Start from the RT-3.3 static scaffold. Add observed entries with a distinct
   provenance kind, so a reviewer can tell an ELF-resolved dependency from an
   observed file access.

@@ -90,7 +90,8 @@ struct BpfProgram {
 #[repr(C)]
 struct RawSyscallInfo {
     operation: u8,
-    _padding: [u8; 3],
+    reserved: u8,
+    flags: u16,
     architecture: u32,
     instruction_pointer: u64,
     stack_pointer: u64,
@@ -626,17 +627,48 @@ pub(crate) fn trace_event_process(process_id: u32) -> io::Result<u32> {
 }
 
 #[cfg(feature = "diagnostic-observer")]
-pub(crate) fn trace_syscall_stop(process_id: u32) -> io::Result<TraceSyscallStop> {
-    const SYSCALL_INFO_NONE: u8 = 0;
-    const SYSCALL_INFO_ENTRY: u8 = 1;
-    const SYSCALL_INFO_EXIT: u8 = 2;
-    const SYSCALL_INFO_SECCOMP: u8 = 3;
+pub(crate) fn trace_read_process_memory(
+    process_id: u32,
+    remote_address: u64,
+    bytes: &mut [u8],
+) -> io::Result<usize> {
+    if bytes.is_empty() {
+        return Ok(0);
+    }
+    let process_id =
+        i32::try_from(process_id).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    let remote_address = usize::try_from(remote_address)
+        .map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    let local = libc::iovec {
+        iov_base: bytes.as_mut_ptr().cast(),
+        iov_len: bytes.len(),
+    };
+    let remote = libc::iovec {
+        iov_base: remote_address as *mut libc::c_void,
+        iov_len: bytes.len(),
+    };
+    // SAFETY: both iovec values remain live for the call. The local vector
+    // identifies the complete writable byte slice. The remote vector is an
+    // address in the exact stopped tracee and is never dereferenced locally.
+    let result = unsafe { libc::process_vm_readv(process_id, &local, 1, &remote, 1, 0) };
+    if result < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let count = usize::try_from(result).map_err(|_| io::Error::from(io::ErrorKind::InvalidData))?;
+    if count > bytes.len() {
+        return Err(io::Error::from(io::ErrorKind::InvalidData));
+    }
+    Ok(count)
+}
 
+#[cfg(feature = "diagnostic-observer")]
+pub(crate) fn trace_syscall_stop(process_id: u32) -> io::Result<TraceSyscallStop> {
     let process_id =
         i32::try_from(process_id).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
     let mut information = RawSyscallInfo {
         operation: 0,
-        _padding: [0; 3],
+        reserved: 0,
+        flags: 0,
         architecture: 0,
         instruction_pointer: 0,
         stack_pointer: 0,
@@ -658,13 +690,33 @@ pub(crate) fn trace_syscall_stop(process_id: u32) -> io::Result<TraceSyscallStop
     }
     let available =
         usize::try_from(result).map_err(|_| io::Error::from(io::ErrorKind::InvalidData))?;
-    if available < 24 {
+    decode_trace_syscall_stop(&information, available)
+}
+
+#[cfg(feature = "diagnostic-observer")]
+fn decode_trace_syscall_stop(
+    information: &RawSyscallInfo,
+    available: usize,
+) -> io::Result<TraceSyscallStop> {
+    const SYSCALL_INFO_NONE: u8 = 0;
+    const SYSCALL_INFO_ENTRY: u8 = 1;
+    const SYSCALL_INFO_EXIT: u8 = 2;
+    const SYSCALL_INFO_SECCOMP: u8 = 3;
+    const SYSCALL_INFO_HEADER_BYTES: usize = 24;
+    const SYSCALL_INFO_ENTRY_BYTES: usize = 80;
+    const SYSCALL_INFO_EXIT_BYTES: usize = 33;
+    const SYSCALL_INFO_SECCOMP_BYTES: usize = 84;
+
+    if available > core::mem::size_of::<RawSyscallInfo>()
+        || information.reserved != 0
+        || information.flags != 0
+    {
         return Err(io::Error::from(io::ErrorKind::InvalidData));
     }
     match information.operation {
-        SYSCALL_INFO_NONE => Ok(TraceSyscallStop::None),
+        SYSCALL_INFO_NONE if available == SYSCALL_INFO_HEADER_BYTES => Ok(TraceSyscallStop::None),
         SYSCALL_INFO_ENTRY => {
-            if available < 80 {
+            if available != SYSCALL_INFO_ENTRY_BYTES {
                 return Err(io::Error::from(io::ErrorKind::InvalidData));
             }
             let number = trace_read_u64(&information.data, 0)?;
@@ -682,7 +734,7 @@ pub(crate) fn trace_syscall_stop(process_id: u32) -> io::Result<TraceSyscallStop
             })
         }
         SYSCALL_INFO_EXIT => {
-            if available < 33 {
+            if available != SYSCALL_INFO_EXIT_BYTES {
                 return Err(io::Error::from(io::ErrorKind::InvalidData));
             }
             let result = trace_read_i64(&information.data, 0)?;
@@ -698,7 +750,9 @@ pub(crate) fn trace_syscall_stop(process_id: u32) -> io::Result<TraceSyscallStop
                 _ => Err(io::Error::from(io::ErrorKind::InvalidData)),
             }
         }
-        SYSCALL_INFO_SECCOMP => Ok(TraceSyscallStop::Seccomp),
+        SYSCALL_INFO_SECCOMP if available == SYSCALL_INFO_SECCOMP_BYTES => {
+            Ok(TraceSyscallStop::Seccomp)
+        }
         _ => Err(io::Error::from(io::ErrorKind::InvalidData)),
     }
 }

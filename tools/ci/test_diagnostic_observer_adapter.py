@@ -66,7 +66,7 @@ def body_sha256(source: str, signature: str) -> str:
 
 
 EXPECTED_LOAD_BEARING_BODIES = {
-    "active-next-event": "8feed0c364401f4506ee0874106d2f0482b16c01a2c07f73b7957f66c6e04d7c",
+    "active-next-event": "f61bba9dcbf6d975378b59c51fa51c14fcdf7c227a7b12cb0dcc5e44b137e3b6",
     "draining-finish": "2af9c106cbc227f9525aeb4e57309bc37b8560b861f76c0c35d0cbcc355aeeb6",
 }
 
@@ -143,8 +143,26 @@ pub use adapter::{
     prepare_observer,
 };
 pub use proofbound_runtime_linux::{
-    ActiveTraceEvent, TraceDeadline, TraceObservationError, TraceProcessId,
+    ActiveTraceEvent, TraceCapturedOperands, TraceDeadline, TraceObservationError, TraceProcessId,
+    TraceSyscallClass, TraceSyscallInvocation,
 };
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        ActiveObserver, ActiveObserverStep, ObserverAdapterError, ReadyObserver, TraceDeadline,
+    };
+
+    #[test]
+    fn decoder_adapter_release_and_drain_paths_compile() {
+        let _: fn(ReadyObserver) -> Result<ActiveObserver, ObserverAdapterError> =
+            ReadyObserver::release;
+        let _: fn(
+            ActiveObserver,
+            TraceDeadline,
+        ) -> Result<ActiveObserverStep, ObserverAdapterError> = ActiveObserver::next_event;
+    }
+}
 """
 
 EXPECTED_ADAPTER_MANIFEST = """[package]
@@ -208,7 +226,7 @@ EXPECTED_DIAGNOSE_LIB_SHA256 = (
     "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de"
 )
 EXPECTED_LINUX_LIB_SHA256 = (
-    "863d7384a627b52b1bd8aa1a7dbbfc3a3dab2ea6ac956adbd733b05beac8ad20"
+    "5e17e13cfe6da73bc3d22a00cc38909296b0b03c14b2709fe2e70f8b481486e1"
 )
 
 
@@ -433,7 +451,8 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
         ready = implementation(self.adapter, "ReadyObserver")
         self.assertLess(ready.index("TraceProcessLimit::new"), ready.index("release_target"))
         self.assertLess(ready.index("release_target"), ready.index("self.trace.release"))
-        self.assertIn("self.trace.release(process_limit)", ready)
+        self.assertIn("TraceCaptureLimits::new", ready)
+        self.assertIn("self.trace.release(process_limit, capture_limits)", ready)
         self.assertIn("Ok(ActiveObserver { trace, protocol })", ready)
 
     def test_live_events_advance_the_same_protocol_or_move_to_drain(self):
@@ -462,6 +481,10 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
         self.assertIn("ActiveObserverStep::Continue", active)
         self.assertIn("ActiveObserverStep::Drain", active)
         self.assertIn("ActiveObserverStep::Complete", active)
+        observation = enum_structure(self.adapter, "ObserverObservation")
+        self.assertIn("Event(Box<ActiveTraceEvent>)", compact(observation))
+        self.assertEqual(active.count("Box::new(event)"), 1)
+        self.assertNotIn("Box::new(event)", implementation(self.adapter, "DrainingObserver"))
         self.assertNotIn("self.trace.clone()", active)
         self.assertNotIn("self.protocol.clone()", active)
 
@@ -539,8 +562,9 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
                 "DrainingObserver,InitialObserver,LauncherPausedObserver,ObserverAdapterError,"
                 "ObserverObservation,PreparedObserver,ReadyObserver,SpawnedObserver,"
                 "prepare_observer,};",
-                "pubuseproofbound_runtime_linux::{ActiveTraceEvent,TraceDeadline,"
-                "TraceObservationError,TraceProcessId,};",
+                "pubuseproofbound_runtime_linux::{ActiveTraceEvent,TraceCapturedOperands,"
+                "TraceDeadline,TraceObservationError,TraceProcessId,TraceSyscallClass,"
+                "TraceSyscallInvocation,};",
             ],
         )
         self.assertNotIn("*", "".join(public_uses))

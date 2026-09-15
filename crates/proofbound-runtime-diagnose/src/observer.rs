@@ -190,6 +190,24 @@ impl ObserverProtocol {
         self.bounds.process_count
     }
 
+    /// Returns the maximum retained bytes for one observed path.
+    #[must_use]
+    pub const fn path_byte_limit(&self) -> u64 {
+        self.bounds.path_bytes
+    }
+
+    /// Returns the maximum retained bytes for one socket address.
+    #[must_use]
+    pub const fn socket_address_byte_limit(&self) -> u64 {
+        self.bounds.socket_address_bytes
+    }
+
+    /// Returns the maximum bytes read for one tracee string.
+    #[must_use]
+    pub const fn tracee_string_byte_limit(&self) -> u64 {
+        self.bounds.tracee_string_bytes
+    }
+
     /// Reports whether one process identity is retained for terminal drain.
     #[must_use]
     pub fn tracks_process(&self, process: DiagnosticProcessId) -> bool {

@@ -1,27 +1,25 @@
 schema = "proofbound-evidence-unit/1"
-id = "diagnostic-observer-adapter-contract"
+id = "diagnostic-syscall-decoder-contract"
 adapter = "independent-check"
 kind = "independent-check"
-claims = ["PBR-OBSERVER-022", "PBR-OBSERVER-024", "PBR-OBSERVER-025"]
+claims = ["PBR-OBSERVER-025"]
 tier = 0
 expected_inventory = [
-  "diagnostic-observer-adapter-bound-inputs",
-  "diagnostic-observer-adapter-drain-coupling",
-  "diagnostic-observer-adapter-event-coupling",
-  "diagnostic-observer-adapter-mutation-witnesses",
-  "diagnostic-observer-adapter-process-capacity",
-  "diagnostic-observer-adapter-production-separation",
-  "diagnostic-observer-adapter-state-continuity",
-  "diagnostic-observer-adapter-transition-order",
+  "diagnostic-syscall-decoder-architecture-tables",
+  "diagnostic-syscall-decoder-bounded-operands",
+  "diagnostic-syscall-decoder-entry-order",
+  "diagnostic-syscall-decoder-exact-source-closure",
+  "diagnostic-syscall-decoder-mutation-witnesses",
+  "diagnostic-syscall-decoder-no-payload",
+  "diagnostic-syscall-decoder-raw-read-confinement",
 ]
 inputs = [
   "Cargo.lock",
   "Cargo.toml",
-  "assumptions/PBR-DIAGNOSTIC-TRACE-AX-016.toml",
-  "claims/PBR-OBSERVER-022.toml",
-  "claims/PBR-OBSERVER-024.toml",
+  "rust-toolchain.toml",
+  "assumptions/PBR-DIAGNOSTIC-DECODE-CHECK-AX-018.toml",
+  "assumptions/PBR-DIAGNOSTIC-DECODE-AX-017.toml",
   "claims/PBR-OBSERVER-025.toml",
-  "crates/proofbound-runtime-cli/Cargo.toml",
   "crates/proofbound-runtime-diagnose/Cargo.toml",
   "crates/proofbound-runtime-diagnose/src/artifact.rs",
   "crates/proofbound-runtime-diagnose/src/lib.rs",
@@ -33,20 +31,23 @@ inputs = [
   "crates/proofbound-runtime-linux/src/lib.rs",
   "crates/proofbound-runtime-linux/src/sys.rs",
   "crates/proofbound-runtime-linux/src/trace.rs",
-  "tools/ci/check_diagnostic_observer_adapter.py",
-  "tools/ci/test_diagnostic_observer_adapter.py",
+  "tools/ci/check_diagnostic_syscall_decoder.py",
+  "tools/ci/test_diagnostic_syscall_decoder.py",
 ]
 outputs = []
 environment_allowlist = ["PATH"]
 
 [operation]
 type = "independent-check"
-checker = "tools/ci/check_diagnostic_observer_adapter.py"
+checker = "tools/ci/check_diagnostic_syscall_decoder.py"
 arguments = []
 paths = [
-  "Cargo.toml",
+  "rust-toolchain.toml",
+  "claims/PBR-OBSERVER-025.toml",
   "crates/proofbound-runtime-diagnose/Cargo.toml",
+  "crates/proofbound-runtime-diagnose/src/artifact.rs",
   "crates/proofbound-runtime-diagnose/src/lib.rs",
+  "crates/proofbound-runtime-diagnose/src/observer.rs",
   "crates/proofbound-runtime-diagnose-linux/Cargo.toml",
   "crates/proofbound-runtime-diagnose-linux/src/adapter.rs",
   "crates/proofbound-runtime-diagnose-linux/src/lib.rs",
@@ -54,6 +55,9 @@ paths = [
   "crates/proofbound-runtime-linux/src/lib.rs",
   "crates/proofbound-runtime-linux/src/sys.rs",
   "crates/proofbound-runtime-linux/src/trace.rs",
+  "proofbound/evidence/diagnostic-observer-adapter-contract.toml",
+  "proofbound/evidence/diagnostic-syscall-decoder-adapter.toml",
+  "proofbound/evidence/diagnostic-syscall-decoder-contract.toml",
 ]
 
 [resource_budget]
