@@ -1,14 +1,15 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T13:02:02+01:00 (Europe/London, BST)
-- **Runtime baseline:** trace-startup merge `9395050`; exact-main Verify run
-  `34962882198` is in progress
-- **Active implementation wave:** the coupled setup adapter is at admitted-main
-  head `8ab66e5` in PR 15 and hosted run `34964466007` is in progress. The live
-  event-and-drain correction at `af9f77d` passed independent exact-head review.
-  Its approval-only commit, admitted-stack replay, hosted gate, and merge remain
-  pending.
+- **Last updated:** 2026-09-15T13:52:13+01:00 (Europe/London, BST)
+- **Runtime baseline:** coupled setup adapter merged as `d34eab1`; exact-main
+  Verify run `34969409215` is in progress. Trace-startup exact-main run
+  `34962882198` and identity-bound exec-release exact-main run `34956564102`
+  passed.
+- **Active implementation wave:** the active-trace admitted-main replay at
+  `1db68a6` is independently approved; approval-only head `c4b88c1` is in hosted
+  verification. The following event-and-drain source `af9f77d` is independently
+  approved and restacked locally for one exact replay review.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -151,8 +152,9 @@ manifest describes the supported tuple.
   exec release that lets the diagnostic adapter stop the acknowledged launcher
   and install exact trace options before target exec. Source implementation and
   registered falsifiers passed exact-head review and hosted verification, then
-  merged unsigned as `3557cc9`. Exact-main Verify run `34956564102` passed.
-- [ ] Complete independent review and hosted admission of the non-copy Linux
+  merged unsigned as `3557cc9`, then passed exact-main Verify run
+  `34956564102`.
+- [x] Complete independent review and hosted admission of the non-copy Linux
   trace-startup typestates. Source implementation and bounded contract checks
   are replayed on exact main `3557cc9`. The earlier exact review required the
   session channel, request, acknowledgement, and release to share one private
@@ -160,9 +162,11 @@ manifest describes the supported tuple.
   review found a public mutable-child replacement escape, a missing falsifier,
   and incomplete checker-assumption language. The following review found that
   the ownership-only private child field would fail the warnings-as-errors
-  gate. Those corrections are retained; refreshed review, hosted admission,
-  and native effect evidence remain open.
-- [ ] Couple the approved trace-startup typestates to the pure observer protocol
+  gate. Those corrections passed refreshed independent review and complete
+  hosted verification, then merged unsigned as `9395050`. Exact-main Verify
+  run `34962882198` passed. Native effect evidence remains open under
+  the later live-observer claim waves.
+- [x] Couple the approved trace-startup typestates to the pure observer protocol
   in the separate diagnostic adapter. Validate bounds before spawn, move one
   private pair after the exact initial stop, advance pure states only in the
   declared effect order, and expose neither raw trace states nor mutable protocol
@@ -181,8 +185,9 @@ manifest describes the supported tuple.
   dependency, target, and pure module-selection sources. Its review found
   conditional path redirection at both dependency crate roots. The sixth
   correction byte-pins those roots and registers the Linux root. Independent
-  re-review approved exact source head `d0c2520`; the approval-only record and
-  hosted verification remain open.
+  re-review approved exact source head `d0c2520`. Its edition correction and
+  admitted-main replay were separately approved, hosted run `34964466007`
+  passed, and the adapter merged as `d34eab1`.
 - [ ] Admit the active trace event source. The implementation polls only its
   private exact tracee set, registers ptrace children before parent resume,
   pairs syscall entry and exit information across exec events, reconciles
@@ -191,8 +196,9 @@ manifest describes the supported tuple.
   explicitly leaves the effectful process-map bound, Linux effects, adapter
   event coupling, and native attack evidence open. The first independent review
   found incorrect syscall-pair retention and non-leader exec identity checks;
-  exact re-review approved corrected head `c20f6e3`. Hosted verification remains
-  open.
+  exact re-review approved corrected head `c20f6e3`. Its admitted-main replay
+  at `1db68a6` also passed independent review; approval-only head `c4b88c1` is
+  in hosted verification.
 - [ ] Admit live event-and-drain coupling. Exact source `af9f77d` passed
   independent review with an explicit `APPROVE`. The adapter passes the validated
   lifetime process bound to the effectful trace before release, consumes each
@@ -205,8 +211,8 @@ manifest describes the supported tuple.
   permanently blocks publication after an unreconciled tree, byte-pins the
   load-bearing bodies with five mutation classes, restores typed unsupported
   paths, closes assumption links, and marks every changed exact subject pending.
-  Approval-only recording, admitted-stack replay, and hosted admission remain
-  open.
+  Its approval is recorded. The restacked exact subject requires one replay
+  review and hosted admission.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.
