@@ -1,6 +1,6 @@
 # RT-11 integration record: signing and platform identity
 
-**Status:** planned ADR work
+**Status:** proposed ADR drafted; independent review pending
 
 **Primary owner:** Proofbound Runtime for Runtime envelopes and policy
 
@@ -9,6 +9,8 @@
 **Roadmap:** [Epic RT-11](../product-roadmap-2.md#9-epic-rt-11-signing-and-transparency-adr)
 
 **Platform contract:** [Specification 0013](../specs/0013_platform_integration_contract.md)
+
+**Decision:** [ADR 0009](../adr/0009-detached-role-bound-signing.md)
 
 ## Product result
 
@@ -41,6 +43,32 @@ the identity, how keys rotate or revoke, and what a consumer pins.
 - Release signatures and execution signatures remain distinct.
 - An integration record names accepted envelopes and algorithms but does not
   authenticate itself.
+
+ADR 0009 selects a deterministic-CBOR outer envelope with detached
+`COSE_Sign1` entries. Each signature authenticates the exact native payload and
+a role binding through COSE external authenticated data. The first algorithm
+is fully specified COSE Ed25519 (`-19`). Deprecated polymorphic EdDSA (`-8`)
+fails closed.
+
+## Selected identity model
+
+- Release, guest-image, log-operator, and witness roles use distinct durable
+  identities and externally managed custody.
+- Execution producers can use a short-lived workload identity.
+- Unsigned local execution keeps ADR 0002's independent commitment channel.
+- Auths is the first maintained identity-resolver integration. It verifies
+  principal control and exact KERI state without moving Auths authorization or
+  KERI event semantics into Runtime.
+- Source-control signing is outside the envelope contract. Git commits need
+  not be signed.
+
+## Selected log model
+
+RT-12 will use an append-only SHA-256 Merkle tree, operator-signed checkpoints,
+inclusion and consistency proofs, and at least two independently administered
+witnesses. The first policy requires every configured witness. Threshold
+quorums require a later fault-model decision. A checkpoint timestamp is not
+freshness evidence.
 
 ## Additional falsifiers
 

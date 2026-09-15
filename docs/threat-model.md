@@ -173,6 +173,23 @@ service behavior, publisher identity, account custody, availability, or atomic
 publication across the independent registries. RT-11 owns any later signing
 and transparency claim.
 
+Future signed-object interpretation follows
+[ADR 0009](adr/0009-detached-role-bound-signing.md). When a signing profile is
+enabled, it additionally trusts the exact COSE and Ed25519 implementations,
+external custody provider, identity resolver, identity-policy distributor,
+trust roots, key-status evidence, and any policy-required current-time source.
+An Auths identity profile additionally trusts the exact Auths verifier and
+retained identity-evidence closure. A keyless profile can additionally trust an
+issuer, certificate authority, and transparency service. These are conditional
+future roles; no current unsigned execution or release claim receives signing
+assurance by this record.
+
+Future receipt-log interpretation additionally trusts the log operator,
+storage, witness implementations, witness state and keys, and the independent
+checkpoint-distribution channel. A checkpoint proves inclusion and tree
+consistency under those roles. It does not prove execution, correctness, or
+freshness.
+
 ## Versioned enforced boundary
 
 Both supported profiles require:

@@ -249,6 +249,11 @@ A missing tuple or unsupported combination fails closed. Product and package
 labels do not imply platform support. An integration record authenticates
 nothing by itself; its distribution and signing policy are trust inputs.
 
+When signing is enabled, [ADR 0009](../adr/0009-detached-role-bound-signing.md)
+defines the Runtime envelope and identity-role boundary. Native objects remain
+the semantic inputs. A signature authenticates exact bytes and a role under a
+consumer-pinned identity policy; it does not promote any native result.
+
 The projects MAY publish independently. Each source change that affects an
 integration surface MUST update the tested integration matrix before the tuple
 is described as supported.
