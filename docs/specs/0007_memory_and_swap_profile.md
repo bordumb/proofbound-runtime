@@ -76,11 +76,13 @@ receipt to version 2, infer missing resource observations, or apply version 2
 eligibility rules retroactively. A version 1 binary rejects version 2 inputs as
 an unsupported version.
 
-The launcher protocol may retain version 1 only if its closed message shape and
-state-machine meaning do not change. The compiled-policy identity bound into
-every message must select policy model version 2 and therefore the new resource
-limits. Any launcher field or transition change requires a version 2 launcher
-protocol in the same claim wave.
+Before the first public compatibility freeze, the launcher protocol label is
+tooling metadata. An unpublished launcher candidate may change its closed
+message shape or state-machine meaning in place only as one atomic exact-source
+claim wave. That wave must update the grammar, producer, consumer, falsifiers,
+claims, and evidence together. Prior candidate approvals do not transfer to
+the changed identities. The compiled-policy identity bound into every message
+must select policy model version 2 and therefore the new resource limits.
 
 ## Version 2 plan limits
 

@@ -359,10 +359,6 @@ impl BoundaryInstalled {
     pub const fn identity(self) -> LauncherIdentity {
         self.identity
     }
-
-    fn verify(self, expected: LauncherIdentity) -> Result<(), LauncherError> {
-        self.identity.verify(expected)
-    }
 }
 
 /// Contains one supervisor exec release bound to one execution.
@@ -382,6 +378,10 @@ impl ExecRelease {
     #[must_use]
     pub const fn identity(self) -> LauncherIdentity {
         self.identity
+    }
+
+    fn verify(self, expected: LauncherIdentity) -> Result<(), LauncherError> {
+        self.identity.verify(expected)
     }
 }
 

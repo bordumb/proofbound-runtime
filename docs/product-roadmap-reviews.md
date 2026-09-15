@@ -1727,3 +1727,25 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 `6735230542b8e5a4944337605e068bd900148109`. The following approval-only
 commit adds this record and changes no reviewed claim-subject bytes. Any later
 subject change requires a new exact-head review.
+## RT-8 launcher exec-release gate initial review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `497642a8e0d8bd3ee46e117fd3f946d9e20a39ae`
+- **Reviewed head:** `66c17897de0c26f0cff48cbdef1568566010e859`
+- **Branch:** `codex/rt8-linux-observer`
+- **Method:** Exact-range static review. The reviewer changed no files and ran
+  no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The review found two blockers. First, the release-identity verifier was added
+to `BoundaryInstalled` instead of `ExecRelease`, so the production call and
+registered substitution falsifiers did not compile. Second, the change added a
+launcher state transition while specification 0007 still required a version 2
+launcher label for any such change. That stale rule conflicted with the
+repository's accepted prelaunch replacement policy.
+
+The correction must put verification on the release type and align the
+launcher-specific text with the prelaunch rule: unpublished candidates may
+change in place only through an atomic exact-source claim wave, and prior
+approvals do not transfer. This verdict is not endorsed. The correction
+requires a new exact subject and independent review.
