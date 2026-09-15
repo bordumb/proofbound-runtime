@@ -817,16 +817,17 @@ resource-observation, read, join, or deadline failure is typed and prevents
 publication.
 
 The Rust evidence fixes the no-refresh public method signatures. The
-independent checker byte-pins preparation, spawn, exact-stop, deadline,
-termination, cgroup, terminal, and adapter transitions. Its causal mutations
-remove a memory-control comparison, replace the execution deadline, reverse
-cleanup owners, accept incomplete resources, or move publication before
-terminal capture. This remains source evidence. Linux cgroup membership and
-counters, monotonic-clock progress, scheduler and ptrace behavior, termination,
-pipe progress, native attacks, command integration, and release binding remain
-open.
-`PBR-DIAGNOSTIC-LIFECYCLE-CHECK-AX-021` retains the compiler,
-standard-library, clock, and independent-checker premises.
+independent checker byte-pins preparation, spawn, deadline, termination, cgroup,
+terminal, and adapter transitions. Its causal mutations remove a memory-control
+comparison, replace the execution deadline, reverse cleanup owners, bypass a
+setup expiry check, accept incomplete resources, delay process-group signalling,
+and move publication before terminal capture. This remains source evidence.
+Linux cgroup membership and counters, monotonic-clock progress, scheduler and
+ptrace behavior, termination, pipe progress, native attacks, command
+integration, and release binding remain open.
+`PBR-DIAGNOSTIC-LIFECYCLE-AX-023` retains those native runtime premises.
+`PBR-DIAGNOSTIC-LIFECYCLE-CHECK-AX-021` separately retains only compiler,
+standard-library, and independent-checker premises.
 
 ## Bounded-domain declaration guard
 

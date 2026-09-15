@@ -7,19 +7,30 @@ ROOT = Path(__file__).resolve().parents[2]
 ROOT_MANIFEST = ROOT / "Cargo.toml"
 LOCK = ROOT / "Cargo.lock"
 TOOLCHAIN = ROOT / "rust-toolchain.toml"
-TRACE_ASSUMPTION = ROOT / "assumptions/PBR-DIAGNOSTIC-TRACE-AX-016.toml"
 LIFECYCLE_ASSUMPTION = (
     ROOT / "assumptions/PBR-DIAGNOSTIC-LIFECYCLE-CHECK-AX-021.toml"
+)
+LIFECYCLE_RUNTIME_ASSUMPTION = (
+    ROOT / "assumptions/PBR-DIAGNOSTIC-LIFECYCLE-AX-023.toml"
 )
 CLAIM = ROOT / "claims/PBR-OBSERVER-028.toml"
 CORE_MANIFEST = ROOT / "crates/proofbound-runtime-core/Cargo.toml"
 AUTHORITY = ROOT / "crates/proofbound-runtime-core/src/authority.rs"
+CORE_LIB = ROOT / "crates/proofbound-runtime-core/src/lib.rs"
+RECEIPT = ROOT / "crates/proofbound-runtime-core/src/receipt.rs"
+DIAGNOSE_MANIFEST = ROOT / "crates/proofbound-runtime-diagnose/Cargo.toml"
+DIAGNOSE_ARTIFACT = ROOT / "crates/proofbound-runtime-diagnose/src/artifact.rs"
+DIAGNOSE_LIB = ROOT / "crates/proofbound-runtime-diagnose/src/lib.rs"
+DIAGNOSE_OBSERVER = ROOT / "crates/proofbound-runtime-diagnose/src/observer.rs"
 ADAPTER_MANIFEST = ROOT / "crates/proofbound-runtime-diagnose-linux/Cargo.toml"
 ADAPTER = ROOT / "crates/proofbound-runtime-diagnose-linux/src/adapter.rs"
 ADAPTER_LIB = ROOT / "crates/proofbound-runtime-diagnose-linux/src/lib.rs"
 LINUX_MANIFEST = ROOT / "crates/proofbound-runtime-linux/Cargo.toml"
 CGROUP = ROOT / "crates/proofbound-runtime-linux/src/cgroup.rs"
 LINUX_LIB = ROOT / "crates/proofbound-runtime-linux/src/lib.rs"
+LAUNCHER = ROOT / "crates/proofbound-runtime-linux/src/launcher.rs"
+RESOLVE = ROOT / "crates/proofbound-runtime-linux/src/resolve.rs"
+SUPERVISOR = ROOT / "crates/proofbound-runtime-linux/src/supervisor.rs"
 SYS = ROOT / "crates/proofbound-runtime-linux/src/sys.rs"
 TRACE = ROOT / "crates/proofbound-runtime-linux/src/trace.rs"
 UNIT_EVIDENCE = ROOT / "proofbound/evidence/diagnostic-lifecycle.toml"
@@ -256,20 +267,29 @@ EXPECTED_FILES = {
     "adapter-lib": "ccad4545cfd41802c32d66a692d65aca9a69d0e59b0a3cb7c5c34da42830a198",
     "adapter-manifest": "ef7c613a66781c4b64d75435524166329b5239b8172f97b28cff2d6d609c8d78",
     "authority": "9d1945b590a3a9f44f6af95d3090ad0a8d1bc0cfa601c35273cd0a72c86cbddc",
-    "claim": "d3b3cad163581f7ddb3ff7a98165ebfd5f65a252e821be95fabfd5091e181f9f",
-    "contract-evidence": "8ba3e16b1d7435b668908588c35f5e1ceaedbc42e42c38ac99f5550e82eaf7fd",
+    "claim": "2e21b4a60d498fadbf4e64ca227f0b42b455b7a6028cd338ed0c7a4335ca3fb5",
+    "contract-evidence": "c97aa661d101a8cd3dcc01ad7622b7a56a73de0f11235c9aa6639b50a81447cd",
     "core-manifest": "0d22823a1d4f397fb58693c7d9fe7498969ce242b5da0f372d8cc8f55f960b9b",
+    "core-lib": "2039d8c789844cddaaabbf432a0a6ef465f77300577f3b57922d7bcbcc930450",
     "cgroup": "ce465e6ddba11a0d54db6e964cc8fc3c24ba54a64424ca4353aa038094db010e",
+    "diagnose-artifact": "ad7cce45d286623dcfd55c21189cb7d58e29f1943960d0a061d6f85c2640baa3",
+    "diagnose-lib": "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de",
+    "diagnose-manifest": "097ec2b4cef98a43bee09c64c289251ab2060808d4fb8e050de3077f541ff2f1",
+    "diagnose-observer": "e6cfb0a92d7bf7e235c7fac8180f488b7b1d9474986791fac4adf2917dae7d12",
+    "launcher": "5b2f251091b01fe9fa9bfb4018fac4971f22c9a7d55a5a92f5fdc24ca2673b83",
     "lifecycle-assumption": "ee12854496d97ecce949d1ff85067003a2fc48880d02d2850cff6fe807090017",
+    "lifecycle-runtime-assumption": "8f2f8e1674a1329b808bfe605208bdb190557a0eb5700a1f3c7f2c3f3301cae3",
     "linux-lib": "47ef2cdd61b7c0854f0ee9fcfb5d32ffcebfec5b5820477636a3d513a7ccf33d",
     "linux-manifest": "e7311e3cada91690da87f42910c96e133538439956a0db78de79dea9294d6c9b",
     "lock": "376572c5d111f5ea72e38667b5813a7c051e9fa128d5af355468e5294889a0c6",
     "root-manifest": "1ea75287f62129c6b15038b0c45df42e616fc4c92e59e61bc03358746fd5d7d6",
+    "receipt": "fc27edf189014a49af8af380902fe90b12cbbd71a2b49301064b589c8a4c4024",
+    "resolve": "66ab088fbadbff3b71deb6edc76d3f7069932949f6cdde08f1fa3cf133892eca",
+    "supervisor": "5f1b80181b01c3ea189643995617aeab60f390c1f5fc6930cf0acd577b88cdd8",
     "sys": "c7433f4485aa12829c87ef10210fa766676bc24729361e0a82ac93a2267eb06f",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
     "trace": "3c766e2767d8622ee40e45825b863c75d3be49aa52aa62b6dd41bd311da6bd07",
-    "trace-assumption": "40a483142f19a6e3c1ece498b07b55463040354e98172a271abd623363414bb0",
-    "unit-evidence": "603cba3ff0c06f11c3d00b1d44f3a58c2987623c2dd044916c42746d74e5b875",
+    "unit-evidence": "2507f5c08798117203e5d8e543986eb22f6e6a38742738b7bdc4736c8e19c9bb",
 }
 
 
@@ -446,16 +466,25 @@ class DiagnosticLifecycleContractTests(unittest.TestCase):
             "claim": CLAIM,
             "contract-evidence": CONTRACT_EVIDENCE,
             "core-manifest": CORE_MANIFEST,
+            "core-lib": CORE_LIB,
             "cgroup": CGROUP,
             "lifecycle-assumption": LIFECYCLE_ASSUMPTION,
+            "lifecycle-runtime-assumption": LIFECYCLE_RUNTIME_ASSUMPTION,
+            "diagnose-artifact": DIAGNOSE_ARTIFACT,
+            "diagnose-lib": DIAGNOSE_LIB,
+            "diagnose-manifest": DIAGNOSE_MANIFEST,
+            "diagnose-observer": DIAGNOSE_OBSERVER,
+            "launcher": LAUNCHER,
             "linux-lib": LINUX_LIB,
             "linux-manifest": LINUX_MANIFEST,
             "lock": LOCK,
             "root-manifest": ROOT_MANIFEST,
+            "receipt": RECEIPT,
+            "resolve": RESOLVE,
+            "supervisor": SUPERVISOR,
             "sys": SYS,
             "toolchain": TOOLCHAIN,
             "trace": TRACE,
-            "trace-assumption": TRACE_ASSUMPTION,
             "unit-evidence": UNIT_EVIDENCE,
         }
         actual_files = {
