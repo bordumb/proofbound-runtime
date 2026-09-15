@@ -1,13 +1,14 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T10:01:43+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T10:05:09+01:00 (Europe/London, BST)
 - **Runtime baseline:** pure observer protocol merge `b04382d`; exact-main
   Verify run `34946613122` passed
 - **Active implementation wave:** the identity-bound exec-release gate is
-  rebased onto the admitted pure observer protocol and awaits refreshed
-  exact-head review. Trace startup and the coupled adapter were approved on the
-  prior stack but remain behind this prerequisite and require their own rebases.
+  rebased onto the admitted pure observer protocol. Its refreshed review found
+  no security defect and requested correction of two stale status summaries.
+  Trace startup and the coupled adapter were approved on the prior stack but
+  remain behind this prerequisite and require their own rebases.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -148,8 +149,8 @@ manifest describes the supported tuple.
   exec release that lets the diagnostic adapter stop the acknowledged launcher
   and install exact trace options before target exec. Source implementation and
   registered falsifiers are rebased onto exact main `b04382d`; refreshed
-  exact-head review, hosted admission, merge, and exact-main verification remain
-  open.
+  review requested only current-status corrections. Exact re-review, hosted
+  admission, merge, and exact-main verification remain open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.

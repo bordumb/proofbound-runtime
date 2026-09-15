@@ -1817,3 +1817,31 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 no reviewed production, schema, specification, claim, assumption, evidence,
 test, or prior review-record bytes. Any later subject change requires a new
 exact-head review.
+
+## RT-8 launcher exec-release gate admitted-base rebase review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `b04382d290924cefe588bb1fbce3830b62db171e`
+- **Reviewed head:** `135e45907ab7dd8d8790d80eb32e4c8ecedf1557`
+- **Branch:** `codex/rt8-linux-observer`
+- **Method:** Complete exact-range static re-review after rebase. The reviewer
+  changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The reviewer found no security or implementation defect. The launcher code,
+schema, attack catalog, claim, evidence, specifications, ADRs, and threat model
+remain byte-identical to the previously approved implementation. Exact release
+identity verification, missing and malformed release rejection, boundary and
+exec ordering, post-seccomp channel reads, source closure, prelaunch replacement,
+and production observer separation remain intact.
+
+Two current-status summaries were stale after the rebase. The high-level
+roadmap still identified producer merge `4ecb871` as current main and described
+the pure observer selector correction as in progress. The assurance table also
+described `PBR-OBSERVER-020` hosted admission as pending. Those statements
+contradicted admitted base `b04382d` and passed exact-main run `34946613122`.
+
+The correction must update current roadmap and assurance status while retaining
+the accurate historical hosted rejection and correction records. This verdict
+is not endorsed. The correction changes the exact subject and requires another
+independent review.
