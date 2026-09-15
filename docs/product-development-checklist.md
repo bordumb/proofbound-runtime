@@ -1,12 +1,13 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T11:12:00+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T11:21:37+01:00 (Europe/London, BST)
 - **Runtime baseline:** identity-bound exec-release merge `3557cc9`; exact-main
   Verify run `34956564102` is in progress
 - **Active implementation wave:** separate feature-gated Linux trace-startup
-  typestates are being replayed onto the admitted dependency stack. The coupled
-  adapter follows after exact-head review and hosted admission.
+  typestates are independently approved at exact source head `a848b70`. The
+  approval-only record and hosted admission are next. The coupled adapter is
+  already being replayed onto that exact stack.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -159,8 +160,9 @@ manifest describes the supported tuple.
   review found a public mutable-child replacement escape, a missing falsifier,
   and incomplete checker-assumption language. The following review found that
   the ownership-only private child field would fail the warnings-as-errors
-  gate. Those corrections are retained; refreshed review, hosted admission,
-  and native effect evidence remain open.
+  gate. Those corrections are retained. Refreshed independent review approved
+  exact source head `a848b70`; its approval-only record, hosted admission, and
+  native effect evidence remain open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.
