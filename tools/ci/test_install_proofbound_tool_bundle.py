@@ -182,29 +182,73 @@ class PinTests(unittest.TestCase):
                     ):
                         installer._request_headers(url)
 
-    def test_api_credential_rejects_every_redirect(self) -> None:
-        request = installer.Request(
-            "https://api.github.com/repos/example/release",
-            headers={"Authorization": "Bearer fixture-credential"},
-        )
-        handler = installer._CredentialRedirectHandler()
-        for target in (
-            "https://api.github.com/repos/example/other-release",
-            "https://example.invalid/capture",
-            "http://api.github.com/repos/example/release",
+    def test_fetch_wires_redirect_guard_and_keeps_assets_credential_free(
+        self,
+    ) -> None:
+        opened: list[tuple[str, dict[str, str]]] = []
+
+        class Response:
+            def __init__(self, url: str, data: bytes) -> None:
+                self.url = url
+                self.data = data
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args: object) -> None:
+                return None
+
+            def geturl(self) -> str:
+                return self.url
+
+            def read(self, _limit: int) -> bytes:
+                return self.data
+
+        def fake_build_opener(*handlers: object):
+            self.assertEqual(len(handlers), 1)
+            self.assertIsInstance(handlers[0], installer._CredentialRedirectHandler)
+            redirect_handler = handlers[0]
+
+            class Opener:
+                def open(self, request, timeout: int):
+                    self_outer.assertEqual(timeout, 30)
+                    opened.append((request.full_url, dict(request.header_items())))
+                    if request.full_url.startswith("https://api.github.com/"):
+                        redirected = redirect_handler.redirect_request(
+                            request,
+                            None,
+                            302,
+                            "Found",
+                            {},
+                            "https://example.invalid/capture",
+                        )
+                        opened.append(
+                            (redirected.full_url, dict(redirected.header_items()))
+                        )
+                    return Response(request.full_url, b"public-asset")
+
+            self_outer = self
+            return Opener()
+
+        api_url = "https://api.github.com/repos/example/release"
+        asset_url = "https://github.com/example/release/download/public-asset"
+        with mock.patch.dict(
+            installer.os.environ, {"GITHUB_TOKEN": "fixture-credential"}
         ):
-            with self.subTest(target=target):
+            with mock.patch.object(
+                installer, "build_opener", side_effect=fake_build_opener
+            ):
                 with self.assertRaisesRegex(
                     installer.ToolBundleError, "request redirected"
                 ):
-                    handler.redirect_request(
-                        request,
-                        None,
-                        302,
-                        "Found",
-                        {},
-                        target,
-                    )
+                    installer._fetch(api_url, 1024)
+                self.assertEqual(installer._fetch(asset_url, 1024), b"public-asset")
+
+        self.assertEqual([url for url, _headers in opened], [api_url, asset_url])
+        self.assertEqual(
+            opened[0][1]["Authorization"], "Bearer fixture-credential"
+        )
+        self.assertNotIn("Authorization", opened[1][1])
 
     def test_canonical_pin_and_upstream_records_are_closed(self) -> None:
         pin, payloads = fixture()

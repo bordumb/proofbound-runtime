@@ -2978,3 +2978,29 @@ temporary directory with a closed environment. It must add causal falsifiers
 for those boundaries and retain `4a0cfdb` only as the historical admission.
 `PBR-DISTRIBUTION-016` and inherited `PBR-DISTRIBUTION-025` remain pending until
 the corrected exact subject receives independent review and hosted admission.
+
+## RT-7 Proofbound metadata credential correction review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `a89b92daa0a6f977c4a090b3f9a2e553fc94884d`
+- **Reviewed head:** `f2c2af8f99cb57392fc49510ed4820ece847db74`
+- **Branch:** `codex/ci-proofbound-api-quota`
+- **Method:** Complete exact-range static security re-review. The reviewer
+  changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review confirmed that the production redirect guard, canonical API origin,
+checkout-credential removal, isolated installer working directory and
+environment, workflow placement checks, and honest pending claim status close
+the four original blockers. One new blocking evidence defect remains: the
+redirect test calls the guard directly instead of reaching it through the
+production `_fetch` path. Removing the production guard would therefore leave
+the purported falsifier green.
+
+The correction must drive a controlled redirect through `_fetch`, prove that
+the production opener installs the guard, prove that no redirected URL is
+opened, and use that production path to confirm that a public release-asset
+request carries no authorization header. The corrected exact head requires a
+new independent review.
