@@ -5,12 +5,14 @@ kind = "example-test"
 claims = ["PBR-SEQUENCE-003"]
 tier = 0
 expected_inventory = [
-  "proofbound_runtime_linux::launcher::tests::sequence_rejects_acknowledgement_forgery_and_omission",
+  "proofbound_runtime_linux::launcher::tests::sequence_rejects_acknowledgement_and_exec_release_omission",
 ]
 inputs = [
   "crates/proofbound-runtime-linux/Cargo.toml",
   "crates/proofbound-runtime-linux/src/launcher.rs",
   "crates/proofbound-runtime-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/supervisor.rs",
+  "crates/proofbound-runtime-linux/src/sys.rs",
   "schemas/launcher-message-v1.cddl",
   "tests/attacks/launcher/protocol-v1.toml",
 ]
@@ -23,7 +25,7 @@ package = "proofbound-runtime-linux"
 manifest = "Cargo.toml"
 targets = ["--lib"]
 paths = []
-arguments = ["launcher::tests::sequence_rejects_acknowledgement_forgery_and_omission"]
+arguments = ["launcher::tests::sequence_rejects_acknowledgement_and_exec_release_omission"]
 
 [resource_budget]
 time_seconds = 120

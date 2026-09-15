@@ -1727,3 +1727,152 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 `6735230542b8e5a4944337605e068bd900148109`. The following approval-only
 commit adds this record and changes no reviewed claim-subject bytes. Any later
 subject change requires a new exact-head review.
+
+## RT-8 launcher exec-release gate initial review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `497642a8e0d8bd3ee46e117fd3f946d9e20a39ae`
+- **Reviewed head:** `66c17897de0c26f0cff48cbdef1568566010e859`
+- **Branch:** `codex/rt8-linux-observer`
+- **Method:** Exact-range static review. The reviewer changed no files and ran
+  no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The review found two blockers. First, the release-identity verifier was added
+to `BoundaryInstalled` instead of `ExecRelease`, so the production call and
+registered substitution falsifiers did not compile. Second, the change added a
+launcher state transition while specification 0007 still required a version 2
+launcher label for any such change. That stale rule conflicted with the
+repository's accepted prelaunch replacement policy.
+
+The correction must put verification on the release type and align the
+launcher-specific text with the prelaunch rule: unpublished candidates may
+change in place only through an atomic exact-source claim wave, and prior
+approvals do not transfer. This verdict is not endorsed. The correction
+requires a new exact subject and independent review.
+
+## RT-8 launcher exec-release gate correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `497642a8e0d8bd3ee46e117fd3f946d9e20a39ae`
+- **Reviewed head:** `0d9884771c342782a1ef3ba20ade451db2c74f7c`
+- **Branch:** `codex/rt8-linux-observer`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that `ExecRelease` now owns the identity check used by
+the production receive path and all three substitution falsifiers, while the
+misplaced method is absent from `BoundaryInstalled`. Specification 0007 now
+applies the accepted prelaunch replacement policy to the launcher: an
+unpublished candidate can change in place only through one atomic exact-source
+wave that updates grammar, producer, consumer, falsifiers, claims, and
+evidence. This exact range updates that complete set without adding
+compatibility machinery.
+
+The complete static rescan found no new blocker. Boundary installation and
+readback, acknowledgement, the blocking identity-bound release, final
+executable revalidation, and exec remain ordered. Post-seccomp `read` remains
+permitted, and the `MAX+1` packet buffer preserves oversized-message
+detection. EOF, wrong variants, malformed or unknown fields, invalid states,
+release omission, and each identity substitution fail closed. The schema,
+codec, supervisor, attacks, claim, evidence, and documentation agree, and no
+observer code enters the launcher.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`0d9884771c342782a1ef3ba20ade451db2c74f7c`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.
+
+## RT-8 launcher exec-release gate rebased approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `cc837538f08856e701c9876fe41f00b04ed7f05f`
+- **Reviewed head:** `f70bea91f83632e4704f81eeec7de077d5114893`
+- **Branch:** `codex/rt8-linux-observer`
+- **Method:** Complete exact-range static re-review after rebase. The reviewer
+  changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the earlier blockers remain closed.
+`ExecRelease::verify` is defined on and called through the release type.
+Execution, policy, and cgroup substitutions fail distinctly. A missing,
+malformed, oversized, or out-of-order release cannot authorize exec. Boundary
+installation, acknowledgement, release, final executable revalidation, and
+exec remain ordered. Post-seccomp channel reads remain permitted, and the
+one-byte-over-bound receive buffer detects oversized sequence packets.
+
+The schema, codec, supervisor, falsifiers, claim, evidence, and source roots
+agree. Specification 0007 applies the atomic prelaunch replacement rule
+without compatibility machinery. Diagnostic observer behavior remains outside
+the production launcher and dependency graph. Rebase status and historical
+review records are coherent. The relevant security-contract files are
+byte-identical to the previously approved corrected implementation.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`f70bea91f83632e4704f81eeec7de077d5114893`. This approval-only commit changes
+no reviewed production, schema, specification, claim, assumption, evidence,
+test, or prior review-record bytes. Any later subject change requires a new
+exact-head review.
+
+## RT-8 launcher exec-release gate admitted-base rebase review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `b04382d290924cefe588bb1fbce3830b62db171e`
+- **Reviewed head:** `135e45907ab7dd8d8790d80eb32e4c8ecedf1557`
+- **Branch:** `codex/rt8-linux-observer`
+- **Method:** Complete exact-range static re-review after rebase. The reviewer
+  changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The reviewer found no security or implementation defect. The launcher code,
+schema, attack catalog, claim, evidence, specifications, ADRs, and threat model
+remain byte-identical to the previously approved implementation. Exact release
+identity verification, missing and malformed release rejection, boundary and
+exec ordering, post-seccomp channel reads, source closure, prelaunch replacement,
+and production observer separation remain intact.
+
+Two current-status summaries were stale after the rebase. The high-level
+roadmap still identified producer merge `4ecb871` as current main and described
+the pure observer selector correction as in progress. The assurance table also
+described `PBR-OBSERVER-020` hosted admission as pending. Those statements
+contradicted admitted base `b04382d` and passed exact-main run `34946613122`.
+
+The correction must update current roadmap and assurance status while retaining
+the accurate historical hosted rejection and correction records. This verdict
+is not endorsed. The correction changes the exact subject and requires another
+independent review.
+
+## RT-8 launcher exec-release gate admitted-base correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `b04382d290924cefe588bb1fbce3830b62db171e`
+- **Reviewed head:** `0d46bb5f1cd58cd1bb4cceee15d2ae149b521d8c`
+- **Branch:** `codex/rt8-linux-observer`
+- **Method:** Complete exact-range static re-review after status correction. The
+  reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the current roadmap, assurance table, checklist,
+and historical review records now agree on admitted base `b04382d`, passed
+exact-main run `34946613122`, the merged pure observer protocol, and the
+exec-release gate as the current admission wave.
+
+All production code, schemas, specifications, claims, evidence, and security
+documentation remain equivalent to the previously approved implementation.
+`ExecRelease` owns exact execution, policy, and cgroup identity verification.
+Missing, malformed, oversized, out-of-order, wrong-variant, and substituted
+release messages fail closed. Boundary installation, acknowledgement, release,
+final executable revalidation, and descriptor-relative exec remain ordered.
+The post-seccomp channel read and one-byte oversize sentinel remain present.
+Diagnostic observer code remains outside the production launcher path.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`0d46bb5f1cd58cd1bb4cceee15d2ae149b521d8c`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, test, or current-status bytes. Any later subject change
+requires a new exact-head review.

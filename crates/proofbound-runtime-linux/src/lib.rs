@@ -28,10 +28,10 @@ pub use landlock::{
     LandlockAccess, LandlockBoundary, LandlockError, LandlockRule, install_landlock,
 };
 pub use launcher::{
-    AcknowledgedLauncher, BoundaryInstalled, ExecAuthorization, InstallRequest, InstalledLauncher,
-    LauncherChannel, LauncherError, LauncherFailure, LauncherFilesystemRule, LauncherIdentity,
-    LauncherMessage, LauncherStage, MAX_LAUNCHER_FRAME_BYTES, PreparedLauncher,
-    decode_launcher_message, encode_launcher_message, pause_for_supervisor,
+    AcknowledgedLauncher, BoundaryInstalled, ExecAuthorization, ExecRelease, InstallRequest,
+    InstalledLauncher, LauncherChannel, LauncherError, LauncherFailure, LauncherFilesystemRule,
+    LauncherIdentity, LauncherMessage, LauncherStage, MAX_LAUNCHER_FRAME_BYTES, PreparedLauncher,
+    ReleasedLauncher, decode_launcher_message, encode_launcher_message, pause_for_supervisor,
     receive_install_request, run_launcher, verify_launcher_response,
 };
 pub use output::{

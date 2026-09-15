@@ -56,9 +56,11 @@ The diagnostic launch protocol performs these transitions:
 5. create the stopped launcher process and establish ptrace ownership;
 6. install and read back the normal Landlock, seccomp, cgroup, descriptor, and
    environment boundary;
-7. require the launcher's ready acknowledgement;
-8. enable the closed process-tree trace options;
-9. release target code;
+7. require the launcher's ready acknowledgement while it waits for the
+   identity-bound exec release;
+8. stop the acknowledged launcher and enable the closed process-tree trace
+   options;
+9. send the identity-bound exec release and release target code;
 10. observe bounded events without changing target behavior;
 11. drain the child tree and resource observations;
 12. construct and publish the diagnostic receipt and draft; and

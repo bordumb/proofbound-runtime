@@ -375,12 +375,15 @@ The supervisor and launcher MUST preserve this order:
 8. The launcher installs the Landlock filesystem ruleset.
 9. The launcher installs the seccomp filter.
 10. The launcher emits a boundary-installed acknowledgement to the supervisor.
-11. The launcher calls `execve` for the identified executable.
+11. The supervisor verifies the acknowledgement and sends an identity-bound
+    exec release.
+12. The launcher verifies the release and calls `execve` for the identified
+    executable.
 
 The supervisor MUST NOT treat process creation as proof that step 8 occurred.
-The acknowledgement protocol MUST be typed and bound to the compiled policy
-identity. EOF, malformed data, partial data, or a mismatched identity is a
-launcher failure.
+The acknowledgement and exec-release protocol MUST be typed and bound to the
+compiled policy identity. EOF, malformed data, partial data, a missing release,
+or a mismatched identity is a launcher failure.
 
 ### 6.3 Filesystem safety
 

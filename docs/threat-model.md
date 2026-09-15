@@ -177,7 +177,8 @@ Both supported profiles require:
 7. Installation of the complete Landlock filesystem ruleset.
 8. Installation of the complete seccomp filter.
 9. A typed acknowledgement bound to the compiled policy identity.
-10. `execve` only after every required step succeeds.
+10. An identity-bound supervisor release after that acknowledgement.
+11. `execve` only after every required step succeeds.
 
 Failure or unsupported capability stops the execution. The runtime does not
 fall back to an unconfined or weaker mode.
@@ -226,7 +227,8 @@ The supervisor and launcher exchange deterministic CBOR messages through a
 private Unix sequence-packet channel. Every message binds the execution,
 compiled-policy, and cgroup identities. The launcher stops itself before it
 receives policy data. Its state machine permits the exec handoff only after all
-boundary witnesses exist and the bound acknowledgement is sent.
+boundary witnesses exist, the bound acknowledgement is sent, and the
+supervisor returns the identity-bound exec release.
 
 ### Environment
 
@@ -294,7 +296,8 @@ must cover at least:
 - malformed, regressing, overflowing, or substituted resource observations;
 - OOM, timeout, launcher failure, and supervisor failure cleanup under memory
   pressure;
-- boundary-installation reordering and acknowledgement forgery;
+- boundary-installation reordering, acknowledgement forgery, and exec-release
+  omission or substitution;
 - partial output and abnormal child termination;
 - receipt omission, duplicate fields, truncation, and unknown versions;
 - policy, runtime, input, output, and platform identity substitution;

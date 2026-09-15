@@ -12,12 +12,12 @@ use proofbound_runtime_core::{
 #[cfg(any(test, target_os = "linux"))]
 use proofbound_runtime_core::{OutputByteLimit, SignalNumber};
 
+#[cfg(target_os = "linux")]
+use crate::{ExecRelease, LauncherChannel, LauncherMessage};
 use crate::{
     FreshCgroup, InstallRequest, LauncherError, LauncherFailure, LauncherIdentity,
     ResourceObservation,
 };
-#[cfg(target_os = "linux")]
-use crate::{LauncherChannel, LauncherMessage};
 
 #[cfg(target_os = "linux")]
 const SUPERVISOR_POLL_INTERVAL: Duration = Duration::from_millis(1);
@@ -567,6 +567,11 @@ fn supervise_lifecycle(
     let boundary_complete = std::time::Instant::now();
     match response {
         LauncherMessage::BoundaryInstalled(_) => {
+            channel
+                .send(&LauncherMessage::ExecRelease(ExecRelease::new(
+                    request.identity(),
+                )))
+                .map_err(|_| SupervisorError::ProtocolSendFailed)?;
             let outcome = monitor_process(child, deadline)?;
             let launcher_failure = receive_late_failure(channel, request.identity())?;
             let process_complete = std::time::Instant::now();
@@ -602,7 +607,9 @@ fn supervise_lifecycle(
                 process_execution: process_complete.duration_since(boundary_complete),
             })
         }
-        LauncherMessage::Install(_) => Err(SupervisorError::ProtocolFailed),
+        LauncherMessage::Install(_) | LauncherMessage::ExecRelease(_) => {
+            Err(SupervisorError::ProtocolFailed)
+        }
     }
 }
 

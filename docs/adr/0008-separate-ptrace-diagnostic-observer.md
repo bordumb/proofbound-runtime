@@ -38,12 +38,15 @@ entry point and do not depend on the diagnostic crate. A source-closure check
 enforces this separation.
 
 The diagnostic supervisor creates and attaches to the launcher process before
-the launch protocol can release target code. The existing Landlock, seccomp,
-cgroup, descriptor, environment, identity, and launch-order checks remain the
-execution boundary. The observer may inspect tracee memory, registers, and
-`/proc` state. It must not change registers, replace syscall results, inject a
-descriptor, skip a syscall, or grant a path. Ptrace is an observation
-mechanism and a trusted diagnostic role. It is not an enforcement mechanism.
+the launch protocol can release target code. After it receives the launcher's
+boundary acknowledgement, it stops the launcher and enables the exact trace
+options before it sends the identity-bound exec release. The existing
+Landlock, seccomp, cgroup, descriptor, environment, identity, and launch-order
+checks remain the execution boundary. The observer may inspect tracee memory,
+registers, and `/proc` state. It must not change registers, replace syscall
+results, inject a descriptor, skip a syscall, or grant a path. Ptrace is an
+observation mechanism and a trusted diagnostic role. It is not an enforcement
+mechanism.
 
 The observer follows the complete child tree with the closed clone, fork,
 vfork, and exec options. It records only the syscall families defined by the

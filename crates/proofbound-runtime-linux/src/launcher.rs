@@ -17,6 +17,7 @@ const MAX_NESTING_DEPTH: usize = 32;
 
 const INSTALL_SCHEMA: &str = "proofbound-runtime-launcher-install/1";
 const BOUNDARY_SCHEMA: &str = "proofbound-runtime-launcher-boundary-installed/1";
+const RELEASE_SCHEMA: &str = "proofbound-runtime-launcher-exec-release/1";
 const FAILURE_SCHEMA: &str = "proofbound-runtime-launcher-failure/1";
 
 /// Contains the three identities that bind every launcher message to one run.
@@ -360,6 +361,30 @@ impl BoundaryInstalled {
     }
 }
 
+/// Contains one supervisor exec release bound to one execution.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ExecRelease {
+    identity: LauncherIdentity,
+}
+
+impl ExecRelease {
+    /// Creates one identity-bound exec release.
+    #[must_use]
+    pub const fn new(identity: LauncherIdentity) -> Self {
+        Self { identity }
+    }
+
+    /// Returns the message identity tuple.
+    #[must_use]
+    pub const fn identity(self) -> LauncherIdentity {
+        self.identity
+    }
+
+    fn verify(self, expected: LauncherIdentity) -> Result<(), LauncherError> {
+        self.identity.verify(expected)
+    }
+}
+
 /// Contains one closed version 1 launcher message.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum LauncherMessage {
@@ -367,6 +392,8 @@ pub enum LauncherMessage {
     Install(InstallRequest),
     /// Confirms that every required boundary was installed.
     BoundaryInstalled(BoundaryInstalled),
+    /// Releases the acknowledged launcher for the final exec handoff.
+    ExecRelease(ExecRelease),
     /// Reports a typed launcher failure before child execution.
     Failure(LauncherFailure),
 }
@@ -436,6 +463,8 @@ pub enum LauncherError {
     BoundaryNotInstalled,
     /// Code attempted to authorize exec before acknowledgement.
     AcknowledgementMissing,
+    /// Code attempted to authorize exec before an identity-bound release.
+    ExecReleaseMissing,
     /// A protocol message or state transition was not expected.
     UnexpectedMessage,
 }
@@ -476,6 +505,7 @@ impl LauncherError {
             Self::ExecFailed => "launcher.exec.failed",
             Self::BoundaryNotInstalled => "launcher.sequence.boundary-not-installed",
             Self::AcknowledgementMissing => "launcher.sequence.acknowledgement-missing",
+            Self::ExecReleaseMissing => "launcher.sequence.exec-release-missing",
             Self::UnexpectedMessage => "launcher.sequence.unexpected-message",
         }
     }
@@ -534,13 +564,13 @@ impl LauncherChannel {
         {
             use std::os::fd::AsRawFd as _;
 
-            let mut buffer = vec![0; MAX_LAUNCHER_FRAME_BYTES];
+            let mut buffer = vec![0; MAX_LAUNCHER_FRAME_BYTES + 1];
             let received = crate::sys::receive_packet(self.descriptor.as_raw_fd(), &mut buffer)
                 .map_err(|_| LauncherError::ChannelReadFailed)?;
             if received == 0 {
                 return Err(LauncherError::Eof);
             }
-            if received > buffer.len() {
+            if received > MAX_LAUNCHER_FRAME_BYTES {
                 return Err(LauncherError::FrameTooLarge);
             }
             buffer.truncate(received);
@@ -751,6 +781,8 @@ pub fn run_launcher(
             .map_err(|error| {
                 report_failure(channel, expected, LauncherStage::Acknowledgement, error)
             })?
+            .receive_exec_release(channel)
+            .map_err(|error| report_failure(channel, expected, LauncherStage::Exec, error))?
             .authorize_exec()
             .map_err(|error| report_failure(channel, expected, LauncherStage::Exec, error))?;
         debug_assert!(authorization.is_authorized());
@@ -961,7 +993,31 @@ pub struct AcknowledgedLauncher {
 }
 
 impl AcknowledgedLauncher {
-    /// Consumes the acknowledgement state and authorizes the exec handoff.
+    /// Receives and verifies the supervisor's identity-bound exec release.
+    pub fn receive_exec_release(
+        self,
+        channel: &LauncherChannel,
+    ) -> Result<ReleasedLauncher, LauncherError> {
+        let LauncherMessage::ExecRelease(release) = channel.receive()? else {
+            return Err(LauncherError::UnexpectedMessage);
+        };
+        release.verify(self.request.identity)?;
+        Ok(ReleasedLauncher {
+            request: self.request,
+            sequence: advance_sequence(self.sequence, SequenceEvent::ExecReleaseValidated)?,
+        })
+    }
+}
+
+/// Contains a request after the supervisor released the exec handoff.
+#[derive(Debug)]
+pub struct ReleasedLauncher {
+    request: InstallRequest,
+    sequence: SequenceState,
+}
+
+impl ReleasedLauncher {
+    /// Consumes the release state and authorizes the exec handoff.
     pub fn authorize_exec(self) -> Result<ExecAuthorization, LauncherError> {
         Ok(ExecAuthorization {
             request: self.request,
@@ -970,7 +1026,7 @@ impl AcknowledgedLauncher {
     }
 }
 
-/// Authorizes one exec handoff after complete boundary installation and acknowledgement.
+/// Authorizes exec after boundary acknowledgement and supervisor release.
 #[derive(Debug)]
 pub struct ExecAuthorization {
     request: InstallRequest,
@@ -996,6 +1052,7 @@ enum SequenceState {
     InstallValidated,
     BoundariesInstalled,
     Acknowledged,
+    ExecReleased,
     ExecAuthorized,
 }
 
@@ -1003,6 +1060,7 @@ enum SequenceState {
 enum SequenceEvent {
     BoundariesInstalled,
     AcknowledgementEmitted,
+    ExecReleaseValidated,
     ExecAuthorized,
 }
 
@@ -1017,13 +1075,22 @@ fn advance_sequence(
         (SequenceState::BoundariesInstalled, SequenceEvent::AcknowledgementEmitted) => {
             Ok(SequenceState::Acknowledged)
         }
-        (SequenceState::Acknowledged, SequenceEvent::ExecAuthorized) => {
+        (SequenceState::Acknowledged, SequenceEvent::ExecReleaseValidated) => {
+            Ok(SequenceState::ExecReleased)
+        }
+        (SequenceState::ExecReleased, SequenceEvent::ExecAuthorized) => {
             Ok(SequenceState::ExecAuthorized)
         }
         (SequenceState::InstallValidated, SequenceEvent::AcknowledgementEmitted) => {
             Err(LauncherError::BoundaryNotInstalled)
         }
-        (_, SequenceEvent::ExecAuthorized) => Err(LauncherError::AcknowledgementMissing),
+        (
+            SequenceState::InstallValidated | SequenceState::BoundariesInstalled,
+            SequenceEvent::ExecAuthorized,
+        ) => Err(LauncherError::AcknowledgementMissing),
+        (SequenceState::Acknowledged, SequenceEvent::ExecAuthorized) => {
+            Err(LauncherError::ExecReleaseMissing)
+        }
         _ => Err(LauncherError::UnexpectedMessage),
     }
 }
@@ -1036,7 +1103,9 @@ pub fn verify_launcher_response(
     match message {
         LauncherMessage::BoundaryInstalled(installed) => installed.identity.verify(expected),
         LauncherMessage::Failure(failure) => failure.identity.verify(expected),
-        LauncherMessage::Install(_) => Err(LauncherError::UnexpectedMessage),
+        LauncherMessage::Install(_) | LauncherMessage::ExecRelease(_) => {
+            Err(LauncherError::UnexpectedMessage)
+        }
     }
 }
 
@@ -1334,6 +1403,14 @@ fn message_to_value(message: &LauncherMessage) -> Value {
             ]);
             Value::Map(entries)
         }
+        LauncherMessage::ExecRelease(release) => {
+            let mut entries = identity_entries(release.identity);
+            entries.extend([
+                ("schema".to_owned(), text(RELEASE_SCHEMA)),
+                ("state".to_owned(), text("released")),
+            ]);
+            Value::Map(entries)
+        }
         LauncherMessage::Failure(failure) => {
             let mut entries = identity_entries(failure.identity);
             entries.extend([
@@ -1411,6 +1488,7 @@ fn value_to_message(value: &Value) -> Result<LauncherMessage, LauncherError> {
     match schema {
         INSTALL_SCHEMA => decode_install(map).map(LauncherMessage::Install),
         BOUNDARY_SCHEMA => decode_boundary(map).map(LauncherMessage::BoundaryInstalled),
+        RELEASE_SCHEMA => decode_release(map).map(LauncherMessage::ExecRelease),
         FAILURE_SCHEMA => decode_failure(map).map(LauncherMessage::Failure),
         _ => Err(LauncherError::UnsupportedVersion),
     }
@@ -1476,6 +1554,17 @@ fn decode_boundary(map: &[(String, Value)]) -> Result<BoundaryInstalled, Launche
     Ok(BoundaryInstalled {
         identity: decode_identity(map)?,
     })
+}
+
+fn decode_release(map: &[(String, Value)]) -> Result<ExecRelease, LauncherError> {
+    require_keys(
+        map,
+        &["schema", "execution_id", "policy_id", "cgroup_id", "state"],
+    )?;
+    if as_text(field(map, "state")?)? != "released" {
+        return Err(LauncherError::Malformed);
+    }
+    Ok(ExecRelease::new(decode_identity(map)?))
 }
 
 fn decode_failure(map: &[(String, Value)]) -> Result<LauncherFailure, LauncherError> {
@@ -1702,6 +1791,7 @@ mod tests {
         let messages = [
             install_message(),
             LauncherMessage::BoundaryInstalled(BoundaryInstalled { identity }),
+            LauncherMessage::ExecRelease(ExecRelease::new(identity)),
             LauncherMessage::Failure(
                 LauncherFailure::new(identity, LauncherStage::Landlock, "landlock.denied")
                     .expect("fixture failure is valid"),
@@ -1908,7 +1998,35 @@ mod tests {
     }
 
     #[test]
-    fn sequence_rejects_acknowledgement_forgery_and_omission() {
+    fn sequence_rejects_acknowledgement_and_exec_release_omission() {
+        let expected = identity(1);
+        let execution = LauncherIdentity::new(
+            identity(2).execution_id(),
+            expected.policy_id(),
+            expected.cgroup_id(),
+        );
+        let policy = LauncherIdentity::new(
+            expected.execution_id(),
+            identity(2).policy_id(),
+            expected.cgroup_id(),
+        );
+        let cgroup = LauncherIdentity::new(
+            expected.execution_id(),
+            expected.policy_id(),
+            identity(2).cgroup_id(),
+        );
+        assert_eq!(
+            ExecRelease::new(execution).verify(expected),
+            Err(LauncherError::ExecutionIdentityMismatch)
+        );
+        assert_eq!(
+            ExecRelease::new(policy).verify(expected),
+            Err(LauncherError::PolicyIdentityMismatch)
+        );
+        assert_eq!(
+            ExecRelease::new(cgroup).verify(expected),
+            Err(LauncherError::CgroupIdentityMismatch)
+        );
         assert_eq!(
             advance_sequence(
                 SequenceState::InstallValidated,
@@ -1922,6 +2040,17 @@ mod tests {
                 SequenceEvent::ExecAuthorized,
             ),
             Err(LauncherError::AcknowledgementMissing)
+        );
+        assert_eq!(
+            advance_sequence(SequenceState::Acknowledged, SequenceEvent::ExecAuthorized,),
+            Err(LauncherError::ExecReleaseMissing)
+        );
+        assert_eq!(
+            advance_sequence(
+                SequenceState::Acknowledged,
+                SequenceEvent::ExecReleaseValidated,
+            ),
+            Ok(SequenceState::ExecReleased)
         );
     }
 
@@ -1954,6 +2083,10 @@ mod tests {
             "execution-substitution",
             "acknowledgement-forgery",
             "acknowledgement-omission",
+            "exec-release-omission",
+            "exec-release-execution-substitution",
+            "exec-release-policy-substitution",
+            "exec-release-cgroup-substitution",
             "executable-closure-substitution",
         ];
         assert!(ATTACK_CATALOG.starts_with("schema = \"proofbound-runtime-launcher-attacks/1\""));
@@ -2000,6 +2133,7 @@ mod tests {
             LauncherError::ExecFailed,
             LauncherError::BoundaryNotInstalled,
             LauncherError::AcknowledgementMissing,
+            LauncherError::ExecReleaseMissing,
             LauncherError::UnexpectedMessage,
         ]
         .map(LauncherError::code);

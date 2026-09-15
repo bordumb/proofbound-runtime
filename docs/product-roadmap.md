@@ -743,7 +743,8 @@ the [cgroup v2 documentation](https://www.kernel.org/doc/html/latest/admin-guide
   socket memory cases covered by the selected kernel accounting contract.
 - Exercise swap disabled, swap limit reached, and host-without-swap cases.
 - Race allocation with boundary installation; no allocation may occur before
-  the launcher acknowledgement sequence permits execution.
+  the launcher acknowledgement and supervisor exec-release sequence permits
+  execution.
 - Confirm another cgroup and the supervisor are not selected by the workload
   cgroup's OOM event.
 - Mutate each receipt observation and installed value and require independent
