@@ -2159,3 +2159,38 @@ The correction must byte-pin both dependency crate roots and register the Linux
 crate root in this evidence unit's inputs and operation paths. This verdict is
 not endorsed. The correction changes the exact subject and requires another
 independent review.
+
+## RT-8 coupled observer adapter admitted-stack approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `a848b706b1c80b2394defda9f3d739b91a1770e5`
+- **Reviewed head:** `d0c2520efc8694ad0e909d8a2e911dc8e46ea375`
+- **Branch:** `codex/rt8-observer-adapter-v2`
+- **Method:** Complete exact-range static re-review after replay onto the
+  corrected trace-startup stack. The reviewer changed no files and ran no
+  builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that validated bounds precede trace preparation and
+spawn and that the pure protocol is seeded from the retained exact process only
+after its mandatory initial stop. Each later state privately moves one matching
+trace and protocol pair. Acknowledgement and option effects precede their pure
+records, while pure release authorization precedes the consuming effectful
+release. No raw trace owner or mutable retained protocol escapes.
+
+Exact installed option bits remain linked through the closed validator and
+pure transition. The independent checker fixes the complete public API,
+traits, implementations, variants, attributes, re-exports, retained-field
+accessors, Cargo mappings, manifests, and both dependency crate-root
+identities. Its wrapper and both repository gates retain that checker. Claim
+and evidence closures retain both crates, raw and safe trace sources,
+assumptions, and gate wiring while explicitly excluding Linux-effect truth,
+cleanup, live observation, tree drain, and release status. The replayed
+technical subject is byte-identical to the final prior correction.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`d0c2520efc8694ad0e909d8a2e911dc8e46ea375`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.
