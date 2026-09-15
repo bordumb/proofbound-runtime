@@ -1,0 +1,303 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://proofbound.dev/runtime/plan-draft-v1.schema.json",
+  "title": "Proofbound Runtime reviewable plan draft version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "candidates": {
+            "contains": {
+              "properties": {
+                "provenance": {"contains": {"const": "capsec-source-observation"}}
+              },
+              "required": ["provenance"],
+              "type": "object"
+            }
+          }
+        },
+        "required": ["candidates"]
+      },
+      "then": {
+        "properties": {
+          "capsec": {
+            "allOf": [
+              {"$ref": "#/$defs/capsecInput"},
+              {"properties": {"usability": {"const": "usable"}}}
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "required": [
+    "arguments",
+    "breadth",
+    "capsec",
+    "candidates",
+    "diagnostic_receipt_commitment",
+    "differences",
+    "environment_names",
+    "gaps",
+    "inputs",
+    "open_items",
+    "safe_policy",
+    "schema",
+    "seed_plan",
+    "static_scaffold"
+  ],
+  "properties": {
+    "schema": {"const": "proofbound-runtime-plan-draft/1"},
+    "safe_policy": {"const": false},
+    "diagnostic_receipt_commitment": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "seed_plan": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "static_scaffold": {
+      "oneOf": [
+        {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        {"type": "null"}
+      ]
+    },
+    "arguments": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {"type": "string", "maxLength": 65536}
+    },
+    "environment_names": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$", "maxLength": 256}
+    },
+    "inputs": {
+      "type": "array",
+      "maxItems": 65536,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/input"}
+    },
+    "capsec": {
+      "oneOf": [
+        {"$ref": "#/$defs/capsecInput"},
+        {"type": "null"}
+      ]
+    },
+    "candidates": {
+      "type": "array",
+      "maxItems": 1048576,
+      "items": {"$ref": "#/$defs/candidate"}
+    },
+    "differences": {
+      "type": "array",
+      "maxItems": 1048576,
+      "items": {"$ref": "#/$defs/difference"}
+    },
+    "open_items": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 1048576,
+      "allOf": [
+        {"$ref": "#/$defs/chooseEnvironment"},
+        {"$ref": "#/$defs/chooseLimits"},
+        {"$ref": "#/$defs/chooseNetwork"},
+        {"$ref": "#/$defs/chooseWriteRoots"}
+      ],
+      "items": {"$ref": "#/$defs/openItem"}
+    },
+    "breadth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["broad_roots", "denials", "suggested_roots", "unresolved_events"],
+      "properties": {
+        "broad_roots": {"type": "integer", "minimum": 0},
+        "denials": {"type": "integer", "minimum": 0},
+        "suggested_roots": {"type": "integer", "minimum": 0},
+        "unresolved_events": {"type": "integer", "minimum": 0}
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/gap"}
+    }
+  },
+  "$defs": {
+    "contentIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "size_bytes"],
+      "properties": {
+        "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "size_bytes": {"type": "integer", "minimum": 0}
+      }
+    },
+    "capsecInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["analyzer", "report", "schema_identity", "source", "usability"],
+      "properties": {
+        "analyzer": {"$ref": "#/$defs/contentIdentity"},
+        "report": {"$ref": "#/$defs/contentIdentity"},
+        "schema_identity": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9._-]*/[1-9][0-9]*$"
+        },
+        "source": {"$ref": "#/$defs/contentIdentity"},
+        "usability": {
+          "enum": [
+            "analyzer-unknown",
+            "incomplete",
+            "report-invalid",
+            "schema-unknown",
+            "source-stale",
+            "usable"
+          ]
+        }
+      }
+    },
+    "difference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "detail", "provenance", "subject"],
+      "properties": {
+        "class": {
+          "enum": [
+            "requirement-without-runtime-authority",
+            "runtime-authority-without-requirement-or-observation",
+            "runtime-observation-without-requirement"
+          ]
+        },
+        "detail": {"type": "string", "minLength": 1, "maxLength": 1048576},
+        "provenance": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/provenance"}
+        },
+        "subject": {"type": "string", "minLength": 1, "maxLength": 1048576}
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "path", "role", "sha256", "size_bytes"],
+      "properties": {
+        "mode": {"type": "string", "pattern": "^[0-7]{4}$"},
+        "path": {"type": "string", "pattern": "^/", "maxLength": 1048576},
+        "role": {"const": "project-input"},
+        "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "size_bytes": {"type": "integer", "minimum": 0}
+      }
+    },
+    "gap": {
+      "enum": [
+        "architecture-unsupported",
+        "child-lost",
+        "event-limit",
+        "event-per-process-limit",
+        "identity-drift",
+        "observer-failed",
+        "output-limit",
+        "path-limit",
+        "process-limit",
+        "socket-address-limit",
+        "string-limit",
+        "symlink-limit",
+        "syscall-unsupported",
+        "tracee-memory-read-failed",
+        "unexpected-stop"
+      ]
+    },
+    "chooseEnvironment": {
+      "contains": {
+        "type": "object",
+        "properties": {"code": {"const": "choose-environment"}},
+        "required": ["code"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "chooseLimits": {
+      "contains": {
+        "type": "object",
+        "properties": {"code": {"const": "choose-limits"}},
+        "required": ["code"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "chooseNetwork": {
+      "contains": {
+        "type": "object",
+        "properties": {"code": {"const": "choose-network-mode"}},
+        "required": ["code"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "chooseWriteRoots": {
+      "contains": {
+        "type": "object",
+        "properties": {"code": {"const": "choose-write-roots"}},
+        "required": ["code"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "provenance": {
+      "enum": [
+        "capsec-source-observation",
+        "diagnostic-runtime-observation",
+        "human-authored",
+        "platform-required-closure",
+        "static-executable-closure"
+      ]
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "path", "provenance"],
+      "properties": {
+        "kind": {"enum": ["execute", "read", "runtime-library"]},
+        "path": {"type": "string", "pattern": "^/", "maxLength": 1048576},
+        "provenance": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/provenance"}
+        }
+      }
+    },
+    "openItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "detail", "provenance"],
+      "properties": {
+        "code": {
+          "enum": [
+            "capsec-analyzer-unknown",
+            "capsec-incomplete",
+            "capsec-missing",
+            "capsec-report-invalid",
+            "capsec-schema-unknown",
+            "capsec-source-stale",
+            "choose-environment",
+            "choose-limits",
+            "choose-network-mode",
+            "choose-write-roots",
+            "diagnostic-gap",
+            "network-attempt",
+            "observation-unresolved"
+          ]
+        },
+        "detail": {"type": "string", "minLength": 1, "maxLength": 1048576},
+        "provenance": {"$ref": "#/$defs/provenance"}
+      }
+    }
+  }
+}

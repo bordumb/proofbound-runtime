@@ -45,7 +45,7 @@ source_roots = [
   "docs/specs/0010_receipt_acceptance_policy.md",
   "proofbound/evidence/receipt-acceptance-attacks.toml",
   "proofbound/evidence/receipt-acceptance-cli.toml",
-  "schemas/acceptance-decision-v1.cddl",
+  "schemas/acceptance-decision-v2.cddl",
   "schemas/acceptance-policy-v1.cddl",
   "schemas/vectors/v2/acceptance-decision.cbor.hex",
   "schemas/vectors/v2/acceptance-policy.cbor.hex",

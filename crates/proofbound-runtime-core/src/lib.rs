@@ -3,6 +3,7 @@
 //! Defines the pure domain model for Proofbound Runtime.
 
 mod authority;
+mod diagnostic;
 mod error;
 mod identity;
 mod normalize;
@@ -17,6 +18,10 @@ pub use authority::{
     AuthorityError, AuthorityPath, AuthorityPlan, EnvironmentName, FileAccess, MemoryByteLimit,
     NetworkMode, OutputByteLimit, PathAuthority, PathRole, ProcessLimit, ResourceLimits,
     SwapByteLimit, WallTimeLimit,
+};
+pub use diagnostic::{
+    DiagnosticCompletion, DiagnosticObserverMechanism, DiagnosticTypeError, DraftProvenance,
+    ExecutionProfile, ObservationResolution,
 };
 pub use error::{CoreError, ErrorClass, MachineError};
 pub use identity::{ArtifactIdentity, ArtifactRole, FileMode, IdentityError, Sha256Digest};

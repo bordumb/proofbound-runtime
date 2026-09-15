@@ -11,7 +11,7 @@ from encode_plan_v2 import encode
 
 ROOT = Path(__file__).resolve().parents[2] / "schemas/vectors/v2"
 POLICY_SCHEMA = "proofbound-runtime-acceptance-policy/1"
-DECISION_SCHEMA = "proofbound-runtime-acceptance-decision/1"
+DECISION_SCHEMA = "proofbound-runtime-acceptance-decision/2"
 
 
 def digest(value: bytes) -> bytes:

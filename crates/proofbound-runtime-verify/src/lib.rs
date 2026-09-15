@@ -77,6 +77,7 @@ pub fn verify_receipt(
     input: &[u8],
     expected: ReceiptCommitment,
 ) -> Result<VerificationReport, VerifyError> {
+    reject_diagnostic_profile(input)?;
     let decoded = validate_canonical_receipt(input)?;
     expected.verify(input)?;
     validate_receipt(&decoded)?;
@@ -84,6 +85,25 @@ pub fn verify_receipt(
         commitment: expected,
         eligibility: derive_eligibility(&decoded.eligibility_input()),
     })
+}
+
+fn reject_diagnostic_profile(input: &[u8]) -> Result<(), VerifyError> {
+    if input.first() != Some(&b'{') {
+        return Ok(());
+    }
+    let value: serde_json::Value = serde_json::from_slice(input)
+        .map_err(|_| CanonicalError::Decode(DecodeError::MalformedJson))?;
+    if value.get("schema").and_then(serde_json::Value::as_str)
+        != Some("proofbound-runtime-diagnostic-receipt/1")
+    {
+        return Ok(());
+    }
+    canonical::reject_duplicate_keys(input)?;
+    let encoded = serde_json::to_vec(&value).map_err(|_| CanonicalError::BytesMismatch)?;
+    if encoded != input {
+        return Err(CanonicalError::BytesMismatch.into());
+    }
+    Err(VerifyError::DiagnosticProfileNotReusable)
 }
 
 #[cfg(test)]
@@ -130,6 +150,25 @@ mod verification_tests {
         assert_eq!(
             verify_receipt(&bytes(&substituted), commitment),
             Err(VerifyError::Commitment(CommitmentError::Mismatch))
+        );
+    }
+
+    #[test]
+    fn diagnostic_profile_is_rejected_before_commitment_or_receipt_decoding() {
+        let fixture = include_bytes!("../../../schemas/vectors/diagnostic/diagnostic-receipt.json");
+        let input = fixture
+            .strip_suffix(b"\n")
+            .expect("fixture has one presentation newline");
+        let unrelated = ReceiptCommitment::for_bytes(b"unrelated production receipt");
+        assert_eq!(
+            verify_receipt(input, unrelated),
+            Err(VerifyError::DiagnosticProfileNotReusable)
+        );
+
+        let duplicate = br#"{"schema":"proofbound-runtime-diagnostic-receipt/1","schema":"proofbound-runtime-diagnostic-receipt/1"}"#;
+        assert_eq!(
+            verify_receipt(duplicate, ReceiptCommitment::for_bytes(duplicate)),
+            Err(VerifyError::Canonical(CanonicalError::DuplicateKey))
         );
     }
 }

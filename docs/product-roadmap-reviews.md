@@ -1247,3 +1247,95 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 `9422165568fae0349a3d086fdfab8545d7f3b18a`. This approval-only envelope adds
 no reviewed production, workflow, schema, specification, claim, assumption,
 evidence, or test bytes.
+
+## RT-8 diagnostic-contract foundation approval after RT-7 rebase
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `acf8f24730857a6e7906336b570c61bec7213ab1`
+- **Reviewed head:** `d242b87b0b4b10fe3a86807a141e4c40a0470efc`
+- **Branch:** `codex/rt8-diagnostic-profile`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** No blocking findings.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the rebase preserves the previously approved RT-8
+implementation and introduces no new assurance or product-claim blocker. Every
+prior blocking finding remains resolved: the acceptance-decision v2 transition
+inventory and UTF-8 wire ordering; event operands and drift identities; exact
+Capsec identity binding and all three difference classes; narrowed composer and
+acceptance evidence language; complete dependency-free nested schema and vector
+validation; consistent completion spelling; and Unicode canonicalization
+agreement, including literal non-ASCII fixture bytes and lone-surrogate
+rejection.
+
+The status refresh accurately leaves final hosted admission, the live observer,
+and the plan-draft producer open. The approval applies only to the exact subject
+above. It does not claim that source-level tests prove kernel observation or
+that the RT-8 epic is complete.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`d242b87b0b4b10fe3a86807a141e4c40a0470efc`. This approval-only envelope adds
+no reviewed production, schema, specification, claim, assumption, evidence, or
+test bytes. Any later change to those bytes requires a new exact-head review.
+
+## RT-8 diagnostic-contract approval after hosted-gate corrections
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `acf8f24730857a6e7906336b570c61bec7213ab1`
+- **Reviewed head:** `253b33d64ca3d812f5d2b1a347edb64ba0ac8075`
+- **Branch:** `codex/rt8-diagnostic-profile`
+- **Method:** Narrow exact-head static re-review. The reviewer changed no files
+  and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+Hosted verification found two declaration-only defects at the preceding
+approval envelope. The reviewer confirmed that the correction changes exactly
+three subject files. `PBR-DRAFT-017` now has the Tier 1 ceiling required by its
+independent-check evidence kind. The assurance summary records the same bounded
+Tier 1 meaning without claiming a released observer or producer. The acceptance
+test assertion changes only to canonical Rust formatting and keeps identical
+ordering semantics.
+
+The intervening `35ebd79fc132d802299af9f206320beb1294d366` commit records only
+the prior exact-head approval. No security behavior, schema, diagnostic
+contract, or evidence meaning changed beyond the required claim-ceiling
+correction. No new blocker was found.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`253b33d64ca3d812f5d2b1a347edb64ba0ac8075`. This approval-only envelope adds
+no reviewed production, schema, specification, claim, assumption, evidence, or
+test bytes. Any later subject change requires a new exact-head review.
+
+## RT-8 verifier error-precedence corrective approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `acf8f24730857a6e7906336b570c61bec7213ab1`
+- **Reviewed head:** `f40c1681a66a2877ce7bb68256c1297879c3e168`
+- **Branch:** `codex/rt8-diagnostic-profile`
+- **Method:** Exact-head static corrective review. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+Hosted Verify run `34926427870` showed that the initial diagnostic precheck
+changed the failure precedence for an unrelated JSON projection. The reviewed
+correction limits the new duplicate-key and canonical-byte checks to objects
+whose top-level schema is exactly
+`proofbound-runtime-diagnostic-receipt/1`. Other JSON inputs return to the
+unchanged production canonical, commitment, and semantic-verification path.
+Canonical diagnostic receipts still fail before commitment and production
+receipt decoding with `profile.diagnostic.not-reusable`; duplicate or
+noncanonical diagnostic objects still fail closed first.
+
+The reviewer also confirmed that the preceding schema, Unicode, Capsec,
+event-operand, acceptance-decision, evidence-language, and claim-tier
+corrections remain intact and that no live observer, released producer, or
+completed RT-8 claim is asserted.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`f40c1681a66a2877ce7bb68256c1297879c3e168`. The following approval-only commit
+adds no reviewed production, schema, specification, claim, assumption,
+evidence, or test bytes. Any later subject change requires a new exact-head
+review.

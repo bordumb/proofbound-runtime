@@ -13,11 +13,11 @@ VERSION_TWO_OBJECTS = (
     "run-result",
     "execution-receipt",
     "composed-receipt",
+    "acceptance-decision",
     "release-provenance",
 )
 NEW_CBOR_OBJECTS = {
     "acceptance-policy": 1,
-    "acceptance-decision": 1,
 }
 
 
@@ -29,7 +29,9 @@ class WireTransitionTests(unittest.TestCase):
         self.assertIn("The deterministic-CBOR decision is accepted.", adr)
         self.assertIn("Version 2 schemas use text map keys.", adr)
         self.assertNotIn("The map-key representation is not yet selected", adr)
-        self.assertIn("**Status:** Accepted implementation specification", specification)
+        self.assertIn(
+            "**Status:** Accepted implementation specification", specification
+        )
         self.assertIn("Version 2 maps use text keys", specification)
 
     def test_memory_receipt_uses_cbor_integers_not_json_workarounds(self) -> None:
@@ -56,11 +58,17 @@ class WireTransitionTests(unittest.TestCase):
         for name, version in NEW_CBOR_OBJECTS.items():
             self.assertTrue((SCHEMA_ROOT / f"{name}-v{version}.cddl").is_file())
         self.assertEqual(
-            {path.name.removesuffix(".cbor.hex") for path in VECTOR_ROOT.glob("*.cbor.hex")},
+            {
+                path.name.removesuffix(".cbor.hex")
+                for path in VECTOR_ROOT.glob("*.cbor.hex")
+            },
             all_objects,
         )
         self.assertEqual(
-            {path.name.removesuffix(".projection.json") for path in VECTOR_ROOT.glob("*.projection.json")},
+            {
+                path.name.removesuffix(".projection.json")
+                for path in VECTOR_ROOT.glob("*.projection.json")
+            },
             all_objects,
         )
 
@@ -86,14 +94,18 @@ class WireTransitionTests(unittest.TestCase):
         self.assertNotIn("FreshCgroup::create(supported.cgroup_v2()", run)
         self.assertIn("let resources = cgroup.finish();", supervisor)
         self.assertIn("resources: resources?", supervisor)
-        self.assertIn("pub const fn resources(&self) -> ResourceObservation", supervisor)
+        self.assertIn(
+            "pub const fn resources(&self) -> ResourceObservation", supervisor
+        )
         self.assertIn(
             "ResourceObservation::Incomplete(configured) => ReceiptResources::incomplete(",
             run,
         )
 
     def test_native_execution_recipe_delegates_memory_and_pids(self) -> None:
-        script = (REPOSITORY_ROOT / "tools/ci/native-linux.sh").read_text(encoding="utf-8")
+        script = (REPOSITORY_ROOT / "tools/ci/native-linux.sh").read_text(
+            encoding="utf-8"
+        )
         doctor = (
             REPOSITORY_ROOT / "crates/proofbound-runtime-cli/src/doctor.rs"
         ).read_text(encoding="utf-8")
@@ -114,9 +126,9 @@ class WireTransitionTests(unittest.TestCase):
         self.assertIn("swapoff", script)
 
     def test_tier_three_policy_domain_carries_memory_and_swap(self) -> None:
-        model = (
-            REPOSITORY_ROOT / "formal/ProofboundRuntime/Policy.lean"
-        ).read_text(encoding="utf-8")
+        model = (REPOSITORY_ROOT / "formal/ProofboundRuntime/Policy.lean").read_text(
+            encoding="utf-8"
+        )
         generated = (
             REPOSITORY_ROOT / "formal/generated/ProofboundRuntimePolicy/Types.lean"
         ).read_text(encoding="utf-8")
@@ -168,17 +180,19 @@ class WireTransitionTests(unittest.TestCase):
 
     def test_public_docs_distinguish_v1_and_v2_resource_boundaries(self) -> None:
         readme = (REPOSITORY_ROOT / "README.md").read_text(encoding="utf-8")
-        threat_model = (
-            REPOSITORY_ROOT / "docs/threat-model.md"
-        ).read_text(encoding="utf-8")
-        receipt_semantics = (
-            REPOSITORY_ROOT / "docs/receipt-semantics.md"
-        ).read_text(encoding="utf-8")
+        threat_model = (REPOSITORY_ROOT / "docs/threat-model.md").read_text(
+            encoding="utf-8"
+        )
+        receipt_semantics = (REPOSITORY_ROOT / "docs/receipt-semantics.md").read_text(
+            encoding="utf-8"
+        )
 
         for document in (threat_model, receipt_semantics):
             self.assertIn("Version 1", document)
             self.assertIn("Version 2", document)
-        self.assertIn("process count, wall time, and captured stream bytes", threat_model)
+        self.assertIn(
+            "process count, wall time, and captured stream bytes", threat_model
+        )
         self.assertIn("memory.max", threat_model)
         self.assertIn("memory.swap.max", threat_model)
         self.assertIn("## Version 2 wire contract", receipt_semantics)
@@ -198,8 +212,8 @@ class WireTransitionTests(unittest.TestCase):
 
         claim = claim_path.read_text(encoding="utf-8")
         evidence = evidence_path.read_text(encoding="utf-8")
-        self.assertIn('tier = 0', claim)
-        self.assertIn('not theorem-derived artifact soundness', claim)
+        self.assertIn("tier = 0", claim)
+        self.assertIn("not theorem-derived artifact soundness", claim)
         self.assertIn('"docs/specs/0007_memory_and_swap_profile.md"', claim)
         self.assertIn('"tests/attacks/native-linux/memory-v2.toml"', claim)
         self.assertIn('claims = ["PBR-RESOURCE-010"]', evidence)
@@ -218,23 +232,19 @@ class WireTransitionTests(unittest.TestCase):
         observations = (
             REPOSITORY_ROOT / "tools/release/observation_inputs.py"
         ).read_text(encoding="utf-8")
-        self.assertIn(
-            '("PBR-RESOURCE-010", "runtime-release", "pbr")', observations
-        )
+        self.assertIn('("PBR-RESOURCE-010", "runtime-release", "pbr")', observations)
         for assumption in (
             "PBR-HOST-AX-002",
             "PBR-LINUX-AX-001",
             "PBR-TOOLCHAIN-AX-003",
         ):
-            source = (
-                REPOSITORY_ROOT / f"assumptions/{assumption}.toml"
-            ).read_text(encoding="utf-8")
+            source = (REPOSITORY_ROOT / f"assumptions/{assumption}.toml").read_text(
+                encoding="utf-8"
+            )
             self.assertIn('"PBR-RESOURCE-010"', source)
 
     def test_effectful_claims_close_over_the_v2_wire_implementation(self) -> None:
-        run = (REPOSITORY_ROOT / "claims/PBR-RUN-007.toml").read_text(
-            encoding="utf-8"
-        )
+        run = (REPOSITORY_ROOT / "claims/PBR-RUN-007.toml").read_text(encoding="utf-8")
         verifier = (REPOSITORY_ROOT / "claims/PBR-VERIFY-006.toml").read_text(
             encoding="utf-8"
         )
@@ -273,9 +283,9 @@ class WireTransitionTests(unittest.TestCase):
         receipt = (
             REPOSITORY_ROOT / "crates/proofbound-runtime-core/src/receipt.rs"
         ).read_text(encoding="utf-8")
-        model = (
-            REPOSITORY_ROOT / "formal/ProofboundRuntime/Binding.lean"
-        ).read_text(encoding="utf-8")
+        model = (REPOSITORY_ROOT / "formal/ProofboundRuntime/Binding.lean").read_text(
+            encoding="utf-8"
+        )
         claim = (REPOSITORY_ROOT / "claims/PBR-BINDING-005.toml").read_text(
             encoding="utf-8"
         )
@@ -288,9 +298,9 @@ class WireTransitionTests(unittest.TestCase):
         self.assertNotIn("all 20 version 1 top-level fields", claim)
 
     def test_v2_limit_events_cross_the_receipt_eligibility_proof_boundary(self) -> None:
-        model = (
-            REPOSITORY_ROOT / "formal/ProofboundRuntime/Receipt.lean"
-        ).read_text(encoding="utf-8")
+        model = (REPOSITORY_ROOT / "formal/ProofboundRuntime/Receipt.lean").read_text(
+            encoding="utf-8"
+        )
         generated = (
             REPOSITORY_ROOT / "formal/generated/ProofboundRuntimeReceipt/Types.lean"
         ).read_text(encoding="utf-8")
@@ -313,9 +323,9 @@ class WireTransitionTests(unittest.TestCase):
         self.assertNotIn("exact version 1 model", claim)
 
     def test_binding_refinement_rebuilds_the_changed_model(self) -> None:
-        script = (
-            REPOSITORY_ROOT / "tools/ci/binding-refinement.sh"
-        ).read_text(encoding="utf-8")
+        script = (REPOSITORY_ROOT / "tools/ci/binding-refinement.sh").read_text(
+            encoding="utf-8"
+        )
 
         self.assertIn(
             "lake build Aeneas ProofboundRuntime.Binding",
@@ -341,9 +351,7 @@ class WireTransitionTests(unittest.TestCase):
         self.assertIn("project_composed_receipt(&composed)", binary)
 
     def test_v2_composition_retains_structured_residual_obligations(self) -> None:
-        schema = (SCHEMA_ROOT / "composed-receipt-v2.cddl").read_text(
-            encoding="utf-8"
-        )
+        schema = (SCHEMA_ROOT / "composed-receipt-v2.cddl").read_text(encoding="utf-8")
         projection = __import__("json").loads(
             (VECTOR_ROOT / "composed-receipt.projection.json").read_text(
                 encoding="utf-8"

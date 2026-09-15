@@ -1,13 +1,14 @@
 # Proofbound Runtime product roadmap 2: deferred capabilities
 
-- **Status:** implementation; RT-7 protected-path cutover merged, registry
-  publication work active, all complete Roadmap 2 epic exits still open
+- **Status:** implementation; RT-7 publication routes merged, external
+  registry setup and publication remain open, and the RT-8 contract foundation
+  is under review; all complete Roadmap 2 epic exits remain open
 - **Date:** 2026-09-13
-- **Runtime baseline:** current admitted `main`; exact source and artifact
-  identities control each implementation wave
+- **Runtime baseline:** `acf8f24` on `main`; exact-main Verify run
+  `34924535451` is pending, so `4a0cfdb` remains the latest admitted identity
 - **Proofbound baseline consumed by Runtime evidence:** public immutable bundle
-  for source `9512469`; protected-path cutover merged as Runtime `4a0cfdb` with
-  exact-main verification pending
+  for source `9512469`; protected-path cutover merged as Runtime `4a0cfdb` and
+  passed exact-main Verify run `34918706960`
 - **Proofbound distribution source:** `9512469`; exact-main Verify and public
   immutable bundle run passed; Runtime dogfood merged as `f2a06de`
 - **Prerequisite:** [Product and delivery roadmap](product-roadmap.md)
@@ -29,7 +30,7 @@ threat-model, ADR, claim, and evidence changes before production code.
 
 ### Execution checkpoint
 
-As of 2026-09-15, Runtime main commit `f2a06de` contains the version 2 memory
+As of 2026-09-15, Runtime main commit `acf8f24` contains the version 2 memory
 and deterministic CBOR wave, receipt composition and acceptance, a bounded
 static plan scaffold,
 typed prelaunch diagnostics, reproducible Rust, Python, and TypeScript SDK
@@ -50,10 +51,16 @@ that exact seven-asset release, passed independent review and hosted dogfood,
 merged it as unsigned commit `f2a06de`, and passed exact-main Verify run
 `34908515545`. The protected evidence and release source-build cutover passed
 independent review and exact-head Verify run `34915891330`, then merged
-unsigned as `4a0cfdb`. Exact-main Verify run `34918706960` remains pending.
-The next isolated wave prepares the four selected registry routes and
-anonymous exact-byte observations. No registry package is yet described as
-published.
+unsigned as `4a0cfdb` and passed exact-main Verify run `34918706960`. The four
+selected registry routes and their exact-byte observer contract merged
+unsigned as `acf8f24`; exact-main Verify run `34924535451` is pending. The
+protected GitHub `package-publish` environment, registry credentials or trusted
+publishers, anonymous retrieval observations, external consumer dogfood, and
+current-integration manifest remain open. No registry package is yet described
+as published. The RT-8 diagnostic contract, observer decision, closed schemas,
+and source-level production non-reuse checks are implemented on
+`codex/rt8-diagnostic-profile`; final review, hosted admission, the live
+observer, and the plan-draft producer remain open.
 RT-9 is blocked until RT-5 implements the accepted single-service network
 decision in production.
 
@@ -258,11 +265,10 @@ can identify review differences but can never grant Runtime authority.
 - A diagnostic run installs the same Landlock, seccomp, and cgroup boundary as
   a production run for the declared plan, and adds an observer. It does not
   weaken the boundary to let the program succeed.
-- Decide the observer mechanism in an ADR. Candidates are Landlock audit
-  records where the running kernel provides them, seccomp user notification
-  for denied syscalls, and `ptrace`. Each expands the diagnostic profile's
-  trusted computing base and is recorded as such. None enters the production
-  profile.
+- Use the separate ptrace observer selected by
+  [ADR 0008](adr/0008-separate-ptrace-diagnostic-observer.md). It expands only
+  the diagnostic trusted computing base. No observer code or entry point enters
+  the production profile.
 - A diagnostic receipt has its own schema and is never reusable. Both
   verifiers and `pbr-accept` reject it with a stable typed reason.
 

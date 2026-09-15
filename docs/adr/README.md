@@ -24,3 +24,4 @@ inevitable. Add a new ADR and mark the earlier record as superseded.
 | [0005](0005-exact-tool-cache-boundary.md) | Cache exact formal tools without caching assurance conclusions | accepted |
 | [0006](0006-cpu-bandwidth-boundary.md) | Keep CPU bandwidth separate from consumed CPU time | accepted |
 | [0007](0007-output-capacity-boundary.md) | Require a host-managed project quota for output capacity | accepted |
+| [0008](0008-separate-ptrace-diagnostic-observer.md) | Use a separate ptrace diagnostic observer | accepted |

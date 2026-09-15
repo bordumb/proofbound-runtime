@@ -185,6 +185,32 @@ mod tests {
     }
 
     #[test]
+    fn diagnostic_receipt_has_a_distinct_non_reuse_failure() {
+        let fixture = include_bytes!("../../../schemas/vectors/diagnostic/diagnostic-receipt.json");
+        let diagnostic = fixture
+            .strip_suffix(b"\n")
+            .expect("fixture has one presentation newline")
+            .to_vec();
+        let commitment = ReceiptCommitment::for_bytes(&diagnostic).to_text();
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+        let code = run_with(
+            args(&[
+                "pbr-verify",
+                "--expected-commitment",
+                &commitment,
+                "diagnostic-receipt.json",
+            ]),
+            |_| Ok(diagnostic.clone()),
+            &mut stdout,
+            &mut stderr,
+        );
+        assert_eq!(code, 7);
+        assert!(stdout.is_empty());
+        assert_eq!(stderr, b"pbr-verify: profile.diagnostic.not-reusable\n");
+    }
+
+    #[test]
     fn help_and_version_are_successful() {
         for option in ["--help", "--version"] {
             let mut stdout = Vec::new();

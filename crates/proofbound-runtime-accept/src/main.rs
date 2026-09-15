@@ -180,7 +180,7 @@ fn run_inner(args: Vec<OsString>) -> Result<Outcome, CliError> {
             &policy,
             &raw,
             &args,
-            RejectionReason::ExecutionVerificationFailed,
+            execution_verification_rejection(&execution_verification),
         )?
     } else {
         let composition_inputs = composition_inputs(&raw, &args);
@@ -380,6 +380,7 @@ fn parse_args(args: &[OsString]) -> Result<Args, CliError> {
 struct VerifierRun {
     stdout: Vec<u8>,
     valid: bool,
+    failure_code: Option<String>,
 }
 
 fn run_verifier(path: &Path, args: &[&OsStr]) -> Result<VerifierRun, CliError> {
@@ -401,10 +402,37 @@ fn validate_process_output(output: Output) -> Result<VerifierRun, CliError> {
         && output.stderr.is_empty()
         && !output.stdout.is_empty()
         && std::str::from_utf8(&output.stdout).is_ok();
+    let failure_code = if valid {
+        None
+    } else {
+        exact_pbr_error(&output.stderr).map(str::to_owned)
+    };
     Ok(VerifierRun {
         stdout: output.stdout,
         valid,
+        failure_code,
     })
+}
+
+fn exact_pbr_error(stderr: &[u8]) -> Option<&str> {
+    let text = std::str::from_utf8(stderr).ok()?;
+    let code = text.strip_prefix("pbr-verify: ")?.strip_suffix('\n')?;
+    if code.is_empty()
+        || code.bytes().any(|byte| {
+            !(byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'.' || byte == b'-')
+        })
+    {
+        return None;
+    }
+    Some(code)
+}
+
+fn execution_verification_rejection(run: &VerifierRun) -> RejectionReason {
+    if run.failure_code.as_deref() == Some("profile.diagnostic.not-reusable") {
+        RejectionReason::DiagnosticProfileNotReusable
+    } else {
+        RejectionReason::ExecutionVerificationFailed
+    }
 }
 
 fn require_directory(path: &Path) -> Result<(), CliError> {
@@ -713,6 +741,28 @@ mod tests {
             composition_rejection(CompositionError::ReleaseSubstituted),
             RejectionReason::CompositionMissing
         );
+    }
+
+    #[test]
+    fn diagnostic_verifier_failure_has_a_distinct_acceptance_reason() {
+        use std::os::unix::process::ExitStatusExt as _;
+
+        let run = validate_process_output(Output {
+            status: std::process::ExitStatus::from_raw(7 << 8),
+            stdout: Vec::new(),
+            stderr: b"pbr-verify: profile.diagnostic.not-reusable\n".to_vec(),
+        })
+        .expect("bounded verifier output is retained");
+        assert!(!run.valid);
+        assert_eq!(
+            execution_verification_rejection(&run),
+            RejectionReason::DiagnosticProfileNotReusable
+        );
+        assert_eq!(
+            exact_pbr_error(b"pbr-verify: profile.diagnostic.not-reusable\n"),
+            Some("profile.diagnostic.not-reusable")
+        );
+        assert_eq!(exact_pbr_error(b"other: diagnostic\n"), None);
     }
 
     #[test]

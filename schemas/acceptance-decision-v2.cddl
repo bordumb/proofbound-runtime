@@ -1,0 +1,45 @@
+; Proofbound Runtime acceptance decision version 2.
+; This is a closed text-key deterministic-CBOR contract under RFC 8949
+; section 4.2.1. A JSON rendering is descriptive and never verification input.
+
+acceptance-decision-v2 = {
+  "schema": "proofbound-runtime-acceptance-decision/2",
+  "status": "accepted" / "rejected",
+  "inputs": [+ input-artifact],
+  "reasons": [* rejection-reason],
+  "decision_id": bstr .size 32,
+  "execution_id": bstr .size 16,
+  "composition_id": bstr .size 32 / null,
+  "policy_identity": bstr .size 32,
+  "execution_commitment": bstr .size 32
+}
+
+input-artifact = {
+  "role": input-role,
+  "size": uint64,
+  "sha256": bstr .size 32
+}
+
+input-role = "acceptance-policy" / "release-envelope" / "compiled-release" /
+  "release-verification" / "release-verifier" / "release-observation-inputs" /
+  "release-tcb-ledger" / "runtime-manifest" / "runtime" / "launcher" /
+  "execution-verifier" / "composer" / "acceptor" / "execution-receipt" /
+  "execution-verification"
+
+rejection-reason = "architecture-mismatch" / "authority-mismatch" /
+  "claim-assumption-mismatch" / "claim-formal-mismatch" /
+  "claim-linkage-mismatch" / "claim-missing" / "claim-policy-mismatch" /
+  "composition-missing" / "diagnostic-profile-not-reusable" /
+  "eligibility-mismatch" / "executable-mismatch" / "execution-replay" /
+  "execution-schema-mismatch" / "execution-verification-failed" /
+  "forbidden-assumption" / "forbidden-exclusion" /
+  "forbidden-open-obligation" / "forbidden-tcb-role" /
+  "freshness-policy-unsupported" / "input-verification-failed" /
+  "plan-id-mismatch" / "platform-mismatch" / "policy-identity-mismatch" /
+  "release-context-mismatch" / "release-directory-mismatch" /
+  "release-payload-mismatch" / "release-project-mismatch" /
+  "release-revision-mismatch" / "release-verification-failed" /
+  "release-verifier-mismatch" / "resource-mismatch" /
+  "runtime-version-mismatch"
+
+uint64 = 0..18446744073709551615

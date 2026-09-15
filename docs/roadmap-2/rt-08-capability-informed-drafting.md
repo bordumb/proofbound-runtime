@@ -1,7 +1,9 @@
 # RT-8 integration record: capability-informed drafting
 
 **Status:** static scaffold and prelaunch diagnostics merged; diagnostic
-execution profile and live observation planned
+contracts, closed schemas, and source-level production non-reuse are
+implemented on `codex/rt8-diagnostic-profile`; final review and hosted
+admission are pending, and the live observer and draft producer remain open
 
 **Primary owner:** Proofbound Runtime
 
@@ -10,6 +12,12 @@ execution profile and live observation planned
 **Roadmap:** [Epic RT-8](../product-roadmap-2.md#6-epic-rt-8-trace-assisted-plan-drafting)
 
 **Platform contract:** [Specification 0013](../specs/0013_platform_integration_contract.md)
+
+**Diagnostic contract:**
+[Specification 0015](../specs/0015_diagnostic_execution_and_plan_drafting.md)
+
+**Observer decision:**
+[ADR 0008](../adr/0008-separate-ptrace-diagnostic-observer.md)
 
 ## Product result
 
@@ -28,7 +36,8 @@ The draft keeps these inputs separate:
 - `platform-required-closure`.
 
 The names are integration vocabulary. The accepted Runtime specification must
-select the final closed wire values.
+select the final closed wire values. Specification 0015 now selects those
+values without making a draft an authority object.
 
 ## Required behavior
 
@@ -41,6 +50,10 @@ select the final closed wire values.
   unusable for automated comparison.
 - Network, environment, write-root, and resource-limit choices remain human
   decisions.
+- The observer is a separate ptrace-based diagnostic executable. Production
+  Runtime and launcher artifacts contain no observer entry point.
+- Diagnostic receipts are JSON diagnostic objects and are never accepted by
+  the production verifier, composer, or acceptance policy.
 
 ## Additional falsifiers
 

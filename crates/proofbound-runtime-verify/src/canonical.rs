@@ -70,7 +70,7 @@ pub fn validate_canonical_receipt(input: &[u8]) -> Result<DecodedReceipt, Canoni
     Ok(decoded)
 }
 
-fn reject_duplicate_keys(input: &[u8]) -> Result<(), CanonicalError> {
+pub(crate) fn reject_duplicate_keys(input: &[u8]) -> Result<(), CanonicalError> {
     let duplicate = Cell::new(false);
     let mut deserializer = serde_json::Deserializer::from_slice(input);
     DuplicateDetector {

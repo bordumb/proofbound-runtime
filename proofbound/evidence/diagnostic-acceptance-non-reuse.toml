@@ -1,21 +1,17 @@
 schema = "proofbound-evidence-unit/1"
-id = "receipt-acceptance-cli"
+id = "diagnostic-acceptance-non-reuse"
 adapter = "rust-test"
 kind = "example-test"
-claims = ["PBR-ACCEPT-012"]
+claims = ["PBR-DRAFT-017"]
 tier = 0
 expected_inventory = [
-  "pbr-accept::tests::closed_usage_help_and_version_are_stable",
-  "pbr-accept::tests::inspect_projects_the_canonical_golden_decision",
+  "pbr-accept::tests::diagnostic_verifier_failure_has_a_distinct_acceptance_reason",
 ]
 inputs = [
-  "Cargo.lock",
-  "Cargo.toml",
   "crates/proofbound-runtime-accept/Cargo.toml",
   "crates/proofbound-runtime-accept/src/lib.rs",
   "crates/proofbound-runtime-accept/src/main.rs",
   "schemas/acceptance-decision-v2.cddl",
-  "schemas/vectors/v2/acceptance-decision.cbor.hex",
 ]
 outputs = []
 environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]

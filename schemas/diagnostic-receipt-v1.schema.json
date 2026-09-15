@@ -1,0 +1,467 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://proofbound.dev/runtime/diagnostic-receipt-v1.schema.json",
+  "title": "Proofbound Runtime diagnostic receipt version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {"completion": {"const": "complete"}},
+        "required": ["completion"]
+      },
+      "then": {"properties": {"gaps": {"maxItems": 0}}}
+    },
+    {
+      "if": {
+        "properties": {"completion": {"const": "incomplete"}},
+        "required": ["completion"]
+      },
+      "then": {"properties": {"gaps": {"minItems": 1}}}
+    }
+  ],
+  "required": [
+    "arguments",
+    "assumptions",
+    "bounds",
+    "completion",
+    "environment_names",
+    "events",
+    "execution_id",
+    "execution_profile",
+    "gaps",
+    "launcher",
+    "mechanism",
+    "observer",
+    "platform",
+    "reusable",
+    "runtime",
+    "safe_policy",
+    "schema",
+    "seed_plan",
+    "target",
+    "trusted_computing_base"
+  ],
+  "properties": {
+    "schema": {"const": "proofbound-runtime-diagnostic-receipt/1"},
+    "execution_profile": {"const": "diagnostic"},
+    "safe_policy": {"const": false},
+    "reusable": {"const": false},
+    "execution_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "seed_plan": {
+      "allOf": [
+        {"$ref": "#/$defs/artifact"},
+        {"properties": {"role": {"const": "execution-plan"}}}
+      ]
+    },
+    "target": {
+      "allOf": [
+        {"$ref": "#/$defs/artifact"},
+        {"properties": {"role": {"const": "runtime-executable"}}}
+      ]
+    },
+    "runtime": {
+      "allOf": [
+        {"$ref": "#/$defs/artifact"},
+        {"properties": {"role": {"const": "runtime-binary"}}}
+      ]
+    },
+    "launcher": {
+      "allOf": [
+        {"$ref": "#/$defs/artifact"},
+        {"properties": {"role": {"const": "launcher-binary"}}}
+      ]
+    },
+    "observer": {
+      "allOf": [
+        {"$ref": "#/$defs/artifact"},
+        {"properties": {"role": {"const": "diagnostic-observer"}}}
+      ]
+    },
+    "platform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["architecture", "kernel_release", "landlock_abi", "operating_system"],
+      "properties": {
+        "operating_system": {"const": "linux"},
+        "architecture": {"enum": ["aarch64", "x86_64"]},
+        "kernel_release": {"type": "string", "minLength": 1, "maxLength": 256},
+        "landlock_abi": {"type": "integer", "minimum": 3, "maximum": 11}
+      }
+    },
+    "mechanism": {"const": "linux-ptrace-syscall-v1"},
+    "arguments": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {"type": "string", "maxLength": 65536}
+    },
+    "environment_names": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$", "maxLength": 256}
+    },
+    "bounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_count",
+        "event_count_per_process",
+        "output_bytes",
+        "path_bytes",
+        "process_count",
+        "socket_address_bytes",
+        "symlink_hops",
+        "tracee_string_bytes"
+      ],
+      "properties": {
+        "event_count": {"type": "integer", "minimum": 1, "maximum": 1048576},
+        "event_count_per_process": {"type": "integer", "minimum": 1, "maximum": 1048576},
+        "output_bytes": {"type": "integer", "minimum": 1024, "maximum": 67108864},
+        "path_bytes": {"type": "integer", "minimum": 1, "maximum": 1048576},
+        "process_count": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "socket_address_bytes": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "symlink_hops": {"type": "integer", "minimum": 1, "maximum": 40},
+        "tracee_string_bytes": {"type": "integer", "minimum": 1, "maximum": 1048576}
+      }
+    },
+    "events": {
+      "type": "array",
+      "maxItems": 1048576,
+      "items": {"$ref": "#/$defs/event"}
+    },
+    "completion": {"enum": ["complete", "incomplete"]},
+    "gaps": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/gap"}
+    },
+    "trusted_computing_base": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {"$ref": "#/$defs/tcb"}
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "role", "sha256", "size_bytes"],
+      "properties": {
+        "role": {
+          "enum": [
+            "diagnostic-observer",
+            "execution-plan",
+            "launcher-binary",
+            "runtime-binary",
+            "runtime-executable"
+          ]
+        },
+        "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "size_bytes": {"type": "integer", "minimum": 1},
+        "mode": {"type": "string", "pattern": "^[0-7]{4}$"}
+      }
+    },
+    "objectIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["device_major", "device_minor", "inode", "mode", "mount_id"],
+      "properties": {
+        "device_major": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "device_minor": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "inode": {"type": "integer", "minimum": 0},
+        "mode": {"type": "string", "pattern": "^[0-7]{6}$"},
+        "mount_id": {"type": "integer", "minimum": 0}
+      }
+    },
+    "socketAddress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bytes_hex", "family", "length_bytes"],
+      "properties": {
+        "bytes_hex": {
+          "type": "string",
+          "maxLength": 8192,
+          "pattern": "^(?:[0-9a-f]{2})*$"
+        },
+        "family": {"enum": ["inet", "inet6", "netlink", "other", "unix"]},
+        "length_bytes": {"type": "integer", "minimum": 0, "maximum": 4096}
+      }
+    },
+    "pathOperands": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "buffer_bytes",
+        "directory_fd",
+        "flags",
+        "kind",
+        "mask",
+        "mode",
+        "path",
+        "resolve"
+      ],
+      "properties": {
+        "buffer_bytes": {"type": ["integer", "null"], "minimum": 0},
+        "directory_fd": {
+          "type": ["integer", "null"],
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "flags": {"type": ["integer", "null"], "minimum": 0},
+        "kind": {"const": "path"},
+        "mask": {"type": ["integer", "null"], "minimum": 0},
+        "mode": {"type": ["integer", "null"], "minimum": 0},
+        "path": {"type": ["string", "null"], "maxLength": 1048576},
+        "resolve": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "processOperands": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["flags", "kind"],
+      "properties": {
+        "flags": {"type": ["integer", "null"], "minimum": 0},
+        "kind": {"const": "process-create"}
+      }
+    },
+    "socketAddressOperands": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["address", "descriptor", "kind", "payload_bytes"],
+      "properties": {
+        "address": {
+          "oneOf": [
+            {"$ref": "#/$defs/socketAddress"},
+            {"type": "null"}
+          ]
+        },
+        "descriptor": {"type": "integer", "minimum": 0},
+        "kind": {"const": "socket-address"},
+        "payload_bytes": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "socketCreateOperands": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["domain", "kind", "protocol", "socket_type"],
+      "properties": {
+        "domain": {"type": "integer", "minimum": 0},
+        "kind": {"const": "socket-create"},
+        "protocol": {"type": "integer", "minimum": 0},
+        "socket_type": {"type": "integer", "minimum": 0}
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "properties": {
+            "error": {"type": "null"},
+            "result": {"type": "integer"}
+          }
+        },
+        {
+          "properties": {
+            "error": {"type": "integer", "minimum": 1},
+            "result": {"type": "null"}
+          }
+        }
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "class": {
+                "enum": [
+                  "creat",
+                  "execve",
+                  "execveat",
+                  "newfstatat",
+                  "open",
+                  "openat",
+                  "openat2",
+                  "readlink",
+                  "readlinkat",
+                  "statx"
+                ]
+              }
+            },
+            "required": ["class"]
+          },
+          "then": {"properties": {"operands": {"$ref": "#/$defs/pathOperands"}}}
+        },
+        {
+          "if": {
+            "properties": {"class": {"enum": ["bind", "connect", "sendto"]}},
+            "required": ["class"]
+          },
+          "then": {
+            "properties": {"operands": {"$ref": "#/$defs/socketAddressOperands"}}
+          }
+        },
+        {
+          "if": {
+            "properties": {"class": {"const": "socket"}},
+            "required": ["class"]
+          },
+          "then": {
+            "properties": {"operands": {"$ref": "#/$defs/socketCreateOperands"}}
+          }
+        },
+        {
+          "if": {
+            "properties": {"class": {"enum": ["clone", "fork", "vfork"]}},
+            "required": ["class"]
+          },
+          "then": {
+            "properties": {"operands": {"$ref": "#/$defs/processOperands"}}
+          }
+        },
+        {
+          "if": {
+            "properties": {"resolution": {"const": "stable-candidate"}},
+            "required": ["resolution"]
+          },
+          "then": {
+            "properties": {
+              "error": {"type": "integer", "minimum": 1},
+              "object_after": {"$ref": "#/$defs/objectIdentity"},
+              "object_before": {"$ref": "#/$defs/objectIdentity"},
+              "resolved_path": {"type": "string", "maxLength": 1048576},
+              "result": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {"resolution": {"const": "kernel-selected"}},
+            "required": ["resolution"]
+          },
+          "then": {
+            "properties": {
+              "object_after": {"$ref": "#/$defs/objectIdentity"},
+              "resolved_path": {"type": "string", "maxLength": 1048576},
+              "result": {"type": "integer", "minimum": 0}
+            }
+          }
+        }
+      ],
+      "required": [
+        "architecture",
+        "class",
+        "error",
+        "object_after",
+        "object_before",
+        "operands",
+        "process",
+        "resolution",
+        "resolved_path",
+        "result",
+        "sequence"
+      ],
+      "properties": {
+        "sequence": {"type": "integer", "minimum": 0},
+        "process": {"type": "integer", "minimum": 1},
+        "architecture": {"enum": ["aarch64", "x86_64"]},
+        "class": {
+          "enum": [
+            "bind",
+            "clone",
+            "connect",
+            "creat",
+            "execve",
+            "execveat",
+            "fork",
+            "newfstatat",
+            "open",
+            "openat",
+            "openat2",
+            "readlink",
+            "readlinkat",
+            "sendto",
+            "socket",
+            "statx",
+            "vfork"
+          ]
+        },
+        "object_after": {
+          "oneOf": [
+            {"$ref": "#/$defs/objectIdentity"},
+            {"type": "null"}
+          ]
+        },
+        "object_before": {
+          "oneOf": [
+            {"$ref": "#/$defs/objectIdentity"},
+            {"type": "null"}
+          ]
+        },
+        "operands": {
+          "oneOf": [
+            {"$ref": "#/$defs/pathOperands"},
+            {"$ref": "#/$defs/processOperands"},
+            {"$ref": "#/$defs/socketAddressOperands"},
+            {"$ref": "#/$defs/socketCreateOperands"}
+          ]
+        },
+        "resolution": {
+          "enum": ["kernel-selected", "redacted", "stable-candidate", "unresolved"]
+        },
+        "resolved_path": {"type": ["string", "null"], "maxLength": 1048576},
+        "result": {"type": ["integer", "null"], "minimum": 0},
+        "error": {"type": ["integer", "null"], "minimum": 1}
+      }
+    },
+    "gap": {
+      "enum": [
+        "architecture-unsupported",
+        "child-lost",
+        "event-limit",
+        "event-per-process-limit",
+        "identity-drift",
+        "observer-failed",
+        "output-limit",
+        "path-limit",
+        "process-limit",
+        "socket-address-limit",
+        "string-limit",
+        "symlink-limit",
+        "syscall-unsupported",
+        "tracee-memory-read-failed",
+        "unexpected-stop"
+      ]
+    },
+    "tcb": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity", "role"],
+      "properties": {
+        "identity": {"type": "string", "minLength": 1, "maxLength": 512},
+        "role": {
+          "enum": [
+            "diagnostic-observer",
+            "filesystem",
+            "hardware",
+            "linux-kernel",
+            "runtime-launcher",
+            "runtime-supervisor"
+          ]
+        }
+      }
+    }
+  }
+}

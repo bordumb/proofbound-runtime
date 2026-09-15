@@ -1,0 +1,71 @@
+schema = "proofbound-claim/1"
+id = "PBR-DRAFT-017"
+title = "Diagnostic artifacts remain distinct from production authority"
+statement = "The pure Runtime core accepts only the registered production and diagnostic profiles, observer mechanism, draft provenance, observation-resolution, and completion values; the independent verifier rejects a canonical diagnostic receipt before commitment or production-receipt decoding; and the composer and acceptance adapters define closed mappings for that exact verifier failure."
+public_language = "Runtime has an accepted, closed diagnostic-profile contract and distinct diagnostic receipt and plan-draft schemas. Registered tests cover the independent verifier rejection and the isolated composer and acceptance failure-code mappings. They do not yet execute the complete composer or acceptance publication path. This is contract and bounded test evidence only: the live ptrace observer and draft producer are not yet implemented, and no diagnostic output is a safe policy or production receipt."
+subject = "rust:proofbound_runtime_core::diagnostic::ExecutionProfile"
+profile = "ledger"
+tier = 1
+evidence = [
+  "independent-check:diagnostic-schema-contract",
+  "example-test:diagnostic-acceptance-non-reuse",
+  "example-test:diagnostic-composer-non-reuse",
+  "example-test:diagnostic-core-vocabulary",
+  "example-test:diagnostic-verifier-cli-non-reuse",
+  "example-test:diagnostic-verifier-non-reuse",
+]
+assumptions = [
+  "PBR-DIAGNOSTIC-CONTRACT-AX-015",
+  "PBR-TOOLCHAIN-AX-003",
+]
+open_obligations = [
+  "Add end-to-end composer and acceptance command falsifiers that submit a diagnostic receipt, observe the exact typed rejection, and prove that no composition or acceptance output is published.",
+  "Implement the separate bounded ptrace observer and diagnostic artifact producer without adding an observer entry point or dependency to the production Runtime or launcher binaries.",
+  "Implement provenance-preserving draft construction, mandatory human choices, optional exact-identity Capsec comparison, and the complete adversarial mutation corpus.",
+  "Execute the live diagnostic attack corpus on both supported architectures and bind exact released pbr-diagnose artifacts before describing the profile as released.",
+]
+out_of_scope = [
+  "A claim that the current repository can execute a diagnostic profile or produce either diagnostic artifact.",
+  "Completeness, transparency, or non-interference of ptrace observation.",
+  "Safety or authority of a generated plan draft.",
+  "Correctness of a Capsec report or conversion of a Capsec observation into Runtime authority.",
+  "A change to production plan, policy, launcher, execution-receipt, composition, or acceptance meaning other than explicit diagnostic non-reuse.",
+]
+source_roots = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "assumptions/PBR-DIAGNOSTIC-CONTRACT-AX-015.toml",
+  "assumptions/PBR-TOOLCHAIN-AX-003.toml",
+  "claims/PBR-DRAFT-017.toml",
+  "crates/proofbound-runtime-accept/src/lib.rs",
+  "crates/proofbound-runtime-accept/src/main.rs",
+  "crates/proofbound-runtime-cli/Cargo.toml",
+  "crates/proofbound-runtime-compose/src/main.rs",
+  "crates/proofbound-runtime-core/src/diagnostic.rs",
+  "crates/proofbound-runtime-core/src/lib.rs",
+  "crates/proofbound-runtime-linux/Cargo.toml",
+  "crates/proofbound-runtime-linux/src/bin/pbr-native-launcher.rs",
+  "crates/proofbound-runtime-verify/src/canonical.rs",
+  "crates/proofbound-runtime-verify/src/error.rs",
+  "crates/proofbound-runtime-verify/src/lib.rs",
+  "crates/proofbound-runtime-verify/src/main.rs",
+  "docs/adr/0008-separate-ptrace-diagnostic-observer.md",
+  "docs/roadmap-2/rt-08-capability-informed-drafting.md",
+  "docs/specs/0013_platform_integration_contract.md",
+  "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",
+  "proofbound/evidence/diagnostic-acceptance-non-reuse.toml",
+  "proofbound/evidence/diagnostic-composer-non-reuse.toml",
+  "proofbound/evidence/diagnostic-core-vocabulary.toml",
+  "proofbound/evidence/diagnostic-schema-contract.toml",
+  "proofbound/evidence/diagnostic-verifier-cli-non-reuse.toml",
+  "proofbound/evidence/diagnostic-verifier-non-reuse.toml",
+  "schemas/acceptance-decision-v2.cddl",
+  "schemas/diagnostic-receipt-v1.schema.json",
+  "schemas/plan-draft-v1.schema.json",
+  "schemas/vectors/diagnostic/diagnostic-receipt.json",
+  "schemas/vectors/diagnostic/plan-draft.json",
+  "tools/ci/ci.sh",
+  "tools/ci/check_diagnostic_contract.py",
+  "tools/ci/pre-commit.sh",
+  "tools/ci/test_diagnostic_drafting_contract.py",
+]
