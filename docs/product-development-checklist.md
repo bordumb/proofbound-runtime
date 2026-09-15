@@ -136,11 +136,11 @@ manifest describes the supported tuple.
 
 - [x] Accept an ADR and specification for a distinct diagnostic execution
   profile and observer mechanism.
-- [ ] Define closed diagnostic-profile, observation, provenance, and failure
+- [x] Define closed diagnostic-profile, observation, provenance, and failure
   types without changing production-receipt meaning.
 - [ ] Keep observer implementation out of the production launcher path.
 - [ ] Produce a distinct diagnostic receipt that is always non-reusable.
-- [ ] Make the independent verifier, composer, and acceptance policy reject a
+- [x] Make the independent verifier, composer, and acceptance policy reject a
   diagnostic receipt for production reuse with an exact typed reason.
 - [ ] Convert observed file and execution effects into provenance-tagged draft
   entries without granting plan authority.
