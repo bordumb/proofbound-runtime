@@ -1,0 +1,59 @@
+schema = "proofbound-claim/1"
+id = "PBR-OBSERVER-028"
+title = "Diagnostic execution owns one bounded resource lifecycle"
+statement = "For the separate Linux diagnostic trace source API, preparation accepts only a fresh cgroup version 2 boundary whose identity and exact process, memory, swap, and OOM-group control readbacks match the install request and resource limits; those controls are read again immediately before child spawn and immediately before target release; one absolute monotonic execution deadline starts immediately before child spawn and remains private to the trace session across setup, target release, and active observation; the spawned child is placed in and read back from the exact cgroup before the spawned trace state is returned; timeout or observation failure selects immediate process-group termination and an independent bounded cleanup deadline instead of extending execution; and a complete or incomplete diagnostic publication decision is available only after the exact trace tree is terminal, cgroup drain and removal succeed, complete version 2 resource observations are retained, and both bounded streams join. A cgroup mismatch, control drift, placement failure, cleanup failure, incomplete resource observation, or stream failure returns a closed error and prevents publication."
+public_language = "The separate diagnostic trace has source-level coupling for one exact cgroup version 2 boundary, control revalidation before spawn and release, one private absolute execution deadline, exact-child placement before trace startup completes, bounded forced cleanup, and terminal resource and stream capture before publication. Registered Rust type checks and an independent exact-source checker cover this lifecycle and its fail-closed order. They do not prove kernel, clock, cgroup, ptrace, scheduler, pipe, command, or released-artifact behavior."
+subject = "rust:proofbound_runtime_linux::trace::TraceTerminalCapture"
+profile = "ledger"
+tier = 1
+evidence = [
+  "example-test:diagnostic-lifecycle",
+  "independent-check:diagnostic-lifecycle-contract",
+]
+assumptions = [
+  "PBR-DIAGNOSTIC-TRACE-AX-016",
+  "PBR-DIAGNOSTIC-LIFECYCLE-CHECK-AX-021",
+]
+open_obligations = [
+  "Run the complete source, compilation, unit, independent-check, and native evidence in hosted exact-head verification before merge.",
+  "Exercise exact cgroup placement, wall-time expiry during every setup and observation state, forced cleanup, resource-counter failure, and descendant-held stream descriptors on both supported native architectures.",
+  "Make the command owner drive trace transitions without unbounded delay, or add an independent watchdog, before making a released wall-time enforcement claim.",
+  "Connect the terminal capture to the separate pbr-diagnose command and diagnostic artifact writer without treating diagnostic observations as reusable production evidence.",
+  "Bind the exact released diagnostic executable and observer mechanism identity before describing this lifecycle as released.",
+]
+out_of_scope = [
+  "Correctness or fairness of Linux cgroup version 2, monotonic clocks, scheduling, ptrace, pidfds, pipes, process status, resource counters, or kernel process-tree events.",
+  "Asynchronous wall-time termination while the API owner stops calling consuming trace transitions; the stored deadline rejects late progress but is not a background watchdog.",
+  "Filesystem object resolution, capability inference, automatic authority generation, or a promise that diagnostic execution has production-equivalent timing.",
+  "Command orchestration, durable artifact publication, native attack evidence, production execution, or released-artifact behavior.",
+]
+source_roots = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "rust-toolchain.toml",
+  "assumptions/PBR-DIAGNOSTIC-LIFECYCLE-CHECK-AX-021.toml",
+  "assumptions/PBR-DIAGNOSTIC-TRACE-AX-016.toml",
+  "claims/PBR-OBSERVER-028.toml",
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/authority.rs",
+  "crates/proofbound-runtime-diagnose-linux/Cargo.toml",
+  "crates/proofbound-runtime-diagnose-linux/src/adapter.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/Cargo.toml",
+  "crates/proofbound-runtime-linux/src/cgroup.rs",
+  "crates/proofbound-runtime-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+  "docs/adr/0008-separate-ptrace-diagnostic-observer.md",
+  "docs/assurance-plan.md",
+  "docs/product-development-checklist.md",
+  "docs/product-roadmap-2.md",
+  "docs/roadmap-2/rt-08-capability-informed-drafting.md",
+  "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",
+  "proofbound/evidence/diagnostic-lifecycle-contract.toml",
+  "proofbound/evidence/diagnostic-lifecycle.toml",
+  "tools/ci/check_diagnostic_lifecycle.py",
+  "tools/ci/ci.sh",
+  "tools/ci/pre-commit.sh",
+  "tools/ci/test_diagnostic_lifecycle.py",
+]

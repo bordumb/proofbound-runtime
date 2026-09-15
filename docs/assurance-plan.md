@@ -36,6 +36,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-OBSERVER-025` | Tier 1 syscall-decoder source admitted on exact Runtime main `4783896` | Approval-only head `db95947` passed complete exact-head run `34992273744`; exact-main run `34997195939` also passed. Kernel ABI truth, memory stability, and native attacks remain open. |
 | `PBR-OBSERVER-026` | Tier 1 event-mapping source admitted on exact Runtime main `a89b92d` | The mapper preserves the closed trace identity, operands, and outcome fields, assigns contiguous sequence values, and keeps object resolution unresolved. Exact-head Verify run `35018691928` and exact-main run `35025687602` passed. Linux truth, object resolution, command integration, native attacks, and release binding remain open. |
 | `PBR-OBSERVER-027` | Tier 1 bounded-stream source admitted on exact Runtime main `17458ad` | The trace starts independent stdout and stderr drains after spawn, retains bounded prefixes while reading to EOF, and exposes captures only after terminal tree handling. Exact-head PR 22 run `35039326242` and exact-main run `35042895100` passed. Linux pipe progress, cgroup placement, wall time, command integration, native attacks, and release binding remain open. |
+| `PBR-OBSERVER-028` | Tier 1 lifecycle source pending independent review and hosted verification | The trace source binds one exact cgroup version 2 owner and one private absolute execution deadline, begins bounded termination before it exposes a drain-only state, and gates publication on complete terminal resources and streams. Native kernel, clock, cgroup, scheduler, pipe, command, and release behavior remain open. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -792,6 +793,40 @@ open. `PBR-DIAGNOSTIC-STREAM-AX-022` retains the ptrace terminal-reporting,
 Linux pipe, scheduler, memory-ordering, and thread-runtime premises separately
 from the compiler and checker premises in
 `PBR-DIAGNOSTIC-STREAM-CHECK-AX-020`.
+
+## PBR-OBSERVER-028
+
+The current subject is the terminal capture owner inside the separate Linux
+diagnostic trace. Preparation accepts the exact fresh cgroup version 2 owner
+and full seed-plan resource limits. It compares the request cgroup identity and
+the read-back process, memory, swap, and OOM-group controls during preparation.
+It reads the controls again immediately before spawn and target release. The
+execution deadline starts immediately before spawn and remains private to the
+trace session through setup, release, active observation, and natural terminal
+collection. No public transition accepts a replacement deadline. Spawn places
+and reads back the exact child in the cgroup before returning its typestate.
+
+An observer failure or pure termination directive consumes the active trace,
+signals every retained identity-stable process group, and starts a separate
+bounded cleanup deadline before it returns a drain-only owner. Natural and
+forced completion establish an empty exact trace tree before they consume the
+cgroup owner. Terminal capture requires successful cgroup drain and removal,
+complete version 2 resource observations, and joined bounded streams before the
+adapter selects a publication result. Identity, control, placement, cleanup,
+resource-observation, read, join, or deadline failure is typed and prevents
+publication.
+
+The Rust evidence fixes the no-refresh public method signatures. The
+independent checker byte-pins preparation, spawn, exact-stop, deadline,
+termination, cgroup, terminal, and adapter transitions. Its causal mutations
+remove a memory-control comparison, replace the execution deadline, reverse
+cleanup owners, accept incomplete resources, or move publication before
+terminal capture. This remains source evidence. Linux cgroup membership and
+counters, monotonic-clock progress, scheduler and ptrace behavior, termination,
+pipe progress, native attacks, command integration, and release binding remain
+open.
+`PBR-DIAGNOSTIC-LIFECYCLE-CHECK-AX-021` retains the compiler,
+standard-library, clock, and independent-checker premises.
 
 ## Bounded-domain declaration guard
 

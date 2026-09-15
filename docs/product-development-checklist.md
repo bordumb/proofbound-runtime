@@ -1,15 +1,16 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-16T18:47:47+01:00 (Europe/London, BST)
-- **Runtime baseline:** the RT-8 bounded stream collector passed exact-head PR
-  22 Verify run `35039326242`, merged unsigned as `17458ad`, and passed
-  exact-main Verify run `35042895100`.
+- **Last updated:** 2026-09-16T20:20:00+01:00 (Europe/London, BST)
+- **Runtime baseline:** roadmap admission synchronization passed exact-head PR
+  24 Verify run `35131985759`, merged unsigned as `e8473bd`, and passed
+  exact-main Verify run `35135938137`.
 - **Active implementation wave:** `PBR-OBSERVER-028` diagnostic execution
   lifecycle: stopped-child cgroup placement, one absolute deadline, resource
   observation, and fail-closed cleanup before command integration.
-- **Current batch:** restack the independently developed lifecycle series on
-  exact admitted main, then repeat exact-source review and hosted admission.
+- **Current batch:** the lifecycle source is restacked on exact admitted main.
+  Reconcile exact-source guards, then repeat independent review and hosted
+  admission.
 - **Parallel external gates:** RT-7 protected routes and current-integration
   source are merged; registry configuration, actual public package publication,
   anonymous observations, consumer dogfood, and a retained current-integration
@@ -324,7 +325,12 @@ manifest describes the supported tuple.
 - [ ] Keep the same stopped child, place it in the prepared cgroup before target
   release, apply one absolute plan wall-time deadline through observation and
   drain, finish resource observation after the tree is empty, and block
-  publication after stream or cleanup failure.
+  publication after stream or cleanup failure. `PBR-OBSERVER-028` implements
+  exact cgroup identity and control-readback checks, pre-return child placement,
+  non-refreshable transition signatures, mandatory process-group signalling,
+  and terminal gating on exact-tree completion, cgroup removal, complete
+  version 2 resource observations, and joined streams. Independent review,
+  hosted admission, and native attack evidence remain open.
 - [ ] Add stopped-tracee filesystem object resolution. Successful descriptor or
   executable results may become `kernel-selected`; denied paths may become
   `stable-candidate` only after bounded before-and-after identity checks. Races

@@ -5,6 +5,7 @@ use std::collections::BTreeSet;
 use std::num::NonZeroU32;
 use std::os::fd::BorrowedFd;
 
+use proofbound_runtime_core::ResourceLimits;
 use proofbound_runtime_diagnose::artifact::ObservationBounds;
 use proofbound_runtime_diagnose::observer::{
     DiagnosticProcessId, DiagnosticTraceOptions, ObserverDirective, ObserverProtocol,
@@ -12,10 +13,10 @@ use proofbound_runtime_diagnose::observer::{
 };
 use proofbound_runtime_linux::{
     AcknowledgedTraceStop, ActiveTrace, ActiveTraceEvent, Architecture, BoundaryRunning,
-    InitialExecStop, InstallRequest, LauncherPause, PreparedTraceCommand, ResolvedFile,
-    SpawnedTrace, TraceCaptureLimits, TraceDeadline, TraceDrainObservation, TraceObservationError,
-    TraceOutputCapture, TraceOutputLimits, TraceProcessCreationKind, TraceProcessId,
-    TraceProcessLimit, TraceReady, TraceStartupError, prepare_traced_launcher,
+    DrainingTrace, FreshCgroup, InitialExecStop, InstallRequest, LauncherPause,
+    PreparedTraceCommand, ResolvedFile, SpawnedTrace, TraceCaptureLimits, TraceDrainObservation,
+    TraceObservationError, TraceProcessCreationKind, TraceProcessId, TraceProcessLimit, TraceReady,
+    TraceStartupError, TraceTerminalCapture, prepare_traced_launcher,
 };
 
 /// Contains a validated observer request before child creation.
@@ -32,7 +33,8 @@ pub fn prepare_observer<'descriptor>(
     inherited_descriptors: &[BorrowedFd<'descriptor>],
     architecture: Architecture,
     landlock_abi: NonZeroU32,
-    output_limits: TraceOutputLimits,
+    cgroup: FreshCgroup,
+    limits: ResourceLimits,
     bounds: ObservationBounds,
 ) -> Result<PreparedObserver<'descriptor>, ObserverAdapterError> {
     let bounds = bounds
@@ -44,7 +46,8 @@ pub fn prepare_observer<'descriptor>(
         inherited_descriptors,
         architecture,
         landlock_abi,
-        output_limits,
+        cgroup,
+        limits,
     )?;
     Ok(PreparedObserver { trace, bounds })
 }
@@ -74,12 +77,9 @@ impl SpawnedObserver {
     }
 
     /// Waits for ptrace ownership before it advances the pure protocol.
-    pub fn wait_for_initial_exec_stop(
-        self,
-        deadline: TraceDeadline,
-    ) -> Result<InitialObserver, ObserverAdapterError> {
+    pub fn wait_for_initial_exec_stop(self) -> Result<InitialObserver, ObserverAdapterError> {
         let process = self.trace.process();
-        let trace = self.trace.wait_for_initial_exec_stop(deadline)?;
+        let trace = self.trace.wait_for_initial_exec_stop()?;
         let root = DiagnosticProcessId::new(process.get())?;
         let mut protocol = ObserverProtocol::new(root, self.bounds)?;
         protocol.attach_root()?;
@@ -98,9 +98,8 @@ impl InitialObserver {
     /// Continues trusted launcher code to its declared pause.
     pub fn continue_to_launcher_pause(
         self,
-        deadline: TraceDeadline,
     ) -> Result<LauncherPausedObserver, ObserverAdapterError> {
-        let trace = self.trace.continue_to_launcher_pause(deadline)?;
+        let trace = self.trace.continue_to_launcher_pause()?;
         Ok(LauncherPausedObserver {
             trace,
             protocol: self.protocol,
@@ -143,9 +142,8 @@ impl BoundaryRunningObserver {
     /// Records boundary readiness only after the exact acknowledgement stop.
     pub fn receive_acknowledgement_and_stop(
         self,
-        deadline: TraceDeadline,
     ) -> Result<AcknowledgedObserver, ObserverAdapterError> {
-        let trace = self.trace.receive_acknowledgement_and_stop(deadline)?;
+        let trace = self.trace.receive_acknowledgement_and_stop()?;
         let mut protocol = self.protocol;
         protocol.record_boundary_ready()?;
         Ok(AcknowledgedObserver { trace, protocol })
@@ -214,11 +212,8 @@ impl ActiveObserver {
     }
 
     /// Consumes one exact trace event and advances the pure protocol.
-    pub fn next_event(
-        mut self,
-        deadline: TraceDeadline,
-    ) -> Result<ActiveObserverStep, ObserverAdapterError> {
-        let event = match self.trace.next_event(deadline) {
+    pub fn next_event(mut self) -> Result<ActiveObserverStep, ObserverAdapterError> {
+        let event = match self.trace.next_event() {
             Ok(event) => event,
             Err(error) => {
                 let directive = self.protocol.record_observer_failure()?;
@@ -227,9 +222,10 @@ impl ActiveObserver {
                         ObserverProtocolError::TransitionInvalid,
                     ));
                 }
+                let trace = self.trace.begin_termination()?;
                 return Ok(ActiveObserverStep::Drain {
                     observer: DrainingObserver {
-                        trace: self.trace,
+                        trace,
                         protocol: self.protocol,
                         untracked_processes: BTreeSet::new(),
                     },
@@ -291,9 +287,10 @@ impl ActiveObserver {
         };
 
         if directive == ObserverDirective::TerminateAndDrain {
+            let trace = self.trace.begin_termination()?;
             return Ok(ActiveObserverStep::Drain {
                 observer: DrainingObserver {
-                    trace: self.trace,
+                    trace,
                     protocol: self.protocol,
                     untracked_processes,
                 },
@@ -306,13 +303,13 @@ impl ActiveObserver {
             ));
         }
         if self.trace.is_drained() {
-            let output = self.trace.finish()?.into_output();
+            let terminal = self.trace.finish()?.into_terminal();
             let publication = self.protocol.finish()?;
             return Ok(ActiveObserverStep::Complete {
                 observer: CompletedObserver {
                     protocol: self.protocol,
                     publication,
-                    output,
+                    terminal,
                 },
                 event,
             });
@@ -362,18 +359,15 @@ pub enum ActiveObserverStep {
 /// Owns one observer after a pure termination directive.
 #[derive(Debug)]
 pub struct DrainingObserver {
-    trace: ActiveTrace,
+    trace: DrainingTrace,
     protocol: ObserverProtocol,
     untracked_processes: BTreeSet<DiagnosticProcessId>,
 }
 
 impl DrainingObserver {
     /// Terminates the exact trace tree and completes the pure drain protocol.
-    pub fn finish(
-        mut self,
-        deadline: TraceDeadline,
-    ) -> Result<CompletedObserver, ObserverAdapterError> {
-        let report = self.trace.terminate_and_drain(deadline)?;
+    pub fn finish(mut self) -> Result<CompletedObserver, ObserverAdapterError> {
+        let report = self.trace.finish()?;
         for observation in report.observations() {
             match observation {
                 TraceDrainObservation::ProcessCreated {
@@ -417,13 +411,13 @@ impl DrainingObserver {
                 ObserverProtocolError::ProcessTreeChanged,
             ));
         }
-        let output = report.into_output();
+        let terminal = report.into_terminal();
         self.protocol.confirm_tree_drained()?;
         let publication = self.protocol.finish()?;
         Ok(CompletedObserver {
             protocol: self.protocol,
             publication,
-            output,
+            terminal,
         })
     }
 }
@@ -433,7 +427,7 @@ impl DrainingObserver {
 pub struct CompletedObserver {
     protocol: ObserverProtocol,
     publication: ObserverDirective,
-    output: TraceOutputCapture,
+    terminal: TraceTerminalCapture,
 }
 
 impl CompletedObserver {
@@ -449,10 +443,10 @@ impl CompletedObserver {
         self.publication
     }
 
-    /// Returns both bounded standard streams from the exact trace session.
+    /// Returns bounded output and resources from terminal trace cleanup.
     #[must_use]
-    pub const fn output(&self) -> &TraceOutputCapture {
-        &self.output
+    pub const fn terminal(&self) -> &TraceTerminalCapture {
+        &self.terminal
     }
 }
 

@@ -12,15 +12,17 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use proofbound_runtime_core::{ArtifactRole, OutputByteLimit, StreamCapture};
+use proofbound_runtime_core::{
+    ArtifactRole, OutputByteLimit, ResourceLimits, StreamCapture, WallTimeLimit,
+};
 
 use crate::{
-    Architecture, ExecRelease, InstallRequest, LauncherChannel, LauncherError, LauncherMessage,
-    ResolvedFile,
+    Architecture, ExecRelease, FreshCgroup, InstallRequest, LauncherChannel, LauncherError,
+    LauncherMessage, ResolvedFile, ResourceObservation, TerminalResources,
 };
 
 const TRACE_POLL_INTERVAL: Duration = Duration::from_millis(1);
-const TRACE_STREAM_FINISH_TIMEOUT: Duration = Duration::from_secs(5);
+const TRACE_DRAIN_TIMEOUT: Duration = Duration::from_secs(5);
 const SIGNAL_STOP: i32 = 19;
 const SIGNAL_TRAP: i32 = 5;
 const SIGNAL_SYSCALL: i32 = SIGNAL_TRAP | 0x80;
@@ -159,13 +161,13 @@ impl TraceCaptureLimits {
     }
 }
 
-/// Contains one absolute monotonic deadline for trace setup.
+/// Contains one absolute monotonic deadline for trace execution or cleanup.
 #[derive(Clone, Copy, Debug)]
-pub struct TraceDeadline(Instant);
+struct TraceDeadline(Instant);
 
 impl TraceDeadline {
     /// Creates a deadline after one nonzero duration.
-    pub fn after(duration: Duration) -> Result<Self, TraceStartupError> {
+    fn after(duration: Duration) -> Result<Self, TraceStartupError> {
         if duration.is_zero() {
             return Err(TraceStartupError::DeadlineInvalid);
         }
@@ -178,6 +180,13 @@ impl TraceDeadline {
     fn expired(self) -> bool {
         Instant::now() >= self.0
     }
+
+    fn cleanup() -> Result<Self, TraceObservationError> {
+        Instant::now()
+            .checked_add(TRACE_DRAIN_TIMEOUT)
+            .map(Self)
+            .ok_or(TraceObservationError::DrainFailed)
+    }
 }
 
 /// Contains one command and its live inherited descriptors before spawn.
@@ -188,6 +197,8 @@ pub struct PreparedTraceCommand<'descriptor> {
     supervisor_channel: LauncherChannel,
     launcher_channel: LauncherChannel,
     request: InstallRequest,
+    cgroup: FreshCgroup,
+    wall_time: WallTimeLimit,
     output_limits: TraceOutputLimits,
     _descriptors: Vec<BorrowedFd<'descriptor>>,
 }
@@ -198,21 +209,30 @@ impl PreparedTraceCommand<'_> {
         self.launcher
             .revalidate_identity()
             .map_err(|_| TraceStartupError::LauncherIdentityInvalid)?;
+        self.cgroup
+            .revalidate_resources()
+            .map_err(|_| TraceStartupError::CgroupIdentityMismatch)?;
+        let deadline = TraceDeadline::after(Duration::from_millis(self.wall_time.milliseconds()))?;
         let child = self
             .command
             .spawn()
             .map_err(|_| TraceStartupError::SpawnFailed)?;
-        let mut child = TraceChild::new(child);
+        let mut child = TraceChild(child);
         let process = TraceProcessId::new(child.0.id())?;
+        self.cgroup
+            .place_process(process.get())
+            .map_err(|_| TraceStartupError::CgroupPlacementFailed)?;
         let streams = TraceStreamReaders::start(&mut child, self.output_limits)?;
         drop(self.launcher_channel);
         Ok(SpawnedTrace {
             session: TraceSession {
                 _child: child,
+                cgroup: Some(self.cgroup),
                 streams,
                 process,
                 channel: self.supervisor_channel,
                 request: self.request,
+                deadline,
             },
         })
     }
@@ -225,7 +245,8 @@ pub fn prepare_traced_launcher<'descriptor>(
     inherited_descriptors: &[BorrowedFd<'descriptor>],
     architecture: Architecture,
     landlock_abi: NonZeroU32,
-    output_limits: TraceOutputLimits,
+    cgroup: FreshCgroup,
+    limits: ResourceLimits,
 ) -> Result<PreparedTraceCommand<'descriptor>, TraceStartupError> {
     #[cfg(target_os = "linux")]
     {
@@ -242,6 +263,17 @@ pub fn prepare_traced_launcher<'descriptor>(
             .map_err(|_| TraceStartupError::LauncherIdentityInvalid)?;
         crate::supervisor::validate_descriptor_set(&request, inherited_descriptors)
             .map_err(|_| TraceStartupError::DescriptorSetInvalid)?;
+        let configured = cgroup
+            .revalidate_resources()
+            .map_err(|_| TraceStartupError::CgroupIdentityMismatch)?;
+        if request.identity().cgroup_id() != cgroup.identity()
+            || configured.processes() != limits.processes()
+            || Some(configured.memory()) != limits.memory()
+            || Some(configured.swap()) != limits.swap()
+            || configured.memory_oom_group() != 1
+        {
+            return Err(TraceStartupError::CgroupIdentityMismatch);
+        }
         let launcher_fd = launcher.as_fd().as_raw_fd();
         if launcher_fd < 3 {
             return Err(TraceStartupError::DescriptorSetInvalid);
@@ -279,7 +311,9 @@ pub fn prepare_traced_launcher<'descriptor>(
             supervisor_channel,
             launcher_channel,
             request,
-            output_limits,
+            cgroup,
+            wall_time: limits.wall_time(),
+            output_limits: TraceOutputLimits::new(limits.stdout(), limits.stderr()),
             _descriptors: retained_descriptors,
         })
     }
@@ -291,56 +325,20 @@ pub fn prepare_traced_launcher<'descriptor>(
             inherited_descriptors,
             architecture,
             landlock_abi,
-            output_limits,
+            cgroup,
+            limits,
         );
         Err(TraceStartupError::UnsupportedOperatingSystem)
     }
 }
 
 #[derive(Debug)]
-struct TraceChild(Child, TraceChildCleanupState);
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum TraceChildCleanupState {
-    Live,
-    IdentityStableHandleOwned,
-    ReapedByTraceWait,
-}
-
-impl TraceChildCleanupState {
-    const fn requires_cleanup(self) -> bool {
-        matches!(self, Self::Live)
-    }
-
-    fn record_trace_wait_reap(&mut self) {
-        *self = Self::ReapedByTraceWait;
-    }
-
-    fn record_identity_stable_handle(&mut self) {
-        *self = Self::IdentityStableHandleOwned;
-    }
-}
+struct TraceChild(Child);
 
 impl TraceChild {
-    const fn new(child: Child) -> Self {
-        Self(child, TraceChildCleanupState::Live)
-    }
-
-    fn disarm_after_trace_wait(&mut self) {
-        self.1.record_trace_wait_reap();
-    }
-
-    fn disarm_after_identity_stable_handle(&mut self) {
-        self.1.record_identity_stable_handle();
-    }
-
     fn terminate_and_wait(&mut self) {
-        if !self.1.requires_cleanup() {
-            return;
-        }
         let _ = self.0.kill();
         let _ = self.0.wait();
-        self.1.record_trace_wait_reap();
     }
 }
 
@@ -406,49 +404,17 @@ impl TraceStreamReaders {
     }
 
     fn finish(&mut self) -> Result<TraceOutputCapture, TraceObservationError> {
-        let deadline = Instant::now()
-            .checked_add(TRACE_STREAM_FINISH_TIMEOUT)
-            .ok_or(TraceObservationError::StreamDrainTimedOut)?;
-        self.finish_before(deadline)
-    }
-
-    fn finish_before(
-        &mut self,
-        deadline: Instant,
-    ) -> Result<TraceOutputCapture, TraceObservationError> {
-        while !self.capture_threads_finished() {
-            if Instant::now() >= deadline {
-                self.cancel_and_join();
-                return Err(TraceObservationError::StreamDrainTimedOut);
-            }
-            std::thread::sleep(TRACE_POLL_INTERVAL);
-        }
-        if Instant::now() >= deadline {
-            self.cancel_and_join();
-            return Err(TraceObservationError::StreamDrainTimedOut);
-        }
         let stdout = join_trace_capture(self.stdout.take());
         let stderr = join_trace_capture(self.stderr.take());
-        if Instant::now() >= deadline {
-            return Err(TraceObservationError::StreamDrainTimedOut);
-        }
         Ok(TraceOutputCapture {
             stdout: stdout?,
             stderr: stderr?,
         })
     }
+}
 
-    fn capture_threads_finished(&self) -> bool {
-        self.stdout
-            .as_ref()
-            .is_none_or(std::thread::JoinHandle::is_finished)
-            && self
-                .stderr
-                .as_ref()
-                .is_none_or(std::thread::JoinHandle::is_finished)
-    }
-
-    fn cancel_and_join(&mut self) {
+impl Drop for TraceStreamReaders {
+    fn drop(&mut self) {
         self.cancellation.store(true, Ordering::Release);
         if let Some(stdout) = self.stdout.take() {
             let _ = stdout.join();
@@ -456,12 +422,6 @@ impl TraceStreamReaders {
         if let Some(stderr) = self.stderr.take() {
             let _ = stderr.join();
         }
-    }
-}
-
-impl Drop for TraceStreamReaders {
-    fn drop(&mut self) {
-        self.cancel_and_join();
     }
 }
 
@@ -536,23 +496,42 @@ fn capture_trace_stream(
 #[derive(Debug)]
 struct TraceSession {
     _child: TraceChild,
+    cgroup: Option<FreshCgroup>,
     streams: TraceStreamReaders,
     process: TraceProcessId,
     channel: LauncherChannel,
     request: InstallRequest,
+    deadline: TraceDeadline,
 }
 
 impl TraceSession {
-    fn finish_streams(&mut self) -> Result<TraceOutputCapture, TraceObservationError> {
-        self.streams.finish()
+    fn revalidate_cgroup(&self) -> Result<(), TraceStartupError> {
+        self.cgroup
+            .as_ref()
+            .ok_or(TraceStartupError::CgroupIdentityMismatch)?
+            .revalidate_resources()
+            .map(|_| ())
+            .map_err(|_| TraceStartupError::CgroupIdentityMismatch)
     }
 
-    fn record_root_reaped(&mut self) {
-        self._child.disarm_after_trace_wait();
-    }
-
-    fn record_root_identity_stable_handle(&mut self) {
-        self._child.disarm_after_identity_stable_handle();
+    fn finish_terminal(&mut self) -> Result<TraceTerminalCapture, TraceObservationError> {
+        let cgroup = self
+            .cgroup
+            .take()
+            .ok_or(TraceObservationError::ResourceCleanupFailed)?;
+        let resources = match cgroup
+            .finish()
+            .map_err(|_| TraceObservationError::ResourceCleanupFailed)?
+        {
+            ResourceObservation::Complete(resources) => resources,
+            ResourceObservation::Legacy | ResourceObservation::Incomplete(_) => {
+                return Err(TraceObservationError::ResourceObservationIncomplete);
+            }
+        };
+        Ok(TraceTerminalCapture {
+            resources,
+            output: self.streams.finish()?,
+        })
     }
 }
 
@@ -570,11 +549,8 @@ impl SpawnedTrace {
     }
 
     /// Waits for the exact post-exec trace stop of the spawned child.
-    pub fn wait_for_initial_exec_stop(
-        mut self,
-        deadline: TraceDeadline,
-    ) -> Result<InitialExecStop, TraceStartupError> {
-        wait_for_exact_stop(&mut self.session, deadline, SIGNAL_TRAP, 0)?;
+    pub fn wait_for_initial_exec_stop(self) -> Result<InitialExecStop, TraceStartupError> {
+        wait_for_exact_stop(self.session.process, self.session.deadline, SIGNAL_TRAP, 0)?;
         Ok(InitialExecStop {
             session: self.session,
         })
@@ -589,12 +565,12 @@ pub struct InitialExecStop {
 
 impl InitialExecStop {
     /// Resumes the trusted launcher until its declared self-stop.
-    pub fn continue_to_launcher_pause(
-        mut self,
-        deadline: TraceDeadline,
-    ) -> Result<LauncherPause, TraceStartupError> {
+    pub fn continue_to_launcher_pause(self) -> Result<LauncherPause, TraceStartupError> {
+        if self.session.deadline.expired() {
+            return Err(TraceStartupError::WaitTimedOut);
+        }
         continue_trace(self.session.process)?;
-        wait_for_exact_stop(&mut self.session, deadline, SIGNAL_STOP, 0)?;
+        wait_for_exact_stop(self.session.process, self.session.deadline, SIGNAL_STOP, 0)?;
         Ok(LauncherPause {
             session: self.session,
         })
@@ -616,6 +592,9 @@ impl LauncherPause {
 
     /// Resumes trusted launcher code for production-boundary installation.
     pub fn continue_for_boundary(self) -> Result<BoundaryRunning, TraceStartupError> {
+        if self.session.deadline.expired() {
+            return Err(TraceStartupError::WaitTimedOut);
+        }
         continue_trace(self.session.process)?;
         self.session
             .channel
@@ -636,16 +615,20 @@ pub struct BoundaryRunning {
 impl BoundaryRunning {
     /// Receives the exact boundary acknowledgement and stops before release.
     pub fn receive_acknowledgement_and_stop(
-        mut self,
-        deadline: TraceDeadline,
+        self,
     ) -> Result<AcknowledgedTraceStop, TraceStartupError> {
-        if deadline.expired() {
+        if self.session.deadline.expired() {
             return Err(TraceStartupError::AcknowledgementTimedOut);
         }
         let response = self
             .session
             .channel
-            .receive_timeout(deadline.0.saturating_duration_since(Instant::now()))
+            .receive_timeout(
+                self.session
+                    .deadline
+                    .0
+                    .saturating_duration_since(Instant::now()),
+            )
             .map_err(map_acknowledgement_receive_error)?;
         match response {
             LauncherMessage::BoundaryInstalled(acknowledgement) => {
@@ -664,7 +647,7 @@ impl BoundaryRunning {
             }
         }
         stop_trace(self.session.process)?;
-        wait_for_exact_stop(&mut self.session, deadline, SIGNAL_STOP, 0)?;
+        wait_for_exact_stop(self.session.process, self.session.deadline, SIGNAL_STOP, 0)?;
         Ok(AcknowledgedTraceStop {
             session: self.session,
         })
@@ -680,6 +663,9 @@ pub struct AcknowledgedTraceStop {
 impl AcknowledgedTraceStop {
     /// Installs the exact closed diagnostic process-tree trace options.
     pub fn install_options(self) -> Result<TraceReady, TraceStartupError> {
+        if self.session.deadline.expired() {
+            return Err(TraceStartupError::WaitTimedOut);
+        }
         #[cfg(target_os = "linux")]
         {
             let options = crate::sys::install_diagnostic_trace_options(self.session.process.get())
@@ -712,10 +698,14 @@ impl TraceReady {
 
     /// Sends the bound exec release and starts syscall-stop observation.
     pub fn release(
-        mut self,
+        self,
         process_limit: TraceProcessLimit,
         capture_limits: TraceCaptureLimits,
     ) -> Result<ActiveTrace, TraceStartupError> {
+        if self.session.deadline.expired() {
+            return Err(TraceStartupError::WaitTimedOut);
+        }
+        self.session.revalidate_cgroup()?;
         self.session
             .channel
             .send(&LauncherMessage::ExecRelease(ExecRelease::new(
@@ -728,7 +718,6 @@ impl TraceReady {
             let process_handle = crate::sys::trace_open_process_handle(root.get())
                 .map_err(|_| TraceStartupError::ProcessHandleFailed)?;
             crate::sys::trace_syscall(root.get()).map_err(|_| TraceStartupError::ResumeFailed)?;
-            self.session.record_root_identity_stable_handle();
             Ok(ActiveTrace {
                 session: self.session,
                 processes: BTreeMap::from([(root, TraceeState::observing(root))]),
@@ -781,21 +770,22 @@ impl ActiveTrace {
             return Err(TraceObservationError::DrainRequired);
         }
         Ok(CompletedTrace {
-            output: self.session.finish_streams()?,
+            terminal: self.session.finish_terminal()?,
         })
     }
 
     /// Waits for the next complete event from the exact known process tree.
     #[cfg(target_os = "linux")]
-    pub fn next_event(
-        &mut self,
-        deadline: TraceDeadline,
-    ) -> Result<ActiveTraceEvent, TraceObservationError> {
+    pub fn next_event(&mut self) -> Result<ActiveTraceEvent, TraceObservationError> {
         if self.must_drain {
             return Err(TraceObservationError::DrainRequired);
         }
         if self.processes.is_empty() {
             return Err(TraceObservationError::ProcessTreeDrained);
+        }
+        if self.session.deadline.expired() {
+            self.must_drain = true;
+            return Err(TraceObservationError::WaitTimedOut);
         }
         if let Some(process) = self.held_process.take()
             && crate::sys::trace_syscall(process.get()).is_err()
@@ -824,7 +814,7 @@ impl ActiveTrace {
                     }
                 }
             }
-            if deadline.expired() {
+            if self.session.deadline.expired() {
                 self.must_drain = true;
                 return Err(TraceObservationError::WaitTimedOut);
             }
@@ -834,62 +824,32 @@ impl ActiveTrace {
 
     /// Rejects active observation on an unsupported operating system.
     #[cfg(not(target_os = "linux"))]
-    pub fn next_event(
-        &mut self,
-        deadline: TraceDeadline,
-    ) -> Result<ActiveTraceEvent, TraceObservationError> {
-        let _ = deadline;
+    pub fn next_event(&mut self) -> Result<ActiveTraceEvent, TraceObservationError> {
+        Err(TraceObservationError::UnsupportedOperatingSystem)
+    }
+
+    /// Signals every identity-stable process group and starts bounded cleanup.
+    #[cfg(target_os = "linux")]
+    pub fn begin_termination(mut self) -> Result<DrainingTrace, TraceObservationError> {
+        let deadline = TraceDeadline::cleanup()?;
+        self.held_process = None;
+        self.must_drain = true;
+        self.signal_all_process_groups();
+        Ok(DrainingTrace {
+            trace: self,
+            deadline,
+        })
+    }
+
+    /// Rejects trace termination on an unsupported operating system.
+    #[cfg(not(target_os = "linux"))]
+    pub fn begin_termination(self) -> Result<DrainingTrace, TraceObservationError> {
         Err(TraceObservationError::UnsupportedOperatingSystem)
     }
 
     /// Terminates every identity-stable process group and drains exact waits.
-    #[cfg(target_os = "linux")]
-    pub fn terminate_and_drain(
-        mut self,
-        deadline: TraceDeadline,
-    ) -> Result<TraceDrainReport, TraceObservationError> {
-        self.held_process = None;
-        self.must_drain = true;
-        self.signal_all_process_groups();
-        let mut observations = Vec::new();
-        while !self.processes.is_empty() {
-            let mut observed = false;
-            let processes = self.processes.keys().copied().collect::<Vec<_>>();
-            for requested in processes {
-                if !self.processes.contains_key(&requested) {
-                    continue;
-                }
-                let observation = match crate::sys::trace_wait_event_nonblocking(requested.get()) {
-                    Ok(Some(observation)) => observation,
-                    Ok(None) => continue,
-                    Err(_) => return Err(TraceObservationError::DrainFailed),
-                };
-                observed = true;
-                if let Some(observation) = self.handle_drain_observation(requested, observation)? {
-                    observations.push(observation);
-                }
-            }
-            if self.processes.is_empty() {
-                return self.complete_drain(observations);
-            }
-            if deadline.expired() {
-                return Err(TraceObservationError::DrainTimedOut);
-            }
-            if !observed {
-                std::thread::sleep(TRACE_POLL_INTERVAL);
-            }
-        }
-        self.complete_drain(observations)
-    }
-
-    /// Rejects trace drain on an unsupported operating system.
-    #[cfg(not(target_os = "linux"))]
-    pub fn terminate_and_drain(
-        self,
-        deadline: TraceDeadline,
-    ) -> Result<TraceDrainReport, TraceObservationError> {
-        let _ = deadline;
-        Err(TraceObservationError::UnsupportedOperatingSystem)
+    pub fn terminate_and_drain(self) -> Result<TraceDrainReport, TraceObservationError> {
+        self.begin_termination()?.finish()
     }
 
     #[cfg(target_os = "linux")]
@@ -902,7 +862,7 @@ impl ActiveTrace {
         }
         Ok(TraceDrainReport {
             observations,
-            output: self.session.finish_streams()?,
+            terminal: self.session.finish_terminal()?,
         })
     }
 
@@ -1154,9 +1114,6 @@ impl ActiveTrace {
         if self.processes.remove(&process).is_none() {
             return Err(TraceObservationError::ProcessUnknown);
         }
-        if process == self.session.process {
-            self.session.record_root_reaped();
-        }
         self.remove_unused_process_handles();
         Ok(())
     }
@@ -1270,6 +1227,58 @@ impl ActiveTrace {
         for handle in self.process_handles.values() {
             let _ = crate::sys::trace_kill_process_handle(handle.as_raw_fd());
         }
+    }
+}
+
+/// Owns an already-signalled trace tree during bounded terminal cleanup.
+#[derive(Debug)]
+pub struct DrainingTrace {
+    trace: ActiveTrace,
+    deadline: TraceDeadline,
+}
+
+impl DrainingTrace {
+    /// Drains exact waits before the cleanup deadline and captures terminal state.
+    #[cfg(target_os = "linux")]
+    pub fn finish(mut self) -> Result<TraceDrainReport, TraceObservationError> {
+        let mut observations = Vec::new();
+        while !self.trace.processes.is_empty() {
+            let mut observed = false;
+            let processes = self.trace.processes.keys().copied().collect::<Vec<_>>();
+            for requested in processes {
+                if !self.trace.processes.contains_key(&requested) {
+                    continue;
+                }
+                let observation = match crate::sys::trace_wait_event_nonblocking(requested.get()) {
+                    Ok(Some(observation)) => observation,
+                    Ok(None) => continue,
+                    Err(_) => return Err(TraceObservationError::DrainFailed),
+                };
+                observed = true;
+                if let Some(observation) = self
+                    .trace
+                    .handle_drain_observation(requested, observation)?
+                {
+                    observations.push(observation);
+                }
+            }
+            if self.trace.processes.is_empty() {
+                return self.trace.complete_drain(observations);
+            }
+            if self.deadline.expired() {
+                return Err(TraceObservationError::DrainTimedOut);
+            }
+            if !observed {
+                std::thread::sleep(TRACE_POLL_INTERVAL);
+            }
+        }
+        self.trace.complete_drain(observations)
+    }
+
+    /// Rejects trace drain on an unsupported operating system.
+    #[cfg(not(target_os = "linux"))]
+    pub fn finish(self) -> Result<TraceDrainReport, TraceObservationError> {
+        Err(TraceObservationError::UnsupportedOperatingSystem)
     }
 }
 
@@ -2006,23 +2015,44 @@ impl TraceOutputCapture {
     }
 }
 
-/// Contains one naturally completed trace and its bounded output.
+/// Contains bounded output and resources after terminal diagnostic cleanup.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct CompletedTrace {
+pub struct TraceTerminalCapture {
+    resources: TerminalResources,
     output: TraceOutputCapture,
 }
 
-impl CompletedTrace {
+impl TraceTerminalCapture {
+    /// Returns the complete terminal resource observation.
+    #[must_use]
+    pub const fn resources(&self) -> TerminalResources {
+        self.resources
+    }
+
     /// Returns both bounded standard streams.
     #[must_use]
     pub const fn output(&self) -> &TraceOutputCapture {
         &self.output
     }
+}
 
-    /// Consumes the completed trace and returns both bounded streams.
+/// Contains one naturally completed trace and its terminal capture.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CompletedTrace {
+    terminal: TraceTerminalCapture,
+}
+
+impl CompletedTrace {
+    /// Returns the bounded output and complete resource observation.
     #[must_use]
-    pub fn into_output(self) -> TraceOutputCapture {
-        self.output
+    pub const fn terminal(&self) -> &TraceTerminalCapture {
+        &self.terminal
+    }
+
+    /// Consumes the completed trace and returns its terminal capture.
+    #[must_use]
+    pub fn into_terminal(self) -> TraceTerminalCapture {
+        self.terminal
     }
 }
 
@@ -2030,7 +2060,7 @@ impl CompletedTrace {
 #[derive(Debug, Eq, PartialEq)]
 pub struct TraceDrainReport {
     observations: Vec<TraceDrainObservation>,
-    output: TraceOutputCapture,
+    terminal: TraceTerminalCapture,
 }
 
 impl TraceDrainReport {
@@ -2040,10 +2070,10 @@ impl TraceDrainReport {
         &self.observations
     }
 
-    /// Consumes the report and returns both bounded standard streams.
+    /// Consumes the report and returns its terminal capture.
     #[must_use]
-    pub fn into_output(self) -> TraceOutputCapture {
-        self.output
+    pub fn into_terminal(self) -> TraceTerminalCapture {
+        self.terminal
     }
 }
 
@@ -2316,8 +2346,10 @@ pub enum TraceObservationError {
     DrainTimedOut,
     /// One standard-stream drain failed or could not be joined.
     StreamReadFailed,
-    /// The standard-stream drains did not finish before their terminal deadline.
-    StreamDrainTimedOut,
+    /// The exact cgroup could not drain and complete removal.
+    ResourceCleanupFailed,
+    /// The exact cgroup did not return complete version 2 observations.
+    ResourceObservationIncomplete,
 }
 
 impl TraceObservationError {
@@ -2352,7 +2384,10 @@ impl TraceObservationError {
             Self::DrainFailed => "diagnostic.trace.drain.failed",
             Self::DrainTimedOut => "diagnostic.trace.drain.timed-out",
             Self::StreamReadFailed => "diagnostic.trace.stream.read-failed",
-            Self::StreamDrainTimedOut => "diagnostic.trace.stream-drain.timed-out",
+            Self::ResourceCleanupFailed => "diagnostic.trace.resource-cleanup.failed",
+            Self::ResourceObservationIncomplete => {
+                "diagnostic.trace.resource-observation.incomplete"
+            }
         }
     }
 }
@@ -2397,14 +2432,13 @@ fn stop_trace(process: TraceProcessId) -> Result<(), TraceStartupError> {
 }
 
 fn wait_for_exact_stop(
-    session: &mut TraceSession,
+    process: TraceProcessId,
     deadline: TraceDeadline,
     expected_signal: i32,
     expected_event: u32,
 ) -> Result<(), TraceStartupError> {
     #[cfg(target_os = "linux")]
     {
-        let process = session.process;
         loop {
             match crate::sys::trace_wait_nonblocking(process.get())
                 .map_err(|_| TraceStartupError::WaitFailed)?
@@ -2419,12 +2453,10 @@ fn wait_for_exact_stop(
                 }
                 Some(crate::sys::TraceWaitStatus::Exited { code }) => {
                     let _ = code;
-                    session.record_root_reaped();
                     return Err(TraceStartupError::TraceeExited);
                 }
                 Some(crate::sys::TraceWaitStatus::Signaled { signal }) => {
                     let _ = signal;
-                    session.record_root_reaped();
                     return Err(TraceStartupError::TraceeExited);
                 }
                 None if deadline.expired() => return Err(TraceStartupError::WaitTimedOut),
@@ -2434,7 +2466,7 @@ fn wait_for_exact_stop(
     }
     #[cfg(not(target_os = "linux"))]
     {
-        let _ = (session, deadline, expected_signal, expected_event);
+        let _ = (process, deadline, expected_signal, expected_event);
         Err(TraceStartupError::UnsupportedOperatingSystem)
     }
 }
@@ -2454,6 +2486,10 @@ pub enum TraceStartupError {
     DeadlineInvalid,
     /// An inherited descriptor is standard, invalid, or duplicated.
     DescriptorSetInvalid,
+    /// The prepared version 2 cgroup identity or resource controls did not match.
+    CgroupIdentityMismatch,
+    /// The stopped child could not be placed and read back in the exact cgroup.
+    CgroupPlacementFailed,
     /// The launcher is not one exact executable launcher artifact.
     LauncherIdentityInvalid,
     /// The private launcher channel pair could not be created.
@@ -2509,6 +2545,8 @@ impl TraceStartupError {
             Self::CaptureLimitInvalid => "diagnostic.trace.capture-limit.invalid",
             Self::DeadlineInvalid => "diagnostic.trace.deadline.invalid",
             Self::DescriptorSetInvalid => "diagnostic.trace.descriptor-set.invalid",
+            Self::CgroupIdentityMismatch => "diagnostic.trace.cgroup-identity.mismatch",
+            Self::CgroupPlacementFailed => "diagnostic.trace.cgroup-placement.failed",
             Self::LauncherIdentityInvalid => "diagnostic.trace.launcher-identity.invalid",
             Self::ChannelCreationFailed => "diagnostic.trace.channel.creation-failed",
             Self::SpawnFailed => "diagnostic.trace.spawn.failed",
@@ -2583,6 +2621,8 @@ mod tests {
             TraceStartupError::CaptureLimitInvalid,
             TraceStartupError::DeadlineInvalid,
             TraceStartupError::DescriptorSetInvalid,
+            TraceStartupError::CgroupIdentityMismatch,
+            TraceStartupError::CgroupPlacementFailed,
             TraceStartupError::LauncherIdentityInvalid,
             TraceStartupError::ChannelCreationFailed,
             TraceStartupError::SpawnFailed,
@@ -2640,11 +2680,39 @@ mod tests {
             TraceObservationError::DrainFailed,
             TraceObservationError::DrainTimedOut,
             TraceObservationError::StreamReadFailed,
-            TraceObservationError::StreamDrainTimedOut,
+            TraceObservationError::ResourceCleanupFailed,
+            TraceObservationError::ResourceObservationIncomplete,
         ]
         .map(TraceObservationError::code);
         codes.sort_unstable();
         assert!(codes.windows(2).all(|pair| pair[0] != pair[1]));
+    }
+
+    #[test]
+    fn diagnostic_lifecycle_does_not_accept_refreshable_deadlines() {
+        let _: fn(SpawnedTrace) -> Result<InitialExecStop, TraceStartupError> =
+            SpawnedTrace::wait_for_initial_exec_stop;
+        let _: fn(InitialExecStop) -> Result<LauncherPause, TraceStartupError> =
+            InitialExecStop::continue_to_launcher_pause;
+        let _: fn(LauncherPause) -> Result<BoundaryRunning, TraceStartupError> =
+            LauncherPause::continue_for_boundary;
+        let _: fn(BoundaryRunning) -> Result<AcknowledgedTraceStop, TraceStartupError> =
+            BoundaryRunning::receive_acknowledgement_and_stop;
+        let _: fn(AcknowledgedTraceStop) -> Result<TraceReady, TraceStartupError> =
+            AcknowledgedTraceStop::install_options;
+        let _: fn(
+            TraceReady,
+            TraceProcessLimit,
+            TraceCaptureLimits,
+        ) -> Result<ActiveTrace, TraceStartupError> = TraceReady::release;
+        let _: fn(&mut ActiveTrace) -> Result<ActiveTraceEvent, TraceObservationError> =
+            ActiveTrace::next_event;
+        let _: fn(ActiveTrace) -> Result<DrainingTrace, TraceObservationError> =
+            ActiveTrace::begin_termination;
+        let _: fn(DrainingTrace) -> Result<TraceDrainReport, TraceObservationError> =
+            DrainingTrace::finish;
+        let _: fn(ActiveTrace) -> Result<TraceDrainReport, TraceObservationError> =
+            ActiveTrace::terminate_and_drain;
     }
 
     #[test]
@@ -2678,51 +2746,6 @@ mod tests {
         let limits = TraceOutputLimits::new(OutputByteLimit::new(17), OutputByteLimit::new(29));
         assert_eq!(limits.stdout().get(), 17);
         assert_eq!(limits.stderr().get(), 29);
-    }
-
-    #[test]
-    fn traced_child_numeric_cleanup_disarms_for_pidfd_and_raw_reap() {
-        let mut state = TraceChildCleanupState::Live;
-        assert!(state.requires_cleanup());
-        state.record_identity_stable_handle();
-        assert_eq!(state, TraceChildCleanupState::IdentityStableHandleOwned);
-        assert!(!state.requires_cleanup());
-        state.record_trace_wait_reap();
-        assert_eq!(state, TraceChildCleanupState::ReapedByTraceWait);
-        assert!(!state.requires_cleanup());
-    }
-
-    #[test]
-    fn diagnostic_stream_completion_cancels_at_its_terminal_deadline() {
-        struct PendingReader;
-
-        impl io::Read for PendingReader {
-            fn read(&mut self, _buffer: &mut [u8]) -> io::Result<usize> {
-                Err(io::Error::from(io::ErrorKind::WouldBlock))
-            }
-        }
-
-        let cancellation = Arc::new(AtomicBool::new(false));
-        let stdout_cancellation = Arc::clone(&cancellation);
-        let stderr_cancellation = Arc::clone(&cancellation);
-        let stdout = std::thread::spawn(move || {
-            capture_trace_stream(PendingReader, OutputByteLimit::new(1), &stdout_cancellation)
-        });
-        let stderr = std::thread::spawn(move || {
-            capture_trace_stream(PendingReader, OutputByteLimit::new(1), &stderr_cancellation)
-        });
-        let mut readers = TraceStreamReaders {
-            stdout: Some(stdout),
-            stderr: Some(stderr),
-            cancellation,
-        };
-
-        assert_eq!(
-            readers.finish_before(Instant::now()),
-            Err(TraceObservationError::StreamDrainTimedOut)
-        );
-        assert!(readers.stdout.is_none());
-        assert!(readers.stderr.is_none());
     }
 
     #[cfg(target_os = "linux")]

@@ -641,6 +641,33 @@ impl FreshCgroup {
         self.process_limit
     }
 
+    /// Reads the version 2 controls again and verifies the installed values.
+    pub fn revalidate_resources(&self) -> Result<ConfiguredResources, CgroupError> {
+        #[cfg(target_os = "linux")]
+        {
+            let process_limit = read_control(&self.descriptor, "pids.max")?;
+            let memory_limit = read_control(&self.descriptor, "memory.max")?;
+            let swap_limit = read_control(&self.descriptor, "memory.swap.max")?;
+            let oom_group = read_control(&self.descriptor, "memory.oom.group")?;
+            let observed = configured_resources_from_readbacks([
+                process_limit.trim(),
+                memory_limit.trim(),
+                swap_limit.trim(),
+                oom_group.trim(),
+            ])?;
+            if self.configured_resources != Some(observed)
+                || self.process_limit != observed.processes()
+            {
+                return Err(CgroupError::LimitMismatch);
+            }
+            Ok(observed)
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            Err(CgroupError::UnsupportedOperatingSystem)
+        }
+    }
+
     /// Moves one paused launcher process into the cgroup and verifies membership.
     pub fn place_process(&self, process_id: u32) -> Result<(), CgroupError> {
         #[cfg(target_os = "linux")]

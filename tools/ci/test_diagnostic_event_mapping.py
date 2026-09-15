@@ -17,7 +17,6 @@ LIB = ROOT / "crates/proofbound-runtime-diagnose-linux/src/lib.rs"
 MANIFEST = ROOT / "crates/proofbound-runtime-diagnose-linux/Cargo.toml"
 CORE_MANIFEST = ROOT / "crates/proofbound-runtime-core/Cargo.toml"
 CORE_DIAGNOSTIC = ROOT / "crates/proofbound-runtime-core/src/diagnostic.rs"
-CORE_LIB = ROOT / "crates/proofbound-runtime-core/src/lib.rs"
 CORE_RECEIPT = ROOT / "crates/proofbound-runtime-core/src/receipt.rs"
 DIAGNOSE_MANIFEST = ROOT / "crates/proofbound-runtime-diagnose/Cargo.toml"
 DIAGNOSE_LIB = ROOT / "crates/proofbound-runtime-diagnose/src/lib.rs"
@@ -84,13 +83,8 @@ def assert_mapping_contract(mapping: str, trace: str, artifact: str) -> None:
             raise AssertionError(f"forbidden mapping term: {forbidden}")
     if "String::from_utf8(path.clone())" not in map_operands:
         raise AssertionError("path conversion must reject invalid UTF-8")
-    if (
-        "bytes.clone()" not in map_operands
-        or "payload_bytes: *payload_bytes" not in map_operands
-    ):
-        raise AssertionError(
-            "socket mapping must retain address and length without payload bytes"
-        )
+    if "bytes.clone()" not in map_operands or "payload_bytes: *payload_bytes" not in map_operands:
+        raise AssertionError("socket mapping must retain address and length without payload bytes")
     for required in ["checked_neg()", "MAX_LINUX_ERRNO", "u64::try_from(result)"]:
         if required not in map_outcome:
             raise AssertionError(f"missing outcome validation: {required}")
@@ -151,17 +145,16 @@ EXPECTED_BODIES = {
 }
 EXPECTED_FILES = {
     "artifact": "ad7cce45d286623dcfd55c21189cb7d58e29f1943960d0a061d6f85c2640baa3",
-    "claim": "ad703e8f87b620838974f7a1f8530b2ca1d37b18a22423b7d2820a2a702a0205",
-    "contract-evidence": "84852872175ba02a3c936e52f4513f2ff04a0229b4b83f57b90870f5a0d26097",
+    "claim": "e3a324ce603ca6440d21d569c1fb805d24de20f1191a25758278c818f4cc0f4c",
+    "contract-evidence": "1cd2dc41e40726ff08a527e17697880185e7073da8fa32aa895139a1317e7e2c",
     "core-diagnostic": "e0a3f1e3204c5dc5b3b152e6432737e90bf5af93f5024a4e6f1d1c25a4f42918",
-    "core-lib": "2039d8c789844cddaaabbf432a0a6ef465f77300577f3b57922d7bcbcc930450",
     "core-manifest": "0d22823a1d4f397fb58693c7d9fe7498969ce242b5da0f372d8cc8f55f960b9b",
     "core-receipt": "fc27edf189014a49af8af380902fe90b12cbbd71a2b49301064b589c8a4c4024",
     "decode-assumption": "0a71deec98c2cb281170fe85d911eb6dba5947161e8130554b5b922f47457847",
     "diagnose-lib": "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de",
     "diagnose-manifest": "097ec2b4cef98a43bee09c64c289251ab2060808d4fb8e050de3077f541ff2f1",
-    "lib": "967270aa9c886b9ead6c80fbeae2c44fce868aa36fbb0c5d6071c77c2fa6ca16",
-    "linux-lib": "a1d7d31fb602afd59aab41aa4153fa2a6fcc0923518118bf956e5939f29c97a8",
+    "lib": "ccad4545cfd41802c32d66a692d65aca9a69d0e59b0a3cb7c5c34da42830a198",
+    "linux-lib": "47ef2cdd61b7c0854f0ee9fcfb5d32ffcebfec5b5820477636a3d513a7ccf33d",
     "linux-manifest": "e7311e3cada91690da87f42910c96e133538439956a0db78de79dea9294d6c9b",
     "lock": "376572c5d111f5ea72e38667b5813a7c051e9fa128d5af355468e5294889a0c6",
     "map-assumption": "e787e8a57b35b174462b2a960a7a91be63e2f2d83da569ecdb1beb26d94b28bd",
@@ -169,8 +162,8 @@ EXPECTED_FILES = {
     "mapping": "ea3c2765a503708ad4a695224027099db1b9e1cb3ca2a2b3f80e4fcd0c9e87c4",
     "root-manifest": "1ea75287f62129c6b15038b0c45df42e616fc4c92e59e61bc03358746fd5d7d6",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "355f78d6d982f8385b88b66c39e9688958d31894d2c2f1649391a7b964252693",
-    "unit-evidence": "c1628a6afa1a191c17c71debd3a8e4f224e31e406f6c280b5ccb1e03371bfa92",
+    "trace": "3c766e2767d8622ee40e45825b863c75d3be49aa52aa62b6dd41bd311da6bd07",
+    "unit-evidence": "1a046691b447830c74dcf77cb9b41d10e09a6b8e2e400744727ca05abb04c5e4",
 }
 
 
@@ -191,9 +184,7 @@ class DiagnosticEventMappingContractTests(unittest.TestCase):
                 1,
             ),
             self.mapping.replace("checked_add(1)", "wrapping_add(1)", 1),
-            self.mapping.replace(
-                "String::from_utf8(path.clone())", "String::from_utf8_lossy(path)", 1
-            ),
+            self.mapping.replace("String::from_utf8(path.clone())", "String::from_utf8_lossy(path)", 1),
             self.mapping.replace("MAX_LINUX_ERRNO", "65_535", 1),
             self.mapping.replace(
                 "TraceSyscallClass::Bind => DiagnosticEventClass::Bind,", "", 1
@@ -206,18 +197,14 @@ class DiagnosticEventMappingContractTests(unittest.TestCase):
             ),
         ]
         for mutation in mutations:
-            with self.subTest(
-                mutation=hashlib.sha256(mutation.encode()).hexdigest()[:12]
-            ):
+            with self.subTest(mutation=hashlib.sha256(mutation.encode()).hexdigest()[:12]):
                 with self.assertRaises(AssertionError):
                     assert_mapping_contract(mutation, self.trace, self.artifact)
 
     def test_exact_load_bearing_source(self) -> None:
         bodies = {
             "map": implementation(self.mapping, "pub fn map("),
-            "map-architecture": implementation(
-                self.mapping, "const fn map_architecture("
-            ),
+            "map-architecture": implementation(self.mapping, "const fn map_architecture("),
             "map-class": implementation(self.mapping, "const fn map_class("),
             "map-operands": implementation(self.mapping, "fn map_operands("),
             "map-outcome": implementation(self.mapping, "fn map_outcome("),
@@ -225,8 +212,7 @@ class DiagnosticEventMappingContractTests(unittest.TestCase):
             "socket-family": implementation(self.mapping, "fn socket_address_family("),
         }
         actual_bodies = {
-            name: hashlib.sha256(body.encode()).hexdigest()
-            for name, body in bodies.items()
+            name: hashlib.sha256(body.encode()).hexdigest() for name, body in bodies.items()
         }
         self.assertEqual(actual_bodies, EXPECTED_BODIES)
 
@@ -235,7 +221,6 @@ class DiagnosticEventMappingContractTests(unittest.TestCase):
             "claim": CLAIM,
             "contract-evidence": CONTRACT_EVIDENCE,
             "core-diagnostic": CORE_DIAGNOSTIC,
-            "core-lib": CORE_LIB,
             "core-manifest": CORE_MANIFEST,
             "core-receipt": CORE_RECEIPT,
             "decode-assumption": DECODE_ASSUMPTION,
@@ -264,9 +249,7 @@ class DiagnosticEventMappingContractTests(unittest.TestCase):
         manifest = MANIFEST.read_text()
         self.assertEqual(lib.count("mod mapping;"), 1)
         self.assertEqual(
-            lib.count(
-                "pub use mapping::{DiagnosticEventMapError, DiagnosticEventMapper};"
-            ),
+            lib.count("pub use mapping::{DiagnosticEventMapError, DiagnosticEventMapper};"),
             1,
         )
         self.assertEqual(manifest.count("proofbound-runtime-core.workspace = true"), 1)

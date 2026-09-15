@@ -66,8 +66,8 @@ def body_sha256(source: str, signature: str) -> str:
 
 
 EXPECTED_LOAD_BEARING_BODIES = {
-    "active-next-event": "568f692fcad7317da1b04dc61b4857b43462f443053e793f4a7771feaa57e850",
-    "draining-finish": "1d8bfca468a28f92d7e7aa546b31fee19770654cc1f44e0522a7985257f8496f",
+    "active-next-event": "e7d57ca91f85832b6fb3310418e2a0df9ee0fb4b40fa29203bac66423c8620cb",
+    "draining-finish": "5f5ee9835cf2bacc73f10cd50b0e9a20f6d91d23c4d2905c84af181e22d05848",
 }
 
 
@@ -104,31 +104,28 @@ def all_function_signatures(source: str) -> list[str]:
 EXPECTED_PUBLIC_FUNCTIONS = [
     "pubfnprepare_observer<'descriptor>(launcher:&'descriptorResolvedFile,"
     "request:InstallRequest,inherited_descriptors:&[BorrowedFd<'descriptor>],"
-    "architecture:Architecture,landlock_abi:NonZeroU32,output_limits:TraceOutputLimits,"
-    "bounds:ObservationBounds,)"
+    "architecture:Architecture,landlock_abi:NonZeroU32,cgroup:FreshCgroup,"
+    "limits:ResourceLimits,bounds:ObservationBounds,)"
     "->Result<PreparedObserver<'descriptor>,ObserverAdapterError>",
     "pubfnspawn(self)->Result<SpawnedObserver,ObserverAdapterError>",
     "pubconstfnprocess(&self)->TraceProcessId",
-    "pubfnwait_for_initial_exec_stop(self,deadline:TraceDeadline,)"
-    "->Result<InitialObserver,ObserverAdapterError>",
-    "pubfncontinue_to_launcher_pause(self,deadline:TraceDeadline,)"
+    "pubfnwait_for_initial_exec_stop(self)->Result<InitialObserver,ObserverAdapterError>",
+    "pubfncontinue_to_launcher_pause(self,)"
     "->Result<LauncherPausedObserver,ObserverAdapterError>",
     "pubconstfnprocess(&self)->TraceProcessId",
     "pubfncontinue_for_boundary(self)"
     "->Result<BoundaryRunningObserver,ObserverAdapterError>",
-    "pubfnreceive_acknowledgement_and_stop(self,deadline:TraceDeadline,)"
+    "pubfnreceive_acknowledgement_and_stop(self,)"
     "->Result<AcknowledgedObserver,ObserverAdapterError>",
     "pubfninstall_options(self)->Result<ReadyObserver,ObserverAdapterError>",
     "pubfnrelease(self)->Result<ActiveObserver,ObserverAdapterError>",
     "pubconstfnroot(&self)->TraceProcessId",
     "pubconstfnprotocol(&self)->&ObserverProtocol",
-    "pubfnnext_event(mutself,deadline:TraceDeadline,)"
-    "->Result<ActiveObserverStep,ObserverAdapterError>",
-    "pubfnfinish(mutself,deadline:TraceDeadline,)"
-    "->Result<CompletedObserver,ObserverAdapterError>",
+    "pubfnnext_event(mutself)->Result<ActiveObserverStep,ObserverAdapterError>",
+    "pubfnfinish(mutself)->Result<CompletedObserver,ObserverAdapterError>",
     "pubconstfnprotocol(&self)->&ObserverProtocol",
     "pubconstfnpublication(&self)->ObserverDirective",
-    "pubconstfnoutput(&self)->&TraceOutputCapture",
+    "pubconstfnterminal(&self)->&TraceTerminalCapture",
     "pubconstfncode(self)->&'staticstr",
 ]
 
@@ -147,25 +144,21 @@ pub use adapter::{
 };
 pub use mapping::{DiagnosticEventMapError, DiagnosticEventMapper};
 pub use proofbound_runtime_linux::{
-    ActiveTraceEvent, TraceCapturedOperands, TraceCapturedStream, TraceDeadline,
-    TraceObservationError, TraceOutputCapture, TraceOutputLimits, TraceProcessId,
-    TraceSyscallClass, TraceSyscallInvocation,
+    ActiveTraceEvent, TraceCapturedOperands, TraceCapturedStream, TraceObservationError,
+    TraceOutputCapture, TraceOutputLimits, TraceProcessId, TraceSyscallClass,
+    TraceSyscallInvocation, TraceTerminalCapture,
 };
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        ActiveObserver, ActiveObserverStep, ObserverAdapterError, ReadyObserver, TraceDeadline,
-    };
+    use super::{ActiveObserver, ActiveObserverStep, ObserverAdapterError, ReadyObserver};
 
     #[test]
     fn decoder_adapter_release_and_drain_paths_compile() {
         let _: fn(ReadyObserver) -> Result<ActiveObserver, ObserverAdapterError> =
             ReadyObserver::release;
-        let _: fn(
-            ActiveObserver,
-            TraceDeadline,
-        ) -> Result<ActiveObserverStep, ObserverAdapterError> = ActiveObserver::next_event;
+        let _: fn(ActiveObserver) -> Result<ActiveObserverStep, ObserverAdapterError> =
+            ActiveObserver::next_event;
     }
 }
 """
@@ -232,7 +225,7 @@ EXPECTED_DIAGNOSE_LIB_SHA256 = (
     "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de"
 )
 EXPECTED_LINUX_LIB_SHA256 = (
-    "a1d7d31fb602afd59aab41aa4153fa2a6fcc0923518118bf956e5939f29c97a8"
+    "47ef2cdd61b7c0854f0ee9fcfb5d32ffcebfec5b5820477636a3d513a7ccf33d"
 )
 
 
@@ -288,7 +281,7 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
         self.assertEqual(
             private_fields(self.adapter, "DrainingObserver"),
             [
-                "trace: ActiveTrace,",
+                "trace: DrainingTrace,",
                 "protocol: ObserverProtocol,",
                 "untracked_processes: BTreeSet<DiagnosticProcessId>,",
             ],
@@ -298,7 +291,7 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
             [
                 "protocol: ObserverProtocol,",
                 "publication: ObserverDirective,",
-                "output: TraceOutputCapture,",
+                "terminal: TraceTerminalCapture,",
             ],
         )
 
@@ -426,7 +419,7 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
         compact_initial = compact(initial)
         exact_process_flow = (
             "letprocess=self.trace.process();"
-            "lettrace=self.trace.wait_for_initial_exec_stop(deadline)?;"
+            "lettrace=self.trace.wait_for_initial_exec_stop()?;"
             "letroot=DiagnosticProcessId::new(process.get())?;"
         )
         self.assertIn(exact_process_flow, compact_initial)
@@ -469,7 +462,7 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
     def test_live_events_advance_the_same_protocol_or_move_to_drain(self):
         active = implementation(self.adapter, "ActiveObserver")
         compact_active = compact(active)
-        self.assertIn("let event = match self.trace.next_event(deadline)", active)
+        self.assertIn("let event = match self.trace.next_event()", active)
         self.assertIn("self.protocol.record_observer_failure()?", active)
         for variant in [
             "ActiveTraceEvent::SyscallCompleted",
@@ -487,14 +480,15 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
         self.assertIn("if self.trace.is_drained()", active)
         self.assertLess(
             active.index("if self.trace.is_drained()"),
-            active.index("let output = self.trace.finish()?.into_output()"),
+            active.index("let terminal = self.trace.finish()?.into_terminal()"),
         )
         self.assertLess(
-            active.index("let output = self.trace.finish()?.into_output()"),
+            active.index("let terminal = self.trace.finish()?.into_terminal()"),
             active.index("let publication = self.protocol.finish()?"),
         )
         self.assertIn("ActiveObserverStep::Continue", active)
         self.assertIn("ActiveObserverStep::Drain", active)
+        self.assertEqual(active.count("self.trace.begin_termination()?"), 2)
         self.assertIn("ActiveObserverStep::Complete", active)
         observation = enum_structure(self.adapter, "ObserverObservation")
         self.assertIn("Event(Box<ActiveTraceEvent>)", compact(observation))
@@ -528,7 +522,7 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
 
     def test_drain_replays_tree_changes_before_empty_acknowledgement(self):
         draining = implementation(self.adapter, "DrainingObserver")
-        self.assertIn("self.trace.terminate_and_drain(deadline)?", draining)
+        self.assertIn("self.trace.finish()?", draining)
         for variant in [
             "TraceDrainObservation::ProcessCreated",
             "TraceDrainObservation::ImageReplaced",
@@ -540,10 +534,10 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
         self.assertIn("self.protocol.record_process_exit", compact(draining))
         self.assertLess(
             draining.index("if !self.untracked_processes.is_empty()"),
-            draining.index("let output = report.into_output()"),
+            draining.index("let terminal = report.into_terminal()"),
         )
         self.assertLess(
-            draining.index("let output = report.into_output()"),
+            draining.index("let terminal = report.into_terminal()"),
             draining.index("self.protocol.confirm_tree_drained()?"),
         )
         self.assertLess(
@@ -583,8 +577,8 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
                 "prepare_observer,};",
                 "pubusemapping::{DiagnosticEventMapError,DiagnosticEventMapper};",
                 "pubuseproofbound_runtime_linux::{ActiveTraceEvent,TraceCapturedOperands,"
-                "TraceCapturedStream,TraceDeadline,TraceObservationError,TraceOutputCapture,"
-                "TraceOutputLimits,TraceProcessId,TraceSyscallClass,TraceSyscallInvocation,};",
+                "TraceCapturedStream,TraceObservationError,TraceOutputCapture,TraceOutputLimits,"
+                "TraceProcessId,TraceSyscallClass,TraceSyscallInvocation,TraceTerminalCapture,};",
             ],
         )
         self.assertNotIn("*", "".join(public_uses))

@@ -1,0 +1,19 @@
+schema = "proofbound-assumption/1"
+id = "PBR-DIAGNOSTIC-LIFECYCLE-CHECK-AX-021"
+statement = "The identified Rust compiler and standard library preserve the registered diagnostic lifecycle types and order, and the identified Python interpreter, hashing, string, regular-expression, subprocess, and filesystem operations preserve the independent lifecycle source check."
+category = "compiler-tcb"
+owner = "Proofbound Runtime release maintainer"
+rationale = "Rust type checks and an independent Python checker can reject registered source defects, but this repository does not prove the compiler, standard library, clock implementation, interpreter, hashing implementation, subprocess runner, or filesystem used to produce that evidence."
+scope = "Only the source, type-check, and independent-check interpretation of PBR-OBSERVER-028. It does not establish Linux cgroup, clock, scheduler, ptrace, pidfd, pipe, process-tree, command, or released-artifact behavior."
+affected_claims = ["PBR-OBSERVER-028"]
+review_evidence = [
+  "rust-toolchain.toml",
+  "crates/proofbound-runtime-linux/src/cgroup.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/adapter.rs",
+  "tools/ci/check_diagnostic_lifecycle.py",
+  "tools/ci/test_diagnostic_lifecycle.py",
+]
+discharge_plan = "Retain the compiler, clock, and checker premises. Narrow them through exact tool identities, independent implementation review, native cgroup and timeout attack fixtures, command integration, and exact released-artifact observations."
+source_citation = "docs/specs/0015_diagnostic_execution_and_plan_drafting.md#9-evidence-meaning"
+status = "active"

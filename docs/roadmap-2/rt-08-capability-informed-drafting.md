@@ -55,7 +55,11 @@ full, and gate publication on fixed-deadline terminal collection that cancels
 and fails closed when either reader withholds completion. Independently
 approved source `5d296fb` and approval-only head `17458ad` passed PR 22 Verify
 run `35039326242`; the unsigned merge `17458ad` passed exact-main Verify run
-`35042895100`. Cgroup and wall-time coupling, object resolution, command
+`35042895100`. The restacked `PBR-OBSERVER-028` lifecycle source owns the same
+exact cgroup and one private absolute wall-time deadline across trace setup and
+observation, begins bounded termination before exposing a drain-only state, and
+requires complete terminal resources and streams before publication. It awaits
+independent exact-source review and hosted admission. Object resolution, command
 integration, the native attack corpus, and release binding remain open.
 
 **Primary owner:** Proofbound Runtime
@@ -188,7 +192,10 @@ Complete the remaining RT-8 work in these claim-sized waves:
 1. Admit `PBR-OBSERVER-028`. Retain the same stopped child and place it in the
    prepared cgroup before target release. Apply one absolute plan wall-time
    limit through observation and drain. Finish resource observations after the
-   tree is empty. Make every stream or cleanup failure block publication.
+   tree is empty. Make every stream or cleanup failure block publication. The
+   source and independent contract are implemented on the restacked lifecycle
+   branch; independent review, hosted verification, and native attack evidence
+   remain open.
 2. Resolve a successful descriptor or executable only from the still-stopped
    tracee. Resolve a denied path only as a bounded stable candidate with before
    and after identities. Preserve races and unsupported forms as explicit gaps.

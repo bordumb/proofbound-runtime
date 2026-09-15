@@ -28,9 +28,11 @@ def body_sha256(source: str, signature: str) -> str:
 
 
 EXPECTED_LOAD_BEARING_BODIES = {
-    "active-next-event": "5a281f37642e52df2bc1a5187c3ee7ff741f2e751a4f977fcc70b0e44b9c59f2",
-    "active-drain": "62659a1112bba90d37df808430b41097415df6ad2d0849dda65999310c486229",
-    "active-complete-drain": "cbf23efa7521a4e7d5d9e1e1257fe777fa12c2a127a71e78e3508788952c173f",
+    "active-begin-termination": "1674fee75a1464bc9c3a2444044cc8774cb33b80e0a64d2b08050101da6aa090",
+    "active-next-event": "975c888931c1f6bde654679101536fbb522cbc770347fdc0bbf8de975657baf0",
+    "active-drain": "93fb4ec3a1af8abcc2ad31dba4c23eb498b43a743137cbe3d0d1e04afdbd6ee3",
+    "active-complete-drain": "db92609df0e5e00a33ce9848422783d7ce5e2ef8b4157c7e7bdafae6bfb1e49e",
+    "draining-finish": "887b3f1d3af522f0c221175bfc0fa2f70b89a0920e8ff2ce255cf1cafacf5024",
     "active-wait-observation": "6197d2734de504cd1419cf47fad0457c0edb91d4f198666a09e4d3e3792f1257",
     "active-drain-observation": "dceb35ed4c886eb36161331cf7106b07145a37d67e6714e359531e8fee06a7c9",
     "active-register-child": "e749a7f47624f313ba624ca850657240f2c0558e2f3b0b1544566b734eb6f3aa",
@@ -39,9 +41,11 @@ EXPECTED_LOAD_BEARING_BODIES = {
 
 def assert_load_bearing_bodies(trace: str) -> None:
     actual = {
+        "active-begin-termination": body_sha256(trace, "pub fn begin_termination"),
         "active-next-event": body_sha256(trace, "pub fn next_event"),
         "active-drain": body_sha256(trace, "pub fn terminate_and_drain"),
         "active-complete-drain": body_sha256(trace, "fn complete_drain"),
+        "draining-finish": body_sha256(trace, "impl DrainingTrace"),
         "active-wait-observation": body_sha256(trace, "fn handle_wait_observation"),
         "active-drain-observation": body_sha256(trace, "fn handle_drain_observation"),
         "active-register-child": body_sha256(trace, "fn register_child"),
@@ -134,7 +138,7 @@ class DiagnosticTraceEventContractTests(unittest.TestCase):
     def test_registration_failure_permanently_blocks_successful_drain(self):
         active = implementation(self.trace, "impl ActiveTrace")
         wait = implementation(active, "fn handle_wait_observation")
-        drain = implementation(active, "pub fn terminate_and_drain")
+        drain = implementation(self.trace, "impl DrainingTrace")
         complete = implementation(active, "fn complete_drain")
         self.assertLess(
             wait.index("self.tree_reconciliation_failed = true"),
@@ -144,7 +148,7 @@ class DiagnosticTraceEventContractTests(unittest.TestCase):
             wait.index("self.register_child(child)?"),
             wait.index("self.tree_reconciliation_failed = false"),
         )
-        self.assertIn("self.complete_drain(observations)", drain)
+        self.assertIn("self.trace.complete_drain(observations)", drain)
         self.assertIn("if self.tree_reconciliation_failed", complete)
         self.assertIn("TreeReconciliationFailed", complete)
 
@@ -200,13 +204,14 @@ class DiagnosticTraceEventContractTests(unittest.TestCase):
 
     def test_termination_uses_pidfds_and_never_numeric_kill(self):
         active = implementation(self.trace, "impl ActiveTrace")
-        drain = implementation(active, "pub fn terminate_and_drain")
+        begin = implementation(active, "pub fn begin_termination")
+        drain = implementation(self.trace, "impl DrainingTrace")
         drop = implementation(self.trace, "impl Drop for ActiveTrace")
         kill = implementation(self.sys, "pub(crate) fn trace_kill_process_handle")
-        self.assertIn("signal_all_process_groups", drain)
+        self.assertIn("signal_all_process_groups", begin)
         self.assertIn("handle_drain_observation", drain)
-        self.assertIn("self.processes.contains_key(&requested)", drain)
-        self.assertIn("self.processes.is_empty()", drain)
+        self.assertIn("self.trace.processes.contains_key(&requested)", drain)
+        self.assertIn("self.trace.processes.is_empty()", drain)
         self.assertIn("signal_all_process_groups", drop)
         self.assertNotIn("libc::", self.trace)
         self.assertIn("SYS_pidfd_open", self.sys)

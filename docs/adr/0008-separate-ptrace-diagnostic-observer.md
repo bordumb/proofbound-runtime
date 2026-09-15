@@ -86,6 +86,35 @@ reads make that cancellation bounded by the poll interval under the registered
 scheduler and atomic-visibility premises. This source order does not prove Linux pipe progress or
 process-tree completeness.
 
+The same trace session owns one prepared cgroup version 2 boundary and one
+private absolute execution deadline. Preparation compares the cgroup identity
+and exact readbacks for `pids.max`, `memory.max`, `memory.swap.max`, and
+`memory.oom.group` with the install request and seed-plan limits. It reads the
+controls again immediately before spawn and immediately before target release,
+so neither transition relies only on cached setup values. The deadline starts
+immediately before spawn. The spawn transition places and reads back the exact
+child in that cgroup before it returns. Each later setup transition,
+option installation, target release, and active wait consults that same stored
+deadline; no public transition accepts a replacement deadline.
+The deadline is checked by consuming transitions. It is not a background
+watchdog. The command owner MUST drive those transitions without unbounded
+delay or add an independent watchdog before it claims released wall-time
+enforcement.
+
+When the pure protocol or effectful observer requires termination, the adapter
+signals all retained identity-stable process groups and starts a separate
+five-second cleanup deadline before it returns the drain-only state. The
+cleanup deadline permits terminal waits; it does not extend target execution.
+Natural and forced completion first establish an empty exact trace tree, then
+drain and remove the cgroup, require complete version 2 resource observations,
+and finally join both stream readers. Only that terminal capture can precede a
+pure publication decision. A cgroup mismatch, placement failure, cleanup
+failure, incomplete resource observation, or stream failure prevents all
+diagnostic publication. Dropping an unfinished session orders root-child,
+cgroup, and stream-reader cleanup. These are source-order properties; native
+kernel, clock, scheduler, cgroup, and pipe behavior still requires the RT-8
+attack corpus.
+
 The separate diagnostic Linux crate presents one coupled adapter instead of
 re-exporting the raw trace typestates. It validates observation bounds before
 spawn. After the exact initial trace stop, every consuming adapter transition
@@ -163,6 +192,9 @@ produce a normal plan before `pbr plan check` can succeed.
 - Missing observer coverage is retained as an explicit gap.
 - A retained stream limit cannot stop the observer from draining later bytes.
 - A stream collection failure cannot produce a diagnostic publication.
+- A caller cannot refresh the plan wall-time deadline between trace states.
+- A drain-only state is returned only after process-group termination starts.
+- Terminal publication requires complete version 2 resource observations.
 - Network attempts remain open decisions and never become network authority.
 - Environment names, write roots, resource limits, and network mode remain
   human choices.

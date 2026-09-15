@@ -5,12 +5,13 @@
   RT-7 publication routes and the RT-8 diagnostic
   contract, artifact producer, observer protocol, trace startup, active event
   source, event-and-drain coupling, architecture-qualified decoder, exact event
-  mapping, and bounded stream collector are merged. The current-integration
+  mapping, and bounded stream collector are merged. The diagnostic lifecycle
+  source is restacked on current main and awaits exact review and admission. The current-integration
   source closes npm's missing first-publication route. External
   registry publication and every complete Roadmap 2 epic exit remain open.
 - **Date:** 2026-09-16
-- **Runtime baseline:** RT-8 bounded-stream merge `17458ad` on `main`;
-  exact-head Verify run `35039326242` and exact-main Verify run `35042895100`
+- **Runtime baseline:** roadmap admission synchronization merge `e8473bd` on
+  `main`; exact-head Verify run `35131985759` and exact-main Verify run `35135938137`
   passed
 - **Proofbound baseline consumed by Runtime evidence:** public immutable bundle
   for source `9512469`; protected-path cutover merged as Runtime `4a0cfdb` and
@@ -36,7 +37,7 @@ threat-model, ADR, claim, and evidence changes before production code.
 
 ### Execution checkpoint
 
-As of 2026-09-16, Runtime main commit `17458ad` contains the version 2 memory
+As of 2026-09-16, Runtime main commit `e8473bd` contains the version 2 memory
 and deterministic CBOR wave, receipt composition and acceptance, a bounded
 static plan scaffold,
 typed prelaunch diagnostics, reproducible Rust, Python, and TypeScript SDK
@@ -133,6 +134,11 @@ closed at a fixed monotonic deadline instead of waiting indefinitely.
 Independently approved source `5d296fb` and approval-only head `17458ad` passed
 PR 22 Verify run `35039326242`; unsigned exact main `17458ad` passed run
 `35042895100`.
+The dependent `PBR-OBSERVER-028` source is restacked on current main. It binds
+the trace to the exact prepared cgroup and one private absolute execution
+deadline, starts bounded termination before exposing a drain-only state, and
+requires complete terminal resources and streams before publication. It awaits
+independent review and hosted verification.
 Object resolution, command integration, the native attack corpus, and release
 binding remain open.
 The RT-7 current-integration source merged as `47c5ad2` and passed exact-main

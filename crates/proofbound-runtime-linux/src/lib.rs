@@ -58,9 +58,10 @@ pub use supervisor::{
 #[cfg(feature = "diagnostic-observer")]
 pub use trace::{
     AcknowledgedTraceStop, ActiveTrace, ActiveTraceEvent, BoundaryRunning, CompletedTrace,
-    InitialExecStop, LauncherPause, PreparedTraceCommand, SpawnedTrace, TraceCaptureLimits,
-    TraceCapturedOperands, TraceCapturedStream, TraceDeadline, TraceDrainObservation,
+    DrainingTrace, InitialExecStop, LauncherPause, PreparedTraceCommand, SpawnedTrace,
+    TraceCaptureLimits, TraceCapturedOperands, TraceCapturedStream, TraceDrainObservation,
     TraceDrainReport, TraceObservationError, TraceOutputCapture, TraceOutputLimits,
     TraceProcessCreationKind, TraceProcessId, TraceProcessLimit, TraceReady, TraceStartupError,
-    TraceSyscallClass, TraceSyscallInvocation, TraceTermination, prepare_traced_launcher,
+    TraceSyscallClass, TraceSyscallInvocation, TraceTerminalCapture, TraceTermination,
+    prepare_traced_launcher,
 };

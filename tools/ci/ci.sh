@@ -63,6 +63,7 @@ if selected "preflight"; then
   timed_unit diagnostic-syscall-decoder-tests python3 -m unittest tools.ci.test_diagnostic_syscall_decoder
   timed_unit diagnostic-event-mapping-tests python3 -m unittest tools.ci.test_diagnostic_event_mapping
   timed_unit diagnostic-stream-capture-tests python3 -m unittest tools.ci.test_diagnostic_stream_capture
+  timed_unit diagnostic-lifecycle-tests python3 -m unittest tools.ci.test_diagnostic_lifecycle
   timed_unit diagnostic-observer-adapter-tests python3 -m unittest tools.ci.test_diagnostic_observer_adapter
   timed_unit sdk-contract-tests python3 -m unittest tools.ci.test_sdk_contract tools.ci.test_sdk_packages
   timed_unit registry-package-tests python3 -m unittest tools.ci.test_registry_packages

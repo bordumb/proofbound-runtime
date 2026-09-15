@@ -13,24 +13,20 @@ pub use adapter::{
 };
 pub use mapping::{DiagnosticEventMapError, DiagnosticEventMapper};
 pub use proofbound_runtime_linux::{
-    ActiveTraceEvent, TraceCapturedOperands, TraceCapturedStream, TraceDeadline,
-    TraceObservationError, TraceOutputCapture, TraceOutputLimits, TraceProcessId,
-    TraceSyscallClass, TraceSyscallInvocation,
+    ActiveTraceEvent, TraceCapturedOperands, TraceCapturedStream, TraceObservationError,
+    TraceOutputCapture, TraceOutputLimits, TraceProcessId, TraceSyscallClass,
+    TraceSyscallInvocation, TraceTerminalCapture,
 };
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        ActiveObserver, ActiveObserverStep, ObserverAdapterError, ReadyObserver, TraceDeadline,
-    };
+    use super::{ActiveObserver, ActiveObserverStep, ObserverAdapterError, ReadyObserver};
 
     #[test]
     fn decoder_adapter_release_and_drain_paths_compile() {
         let _: fn(ReadyObserver) -> Result<ActiveObserver, ObserverAdapterError> =
             ReadyObserver::release;
-        let _: fn(
-            ActiveObserver,
-            TraceDeadline,
-        ) -> Result<ActiveObserverStep, ObserverAdapterError> = ActiveObserver::next_event;
+        let _: fn(ActiveObserver) -> Result<ActiveObserverStep, ObserverAdapterError> =
+            ActiveObserver::next_event;
     }
 }
