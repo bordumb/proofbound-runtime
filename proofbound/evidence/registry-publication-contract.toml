@@ -26,6 +26,7 @@ inputs = [
   "crates/proofbound-runtime-sdk/Cargo.toml",
   "crates/proofbound-runtime-verify/Cargo.toml",
   "docs/specs/0014_public_compatibility_and_distribution.md",
+  "schemas/registry-observations-v1.schema.json",
   "sdk/python/pyproject.toml",
   "sdk/typescript/package.json",
   "tools/ci/check_registry_publication.py",

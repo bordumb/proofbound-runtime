@@ -31,27 +31,32 @@ def canonical_json(value: object) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
 
 
-def load_json(path: Path) -> dict[str, object]:
-    """Read one bounded JSON object and reject duplicate member names."""
+def closed_json(data: bytes, label: str) -> dict[str, object]:
+    """Decode one bounded JSON object and reject duplicate member names."""
 
     def closed_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
         value: dict[str, object] = {}
         for key, item in pairs:
             if key in value:
-                raise RegistryError(f"duplicate JSON member in {path}: {key}")
+                raise RegistryError(f"duplicate JSON member in {label}: {key}")
             value[key] = item
         return value
 
-    data = path.read_bytes()
     if len(data) > MAX_METADATA_BYTES:
-        raise RegistryError(f"metadata exceeds the read bound: {path}")
+        raise RegistryError(f"metadata exceeds the read bound: {label}")
     try:
         value = json.loads(data, object_pairs_hook=closed_object)
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise RegistryError(f"invalid JSON metadata: {path}") from error
+        raise RegistryError(f"invalid JSON metadata: {label}") from error
     if not isinstance(value, dict):
-        raise RegistryError(f"metadata is not an object: {path}")
+        raise RegistryError(f"metadata is not an object: {label}")
     return value
+
+
+def load_json(path: Path) -> dict[str, object]:
+    """Read one bounded JSON object and reject duplicate member names."""
+
+    return closed_json(path.read_bytes(), str(path))
 
 
 def fetch_url(url: str, maximum: int) -> bytes:
@@ -62,8 +67,14 @@ def fetch_url(url: str, maximum: int) -> bytes:
     request = Request(url, headers={"User-Agent": USER_AGENT})
     with urlopen(request, timeout=30) as response:  # noqa: S310 - URL is closed below.
         final = response.geturl()
-        if urlparse(final).scheme != "https":
-            raise RegistryError("registry redirected outside HTTPS")
+        requested_url = urlparse(url)
+        final_url = urlparse(final)
+        if (
+            requested_url.scheme != "https"
+            or final_url.scheme != "https"
+            or final_url.hostname != requested_url.hostname
+        ):
+            raise RegistryError("registry redirected outside the admitted HTTPS host")
         data = response.read(maximum + 1)
     if len(data) > maximum:
         raise RegistryError("registry response exceeds the byte bound")
@@ -89,7 +100,7 @@ def text(value: object, field: str) -> str:
 
 
 def natural(value: object, field: str) -> int:
-    if type(value) is not int or value < 0:
+    if type(value) is not int or value <= 0:
         raise RegistryError(f"invalid {field}")
     return value
 
@@ -154,17 +165,13 @@ def verifier_artifact(
     if not size_text.isascii() or not size_text.isdecimal():
         raise RegistryError("invalid verifier artifact size")
     size = int(size_text)
+    if size <= 0:
+        raise RegistryError("invalid verifier artifact size")
     return name, digest, size, exact_file(directory, name, digest, size)
 
 
 def metadata(fetch: Callable[[str, int], bytes], url: str) -> dict[str, object]:
-    try:
-        value = json.loads(fetch(url, MAX_METADATA_BYTES))
-    except (UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise RegistryError(f"invalid registry metadata: {url}") from error
-    if not isinstance(value, dict):
-        raise RegistryError(f"registry metadata is not an object: {url}")
-    return value
+    return closed_json(fetch(url, MAX_METADATA_BYTES), url)
 
 
 def observe(

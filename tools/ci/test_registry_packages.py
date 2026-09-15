@@ -3,12 +3,14 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
-from tools.release.verify_registry_packages import RegistryError, observe
+from tools.release.verify_registry_packages import RegistryError, fetch_url, observe
 
 
 REVISION = "12" * 20
 VERSION = "0.2.0"
+ROOT = Path(__file__).resolve().parents[2]
 
 
 class RegistryPackageTests(unittest.TestCase):
@@ -153,6 +155,43 @@ class RegistryPackageTests(unittest.TestCase):
                 fetch=substituted,
             )
 
+    def test_registry_metadata_with_duplicate_members_fails_closed(self):
+        clean = self.registry()
+
+        def duplicate_metadata(url, maximum):
+            if url.startswith("https://pypi.org/"):
+                return b'{"urls":[],"urls":[]}'
+            return clean(url, maximum)
+
+        with self.assertRaisesRegex(RegistryError, "duplicate JSON member"):
+            observe(
+                sdk_directory=self.sdk,
+                verifier_directory=self.verifier,
+                expected_revision=REVISION,
+                fetch=duplicate_metadata,
+            )
+
+    def test_registry_redirect_cannot_change_the_admitted_host(self):
+        class Response:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exception_type, exception, traceback):
+                return False
+
+            def geturl(self):
+                return "https://substitute.example/package"
+
+            def read(self, maximum):
+                return b"bytes"
+
+        with patch(
+            "tools.release.verify_registry_packages.urlopen",
+            return_value=Response(),
+        ):
+            with self.assertRaisesRegex(RegistryError, "admitted HTTPS host"):
+                fetch_url("https://registry.example/package", 64)
+
     def test_manifest_revision_and_registry_hosts_are_closed(self):
         sdk_manifest = self.sdk / "SDK-MANIFEST.json"
         value = json.loads(sdk_manifest.read_bytes())
@@ -165,6 +204,18 @@ class RegistryPackageTests(unittest.TestCase):
                 expected_revision=REVISION,
                 fetch=self.registry(),
             )
+
+    def test_observation_schema_is_closed_and_matches_the_producer(self):
+        schema = json.loads(
+            (ROOT / "schemas/registry-observations-v1.schema.json").read_bytes()
+        )
+        self.assertFalse(schema["additionalProperties"])
+        self.assertEqual(
+            schema["properties"]["schema"]["const"],
+            "proofbound-runtime-registry-observations/1",
+        )
+        self.assertEqual(schema["properties"]["observations"]["minItems"], 4)
+        self.assertEqual(schema["properties"]["observations"]["maxItems"], 4)
 
 
 if __name__ == "__main__":
