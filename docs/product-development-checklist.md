@@ -147,10 +147,15 @@ Review history:
   change in the following approval-only commit.
 - [ ] Publish from one exact approved `main` revision using registry
   credentials supplied through the release environment.
-- [ ] Configure the protected `package-publish` environment, PyPI pending
-  publisher, scoped crates.io token, and one-time npm bootstrap token. After the
-  first npm upload, configure its exact trusted publisher, delete the GitHub
-  secret, and revoke the token before any later release.
+- [x] Configure the protected `package-publish` GitHub environment with a
+  custom `main`-only deployment policy, required reviewer `bordumb`, disabled
+  administrator bypass, and self-review prevention disabled because the
+  repository has no second collaborator. This is an observed external setting,
+  not an independent approval or a frozen state.
+- [ ] Configure the PyPI pending publisher, scoped crates.io token, and one-time
+  npm bootstrap token. After the first npm upload, configure its exact trusted
+  publisher, delete the GitHub secret, and revoke the token before any later
+  release.
 - [ ] Retrieve each registry artifact anonymously and compare its exact bytes
   or registered package identity with the approved artifact.
 - [ ] Exercise each package from an unrelated consumer repository or other
@@ -181,7 +186,9 @@ manifest describes the supported tuple.
   profile and observer mechanism.
 - [x] Define closed diagnostic-profile, observation, provenance, and failure
   types without changing production-receipt meaning.
-- [ ] Keep observer implementation out of the production launcher path.
+- [x] Keep observer implementation out of the production launcher path at the
+  source and dependency-graph boundary. Exact released-artifact inspection
+  remains part of the release-binding wave.
 - [x] Put Linux trace-startup code behind an empty-by-default feature selected
   only by the separate diagnostic Linux crate; keep raw calls in `sys.rs`.
 - [x] Keep the pure diagnostic artifact producer out of the production CLI and
@@ -277,6 +284,25 @@ manifest describes the supported tuple.
   exact head `fbd2d66`. Approval-only head `db95947` passed complete hosted run
   `34992273744` and merged unsigned as `4783896`; exact-main run `34997195939`
   passed.
+- [ ] Admit exact trace-to-artifact mapping. The `PBR-OBSERVER-026` source wave
+  preserves process identity, architecture, class, bounded entry operands, and
+  consistent outcomes with contiguous sequence values. It maps no lifecycle
+  event to a syscall, invents no object resolution, and fails closed for an
+  unknown architecture, malformed outcome, invalid exec entry, non-UTF-8
+  version 1 path, artifact inconsistency, or sequence overflow. Source,
+  registered Rust tests, independent checks, and mutation witnesses are
+  implemented; independent review and hosted exact-head admission remain open.
+- [ ] Add bounded concurrent stdout and stderr collection to the traced session
+  before command integration. Keep the same stopped child, place it in the
+  prepared cgroup, enforce wall time, and make stream or cleanup failure select
+  drain. A command without this wave can deadlock when a target fills a pipe.
+- [ ] Add stopped-tracee filesystem object resolution. Successful descriptor or
+  executable results may become `kernel-selected`; denied paths may become
+  `stable-candidate` only after bounded before-and-after identity checks. Races
+  and unsupported forms remain explicit gaps.
+- [ ] Add the separate `pbr-diagnose` command with strict seed-plan reuse,
+  fail-closed pre-release setup, and no-replace publication of the diagnostic
+  receipt and plan draft.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.
@@ -409,7 +435,8 @@ role-bound COSE with fully specified Ed25519, a mixed durable and ephemeral
 identity model, Auths as the first maintained identity-resolver integration,
 and an all-witness checkpoint policy. Independent review approved exact base
 `b04382d` through exact design head `2a4ca41`. Implementation remains a later
-claim-sized wave.
+claim-sized wave. The accepted decision merged unsigned as `08b8dbe` and
+passed exact-main Verify run `35012954812`.
 
 ## Roadmap 1 residual closure
 

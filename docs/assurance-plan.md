@@ -33,7 +33,8 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-OBSERVER-022` | Tier 1 decoder identity admitted on exact Runtime main `4783896` | The adapter derives capture limits from the same validated protocol and passed exact-head run `34992273744` and exact-main run `34997195939`. |
 | `PBR-OBSERVER-023` | Tier 1 decoder identity admitted on exact Runtime main `4783896` | Entry-time operand capture passed exact-head run `34992273744` and exact-main run `34997195939`. |
 | `PBR-OBSERVER-024` | Tier 1 decoder identity admitted on exact Runtime main `4783896` | The shared trace, adapter, and observer sources passed exact-head run `34992273744` and exact-main run `34997195939`. |
-| `PBR-OBSERVER-025` | Tier 1 syscall-decoder source admitted on exact Runtime main `4783896` | Approval-only head `db95947` passed complete exact-head run `34992273744`; exact-main run `34997195939` also passed. Kernel ABI truth, memory stability, native attacks, and artifact mapping remain open. |
+| `PBR-OBSERVER-025` | Tier 1 syscall-decoder source admitted on exact Runtime main `4783896` | Approval-only head `db95947` passed complete exact-head run `34992273744`; exact-main run `34997195939` also passed. Kernel ABI truth, memory stability, and native attacks remain open. |
+| `PBR-OBSERVER-026` | Tier 1 event-mapping source pending independent review and hosted admission | The mapper preserves the closed trace identity, operands, and outcome fields, assigns contiguous sequence values, and keeps object resolution unresolved. Linux truth, object resolution, command integration, native attacks, and release binding remain open. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -701,8 +702,8 @@ bound, adapter limit wiring, payload pointer selection, and raw read-only
 operation. These source checks do not prove the Linux ABI, `process_vm_readv`,
 memory stability, or event completeness.
 `PBR-DIAGNOSTIC-DECODE-AX-017` retains those premises. Native decoder fixtures,
-artifact mapping, object resolution, command integration, and release binding
-remain open.
+object resolution, command integration, and release binding remain open. The
+following `PBR-OBSERVER-026` wave owns artifact mapping.
 
 Replacement hosted run `34988148920` passed preflight, formal, both native,
 and every fresh-evidence lane except the receipt lane, whose anonymous
@@ -714,6 +715,35 @@ natural-completion, or trace-wait events. The affected exact-body checks are
 refreshed. Independent re-review approved exact head `fbd2d66`. Approval-only
 head `db95947` passed complete exact-head run `34992273744` and merged unsigned
 as `4783896`. Exact-main Verify run `34997195939` passed.
+
+## PBR-OBSERVER-026
+
+The current subject is the separate Linux trace-to-artifact mapper. Each
+complete registered syscall event becomes one diagnostic event with the exact
+trace process identity, closed audit architecture, syscall class, bounded
+entry operands, and either a consistent nonnegative result or positive Linux
+error. A successful image replacement produces an event only when the trace
+retained a matching `execve` or `execveat` entry. Process creation, image
+replacement without an entry, exit, and unexpected-stop lifecycle records do
+not become duplicate syscall events.
+
+The mapper owns a monotonic sequence counter and advances it only after a
+successful artifact construction. It keeps every filesystem and socket object
+resolution `unresolved`. It never invents a resolved path or object identity,
+and it retains only the `sendto` payload length supplied by the decoder. An
+unknown audit architecture, inconsistent result marker, invalid exec entry,
+non-UTF-8 version 1 path, artifact inconsistency, or sequence overflow returns
+a closed error.
+
+The Rust tests cover both architectures, all closed syscall classes, result
+validation, bounded operand preservation, invalid path encoding, and socket
+family classification. The independent checker byte-pins every load-bearing
+mapping body and exact source file. Its causal mutations attempt a resolution
+upgrade, wrapping sequence arithmetic, lossy path conversion, wider error
+range, missing class, discarded socket bytes, and weakened exec validation.
+This evidence does not prove the Linux event, operand, or result; it does not
+resolve an object; and it does not yet connect mapping failure or artifact
+publication to a released `pbr-diagnose` command.
 
 ## Bounded-domain declaration guard
 

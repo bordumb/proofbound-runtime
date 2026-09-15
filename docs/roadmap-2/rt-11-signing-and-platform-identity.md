@@ -1,7 +1,8 @@
 # RT-11 integration record: signing and platform identity
 
-**Status:** ADR accepted after independent exact-head review; implementation
-remains deferred to claim-sized waves
+**Status:** ADR accepted after independent exact-head review, merged unsigned
+as `08b8dbe`, and admitted by exact-main Verify run `35012954812`;
+implementation remains deferred to claim-sized waves
 
 **Primary owner:** Proofbound Runtime for Runtime envelopes and policy
 

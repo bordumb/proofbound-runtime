@@ -4,8 +4,8 @@ statement = "On an identified supported Linux architecture, the kernel audit arc
 category = "runtime-environment"
 owner = "Proofbound Runtime platform maintainer"
 rationale = "The source fixes architecture-qualified tables and bounded read behavior, but it does not prove the Linux ABI, ptrace register report, process_vm_readv, or the relationship between bytes observed by the tracer and bytes later consumed by a concurrently mutable tracee address space."
-scope = "Only the native Linux interpretation of PBR-OBSERVER-025 on the registered x86_64 and aarch64 ABI forms. It does not establish syscall completeness, filesystem or network object identity, absence of concurrent operand mutation, or a complete diagnostic execution."
-affected_claims = ["PBR-OBSERVER-025"]
+scope = "Only the native Linux interpretation of PBR-OBSERVER-025 and PBR-OBSERVER-026 on the registered x86_64 and aarch64 ABI forms. It does not establish syscall completeness, filesystem or network object identity, absence of concurrent operand mutation, or a complete diagnostic execution."
+affected_claims = ["PBR-OBSERVER-025", "PBR-OBSERVER-026"]
 review_evidence = [
   "docs/adr/0008-separate-ptrace-diagnostic-observer.md",
   "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",

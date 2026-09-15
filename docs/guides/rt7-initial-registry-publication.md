@@ -30,6 +30,18 @@ Authoritative external instructions:
 
 ## 1. Protect the GitHub publication environment
 
+Live state observed through the GitHub API on 2026-09-15:
+
+- `package-publish` exists;
+- only the `main` branch can deploy through its custom branch policy;
+- administrator bypass is disabled;
+- `bordumb` is the required reviewer; and
+- self-review prevention is disabled because the repository has no second
+  collaborator.
+
+This closes the GitHub environment-configuration task. It does not supply an
+independent release approver and does not configure any package registry.
+
 Create the `package-publish` environment in `bordumb/proofbound-runtime`.
 Configure all of these controls before adding a credential:
 
@@ -42,7 +54,8 @@ Configure all of these controls before adding a credential:
    or repository secret settings.
 
 An environment name without these controls is not the protected approval named
-by `PBR-DISTRIBUTION-018`.
+by `PBR-DISTRIBUTION-018`. Re-check the live settings before publication because
+the observation above does not freeze GitHub state.
 
 ## 2. Prepare crates.io
 

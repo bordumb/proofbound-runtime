@@ -44,8 +44,11 @@ single event that selects terminal drain; normal trace waits and continuing
 events receive no new boxing allocation. Independent exact-head re-review
 approved head `fbd2d66`; approval-only head `db95947` passed complete
 exact-head run `34992273744` and merged unsigned as `4783896`. Exact-main run
-`34997195939` passed. Artifact mapping, command integration, the
-native attack corpus, and release binding remain open.
+`34997195939` passed. The following `PBR-OBSERVER-026` wave maps the complete
+registered trace events into closed diagnostic artifact events without
+inventing object resolution. Its source and evidence are implemented and await
+independent review and hosted admission. Object resolution, command integration,
+the native attack corpus, and release binding remain open.
 
 **Primary owner:** Proofbound Runtime
 
@@ -147,6 +150,13 @@ values without making a draft an authority object.
   unsupported registered forms. It captures bounded path and socket-address
   operands before resume, completes partial read-only tracee-memory reads or
   fails, and retains only the `sendto` payload length, never payload bytes.
+- The separate event mapper assigns contiguous sequence values and preserves
+  the process, audit architecture, syscall class, bounded entry operands, and
+  consistent result or Linux error. It emits an exec event only from a retained
+  `execve` or `execveat` entry. Lifecycle-only observations do not become
+  syscall records. Every mapped object remains `unresolved`; an unknown
+  architecture, malformed result, invalid exec entry, non-UTF-8 version 1 path,
+  artifact inconsistency, or sequence overflow fails closed.
 - Automatic candidates require an explicit normalized project or runtime
   scope. System, home, and configured temporary roots remain open review
   items.
@@ -157,6 +167,35 @@ values without making a draft an authority object.
 - A report that names a broad filesystem root cannot broaden a draft.
 - A missing Capsec report does not weaken Runtime's production boundary.
 - A diagnostic observation cannot be relabeled as a Capsec declaration.
+
+## Remaining implementation order
+
+Complete RT-8 in these claim-sized waves:
+
+1. Admit `PBR-OBSERVER-026`, which maps complete trace events into unresolved
+   diagnostic artifact events.
+2. Give the trace session a bounded concurrent stdout and stderr collector.
+   Retain the same stopped child, place it in the prepared cgroup before target
+   release, apply the plan wall-time limit, and make every collection or cleanup
+   failure select drain. This must precede the command because unread launcher
+   pipes can otherwise block a target before the observer reaches completion.
+3. Resolve a successful descriptor or executable only from the still-stopped
+   tracee. Resolve a denied path only as a bounded stable candidate with before
+   and after identities. Preserve races and unsupported forms as explicit gaps.
+4. Add the separate `pbr-diagnose` command. Reuse the seed plan's exact
+   production authority, publish neither output before release, and publish the
+   diagnostic receipt and draft with the existing no-replace durability model.
+5. Run the registered native attack corpus on x86_64 and aarch64, including
+   pipe saturation, wall-time expiry, process-tree races, observation-sensitive
+   behavior, path drift, malformed operands, and publication interruption.
+6. Add the exact diagnostic executable to release provenance and artifact
+   inspection. Finish with one maintained dynamic workload that displays every
+   available provenance class, requires human completion, and produces no
+   reusable production evidence.
+
+Do not merge waves 2 through 6 into one review subject. Each wave changes a
+different security boundary and must retain its own exact-head review and
+hosted admission before the next dependent wave is called complete.
 
 ## Integration exit
 
