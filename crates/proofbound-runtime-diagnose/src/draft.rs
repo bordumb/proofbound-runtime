@@ -835,9 +835,9 @@ mod tests {
     use super::*;
     use crate::artifact::tests::fixture_receipt;
     use crate::artifact::{
-        DiagnosticArtifactIdentity, DiagnosticArtifactRole, DiagnosticEvent, DiagnosticGap,
-        DiagnosticPlatform, DiagnosticReceiptParts, DiagnosticTcbEntry, DiagnosticTcbRole,
-        ObservationBounds, ObservationOperands, ObservedObjectIdentity,
+        DiagnosticArtifactIdentity, DiagnosticArtifactRole, DiagnosticEvent, DiagnosticPlatform,
+        DiagnosticReceiptParts, DiagnosticTcbEntry, DiagnosticTcbRole, ObservationBounds,
+        ObservationOperands, ObservedObjectIdentity,
     };
     use proofbound_runtime_core::{Architecture, DiagnosticCompletion, ExecutionId, FileMode};
 

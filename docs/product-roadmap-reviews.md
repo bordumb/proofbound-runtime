@@ -1525,3 +1525,16 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, or test bytes. Any later subject change requires a new
 exact-head review.
+
+## RT-8 diagnostic artifact producer second hosted correction
+
+Hosted Verify run `34931523063` tested approval envelope
+`97cdb4f219df90582fc7f729f5d446926d274c30`. Both native lanes and the
+completed formal, ledger, binding, and policy lanes passed. The Rust lane
+found that moving `DiagnosticGap` from the production import set to the test
+import set was insufficient because no test in `draft.rs` uses that name. The
+warnings-as-errors gate therefore rejected the residual unused test import.
+
+The correction removes only that unused import. It changes source bytes in the
+reviewed range, so the corrected exact head requires a new independent static
+review and complete hosted verification before merge.
