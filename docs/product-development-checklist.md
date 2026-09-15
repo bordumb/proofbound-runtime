@@ -1,18 +1,24 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T14:59:00+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T16:14:22+01:00 (Europe/London, BST)
 - **Runtime baseline:** the combined active trace and event-drain batch passed
   exact-head Verify run `34973401808` at `9f82afa` and merged unsigned as
-  `b2cb4b9`; exact-main run `34978365970` is in progress. The coupled setup
+  `b2cb4b9`. Exact-main run `34978365970` failed before the required lanes
+  started because the unrelated network experiment missed its bounded ready-file
+  observation. The coupled setup
   adapter exact-main run `34969409215`, trace-startup run `34962882198`, and
   identity-bound exec-release run `34956564102` passed.
 - **Active implementation wave:** active trace and event-and-drain coupling are
   merged together as `b2cb4b9`. The earlier `c4b88c1` run `34970508987`
   failed only on two Rust lints fixed by the combined reviewed batch and is
   superseded by the green `9f82afa` run. The decoder series is restacked on
-  exact main with no content conflict at `ca670bb`; final exact review is in
-  progress before the single hosted admission run.
+  exact main with no content conflict. Its independently approved exact source
+  `5d82dcd` and approval-only head `858bfb9` then failed hosted run
+  `34979197795` only on a large private enum lint. Correction `5d479bd` removes
+  that enum without adding per-event allocation, refreshes the exact source
+  guards, and is pending independent exact-head re-review before replacement
+  hosted admission.
 - **Current implementation batch:** architecture-qualified syscall decoding and
   bounded operand capture are implemented locally as `PBR-OBSERVER-025`. The
   exact aggregate subject, compiler and crate-selection closure, adapter build
@@ -224,15 +230,21 @@ manifest describes the supported tuple.
   The `af9f77d`, restacked `45b1c91`, and lint-corrected `a3f56b5` approvals are
   recorded. Combined approval-only head `9f82afa` passed replacement Verify run
   `34973401808` and merged unsigned as `b2cb4b9`; exact-main run `34978365970`
-  is in progress. The following decoder changes the same exact sources, so its
-  exact review and hosted admission remain open.
+  failed in the unrelated network experiment ready-file check before the
+  required lanes started. The following decoder changes the same exact sources,
+  so its exact review and hosted admission remain open.
 - [ ] Admit architecture-qualified syscall decoding and bounded operand capture.
   The current source has separate x86_64 and aarch64 tables, rejects x32 and
   unsupported registered forms, captures path and socket-address bytes before
   resume under three independent limits, completes partial reads or fails, and
   never reads payload bytes. The raw parser rejects nonzero reserved and flags
-  fields and all non-exact syscall-information sizes. Exact review and hosted
-  admission remain open at restacked candidate `ca670bb`.
+  fields and all non-exact syscall-information sizes. Independently approved
+  source `5d82dcd` and approval-only head `858bfb9` reached hosted run
+  `34979197795`; every formal, native, and fresh-evidence lane passed, but the
+  Rust lane rejected a large private enum. Correction `5d479bd` represents the
+  same continue-or-event state as `Option<ActiveTraceEvent>`, avoids heap
+  allocation, and refreshes both exact-body checkers. Its exact re-review and
+  replacement hosted admission remain open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.

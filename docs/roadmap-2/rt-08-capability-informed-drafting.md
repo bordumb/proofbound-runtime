@@ -15,8 +15,9 @@ The event-and-drain correction at `af9f77d` and its restacked exact head
 `45b1c91` passed independent review. Its behavior-preserving Rust-lint
 correction `a3f56b5` also passed exact review. Approval-only head `9f82afa`
 passed replacement Verify run `34973401808`, and the combined active event and
-drain series merged unsigned as Runtime `b2cb4b9`; exact-main run `34978365970`
-is in progress. It passes the validated process
+drain series merged unsigned as Runtime `b2cb4b9`. Exact-main run `34978365970`
+failed before required lanes started in an unrelated network-experiment
+ready-file check. The merged source passes the validated process
 bound into the effectful trace, consumes complete events into the matching
 pure protocol, permanently
 rejects an unreconciled process tree, and makes successful effectful drain
@@ -28,8 +29,12 @@ subject, compiler and crate-selection closure, adapter build evidence, and all
 load-bearing decoder bodies are registered in response to independent review.
 The raw syscall-information parser also rejects nonzero reserved or flags
 fields and any non-exact operation size, so a future UAPI extension fails
-closed. It is restacked without content conflict on admitted main as candidate
-`ca670bb`; exact review and hosted admission remain open. Artifact mapping,
+closed. Independently approved source `5d82dcd` and approval-only head
+`858bfb9` reached hosted run `34979197795`; the formal, native, and all
+fresh-evidence lanes passed, but the Rust lane rejected a large private enum.
+Correction `5d479bd` uses the existing optional event state directly, adds no
+per-event allocation, and refreshes the exact-body guards. Its independent
+exact-head re-review and replacement hosted admission remain open. Artifact mapping,
 command integration, the native attack corpus,
 and release binding remain open.
 

@@ -2541,3 +2541,24 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, or test bytes. Any later subject change requires a new
 exact-head review.
+
+## RT-8 architecture-qualified syscall decoder hosted rejection
+
+- **Hosted run:** `34979197795`
+- **Exact head:** `858bfb9b39540c36dc652875a6228a7da8501305`
+- **Branch:** `codex/rt8-syscall-decoder`
+- **Result:** **REJECTED**
+
+The formal model, both native Linux lanes, and every fresh Proofbound evidence
+lane passed. The Rust lane rejected the private `WaitDecision` enum because its
+event variant was at least 224 bytes while its continue variant carried no
+data. The final assurance gate therefore failed. No decoder behavior is
+admitted at this head.
+
+Correction `5d479bd60cb3487100633b40ee04a8c1f1c42ce2` removes the redundant
+private enum and represents the same continue-or-event decision as
+`Option<ActiveTraceEvent>`. It does not allocate each event on the heap. Both
+exact-body checkers pin the corrected next-event, wait-router, and syscall-stop
+bodies, and a source regression rejects restoration of the large enum or a
+boxed event. The focused source-contract tests pass. Independent exact-head
+re-review and replacement hosted admission remain required.

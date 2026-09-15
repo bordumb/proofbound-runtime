@@ -7,8 +7,9 @@
   remain open.
 - **Date:** 2026-09-13
 - **Runtime baseline:** combined active trace and event-and-drain merge
-  `b2cb4b9` on `main`; exact-head Verify run `34973401808` passed and exact-main
-  run `34978365970` is in progress. Coupled-adapter run `34969409215`,
+  `b2cb4b9` on `main`; exact-head Verify run `34973401808` passed. Exact-main
+  run `34978365970` failed before required lanes started in an unrelated
+  network-experiment ready-file check. Coupled-adapter run `34969409215`,
   trace-startup run `34962882198`, and identity-bound exec-release run
   `34956564102` passed.
 - **Proofbound baseline consumed by Runtime evidence:** public immutable bundle
@@ -94,14 +95,20 @@ successful effectful drain before the pure tree-empty acknowledgement. Restacked
 head `45b1c91` passed exact replay review. The behavior-preserving Rust-lint
 correction `a3f56b5` also passed exact review. Approval-only head `9f82afa`
 passed replacement Verify run `34973401808`, then the combined series merged
-unsigned as `b2cb4b9`; exact-main run `34978365970` is in progress. The
+unsigned as `b2cb4b9`; exact-main run `34978365970` failed before the required
+lanes started because the unrelated network experiment missed its bounded
+ready-file observation. The
 following decoder changes these shared sources again. Its architecture-qualified tables and bounded
 entry-time operand capture are implemented under `PBR-OBSERVER-025`; the exact
 aggregate subject, compiler and crate-selection closure, adapter build
 evidence, all load-bearing decoder bodies, and the zero-reserved exact-size
-syscall-information parser are registered. The decoder is restacked without
-content conflict on admitted main as candidate `ca670bb`; exact review and
-hosted admission of that current source remain open. Artifact
+syscall-information parser are registered. Independently approved source
+`5d82dcd` and approval-only head `858bfb9` reached hosted run `34979197795`.
+Every formal, native, and fresh-evidence lane passed, but the Rust lane rejected
+a large private enum. Correction `5d479bd` replaces that private state with
+`Option<ActiveTraceEvent>` without per-event allocation and refreshes both exact
+source guards. Its independent exact-head re-review and replacement hosted
+admission remain open. Artifact
 mapping, command integration, the native attack corpus, and release binding
 remain open.
 RT-9 is blocked until RT-5 implements the accepted single-service network
