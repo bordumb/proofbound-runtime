@@ -2667,3 +2667,30 @@ is absent from those paths, but pre-existing process-snapshot and
 image-replacement conversions can allocate there. The correction must say
 that this change adds no boxing allocation to the normal path. This verdict is
 not endorsed. The exact corrected head requires independent re-review.
+
+## RT-8 terminal-observation lint correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `b2cb4b9bf10398ca5559dc476c492c3bd6d46c0b`
+- **Reviewed head:** `fbd2d6679bfc609759783d9b54275ead3acd9731`
+- **Branch:** `codex/rt8-syscall-decoder`
+- **Method:** Complete exact-range static re-review after the allocation-language
+  correction. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the corrected documents say only that this change
+adds no boxing allocation outside terminal drain. They no longer describe the
+pre-existing wait or continuation paths as entirely allocation-free. The prior
+`REQUEST CHANGES` record accurately names its exact identities, implementation
+conclusion, documentation blocker, and non-endorsement.
+
+Production, claim, assumption, evidence, and checker bytes are unchanged from
+`2eec428fd78fe1e65e081e2944c00a69ba078a4c`. The boxed terminal observation
+closes the hosted large-enum lint and remains confined to one precisely guarded
+drain-selection construction site.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`fbd2d6679bfc609759783d9b54275ead3acd9731`. The following approval-only commit
+changes no reviewed production, claim, assumption, evidence, or checker bytes.
+Any later subject change requires a new exact-head review.

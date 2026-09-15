@@ -1,7 +1,7 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T16:50:58+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T17:00:11+01:00 (Europe/London, BST)
 - **Runtime baseline:** the combined active trace and event-drain batch passed
   exact-head Verify run `34973401808` at `9f82afa` and merged unsigned as
   `b2cb4b9`. Exact-main run `34978365970` failed before the required lanes
@@ -21,7 +21,8 @@
   head `4f66fc4` reached run `34988148920`. Rust lint found a separate large
   public adapter observation enum, while the receipt evidence lane hit anonymous
   GitHub rate exhaustion. The current correction boxes only the one terminal
-  drain-selection event and requires exact re-review before another hosted run.
+  drain-selection event. Exact re-review approved head `fbd2d66`; the following
+  approval-only record precedes another hosted run.
 - **Current implementation batch:** architecture-qualified syscall decoding and
   bounded operand capture are implemented locally as `PBR-OBSERVER-025`. The
   exact aggregate subject, compiler and crate-selection closure, adapter build
@@ -250,8 +251,9 @@ manifest describes the supported tuple.
   allocation, and refreshes both exact-body checkers. Independent re-review
   approved exact head `b027ddd`. Replacement run `34988148920` found a second
   large enum in the adapter's terminal drain observation. The current narrow
-  correction boxes only that terminal event and requires exact re-review and
-  replacement hosted admission.
+  correction boxes only that terminal event, and independent re-review approved
+  exact head `fbd2d66`. The following approval-only record and replacement
+  hosted admission remain open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.

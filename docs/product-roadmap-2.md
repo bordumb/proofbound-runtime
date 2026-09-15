@@ -112,8 +112,9 @@ approval-only head `4f66fc4` reached replacement run `34988148920`. That run
 passed preflight, formal, both native lanes, and all fresh-evidence lanes except
 one anonymous GitHub rate-limit failure, but Rust lint found a separate large
 public adapter observation enum. The current correction boxes only the terminal
-drain-selection event and adds no boxing allocation to the normal trace path. Exact
-re-review and replacement hosted admission remain open. Artifact
+drain-selection event and adds no boxing allocation to the normal trace path.
+Exact re-review approved head `fbd2d66`; the following approval-only record and
+replacement hosted admission remain open. Artifact
 mapping, command integration, the native attack corpus, and release binding
 remain open.
 RT-9 is blocked until RT-5 implements the accepted single-service network

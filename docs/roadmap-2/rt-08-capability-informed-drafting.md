@@ -40,8 +40,9 @@ and all non-rate-limited fresh-evidence lanes passed. The receipt lane was
 blocked by anonymous GitHub API rate exhaustion, and Rust lint found a separate
 large public adapter observation enum. The current correction boxes only the
 single event that selects terminal drain; normal trace waits and continuing
-events receive no new boxing allocation. Independent exact-head re-review and
-replacement hosted admission remain open. Artifact mapping, command
+events receive no new boxing allocation. Independent exact-head re-review
+approved head `fbd2d66`; the following approval-only record changes no reviewed
+source. Replacement hosted admission remains open. Artifact mapping, command
 integration, the native attack corpus,
 and release binding remain open.
 
