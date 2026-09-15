@@ -435,7 +435,8 @@ role-bound COSE with fully specified Ed25519, a mixed durable and ephemeral
 identity model, Auths as the first maintained identity-resolver integration,
 and an all-witness checkpoint policy. Independent review approved exact base
 `b04382d` through exact design head `2a4ca41`. Implementation remains a later
-claim-sized wave.
+claim-sized wave. The accepted decision merged unsigned as `08b8dbe` and
+passed exact-main Verify run `35012954812`.
 
 ## Roadmap 1 residual closure
 
