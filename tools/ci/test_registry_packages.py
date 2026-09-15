@@ -173,6 +173,8 @@ class RegistryPackageTests(unittest.TestCase):
 
     def test_registry_redirect_cannot_change_the_admitted_host(self):
         class Response:
+            final_url = "https://substitute.example/package"
+
             def __enter__(self):
                 return self
 
@@ -180,7 +182,7 @@ class RegistryPackageTests(unittest.TestCase):
                 return False
 
             def geturl(self):
-                return "https://substitute.example/package"
+                return self.final_url
 
             def read(self, maximum):
                 return b"bytes"
@@ -191,6 +193,45 @@ class RegistryPackageTests(unittest.TestCase):
         ):
             with self.assertRaisesRegex(RegistryError, "admitted HTTPS host"):
                 fetch_url("https://registry.example/package", 64)
+
+        for rejected in (
+            "https://registry.example:444/package",
+            "https://user@registry.example/package",
+            "https://registry.example/package#substitute",
+        ):
+            with self.subTest(rejected=rejected):
+                Response.final_url = rejected
+                with patch(
+                    "tools.release.verify_registry_packages.urlopen",
+                    return_value=Response(),
+                ):
+                    with self.assertRaisesRegex(RegistryError, "admitted HTTPS host"):
+                        fetch_url("https://registry.example/package", 64)
+
+    def test_registry_metadata_cannot_select_port_or_credentials(self):
+        clean = self.registry()
+
+        for rejected in (
+            "https://files.pythonhosted.org:444/package.whl",
+            "https://user@files.pythonhosted.org/package.whl",
+        ):
+            with self.subTest(rejected=rejected):
+
+                def substituted_metadata(url, maximum):
+                    data = clean(url, maximum)
+                    if url.startswith("https://pypi.org/"):
+                        value = json.loads(data)
+                        value["urls"][0]["url"] = rejected
+                        return json.dumps(value).encode()
+                    return data
+
+                with self.assertRaisesRegex(RegistryError, "outside the admitted host"):
+                    observe(
+                        sdk_directory=self.sdk,
+                        verifier_directory=self.verifier,
+                        expected_revision=REVISION,
+                        fetch=substituted_metadata,
+                    )
 
     def test_manifest_revision_and_registry_hosts_are_closed(self):
         sdk_manifest = self.sdk / "SDK-MANIFEST.json"

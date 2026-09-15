@@ -59,6 +59,24 @@ def load_json(path: Path) -> dict[str, object]:
     return closed_json(path.read_bytes(), str(path))
 
 
+def admitted_https_url(url: str, host: str) -> bool:
+    """Accept one credential-free HTTPS URL on the default port and exact host."""
+
+    parsed = urlparse(url)
+    try:
+        port = parsed.port
+    except ValueError:
+        return False
+    return (
+        parsed.scheme == "https"
+        and parsed.hostname == host
+        and parsed.username is None
+        and parsed.password is None
+        and port in (None, 443)
+        and not parsed.fragment
+    )
+
+
 def fetch_url(url: str, maximum: int) -> bytes:
     """Read one HTTPS resource with a strict byte bound."""
 
@@ -68,11 +86,10 @@ def fetch_url(url: str, maximum: int) -> bytes:
     with urlopen(request, timeout=30) as response:  # noqa: S310 - URL is closed below.
         final = response.geturl()
         requested_url = urlparse(url)
-        final_url = urlparse(final)
         if (
-            requested_url.scheme != "https"
-            or final_url.scheme != "https"
-            or final_url.hostname != requested_url.hostname
+            requested_url.hostname is None
+            or not admitted_https_url(url, requested_url.hostname)
+            or not admitted_https_url(final, requested_url.hostname)
         ):
             raise RegistryError("registry redirected outside the admitted HTTPS host")
         data = response.read(maximum + 1)
@@ -228,7 +245,7 @@ def observe(
     if len(matching) != 1:
         raise RegistryError("PyPI wheel is absent or ambiguous")
     wheel_url = text(matching[0].get("url"), "PyPI wheel URL")
-    if urlparse(wheel_url).scheme != "https" or urlparse(wheel_url).hostname != "files.pythonhosted.org":
+    if not admitted_https_url(wheel_url, "files.pythonhosted.org"):
         raise RegistryError("PyPI wheel URL is outside the admitted host")
     urls["proofbound-runtime-sdk-pypi"] = wheel_url
 
@@ -239,7 +256,7 @@ def observe(
     if not isinstance(distribution, dict):
         raise RegistryError("npm distribution metadata is invalid")
     tarball_url = text(distribution.get("tarball"), "npm tarball URL")
-    if urlparse(tarball_url).scheme != "https" or urlparse(tarball_url).hostname != "registry.npmjs.org":
+    if not admitted_https_url(tarball_url, "registry.npmjs.org"):
         raise RegistryError("npm tarball URL is outside the admitted host")
     urls["proofbound-runtime-sdk-npm"] = tarball_url
 
