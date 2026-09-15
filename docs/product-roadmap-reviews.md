@@ -3416,3 +3416,26 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes no reviewed claim, obligation,
 roadmap status, dependency order, checker fingerprint, or hosted admission
 identity. Any later subject change requires a new exact-head review.
+
+## RT-8 diagnostic lifecycle initial review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `0eca2f363d4e7e1745c4d5ec9eed1a83f04ef29e`
+- **Reviewed head:** `28a467a806eaf2cc3cae0e3f87a4bf18312c93b5`
+- **Branch:** `codex/rt8-diagnostic-lifecycle`
+- **Method:** Complete exact-range static review. The reviewer changed no files
+  and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review found six blocking defects. First, cgroup freshness was not
+revalidated before diagnostic ownership. Second, expiry did not always win over
+a late-ready stop or event. Third, cgroup cleanup and stream joins escaped the
+single cleanup deadline. Fourth, mandatory termination discarded pidfd signal
+failures. Fifth, the lifecycle premise omitted inherited trace assumptions.
+Sixth, the source closure, adapter compilation evidence, and causal mutation
+set were incomplete. The correction requires a new exact-head independent
+review. The reviewer found no additional blocker in feature isolation,
+raw-syscall confinement, typed publication gating, status language, or
+historical admission accounting.
