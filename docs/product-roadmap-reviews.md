@@ -2278,3 +2278,27 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, or test bytes. Any later subject change requires a new
 exact-head review.
+
+## RT-8 coupled observer adapter admitted-main replay approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `9395050b5c3a8e968d4e162bfdde1709e33e0989`
+- **Reviewed head:** `6579dacab85746b6d2eef0af06add803320815e1`
+- **Branch:** `codex/rt8-observer-adapter-v2`
+- **Method:** Narrow exact-range static replay review after current-main
+  integration. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed by direct tree comparison that the Rust, checker,
+claim, evidence, schema, and manifest subject is byte-identical to approved
+head `176b10a075f4ea815d020be0d48a9b947584ecdd`. Only the roadmap, checklist,
+and review ledger changed during main integration. The conflict resolution
+preserves the complete adapter review history and the admitted trace-startup
+approval while reporting the current main identity and pending hosted gate.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact merge
+head `6579dacab85746b6d2eef0af06add803320815e1`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.

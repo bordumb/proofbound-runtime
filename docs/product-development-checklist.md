@@ -1,7 +1,7 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T12:36:00+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T12:38:42+01:00 (Europe/London, BST)
 - **Runtime baseline:** trace-startup merge `9395050`; its exact-main Verify run
   `34962882198` is in progress. Identity-bound exec-release exact-main run
   `34956564102` passed.
@@ -9,8 +9,8 @@
   hosted run reached the Rust lane and rejected two files formatted with the
   wrong Rust edition. The edition-2024-only correction passed the focused
   formatter, source contract, and independent exact-head re-review. The
-  approval-only commit is `e305fb0`; current-main integration and a new
-  exact-head hosted run remain.
+  approval-only commit is `e305fb0`. Current-main integration passed an
+  independent exact-head replay at `6579dac`; a new hosted run remains.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -189,8 +189,9 @@ manifest describes the supported tuple.
   re-review approved exact source head `d0c2520`. Hosted verification then
   rejected only edition-2021 import ordering before compilation. The
   edition-2024-only correction passed independent exact-head re-review at
-  `176b10a`, followed by approval-only commit `e305fb0`; current-main
-  integration and a new hosted run remain open.
+  `176b10a`, followed by approval-only commit `e305fb0`. Current-main
+  integration passed independent replay at `6579dac`; a new hosted run remains
+  open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.
