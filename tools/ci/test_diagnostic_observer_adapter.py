@@ -81,6 +81,35 @@ EXPECTED_PUBLIC_FUNCTIONS = [
     "pubconstfncode(self)->&'staticstr",
 ]
 
+EXPECTED_ADAPTER_LIB = """#![deny(unsafe_code)]
+
+//! Owns the separate effectful Linux diagnostic-observer path.
+
+mod adapter;
+
+pub use adapter::{
+    prepare_observer, AcknowledgedObserver, ActiveObserver, BoundaryRunningObserver,
+    InitialObserver, LauncherPausedObserver, ObserverAdapterError, PreparedObserver, ReadyObserver,
+    SpawnedObserver,
+};
+pub use proofbound_runtime_linux::{TraceDeadline, TraceProcessId};
+"""
+
+EXPECTED_ADAPTER_MANIFEST = """[package]
+name = "proofbound-runtime-diagnose-linux"
+description = "Separate Linux diagnostic observer for Proofbound Runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+proofbound-runtime-diagnose.workspace = true
+proofbound-runtime-linux = { workspace = true, features = ["diagnostic-observer"] }
+"""
+
 
 class DiagnosticObserverAdapterContractTests(unittest.TestCase):
     def setUp(self):
@@ -165,6 +194,7 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
         self.assertNotRegex(self.adapter, r"\bpub\s+const\s+(?!fn\b)")
         self.assertNotIn("macro_rules!", self.adapter)
         self.assertNotIn("#[macro_export]", self.adapter)
+        self.assertNotRegex(self.adapter, r"(?m)^\s*(?:pub\s+)?mod\s+")
         self.assertNotRegex(
             self.adapter,
             r"\b[A-Za-z_][A-Za-z0-9_]*!\s*[\(\{\[]",
@@ -271,6 +301,7 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
 
     def test_adapter_is_separate_and_hides_raw_trace_typestates(self):
         self.assertNotIn("unsafe", self.adapter)
+        self.assertEqual(self.adapter_lib, EXPECTED_ADAPTER_LIB)
         public_uses = [
             compact(statement)
             for statement in re.findall(r"pub use [^;]+;", self.adapter_lib, re.DOTALL)
@@ -293,7 +324,7 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
             self.adapter_lib,
             r"\b[A-Za-z_][A-Za-z0-9_]*!\s*[\(\{\[]",
         )
-        self.assertIn("proofbound-runtime-diagnose.workspace = true", ADAPTER_MANIFEST.read_text())
+        self.assertEqual(ADAPTER_MANIFEST.read_text(), EXPECTED_ADAPTER_MANIFEST)
         spawned_trace = implementation(self.trace, "SpawnedTrace")
         self.assertIn(
             "pubconstfnprocess(&self)->TraceProcessId{self.session.process}",

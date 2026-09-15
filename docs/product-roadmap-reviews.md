@@ -2075,3 +2075,31 @@ The correction must exact-allowlist every implementation header and method,
 fix the public error variant set, and reject source macros that could generate
 an uninspected public item. This verdict is not endorsed. The correction changes
 the exact subject and requires another independent review.
+
+## RT-8 diagnostic observer-adapter third correction review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `98be91872a263b4c9f6683f4f028695372be7fdf`
+- **Reviewed head:** `641fb4f1241b1077eb94cba0a437419352d38a90`
+- **Branch:** `codex/rt8-observer-adapter`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The reviewer confirmed that the third correction fixes all declared functions,
+trait methods, implementation headers, public types, error variants, fields,
+re-exports, attributes, derives, macro generation, retained-field accessors,
+and linked process and option flows. The current compiled source contains no
+raw-owner or mutable-protocol escape.
+
+One source-selection gap remained. The checker inspected `src/adapter.rs` but
+did not fix the private `mod adapter;` declaration in the crate root. A path
+attribute could redirect that module to an unregistered alternate source while
+the checker continued to approve the original file. A nested module declaration
+inside the registered adapter file could similarly compile uninspected trait
+implementations.
+
+The correction must fix the complete crate-root source, including its private
+module declaration and attributes, and reject any nested module declaration in
+the single-file adapter. This verdict is not endorsed. The correction changes
+the exact subject and requires another independent review.
