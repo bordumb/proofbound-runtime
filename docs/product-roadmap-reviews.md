@@ -1307,3 +1307,35 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 `253b33d64ca3d812f5d2b1a347edb64ba0ac8075`. This approval-only envelope adds
 no reviewed production, schema, specification, claim, assumption, evidence, or
 test bytes. Any later subject change requires a new exact-head review.
+
+## RT-8 verifier error-precedence corrective approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `acf8f24730857a6e7906336b570c61bec7213ab1`
+- **Reviewed head:** `f40c1681a66a2877ce7bb68256c1297879c3e168`
+- **Branch:** `codex/rt8-diagnostic-profile`
+- **Method:** Exact-head static corrective review. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+Hosted Verify run `34926427870` showed that the initial diagnostic precheck
+changed the failure precedence for an unrelated JSON projection. The reviewed
+correction limits the new duplicate-key and canonical-byte checks to objects
+whose top-level schema is exactly
+`proofbound-runtime-diagnostic-receipt/1`. Other JSON inputs return to the
+unchanged production canonical, commitment, and semantic-verification path.
+Canonical diagnostic receipts still fail before commitment and production
+receipt decoding with `profile.diagnostic.not-reusable`; duplicate or
+noncanonical diagnostic objects still fail closed first.
+
+The reviewer also confirmed that the preceding schema, Unicode, Capsec,
+event-operand, acceptance-decision, evidence-language, and claim-tier
+corrections remain intact and that no live observer, released producer, or
+completed RT-8 claim is asserted.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`f40c1681a66a2877ce7bb68256c1297879c3e168`. The following approval-only commit
+adds no reviewed production, schema, specification, claim, assumption,
+evidence, or test bytes. Any later subject change requires a new exact-head
+review.
