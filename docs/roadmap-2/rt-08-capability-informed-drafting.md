@@ -11,15 +11,16 @@ exact-main run `34962882198` passed. The adapter that privately couples the
 effectful and pure setup states passed hosted run `34964466007`, merged as
 `d34eab1`, and has exact-main run `34969409215` in progress. The active-trace
 admitted-main replay at `1db68a6` passed independent review; approval-only head
-`c4b88c1` is in hosted verification. The following event-and-drain source
-`af9f77d` passed independent exact-head review and its approval is recorded.
-Its restack changes only operational history, which remains in replay review;
-hosted admission and merge remain open. It passes the validated process bound
-into the effectful trace, consumes complete events into the matching pure
-protocol, permanently rejects an unreconciled process tree, and makes
-successful effectful drain reconciliation precede pure tree-empty
-acknowledgement. Its first exact review requested five corrections; the
-combined correction closed them and received an explicit `APPROVE`.
+`c4b88c1` is in hosted verification. Event-and-drain source `af9f77d` and
+restacked head `45b1c91` passed independent review. Hosted run `34972072843`
+rejected two warnings-as-errors in the shared trace source and was cancelled.
+The lint-only correction and refreshed exact-body checker require narrow exact
+re-review; hosted admission and merge remain open. The wave passes the
+validated process bound into the effectful trace, consumes complete events into
+the matching pure protocol, permanently rejects an unreconciled process tree,
+and makes successful effectful drain reconciliation precede pure tree-empty
+acknowledgement. Its first exact review requested five corrections; the combined
+correction closed them and received an explicit `APPROVE`.
 Decoding, command integration, the native attack corpus, and release binding
 remain open.
 

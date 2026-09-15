@@ -83,14 +83,15 @@ source adds exact-set waits, paired syscall stops, process-tree identity
 handling, and validated pidfd-directed termination. It remains byte-identical
 to independently approved source `c20f6e3`; its admitted-main replay at
 `1db68a6` was also independently approved, and approval-only head `c4b88c1` is
-in hosted verification. The following event-and-drain source `af9f77d` passed
-independent exact-head review before this restack. It passes the validated
-process bound into the trace, consumes each complete event into the same pure
-protocol, permanently rejects an unreconciled process tree, and orders a
-successful effectful drain before the pure tree-empty acknowledgement. The
-restacked exact subject still requires one exact replay review and hosted
-admission. Syscall decoding, command integration, the native attack corpus,
-and release binding remain open.
+in hosted verification. Event-and-drain restack `45b1c91` passed independent
+review. Hosted run `34972072843` then rejected two warnings-as-errors in the
+shared trace source and was cancelled. The lint-only correction and refreshed
+exact-body checker are pending narrow exact re-review. The wave passes the
+validated process bound into the trace, consumes each complete event into the
+same pure protocol, permanently rejects an unreconciled process tree, and
+orders a successful effectful drain before the pure tree-empty acknowledgement.
+Hosted admission remains open. Syscall decoding, command integration, the
+native attack corpus, and release binding remain open.
 RT-9 is blocked until RT-5 implements the accepted single-service network
 decision in production.
 

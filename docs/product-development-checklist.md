@@ -1,15 +1,17 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T13:52:13+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T14:04:57+01:00 (Europe/London, BST)
 - **Runtime baseline:** coupled setup adapter merged as `d34eab1`; exact-main
   Verify run `34969409215` is in progress. Trace-startup exact-main run
   `34962882198` and identity-bound exec-release exact-main run `34956564102`
   passed.
 - **Active implementation wave:** the active-trace admitted-main replay at
   `1db68a6` is independently approved; approval-only head `c4b88c1` is in hosted
-  verification. The following event-and-drain source `af9f77d` is independently
-  approved and restacked locally for one exact replay review.
+  verification. Event-and-drain restack `45b1c91` is independently approved.
+  Hosted run `34972072843` exposed two warnings-as-errors in the trace source
+  and was cancelled after the Rust lane failed. The behavior-preserving lint
+  correction and exact checker refresh are pending one narrow re-review.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -211,8 +213,9 @@ manifest describes the supported tuple.
   permanently blocks publication after an unreconciled tree, byte-pins the
   load-bearing bodies with five mutation classes, restores typed unsupported
   paths, closes assumption links, and marks every changed exact subject pending.
-  Its approval is recorded. The restacked exact subject requires one replay
-  review and hosted admission.
+  Its approval and restacked approval are recorded. Hosted run `34972072843`
+  rejected two lint forms. Their behavior-preserving correction is pending
+  exact re-review before a replacement hosted run.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.

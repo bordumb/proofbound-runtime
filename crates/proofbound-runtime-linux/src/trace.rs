@@ -446,11 +446,11 @@ impl ActiveTrace {
         if self.processes.is_empty() {
             return Err(TraceObservationError::ProcessTreeDrained);
         }
-        if let Some(process) = self.held_process.take() {
-            if crate::sys::trace_syscall(process.get()).is_err() {
-                self.must_drain = true;
-                return Err(TraceObservationError::ResumeFailed);
-            }
+        if let Some(process) = self.held_process.take()
+            && crate::sys::trace_syscall(process.get()).is_err()
+        {
+            self.must_drain = true;
+            return Err(TraceObservationError::ResumeFailed);
         }
 
         loop {
@@ -753,10 +753,12 @@ impl ActiveTrace {
                     .map_err(|_| TraceObservationError::ProcessIdentityInvalid)
             })?;
         let change = reconcile_exec_processes(&mut self.processes, requested, reported, former)?;
-        if !self.process_handles.contains_key(&reported) {
+        if let std::collections::btree_map::Entry::Vacant(entry) =
+            self.process_handles.entry(reported)
+        {
             let handle = crate::sys::trace_open_process_handle(reported.get())
                 .map_err(|_| TraceObservationError::ProcessHandleFailed)?;
-            self.process_handles.insert(reported, handle);
+            entry.insert(handle);
         }
         self.remove_unused_process_handles();
         Ok(change)
