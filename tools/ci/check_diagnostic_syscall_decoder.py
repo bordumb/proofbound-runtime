@@ -14,6 +14,7 @@ INVENTORY = [
     "diagnostic-syscall-decoder-architecture-tables",
     "diagnostic-syscall-decoder-bounded-operands",
     "diagnostic-syscall-decoder-entry-order",
+    "diagnostic-syscall-decoder-exact-source-closure",
     "diagnostic-syscall-decoder-mutation-witnesses",
     "diagnostic-syscall-decoder-no-payload",
     "diagnostic-syscall-decoder-raw-read-confinement",

@@ -1,21 +1,28 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T13:59:56+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T14:35:11+01:00 (Europe/London, BST)
 - **Runtime baseline:** coupled setup adapter merged as `d34eab1`; exact-main
-  Verify run `34969409215` is in progress. Trace-startup exact-main run
+  Verify run `34969409215` passed. Trace-startup exact-main run
   `34962882198` and identity-bound exec-release exact-main run `34956564102`
   passed.
 - **Active implementation wave:** the active-trace admitted-main replay at
-  `1db68a6` is independently approved; approval-only head `c4b88c1` is in hosted
-  verification. Event-and-drain source `af9f77d` and restacked head `45b1c91`
-  are independently approved; approval-only head `a048f5e` is in hosted
-  verification. The following decoder batch changes the same trace, adapter,
-  and observer sources, so the combined current identity is pending exact
-  review and hosted admission.
+  `1db68a6` is independently approved. Its approval-only head `c4b88c1` failed
+  run `34970508987` only on the two Rust lints corrected by the following
+  reviewed batch, so it is superseded rather than admitted alone.
+  Event-and-drain source `af9f77d`, restacked head `45b1c91`, and lint
+  correction `a3f56b5` are independently approved. Combined approval-only head
+  `9f82afa` is in replacement Verify run `34973401808`; preflight, Rust, and
+  both native lanes passed while the formal and evidence lanes continue.
+  The following decoder batch changes the same trace, adapter, and observer
+  sources, so the combined current identity is pending exact review and hosted
+  admission.
 - **Current implementation batch:** architecture-qualified syscall decoding and
-  bounded operand capture are implemented locally as `PBR-OBSERVER-025`.
-  Artifact mapping and native attacks remain open after this batch.
+  bounded operand capture are implemented locally as `PBR-OBSERVER-025`. The
+  exact aggregate subject, compiler and crate-selection closure, adapter build
+  evidence, all load-bearing decoder bodies, and the zero-reserved exact-size
+  syscall-information parser are now registered in response to independent
+  review. Artifact mapping and native attacks remain open after this batch.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the

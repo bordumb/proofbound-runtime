@@ -1,13 +1,15 @@
 schema = "proofbound-claim/1"
 id = "PBR-OBSERVER-025"
 title = "Diagnostic syscall decoding is architecture-qualified and operand-bounded"
-statement = "For the separate Linux diagnostic active-trace source API, each PTRACE_GET_SYSCALL_INFO entry is decoded through one closed x86_64 or aarch64 syscall-number table before the stopped tracee resumes; only the filesystem, socket, process-creation, and execution families registered by Specification 0015 produce retained syscall events; openat2 and clone3 accept only registered ABI structure sizes; path strings are read without silent truncation under independent tracee-string and retained-path byte limits; socket-address reads use their independent byte limit; process_vm_readv is confined to the raw syscall module and completes each bounded read or returns a typed failure; sendto retains its payload length but never reads payload bytes; and an unknown architecture, x32 form, unsupported registered form, tracee-memory failure, or operand-bound exhaustion returns a closed error that forces diagnostic drain instead of producing an observation."
-public_language = "The separate Linux diagnostic observer has a bounded source-level decoder for the registered x86_64 and aarch64 syscall families. It captures path and socket-address operands while the tracee is stopped at entry, enforces independent string, path, and socket-address limits without silent truncation, and never reads request or response payload bytes. Unknown architectures, unsupported ABI forms, read failures, and bound exhaustion fail closed into diagnostic drain. Registered Rust tests and an independent exact-body checker cover the decoder tables, ordering, limits, read-only syscall confinement, and payload exclusion. They do not prove the Linux ABI, event completeness, tracee-memory stability, kernel-selected object identity, or a complete diagnostic execution."
-subject = "rust:proofbound_runtime_linux::trace::capture_syscall_invocation"
+statement = "For the separate Linux diagnostic observer's aggregate pure-bound, adapter, trace, and raw-read source path, each PTRACE_GET_SYSCALL_INFO entry is decoded through one closed x86_64 or aarch64 syscall-number table before the stopped tracee resumes; only the filesystem, socket, process-creation, and execution families registered by Specification 0015 produce retained syscall events; openat2 and clone3 accept only registered ABI structure sizes; path strings are read without silent truncation under independent tracee-string and retained-path byte limits; socket-address reads use their independent byte limit; process_vm_readv is confined to the raw syscall module and completes each bounded read or returns a typed failure; sendto retains its payload length but never reads payload bytes; and an unknown architecture, x32 form, unsupported registered form, tracee-memory failure, or operand-bound exhaustion returns a closed error that the coupled adapter converts irreversibly into diagnostic drain instead of producing an observation."
+public_language = "The separate Linux diagnostic observer has a bounded source-level decoder for the registered x86_64 and aarch64 syscall families. It captures path and socket-address operands while the tracee is stopped at entry, enforces independently derived string, path, and socket-address limits without silent truncation, and never reads request or response payload bytes. Unknown architectures, unsupported ABI forms, read failures, and bound exhaustion fail closed into diagnostic drain. Registered Rust compile/tests and independent exact-source checkers cover the aggregate bound, adapter, decoder, ordering, limit, read-only syscall, and payload-exclusion path. They do not prove the Linux ABI, event completeness, tracee-memory stability, kernel-selected object identity, or a complete diagnostic execution."
+subject = "rust:proofbound_runtime_linux::trace+proofbound_runtime_linux::sys::trace_read_process_memory+proofbound_runtime_diagnose::observer+proofbound_runtime_diagnose_linux::adapter"
 profile = "ledger"
 tier = 1
 evidence = [
   "example-test:diagnostic-trace-startup",
+  "example-test:diagnostic-syscall-decoder-adapter",
+  "independent-check:diagnostic-observer-adapter-contract",
   "independent-check:diagnostic-syscall-decoder-contract",
 ]
 assumptions = [
@@ -29,13 +31,18 @@ out_of_scope = [
 source_roots = [
   "Cargo.lock",
   "Cargo.toml",
+  "rust-toolchain.toml",
   "assumptions/PBR-DIAGNOSTIC-DECODE-CHECK-AX-018.toml",
   "assumptions/PBR-DIAGNOSTIC-DECODE-AX-017.toml",
   "claims/PBR-OBSERVER-025.toml",
+  "crates/proofbound-runtime-diagnose/Cargo.toml",
+  "crates/proofbound-runtime-diagnose/src/lib.rs",
   "crates/proofbound-runtime-diagnose/src/artifact.rs",
   "crates/proofbound-runtime-diagnose/src/observer.rs",
+  "crates/proofbound-runtime-diagnose-linux/Cargo.toml",
   "crates/proofbound-runtime-diagnose-linux/src/adapter.rs",
   "crates/proofbound-runtime-diagnose-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/Cargo.toml",
   "crates/proofbound-runtime-linux/src/lib.rs",
   "crates/proofbound-runtime-linux/src/sys.rs",
   "crates/proofbound-runtime-linux/src/trace.rs",
@@ -46,9 +53,13 @@ source_roots = [
   "docs/roadmap-2/rt-08-capability-informed-drafting.md",
   "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",
   "proofbound/evidence/diagnostic-syscall-decoder-contract.toml",
+  "proofbound/evidence/diagnostic-syscall-decoder-adapter.toml",
+  "proofbound/evidence/diagnostic-observer-adapter-contract.toml",
   "proofbound/evidence/diagnostic-trace-startup.toml",
+  "tools/ci/check_diagnostic_observer_adapter.py",
   "tools/ci/check_diagnostic_syscall_decoder.py",
   "tools/ci/ci.sh",
   "tools/ci/pre-commit.sh",
+  "tools/ci/test_diagnostic_observer_adapter.py",
   "tools/ci/test_diagnostic_syscall_decoder.py",
 ]

@@ -8,6 +8,7 @@ expected_inventory = [
   "diagnostic-syscall-decoder-architecture-tables",
   "diagnostic-syscall-decoder-bounded-operands",
   "diagnostic-syscall-decoder-entry-order",
+  "diagnostic-syscall-decoder-exact-source-closure",
   "diagnostic-syscall-decoder-mutation-witnesses",
   "diagnostic-syscall-decoder-no-payload",
   "diagnostic-syscall-decoder-raw-read-confinement",
@@ -15,13 +16,18 @@ expected_inventory = [
 inputs = [
   "Cargo.lock",
   "Cargo.toml",
+  "rust-toolchain.toml",
   "assumptions/PBR-DIAGNOSTIC-DECODE-CHECK-AX-018.toml",
   "assumptions/PBR-DIAGNOSTIC-DECODE-AX-017.toml",
   "claims/PBR-OBSERVER-025.toml",
+  "crates/proofbound-runtime-diagnose/Cargo.toml",
+  "crates/proofbound-runtime-diagnose/src/lib.rs",
   "crates/proofbound-runtime-diagnose/src/artifact.rs",
   "crates/proofbound-runtime-diagnose/src/observer.rs",
+  "crates/proofbound-runtime-diagnose-linux/Cargo.toml",
   "crates/proofbound-runtime-diagnose-linux/src/adapter.rs",
   "crates/proofbound-runtime-diagnose-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/Cargo.toml",
   "crates/proofbound-runtime-linux/src/lib.rs",
   "crates/proofbound-runtime-linux/src/sys.rs",
   "crates/proofbound-runtime-linux/src/trace.rs",
@@ -36,11 +42,21 @@ type = "independent-check"
 checker = "tools/ci/check_diagnostic_syscall_decoder.py"
 arguments = []
 paths = [
+  "rust-toolchain.toml",
+  "claims/PBR-OBSERVER-025.toml",
+  "crates/proofbound-runtime-diagnose/Cargo.toml",
+  "crates/proofbound-runtime-diagnose/src/lib.rs",
   "crates/proofbound-runtime-diagnose/src/observer.rs",
+  "crates/proofbound-runtime-diagnose-linux/Cargo.toml",
   "crates/proofbound-runtime-diagnose-linux/src/adapter.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/Cargo.toml",
   "crates/proofbound-runtime-linux/src/lib.rs",
   "crates/proofbound-runtime-linux/src/sys.rs",
   "crates/proofbound-runtime-linux/src/trace.rs",
+  "proofbound/evidence/diagnostic-observer-adapter-contract.toml",
+  "proofbound/evidence/diagnostic-syscall-decoder-adapter.toml",
+  "proofbound/evidence/diagnostic-syscall-decoder-contract.toml",
 ]
 
 [resource_budget]

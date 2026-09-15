@@ -78,22 +78,29 @@ exact-main run `34956564102`. The trace-startup prerequisite passed independent
 exact-head review and complete hosted verification, merged unsigned as
 `9395050`, and exact-main run `34962882198` passed. Its coupled adapter passed
 independent review and complete hosted run `34964466007`, then merged unsigned
-as `d34eab1`; exact-main run `34969409215` is in progress. The following active-trace
+as `d34eab1`; exact-main run `34969409215` passed. The following active-trace
 source adds exact-set waits, paired syscall stops, process-tree identity
 handling, and validated pidfd-directed termination. It remains byte-identical
 to independently approved source `c20f6e3`; its admitted-main replay at
 `1db68a6` was also independently approved, and approval-only head `c4b88c1` is
-in hosted verification. The following event-and-drain source `af9f77d` passed
+not admitted alone: run `34970508987` failed only on the two Rust lints fixed by
+the following reviewed batch. The following event-and-drain source `af9f77d` passed
 independent exact-head review before this restack. It passes the validated
 process bound into the trace, consumes each complete event into the same pure
 protocol, permanently rejects an unreconciled process tree, and orders a
 successful effectful drain before the pure tree-empty acknowledgement. Restacked
-head `45b1c91` passed exact replay review, and approval-only head `a048f5e` is in
-hosted verification. The following decoder changes these shared sources again.
-Its architecture-qualified tables and bounded entry-time operand capture are
-implemented under `PBR-OBSERVER-025`; exact review and hosted admission of the
-combined current sources remain open. Artifact mapping, command integration,
-the native attack corpus, and release binding remain open.
+head `45b1c91` passed exact replay review. The behavior-preserving Rust-lint
+correction `a3f56b5` also passed exact review; approval-only head `9f82afa` is in
+replacement Verify run `34973401808`, where preflight, Rust, and both native
+lanes passed while formal and evidence continue. The following decoder changes
+these shared sources again. Its architecture-qualified tables and bounded
+entry-time operand capture are implemented under `PBR-OBSERVER-025`; the exact
+aggregate subject, compiler and crate-selection closure, adapter build
+evidence, all load-bearing decoder bodies, and the zero-reserved exact-size
+syscall-information parser are registered. Exact review and hosted admission
+of the combined current sources remain open. Artifact
+mapping, command integration, the native attack corpus, and release binding
+remain open.
 RT-9 is blocked until RT-5 implements the accepted single-service network
 decision in production.
 

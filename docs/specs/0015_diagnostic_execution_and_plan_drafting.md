@@ -382,11 +382,17 @@ typestate, and the ordering of an effectful empty-tree report before a pure
 tree-empty acknowledgement. It does not strengthen the Linux premise or make
 the diagnostic executable a released artifact.
 
-`PBR-OBSERVER-025` checks the closed x86_64 and aarch64 decoder tables,
-entry-before-resume ordering, supported structure sizes, independent operand
+`PBR-OBSERVER-025` checks the aggregate source path from pure bound accessors
+through adapter derivation, irreversible failure-to-drain coupling, pre-resume
+entry capture, the closed x86_64 and aarch64 decoder tables, supported
+structure sizes, argument-width and byte-order helpers, independent operand
 bounds, exact-or-error tracee reads, raw read-only syscall confinement, and
-payload exclusion. It does not establish the Linux ABI, tracee-memory
-stability, kernel-selected object identity, or native observation completeness.
+payload exclusion. The syscall-information form accepts zero reserved and
+flags fields and the exact operation-specific returned size; extensions fail
+closed until registered. The evidence byte-pins the compiler and
+crate-selection closure and compiles the selected adapter release and drain
+paths. It does not establish the Linux ABI, tracee-memory stability,
+kernel-selected object identity, or native observation completeness.
 
 RT-8 closes only after one maintained dynamic workload displays all available
 provenance classes, requires human completion, passes the independent

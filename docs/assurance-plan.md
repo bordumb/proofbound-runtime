@@ -616,12 +616,21 @@ PBR-DIAGNOSTIC-TRACE-AX-016 and the RT-8 native evidence wave.
 
 ## PBR-OBSERVER-025
 
-The current subject is the separate Linux active trace syscall-entry decoder.
-It selects one closed table from the Linux audit architecture before it
-interprets a syscall number. The table contains only the filesystem, socket,
-process-creation, and execution families registered by Specification 0015 for
-x86_64 and aarch64. It rejects x32, unknown architectures, and unsupported
-`openat2` or `clone3` structure forms.
+The current aggregate subject joins the pure observer bound accessors, the
+Linux adapter's bound derivation and irreversible failure-to-drain transition,
+the active trace's pre-resume entry capture, architecture router, closed
+tables, argument helpers, and bounded readers, and the raw read-only process
+memory operation. It selects one closed table from the Linux audit architecture
+before it interprets a syscall number. The table contains only the filesystem,
+socket, process-creation, and execution families registered by Specification
+0015 for x86_64 and aarch64. It rejects x32, unknown architectures, and
+unsupported `openat2` or `clone3` structure forms.
+
+The raw syscall-information parser names the current Linux reserved and flags
+fields. Both must be zero. It rejects a return larger than its supplied buffer
+and accepts only the exact operation-specific byte count for none, entry, exit,
+or seccomp data. A future extension therefore becomes a typed diagnostic
+failure and drain obligation until Runtime registers its meaning.
 
 The trace captures a registered operand before it resumes the stopped tracee.
 Path strings must terminate within the tracee-string read bound and fit the
@@ -632,11 +641,18 @@ length but never reads the payload pointer or bytes. Other unregistered syscall
 numbers resume without producing a retained event.
 
 The Rust tests cover architecture-qualified table selection, unknown
-architecture rejection, x32 rejection, bound constructors, and the closed error
-vocabulary. The independent checker byte-pins the load-bearing decoder and read
-bodies and mutates architecture numbers, each operand bound, the payload
-pointer selection, and the raw read-only operation. These source checks do not
-prove the Linux ABI, `process_vm_readv`, memory stability, or event completeness.
+architecture rejection, x32 rejection, bound constructors, the closed error
+vocabulary, and compilation of the selected adapter release and drain paths.
+The independent checker byte-pins the compiler and crate-selection closure;
+the adapter release and drain transition; the trace event loop, entry handler,
+bound constructor, router, both architecture tables, width and byte-order
+helpers, supported-family decoder, syscall-information fetch and exact parser,
+bounded readers, and raw read operation. Its mutation witnesses cover the
+router, architecture numbers, x32 rejection, argument width, byte order,
+reserved and flags fields, truncated and extended operation sizes, each operand
+bound, adapter limit wiring, payload pointer selection, and raw read-only
+operation. These source checks do not prove the Linux ABI, `process_vm_readv`,
+memory stability, or event completeness.
 `PBR-DIAGNOSTIC-DECODE-AX-017` retains those premises. Native decoder fixtures,
 artifact mapping, object resolution, command integration, and release binding
 remain open.
