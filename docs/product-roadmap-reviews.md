@@ -1538,3 +1538,32 @@ warnings-as-errors gate therefore rejected the residual unused test import.
 The correction removes only that unused import. It changes source bytes in the
 reviewed range, so the corrected exact head requires a new independent static
 review and complete hosted verification before merge.
+
+## RT-8 diagnostic artifact producer final hosted-correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `cb52c5115d73c72aebad51c4c0f4a301068d8479`
+- **Reviewed head:** `1d4f0986e41993255a6516e377669c5139ca3ce2`
+- **Branch:** `codex/rt8-observer`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the final correction removes only the unused
+`DiagnosticGap` test import while retaining the separate diagnostic-gap open
+item. All prior blockers remain closed: receipt roles, bounds, gap
+consistency, reusable-path evidence, redaction, event ordering, complete TCB
+roles, incremental bounded canonical output, automatic-candidate path scopes,
+Capsec identity and completeness binding, aggregate claim identity, locked
+dependencies, and registered evidence inventory.
+
+The documentation continues to leave exact-head hosted admission, the live
+observer, native attack evidence, and release binding open. No new blocker was
+found.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`1d4f0986e41993255a6516e377669c5139ca3ce2`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.
