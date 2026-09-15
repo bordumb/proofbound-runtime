@@ -186,11 +186,13 @@ manifest describes the supported tuple.
   hosted verification remain open.
 - [ ] Admit the active trace event source. The implementation polls only its
   private exact tracee set, registers ptrace children before parent resume,
-  pairs syscall entry and exit information, reconciles multithreaded exec, and
+  pairs syscall entry and exit information across exec events, reconciles
+  leader and non-leader exec, and
   uses validated pidfds for identity-stable termination. Its source claim
   explicitly leaves the effectful process-map bound, Linux effects, adapter
-  event coupling, and native attack evidence open. Independent review and
-  hosted compilation remain open.
+  event coupling, and native attack evidence open. The first independent review
+  found incorrect syscall-pair retention and non-leader exec identity checks;
+  the correction and exact re-review remain open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.

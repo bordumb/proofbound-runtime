@@ -132,8 +132,11 @@ process-creation stop supplies a child identity before the stopped parent can
 resume. The trace reads and retains the child's thread-group identity and an
 identity-stable process handle before it adds the child. It pairs system-call
 entry and exit information before it returns a complete system-call event. A
-successful multithreaded exec reconciles the former thread identity with the
-reported thread-group leader and removes superseded thread state. A terminal
+successful multithreaded exec requires the exact wait to report its requested
+retained leader and the kernel event message to name a former thread retained
+in that leader's group. It transfers the former state to the reported leader,
+preserves a pending syscall entry for the following exit stop, and removes
+superseded thread state. A terminal
 wait removes exactly one retained tracee. Every returned nonterminal event
 keeps its tracee stopped until the next request.
 

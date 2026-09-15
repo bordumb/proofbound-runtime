@@ -537,10 +537,13 @@ adds the child to the exact wait set.
 
 System-call entry information is retained privately and paired with its exit
 information before the API returns one complete event. The stopped tracee is
-held until the caller asks for another event. An exec event requires the
-kernel-reported former thread to equal the requested tracee and its retained
-thread group to equal the reported survivor. It retains the surviving entry
-state and removes superseded threads in that group. Exact terminal
+held until the caller asks for another event. An exec event requires the exact
+wait result to name the requested retained thread-group leader. The kernel
+event message can name the former non-leader thread. Both identities must
+belong to the retained surviving thread group. The trace transfers the former
+thread state to the surviving leader, preserves its pending syscall entry for
+the following exit stop, and removes superseded thread state in that group.
+Exact terminal
 wait results remove tracees and unused process handles.
 
 The bounded evidence path checks that:
@@ -551,8 +554,9 @@ The bounded evidence path checks that:
    resumes;
 3. system-call entry and exit information is paired, with missing or duplicate
    phases rejected;
-4. exec identity replacement updates the retained set and removes superseded
-   thread state;
+4. leader and non-leader exec identity replacement updates the retained set,
+   preserves syscall pairing across the exec event, rejects foreign identities,
+   and removes superseded thread state;
 5. unexpected stops, event errors, and timeouts make further collection require
    drain; and
 6. active-trace drop and explicit drain address thread groups only through

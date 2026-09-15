@@ -97,8 +97,8 @@ values without making a draft an authority object.
   Public owner fields, raw trace states, and mutable protocol access are absent.
 - The active trace polls only its private known tracee set. It registers a
   ptrace-created child and identity-stable thread-group handle before its
-  stopped parent resumes, pairs syscall entry and exit information, reconciles
-  multithreaded exec identity replacement, and holds each returned nonterminal
+  stopped parent resumes, pairs syscall entry and exit information across exec
+  events, reconciles leader and non-leader exec identity replacement, and holds each returned nonterminal
   event stopped until the next request. Observation failure requires drain.
   Termination uses retained pidfds and cannot target a reused numeric PID.
 - Automatic candidates require an explicit normalized project or runtime

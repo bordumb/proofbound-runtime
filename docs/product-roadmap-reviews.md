@@ -2194,3 +2194,30 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, or test bytes. Any later subject change requires a new
 exact-head review.
+
+## RT-8 active-trace event source review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `17bb2b4c38cfeb18e2c8d75c372e6c06d6dd2656`
+- **Reviewed head:** `70311d7e3abf9111a658dda13e3986f81018e6a3`
+- **Branch:** `codex/rt8-live-events`
+- **Method:** Complete exact-range static review. The reviewer changed no files
+  and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The review found two blocking Linux exec-state defects. First, the exec event
+removed the pending syscall entry even though the kernel reports the matching
+syscall-exit stop after `PTRACE_EVENT_EXEC`. A successful exec would therefore
+fail closed with a false syscall-order error at the following stop. Second,
+the identity predicate required the kernel event message's former thread to
+equal the requested wait identity. During a non-leader exec, Linux reports the
+event under the surviving thread-group leader and returns the former
+non-leader identity through `PTRACE_GETEVENTMSG`, so the predicate rejected a
+valid transition.
+
+The correction must preserve the pending entry across the exec event, require
+the exact wait result to match its requested retained leader, validate both the
+reported survivor and former thread against the same retained thread group,
+and add regression cases for entry-to-exec-to-exit pairing and non-leader exec.
+This verdict is not endorsed. The correction changes the exact subject and
+requires another independent review.

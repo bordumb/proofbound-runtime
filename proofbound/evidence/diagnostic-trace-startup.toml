@@ -7,6 +7,8 @@ tier = 0
 expected_inventory = [
   "proofbound_runtime_linux::trace::tests::process_ids_deadlines_and_error_codes_are_closed",
   "proofbound_runtime_linux::trace::tests::observation_errors_have_unique_stable_codes",
+  "proofbound_runtime_linux::trace::tests::nonleader_exec_preserves_pending_syscall_until_exit_pair",
+  "proofbound_runtime_linux::trace::tests::exec_identity_rejects_wrong_wait_owner_and_foreign_former_thread",
   "proofbound_runtime_linux::trace::tests::thread_group_parser_requires_one_exact_positive_field",
 ]
 inputs = [

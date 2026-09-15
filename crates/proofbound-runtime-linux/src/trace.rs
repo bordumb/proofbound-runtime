@@ -489,12 +489,7 @@ impl ActiveTrace {
     ) -> Result<WaitDecision, TraceObservationError> {
         let reported = TraceProcessId::new(observation.process_id)
             .map_err(|_| TraceObservationError::ProcessIdentityInvalid)?;
-        let is_exec = matches!(
-            observation.status,
-            crate::sys::TraceWaitStatus::Stopped { signal, event }
-                if signal == SIGNAL_TRAP && crate::sys::trace_event_is_exec(event)
-        );
-        if reported != requested && !is_exec {
+        if reported != requested {
             return Err(TraceObservationError::ProcessIdentityChanged);
         }
 
@@ -503,10 +498,7 @@ impl ActiveTrace {
                 if signal == SIGNAL_TRAP && crate::sys::trace_event_is_exec(event) =>
             {
                 let process = self.reconcile_exec_identity(requested, reported)?;
-                let invocation = self
-                    .processes
-                    .get_mut(&process)
-                    .and_then(|state| state.pending.take());
+                let invocation = self.processes.get(&process).and_then(|state| state.pending);
                 self.held_process = Some(process);
                 Ok(WaitDecision::Event(ActiveTraceEvent::ImageReplaced {
                     process,
@@ -675,36 +667,14 @@ impl ActiveTrace {
                 TraceProcessId::new(value)
                     .map_err(|_| TraceObservationError::ProcessIdentityInvalid)
             })?;
-        let former_thread_group = self
-            .processes
-            .get(&former)
-            .map(|state| state.thread_group)
-            .ok_or(TraceObservationError::ProcessUnknown)?;
-        if former != requested || former_thread_group != reported {
-            return Err(TraceObservationError::ProcessIdentityChanged);
-        }
-        let mut exec_state = self
-            .processes
-            .remove(&former)
-            .ok_or(TraceObservationError::ProcessUnknown)?;
-        let replaced_threads = self
-            .processes
-            .iter()
-            .filter_map(|(process, state)| (state.thread_group == reported).then_some(*process))
-            .collect::<Vec<_>>();
-        for process in replaced_threads {
-            self.processes.remove(&process);
-        }
-        exec_state.thread_group = reported;
-        exec_state.awaiting_initial_stop = false;
-        self.processes.insert(reported, exec_state);
+        let process = reconcile_exec_processes(&mut self.processes, requested, reported, former)?;
         if !self.process_handles.contains_key(&reported) {
             let handle = crate::sys::trace_open_process_handle(reported.get())
                 .map_err(|_| TraceObservationError::ProcessHandleFailed)?;
             self.process_handles.insert(reported, handle);
         }
         self.remove_unused_process_handles();
-        Ok(reported)
+        Ok(process)
     }
 
     #[cfg(target_os = "linux")]
@@ -736,12 +706,7 @@ impl ActiveTrace {
     ) -> Result<(), TraceObservationError> {
         let reported = TraceProcessId::new(observation.process_id)
             .map_err(|_| TraceObservationError::ProcessIdentityInvalid)?;
-        let is_exec = matches!(
-            observation.status,
-            crate::sys::TraceWaitStatus::Stopped { signal, event }
-                if signal == SIGNAL_TRAP && crate::sys::trace_event_is_exec(event)
-        );
-        if reported != requested && !is_exec {
+        if reported != requested {
             return Err(TraceObservationError::ProcessIdentityChanged);
         }
         match observation.status {
@@ -862,6 +827,44 @@ impl TraceeState {
             pending: None,
         }
     }
+}
+
+#[cfg(target_os = "linux")]
+fn reconcile_exec_processes(
+    processes: &mut BTreeMap<TraceProcessId, TraceeState>,
+    requested: TraceProcessId,
+    reported: TraceProcessId,
+    former: TraceProcessId,
+) -> Result<TraceProcessId, TraceObservationError> {
+    if reported != requested {
+        return Err(TraceObservationError::ProcessIdentityChanged);
+    }
+    let survivor_thread_group = processes
+        .get(&reported)
+        .map(|state| state.thread_group)
+        .ok_or(TraceObservationError::ProcessUnknown)?;
+    let former_thread_group = processes
+        .get(&former)
+        .map(|state| state.thread_group)
+        .ok_or(TraceObservationError::ProcessUnknown)?;
+    if survivor_thread_group != reported || former_thread_group != reported {
+        return Err(TraceObservationError::ProcessIdentityChanged);
+    }
+
+    let mut exec_state = processes
+        .remove(&former)
+        .ok_or(TraceObservationError::ProcessUnknown)?;
+    let replaced_threads = processes
+        .iter()
+        .filter_map(|(process, state)| (state.thread_group == reported).then_some(*process))
+        .collect::<Vec<_>>();
+    for process in replaced_threads {
+        processes.remove(&process);
+    }
+    exec_state.thread_group = reported;
+    exec_state.awaiting_initial_stop = false;
+    processes.insert(reported, exec_state);
+    Ok(reported)
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1304,5 +1307,78 @@ mod tests {
                 Err(TraceObservationError::ThreadGroupInvalid)
             );
         }
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn nonleader_exec_preserves_pending_syscall_until_exit_pair() {
+        let leader = TraceProcessId::new(41).expect("positive leader identity");
+        let former = TraceProcessId::new(42).expect("positive former identity");
+        let sibling = TraceProcessId::new(43).expect("positive sibling identity");
+        let unrelated = TraceProcessId::new(51).expect("positive unrelated identity");
+        let invocation = TraceSyscallInvocation {
+            architecture: 0xc000_003e,
+            instruction_pointer: 0x1234,
+            stack_pointer: 0x5678,
+            number: 59,
+            arguments: [1, 2, 3, 4, 5, 6],
+        };
+        let mut processes = BTreeMap::from([
+            (leader, TraceeState::observing(leader)),
+            (
+                former,
+                TraceeState {
+                    thread_group: leader,
+                    awaiting_initial_stop: false,
+                    pending: Some(invocation),
+                },
+            ),
+            (sibling, TraceeState::observing(leader)),
+            (unrelated, TraceeState::observing(unrelated)),
+        ]);
+
+        assert_eq!(
+            reconcile_exec_processes(&mut processes, leader, leader, former),
+            Ok(leader)
+        );
+        assert_eq!(processes.len(), 2);
+        assert!(!processes.contains_key(&former));
+        assert!(!processes.contains_key(&sibling));
+        assert_eq!(
+            processes.get(&leader).and_then(|state| state.pending),
+            Some(invocation)
+        );
+        assert_eq!(
+            processes
+                .get_mut(&leader)
+                .and_then(|state| state.pending.take()),
+            Some(invocation)
+        );
+        assert!(processes
+            .get(&leader)
+            .is_some_and(|state| state.pending.is_none()));
+        assert!(processes.contains_key(&unrelated));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn exec_identity_rejects_wrong_wait_owner_and_foreign_former_thread() {
+        let leader = TraceProcessId::new(61).expect("positive leader identity");
+        let former = TraceProcessId::new(62).expect("positive former identity");
+        let foreign = TraceProcessId::new(71).expect("positive foreign identity");
+        let mut processes = BTreeMap::from([
+            (leader, TraceeState::observing(leader)),
+            (former, TraceeState::observing(leader)),
+            (foreign, TraceeState::observing(foreign)),
+        ]);
+
+        assert_eq!(
+            reconcile_exec_processes(&mut processes, former, leader, former),
+            Err(TraceObservationError::ProcessIdentityChanged)
+        );
+        assert_eq!(
+            reconcile_exec_processes(&mut processes, leader, leader, foreign),
+            Err(TraceObservationError::ProcessIdentityChanged)
+        );
     }
 }

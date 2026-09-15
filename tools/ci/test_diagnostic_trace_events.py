@@ -63,7 +63,10 @@ class DiagnosticTraceEventContractTests(unittest.TestCase):
         active = implementation(self.trace, "impl ActiveTrace")
         register = implementation(active, "fn register_child")
         reconcile = implementation(active, "fn reconcile_exec_identity")
-        reconcile_compact = re.sub(r"\s+", "", reconcile)
+        reconcile_processes = implementation(self.trace, "fn reconcile_exec_processes")
+        wait = implementation(active, "fn handle_wait_observation")
+        drain = implementation(active, "fn handle_drain_observation")
+        reconcile_compact = re.sub(r"\s+", "", reconcile_processes)
         self.assertIn("trace_event_process(reported.get())", active)
         self.assertIn("trace_process_creation_event(event)", active)
         self.assertLess(
@@ -71,14 +74,42 @@ class DiagnosticTraceEventContractTests(unittest.TestCase):
             register.index("self.processes"),
         )
         self.assertIn("read_thread_group_id(child)", register)
-        self.assertIn("self.processes.remove(&former)", reconcile_compact)
-        self.assertIn("former != requested || former_thread_group != reported", reconcile)
-        self.assertIn("state.thread_group == reported", reconcile)
-        self.assertIn("self.processes.insert(reported, exec_state)", reconcile)
+        self.assertIn("reconcile_exec_processes(&mut self.processes", reconcile)
+        self.assertIn("ifreported!=requested", reconcile_compact)
+        self.assertIn("survivor_thread_group != reported", reconcile_processes)
+        self.assertIn("former_thread_group != reported", reconcile_processes)
+        self.assertIn("processes.remove(&former)", reconcile_compact)
+        self.assertIn("state.thread_group == reported", reconcile_processes)
+        self.assertIn("processes.insert(reported, exec_state)", reconcile_processes)
+        self.assertIn("if reported != requested", wait)
+        self.assertIn("if reported != requested", drain)
         self.assertIn("PTRACE_EVENT_FORK", self.sys)
         self.assertIn("PTRACE_EVENT_VFORK", self.sys)
         self.assertIn("PTRACE_EVENT_CLONE", self.sys)
         self.assertIn("PTRACE_EVENT_EXEC", self.sys)
+
+    def test_nonleader_exec_keeps_entry_for_the_following_exit_stop(self):
+        active = implementation(self.trace, "impl ActiveTrace")
+        wait = implementation(active, "fn handle_wait_observation")
+        regression = implementation(
+            self.trace,
+            "fn nonleader_exec_preserves_pending_syscall_until_exit_pair",
+        )
+        self.assertIn(".get(&process)", wait)
+        self.assertIn("state.pending", wait)
+        self.assertNotIn("state.pending.take()", wait)
+        self.assertIn("reconcile_exec_processes", regression)
+        self.assertIn("pending: Some(invocation)", regression)
+        self.assertIn("state.pending.take()", regression)
+
+    def test_exec_identity_falsifiers_cover_wrong_owner_and_foreign_thread(self):
+        regression = implementation(
+            self.trace,
+            "fn exec_identity_rejects_wrong_wait_owner_and_foreign_former_thread",
+        )
+        self.assertEqual(regression.count("ProcessIdentityChanged"), 2)
+        self.assertIn("former, leader, former", regression)
+        self.assertIn("leader, leader, foreign", regression)
 
     def test_termination_uses_pidfds_and_never_numeric_kill(self):
         active = implementation(self.trace, "impl ActiveTrace")
