@@ -107,8 +107,9 @@ syscall-information parser are registered. Independently approved source
 Every formal, native, and fresh-evidence lane passed, but the Rust lane rejected
 a large private enum. Correction `5d479bd` replaces that private state with
 `Option<ActiveTraceEvent>` without per-event allocation and refreshes both exact
-source guards. Its independent exact-head re-review and replacement hosted
-admission remain open. Artifact
+source guards. Independent re-review approved exact head `b027ddd`; the
+following approval-only status commit and replacement hosted admission remain
+open. Artifact
 mapping, command integration, the native attack corpus, and release binding
 remain open.
 RT-9 is blocked until RT-5 implements the accepted single-service network

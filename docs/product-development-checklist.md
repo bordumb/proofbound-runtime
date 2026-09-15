@@ -1,7 +1,7 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T16:14:22+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T16:27:00+01:00 (Europe/London, BST)
 - **Runtime baseline:** the combined active trace and event-drain batch passed
   exact-head Verify run `34973401808` at `9f82afa` and merged unsigned as
   `b2cb4b9`. Exact-main run `34978365970` failed before the required lanes
@@ -16,9 +16,9 @@
   exact main with no content conflict. Its independently approved exact source
   `5d82dcd` and approval-only head `858bfb9` then failed hosted run
   `34979197795` only on a large private enum lint. Correction `5d479bd` removes
-  that enum without adding per-event allocation, refreshes the exact source
-  guards, and is pending independent exact-head re-review before replacement
-  hosted admission.
+  that enum without adding per-event allocation and refreshes the exact source
+  guards. Independent re-review approved exact head `b027ddd`; the following
+  approval-only status commit precedes replacement hosted admission.
 - **Current implementation batch:** architecture-qualified syscall decoding and
   bounded operand capture are implemented locally as `PBR-OBSERVER-025`. The
   exact aggregate subject, compiler and crate-selection closure, adapter build
@@ -244,7 +244,8 @@ manifest describes the supported tuple.
   `34979197795`; every formal, native, and fresh-evidence lane passed, but the
   Rust lane rejected a large private enum. Correction `5d479bd` represents the
   same continue-or-event state as `Option<ActiveTraceEvent>`, avoids heap
-  allocation, and refreshes both exact-body checkers. Its exact re-review and
+  allocation, and refreshes both exact-body checkers. Independent re-review
+  approved exact head `b027ddd`. The following approval-only status commit and
   replacement hosted admission remain open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty

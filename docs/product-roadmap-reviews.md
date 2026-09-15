@@ -2586,3 +2586,31 @@ document correctly records that the run failed before required lanes started
 because the unrelated network experiment missed its ready-file observation.
 The correction aligns that sentence. This verdict is not endorsed. The exact
 corrected head requires independent re-review.
+
+## RT-8 hosted-lint correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `b2cb4b9bf10398ca5559dc476c492c3bd6d46c0b`
+- **Reviewed head:** `b027dddcd600170917ceba313b27adb644a06d5a`
+- **Branch:** `codex/rt8-syscall-decoder`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the stale checklist sentence now records exact-main
+run `34978365970` as failing before required lanes because of the unrelated
+ready-file observation. The previous `REQUEST CHANGES` record accurately names
+the reviewed identities, blocker, and non-endorsement.
+
+The final correction after `1750ef4` changes only that checklist sentence and
+the review record. Production code, claims, evidence, and checkers are
+unchanged. The `Option<ActiveTraceEvent>` correction therefore preserves every
+previously approved continue-or-event branch, adds no per-event allocation,
+refreshes all three affected exact-body guards, and retains the causal routing
+mutation.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`b027dddcd600170917ceba313b27adb644a06d5a`. The following approval-only commit
+changes no reviewed production, claim, evidence, or checker bytes. Any later
+subject change requires a new exact-head review.

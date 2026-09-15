@@ -33,8 +33,9 @@ closed. Independently approved source `5d82dcd` and approval-only head
 `858bfb9` reached hosted run `34979197795`; the formal, native, and all
 fresh-evidence lanes passed, but the Rust lane rejected a large private enum.
 Correction `5d479bd` uses the existing optional event state directly, adds no
-per-event allocation, and refreshes the exact-body guards. Its independent
-exact-head re-review and replacement hosted admission remain open. Artifact mapping,
+per-event allocation, and refreshes the exact-body guards. Independent
+re-review approved exact head `b027ddd`; the following approval-only status
+commit and replacement hosted admission remain open. Artifact mapping,
 command integration, the native attack corpus,
 and release binding remain open.
 
