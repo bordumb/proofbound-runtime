@@ -5,7 +5,7 @@ category = "compiler-tcb"
 owner = "Proofbound Runtime release maintainer"
 rationale = "Golden equality, rejection tests, process-boundary tests, and package reproduction execute through language runtimes and standard libraries whose implementations are not proved by this repository."
 scope = "Only the source-level interpretation of the Python and TypeScript SDK evidence for PBR-SDK-014."
-affected_claims = ["PBR-SDK-014"]
+affected_claims = ["PBR-DISTRIBUTION-018", "PBR-SDK-014"]
 review_evidence = [
   ".github/workflows/ci.yml",
   "docs/specs/0012_plan_sdks.md",

@@ -319,18 +319,13 @@ class VerifierPackagePreflightTests(unittest.TestCase):
             ],
         )
 
-    def test_first_slice_has_no_registry_publication_route(self) -> None:
+    def test_package_builder_has_no_registry_publication_side_effect(self) -> None:
         builder = (ROOT / "tools/release/build_verifier_package.py").read_text(
             encoding="utf-8"
         )
-        sources = [
-            (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8"),
-            builder,
-        ]
-        for source in sources:
-            self.assertNotIn("cargo publish", source)
-            self.assertNotIn("npm publish", source)
-            self.assertNotIn("twine upload", source)
+        self.assertNotIn("cargo publish", builder)
+        self.assertNotIn("npm publish", builder)
+        self.assertNotIn("twine upload", builder)
         self.assertGreaterEqual(builder.count('"--offline"'), 2)
 
     def test_publication_inheritance_or_denial_is_rejected(self) -> None:

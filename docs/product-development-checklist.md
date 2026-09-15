@@ -1,9 +1,11 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T02:04:26+01:00 (Europe/London, BST)
-- **Runtime baseline:** admitted `main` at `f2a06de`
-- **Active worktree:** `codex/rt7-public-bundle-cutover`
+- **Last updated:** 2026-09-15T03:00:38+01:00 (Europe/London, BST)
+- **Runtime baseline:** unsigned RT-7 merge `4a0cfdb`; exact-main Verify run
+  `34918706960` is pending, so `f2a06de` remains the latest admitted identity
+- **Active implementation wave:** RT-7 registry publication contract on
+  `codex/rt7-registry-publication`
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -77,7 +79,8 @@ implementation remain behind their recorded demand gates.
 - [x] Record and endorse the non-author exact-subject approval in a separate
   unsigned documentation-only commit without changing the reviewed production
   subject.
-- [ ] Push once and pass the complete hosted exact-head Verify gate.
+- [x] Push once and pass the complete hosted exact-head Verify gate at
+  `515fcbc` in run `34915891330`.
 - [ ] Merge unsigned and pass the exact-main Verify gate.
 - [ ] Close `PBR-DISTRIBUTION-016` only after the review and hosted evidence
   above exist.
@@ -97,10 +100,11 @@ Review history:
 
 ### Package publication and consumer closure
 
-- [ ] Select the smallest current public set: independent verifier, Runtime
+- [x] Select the smallest current public set: independent verifier, Runtime
   SDK, Python SDK, and TypeScript SDK. Do not publish internal crates without a
   demonstrated consumer.
-- [ ] Add registry publication only to the exact approved release workflow.
+- [x] Add opt-in registry publication only to the exact approved release
+  workflow, behind the protected `package-publish` environment.
 - [ ] Publish from one exact approved `main` revision using registry
   credentials supplied through the release environment.
 - [ ] Retrieve each registry artifact anonymously and compare its exact bytes

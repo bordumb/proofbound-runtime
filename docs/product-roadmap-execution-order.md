@@ -1,7 +1,7 @@
 # Product roadmap execution order
 
 - **Status:** active delivery order
-- **Date:** 2026-09-13
+- **Date:** 2026-09-15
 - **Applies to:** Roadmap 1 release closure, Roadmap 2, and Roadmap 3 candidate
   promotion
 - **Current admitted Runtime main:** `7f989d3`; exact-main Verify run
@@ -136,9 +136,12 @@ passed. Public release `388736918` is immutable and binds that exact source.
 Runtime's isolated public-bundle dogfood wave pins those identities without
 changing the existing evidence path. That wave passed independent review,
 merged as Runtime `f2a06de`, and passed exact-main Verify run `34908515545`.
-The current separate wave replaces protected evidence and release source builds
-with independent exact-bundle installation. It remains incomplete until its
-own independent review and exact-head hosted gate pass.
+The protected-path cutover passed independent review at production subject
+`9d0cbb2`, passed exact-head Verify run `34915891330` at approval-envelope head
+`515fcbc`, and merged unsigned as `4a0cfdb`. Exact-main Verify run
+`34918706960` is pending. The next isolated RT-7 wave adds an explicit,
+protected registry route and anonymous exact-byte retrieval; it does not claim
+that registry publication or external configuration has occurred.
 This work follows the admitted foundation as a separate exact-source wave. It
 does not require a version transition or preserve an older candidate surface.
 

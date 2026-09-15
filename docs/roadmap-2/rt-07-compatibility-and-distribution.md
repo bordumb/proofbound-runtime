@@ -1,8 +1,8 @@
 # RT-7 integration record: prelaunch packaging and distribution
 
-**Status:** RT-7.2 verifier package and Runtime public-bundle dogfood merged and
-admitted; protected evidence and release cutover is in progress; registry
-publication and the current-integration record remain open
+**Status:** RT-7.2 verifier package and Runtime public-bundle dogfood admitted;
+protected evidence and release cutover merged with exact-main verification
+pending; registry publication and the current-integration record remain open
 
 **Primary owner:** Proofbound Runtime
 
@@ -67,9 +67,11 @@ workflow, asset digest, and byte-size identities in
 `proofbound/toolchains/proofbound-tool-bundle-pin.json`. The first consumer
 wave installed those public bytes only in an isolated required dogfood job. It
 passed independent review, merged as unsigned Runtime commit `f2a06de`, and
-passed exact-main Verify run `34908515545`. The current separate wave replaces
-the existing source-build path in protected evidence and release production.
-It remains open until its independent review and exact-head hosted gate pass.
+passed exact-main Verify run `34908515545`. The separate cutover replaced the
+existing source-build path in protected evidence and release production. It
+passed independent review at production subject `9d0cbb2`, passed exact-head
+Verify run `34915891330` at approval-envelope head `515fcbc`, and merged
+unsigned as `4a0cfdb`. Exact-main run `34918706960` remains the admission gate.
 The product label does not participate in selection.
 
 ## RT-7.2 implementation checkpoint
@@ -119,17 +121,40 @@ The admitted dogfood wave added:
   bundle while the admitted source-build evidence path stays unchanged.
 
 The dogfood wave was not a compatibility period. It limited the supply-chain
-blast radius before the current separate reviewed cutover. The cutover removes
-the Git source build and cross-job tool artifact from protected CI. Each fresh
+blast radius before the separate reviewed cutover. The cutover removes the Git
+source build and cross-job tool artifact from protected CI. Each fresh
 evidence shard installs and verifies the public bundle directly. Each release
 architecture selects its matching public platform bundle and verifies all
-seven executables before the base gate runs. The cutover is not admitted until
-independent review and exact-head hosted verification pass.
+seven executables before the base gate runs. The exact-head gates passed and
+the unsigned merge is awaiting its exact-main result.
 
 The registered premises keep GitHub, repository controls, DNS, TLS, Python,
 the digest implementation, the pinned upstream installer, the hosted runner,
 process behavior, and filesystem behavior visible. The checks bind exact
 identities under those premises; they do not discharge them.
+
+## Registry publication implementation checkpoint
+
+The next claim-sized wave selects only the independent verifier, Rust SDK,
+Python SDK, and TypeScript SDK. The exact release workflow has an explicit
+`publish_packages` input whose default is false. A publish request still waits
+for complete release provenance and the protected `package-publish`
+environment. Rust publication uses a scoped crates.io token only in its two
+Rust publisher steps. PyPI and npm use workflow-specific OIDC trusted
+publishers. No credential is available to the anonymous observation job.
+
+The four publishers run in the selected order. The Rust jobs reproduce their
+upload inputs from the exact checked-out mainline source and compare those
+bytes with the approved release artifacts. After the last publisher, an
+uncredentialed job retrieves all four public artifacts, constrains registry
+metadata and download hosts, and compares downloaded bytes with the approved
+artifacts. A canonical registry-observation record is retained only after all
+four comparisons pass.
+
+Repository code does not configure registry ownership, GitHub environment
+protection, OIDC trusted-publisher records, or the crates.io token. It does not
+claim an atomic transaction across registries. The current-integration
+manifest stays unpublished until the complete selected set has been observed.
 
 ## Repository work
 

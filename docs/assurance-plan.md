@@ -23,7 +23,8 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-SCAFFOLD-013` | Tested/model-only on the development branch | Static ELF scaffolding is bounded diagnostic evidence, not a safe policy or a complete dynamic-load inventory. |
 | `PBR-SDK-014` | Tier 1, independently checked source and package contract | Rust, Python, and TypeScript SDKs preserve the separate-process boundary; registry publication and consumer dogfood remain open. |
 | `PBR-DISTRIBUTION-015` | Tier 1 independently reviewed and admitted on exact Runtime main | The verifier package has a closed preflight, source-payload comparison, byte reproduction, local consumer, and release-retention path; no registry or publisher claim is admitted. |
-| `PBR-DISTRIBUTION-016` | Tier 1 public-bundle consumer admitted; protected-path cutover pending exact-head review and hosted evidence | Runtime pins one immutable public Proofbound release and rejects identity, inventory, manifest, checksum, archive, installer, and installed-byte substitution. The proposed cutover makes every protected evidence and release job install that exact bundle independently. |
+| `PBR-DISTRIBUTION-016` | Tier 1 public-bundle consumer merged; exact-main admission pending | Runtime pins one immutable public Proofbound release and rejects identity, inventory, manifest, checksum, archive, installer, and installed-byte substitution. Every protected evidence and release job installs that exact bundle independently. |
+| `PBR-DISTRIBUTION-018` | Tier 1 workflow and registry-observer contract | Publication is explicit, exact-source, protected, ordered, and credential-isolated. Anonymous exact-byte registry observations and external registry setup remain open. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -102,15 +103,40 @@ upstream public release is Proofbound release `388736918`, source `9512469`,
 Verify run `34899222179`, and bundle run `34900896450`.
 
 The isolated dogfood wave passed exact-head review and merged as Runtime
-commit `f2a06de`. Exact-main Verify run `34908515545` passed. The next
-exact-source wave removes cross-repository source compilation and redundant
-artifact transport from protected CI and release production. Its claim remains
-open until independent review and exact-head hosted verification exercise the
-new evidence path. This does not prove Proofbound correctness or independently
+commit `f2a06de`. Exact-main Verify run `34908515545` passed. The protected
+cutover passed independent review and exact-head Verify run `34915891330`,
+then merged unsigned as `4a0cfdb`. Exact-main Verify run `34918706960` remains
+the admission gate. This does not prove Proofbound correctness or independently
 authenticate GitHub or a publisher. `PBR-BUNDLE-DISTRIBUTION-AX-012` retains
 the GitHub, repository control, DNS, and TLS premises.
 `PBR-BUNDLE-TOOLCHAIN-AX-013` retains the Python, digest, installer, runner,
 process, and filesystem premises.
+
+## PBR-DISTRIBUTION-018
+
+The subject is the opt-in selected-package route in the exact-source release
+workflow and its uncredentialed registry observer. Its current closure
+contains:
+
+- a default-off Boolean publication input;
+- one exact mainline revision admitted by the complete release-provenance job;
+- a protected `package-publish` environment on every publisher;
+- ordered verifier, Rust SDK, Python SDK, and TypeScript SDK publishers;
+- a crates.io token exposed only to each Rust publisher step;
+- PyPI and npm OIDC identities scoped by external trusted-publisher records;
+- exact reproduction of each Rust upload input against its approved retained
+  artifact; and
+- anonymous retrieval and exact byte comparison of all four registry
+  artifacts before one canonical observation record is retained.
+
+The bounded evidence mutates the approved source revision, package manifests,
+downloaded bytes, metadata hosts, package inventory, and workflow gates. It
+does not publish a package or test external configuration. Registry ownership,
+protected-environment rules, the scoped crates.io token, and the two OIDC
+trusted-publisher records remain explicit external obligations. Partial
+publication can occur because the registries do not provide one atomic
+transaction; the current-integration manifest must remain absent until the
+complete selected set passes anonymous observation.
 
 ## PBR-POLICY-002
 

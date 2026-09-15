@@ -1,12 +1,13 @@
 # Proofbound Runtime product roadmap 2: deferred capabilities
 
-- **Status:** implementation; first-roadmap source foundation merged, RT-7
-  distribution work active, all complete Roadmap 2 epic exits still open
+- **Status:** implementation; RT-7 protected-path cutover merged, registry
+  publication work active, all complete Roadmap 2 epic exits still open
 - **Date:** 2026-09-13
 - **Runtime baseline:** current admitted `main`; exact source and artifact
   identities control each implementation wave
 - **Proofbound baseline consumed by Runtime evidence:** public immutable bundle
-  for source `9512469`; protected-path cutover pending review and hosted proof
+  for source `9512469`; protected-path cutover merged as Runtime `4a0cfdb` with
+  exact-main verification pending
 - **Proofbound distribution source:** `9512469`; exact-main Verify and public
   immutable bundle run passed; Runtime dogfood merged as `f2a06de`
 - **Prerequisite:** [Product and delivery roadmap](product-roadmap.md)
@@ -47,9 +48,12 @@ as `9512469`, passed exact-main Verify run `34899222179`, and published
 immutable release `388736918` from bundle run `34900896450`. Runtime pinned
 that exact seven-asset release, passed independent review and hosted dogfood,
 merged it as unsigned commit `f2a06de`, and passed exact-main Verify run
-`34908515545`. The current wave replaces protected evidence and release source
-builds with independent installation of those exact public bytes; its claim
-remains open until review and exact-head hosted verification pass.
+`34908515545`. The protected evidence and release source-build cutover passed
+independent review and exact-head Verify run `34915891330`, then merged
+unsigned as `4a0cfdb`. Exact-main Verify run `34918706960` remains pending.
+The next isolated wave prepares the four selected registry routes and
+anonymous exact-byte observations. No registry package is yet described as
+published.
 RT-9 is blocked until RT-5 implements the accepted single-service network
 decision in production.
 
