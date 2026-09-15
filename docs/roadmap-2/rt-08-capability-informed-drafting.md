@@ -4,8 +4,8 @@
 closed schemas, source-level production non-reuse, the pure diagnostic artifact
 producer, and the pure observer protocol are merged through Runtime `b04382d`.
 Exact-main Verify run `34946613122` passed. The identity-bound launcher
-exec-release prerequisite for race-free trace setup is rebasing onto that
-admitted source before refreshed exact-head review. The live ptrace adapter,
+exec-release prerequisite for race-free trace setup is rebased onto that
+admitted source and awaits refreshed exact-head review. The live ptrace adapter,
 command integration, native attack corpus, and release binding remain open.
 
 **Primary owner:** Proofbound Runtime
