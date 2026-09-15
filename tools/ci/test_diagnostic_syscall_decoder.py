@@ -585,6 +585,50 @@ class DiagnosticSyscallDecoderContractTests(unittest.TestCase):
                 self.observer,
                 self.artifact,
             ),
+            "truncated none form accepted": (
+                self.trace,
+                self.sys.replace(
+                    "available == SYSCALL_INFO_HEADER_BYTES",
+                    "available <= SYSCALL_INFO_HEADER_BYTES",
+                    1,
+                ),
+                self.adapter,
+                self.observer,
+                self.artifact,
+            ),
+            "truncated entry form accepted": (
+                self.trace,
+                self.sys.replace(
+                    "available != SYSCALL_INFO_ENTRY_BYTES",
+                    "available > SYSCALL_INFO_ENTRY_BYTES",
+                    1,
+                ),
+                self.adapter,
+                self.observer,
+                self.artifact,
+            ),
+            "truncated exit form accepted": (
+                self.trace,
+                self.sys.replace(
+                    "available != SYSCALL_INFO_EXIT_BYTES",
+                    "available > SYSCALL_INFO_EXIT_BYTES",
+                    1,
+                ),
+                self.adapter,
+                self.observer,
+                self.artifact,
+            ),
+            "truncated seccomp form accepted": (
+                self.trace,
+                self.sys.replace(
+                    "available == SYSCALL_INFO_SECCOMP_BYTES",
+                    "available <= SYSCALL_INFO_SECCOMP_BYTES",
+                    1,
+                ),
+                self.adapter,
+                self.observer,
+                self.artifact,
+            ),
             "raw write substituted": (
                 self.trace,
                 self.sys.replace(
