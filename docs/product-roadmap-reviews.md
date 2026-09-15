@@ -1591,3 +1591,37 @@ termination directive must also require an independently represented complete
 tree-drain condition. Duplicate child discovery must irreversibly enter the
 same terminate-and-drain path and prevent complete publication. This verdict
 is not endorsed; the correction requires a separate exact subject and review.
+
+## RT-8 pure observer protocol correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `97cdb4f219df90582fc7f729f5d446926d274c30`
+- **Reviewed head:** `33f28333085dfeb484acbfd7b7ad69017a055c3a`
+- **Branch:** `codex/rt8-observer-protocol`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that overflow and unknown observations irreversibly
+enter drain, invalidate earlier tree-drain confirmation, and cannot publish
+until every retained process has a terminal wait result and the adapter
+separately confirms an empty complete child tree. Duplicate child discovery
+now retains `ObserverFailed`, enters the same drain path, and permits only
+incomplete publication after drain. Later observations invalidate an earlier
+confirmation. Registered falsifiers cover premature publication, confirmation
+ordering, duplicate discovery, and confirmation invalidation.
+
+Release ordering, the exact ptrace option set, pre-release no-publication,
+post-release incomplete precedence, lifetime bounds, natural exact capacity,
+gap identity, typed errors, pure/effectful separation, production dependency
+separation, claim scope, evidence inventory, specifications, ADRs, and roadmap
+language remain consistent. The future Linux adapter's responsibility for the
+truth and race-free derivation of the acknowledgement remains an explicit open
+obligation and exclusion from the current claim.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`33f28333085dfeb484acbfd7b7ad69017a055c3a`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.
