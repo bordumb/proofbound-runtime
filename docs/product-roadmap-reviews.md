@@ -2244,3 +2244,37 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, or test bytes. Any later subject change requires a new
 exact-head review.
+
+## RT-8 diagnostic trace-startup admitted-base approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `3557cc9dc7d620a0dee011d5ce161357924e30ea`
+- **Reviewed head:** `a848b706b1c80b2394defda9f3d739b91a1770e5`
+- **Branch:** `codex/rt8-trace-startup`
+- **Method:** Complete exact-range static re-review after replay onto the
+  admitted dependency stack. The reviewer changed no files and ran no builds
+  or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that preparation controls the command, retained
+launcher descriptor, private channel, and exact request. Every typestate moves
+one private `TraceSession`; the ownership-only child guard remains bound to the
+same session and safe callers have no mutable child escape. Boundary identity,
+acknowledgement identity, stop state, exact trace options, release, and
+descriptor-relative exec remain ordered and fail closed.
+
+Raw trace calls remain confined to `sys.rs` and behind an empty-by-default
+feature that is absent from the production launcher dependency graph. The
+registered checker retains the session-continuity, ownership, mutable-child,
+internal-channel, source-closure, and production-isolation falsifiers. Claim
+language stays limited to trace startup; hosted compilation, native cleanup,
+process-tree accounting, and live event capture remain explicit open work.
+The admitted-base replay preserves the corrected source subject and its
+historical review record.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`a848b706b1c80b2394defda9f3d739b91a1770e5`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.
