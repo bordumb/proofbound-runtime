@@ -146,7 +146,9 @@ Review history:
 - [x] Correct all three findings with independent CDDL-bound validation,
   bounded no-follow input descriptors, streaming archive inventory, and
   direct registry-evidence replay.
-- [ ] Obtain an independent exact-head re-review of the correction series.
+- [x] Obtain an independent exact-head `APPROVE` verdict for corrected subject
+  `a81e259`; no production, schema, claim, assumption, evidence, or test bytes
+  change in the following approval-only commit.
 - [ ] Publish from one exact approved `main` revision using registry
   credentials supplied through the release environment.
 - [ ] Retrieve each registry artifact anonymously and compare its exact bytes

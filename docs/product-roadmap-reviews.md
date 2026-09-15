@@ -2720,3 +2720,30 @@ Runtime artifacts and eight embedded executables, fixed package order and
 hosts, preserved registry-credential isolation, validated the exact
 Proofbound pin inventory, independently reconstructed the record, and did not
 claim that an external tuple had already been published.
+
+## RT-7 current-integration correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `b2cb4b9bf10398ca5559dc476c492c3bd6d46c0b`
+- **Reviewed head:** `a81e25903869b45677677d26828a677288e6dc6c`
+- **Branch:** `codex/rt7-current-integration-manifest`
+- **Method:** Complete exact-range static re-review of the three requested
+  corrections. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that both independent implementations enforce the
+CDDL text and integer limits; JSON, CBOR, artifact, and archive inputs use
+bounded no-follow descriptor reads; the archive inspector streams and rejects
+a sixth member; and the current-integration claim directly cites and replays
+the admitted registry-publication evidence. The correction preserves
+deterministic CBOR, independent verifier ownership, exact four-artifact and
+eight-executable binding, package and host closure, credential isolation,
+Proofbound pin closure, and workflow order.
+
+External registry publication, hosted admission, and unrelated-consumer
+dogfood remain open. As maintainer, I endorse this independent `APPROVE`
+verdict for exact subject `a81e25903869b45677677d26828a677288e6dc6c`.
+The following approval-only commit changes no production, schema,
+specification, claim, assumption, evidence, or test bytes. A replay onto a
+different admitted main requires a new exact-head review.
