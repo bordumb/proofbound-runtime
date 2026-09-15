@@ -6,7 +6,10 @@ public_language = "Runtime has a fail-closed producer and independent verifier f
 subject = "workflow:.github/workflows/release.yml#current-integration"
 profile = "ledger"
 tier = 1
-evidence = ["independent-check:current-integration-contract"]
+evidence = [
+  "independent-check:current-integration-contract",
+  "independent-check:registry-publication-contract",
+]
 assumptions = [
   "PBR-BUNDLE-DISTRIBUTION-AX-012",
   "PBR-BUNDLE-TOOLCHAIN-AX-013",
@@ -27,6 +30,7 @@ out_of_scope = [
 ]
 source_roots = [
   ".github/workflows/release.yml",
+  "Cargo.lock",
   "Cargo.toml",
   "VERSION",
   "assumptions/PBR-BUNDLE-DISTRIBUTION-AX-012.toml",
@@ -34,20 +38,25 @@ source_roots = [
   "assumptions/PBR-PACKAGE-TOOLCHAINS-AX-011.toml",
   "assumptions/PBR-REGISTRY-DISTRIBUTION-AX-014.toml",
   "assumptions/PBR-SDK-TOOLCHAINS-AX-010.toml",
+  "claims/PBR-DISTRIBUTION-018.toml",
   "claims/PBR-DISTRIBUTION-025.toml",
   "crates/proofbound-runtime-accept/src/lib.rs",
   "crates/proofbound-runtime-compose/src/lib.rs",
   "crates/proofbound-runtime-core/src/plan.rs",
   "crates/proofbound-runtime-core/src/receipt.rs",
   "crates/proofbound-runtime-core/src/run_result.rs",
+  "crates/proofbound-runtime-sdk/Cargo.toml",
   "crates/proofbound-runtime-sdk/src/lib.rs",
+  "crates/proofbound-runtime-verify/Cargo.toml",
   "crates/proofbound-runtime-verify/src/decode.rs",
   "crates/proofbound-runtime-verify/src/decode_v2.rs",
   "docs/roadmap-2/rt-07-compatibility-and-distribution.md",
   "docs/specs/0014_public_compatibility_and_distribution.md",
   "docs/threat-model.md",
   "proofbound/evidence/current-integration-contract.toml",
+  "proofbound/evidence/registry-publication-contract.toml",
   "proofbound/toolchains/proofbound-tool-bundle-pin.json",
+  "rust-toolchain.toml",
   "schemas/current-integration-v1.cddl",
   "schemas/registry-observations-v1.schema.json",
   "sdk/python/pyproject.toml",
@@ -55,10 +64,16 @@ source_roots = [
   "sdk/typescript/package.json",
   "sdk/typescript/src/index.ts",
   "tools/ci/check_current_integration.py",
+  "tools/ci/check_registry_publication.py",
   "tools/ci/ci.sh",
   "tools/ci/pre-commit.sh",
   "tools/ci/test_current_integration.py",
+  "tools/ci/test_registry_packages.py",
   "tools/ci/test_release_workflow.py",
+  "tools/ci/test_verifier_package.py",
   "tools/release/build_current_integration.py",
+  "tools/release/build_sdks.py",
+  "tools/release/build_verifier_package.py",
   "tools/release/verify_current_integration.py",
+  "tools/release/verify_registry_packages.py",
 ]

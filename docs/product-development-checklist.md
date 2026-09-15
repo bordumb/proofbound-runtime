@@ -139,6 +139,14 @@ Review history:
 - [x] Record emitted and accepted Runtime schemas, all three closed SDK error
   vocabularies, the exact Proofbound tool and receipt identities, and an empty
   optional-integration inventory.
+- [x] Receive an independent `REQUEST CHANGES` verdict for exact source
+  `5b4893c`: the first implementation did not enforce all CDDL text limits,
+  materialized bounded inputs too early, and did not causally replay the
+  registry observer evidence.
+- [x] Correct all three findings with independent CDDL-bound validation,
+  bounded no-follow input descriptors, streaming archive inventory, and
+  direct registry-evidence replay.
+- [ ] Obtain an independent exact-head re-review of the correction series.
 - [ ] Publish from one exact approved `main` revision using registry
   credentials supplied through the release environment.
 - [ ] Retrieve each registry artifact anonymously and compare its exact bytes

@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
 import sys
 import tarfile
 from typing import Any
@@ -208,12 +209,43 @@ def closed_json_data(data: bytes, label: str) -> dict[str, object]:
     return value
 
 
+def read_regular(path: Path, maximum: int, label: str) -> bytes:
+    """Read one bounded regular file through a no-follow descriptor."""
+
+    if not hasattr(os, "O_NOFOLLOW"):
+        raise IntegrationError(
+            "host cannot open integration inputs without following links"
+        )
+    flags = os.O_RDONLY | os.O_CLOEXEC | os.O_NONBLOCK | os.O_NOFOLLOW
+    try:
+        descriptor = os.open(path, flags)
+        with os.fdopen(descriptor, "rb") as source:
+            before = os.fstat(source.fileno())
+            if not stat.S_ISREG(before.st_mode):
+                raise IntegrationError(f"input is not a regular file: {path}")
+            if before.st_size > maximum:
+                raise IntegrationError(f"input exceeds the read bound: {label}")
+            data = source.read(maximum + 1)
+            after = os.fstat(source.fileno())
+    except IntegrationError:
+        raise
+    except OSError as error:
+        raise IntegrationError(f"cannot read input: {path}") from error
+    if len(data) > maximum:
+        raise IntegrationError(f"input exceeds the read bound: {label}")
+    if (before.st_dev, before.st_ino, before.st_size) != (
+        after.st_dev,
+        after.st_ino,
+        after.st_size,
+    ) or after.st_size != len(data):
+        raise IntegrationError(f"input changed while read: {label}")
+    return data
+
+
 def closed_json(path: Path) -> dict[str, object]:
     """Read one bounded JSON object and reject duplicate members."""
 
-    if path.is_symlink() or not path.is_file():
-        raise IntegrationError(f"input is not a regular file: {path}")
-    return closed_json_data(path.read_bytes(), str(path))
+    return closed_json_data(read_regular(path, MAX_INPUT_BYTES, str(path)), str(path))
 
 
 def exact_keys(value: dict[str, object], expected: set[str], label: str) -> None:
@@ -227,6 +259,13 @@ def text(value: object, label: str) -> str:
     return value
 
 
+def bounded_text(value: object, maximum: int, label: str) -> str:
+    result = text(value, label)
+    if len(result.encode("utf-8")) > maximum:
+        raise IntegrationError(f"{label} exceeds the byte bound")
+    return result
+
+
 def natural(value: object, label: str) -> int:
     if type(value) is not int or value <= 0 or value > MAX_U64:
         raise IntegrationError(f"invalid {label}")
@@ -234,7 +273,7 @@ def natural(value: object, label: str) -> int:
 
 
 def admitted_source_url(value: object, ecosystem: str) -> str:
-    url = text(value, "registry artifact URL")
+    url = bounded_text(value, 4096, "registry artifact URL")
     parsed = urlparse(url)
     expected_host = {
         "crates.io": "static.crates.io",
@@ -258,46 +297,97 @@ def admitted_source_url(value: object, ecosystem: str) -> str:
 
 
 def digest_file(path: Path) -> tuple[bytes, int]:
-    if path.is_symlink() or not path.is_file():
-        raise IntegrationError(f"artifact is not a regular file: {path}")
+    if not hasattr(os, "O_NOFOLLOW"):
+        raise IntegrationError(
+            "host cannot open Runtime artifacts without following links"
+        )
     hasher = hashlib.sha256()
     size = 0
-    with path.open("rb") as source:
-        while block := source.read(1024 * 1024):
-            size += len(block)
-            if size > MAX_ARTIFACT_BYTES:
+    flags = os.O_RDONLY | os.O_CLOEXEC | os.O_NONBLOCK | os.O_NOFOLLOW
+    try:
+        descriptor = os.open(path, flags)
+        with os.fdopen(descriptor, "rb") as source:
+            before = os.fstat(source.fileno())
+            if not stat.S_ISREG(before.st_mode):
+                raise IntegrationError(f"artifact is not a regular file: {path}")
+            if not (0 < before.st_size <= MAX_ARTIFACT_BYTES):
                 raise IntegrationError(f"artifact exceeds the byte bound: {path}")
-            hasher.update(block)
+            while block := source.read(1024 * 1024):
+                size += len(block)
+                if size > MAX_ARTIFACT_BYTES:
+                    raise IntegrationError(f"artifact exceeds the byte bound: {path}")
+                hasher.update(block)
+            after = os.fstat(source.fileno())
+    except IntegrationError:
+        raise
+    except OSError as error:
+        raise IntegrationError(f"cannot read Runtime artifact: {path}") from error
     if size == 0:
         raise IntegrationError(f"artifact is empty: {path}")
+    if (before.st_dev, before.st_ino, before.st_size) != (
+        after.st_dev,
+        after.st_ino,
+        after.st_size,
+    ) or after.st_size != size:
+        raise IntegrationError(f"artifact changed while read: {path}")
     return hasher.digest(), size
 
 
 def inspect_runtime_bundle(
     path: Path, architecture: str, target: str, version: str
 ) -> list[dict[str, object]]:
+    if not hasattr(os, "O_NOFOLLOW"):
+        raise IntegrationError(
+            "host cannot inspect Runtime bundles without following links"
+        )
     try:
-        with tarfile.open(path, mode="r:gz") as archive:
-            entries = archive.getmembers()
-            if [entry.name for entry in entries] != list(RUNTIME_MEMBERS):
-                raise IntegrationError("Runtime bundle member inventory mismatch")
+        descriptor = os.open(
+            path, os.O_RDONLY | os.O_CLOEXEC | os.O_NONBLOCK | os.O_NOFOLLOW
+        )
+        with os.fdopen(descriptor, "rb") as compressed:
+            before = os.fstat(compressed.fileno())
+            if not stat.S_ISREG(before.st_mode) or not (
+                0 < before.st_size <= MAX_ARTIFACT_BYTES
+            ):
+                raise IntegrationError("Runtime bundle is not an admitted regular file")
             files: dict[str, bytes] = {}
-            for entry in entries:
-                if not entry.isfile() or not (0 < entry.size <= MAX_RUNTIME_MEMBER_BYTES):
-                    raise IntegrationError(
-                        f"Runtime bundle member is not an admitted regular file: {entry.name}"
-                    )
-                source = archive.extractfile(entry)
-                if source is None:
-                    raise IntegrationError(
-                        f"Runtime bundle member cannot be read: {entry.name}"
-                    )
-                data = source.read(MAX_RUNTIME_MEMBER_BYTES + 1)
-                if len(data) != entry.size:
-                    raise IntegrationError(
-                        f"Runtime bundle member size changed: {entry.name}"
-                    )
-                files[entry.name] = data
+            with tarfile.open(fileobj=compressed, mode="r|gz") as archive:
+                count = 0
+                for entry in archive:
+                    if count >= len(RUNTIME_MEMBERS):
+                        raise IntegrationError(
+                            "Runtime bundle member inventory mismatch"
+                        )
+                    expected_name = RUNTIME_MEMBERS[count]
+                    if (
+                        entry.name != expected_name
+                        or not entry.isfile()
+                        or not (0 < entry.size <= MAX_RUNTIME_MEMBER_BYTES)
+                    ):
+                        raise IntegrationError(
+                            "Runtime bundle member inventory or type mismatch"
+                        )
+                    source = archive.extractfile(entry)
+                    if source is None:
+                        raise IntegrationError(
+                            f"Runtime bundle member cannot be read: {entry.name}"
+                        )
+                    data = source.read(MAX_RUNTIME_MEMBER_BYTES + 1)
+                    if len(data) != entry.size:
+                        raise IntegrationError(
+                            f"Runtime bundle member size changed: {entry.name}"
+                        )
+                    files[entry.name] = data
+                    count += 1
+                if count != len(RUNTIME_MEMBERS):
+                    raise IntegrationError("Runtime bundle member inventory mismatch")
+            after = os.fstat(compressed.fileno())
+            if (before.st_dev, before.st_ino, before.st_size) != (
+                after.st_dev,
+                after.st_ino,
+                after.st_size,
+            ):
+                raise IntegrationError("Runtime bundle changed during inspection")
     except IntegrationError:
         raise
     except (OSError, tarfile.TarError) as error:
@@ -360,7 +450,9 @@ def parse_runtime_artifacts(
         identity, separator, raw_path = specification.partition("=")
         architecture, role_separator, role = identity.partition(":")
         if not separator or not role_separator:
-            raise IntegrationError(f"invalid Runtime artifact argument: {specification}")
+            raise IntegrationError(
+                f"invalid Runtime artifact argument: {specification}"
+            )
         key = (architecture, role)
         if key not in RUNTIME_ORDER:
             raise IntegrationError(f"unsupported Runtime artifact role: {identity}")
@@ -415,7 +507,7 @@ def registry_packages(path: Path, revision: str) -> tuple[str, list[dict[str, ob
         raise IntegrationError("registry observation schema is unsupported")
     if value["source_revision"] != revision:
         raise IntegrationError("registry observation source revision mismatch")
-    version = text(value["version"], "registry package version")
+    version = bounded_text(value["version"], 64, "registry package version")
     if VERSION.fullmatch(version) is None:
         raise IntegrationError("registry package version is invalid")
     observations = value["observations"]

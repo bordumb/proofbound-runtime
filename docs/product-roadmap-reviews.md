@@ -2694,3 +2694,29 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 `fbd2d6679bfc609759783d9b54275ead3acd9731`. The following approval-only commit
 changes no reviewed production, claim, assumption, evidence, or checker bytes.
 Any later subject change requires a new exact-head review.
+## RT-7 current-integration initial exact-head review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `b2cb4b9bf10398ca5559dc476c492c3bd6d46c0b`
+- **Reviewed head:** `5b4893c3f6fa41c7f1cc19f6e13bebfb1d7d0866`
+- **Branch:** `codex/rt7-current-integration-manifest`
+- **Method:** Complete exact-range static security and product review. The
+  reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review found three blockers. First, the CDDL bounded the Runtime product
+label and package version to 64 bytes and registry source URLs to 4096 bytes,
+but both implementations accepted longer values. Second, JSON and CBOR inputs
+were materialized before their bounds were enforced, archive members were
+materialized before the exact-five check, and pathname checks were separated
+from later opens. Third, `PBR-DISTRIBUTION-025` consumed a synthetic registry
+observation without causally replaying or closing the admitted registry
+observer implementation and falsifiers.
+
+The remaining reviewed behavior was coherent: the implementation bound four
+Runtime artifacts and eight embedded executables, fixed package order and
+hosts, preserved registry-credential isolation, validated the exact
+Proofbound pin inventory, independently reconstructed the record, and did not
+claim that an external tuple had already been published.

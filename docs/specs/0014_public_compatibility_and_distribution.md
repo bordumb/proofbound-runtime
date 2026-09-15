@@ -270,6 +270,14 @@ does not establish that this release path has run. A tuple becomes current
 only when the exact protected workflow retains its successful registry
 observations and current-integration artifacts.
 
+The producer and verifier open every local input through a no-follow file
+descriptor, require a regular file, and enforce the declared byte ceiling
+before they materialize its contents. They stream the closed Runtime archive
+in order and stop after the five expected entries plus one overflow sentinel.
+Every CDDL text and integer bound is enforced independently by both
+implementations. A pathname check followed by a separate open, an unbounded
+JSON or CBOR read, or an unbounded archive-member inventory is not admitted.
+
 ## 10. Consumer support
 
 - Provide one minimal consumer for each published package.

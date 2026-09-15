@@ -179,7 +179,13 @@ The active `PBR-DISTRIBUTION-025` wave adds the missing exact-tuple boundary:
   service tuple is implied; and
 - an independently implemented decoder and semantic validator compares every
   recorded identity with the registry observation, Runtime files, and
-  Runtime-owned Proofbound pin before producing JSON and Markdown views.
+  Runtime-owned Proofbound pin before producing JSON and Markdown views;
+- both implementations enforce the CDDL text and integer limits, open inputs
+  as bounded no-follow regular files, and stream only the closed five-entry
+  Runtime archive inventory plus one overflow sentinel; and
+- the registered current-integration checker causally replays the existing
+  registry-publication evidence instead of trusting a synthetic observation
+  as proof that the observer remains fail closed.
 
 The release workflow cannot create this record before the registry observer
 succeeds. Source checks and a passing review establish only that this

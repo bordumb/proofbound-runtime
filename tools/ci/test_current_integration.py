@@ -18,6 +18,7 @@ from tools.release.verify_current_integration import decode_strict
 ROOT = Path(__file__).resolve().parents[2]
 BUILDER = ROOT / "tools/release/build_current_integration.py"
 VERIFIER = ROOT / "tools/release/verify_current_integration.py"
+SCHEMA = ROOT / "schemas/current-integration-v1.cddl"
 REVISION = "00112233445566778899aabbccddeeff00112233"
 PROOFBOUND_REVISION = "112233445566778899aabbccddeeff0011223344"
 VERSION = "0.2.0"
@@ -38,28 +39,29 @@ def write_tar(path: Path, members: dict[str, bytes]) -> None:
 
 
 def write_runtime_bundle(path: Path, architecture: str, target: str) -> None:
-    files = {
-        name: f"{architecture} {name}\n".encode() for name in RUNTIME_EXECUTABLES
-    }
-    manifest = json.dumps(
-        {
-            "architecture": architecture,
-            "artifacts": [
-                {
-                    "name": name,
-                    "sha256": hashlib.sha256(files[name]).hexdigest(),
-                    "size": len(files[name]),
-                }
-                for name in RUNTIME_EXECUTABLES
-            ],
-            "schema": "proofbound-runtime-release-manifest/1",
-            "target": target,
-            "toolchain": "rustc test",
-            "version": VERSION,
-        },
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode() + b"\n"
+    files = {name: f"{architecture} {name}\n".encode() for name in RUNTIME_EXECUTABLES}
+    manifest = (
+        json.dumps(
+            {
+                "architecture": architecture,
+                "artifacts": [
+                    {
+                        "name": name,
+                        "sha256": hashlib.sha256(files[name]).hexdigest(),
+                        "size": len(files[name]),
+                    }
+                    for name in RUNTIME_EXECUTABLES
+                ],
+                "schema": "proofbound-runtime-release-manifest/1",
+                "target": target,
+                "toolchain": "rustc test",
+                "version": VERSION,
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+        + b"\n"
+    )
     write_tar(path, {"RELEASE-MANIFEST.json": manifest, **files})
 
 
@@ -92,10 +94,22 @@ class CurrentIntegrationFixture:
 
         observations = []
         packages = (
-            ("crates.io", "proofbound-runtime-sdk", "proofbound-runtime-sdk-0.2.0.crate"),
+            (
+                "crates.io",
+                "proofbound-runtime-sdk",
+                "proofbound-runtime-sdk-0.2.0.crate",
+            ),
             ("npm", "@proofbound/runtime-sdk", "proofbound-runtime-sdk-0.2.0.tgz"),
-            ("pypi", "proofbound-runtime-sdk", "proofbound_runtime_sdk-0.2.0-py3-none-any.whl"),
-            ("crates.io", "proofbound-runtime-verify", "proofbound-runtime-verify-0.2.0.crate"),
+            (
+                "pypi",
+                "proofbound-runtime-sdk",
+                "proofbound_runtime_sdk-0.2.0-py3-none-any.whl",
+            ),
+            (
+                "crates.io",
+                "proofbound-runtime-verify",
+                "proofbound-runtime-verify-0.2.0.crate",
+            ),
         )
         for ecosystem, package, artifact in packages:
             payload = f"{ecosystem} {package}\n".encode()
@@ -220,8 +234,12 @@ class CurrentIntegrationTests(unittest.TestCase):
             subprocess.run(fixture.verifier_command(), check=True)
 
             value = decode_strict(fixture.record.read_bytes())
-            self.assertEqual(value["schema"], "proofbound-runtime-current-integration/1")
-            self.assertEqual(value["runtime"]["source_revision"], bytes.fromhex(REVISION))
+            self.assertEqual(
+                value["schema"], "proofbound-runtime-current-integration/1"
+            )
+            self.assertEqual(
+                value["runtime"]["source_revision"], bytes.fromhex(REVISION)
+            )
             self.assertEqual(len(value["runtime"]["artifacts"]), 4)
             self.assertEqual(len(value["runtime"]["executables"]), 8)
             self.assertEqual(
@@ -235,7 +253,9 @@ class CurrentIntegrationTests(unittest.TestCase):
                 bytes.fromhex(PROOFBOUND_REVISION),
             )
             projection = json.loads(fixture.projection.read_bytes())
-            self.assertEqual(projection["runtime"]["source_revision"], f"hex:{REVISION}")
+            self.assertEqual(
+                projection["runtime"]["source_revision"], f"hex:{REVISION}"
+            )
             rendering = fixture.rendering.read_text()
             self.assertIn("An identity that is", rendering)
             self.assertIn("does not authenticate", rendering)
@@ -259,6 +279,7 @@ class CurrentIntegrationTests(unittest.TestCase):
     def test_symlinked_runtime_artifact_is_not_admitted(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             fixture = CurrentIntegrationFixture(Path(directory))
+            subprocess.run(fixture.builder_command(), check=True)
             artifact = Path(fixture.runtime_arguments[1].split("=", 1)[1])
             link = fixture.root / "linked" / artifact.name
             link.parent.mkdir()
@@ -267,12 +288,102 @@ class CurrentIntegrationTests(unittest.TestCase):
                 fixture.runtime_arguments[1].split("=", 1)[0] + f"={link}"
             )
 
+            for command in (fixture.builder_command(), fixture.verifier_command()):
+                with self.subTest(command=Path(command[1]).name):
+                    rejected = subprocess.run(command, capture_output=True, text=True)
+                    self.assertNotEqual(rejected.returncode, 0)
+                    self.assertIn("cannot read Runtime artifact", rejected.stderr)
+            self.assertFalse(fixture.projection.exists())
+            self.assertFalse(fixture.rendering.exists())
+
+    def test_cddl_text_bounds_are_enforced_by_both_implementations(self) -> None:
+        mutations = (
+            (
+                "version",
+                lambda value: value.__setitem__("version", f"1.{'1' * 63}.1"),
+                "exceeds the byte bound",
+            ),
+            (
+                "source-url",
+                lambda value: value["observations"][0].__setitem__(
+                    "url", "https://static.crates.io/" + "a" * 4096
+                ),
+                "exceeds the byte bound",
+            ),
+        )
+        for label, mutate, message in mutations:
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as directory:
+                fixture = CurrentIntegrationFixture(Path(directory))
+                subprocess.run(fixture.builder_command(), check=True)
+                registry = json.loads(fixture.registry.read_bytes())
+                mutate(registry)
+                fixture.registry.write_text(json.dumps(registry))
+                for command in (
+                    fixture.builder_command(),
+                    fixture.verifier_command(),
+                ):
+                    rejected = subprocess.run(command, capture_output=True, text=True)
+                    self.assertNotEqual(rejected.returncode, 0)
+                    self.assertIn(message, rejected.stderr)
+                self.assertFalse(fixture.projection.exists())
+                self.assertFalse(fixture.rendering.exists())
+
+        schema = SCHEMA.read_text(encoding="utf-8")
+        self.assertIn('"product_label": text .size (1..64)', schema)
+        self.assertIn('"version": text .size (1..64)', schema)
+        self.assertIn('"source_url": text .size (1..4096)', schema)
+        self.assertIn("positive-u64 = 1..18446744073709551615", schema)
+
+    def test_oversized_json_is_rejected_by_both_bounded_readers(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = CurrentIntegrationFixture(Path(directory))
+            subprocess.run(fixture.builder_command(), check=True)
+            fixture.registry.write_bytes(b"{" + b" " * 1_048_576)
+
+            for command in (fixture.builder_command(), fixture.verifier_command()):
+                with self.subTest(command=Path(command[1]).name):
+                    rejected = subprocess.run(command, capture_output=True, text=True)
+                    self.assertNotEqual(rejected.returncode, 0)
+                    self.assertIn("exceeds the read bound", rejected.stderr)
+            self.assertFalse(fixture.projection.exists())
+            self.assertFalse(fixture.rendering.exists())
+
+    def test_archive_member_overflow_is_streamed_and_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = CurrentIntegrationFixture(Path(directory))
+            subprocess.run(fixture.builder_command(), check=True)
+            archive_path = Path(fixture.runtime_arguments[1].split("=", 1)[1])
+            with tarfile.open(archive_path, mode="r:gz") as archive:
+                members = {
+                    entry.name: archive.extractfile(entry).read()
+                    for entry in archive.getmembers()
+                }
+            members["unregistered"] = b"overflow sentinel\n"
+            write_tar(archive_path, members)
+
+            for command in (fixture.builder_command(), fixture.verifier_command()):
+                with self.subTest(command=Path(command[1]).name):
+                    rejected = subprocess.run(command, capture_output=True, text=True)
+                    self.assertNotEqual(rejected.returncode, 0)
+                    self.assertIn("member inventory mismatch", rejected.stderr)
+            self.assertFalse(fixture.projection.exists())
+            self.assertFalse(fixture.rendering.exists())
+
+    def test_symlinked_record_is_not_admitted_by_the_verifier(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = CurrentIntegrationFixture(Path(directory))
+            subprocess.run(fixture.builder_command(), check=True)
+            link = fixture.root / "linked-record.cbor"
+            link.symlink_to(fixture.record)
+            fixture.record = link
+
             rejected = subprocess.run(
-                fixture.builder_command(), capture_output=True, text=True
+                fixture.verifier_command(), capture_output=True, text=True
             )
             self.assertNotEqual(rejected.returncode, 0)
-            self.assertIn("not a regular file", rejected.stderr)
-            self.assertFalse(fixture.record.exists())
+            self.assertIn("cannot read input", rejected.stderr)
+            self.assertFalse(fixture.projection.exists())
+            self.assertFalse(fixture.rendering.exists())
 
     def test_runtime_executable_substitution_cannot_enter_the_record(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -401,10 +512,11 @@ class CurrentIntegrationTests(unittest.TestCase):
                 ROOT / "crates/proofbound-runtime-core/src/run_result.rs"
             ).read_text(),
         }
+
         def schema_constants(source: str) -> dict[str, str]:
             return dict(
                 re.findall(
-                    r'(?m)^(?:pub )?const ([A-Z0-9_]*SCHEMA(?:_V[0-9]+)?):[^=]+='
+                    r"(?m)^(?:pub )?const ([A-Z0-9_]*SCHEMA(?:_V[0-9]+)?):[^=]+="
                     r' "([^"]+)";',
                     source,
                 )

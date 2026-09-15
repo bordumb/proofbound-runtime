@@ -2,7 +2,7 @@ schema = "proofbound-evidence-unit/1"
 id = "registry-publication-contract"
 adapter = "independent-check"
 kind = "independent-check"
-claims = ["PBR-DISTRIBUTION-018"]
+claims = ["PBR-DISTRIBUTION-018", "PBR-DISTRIBUTION-025"]
 tier = 1
 assumptions = [
   "PBR-PACKAGE-TOOLCHAINS-AX-011",

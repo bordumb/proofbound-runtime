@@ -14,6 +14,7 @@ INVENTORY = [
     "current-integration-closed-deterministic-cbor",
     "current-integration-independent-verification",
     "current-integration-complete-registry-observation-dependency",
+    "current-integration-registry-observer-contract",
     "current-integration-exact-package-identities",
     "current-integration-exact-runtime-artifact-identities",
     "current-integration-exact-runtime-executable-identities",
@@ -30,7 +31,7 @@ def main() -> int:
     root = Path(__file__).resolve().parents[2]
     environment = dict(os.environ)
     environment["PYTHONDONTWRITEBYTECODE"] = "1"
-    completed = subprocess.run(
+    commands = (
         [
             sys.executable,
             "-m",
@@ -41,17 +42,22 @@ def main() -> int:
                 "test_current_integration_requires_complete_anonymous_observation"
             ),
         ],
-        cwd=root,
-        env=environment,
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
+        [sys.executable, "tools/ci/check_registry_publication.py"],
     )
-    if completed.returncode != 0:
-        sys.stderr.buffer.write(completed.stdout)
-        sys.stderr.buffer.write(completed.stderr)
-        return 2
+    for command in commands:
+        completed = subprocess.run(
+            command,
+            cwd=root,
+            env=environment,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        if completed.returncode != 0:
+            sys.stderr.buffer.write(completed.stdout)
+            sys.stderr.buffer.write(completed.stderr)
+            return 2
     sys.stdout.write(
         json.dumps(
             {
