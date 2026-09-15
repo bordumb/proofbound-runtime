@@ -37,6 +37,14 @@ The production `pbr` and `pbr-native-launcher` executables contain no observer
 entry point and do not depend on the diagnostic crate. A source-closure check
 enforces this separation.
 
+The effectful observer has its own `proofbound-runtime-diagnose-linux` crate.
+It alone enables the `diagnostic-observer` feature on the Linux boundary crate.
+The production CLI uses the default empty feature set. Raw ptrace, wait, and
+signal calls remain in the Linux syscall module, while the safe feature-gated
+surface uses non-copy typestates. This split keeps raw Linux calls under the
+existing unsafe-code boundary without adding an observer entry point to either
+production executable.
+
 The diagnostic supervisor creates and attaches to the launcher process before
 the launch protocol can release target code. After it receives the launcher's
 boundary acknowledgement, it stops the launcher and enables the exact trace
@@ -47,6 +55,15 @@ registers, and `/proc` state. It must not change registers, replace syscall
 results, inject a descriptor, skip a syscall, or grant a path. Ptrace is an
 observation mechanism and a trusted diagnostic role. It is not an enforcement
 mechanism.
+
+The safe startup session accepts an identified launcher file, revalidates it
+during preparation and immediately before spawn, executes it through the
+retained descriptor, and creates the launcher command and private channel
+together. It retains the exact install request and
+supervisor channel across every non-copy setup state. It receives and verifies
+the acknowledgement internally and sends the release on that same channel. A
+caller cannot supply a command, acknowledgement value, expected identity, or
+different release channel to advance the session.
 
 The observer follows the complete child tree with the closed clone, fork,
 vfork, and exec options. It records only the syscall families defined by the

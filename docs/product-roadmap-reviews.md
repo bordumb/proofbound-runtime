@@ -1876,3 +1876,120 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, test, or current-status bytes. Any later subject change
 requires a new exact-head review.
+
+## RT-8 diagnostic trace-startup initial review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `db31e0259bbe708fc8afd8288bb6445b1ad06235`
+- **Reviewed head:** `3fa73a2b00168da7a9fe6c7622d1b45ac81d774b`
+- **Branch:** `codex/rt8-ptrace-backend`
+- **Method:** Complete exact-range static review. The reviewer changed no files
+  and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The review found three blockers. First, the public typestate API accepted an
+arbitrary command, caller-supplied acknowledgement and expected identity, and
+caller-supplied release channel. A safe caller could therefore advance an
+unrelated trace session with a decoded acknowledgement and send the release on
+a different channel. The session must create and retain the exact launcher
+channel and request, receive and verify the acknowledgement internally, and
+release through that same channel.
+
+Second, the registered evidence overstated exact-child retention and cleanup.
+It checked non-copy declarations, operation ordering, and cleanup strings, but
+did not check that every spawned state owns one common session or that each
+transition moves that same guard. Third, the claim cited the toolchain
+assumption without listing itself in that assumption, and both the claim and
+evidence omitted the core identity sources used by `LauncherIdentity`.
+
+This verdict is not endorsed. The correction changes the exact subject and
+requires independent re-review.
+
+## RT-8 diagnostic trace-startup first correction review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `db31e0259bbe708fc8afd8288bb6445b1ad06235`
+- **Reviewed head:** `14361d32e73c8ee2d3b43fa6aa0adb9d52b4a092`
+- **Branch:** `codex/rt8-ptrace-backend`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The review confirmed that the first correction closed the caller-supplied
+command, identity, acknowledgement, and channel substitutions. Preparation now
+revalidates an identified launcher, executes it through the retained descriptor,
+creates the channel internally, and retains one request and channel through one
+private session. The toolchain reciprocal link and identity source closure are
+also complete.
+
+The review found three remaining blockers. Public `child_mut` access still let
+safe code replace the `Child` guarded by the private session, so cleanup could
+target an unrelated process while the exact tracee remained live. The
+session-continuity checker did not reject that mutable escape. The registered
+Python toolchain assumption also described only JSON interpretation although
+its scope included source-structure checks implemented with Python string and
+regular-expression operations.
+
+This verdict is not endorsed. The second correction must remove mutable child
+replacement, add the corresponding falsifier, and align the assumption with
+the checker that depends on it. It requires a new exact-head review.
+
+## RT-8 diagnostic trace-startup second correction review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `db31e0259bbe708fc8afd8288bb6445b1ad06235`
+- **Reviewed head:** `f8032ddb9d04b5b608fa53ea2c6a0ad2d713fac1`
+- **Branch:** `codex/rt8-ptrace-backend`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The review confirmed that every cumulative security and assurance blocker was
+closed. Public mutable child access is absent and the checker rejects its
+return. The exact launcher, child, request, process identity, and internally
+created channel remain bound through one private session. Protocol ordering,
+source closure, reciprocal assumptions, raw-call confinement, feature
+isolation, closed errors, claims, and evidence remain aligned.
+
+The review found one compile-gate blocker. Once mutable access was removed, the
+private child field became ownership-only and no longer had a read. Rust's
+default dead-code lint therefore warns, and the required Clippy command promotes
+warnings to errors. The field must explicitly identify its intentional
+ownership-only role, and the structural falsifier must require that form.
+
+This verdict is not endorsed. The correction changes the exact subject and
+requires one more exact-head review.
+
+## RT-8 diagnostic trace-startup admitted-base approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `3557cc9dc7d620a0dee011d5ce161357924e30ea`
+- **Reviewed head:** `a848b706b1c80b2394defda9f3d739b91a1770e5`
+- **Branch:** `codex/rt8-trace-startup`
+- **Method:** Complete exact-range static re-review after replay onto the
+  admitted dependency stack. The reviewer changed no files and ran no builds
+  or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that preparation controls the command, retained
+launcher descriptor, private channel, and exact request. Every typestate moves
+one private `TraceSession`; the ownership-only child guard remains bound to the
+same session and safe callers have no mutable child escape. Boundary identity,
+acknowledgement identity, stop state, exact trace options, release, and
+descriptor-relative exec remain ordered and fail closed.
+
+Raw trace calls remain confined to `sys.rs` and behind an empty-by-default
+feature that is absent from the production launcher dependency graph. The
+registered checker retains the session-continuity, ownership, mutable-child,
+internal-channel, source-closure, and production-isolation falsifiers. Claim
+language stays limited to trace startup; hosted compilation, native cleanup,
+process-tree accounting, and live event capture remain explicit open work.
+The admitted-base replay preserves the corrected source subject and its
+historical review record.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`a848b706b1c80b2394defda9f3d739b91a1770e5`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.

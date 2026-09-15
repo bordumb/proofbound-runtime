@@ -1,14 +1,13 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T10:05:09+01:00 (Europe/London, BST)
-- **Runtime baseline:** pure observer protocol merge `b04382d`; exact-main
-  Verify run `34946613122` passed
-- **Active implementation wave:** the identity-bound exec-release gate is
-  rebased onto the admitted pure observer protocol. Its refreshed review found
-  no security defect and requested correction of two stale status summaries.
-  Trace startup and the coupled adapter were approved on the prior stack but
-  remain behind this prerequisite and require their own rebases.
+- **Last updated:** 2026-09-15T11:21:37+01:00 (Europe/London, BST)
+- **Runtime baseline:** identity-bound exec-release merge `3557cc9`; exact-main
+  Verify run `34956564102` is in progress
+- **Active implementation wave:** separate feature-gated Linux trace-startup
+  typestates are independently approved at exact source head `a848b70`. The
+  approval-only record and hosted admission are next. The coupled adapter is
+  already being replayed onto that exact stack.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -141,6 +140,8 @@ manifest describes the supported tuple.
 - [x] Define closed diagnostic-profile, observation, provenance, and failure
   types without changing production-receipt meaning.
 - [ ] Keep observer implementation out of the production launcher path.
+- [x] Put Linux trace-startup code behind an empty-by-default feature selected
+  only by the separate diagnostic Linux crate; keep raw calls in `sys.rs`.
 - [x] Keep the pure diagnostic artifact producer out of the production CLI and
   launcher dependency graphs.
 - [x] Define a pure typed observer protocol that cannot release target code
@@ -148,9 +149,20 @@ manifest describes the supported tuple.
 - [ ] Complete review and hosted admission of the identity-bound supervisor
   exec release that lets the diagnostic adapter stop the acknowledged launcher
   and install exact trace options before target exec. Source implementation and
-  registered falsifiers are rebased onto exact main `b04382d`; refreshed
-  review requested only current-status corrections. Exact re-review, hosted
-  admission, merge, and exact-main verification remain open.
+  registered falsifiers passed exact-head review and hosted verification, then
+  merged unsigned as `3557cc9`. Exact-main Verify run `34956564102` remains the
+  admission gate.
+- [ ] Complete independent review and hosted admission of the non-copy Linux
+  trace-startup typestates. Source implementation and bounded contract checks
+  are replayed on exact main `3557cc9`. The earlier exact review required the
+  session channel, request, acknowledgement, and release to share one private
+  owner and required complete evidence and identity source closure. Its next
+  review found a public mutable-child replacement escape, a missing falsifier,
+  and incomplete checker-assumption language. The following review found that
+  the ownership-only private child field would fail the warnings-as-errors
+  gate. Those corrections are retained. Refreshed independent review approved
+  exact source head `a848b70`; its approval-only record, hosted admission, and
+  native effect evidence remain open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.

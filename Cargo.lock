@@ -179,6 +179,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "proofbound-runtime-diagnose-linux"
+version = "0.2.0"
+dependencies = [
+ "proofbound-runtime-linux",
+]
+
+[[package]]
 name = "proofbound-runtime-linux"
 version = "0.2.0"
 dependencies = [

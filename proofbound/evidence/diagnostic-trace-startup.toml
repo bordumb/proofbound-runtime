@@ -1,0 +1,39 @@
+schema = "proofbound-evidence-unit/1"
+id = "diagnostic-trace-startup"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-OBSERVER-021"]
+tier = 0
+expected_inventory = [
+  "proofbound_runtime_linux::trace::tests::process_ids_deadlines_and_error_codes_are_closed",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-diagnose-linux/Cargo.toml",
+  "crates/proofbound-runtime-diagnose-linux/src/lib.rs",
+  "crates/proofbound-runtime-core/src/identity.rs",
+  "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-linux/Cargo.toml",
+  "crates/proofbound-runtime-linux/src/launcher.rs",
+  "crates/proofbound-runtime-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/resolve.rs",
+  "crates/proofbound-runtime-linux/src/supervisor.rs",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-linux"
+manifest = "Cargo.toml"
+targets = ["--lib"]
+paths = []
+arguments = ["--features=diagnostic-observer", "trace::tests"]
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824
