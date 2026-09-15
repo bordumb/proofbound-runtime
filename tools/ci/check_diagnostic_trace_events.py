@@ -13,6 +13,7 @@ import sys
 INVENTORY = [
     "diagnostic-trace-events-exact-waits",
     "diagnostic-trace-events-identity-stable-termination",
+    "diagnostic-trace-events-mutation-witnesses",
     "diagnostic-trace-events-nonleader-exec",
     "diagnostic-trace-events-process-tree",
     "diagnostic-trace-events-syscall-pairing",

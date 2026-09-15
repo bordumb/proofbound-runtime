@@ -91,7 +91,9 @@ A pure protocol owns release order, lifetime process and event accounting,
 gap accumulation, drain ordering, and publication eligibility. It requires a
 closed tree-empty acknowledgement after it directs termination. The Linux
 adapter owns ptrace, wait, memory-read, signal, process-cleanup, and the truth
-of that acknowledgement.
+of that acknowledgement. It sets a permanent unreconciled-tree condition before
+child registration and cannot acknowledge an empty tree after a message,
+identity, capacity, thread-group, or handle failure.
 This separation lets the ordered decisions receive bounded source evidence
 without presenting effectful Linux behavior as proved.
 

@@ -14,6 +14,7 @@ INVENTORY = [
     "diagnostic-observer-adapter-bound-inputs",
     "diagnostic-observer-adapter-drain-coupling",
     "diagnostic-observer-adapter-event-coupling",
+    "diagnostic-observer-adapter-mutation-witnesses",
     "diagnostic-observer-adapter-process-capacity",
     "diagnostic-observer-adapter-production-separation",
     "diagnostic-observer-adapter-state-continuity",

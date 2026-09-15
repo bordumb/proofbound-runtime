@@ -27,11 +27,11 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-DISTRIBUTION-018` | Tier 1 workflow and registry-observer contract | Publication is explicit, exact-source, protected, ordered, and credential-isolated. Anonymous exact-byte registry observations and external registry setup remain open. |
 | `PBR-DRAFT-017` | Tier 1 bounded contract and source-level non-reuse checks | Closed diagnostic vocabulary and schemas are registered, and verifier, composer, and acceptor paths reject diagnostic receipt reuse. The live observer remains open. |
 | `PBR-DRAFT-019` | Tier 1 bounded producer contract independently reviewed and admitted on exact Runtime main | The pure diagnostic artifact producer preserves non-reuse, provenance, explicit gaps, and mandatory human authority choices. It does not claim live observer coverage. |
-| `PBR-OBSERVER-020` | Tier 1 pure observer-protocol contract independently reviewed and admitted on exact Runtime main | The typed state machine orders diagnostic release, fixes exact process-tree trace options, bounds retained process and event state, and requires termination and explicit gaps after release failures. It does not claim that Linux observation is implemented. |
-| `PBR-OBSERVER-021` | Tier 1 trace-startup source contract; hosted admission pending | A separate feature-gated Linux API uses non-copy typestates to order initial trace ownership, launcher pause, exact boundary identity, exact options, release, and syscall-stop activation. Native ptrace behavior and complete observation remain open. |
-| `PBR-OBSERVER-022` | Tier 1 coupled setup source contract; independently approved and hosted admission pending | The separate diagnostic adapter moves matching effectful trace and pure setup states together without exposing either mutable owner. Linux effects remain open. |
-| `PBR-OBSERVER-023` | Tier 1 active-trace source contract; independently approved and hosted admission pending | The feature-gated trace polls a private exact tracee set, pairs syscall stops across exec, handles child and exec identity changes, and uses pidfds for termination. Kernel effects, decoding, and adapter acknowledgement remain open. |
-| `PBR-OBSERVER-024` | Tier 1 live event-and-drain coupling source contract; implementation review pending | The separate adapter consumes complete trace events into the matching pure protocol, transfers failures and bounds into a drain-only state, and gates pure tree-empty acknowledgement on effectful drain reconciliation. Linux effect truth, decoding, and native evidence remain open. |
+| `PBR-OBSERVER-020` | Tier 1 admitted baseline; changed exact source is in current coupling review | The prior exact main identity remains admitted history. This branch changes its pure observer source, so no status transfers until the complete current range is reviewed and verified. |
+| `PBR-OBSERVER-021` | Tier 1 admitted trace-startup baseline; changed exact source is in current coupling review | The prior exact main identity remains admitted history. This branch changes the shared trace source; native ptrace behavior and complete observation remain open. |
+| `PBR-OBSERVER-022` | Tier 1 historically approved setup source; changed exact source is in current coupling review | The prior setup review remains history. This branch extends the same adapter module with active and drain states, so the changed subject is pending exact review and hosted evidence. |
+| `PBR-OBSERVER-023` | Tier 1 historically approved active-trace source; changed exact source is in current coupling review | The prior trace-event review remains history. This branch changes `ActiveTrace`; kernel effects, decoding, and native evidence remain open. |
+| `PBR-OBSERVER-024` | Tier 1 corrected live event-and-drain source contract; exact review pending | The separate adapter consumes complete trace events into the matching pure protocol, transfers failures and bounds into a drain-only state, rejects an unreconciled tree, and gates pure tree-empty acknowledgement on successful effectful drain reconciliation. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -589,6 +589,12 @@ declared value. The pure protocol never admits an attempted lifetime overflow.
 The adapter privately retains those overflow identities so they cannot be
 mistaken for entries in the bounded ledger.
 
+A process-creation message, identity, capacity, thread-group, or handle failure
+sets a permanent unreconciled-tree condition before the risky registration
+step. Even if every already registered process later reaches a terminal wait,
+that condition prevents the trace from returning a successful drain report and
+therefore prevents either complete or incomplete publication.
+
 The effectful drain continues exact waits and reports pending child creation,
 exec replacement, and terminal observations. The adapter reconciles those
 reports with the pure protocol and its private overflow set. It can record the
@@ -598,9 +604,11 @@ remains. Natural completion similarly requires the effectful trace and pure
 process map to be empty before complete publication.
 
 The registered Rust tests cover atomic pure exec reconciliation and the closed
-process-limit values. The independent checker fixes the public typestates,
-event mapping, drain ordering, process-bound flow, dependency separation, and
-source selection. This is a source contract. It does not establish Linux event
+process-limit values. The independent checker byte-pins the load-bearing event
+and drain bodies and executes mutation witnesses for omitted registration,
+false empty reporting, premature overflow clearing, omitted drain reporting,
+and replay bypass. It also fixes the public typestates, dependency separation,
+and source selection. This is a source contract. It does not establish Linux event
 completeness, correct syscall meaning, tracee-memory reads, exact native cleanup,
 or a released diagnostic executable. Those obligations remain explicit under
 PBR-DIAGNOSTIC-TRACE-AX-016 and the RT-8 native evidence wave.

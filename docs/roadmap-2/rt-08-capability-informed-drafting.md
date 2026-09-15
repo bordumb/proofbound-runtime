@@ -6,15 +6,16 @@ producer, and the pure observer protocol are merged through Runtime `b04382d`.
 Exact-main Verify run `34946613122` passed. The identity-bound launcher
 exec-release prerequisite for race-free trace setup merged as `3557cc9` after
 exact-head hosted verification; exact-main run `34956564102` passed.
-The separate feature-gated Linux trace-startup source is independently approved
-and in hosted PR 14. The adapter that privately couples the effectful and pure
-setup states is independently approved at exact source head `d0c2520` and is in
-PR 15. The following active-trace source adds exact-set waits, process-creation
-and exec identity validation, paired syscall stops, and validated pidfd
-termination. Its exact correction is independently approved in PR 16. The next
-source wave passes the validated process bound into the effectful trace,
-consumes complete events into the matching pure protocol, and makes successful
-effectful drain reconciliation precede pure tree-empty acknowledgement.
+The separate feature-gated Linux trace-startup source merged as `9395050` and
+exact-main run `34962882198` is in progress. The adapter that privately couples
+the effectful and pure setup states is at admitted-main PR 15 head `8ab66e5` in
+hosted run `34964466007`. The active-trace event approval in PR 16 remains
+historical because the live event-and-drain wave changes the same source. That
+wave passes the validated process bound into the effectful trace, consumes
+complete events into the matching pure protocol, permanently rejects an
+unreconciled process tree, and makes successful effectful drain reconciliation
+precede pure tree-empty acknowledgement. Its first exact review requested
+corrections; the combined correction is pending exact re-review.
 Decoding, command integration, the native attack corpus, and release binding
 remain open.
 
@@ -111,6 +112,8 @@ values without making a draft an authority object.
   ledger, and exposes only a drain state after any failure or bound directive.
   A successful effectful empty-tree report and an empty overflow set must both
   precede pure tree-drain acknowledgement and publication selection.
+  Process-creation message, identity, capacity, thread-group, or handle failures
+  permanently prevent a successful effectful empty-tree report.
 - Automatic candidates require an explicit normalized project or runtime
   scope. System, home, and configured temporary roots remain open review
   items.

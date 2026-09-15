@@ -355,7 +355,6 @@ impl AcknowledgedTraceStop {
         }
         #[cfg(not(target_os = "linux"))]
         {
-            let _ = process_limit;
             Err(TraceStartupError::UnsupportedOperatingSystem)
         }
     }
@@ -399,10 +398,12 @@ impl TraceReady {
                 held_process: None,
                 must_drain: false,
                 process_limit,
+                tree_reconciliation_failed: false,
             })
         }
         #[cfg(not(target_os = "linux"))]
         {
+            let _ = process_limit;
             Err(TraceStartupError::UnsupportedOperatingSystem)
         }
     }
@@ -417,6 +418,7 @@ pub struct ActiveTrace {
     held_process: Option<TraceProcessId>,
     must_drain: bool,
     process_limit: TraceProcessLimit,
+    tree_reconciliation_failed: bool,
 }
 
 impl ActiveTrace {
@@ -429,7 +431,7 @@ impl ActiveTrace {
     /// Reports whether every known tracee has one terminal wait result.
     #[must_use]
     pub fn is_drained(&self) -> bool {
-        self.processes.is_empty()
+        self.processes.is_empty() && !self.tree_reconciliation_failed
     }
 
     /// Waits for the next complete event from the exact known process tree.
@@ -479,6 +481,16 @@ impl ActiveTrace {
         }
     }
 
+    /// Rejects active observation on an unsupported operating system.
+    #[cfg(not(target_os = "linux"))]
+    pub fn next_event(
+        &mut self,
+        deadline: TraceDeadline,
+    ) -> Result<ActiveTraceEvent, TraceObservationError> {
+        let _ = deadline;
+        Err(TraceObservationError::UnsupportedOperatingSystem)
+    }
+
     /// Terminates every identity-stable process group and drains exact waits.
     #[cfg(target_os = "linux")]
     pub fn terminate_and_drain(
@@ -507,7 +519,7 @@ impl ActiveTrace {
                 }
             }
             if self.processes.is_empty() {
-                return Ok(TraceDrainReport { observations });
+                return self.complete_drain(observations);
             }
             if deadline.expired() {
                 return Err(TraceObservationError::DrainTimedOut);
@@ -515,6 +527,27 @@ impl ActiveTrace {
             if !observed {
                 std::thread::sleep(TRACE_POLL_INTERVAL);
             }
+        }
+        self.complete_drain(observations)
+    }
+
+    /// Rejects trace drain on an unsupported operating system.
+    #[cfg(not(target_os = "linux"))]
+    pub fn terminate_and_drain(
+        self,
+        deadline: TraceDeadline,
+    ) -> Result<TraceDrainReport, TraceObservationError> {
+        let _ = deadline;
+        Err(TraceObservationError::UnsupportedOperatingSystem)
+    }
+
+    #[cfg(target_os = "linux")]
+    fn complete_drain(
+        &self,
+        observations: Vec<TraceDrainObservation>,
+    ) -> Result<TraceDrainReport, TraceObservationError> {
+        if self.tree_reconciliation_failed {
+            return Err(TraceObservationError::TreeReconciliationFailed);
         }
         Ok(TraceDrainReport { observations })
     }
@@ -552,6 +585,7 @@ impl ActiveTrace {
                 if signal == SIGNAL_TRAP
                     && crate::sys::trace_process_creation_event(event).is_some() =>
             {
+                self.tree_reconciliation_failed = true;
                 let child = crate::sys::trace_event_process(reported.get())
                     .map_err(|_| TraceObservationError::EventMessageInvalid)
                     .and_then(|value| {
@@ -574,6 +608,7 @@ impl ActiveTrace {
                     None => return Err(TraceObservationError::EventMessageInvalid),
                 };
                 let capacity_exceeded = self.register_child(child)?;
+                self.tree_reconciliation_failed = false;
                 if capacity_exceeded {
                     self.must_drain = true;
                 }
@@ -1131,6 +1166,8 @@ pub enum ActiveTraceEvent {
 /// Identifies one fail-closed active-trace observation error.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TraceObservationError {
+    /// Active trace observation is unavailable on this operating system.
+    UnsupportedOperatingSystem,
     /// An active trace cannot continue until the process tree is drained.
     DrainRequired,
     /// The tree was already empty before another event was requested.
@@ -1141,6 +1178,8 @@ pub enum TraceObservationError {
     ProcessIdentityChanged,
     /// One new child reused a live process identity.
     ProcessIdentityDuplicate,
+    /// A process-tree event could not be retained and reconciled exactly.
+    TreeReconciliationFailed,
     /// The retained process set exceeded its closed drain capacity.
     ProcessCapacityExceeded,
     /// An event referred to a process outside the exact known tree.
@@ -1174,11 +1213,13 @@ impl TraceObservationError {
     #[must_use]
     pub const fn code(self) -> &'static str {
         match self {
+            Self::UnsupportedOperatingSystem => "diagnostic.trace.observation.os.unsupported",
             Self::DrainRequired => "diagnostic.trace.drain-required",
             Self::ProcessTreeDrained => "diagnostic.trace.process-tree-drained",
             Self::ProcessIdentityInvalid => "diagnostic.trace.process-identity.invalid",
             Self::ProcessIdentityChanged => "diagnostic.trace.process-identity.changed",
             Self::ProcessIdentityDuplicate => "diagnostic.trace.process-identity.duplicate",
+            Self::TreeReconciliationFailed => "diagnostic.trace.tree-reconciliation.failed",
             Self::ProcessCapacityExceeded => "diagnostic.trace.process-capacity.exceeded",
             Self::ProcessUnknown => "diagnostic.trace.process.unknown",
             Self::InitialStopMissing => "diagnostic.trace.initial-stop.missing",
@@ -1425,11 +1466,13 @@ mod tests {
     #[test]
     fn observation_errors_have_unique_stable_codes() {
         let mut codes = [
+            TraceObservationError::UnsupportedOperatingSystem,
             TraceObservationError::DrainRequired,
             TraceObservationError::ProcessTreeDrained,
             TraceObservationError::ProcessIdentityInvalid,
             TraceObservationError::ProcessIdentityChanged,
             TraceObservationError::ProcessIdentityDuplicate,
+            TraceObservationError::TreeReconciliationFailed,
             TraceObservationError::ProcessCapacityExceeded,
             TraceObservationError::ProcessUnknown,
             TraceObservationError::InitialStopMissing,

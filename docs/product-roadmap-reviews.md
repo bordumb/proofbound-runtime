@@ -2251,3 +2251,33 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, or test bytes. Any later subject change requires a new
 exact-head review.
+
+## RT-8 live event-and-drain coupling initial review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `c93d900cfeace7d2151b819ad9725dcb3c4eddd9`
+- **Reviewed head:** `4af215a0a54962cd6e1b8f6b606df96ac62f3022`
+- **Branch:** `codex/rt8-event-adapter`
+- **Method:** Complete exact-range static review. The reviewer changed no files
+  and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The reviewer found five blockers. First, a process-creation message, identity,
+capacity, thread-group, or pidfd failure could occur before the attached child
+entered the exact process map. The later drain could empty only the incomplete
+map and authorize incomplete publication. Second, the registered checkers used
+presence and ordering assertions but did not falsify omitted registration,
+false empty reporting, premature overflow clearing, omitted drain reporting, or
+replay bypass. Third, three cited assumptions omitted reciprocal
+`PBR-OBSERVER-024` scope and affected-claim links. Fourth, the non-Linux branch
+referenced the process limit in the wrong function while the adapter called two
+Linux-only methods unconditionally. Fifth, current-status language transferred
+prior approval across changed exact source identities for the pure observer,
+setup adapter, and active trace.
+
+This verdict is not endorsed. The combined correction must retain a permanent
+unreconciled-tree condition that prevents all publication, add closed
+load-bearing checks and mutation witnesses, close the reciprocal assumption
+links, restore typed unsupported-platform compilation, and mark every changed
+exact subject pending. The correction changes the exact subject and requires
+another independent review.

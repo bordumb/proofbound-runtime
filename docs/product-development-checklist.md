@@ -1,15 +1,15 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T12:15:03+01:00 (Europe/London, BST)
-- **Runtime baseline:** identity-bound exec-release merge `3557cc9`; exact-main
-  Verify run `34956564102` passed
-- **Active implementation wave:** separate feature-gated Linux trace-startup
-  typestates are in hosted PR 14; one bundle download received a transient HTTP
-  504 and its failed lane is rerunning. The coupled setup adapter is
-  independently approved at exact source head `d0c2520` in PR 15. The active
-  trace event source is independently approved at corrected exact source head
-  `c20f6e3` in PR 16. Live event-and-drain coupling is the active source wave.
+- **Last updated:** 2026-09-15T12:48:53+01:00 (Europe/London, BST)
+- **Runtime baseline:** trace-startup merge `9395050`; exact-main Verify run
+  `34962882198` is in progress
+- **Active implementation wave:** the coupled setup adapter is at admitted-main
+  head `8ab66e5` in PR 15 and hosted run `34964466007` is in progress. The prior
+  active-trace event source approval at `c20f6e3` remains historical because the
+  live event-and-drain batch changes the same exact source. Its first review of
+  head `4af215a` requested five corrections; one combined correction is in
+  exact re-review preparation.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -198,8 +198,14 @@ manifest describes the supported tuple.
   lifetime process bound to the effectful trace before release, consumes each
   trace event into the same pure protocol, retains overflow identities outside
   the bounded ledger, and requires a successful exact drain before the pure
-  tree-empty acknowledgement. Claim and focused source evidence are registered;
-  exact review and hosted admission remain open.
+  tree-empty acknowledgement. Its first exact review found a false successful
+  drain after child-registration failure, weak load-bearing source falsifiers,
+  three missing reciprocal assumption links, broken unsupported-platform
+  compilation paths, and transferred approval language. The combined correction
+  permanently blocks publication after an unreconciled tree, byte-pins the
+  load-bearing bodies with five mutation classes, restores typed unsupported
+  paths, closes assumption links, and marks every changed exact subject pending.
+  Exact re-review and hosted admission remain open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.

@@ -2,11 +2,11 @@
 
 - **Status:** implementation; RT-7 publication routes and the RT-8 diagnostic
   contract, artifact producer, pure observer protocol, and exec-release
-  prerequisite are merged; external registry publication and every complete
-  Roadmap 2 epic exit remain open
+  and trace-startup prerequisites are merged; external registry publication
+  and every complete Roadmap 2 epic exit remain open
 - **Date:** 2026-09-13
-- **Runtime baseline:** `3557cc9` on `main`; exact-main Verify run
-  `34956564102` passed
+- **Runtime baseline:** trace-startup merge `9395050` on `main`; exact-main
+  Verify run `34962882198` is in progress
 - **Proofbound baseline consumed by Runtime evidence:** public immutable bundle
   for source `9512469`; protected-path cutover merged as Runtime `4a0cfdb` and
   passed exact-main Verify run `34918706960`
@@ -71,14 +71,15 @@ witnesses. The corrected exact source passed independent review and complete
 hosted run `34942545372`, merged unsigned as `b04382d`, and passed exact-main
 Verify run `34946613122`. The identity-bound exec-release prerequisite passed
 exact-head hosted verification and merged unsigned as `3557cc9`; exact-main
-run `34956564102` passed. Trace startup is independently approved and
-in hosted PR 14. Its coupled adapter is independently approved at exact source
-head `d0c2520` and is in PR 15. The following active-trace source adds exact-set
-waits, paired syscall stops across exec, process-tree identity handling, and
-validated pidfd-directed termination; its exact correction is independently
-approved in PR 16. The next source wave passes the validated process bound into
-the trace, consumes each complete event into the same pure protocol, and
-orders successful effectful drain before the pure tree-empty acknowledgement.
+run `34956564102` passed. Trace startup merged as `9395050`; exact-main run
+`34962882198` is in progress. Its coupled adapter is at admitted-main PR 15
+head `8ab66e5` in hosted run `34964466007`. The active-trace approval in PR 16
+remains historical because the following live event-and-drain wave changes the
+same source. That wave passes the validated process bound into the trace,
+consumes each complete event into the same pure protocol, permanently rejects
+an unreconciled process tree, and orders successful effectful drain before the
+pure tree-empty acknowledgement. Its first exact review requested corrections;
+the combined correction is pending exact re-review.
 Syscall decoding, command integration, the native attack corpus, and release
 binding remain open.
 

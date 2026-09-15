@@ -4,7 +4,7 @@ statement = "The identified Python interpreter, JSON and TOML implementations, r
 category = "compiler-tcb"
 owner = "Proofbound Runtime release maintainer"
 rationale = "The independent contract checkers parse schemas, fixtures, and selected Cargo configuration, compare canonical JSON, and inspect Rust, manifest, and assurance source with Python TOML, string, and regular-expression operations. This repository does not prove that Python behavior."
-scope = "Only the source-level schema, fixture, production-separation, consumer-contract, producer-check, observer-protocol-check, trace-startup-check, observer-adapter-check, and active-trace source-check interpretation of PBR-DRAFT-017, PBR-DRAFT-019, PBR-OBSERVER-020, PBR-OBSERVER-021, PBR-OBSERVER-022, and PBR-OBSERVER-023. It does not cover the truth of Linux event delivery, syscall observation, process termination, or complete diagnostic execution."
+scope = "Only the source-level schema, fixture, production-separation, consumer-contract, producer-check, observer-protocol-check, trace-startup-check, observer-adapter-check, and active-trace source-check interpretation of PBR-DRAFT-017, PBR-DRAFT-019, PBR-OBSERVER-020, PBR-OBSERVER-021, PBR-OBSERVER-022, PBR-OBSERVER-023, and PBR-OBSERVER-024. It does not cover the truth of Linux event delivery, syscall observation, process termination, or complete diagnostic execution."
 affected_claims = [
   "PBR-DRAFT-017",
   "PBR-DRAFT-019",
@@ -12,6 +12,7 @@ affected_claims = [
   "PBR-OBSERVER-021",
   "PBR-OBSERVER-022",
   "PBR-OBSERVER-023",
+  "PBR-OBSERVER-024",
 ]
 review_evidence = [
   "schemas/diagnostic-receipt-v1.schema.json",

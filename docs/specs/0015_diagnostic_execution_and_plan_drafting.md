@@ -100,6 +100,14 @@ the observer and makes publication ineligible. This capacity argument depends
 on the registered Linux ptrace stop premise; native adversarial evidence must
 test it on each supported architecture.
 
+The trace sets an unreconciled-tree condition before it reads or registers a
+reported child identity. A missing event message, invalid or duplicate
+identity, closed-capacity excess, invalid thread-group identity, or failed
+identity-stable handle acquisition leaves that condition set. The condition is
+permanent for the trace. A terminal wait for every previously registered
+process does not clear it, cannot produce a successful empty-tree report, and
+makes all diagnostic publication ineligible.
+
 The Linux implementation keeps its effectful observer in a separate crate.
 That crate alone enables the diagnostic observer feature on the Linux boundary
 crate. The production CLI uses the default empty feature set. The safe startup

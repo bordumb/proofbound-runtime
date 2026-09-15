@@ -61,6 +61,25 @@ def compact(source: str) -> str:
     return re.sub(r"\s+", "", source)
 
 
+def body_sha256(source: str, signature: str) -> str:
+    return hashlib.sha256(function_implementation(source, signature).encode()).hexdigest()
+
+
+EXPECTED_LOAD_BEARING_BODIES = {
+    "active-next-event": "8feed0c364401f4506ee0874106d2f0482b16c01a2c07f73b7957f66c6e04d7c",
+    "draining-finish": "2af9c106cbc227f9525aeb4e57309bc37b8560b861f76c0c35d0cbcc355aeeb6",
+}
+
+
+def assert_load_bearing_bodies(adapter: str) -> None:
+    actual = {
+        "active-next-event": body_sha256(adapter, "pub fn next_event"),
+        "draining-finish": body_sha256(adapter, "pub fn finish"),
+    }
+    if actual != EXPECTED_LOAD_BEARING_BODIES:
+        raise AssertionError(f"load-bearing adapter body mismatch: {actual!r}")
+
+
 def private_fields(source: str, type_name: str) -> list[str]:
     body = structure(source, type_name).split("{", 1)[1]
     return [line.strip() for line in body.splitlines() if ":" in line]
@@ -445,6 +464,29 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
         self.assertIn("ActiveObserverStep::Complete", active)
         self.assertNotIn("self.trace.clone()", active)
         self.assertNotIn("self.protocol.clone()", active)
+
+    def test_load_bearing_event_and_drain_bodies_are_exact(self):
+        assert_load_bearing_bodies(self.adapter)
+
+    def test_mutation_witnesses_reject_overflow_clear_and_replay_bypass(self):
+        mutations = {
+            "premature overflow clear": self.adapter.replace(
+                "if !self.untracked_processes.is_empty() {",
+                "self.untracked_processes.clear();\n"
+                "        if !self.untracked_processes.is_empty() {",
+                1,
+            ),
+            "terminal replay bypass": self.adapter.replace(
+                "self.protocol.record_process_exit(process)?;",
+                "let _ = process;",
+                1,
+            ),
+        }
+        for name, mutation in mutations.items():
+            with self.subTest(name=name):
+                self.assertNotEqual(mutation, self.adapter)
+                with self.assertRaisesRegex(AssertionError, "load-bearing adapter"):
+                    assert_load_bearing_bodies(mutation)
 
     def test_drain_replays_tree_changes_before_empty_acknowledgement(self):
         draining = implementation(self.adapter, "DrainingObserver")
