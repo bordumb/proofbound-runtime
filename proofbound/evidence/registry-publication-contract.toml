@@ -16,6 +16,7 @@ expected_inventory = [
   "registry-publication-ordered-package-set",
   "registry-publication-credential-separation",
   "registry-publication-upload-input-reproduction",
+  "registry-publication-npm-bootstrap-gate",
   "registry-publication-anonymous-retrieval",
   "registry-publication-exact-byte-comparison",
 ]
@@ -29,6 +30,7 @@ inputs = [
   "assumptions/PBR-SDK-TOOLCHAINS-AX-010.toml",
   "crates/proofbound-runtime-sdk/Cargo.toml",
   "crates/proofbound-runtime-verify/Cargo.toml",
+  "docs/guides/rt7-initial-registry-publication.md",
   "docs/specs/0014_public_compatibility_and_distribution.md",
   "docs/threat-model.md",
   "rust-toolchain.toml",

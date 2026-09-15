@@ -24,8 +24,8 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-SDK-014` | Tier 1, independently checked source and package contract | Rust, Python, and TypeScript SDKs preserve the separate-process boundary; registry publication and consumer dogfood remain open. |
 | `PBR-DISTRIBUTION-015` | Tier 1 independently reviewed and admitted on exact Runtime main | The verifier package has a closed preflight, source-payload comparison, byte reproduction, local consumer, and release-retention path; no registry or publisher claim is admitted. |
 | `PBR-DISTRIBUTION-016` | Tier 1 public-bundle consumer independently reviewed and admitted on exact Runtime main | Runtime pins one immutable public Proofbound release and rejects identity, inventory, manifest, checksum, archive, installer, and installed-byte substitution. Every protected evidence and release job installs that exact bundle independently. |
-| `PBR-DISTRIBUTION-018` | Tier 1 workflow and registry-observer contract | Publication is explicit, exact-source, protected, ordered, and credential-isolated. Anonymous exact-byte registry observations and external registry setup remain open. |
-| `PBR-DISTRIBUTION-025` | Tier 1 source contract independently approved at `a81e259`; replayed review and hosted admission pending | A deterministic-CBOR producer and independent verifier close one Runtime-only integration tuple after complete registry observation. No tuple is published until an exact protected run retains it. |
+| `PBR-DISTRIBUTION-018` | Tier 1 npm-bootstrap correction pending exact review | Publication is explicit, exact-source, protected, ordered, and credential-isolated. The active correction adds the missing one-time npm bootstrap gate; external configuration and observations remain open. |
+| `PBR-DISTRIBUTION-025` | Tier 1 implementation previously approved at `a81e259`; registry-route dependency changed and exact re-review is required | A deterministic-CBOR producer and independent verifier close one Runtime-only integration tuple after complete registry observation. No tuple is published until an exact protected run retains it. |
 | `PBR-DRAFT-017` | Tier 1 bounded contract and source-level non-reuse checks | Closed diagnostic vocabulary and schemas are registered, and verifier, composer, and acceptor paths reject diagnostic receipt reuse. The live observer remains open. |
 | `PBR-DRAFT-019` | Tier 1 bounded producer contract independently reviewed and admitted on exact Runtime main | The pure diagnostic artifact producer preserves non-reuse, provenance, explicit gaps, and mandatory human authority choices. It does not claim live observer coverage. |
 | `PBR-OBSERVER-020` | Tier 1 decoder identity merged as `4783896`; exact-main admission pending | The complete decoder subject passed exact-head run `34992273744`. Exact-main run `34997195939` is in progress. |
@@ -132,7 +132,12 @@ contains:
 - a protected `package-publish` environment on every publisher;
 - ordered verifier, Rust SDK, Python SDK, and TypeScript SDK publishers;
 - a crates.io token exposed only to each Rust publisher step;
-- PyPI and npm OIDC identities scoped by external trusted-publisher records;
+- a PyPI pending trusted publisher;
+- an independently selected, default-off npm first-publication input that is
+  valid only while the package endpoint returns exactly `404`;
+- a one-time npm bootstrap token exposed only to that initial publish step;
+- a normal npm OIDC route that requires the package endpoint to return exactly
+  `200` and has no bootstrap-token reference;
 - exact reproduction of each Rust upload input against its approved retained
   artifact; and
 - anonymous retrieval and exact byte comparison of all four registry
@@ -141,8 +146,9 @@ contains:
 The bounded evidence mutates the approved source revision, package manifests,
 downloaded bytes, metadata hosts, package inventory, and workflow gates. It
 does not publish a package or test external configuration. Registry ownership,
-protected-environment rules, the scoped crates.io token, and the two OIDC
-trusted-publisher records remain explicit external obligations. Partial
+protected-environment rules, the scoped crates.io token, the PyPI pending
+publisher, npm scope control, the bootstrap token and its revocation, and the
+post-bootstrap npm OIDC record remain explicit external obligations. Partial
 publication can occur because the registries do not provide one atomic
 transaction; the current-integration manifest must remain absent until the
 complete selected set passes anonymous observation.

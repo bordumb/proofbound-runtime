@@ -17,6 +17,7 @@ INVENTORY = [
     "registry-publication-ordered-package-set",
     "registry-publication-credential-separation",
     "registry-publication-upload-input-reproduction",
+    "registry-publication-npm-bootstrap-gate",
     "registry-publication-anonymous-retrieval",
     "registry-publication-exact-byte-comparison",
 ]

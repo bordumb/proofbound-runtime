@@ -3,9 +3,9 @@
 - **Status:** implementation; RT-7 publication routes and the RT-8 diagnostic
   contract, artifact producer, observer protocol, trace startup, active event
   source, event-and-drain coupling, and architecture-qualified decoder are
-  merged. The current-integration source wave is independently approved and
-  is being replayed on admitted main. External registry publication and every
-  complete Roadmap 2 epic exit remain open.
+  merged. The current-integration source is replayed on current main, and its
+  active correction closes npm's missing first-publication route. External
+  registry publication and every complete Roadmap 2 epic exit remain open.
 - **Date:** 2026-09-15
 - **Runtime baseline:** architecture-qualified diagnostic decoder merge
   `4783896` on `main`; exact-head Verify run `34992273744` passed and
@@ -60,8 +60,9 @@ selected registry routes and their exact-byte observer contract merged
 unsigned as `acf8f24`; exact-main Verify run `34924535451` passed after a
 rate-limit-only retry. The
 protected GitHub `package-publish` environment, registry credentials or trusted
-publishers, anonymous retrieval observations, external consumer dogfood, and
-publication of a current-integration record remain open. The
+publishers, npm's one-time token-to-OIDC transition, anonymous retrieval
+observations, external consumer dogfood, and publication of a
+current-integration record remain open. The
 `PBR-DISTRIBUTION-025` source wave adds the fail-closed deterministic-CBOR
 producer and independent verifier, but cannot claim that an external tuple was
 published. No registry package is yet described as published. The RT-8

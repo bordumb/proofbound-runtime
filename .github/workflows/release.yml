@@ -12,13 +12,20 @@ on:
         required: true
         default: false
         type: boolean
+      bootstrap_npm_package:
+        description: Use the one-time protected token route for the first npm publication
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
 
 env:
   CARGO_TERM_COLOR: always
+  PBR_BOOTSTRAP_NPM_PACKAGE: ${{ inputs.bootstrap_npm_package }}
   PBR_RELEASE_REVISION: ${{ inputs.revision }}
+  PBR_PUBLISH_PACKAGES: ${{ inputs.publish_packages }}
 
 jobs:
   validate-revision:
@@ -38,6 +45,13 @@ jobs:
           test "$(git rev-parse HEAD)" = "$PBR_RELEASE_REVISION"
           git fetch --no-tags origin main:refs/remotes/origin/main
           git merge-base --is-ancestor "$PBR_RELEASE_REVISION" origin/main
+          case "$PBR_PUBLISH_PACKAGES:$PBR_BOOTSTRAP_NPM_PACKAGE" in
+            true:true|true:false|false:false) ;;
+            *)
+              echo "npm bootstrap requires package publication" >&2
+              exit 2
+              ;;
+          esac
 
       - name: Require prepared version and changelog state
         run: python3 tools/release/validate_release_state.py
@@ -615,12 +629,61 @@ jobs:
           node-version: "24.8.0"
           package-manager-cache: false
 
-      - name: Publish through the configured npm trusted publisher
+      - name: Confirm the selected npm authentication route
+        env:
+          PBR_NPM_PACKAGE: "@proofbound/runtime-sdk"
         run: |
           npm install --global npm@11.6.0
           test "$(npm --version)" = 11.6.0
+          node --input-type=module <<'NODE'
+          const mode = process.env.PBR_BOOTSTRAP_NPM_PACKAGE;
+          if (mode !== "true" && mode !== "false") {
+            throw new Error("npm bootstrap input is not Boolean");
+          }
+          const packageName = process.env.PBR_NPM_PACKAGE;
+          if (packageName !== "@proofbound/runtime-sdk") {
+            throw new Error("npm package identity is not admitted");
+          }
+          const response = await fetch(
+            `https://registry.npmjs.org/${encodeURIComponent(packageName)}`,
+            {
+              headers: {accept: "application/json"},
+              redirect: "error",
+              signal: AbortSignal.timeout(30_000),
+            },
+          );
+          const expected = mode === "true" ? 404 : 200;
+          if (response.status !== expected) {
+            throw new Error(
+              `npm package state is ${response.status}; expected ${expected}`,
+            );
+          }
+          await response.body?.cancel();
+          NODE
+
+      - name: Bootstrap the missing npm package once
+        if: ${{ inputs.bootstrap_npm_package == true }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_INITIAL_PUBLISH_TOKEN }}
+        run: |
+          test -n "${NODE_AUTH_TOKEN:-}"
+          npm_config="$RUNNER_TEMP/npm-bootstrap.npmrc"
+          trap 'rm -f "$npm_config"' EXIT
+          # Keep the token out of the file. npm expands this placeholder.
+          # shellcheck disable=SC2016
+          printf '%s\n' '//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}' >"$npm_config"
+          NPM_CONFIG_USERCONFIG="$npm_config" npm publish \
+            dist/sdk/proofbound-runtime-sdk-*.tgz \
+            --access public \
+            --provenance \
+            --registry https://registry.npmjs.org
+
+      - name: Publish through the configured npm trusted publisher
+        if: ${{ inputs.bootstrap_npm_package != true }}
+        run: |
           npm publish dist/sdk/proofbound-runtime-sdk-*.tgz \
             --access public \
+            --provenance \
             --registry https://registry.npmjs.org
 
   observe-registry-packages:

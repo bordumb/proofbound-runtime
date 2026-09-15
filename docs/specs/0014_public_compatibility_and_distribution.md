@@ -196,6 +196,22 @@ Publication from a developer machine or a non-release workflow is unsupported.
 Package labels are tooling metadata. They do not select, approve, or identify
 the authoritative package bytes.
 
+npm does not accept a trusted-publisher configuration for a package that does
+not yet exist. The first `@proofbound/runtime-sdk` upload therefore has one
+separate bootstrap route in the same protected exact-source workflow. The
+route is disabled by default, requires the general publication input, checks
+that the anonymous package endpoint returns exactly `404` before the
+token-bearing step, and exposes a shortest-lived external bootstrap token only
+to that step. It cannot run after the package endpoint returns `200`.
+
+After the first accepted upload, the release maintainer must configure the
+exact npm OIDC trusted publisher, delete the GitHub bootstrap secret, revoke
+the npm token, and leave the bootstrap input disabled. The normal route
+requires the package endpoint to return exactly `200` and has no token
+reference. PyPI uses a pending trusted publisher and needs no corresponding
+bootstrap credential. The maintained external procedure is
+[the RT-7 initial registry publication guide](../guides/rt7-initial-registry-publication.md).
+
 ## 8. Prelaunch replacement policy
 
 No compatibility, deprecation, migration-window, or long-term-support policy is
@@ -299,6 +315,10 @@ bounded observation for the tested identity tuple.
 - Build package bytes whose inventory differs from the exact selected revision.
 - Attempt publication from a non-release context.
 - Publish one package from an incomplete selected first-party package set.
+- Select npm bootstrap while general publication is disabled.
+- Select npm bootstrap after the package exists, or select OIDC while it is
+  absent.
+- Expose the npm bootstrap token to the normal publisher or anonymous observer.
 - Substitute registry bytes after release approval.
 - Select an unlisted platform integration tuple.
 - Replace the independent verifier with an unrecorded executable identity.

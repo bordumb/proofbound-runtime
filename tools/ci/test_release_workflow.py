@@ -21,6 +21,12 @@ class ReleaseWorkflowTests(unittest.TestCase):
         workflow = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("publish_packages:", workflow)
         self.assertIn("default: false", workflow)
+        self.assertIn("bootstrap_npm_package:", workflow)
+        bootstrap_input = workflow[workflow.index("      bootstrap_npm_package:") :]
+        bootstrap_input = bootstrap_input[: bootstrap_input.index("\n\nenv:")]
+        self.assertIn("required: true", bootstrap_input)
+        self.assertIn("default: false", bootstrap_input)
+        self.assertIn("type: boolean", bootstrap_input)
         verifier = workflow.index("\n  publish-verifier-crate:\n")
         rust_sdk = workflow.index("\n  publish-rust-sdk:\n")
         python_sdk = workflow.index("\n  publish-python-sdk:\n")
@@ -40,11 +46,15 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("needs: publish-python-sdk", publication)
         self.assertEqual(publication.count("cargo publish --locked --no-verify"), 2)
         self.assertEqual(publication.count("--registry crates-io"), 4)
-        self.assertEqual(publication.count("Reproduce the upload input from the exact source"), 2)
+        self.assertEqual(
+            publication.count("Reproduce the upload input from the exact source"), 2
+        )
         self.assertIn("proofbound-runtime-verifier-package-", publication)
         self.assertIn("proofbound-runtime-sdk-packages-", publication)
         self.assertGreaterEqual(publication.count("cmp \\"), 2)
-        self.assertIn("CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}", publication)
+        self.assertIn(
+            "CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}", publication
+        )
         self.assertIn("id-token: write", publication)
         self.assertIn("pypa/gh-action-pypi-publish@dc37677", publication)
         self.assertIn("actions/setup-node@2499707", publication)
@@ -52,11 +62,33 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("--registry https://registry.npmjs.org", publication)
         typescript = workflow[typescript_sdk:observe]
         self.assertNotIn("registry-url:", typescript)
+        self.assertIn("Confirm the selected npm authentication route", typescript)
+        self.assertIn('PBR_NPM_PACKAGE: "@proofbound/runtime-sdk"', typescript)
+        self.assertIn('packageName !== "@proofbound/runtime-sdk"', typescript)
+        self.assertIn("encodeURIComponent(packageName)", typescript)
+        self.assertIn('const expected = mode === "true" ? 404 : 200;', typescript)
+        self.assertIn("inputs.bootstrap_npm_package == true", typescript)
+        self.assertIn("inputs.bootstrap_npm_package != true", typescript)
+        self.assertEqual(typescript.count("secrets.NPM_INITIAL_PUBLISH_TOKEN"), 1)
+        self.assertEqual(typescript.count("NODE_AUTH_TOKEN"), 3)
+        self.assertIn("--provenance", typescript)
+        self.assertIn("npm-bootstrap.npmrc", typescript)
         observation = workflow[observe:]
         self.assertIn("verify_registry_packages.py", observation)
         self.assertIn("needs: [provenance, publish-typescript-sdk]", observation)
         self.assertIn("persist-credentials: false", observation)
         self.assertNotIn("CARGO_REGISTRY_TOKEN", observation)
+        self.assertNotIn("NPM_INITIAL_PUBLISH_TOKEN", observation)
+
+    def test_npm_bootstrap_cannot_run_without_package_publication(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        validation_start = workflow.index("\n  validate-revision:\n")
+        sdk_start = workflow.index("\n  sdk-release:\n")
+        validation = workflow[validation_start:sdk_start]
+
+        self.assertIn("PBR_PUBLISH_PACKAGES:$PBR_BOOTSTRAP_NPM_PACKAGE", validation)
+        self.assertIn("true:true|true:false|false:false", validation)
+        self.assertIn("npm bootstrap requires package publication", validation)
 
     def test_current_integration_requires_complete_anonymous_observation(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
@@ -73,22 +105,17 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertLess(build, upload)
         self.assertIn("build_current_integration.py", observation[build:upload])
         self.assertIn("verify_current_integration.py", observation[build:upload])
-        self.assertEqual(
-            observation.count("path: dist/current-integration-inputs/"), 2
-        )
+        self.assertEqual(observation.count("path: dist/current-integration-inputs/"), 2)
         self.assertIn("name: proofbound-runtime-x86_64", observation)
         self.assertIn("name: proofbound-runtime-aarch64", observation)
         self.assertIn(
             "--registry-observations dist/registry/registry-observations.json",
             observation[build:upload],
         )
-        self.assertEqual(
-            observation[build:upload].count("--runtime-artifact"), 8
-        )
+        self.assertEqual(observation[build:upload].count("--runtime-artifact"), 8)
         self.assertEqual(
             observation[build:upload].count(
-                "--proofbound-pin proofbound/toolchains/"
-                "proofbound-tool-bundle-pin.json"
+                "--proofbound-pin proofbound/toolchains/proofbound-tool-bundle-pin.json"
             ),
             2,
         )
@@ -132,9 +159,9 @@ class ReleaseWorkflowTests(unittest.TestCase):
 
     def test_release_uses_the_identity_checked_public_proofbound_bundle(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        release = workflow[workflow.index("\n  release:\n") : workflow.index(
-            "\n  provenance:\n"
-        )]
+        release = workflow[
+            workflow.index("\n  release:\n") : workflow.index("\n  provenance:\n")
+        ]
 
         install = release.index("Install the exact public Proofbound bundle")
         path = release.index("Add the identity-checked public tools to PATH")
@@ -146,9 +173,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("install_proofbound_tool_bundle.py", release)
         self.assertIn("--platform linux-${{ matrix.architecture }}", release)
         self.assertIn('--destination "$RUNNER_TEMP/proofbound-tools"', release)
-        self.assertIn(
-            'echo "$RUNNER_TEMP/proofbound-tools" >> "$GITHUB_PATH"', release
-        )
+        self.assertIn('echo "$RUNNER_TEMP/proofbound-tools" >> "$GITHUB_PATH"', release)
         for executable in (
             "proofbound",
             "proofbound-verify",

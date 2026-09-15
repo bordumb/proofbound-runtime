@@ -144,8 +144,10 @@ The protected-path cutover passed independent review at production subject
 `34918706960` passed. The protected registry route and anonymous exact-byte
 observer are now merged. The deterministic-CBOR current-integration producer
 and independent verifier passed independent review at source `a81e259` and are
-replayed on current main under `PBR-DISTRIBUTION-025`; admitted-main review and
-hosted verification remain open.
+replayed on current main under `PBR-DISTRIBUTION-025`. Current npm registry
+rules exposed a missing first-publication route, so the active wave also adds
+an absence-gated one-time bootstrap token and mandatory transition to OIDC.
+Exact-head review and hosted verification remain open.
 External registry configuration, publication, anonymous observations, and
 unrelated consumer dogfood remain separate completion gates.
 This work follows the admitted foundation as a separate exact-source wave. It

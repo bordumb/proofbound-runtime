@@ -1,8 +1,9 @@
 # RT-7 integration record: prelaunch packaging and distribution
 
-**Status:** package, public Proofbound bundle, protected cutover, and opt-in
-registry-route contracts are admitted; the current-integration source wave is
-active; external registry publication and consumer observations remain open
+**Status:** package, public Proofbound bundle, and protected cutover contracts
+are admitted. The current-integration and one-time npm bootstrap correction
+wave is active; external registry publication and consumer observations remain
+open
 
 **Primary owner:** Proofbound Runtime
 
@@ -141,8 +142,12 @@ Python SDK, and TypeScript SDK. The exact release workflow has an explicit
 `publish_packages` input whose default is false. A publish request still waits
 for complete release provenance and the protected `package-publish`
 environment. Rust publication uses a scoped crates.io token only in its two
-Rust publisher steps. PyPI and npm use workflow-specific OIDC trusted
-publishers. The observation job has no registry credential. Its read-only
+Rust publisher steps. PyPI uses a pending workflow-specific OIDC trusted
+publisher. npm requires the package to exist before it can bind a trusted
+publisher, so the active correction adds one separately selected initial-token
+route. It checks the anonymous package endpoint for exact absence before the
+token-bearing step. The normal npm route requires the package to exist and uses
+only OIDC. The observation job has no registry credential. Its read-only
 checkout credential is removed before it makes anonymous registry requests.
 
 The four publishers run in the selected order. The Rust jobs reproduce their
@@ -154,9 +159,12 @@ the approved artifacts. A canonical registry-observation record is retained only
 four comparisons pass.
 
 Repository code does not configure registry ownership, GitHub environment
-protection, OIDC trusted-publisher records, or the crates.io token. It does not
-claim an atomic transaction across registries. The current-integration
-manifest stays unpublished until the complete selected set has been observed.
+protection, OIDC trusted-publisher records, or either temporary registry token.
+The [initial registry publication guide](../guides/rt7-initial-registry-publication.md)
+records the exact external setup and mandatory npm token-to-OIDC transition.
+The workflow does not claim an atomic transaction across registries. The
+current-integration manifest stays unpublished until the complete selected set
+has been observed.
 
 ## Current-integration source checkpoint
 

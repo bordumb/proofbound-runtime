@@ -9,8 +9,10 @@
 - **Active implementation wave:** the `PBR-DISTRIBUTION-025`
   current-integration source passed independent review at exact subject
   `a81e259`. Its four unsigned commits are replayed on Runtime main with the
-  approved implementation, schema, claim, evidence, and tests preserved.
-  Focused static replay checks pass; admitted-main review is pending.
+  approved implementation and schema preserved. Current npm documentation and
+  an anonymous package check exposed a missing first-publication route: npm
+  cannot bind OIDC until the package exists. A narrow protected bootstrap
+  correction is active and requires a new exact-head review.
 - **Current implementation batch:** close RT-7's machine-readable supported
   tuple before external publication. Registry configuration, protected
   publication, anonymous observations, unrelated consumer dogfood, and a
@@ -114,6 +116,13 @@ Review history:
   demonstrated consumer.
 - [x] Add opt-in registry publication only to the exact approved release
   workflow, behind the protected `package-publish` environment.
+- [x] Detect the npm first-publication constraint. Add a separately selected,
+  default-off route that fails unless general publication is active and the
+  anonymous package endpoint returns exactly `404`; expose the one-time token
+  only to that step. Require `200` and OIDC on the normal route.
+- [x] Document the external environment, PyPI pending publisher, npm bootstrap,
+  immediate token revocation, npm OIDC transition, and retained evidence in the
+  [initial registry publication guide](guides/rt7-initial-registry-publication.md).
 - [x] Implement the closed deterministic-CBOR current-integration producer,
   independently owned verifier, JSON projection, and human rendering as the
   `PBR-DISTRIBUTION-025` source wave.
@@ -137,6 +146,10 @@ Review history:
   change in the following approval-only commit.
 - [ ] Publish from one exact approved `main` revision using registry
   credentials supplied through the release environment.
+- [ ] Configure the protected `package-publish` environment, PyPI pending
+  publisher, scoped crates.io token, and one-time npm bootstrap token. After the
+  first npm upload, configure its exact trusted publisher, delete the GitHub
+  secret, and revoke the token before any later release.
 - [ ] Retrieve each registry artifact anonymously and compare its exact bytes
   or registered package identity with the approved artifact.
 - [ ] Exercise each package from an unrelated consumer repository or other
