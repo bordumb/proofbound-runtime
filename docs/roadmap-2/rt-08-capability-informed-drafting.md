@@ -189,13 +189,18 @@ nonblocking stdout and stderr drains before command integration.
 
 Complete the remaining RT-8 work in these claim-sized waves:
 
-1. Admit `PBR-OBSERVER-028`. Retain the same stopped child and place it in the
-   prepared cgroup before target release. Apply one absolute plan wall-time
-   limit through observation and drain. Finish resource observations after the
-   tree is empty. Make every stream or cleanup failure block publication. The
-   source and independent contract are implemented on the restacked lifecycle
-   branch; independent review, hosted verification, and native attack evidence
-   remain open.
+1. Admit `PBR-OBSERVER-028`. Retain the same child in the exact prepared cgroup
+   before the spawned state becomes available; revalidate its zero resource
+   snapshot, empty membership, and controls before spawn; apply one private
+   absolute plan wall-time deadline across setup, late-ready rejection,
+   observation, and natural terminal collection; and start a distinct bounded
+   cleanup deadline only after mandatory termination begins. Require every
+   retained process-group signal to succeed, then carry one absolute cleanup
+   deadline through exact-tree completion, cgroup cleanup, complete version 2
+   resource observations, stream cancellation, and joins before any publication
+   decision. The source and independent contract are implemented on the stacked
+   lifecycle branch; independent review, hosted verification, and native attack
+   evidence remain open.
 2. Resolve a successful descriptor or executable only from the still-stopped
    tracee. Resolve a denied path only as a bounded stable candidate with before
    and after identities. Preserve races and unsupported forms as explicit gaps.

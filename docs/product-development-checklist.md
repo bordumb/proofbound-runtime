@@ -323,14 +323,16 @@ manifest describes the supported tuple.
   Verify run `35042895100` passed. A command without this wave can deadlock when
   a target fills a pipe.
 - [ ] Keep the same stopped child, place it in the prepared cgroup before target
-  release, apply one absolute plan wall-time deadline through observation and
-  drain, finish resource observation after the tree is empty, and block
-  publication after stream or cleanup failure. `PBR-OBSERVER-028` implements
-  exact cgroup identity and control-readback checks, pre-return child placement,
-  non-refreshable transition signatures, mandatory process-group signalling,
-  and terminal gating on exact-tree completion, cgroup removal, complete
-  version 2 resource observations, and joined streams. Independent review,
-  hosted admission, and native attack evidence remain open.
+  release, apply one absolute plan wall-time deadline through observation, and
+  start a separate bounded cleanup deadline only after termination begins.
+  `PBR-OBSERVER-028` implements exact cgroup identity and control-readback
+  checks, zero-snapshot and empty-membership revalidation before spawn,
+  pre-return child placement, non-refreshable transition signatures,
+  late-stop and late-event rejection, mandatory successful process-group
+  signalling before a drain-only state is exposed, and terminal gating on
+  exact-tree completion, cgroup removal, complete version 2 resource
+  observations, and joined streams under one cleanup deadline. Independent
+  review, hosted admission, and native attack evidence remain open.
 - [ ] Add stopped-tracee filesystem object resolution. Successful descriptor or
   executable results may become `kernel-selected`; denied paths may become
   `stable-candidate` only after bounded before-and-after identity checks. Races

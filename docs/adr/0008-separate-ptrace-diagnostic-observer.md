@@ -89,31 +89,38 @@ process-tree completeness.
 The same trace session owns one prepared cgroup version 2 boundary and one
 private absolute execution deadline. Preparation compares the cgroup identity
 and exact readbacks for `pids.max`, `memory.max`, `memory.swap.max`, and
-`memory.oom.group` with the install request and seed-plan limits. It reads the
+`memory.oom.group` with the install request and seed-plan limits. Preparation
+and the immediate pre-spawn transition also revalidate the zero initial
+resource snapshot, empty membership, and unpopulated state. It reads the
 controls again immediately before spawn and immediately before target release,
 so neither transition relies only on cached setup values. The deadline starts
 immediately before spawn. The spawn transition places and reads back the exact
-child in that cgroup before it returns. Each later setup transition,
-option installation, target release, and active wait consults that same stored
-deadline; no public transition accepts a replacement deadline.
+child in that cgroup before it returns. Each later setup transition, option
+installation, target release, active wait, and natural terminal collection
+consults that same stored deadline; no public transition accepts a replacement
+deadline. Ready stops and events are checked against the deadline before they
+can become progress, and target release or resume has an immediate deadline
+gate.
 The deadline is checked by consuming transitions. It is not a background
 watchdog. The command owner MUST drive those transitions without unbounded
 delay or add an independent watchdog before it claims released wall-time
 enforcement.
 
 When the pure protocol or effectful observer requires termination, the adapter
-signals all retained identity-stable process groups and starts a separate
-five-second cleanup deadline before it returns the drain-only state. The
-cleanup deadline permits terminal waits; it does not extend target execution.
-Natural and forced completion first establish an empty exact trace tree, then
-drain and remove the cgroup, require complete version 2 resource observations,
-and finally join both stream readers. Only that terminal capture can precede a
-pure publication decision. A cgroup mismatch, placement failure, cleanup
-failure, incomplete resource observation, or stream failure prevents all
-diagnostic publication. Dropping an unfinished session orders root-child,
-cgroup, and stream-reader cleanup. These are source-order properties; native
-kernel, clock, scheduler, cgroup, and pipe behavior still requires the RT-8
-attack corpus.
+must successfully signal all retained identity-stable process groups and starts
+a separate five-second cleanup deadline before it returns the drain-only state.
+The same absolute deadline covers terminal waits, cgroup drain and removal,
+resource observation, stream cancellation, and both joins; no stage refreshes
+it. The cleanup deadline does not extend target execution. Natural and forced
+completion first establish an empty exact trace tree, then drain and remove the
+cgroup, require complete version 2 resource observations, and finally join both
+stream readers. Only that terminal capture can precede a pure publication
+decision. A cgroup mismatch, stale freshness, placement failure, signal
+failure, cleanup failure, incomplete resource observation, stream failure, or
+deadline expiry prevents all diagnostic publication. Dropping an unfinished
+session orders best-effort root-child, cgroup, and stream-reader cleanup. These
+are source-order properties; native kernel, clock, scheduler, cgroup, and pipe
+behavior still requires the RT-8 attack corpus.
 
 The separate diagnostic Linux crate presents one coupled adapter instead of
 re-exporting the raw trace typestates. It validates observation bounds before

@@ -1,13 +1,14 @@
 schema = "proofbound-claim/1"
 id = "PBR-OBSERVER-028"
 title = "Diagnostic execution owns one bounded resource lifecycle"
-statement = "For the separate Linux diagnostic trace source API, preparation accepts only a fresh cgroup version 2 boundary whose identity and exact process, memory, swap, and OOM-group control readbacks match the install request and resource limits; those controls are read again immediately before child spawn and immediately before target release; one absolute monotonic execution deadline starts immediately before child spawn and remains private to the trace session across setup, target release, and active observation; the spawned child is placed in and read back from the exact cgroup before the spawned trace state is returned; timeout or observation failure selects immediate process-group termination and an independent bounded cleanup deadline instead of extending execution; and a complete or incomplete diagnostic publication decision is available only after the exact trace tree is terminal, cgroup drain and removal succeed, complete version 2 resource observations are retained, and both bounded streams join. A cgroup mismatch, control drift, placement failure, cleanup failure, incomplete resource observation, or stream failure returns a closed error and prevents publication."
-public_language = "The separate diagnostic trace has source-level coupling for one exact cgroup version 2 boundary, control revalidation before spawn and release, one private absolute execution deadline, exact-child placement before trace startup completes, bounded forced cleanup, and terminal resource and stream capture before publication. Registered Rust type checks and an independent exact-source checker cover this lifecycle and its fail-closed order. They do not prove kernel, clock, cgroup, ptrace, scheduler, pipe, command, or released-artifact behavior."
-subject = "rust:proofbound_runtime_linux::trace::TraceTerminalCapture"
+statement = "For the aggregate separate Linux diagnostic cgroup, trace, raw-operation, and adapter source path, preparation accepts only a fresh cgroup version 2 boundary whose identity and exact process, memory, swap, and OOM-group control readbacks match the install request and resource limits; zero resource observations, empty membership, and unpopulated state are revalidated during preparation and immediately before child spawn, while controls are also revalidated immediately before target release; one absolute monotonic execution deadline starts immediately before child spawn, remains private across setup, target release, active observation, and natural terminal collection, wins over late-ready stops and events, and is checked immediately before target release or resume; the spawned child is placed in and read back from the exact cgroup before the spawned trace state is returned; timeout or observation failure creates one fixed absolute cleanup deadline, successfully signals every retained process group through identity-stable handles, and carries that same deadline through exact waits, cgroup drain and removal, resource observation, stream cancellation, and joins; and a complete or incomplete diagnostic publication decision is available only after the exact trace tree is terminal, cgroup drain and removal succeed, complete version 2 resource observations are retained, and both bounded streams join before the applicable deadline. A pre-used cgroup, cgroup mismatch, control drift, placement failure, late stop or event, signal failure, cleanup failure, incomplete resource observation, stream failure, or deadline expiry returns a closed error and prevents publication."
+public_language = "The separate diagnostic trace has source-level coupling for one exact fresh cgroup version 2 boundary, freshness and control revalidation before spawn, control revalidation before release, one private absolute execution deadline with late-event rejection, exact-child placement before trace startup completes, and one absolute forced-cleanup deadline shared by process waits, cgroup cleanup, resource capture, stream cancellation, and joins. Explicit signal failure and every incomplete terminal state prevent publication. Registered Rust type and adapter compile checks plus an independent exact-source checker cover this lifecycle and its fail-closed order. They do not prove kernel, clock, cgroup, ptrace, scheduler, pipe, command, or released-artifact behavior."
+subject = "rust:proofbound_runtime_linux::cgroup+proofbound_runtime_linux::trace+proofbound_runtime_linux::sys+proofbound_runtime_diagnose_linux::adapter"
 profile = "ledger"
 tier = 1
 evidence = [
   "example-test:diagnostic-lifecycle",
+  "example-test:diagnostic-lifecycle-adapter",
   "independent-check:diagnostic-lifecycle-contract",
 ]
 assumptions = [
@@ -36,8 +37,11 @@ source_roots = [
   "claims/PBR-OBSERVER-028.toml",
   "crates/proofbound-runtime-core/Cargo.toml",
   "crates/proofbound-runtime-core/src/authority.rs",
+  "crates/proofbound-runtime-core/src/identity.rs",
   "crates/proofbound-runtime-core/src/lib.rs",
   "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-receipt/Cargo.toml",
+  "crates/proofbound-runtime-receipt/src/lib.rs",
   "crates/proofbound-runtime-diagnose/Cargo.toml",
   "crates/proofbound-runtime-diagnose/src/artifact.rs",
   "crates/proofbound-runtime-diagnose/src/lib.rs",
@@ -49,6 +53,7 @@ source_roots = [
   "crates/proofbound-runtime-linux/src/cgroup.rs",
   "crates/proofbound-runtime-linux/src/lib.rs",
   "crates/proofbound-runtime-linux/src/launcher.rs",
+  "crates/proofbound-runtime-linux/src/probe.rs",
   "crates/proofbound-runtime-linux/src/resolve.rs",
   "crates/proofbound-runtime-linux/src/supervisor.rs",
   "crates/proofbound-runtime-linux/src/sys.rs",
@@ -60,6 +65,7 @@ source_roots = [
   "docs/roadmap-2/rt-08-capability-informed-drafting.md",
   "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",
   "proofbound/evidence/diagnostic-lifecycle-contract.toml",
+  "proofbound/evidence/diagnostic-lifecycle-adapter.toml",
   "proofbound/evidence/diagnostic-lifecycle.toml",
   "tools/ci/check_diagnostic_lifecycle.py",
   "tools/ci/ci.sh",

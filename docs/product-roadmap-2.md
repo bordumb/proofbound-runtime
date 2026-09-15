@@ -135,10 +135,12 @@ Independently approved source `5d296fb` and approval-only head `17458ad` passed
 PR 22 Verify run `35039326242`; unsigned exact main `17458ad` passed run
 `35042895100`.
 The dependent `PBR-OBSERVER-028` source is restacked on current main. It binds
-the trace to the exact prepared cgroup and one private absolute execution
-deadline, starts bounded termination before exposing a drain-only state, and
-requires complete terminal resources and streams before publication. It awaits
-independent review and hosted verification.
+the trace to the exact prepared and still-fresh cgroup and one private absolute
+execution deadline, rejects late-ready progress, starts bounded termination
+before exposing a drain-only state, treats process-group signal failure as
+terminal, and carries one cleanup deadline through complete terminal resources
+and stream joins before publication. It awaits independent review and hosted
+verification.
 Object resolution, command integration, the native attack corpus, and release
 binding remain open.
 The RT-7 current-integration source merged as `47c5ad2` and passed exact-main

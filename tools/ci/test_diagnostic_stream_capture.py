@@ -67,7 +67,6 @@ def assert_stream_contract(trace: str, adapter: str, sys: str) -> None:
     spawn = implementation(trace, "pub fn spawn(mut self)")
     start = implementation(trace, "fn start(")
     capture = implementation(trace, "fn capture_trace_stream(")
-    reader_finish = implementation(trace, "fn finish(&mut self)")
     reader_finish_before = implementation(trace, "fn finish_before(")
     reader_cancel = implementation(trace, "fn cancel_and_join(")
     natural_finish = implementation(trace, "pub fn finish(mut self)")
@@ -75,7 +74,9 @@ def assert_stream_contract(trace: str, adapter: str, sys: str) -> None:
     child_drop = implementation(trace, "impl Drop for TraceChild")
     child_terminate = implementation(trace, "fn terminate_and_wait(")
     child_disarm = implementation(trace, "fn disarm_after_trace_wait(")
-    child_pidfd_disarm = implementation(trace, "fn disarm_after_identity_stable_handle(")
+    child_pidfd_disarm = implementation(
+        trace, "fn disarm_after_identity_stable_handle("
+    )
     record_terminal = implementation(trace, "fn record_terminal_process(")
     release = implementation(trace, "pub fn release(")
     reader_drop = implementation(trace, "impl Drop for TraceStreamReaders")
@@ -83,6 +84,7 @@ def assert_stream_contract(trace: str, adapter: str, sys: str) -> None:
     session = structure(trace, "TraceSession")
     active_step = implementation(adapter, "pub fn next_event(")
     drain_finish = implementation(adapter, "pub fn finish(")
+    terminal_finish = implementation(trace, "fn finish_terminal(")
 
     for term in [
         ".stdout(Stdio::piped())",
@@ -135,13 +137,10 @@ def assert_stream_contract(trace: str, adapter: str, sys: str) -> None:
         if term not in set_nonblocking:
             raise AssertionError(f"missing nonblocking pipe configuration: {term}")
 
-    for term in [
-        "checked_add(TRACE_STREAM_FINISH_TIMEOUT)",
-        "TraceObservationError::StreamDrainTimedOut",
-        "self.finish_before(deadline)",
-    ]:
-        if term not in reader_finish:
-            raise AssertionError(f"missing terminal stream deadline term: {term}")
+    if "self.streams.finish_before(deadline.instant())" not in terminal_finish:
+        raise AssertionError(
+            "terminal stream collection does not use its absolute deadline"
+        )
     for term in [
         "while !self.capture_threads_finished()",
         "Instant::now() >= deadline",
@@ -151,6 +150,8 @@ def assert_stream_contract(trace: str, adapter: str, sys: str) -> None:
     ]:
         if term not in reader_finish_before:
             raise AssertionError(f"missing terminal stream timeout term: {term}")
+    if reader_finish_before.count("Instant::now() >= deadline") != 3:
+        raise AssertionError("ready drains or joins can win after terminal expiry")
     before(
         reader_finish_before,
         "self.cancel_and_join()",
@@ -164,7 +165,9 @@ def assert_stream_contract(trace: str, adapter: str, sys: str) -> None:
             or f"let _ = {stream}.join()" not in reader_cancel
         ):
             raise AssertionError(f"cancellation does not join {stream}")
-    before(reader_cancel, "cancellation.store(true, Ordering::Release)", "stdout.join()")
+    before(
+        reader_cancel, "cancellation.store(true, Ordering::Release)", "stdout.join()"
+    )
     if "self.cancel_and_join()" not in reader_drop:
         raise AssertionError("reader drop does not cancel and join")
     before(session, "_child: TraceChild", "streams: TraceStreamReaders")
@@ -186,14 +189,24 @@ def assert_stream_contract(trace: str, adapter: str, sys: str) -> None:
         "record_root_identity_stable_handle()",
     )
     before(release, "record_root_identity_stable_handle()", "Ok(ActiveTrace")
-    before(record_terminal, "self.processes.remove", "self.session.record_root_reaped()")
+    before(
+        record_terminal, "self.processes.remove", "self.session.record_root_reaped()"
+    )
     if "if process == self.session.process" not in record_terminal:
         raise AssertionError("terminal child cleanup is not confined to the exact root")
     if "self.terminate_and_wait()" not in child_drop:
         raise AssertionError("child drop does not terminate and wait")
 
-    before(natural_finish, "if !self.is_drained()", "self.session.finish_terminal()?")
-    before(complete_drain, "if self.tree_reconciliation_failed", "self.session.finish_terminal()?")
+    before(
+        natural_finish,
+        "if !self.is_drained()",
+        "self.session.finish_terminal(deadline)?",
+    )
+    before(
+        complete_drain,
+        "if self.tree_reconciliation_failed",
+        "self.session.finish_terminal(deadline)?",
+    )
     for variant in [
         "StreamUnavailable",
         "StreamDrainStartFailed",
@@ -204,9 +217,15 @@ def assert_stream_contract(trace: str, adapter: str, sys: str) -> None:
         if variant not in trace:
             raise AssertionError(f"missing closed stream failure: {variant}")
 
-    before(active_step, "self.trace.finish()?.into_terminal()", "self.protocol.finish()?")
-    before(drain_finish, "report.into_terminal()", "self.protocol.confirm_tree_drained()?")
-    before(drain_finish, "self.protocol.confirm_tree_drained()?", "self.protocol.finish()?")
+    before(
+        active_step, "self.trace.finish()?.into_terminal()", "self.protocol.finish()?"
+    )
+    before(
+        drain_finish, "report.into_terminal()", "self.protocol.confirm_tree_drained()?"
+    )
+    before(
+        drain_finish, "self.protocol.confirm_tree_drained()?", "self.protocol.finish()?"
+    )
     if adapter.count("terminal: TraceTerminalCapture") != 1:
         raise AssertionError("completed adapter terminal ownership is not singular")
 
@@ -219,15 +238,14 @@ EXPECTED_BODIES = {
     "child-disarm": "573522b819713c764133d1ee66fa52cd8b9d9c7d085cf75a201773849c5b2df2",
     "child-pidfd-disarm": "47d90711e30be1b77dd750af5d39be069df6f33734dac1aa8db0a3ebaf50962d",
     "child-terminate": "8cacb6f54d429d3319a586ef2a0afcec3aa53ee709406798de2aef17374fe5aa",
-    "complete-drain": "db92609df0e5e00a33ce9848422783d7ce5e2ef8b4157c7e7bdafae6bfb1e49e",
-    "natural-finish": "b1feb2846c2a896e67a10874aa44e8f1675c76f8ba992d06a232538ec191324d",
-    "reader-finish": "fd900504cf37bbf8ceb94f1cdb1c330b1e7822e68cd56512973b8ce545196710",
-    "reader-finish-before": "0a8574bca5ab821a1430ae1d7eaf9da65253e21828afa8f04c8b199901d3e8be",
+    "complete-drain": "aaeab9d4290dd85e24d981b32d84061041a0c2eb2d80b68e9810fe3c7e63b546",
+    "natural-finish": "e1c023f8009923758a6e37f4cc77e6e88e1f7c92e346ac08f98197a5c9e1d9a5",
+    "reader-finish-before": "ca94b24d17e16baa9f7c89b784593aa021aa1dcf21241a565dec71be8893dd8e",
     "reader-cancel": "f8d1f73f2d46e508fe3a6dcb6ae5a3bb2749082808f368f9c21ba871c3e1ecdb",
     "reader-start": "8d00f7968b3498b8c59e4cac187a38908673edb446ad20b600aacab971e21f5c",
     "record-terminal": "1b039cd8a628df661083e7f65b8aeb4b691b7a476b851d06ab531826ca7365fa",
-    "release": "9291677b73a2de86abc96f7e79f9089ebbe2a218fea9a1e4394b2297579006e5",
-    "spawn": "f5c98f713e65d47d0e64b7cbfb5c6950c348f1eee9a4e6fd4a06d4b790a8f4f3",
+    "release": "abf4ad5e46246918501f3f120f43d6202c37e5ddffded053d69d3242dce18526",
+    "spawn": "1faca0106ae138c1f98807b3d21371eace9a69d41892a8a13c6d94a72b30f681",
 }
 
 EXPECTED_FILES = {
@@ -235,7 +253,7 @@ EXPECTED_FILES = {
     "adapter-lib": "ccad4545cfd41802c32d66a692d65aca9a69d0e59b0a3cb7c5c34da42830a198",
     "adapter-manifest": "ef7c613a66781c4b64d75435524166329b5239b8172f97b28cff2d6d609c8d78",
     "authority": "9d1945b590a3a9f44f6af95d3090ad0a8d1bc0cfa601c35273cd0a72c86cbddc",
-    "claim": "f633143ff992f9de3001626074690af2ed95c01bd9aeb64d8f1a55f3f7066113",
+    "claim": "9ea76c092760e3aa9350474770066ccbf5d218f11b6e4812310ca22db32d862a",
     "contract-evidence": "8efddeb82d8cfcea95e6967b5d4b995f77215e159fc74b45a8f9cc0450a512c8",
     "core-manifest": "0d22823a1d4f397fb58693c7d9fe7498969ce242b5da0f372d8cc8f55f960b9b",
     "core-lib": "2039d8c789844cddaaabbf432a0a6ef465f77300577f3b57922d7bcbcc930450",
@@ -254,7 +272,7 @@ EXPECTED_FILES = {
     "stream-runtime-assumption": "ce57e1cab085cbd7b4f60ab03a607166a2dc77bdb924228b1f7c949a72bfeb19",
     "sys": "c7433f4485aa12829c87ef10210fa766676bc24729361e0a82ac93a2267eb06f",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "228a18c115c9130d095285da1cca15d5300f1a425d391dd463b2de949b5aa181",
+    "trace": "83ac6a80b1e3be2e5b44fe5ce4edc1ade1e10f7332f13bc81a3d1db86077cc90",
     "unit-evidence": "aa412bdc666a1817f18e8a8df227ff356100147635f5a996068b8f3672aaeda7",
 }
 
@@ -303,10 +321,10 @@ class DiagnosticStreamCaptureContractTests(unittest.TestCase):
                 self.sys,
             ),
             (
-                "terminal deadline removed",
+                "terminal deadline replaced",
                 self.trace.replace(
-                    ".checked_add(TRACE_STREAM_FINISH_TIMEOUT)",
-                    ".checked_add(Duration::MAX)",
+                    "self.streams.finish_before(deadline.instant())",
+                    "self.streams.finish_before(Instant::now())",
                     1,
                 ),
                 self.adapter,
@@ -315,6 +333,20 @@ class DiagnosticStreamCaptureContractTests(unittest.TestCase):
             (
                 "terminal timeout skips cancellation",
                 self.trace.replace("self.cancel_and_join();", "", 1),
+                self.adapter,
+                self.sys,
+            ),
+            (
+                "late-ready stream drains win over deadline",
+                self.trace.replace(
+                    "        if Instant::now() >= deadline {\n"
+                    "            self.cancel_and_join();\n"
+                    "            return Err(TraceObservationError::StreamDrainTimedOut);\n"
+                    "        }\n"
+                    "        let stdout = join_trace_capture(self.stdout.take());",
+                    "        let stdout = join_trace_capture(self.stdout.take());",
+                    1,
+                ),
                 self.adapter,
                 self.sys,
             ),
@@ -394,16 +426,18 @@ class DiagnosticStreamCaptureContractTests(unittest.TestCase):
             "child-terminate": implementation(self.trace, "fn terminate_and_wait("),
             "complete-drain": implementation(self.trace, "fn complete_drain("),
             "natural-finish": implementation(self.trace, "pub fn finish(mut self)"),
-            "reader-finish": implementation(self.trace, "fn finish(&mut self)"),
             "reader-finish-before": implementation(self.trace, "fn finish_before("),
             "reader-cancel": implementation(self.trace, "fn cancel_and_join("),
             "reader-start": implementation(self.trace, "fn start("),
-            "record-terminal": implementation(self.trace, "fn record_terminal_process("),
+            "record-terminal": implementation(
+                self.trace, "fn record_terminal_process("
+            ),
             "release": implementation(self.trace, "pub fn release("),
             "spawn": implementation(self.trace, "pub fn spawn(mut self)"),
         }
         actual_bodies = {
-            name: hashlib.sha256(body.encode()).hexdigest() for name, body in bodies.items()
+            name: hashlib.sha256(body.encode()).hexdigest()
+            for name, body in bodies.items()
         }
         self.assertEqual(actual_bodies, EXPECTED_BODIES)
 
@@ -435,7 +469,8 @@ class DiagnosticStreamCaptureContractTests(unittest.TestCase):
             "unit-evidence": UNIT_EVIDENCE,
         }
         actual_files = {
-            name: hashlib.sha256(path.read_bytes()).hexdigest() for name, path in files.items()
+            name: hashlib.sha256(path.read_bytes()).hexdigest()
+            for name, path in files.items()
         }
         self.assertEqual(actual_files, EXPECTED_FILES)
 

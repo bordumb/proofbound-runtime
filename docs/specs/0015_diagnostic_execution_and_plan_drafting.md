@@ -188,13 +188,18 @@ Dropping an active trace sends termination through every retained pidfd.
 Stream collection does not replace the command's wall-time or resource
 lifecycle. The trace preparation surface takes the exact fresh cgroup version 2
 owner and the seed plan's full resource limits. It rejects a cgroup identity or
-readback mismatch. It reads the control files again immediately before spawn
-and immediately before target release; a drift from the installed values fails
-closed. One absolute monotonic execution deadline starts immediately before
-spawn and remains private across every setup transition, option
-installation, target release, and active observation. The exact child is placed
-in and read back from the cgroup before the spawned trace state becomes
-available.
+readback mismatch. Preparation and the immediate pre-spawn transition each
+require the initial resource snapshot to remain zero, membership to remain
+empty, and the group to remain unpopulated. The control files are read again
+immediately before spawn and immediately before target release; a drift from
+the installed values fails closed. One absolute monotonic execution deadline
+starts immediately before spawn and remains private across every setup
+transition, option installation, target release, active observation, and
+natural terminal collection. Each blocking or effectful transition checks the
+same deadline after a ready stop or event and immediately before target release
+or resume. A late-ready result is a timeout, not successful progress. The exact
+child is placed in and read back from the cgroup before the spawned trace state
+becomes available.
 The source API checks the deadline only when its owner drives a consuming
 transition. It is not an asynchronous watchdog. Command integration MUST drive
 the trace loop without unbounded delay or install an independent watchdog
@@ -202,14 +207,18 @@ before the product describes the deadline as released wall-time enforcement.
 
 When termination becomes mandatory, process-group signalling and a distinct
 bounded cleanup deadline start before the adapter returns a drain-only state.
-That deadline bounds terminal collection and does not refresh or extend the
-execution deadline. Natural or forced terminal capture requires an empty exact
-trace tree, successful cgroup drain and removal, complete version 2 resource
-observations, and joined stdout and stderr drains, in that order. Any placement,
-cleanup, resource-observation, read, or join failure blocks both complete and
-incomplete diagnostic publication. This source contract does not prove native
-cgroup membership, clock progress, termination, resource-counter truth, or
-stream progress. Those remain native evidence obligations.
+Every retained process-group signal must succeed. The same absolute cleanup
+deadline then bounds exact waits, cgroup drain and removal, resource
+observation, stream cancellation, and both joins; no cleanup owner starts a
+fresh timeout. The cleanup deadline does not refresh or extend the execution
+deadline. Natural or forced terminal capture requires an empty exact trace
+tree, successful cgroup drain and removal, complete version 2 resource
+observations, and joined stdout and stderr drains, in that order. Any
+freshness, placement, signalling, cleanup, resource-observation, read, join, or
+deadline failure blocks both complete and incomplete diagnostic publication.
+This source contract does not prove native cgroup membership, clock progress,
+termination, resource-counter truth, or stream progress. Those remain native
+evidence obligations.
 
 The diagnostic host must provide `PTRACE_GET_SYSCALL_INFO`, procfs `Tgid`
 identity, `pidfd_open`, and `pidfd_send_signal`. Missing support fails before

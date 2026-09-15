@@ -7,17 +7,16 @@ ROOT = Path(__file__).resolve().parents[2]
 ROOT_MANIFEST = ROOT / "Cargo.toml"
 LOCK = ROOT / "Cargo.lock"
 TOOLCHAIN = ROOT / "rust-toolchain.toml"
-LIFECYCLE_ASSUMPTION = (
-    ROOT / "assumptions/PBR-DIAGNOSTIC-LIFECYCLE-CHECK-AX-021.toml"
-)
-LIFECYCLE_RUNTIME_ASSUMPTION = (
-    ROOT / "assumptions/PBR-DIAGNOSTIC-LIFECYCLE-AX-023.toml"
-)
+LIFECYCLE_ASSUMPTION = ROOT / "assumptions/PBR-DIAGNOSTIC-LIFECYCLE-CHECK-AX-021.toml"
+LIFECYCLE_RUNTIME_ASSUMPTION = ROOT / "assumptions/PBR-DIAGNOSTIC-LIFECYCLE-AX-023.toml"
 CLAIM = ROOT / "claims/PBR-OBSERVER-028.toml"
 CORE_MANIFEST = ROOT / "crates/proofbound-runtime-core/Cargo.toml"
 AUTHORITY = ROOT / "crates/proofbound-runtime-core/src/authority.rs"
+IDENTITY = ROOT / "crates/proofbound-runtime-core/src/identity.rs"
 CORE_LIB = ROOT / "crates/proofbound-runtime-core/src/lib.rs"
 RECEIPT = ROOT / "crates/proofbound-runtime-core/src/receipt.rs"
+PATH_RECEIPT_MANIFEST = ROOT / "crates/proofbound-runtime-receipt/Cargo.toml"
+PATH_RECEIPT_LIB = ROOT / "crates/proofbound-runtime-receipt/src/lib.rs"
 DIAGNOSE_MANIFEST = ROOT / "crates/proofbound-runtime-diagnose/Cargo.toml"
 DIAGNOSE_ARTIFACT = ROOT / "crates/proofbound-runtime-diagnose/src/artifact.rs"
 DIAGNOSE_LIB = ROOT / "crates/proofbound-runtime-diagnose/src/lib.rs"
@@ -29,11 +28,13 @@ LINUX_MANIFEST = ROOT / "crates/proofbound-runtime-linux/Cargo.toml"
 CGROUP = ROOT / "crates/proofbound-runtime-linux/src/cgroup.rs"
 LINUX_LIB = ROOT / "crates/proofbound-runtime-linux/src/lib.rs"
 LAUNCHER = ROOT / "crates/proofbound-runtime-linux/src/launcher.rs"
+PROBE = ROOT / "crates/proofbound-runtime-linux/src/probe.rs"
 RESOLVE = ROOT / "crates/proofbound-runtime-linux/src/resolve.rs"
 SUPERVISOR = ROOT / "crates/proofbound-runtime-linux/src/supervisor.rs"
 SYS = ROOT / "crates/proofbound-runtime-linux/src/sys.rs"
 TRACE = ROOT / "crates/proofbound-runtime-linux/src/trace.rs"
 UNIT_EVIDENCE = ROOT / "proofbound/evidence/diagnostic-lifecycle.toml"
+ADAPTER_EVIDENCE = ROOT / "proofbound/evidence/diagnostic-lifecycle-adapter.toml"
 CONTRACT_EVIDENCE = ROOT / "proofbound/evidence/diagnostic-lifecycle-contract.toml"
 
 
@@ -93,6 +94,13 @@ def assert_lifecycle_contract(
     drain_finish = implementation(draining_trace, "pub fn finish(mut self)")
     deadline = implementation(trace, "impl TraceDeadline")
     configured = implementation(cgroup, "pub fn revalidate_resources(")
+    fresh = implementation(cgroup, "pub(crate) fn revalidate_fresh(")
+    cgroup_finish = implementation(cgroup, "pub(crate) fn finish_before(")
+    cgroup_drain = implementation(cgroup, "fn drain_in_place_before(")
+    cgroup_drop = implementation(cgroup, "impl Drop for FreshCgroup")
+    exact_stop = implementation(trace, "fn wait_for_exact_stop(")
+    resume = implementation(active, "fn resume_before_deadline(")
+    signal_all = implementation(active, "fn signal_all_process_groups(")
     adapter_active = implementation(adapter, "impl ActiveObserver")
     adapter_next = implementation(adapter_active, "pub fn next_event(mut self)")
     adapter_drain = implementation(adapter, "impl DrainingObserver")
@@ -106,6 +114,7 @@ def assert_lifecycle_contract(
         "cgroup: FreshCgroup",
         "limits: ResourceLimits",
         ".revalidate_resources()",
+        ".revalidate_fresh()",
         "request.identity().cgroup_id() != cgroup.identity()",
         "configured.processes() != limits.processes()",
         "Some(configured.memory()) != limits.memory()",
@@ -115,8 +124,11 @@ def assert_lifecycle_contract(
         if term not in prepare:
             raise AssertionError(f"missing exact cgroup binding term: {term}")
 
-    before(spawn, "let deadline = TraceDeadline::after", ".command\n            .spawn()")
+    before(
+        spawn, "let deadline = TraceDeadline::after", ".command\n            .spawn()"
+    )
     before(spawn, ".revalidate_resources()", "let deadline = TraceDeadline::after")
+    before(spawn, ".revalidate_fresh()", "let deadline = TraceDeadline::after")
     before(spawn, ".place_process(process.get())", "TraceStreamReaders::start")
     before(spawn, ".place_process(process.get())", "Ok(SpawnedTrace")
     for term in ["cgroup: Some(self.cgroup)", "deadline,"]:
@@ -161,7 +173,9 @@ def assert_lifecycle_contract(
         release,
     ]:
         if "self.session.deadline" not in step:
-            raise AssertionError("setup step does not use the stored execution deadline")
+            raise AssertionError(
+                "setup step does not use the stored execution deadline"
+            )
         if "TraceDeadline" in signature(step):
             raise AssertionError("setup step accepts a replacement deadline")
     for step in [
@@ -172,12 +186,41 @@ def assert_lifecycle_contract(
         release,
     ]:
         if "if self.session.deadline.expired()" not in step:
-            raise AssertionError("effectful setup step can proceed after deadline expiry")
-    before(release, "self.session.revalidate_cgroup()?", ".send(&LauncherMessage::ExecRelease")
+            raise AssertionError(
+                "effectful setup step can proceed after deadline expiry"
+            )
+    before(
+        release,
+        "self.session.revalidate_cgroup()?",
+        ".send(&LauncherMessage::ExecRelease",
+    )
+    release_after_send = release[release.index(".send(&LauncherMessage::ExecRelease") :]
+    before(
+        release_after_send,
+        "if self.session.deadline.expired()",
+        "trace_syscall(root.get())",
+    )
     if "self.session.deadline" not in next_event:
-        raise AssertionError("active observation does not use the stored execution deadline")
+        raise AssertionError(
+            "active observation does not use the stored execution deadline"
+        )
     before(next_event, "self.session.deadline.expired()", "self.held_process.take()")
-    before(next_event, "self.session.deadline.expired()", "trace_wait_event_nonblocking")
+    before(
+        next_event, "self.session.deadline.expired()", "trace_wait_event_nonblocking"
+    )
+    before(next_event, "trace_wait_event_nonblocking", "let handled =")
+    if next_event.count("self.session.deadline.expired()") < 4:
+        raise AssertionError("active observation does not reject late-ready events")
+    before(exact_stop, "if deadline.expired()", "trace_wait_nonblocking")
+    if exact_stop.count("if deadline.expired()") != 2:
+        raise AssertionError("exact setup wait does not reject a late-ready stop")
+    for term in [
+        "if self.session.deadline.expired()",
+        "TraceObservationError::WaitTimedOut",
+        "trace_syscall(process.get())",
+    ]:
+        if term not in resume:
+            raise AssertionError(f"target resume lacks final deadline gate: {term}")
     for term in ["TRACE_DRAIN_TIMEOUT", "checked_add(TRACE_DRAIN_TIMEOUT)"]:
         if term not in trace and term not in deadline:
             raise AssertionError(f"missing bounded cleanup deadline term: {term}")
@@ -186,34 +229,53 @@ def assert_lifecycle_contract(
         "let deadline = TraceDeadline::cleanup()?",
         "self.signal_all_process_groups()",
     )
-    before(begin_termination, "self.signal_all_process_groups()", "Ok(DrainingTrace")
+    before(begin_termination, "self.signal_all_process_groups()?", "Ok(DrainingTrace")
+    for term in ["let mut failed = false", ".is_err()", "if failed", "Err("]:
+        if term not in signal_all:
+            raise AssertionError(f"explicit signal failure is discarded: {term}")
     if "self.begin_termination()?.finish()" not in drain:
         raise AssertionError("combined drain bypasses immediate termination typestate")
     if "self.deadline.expired()" not in drain_finish:
         raise AssertionError("forced drain does not enforce its cleanup deadline")
     if "while !self.trace.processes.is_empty()" not in drain_finish:
-        raise AssertionError("forced drain does not empty the exact retained trace tree")
+        raise AssertionError(
+            "forced drain does not empty the exact retained trace tree"
+        )
 
     for term in [
         ".cgroup\n            .take()",
-        ".finish()",
+        ".finish_before(deadline.instant())",
         "ResourceObservation::Complete(resources)",
         "ResourceObservation::Legacy | ResourceObservation::Incomplete(_)",
         "TraceObservationError::ResourceObservationIncomplete",
-        "output: self.streams.finish()?",
+        "output: self.streams.finish_before(deadline.instant())?",
     ]:
         if term not in finish_terminal:
             raise AssertionError(f"missing terminal resource gate: {term}")
-    before(finish_terminal, ".finish()", "self.streams.finish()?")
-    before(natural_finish, "if !self.is_drained()", "self.session.finish_terminal()?")
+    if finish_terminal.count("deadline.instant()") != 2:
+        raise AssertionError("cgroup and stream completion do not share one deadline")
+    before(
+        finish_terminal,
+        ".finish_before(deadline.instant())",
+        "self.streams.finish_before(deadline.instant())?",
+    )
+    before(
+        natural_finish,
+        "if !self.is_drained()",
+        "self.session.finish_terminal(deadline)?",
+    )
     before(
         complete_drain,
         "if self.tree_reconciliation_failed",
-        "self.session.finish_terminal()?",
+        "self.session.finish_terminal(deadline)?",
     )
-    before(adapter_next, "self.trace.finish()?.into_terminal()", "self.protocol.finish()?")
+    before(
+        adapter_next, "self.trace.finish()?.into_terminal()", "self.protocol.finish()?"
+    )
     if adapter_next.count("self.trace.begin_termination()?") != 2:
-        raise AssertionError("adapter does not start termination before returning drain state")
+        raise AssertionError(
+            "adapter does not start termination before returning drain state"
+        )
     before(
         adapter_finish,
         "report.into_terminal()",
@@ -229,6 +291,7 @@ def assert_lifecycle_contract(
 
     for variant in [
         "CgroupIdentityMismatch",
+        "CgroupNotFresh",
         "CgroupPlacementFailed",
         "ResourceCleanupFailed",
         "ResourceObservationIncomplete",
@@ -247,49 +310,77 @@ def assert_lifecycle_contract(
     ]:
         if term not in configured:
             raise AssertionError(f"cgroup resource revalidation is not closed: {term}")
+    for term in [
+        "read_resource_snapshot(&self.descriptor)",
+        "!initial.is_zero()",
+        "observed != initial",
+        "populated(&self.descriptor)?",
+        "!processes(&self.descriptor)?.is_empty()",
+    ]:
+        if term not in fresh:
+            raise AssertionError(f"cgroup freshness is not revalidated: {term}")
+    for term in ["Instant::now() >= deadline", "drain_in_place_before(deadline)"]:
+        if term not in cgroup_finish and term not in cgroup_drain:
+            raise AssertionError(
+                f"terminal cgroup work is outside the deadline: {term}"
+            )
+    if "cleanup_in_place()" in cgroup_drop or "sleep(" in cgroup_drop:
+        raise AssertionError("cgroup drop can restart a blocking cleanup deadline")
 
 
 EXPECTED_BODIES = {
-    "active-begin-termination": "1674fee75a1464bc9c3a2444044cc8774cb33b80e0a64d2b08050101da6aa090",
+    "active-begin-termination": "e52f7855e3e0bd7d538fa18963b1a404be004736fd029db4c1af4e092c495ed2",
     "active-drain": "93fb4ec3a1af8abcc2ad31dba4c23eb498b43a743137cbe3d0d1e04afdbd6ee3",
-    "active-finish": "b1feb2846c2a896e67a10874aa44e8f1675c76f8ba992d06a232538ec191324d",
-    "active-next": "975c888931c1f6bde654679101536fbb522cbc770347fdc0bbf8de975657baf0",
+    "active-finish": "e1c023f8009923758a6e37f4cc77e6e88e1f7c92e346ac08f98197a5c9e1d9a5",
+    "active-next": "d338650ed48b9e795519e78b67f2b23052c42f5d09de1c2fe76f019688d98efb",
     "adapter-drain": "5f5ee9835cf2bacc73f10cd50b0e9a20f6d91d23c4d2905c84af181e22d05848",
     "adapter-next": "e7d57ca91f85832b6fb3310418e2a0df9ee0fb4b40fa29203bac66423c8620cb",
+    "cgroup-drain-before": "caa3f99baee132f20cfb3ca42fda7d8b93c046f83e6d3fa35d2fcea3d4deeda5",
+    "cgroup-drop": "c9534897bad7882ee2591148643c0f02910ed23c2c3fbdd227b2115fbb84c95d",
+    "cgroup-finish-before": "328db0a2d73eb4ea614b52b9620fc35f1f3678d15b30595b10acdff453e77c36",
     "revalidate-resources": "30ecf689ab0e1c1846169130bf9c5efc2ef19d1208420023816df84ddee06fdf",
-    "finish-terminal": "aae17be317674057b4cd11a1e95096d69844726a200f6a4ae121affb2226311a",
-    "draining-trace-finish": "e0e9e0c0fb13e0e79f1ed7aa456102459d5d82cb39db9e8d421ec4020caafb13",
-    "prepare": "cae95d38b19bbecbdf2d58053b5ec66a3d34afacfbe177cf585bc60a772ffc15",
-    "spawn": "5b97c0af4ae4000f43dd8b7eb1288edb03bbc61df89f77f0c332c81fbf16a071",
+    "revalidate-fresh": "277b2ee0776fb7942d6d63a91183bc88cd9531716b5f1078d06f46d622e18c9e",
+    "finish-terminal": "94c3e1fdd35bae6143dcd4dea5a971e18f641e995ce83e793de217bb61d28877",
+    "draining-trace-finish": "57620c4257f982a79a1396b1d7e9c3d31dda4b7217ea2ba796e986c73fd61148",
+    "prepare": "3274dfd85f027ca69c6cf0d95ff359f630d43c2c813292e52881cdb6490091af",
+    "resume-before-deadline": "bff9c1e06b805663e587a4dd5a5313bb7e04a6aceeb68aa017e4c09a4953f502",
+    "signal-all-process-groups": "cc6ac7670b610a46d35cdcdb6e720ab44f75e29479fcec88e3a2fe7ca6eb6244",
+    "spawn": "1faca0106ae138c1f98807b3d21371eace9a69d41892a8a13c6d94a72b30f681",
+    "wait-for-exact-stop": "99c67c1edf78873218595650823de8559301aeba8be62443102a7383b9bfeaaa",
 }
 EXPECTED_FILES = {
     "adapter": "72b8868fb0d50a65e4306f754051dec1e3aace4ee7da33825bb990f4d7bab70b",
+    "adapter-evidence": "87bc8da1a2cab8f6e3b380d38e2017852abe4cee0039854a4ea0dd3b8571d8b4",
     "adapter-lib": "ccad4545cfd41802c32d66a692d65aca9a69d0e59b0a3cb7c5c34da42830a198",
     "adapter-manifest": "ef7c613a66781c4b64d75435524166329b5239b8172f97b28cff2d6d609c8d78",
     "authority": "9d1945b590a3a9f44f6af95d3090ad0a8d1bc0cfa601c35273cd0a72c86cbddc",
-    "claim": "2e21b4a60d498fadbf4e64ca227f0b42b455b7a6028cd338ed0c7a4335ca3fb5",
-    "contract-evidence": "c97aa661d101a8cd3dcc01ad7622b7a56a73de0f11235c9aa6639b50a81447cd",
+    "claim": "40e7e16c6231bebce538e759cdf5a8ad577cfd9f2b70a36e36372da2e2629d24",
+    "contract-evidence": "deda6ad938018d660fc4f8fd4bd83e2123936023ff73cca64ab12f13c69ea5b2",
     "core-manifest": "0d22823a1d4f397fb58693c7d9fe7498969ce242b5da0f372d8cc8f55f960b9b",
     "core-lib": "2039d8c789844cddaaabbf432a0a6ef465f77300577f3b57922d7bcbcc930450",
-    "cgroup": "ce465e6ddba11a0d54db6e964cc8fc3c24ba54a64424ca4353aa038094db010e",
+    "cgroup": "445a17fa958e673180bcebc2c2314897503563a4a709d7600442eee1dee7c2ae",
     "diagnose-artifact": "ad7cce45d286623dcfd55c21189cb7d58e29f1943960d0a061d6f85c2640baa3",
     "diagnose-lib": "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de",
     "diagnose-manifest": "097ec2b4cef98a43bee09c64c289251ab2060808d4fb8e050de3077f541ff2f1",
     "diagnose-observer": "e6cfb0a92d7bf7e235c7fac8180f488b7b1d9474986791fac4adf2917dae7d12",
     "launcher": "5b2f251091b01fe9fa9bfb4018fac4971f22c9a7d55a5a92f5fdc24ca2673b83",
     "lifecycle-assumption": "ee12854496d97ecce949d1ff85067003a2fc48880d02d2850cff6fe807090017",
-    "lifecycle-runtime-assumption": "8f2f8e1674a1329b808bfe605208bdb190557a0eb5700a1f3c7f2c3f3301cae3",
+    "lifecycle-runtime-assumption": "16ca1aa8d7e6c9b41eed370fd2e53e4ea4de181a51e8e176046369a744ea1cd6",
+    "identity": "176bb4e1cc50e8b0efc285a80cf3091e81ee3f8502067a380ac5fa49ad863bc5",
     "linux-lib": "47ef2cdd61b7c0854f0ee9fcfb5d32ffcebfec5b5820477636a3d513a7ccf33d",
     "linux-manifest": "e7311e3cada91690da87f42910c96e133538439956a0db78de79dea9294d6c9b",
     "lock": "376572c5d111f5ea72e38667b5813a7c051e9fa128d5af355468e5294889a0c6",
     "root-manifest": "1ea75287f62129c6b15038b0c45df42e616fc4c92e59e61bc03358746fd5d7d6",
     "receipt": "fc27edf189014a49af8af380902fe90b12cbbd71a2b49301064b589c8a4c4024",
+    "path-receipt-lib": "f2f103cbc2c928f9a69211963788c1472c62a936de63a8f53dca2cd9c5469b01",
+    "path-receipt-manifest": "4cb9c84da77bd72e3a49e2be1cbf52f2e5841ab15d9ae8fb07c2022f788518d6",
+    "probe": "2bf141cf9ee8b2943cd3e63305399030ae8829a040ed06c9cc65de8533e0a692",
     "resolve": "66ab088fbadbff3b71deb6edc76d3f7069932949f6cdde08f1fa3cf133892eca",
     "supervisor": "5f1b80181b01c3ea189643995617aeab60f390c1f5fc6930cf0acd577b88cdd8",
     "sys": "c7433f4485aa12829c87ef10210fa766676bc24729361e0a82ac93a2267eb06f",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "3c766e2767d8622ee40e45825b863c75d3be49aa52aa62b6dd41bd311da6bd07",
-    "unit-evidence": "2507f5c08798117203e5d8e543986eb22f6e6a38742738b7bdc4736c8e19c9bb",
+    "trace": "83ac6a80b1e3be2e5b44fe5ce4edc1ade1e10f7332f13bc81a3d1db86077cc90",
+    "unit-evidence": "04a73555049ca93388dd4fbf2ac77ff28f5e718d1f84cedd11255ebd63ca24d0",
 }
 
 
@@ -362,10 +453,80 @@ class DiagnosticLifecycleContractTests(unittest.TestCase):
                 self.adapter_lib,
             ),
             (
+                "spawn accepts a pre-used cgroup",
+                self.trace.replace(
+                    "self.cgroup\n            .revalidate_fresh()\n"
+                    "            .map_err(|_| TraceStartupError::CgroupNotFresh)?;",
+                    "",
+                    1,
+                ),
+                self.adapter,
+                self.cgroup,
+                self.linux_lib,
+                self.adapter_lib,
+            ),
+            (
                 "setup expiry bypassed",
                 self.trace.replace(
                     "if self.session.deadline.expired() {",
                     "if false {",
+                    1,
+                ),
+                self.adapter,
+                self.cgroup,
+                self.linux_lib,
+                self.adapter_lib,
+            ),
+            (
+                "late-ready event wins over deadline",
+                self.trace.replace(
+                    "let handled = self.handle_wait_observation(requested, observation);\n"
+                    "                if self.session.deadline.expired() {\n"
+                    "                    self.must_drain = true;\n"
+                    "                    return Err(TraceObservationError::WaitTimedOut);\n"
+                    "                }",
+                    "let handled = self.handle_wait_observation(requested, observation);",
+                    1,
+                ),
+                self.adapter,
+                self.cgroup,
+                self.linux_lib,
+                self.adapter_lib,
+            ),
+            (
+                "late-ready setup stop wins over deadline",
+                self.trace.replace(
+                    "let observation = crate::sys::trace_wait_nonblocking(process.get());\n"
+                    "            if deadline.expired() {\n"
+                    "                return Err(TraceStartupError::WaitTimedOut);\n"
+                    "            }\n"
+                    "            let observation = observation.map_err(|_| TraceStartupError::WaitFailed)?;",
+                    "let observation = crate::sys::trace_wait_nonblocking(process.get())\n"
+                    "                .map_err(|_| TraceStartupError::WaitFailed)?;",
+                    1,
+                ),
+                self.adapter,
+                self.cgroup,
+                self.linux_lib,
+                self.adapter_lib,
+            ),
+            (
+                "explicit signal failures are discarded",
+                self.trace.replace(
+                    "self.signal_all_process_groups()?;",
+                    "let _ = self.signal_all_process_groups();",
+                    1,
+                ),
+                self.adapter,
+                self.cgroup,
+                self.linux_lib,
+                self.adapter_lib,
+            ),
+            (
+                "stream completion receives a fresh deadline",
+                self.trace.replace(
+                    "self.streams.finish_before(deadline.instant())?",
+                    "self.streams.finish_before(Instant::now())?",
                     1,
                 ),
                 self.adapter,
@@ -439,12 +600,39 @@ class DiagnosticLifecycleContractTests(unittest.TestCase):
             "active-finish": implementation(active, "pub fn finish(mut self)"),
             "active-next": implementation(active, "pub fn next_event(&mut self)"),
             "adapter-drain": implementation(adapter_drain, "pub fn finish(mut self)"),
-            "adapter-next": implementation(adapter_active, "pub fn next_event(mut self)"),
+            "adapter-next": implementation(
+                adapter_active, "pub fn next_event(mut self)"
+            ),
             "revalidate-resources": implementation(
                 self.cgroup,
                 "pub fn revalidate_resources(",
             ),
+            "revalidate-fresh": implementation(
+                self.cgroup,
+                "pub(crate) fn revalidate_fresh(",
+            ),
+            "cgroup-finish-before": implementation(
+                self.cgroup,
+                "pub(crate) fn finish_before(",
+            ),
+            "cgroup-drain-before": implementation(
+                self.cgroup,
+                "fn drain_in_place_before(",
+            ),
+            "cgroup-drop": implementation(self.cgroup, "impl Drop for FreshCgroup"),
             "finish-terminal": implementation(self.trace, "fn finish_terminal("),
+            "wait-for-exact-stop": implementation(
+                self.trace,
+                "fn wait_for_exact_stop(",
+            ),
+            "resume-before-deadline": implementation(
+                active,
+                "fn resume_before_deadline(",
+            ),
+            "signal-all-process-groups": implementation(
+                active,
+                "fn signal_all_process_groups(",
+            ),
             "draining-trace-finish": implementation(
                 implementation(self.trace, "impl DrainingTrace"),
                 "pub fn finish(mut self)",
@@ -463,11 +651,13 @@ class DiagnosticLifecycleContractTests(unittest.TestCase):
             "adapter-lib": ADAPTER_LIB,
             "adapter-manifest": ADAPTER_MANIFEST,
             "authority": AUTHORITY,
+            "adapter-evidence": ADAPTER_EVIDENCE,
             "claim": CLAIM,
             "contract-evidence": CONTRACT_EVIDENCE,
             "core-manifest": CORE_MANIFEST,
             "core-lib": CORE_LIB,
             "cgroup": CGROUP,
+            "identity": IDENTITY,
             "lifecycle-assumption": LIFECYCLE_ASSUMPTION,
             "lifecycle-runtime-assumption": LIFECYCLE_RUNTIME_ASSUMPTION,
             "diagnose-artifact": DIAGNOSE_ARTIFACT,
@@ -480,6 +670,9 @@ class DiagnosticLifecycleContractTests(unittest.TestCase):
             "lock": LOCK,
             "root-manifest": ROOT_MANIFEST,
             "receipt": RECEIPT,
+            "path-receipt-lib": PATH_RECEIPT_LIB,
+            "path-receipt-manifest": PATH_RECEIPT_MANIFEST,
+            "probe": PROBE,
             "resolve": RESOLVE,
             "supervisor": SUPERVISOR,
             "sys": SYS,

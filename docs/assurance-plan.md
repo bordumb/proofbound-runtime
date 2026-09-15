@@ -799,29 +799,38 @@ from the compiler and checker premises in
 The current subject is the terminal capture owner inside the separate Linux
 diagnostic trace. Preparation accepts the exact fresh cgroup version 2 owner
 and full seed-plan resource limits. It compares the request cgroup identity and
-the read-back process, memory, swap, and OOM-group controls during preparation.
-It reads the controls again immediately before spawn and target release. The
-execution deadline starts immediately before spawn and remains private to the
-trace session through setup, release, active observation, and natural terminal
-collection. No public transition accepts a replacement deadline. Spawn places
-and reads back the exact child in the cgroup before returning its typestate.
+the read-back process, memory, swap, and OOM-group controls during preparation,
+then revalidates the zero resource snapshot, empty membership, and unpopulated
+state during preparation and immediately before spawn. It reads the controls
+again immediately before spawn and immediately before target release. The
+execution deadline is created immediately before spawn, stored privately in the
+trace session, and used by setup, option installation, release, active
+observation, and natural terminal collection. A ready stop or event cannot win
+after expiry, and target release or resume has an immediate deadline check. No
+public transition accepts a replacement deadline. Spawn places and reads back
+the exact child in the cgroup before returning the spawned typestate.
 
 An observer failure or pure termination directive consumes the active trace,
-signals every retained identity-stable process group, and starts a separate
-bounded cleanup deadline before it returns a drain-only owner. Natural and
-forced completion establish an empty exact trace tree before they consume the
-cgroup owner. Terminal capture requires successful cgroup drain and removal,
-complete version 2 resource observations, and joined bounded streams before the
-adapter selects a publication result. Identity, control, placement, cleanup,
-resource-observation, read, join, or deadline failure is typed and prevents
-publication.
+successfully signals every retained identity-stable process group, and starts a
+separate five-second cleanup deadline before it returns a drain-only owner.
+Natural and forced completion establish an empty exact trace tree before they
+consume the cgroup owner. One absolute cleanup deadline covers those waits,
+cgroup drain and removal, complete version 2 resource observations, stream
+cancellation, and both joins. The adapter obtains this combined terminal
+capture before it selects either publication result. Identity, freshness,
+control, placement, signalling, cleanup, resource-observation, read, join, or
+deadline failure is typed and prevents publication. Field ownership orders
+best-effort abandoned-session cleanup through root child, cgroup, and stream
+readers.
 
 The Rust evidence fixes the no-refresh public method signatures. The
-independent checker byte-pins preparation, spawn, deadline, termination, cgroup,
-terminal, and adapter transitions. Its causal mutations remove a memory-control
-comparison, replace the execution deadline, reverse cleanup owners, bypass a
-setup expiry check, accept incomplete resources, delay process-group signalling,
-and move publication before terminal capture. This remains source evidence.
+independent checker byte-pins preparation, spawn, freshness, exact-stop,
+deadline, resume, termination, cgroup, terminal, and adapter transitions. Its
+causal mutations remove a memory-control comparison or freshness check, replace
+the execution deadline, reverse cleanup owners, accept a late stop or event,
+discard process-group signal failure, refresh the stream deadline, accept
+incomplete resources, or move publication before terminal capture. This
+remains source evidence.
 Linux cgroup membership and counters, monotonic-clock progress, scheduler and
 ptrace behavior, termination, pipe progress, native attacks, command
 integration, and release binding remain open.

@@ -2,6 +2,7 @@
 
 use core::fmt;
 use std::path::{Path, PathBuf};
+use std::time::Instant;
 
 use proofbound_runtime_core::{
     CgroupIdentity, ExecutionId, LimitEvent, LimitEvents, MemoryByteLimit, ProcessLimit,
@@ -668,6 +669,28 @@ impl FreshCgroup {
         }
     }
 
+    /// Verifies that the version 2 cgroup remains unused with its zero snapshot.
+    pub(crate) fn revalidate_fresh(&self) -> Result<(), CgroupError> {
+        #[cfg(target_os = "linux")]
+        {
+            let initial = self
+                .initial_resources
+                .ok_or(CgroupError::ObservationInvalid)?;
+            let observed = read_resource_snapshot(&self.descriptor)?;
+            if !initial.is_zero() || observed != initial {
+                return Err(CgroupError::ObservationNonzero);
+            }
+            if populated(&self.descriptor)? || !processes(&self.descriptor)?.is_empty() {
+                return Err(CgroupError::NotFresh);
+            }
+            Ok(())
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            Err(CgroupError::UnsupportedOperatingSystem)
+        }
+    }
+
     /// Moves one paused launcher process into the cgroup and verifies membership.
     pub fn place_process(&self, process_id: u32) -> Result<(), CgroupError> {
         #[cfg(target_os = "linux")]
@@ -760,6 +783,43 @@ impl FreshCgroup {
         }
     }
 
+    /// Drains, observes, and removes the exact group before an absolute deadline.
+    pub(crate) fn finish_before(
+        self,
+        deadline: Instant,
+    ) -> Result<ResourceObservation, CgroupError> {
+        #[cfg(target_os = "linux")]
+        {
+            let mut group = self;
+            group.drain_in_place_before(deadline)?;
+            if Instant::now() >= deadline {
+                return Err(CgroupError::DrainFailed);
+            }
+            let observation = match (group.initial_resources, group.configured_resources) {
+                (Some(initial), Some(configured)) => retain_resource_observation(
+                    configured,
+                    read_resource_snapshot(&group.descriptor)
+                        .and_then(|terminal| terminal.checked_delta(initial, configured)),
+                ),
+                (None, None) => ResourceObservation::Legacy,
+                _ => return Err(CgroupError::ObservationInvalid),
+            };
+            if Instant::now() >= deadline {
+                return Err(CgroupError::DrainFailed);
+            }
+            group.remove_in_place()?;
+            if Instant::now() >= deadline {
+                return Err(CgroupError::DrainFailed);
+            }
+            Ok(observation)
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            let _ = deadline;
+            Err(CgroupError::UnsupportedOperatingSystem)
+        }
+    }
+
     #[cfg(target_os = "linux")]
     fn cleanup_in_place(&mut self) -> Result<(), CgroupError> {
         self.drain_in_place()?;
@@ -784,6 +844,28 @@ impl FreshCgroup {
     }
 
     #[cfg(target_os = "linux")]
+    fn drain_in_place_before(&mut self, deadline: Instant) -> Result<(), CgroupError> {
+        if self.removed {
+            return Ok(());
+        }
+        if Instant::now() >= deadline {
+            return Err(CgroupError::DrainFailed);
+        }
+        if populated(&self.descriptor)? {
+            write_control(&self.descriptor, "cgroup.kill", b"1")?;
+        }
+        loop {
+            if Instant::now() >= deadline {
+                return Err(CgroupError::DrainFailed);
+            }
+            if !populated(&self.descriptor)? && processes(&self.descriptor)?.is_empty() {
+                return Ok(());
+            }
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        }
+    }
+
+    #[cfg(target_os = "linux")]
     fn remove_in_place(&mut self) -> Result<(), CgroupError> {
         use std::os::fd::AsRawFd as _;
 
@@ -801,7 +883,10 @@ impl Drop for FreshCgroup {
     fn drop(&mut self) {
         #[cfg(target_os = "linux")]
         if !self.removed {
-            let _ = self.cleanup_in_place();
+            if populated(&self.descriptor).unwrap_or(true) {
+                let _ = write_control(&self.descriptor, "cgroup.kill", b"1");
+            }
+            let _ = self.remove_in_place();
         }
     }
 }

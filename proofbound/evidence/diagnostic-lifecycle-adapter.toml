@@ -1,11 +1,11 @@
 schema = "proofbound-evidence-unit/1"
-id = "diagnostic-lifecycle"
+id = "diagnostic-lifecycle-adapter"
 adapter = "rust-test"
 kind = "example-test"
 claims = ["PBR-OBSERVER-028"]
 tier = 0
 expected_inventory = [
-  "proofbound_runtime_linux::trace::tests::diagnostic_lifecycle_does_not_accept_refreshable_deadlines",
+  "proofbound_runtime_diagnose_linux::tests::decoder_adapter_release_and_drain_paths_compile",
 ]
 inputs = [
   "Cargo.lock",
@@ -43,9 +43,9 @@ environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
 
 [operation]
 type = "cargo-test"
-package = "proofbound-runtime-linux"
+package = "proofbound-runtime-diagnose-linux"
 manifest = "Cargo.toml"
-targets = ["--lib", "--features", "diagnostic-observer"]
+targets = ["--lib"]
 paths = []
 arguments = []
 
