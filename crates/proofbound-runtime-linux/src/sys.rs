@@ -705,7 +705,7 @@ fn decode_trace_syscall_stop(
     const SYSCALL_INFO_HEADER_BYTES: usize = 24;
     const SYSCALL_INFO_ENTRY_BYTES: usize = 80;
     const SYSCALL_INFO_EXIT_BYTES: usize = 33;
-    const SYSCALL_INFO_SECCOMP_BYTES: usize = 88;
+    const SYSCALL_INFO_SECCOMP_BYTES: usize = 84;
 
     if available > core::mem::size_of::<RawSyscallInfo>()
         || information.reserved != 0

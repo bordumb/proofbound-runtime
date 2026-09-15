@@ -62,7 +62,7 @@ EXPECTED_LOAD_BEARING_BODIES = {
     "string-limit": "a839a837690914354efd25be3073c3ad8c1e21491d274004f54cb4464317eb3a",
     "supported-families": "928ac43d5c23a7e3bcbd24edf3d895597a55aa7a855ca4e2fdb8cfea4fa94f88",
     "syscall-info-fetch": "0b5e52f129fc45db01bd022959e42237ae68f7c44aff9f0b483a278546bb8084",
-    "syscall-info-parser": "015a1a982bece9f59fca93b4a4d4425405eafffa40db25cb06adfb8869c6a12f",
+    "syscall-info-parser": "796f463adb9db22ebf211f25ff7d0097f86ab49f9d240a62319161dc3f91af5e",
     "tracee-string-read": "54fec5ee2c46ba8bd614c0da4e769b311ca6ff65637e7685be6e086369f7189c",
     "trace-next-event": "7c367d988aca81e12e6fa970c51e6c647b82edb2a3bacdaaaf35a605d94b0cfc",
     "u32-argument": "9a611e944f835a154c65dc1745c111c20a12d97323954af68e80fee6e74d391e",
@@ -220,6 +220,7 @@ def assert_decoder_contract(trace: str, sys: str, adapter: str, observer: str) -
         "information.flags != 0",
         "available != SYSCALL_INFO_ENTRY_BYTES",
         "available != SYSCALL_INFO_EXIT_BYTES",
+        "SYSCALL_INFO_SECCOMP_BYTES: usize = 84",
         "available == SYSCALL_INFO_SECCOMP_BYTES",
     ]:
         if required not in syscall_info:
