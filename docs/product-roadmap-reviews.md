@@ -2859,3 +2859,39 @@ commit records the verdict and changes status from proposed to accepted. It
 changes no reviewed protocol design, schema, specification, threat-model,
 falsifier, or identity-policy bytes. Any later design-subject change requires
 a new exact-head review.
+
+## RT-11 signing and identity ADR restack approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `3dc113116f12ac76536a491f0e40645dce083bba`
+- **Reviewed head:** `5a0071ad6dc115556aff271ec5cee28cc4848ca0`
+- **Branch:** `codex/rt11-signing-adr`
+- **Method:** Complete exact-range static replay review. The reviewer changed
+  no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the merge base is the reviewed base and that the
+restacked ADR 0009, Specification 0013, and RT-11 integration-record blobs are
+byte-identical to the previously approved correction at
+`2a4ca41b0b4c967eb7097b77363f5db55b67ede9`. The final reviewed commit changes
+only the intended proposed-to-accepted status and deferred-implementation
+language.
+
+All five original blockers remain closed. The signature input binds the outer
+schema. The first profile rejects old-key signatures unless a later profile
+adds independently authenticated temporal evidence. The verification order is
+consistent across the ADR and specification. The deterministic detached
+`COSE_Sign1` shape and Ed25519 algorithm identifier remain closed. Thresholds
+count canonical resolved keys and controllers and reject alias substitution.
+
+The conflict resolutions retain both the RT-7 review history and the RT-11
+initial rejection and correction approval. The checklist and integration
+record still defer implementation. The threat model keeps the signing roles
+conditional and grants no signing assurance to unsigned objects.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`3dc113116f12ac76536a491f0e40645dce083bba..5a0071ad6dc115556aff271ec5cee28cc4848ca0`.
+The following approval-only commit changes no reviewed protocol design,
+schema, specification, threat-model, falsifier, or identity-policy bytes. Any
+later design-subject change requires a new exact-head review.
