@@ -401,15 +401,15 @@ service set and every registered cross-service attack fails closed.
   changing native receipt bytes.
 - [x] State explicitly that signatures authenticate an origin under policy;
   they do not prove execution, correctness, or containment.
-- [ ] Accept or reject the ADR through independent review.
+- [x] Accept the ADR through independent exact-head review.
 
-Decision record: proposed
+Decision record: accepted
 [ADR 0009](adr/0009-detached-role-bound-signing.md) selects detached,
 role-bound COSE with fully specified Ed25519, a mixed durable and ephemeral
 identity model, Auths as the first maintained identity-resolver integration,
-and an all-witness checkpoint policy. Implementation remains a later
-claim-sized wave. This checklist does not mark the ADR accepted before exact
-independent review.
+and an all-witness checkpoint policy. Independent review approved exact base
+`b04382d` through exact design head `2a4ca41`. Implementation remains a later
+claim-sized wave.
 
 ## Roadmap 1 residual closure
 

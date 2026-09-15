@@ -2821,3 +2821,41 @@ precede commitment authentication and native semantic verification, freezes
 the complete inner COSE structure, and counts canonical resolved keys and
 controllers rather than asserted references. This verdict is not endorsed.
 The corrected exact head requires independent re-review.
+
+## RT-11 signing and identity ADR correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `b04382d290924cefe588bb1fbce3830b62db171e`
+- **Reviewed head:** `2a4ca41b0b4c967eb7097b77363f5db55b67ede9`
+- **Branch:** `codex/rt11-signing-adr`
+- **Method:** Complete exact-range static architecture re-review. The reviewer
+  changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that all five blockers are closed. The signed binding
+now authenticates the outer envelope schema and has a schema-substitution
+falsifier. The first lifecycle profile rejects every signature from a retired,
+revoked, or compromised key; historical acceptance is reserved for a later
+profile with independently authenticated temporal evidence bound to the exact
+envelope. Specification 0013 and ADR 0009 now require the same bounded-parse,
+commitment-authentication, native-verification, linkage, and policy order.
+
+The inner object is closed to tagged `COSE_Sign1`, exactly four array items,
+the exact protected Ed25519 `-19` algorithm map, an empty unprotected map, a
+detached `nil` payload, a 64-byte signature, no additional headers, and
+deterministic encoding. Threshold evaluation uses canonical resolved keys and
+controllers. Aliases fail closed, one controller counts once, and witnesses
+must use distinct controllers with disjoint accepted key identities.
+
+The correction preserves role separation, the Auths and KERI semantic
+boundary, offline closure, witness assumptions, and the rule that signatures
+authenticate exact bytes and a role under policy but do not prove execution.
+No new blocker was introduced.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact design
+head `2a4ca41b0b4c967eb7097b77363f5db55b67ede9`. The following approval-only
+commit records the verdict and changes status from proposed to accepted. It
+changes no reviewed protocol design, schema, specification, threat-model,
+falsifier, or identity-policy bytes. Any later design-subject change requires
+a new exact-head review.

@@ -1,6 +1,7 @@
 # RT-11 integration record: signing and platform identity
 
-**Status:** proposed ADR drafted; independent review pending
+**Status:** ADR accepted after independent exact-head review; implementation
+remains deferred to claim-sized waves
 
 **Primary owner:** Proofbound Runtime for Runtime envelopes and policy
 

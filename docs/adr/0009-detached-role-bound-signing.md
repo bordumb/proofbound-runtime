@@ -1,6 +1,6 @@
 # ADR 0009: Use detached role-bound COSE signatures
 
-- **Status:** proposed
+- **Status:** accepted
 - **Date:** 2026-09-15
 - **Decision owners:** Proofbound Runtime maintainers
 - **Applies to:** Runtime release, guest-image, execution, and log objects
