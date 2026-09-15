@@ -1,13 +1,14 @@
 schema = "proofbound-claim/1"
 id = "PBR-DISTRIBUTION-018"
 title = "Selected packages publish only through the protected exact-source workflow"
-statement = "Under the registered external registry and SDK toolchain premises, the release workflow publishes the selected verifier, Rust SDK, Python SDK, and TypeScript SDK packages only after explicit opt-in, exact-mainline validation, complete release provenance, and protected-environment approval; isolates registry credentials by publisher; reproduces Rust upload inputs against the approved artifacts; and anonymously retrieves all four registry artifacts for exact byte comparison."
+statement = "Under the registered external-registry, package-toolchain, and SDK-toolchain premises, the release workflow publishes the selected verifier, Rust SDK, Python SDK, and TypeScript SDK packages only after explicit opt-in, exact-mainline validation, complete release provenance, and protected-environment approval; isolates registry credentials by publisher; reproduces Rust upload inputs against the approved artifacts; and anonymously retrieves all four registry artifacts for exact byte comparison."
 public_language = "Runtime has an opt-in protected release path for its independent verifier and three SDK packages. The registered source checks require one exact mainline revision, ordered isolated publishers, exact Rust upload-input reproduction, and anonymous byte comparison after publication. This is workflow and bounded test evidence only: no package is described as published until an exact protected run and registry observations exist, and registry or workflow identity is not independently authenticated."
 subject = "workflow:.github/workflows/release.yml#selected-package-publication"
 profile = "ledger"
 tier = 1
 evidence = ["independent-check:registry-publication-contract"]
 assumptions = [
+  "PBR-PACKAGE-TOOLCHAINS-AX-011",
   "PBR-REGISTRY-DISTRIBUTION-AX-014",
   "PBR-SDK-TOOLCHAINS-AX-010",
 ]
@@ -28,6 +29,7 @@ source_roots = [
   "Cargo.lock",
   "Cargo.toml",
   "VERSION",
+  "assumptions/PBR-PACKAGE-TOOLCHAINS-AX-011.toml",
   "assumptions/PBR-REGISTRY-DISTRIBUTION-AX-014.toml",
   "assumptions/PBR-SDK-TOOLCHAINS-AX-010.toml",
   "claims/PBR-DISTRIBUTION-018.toml",

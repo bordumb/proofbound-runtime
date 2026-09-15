@@ -61,8 +61,14 @@ class RegistryPackageTests(unittest.TestCase):
                             "size": str(len(verifier_bytes)),
                         }
                     ],
+                    "binary": "pbr-verify",
+                    "package": "proofbound-runtime-verify",
                     "schema": "proofbound-runtime-verifier-package-manifest/1",
                     "source_revision": REVISION,
+                    "supported_receipt_schemas": [
+                        "proofbound-runtime-receipt/1",
+                        "proofbound-runtime-execution-receipt/2",
+                    ],
                     "version": VERSION,
                 }
             )
@@ -172,41 +178,47 @@ class RegistryPackageTests(unittest.TestCase):
             )
 
     def test_registry_redirect_cannot_change_the_admitted_host(self):
-        class Response:
-            final_url = "https://substitute.example/package"
+        opened = []
 
-            def __enter__(self):
-                return self
+        class RedirectingOpener:
+            def __init__(self, handler):
+                self.handler = handler
 
-            def __exit__(self, exception_type, exception, traceback):
-                return False
-
-            def geturl(self):
-                return self.final_url
-
-            def read(self, maximum):
-                return b"bytes"
+            def open(self, request, timeout):
+                opened.append(request.full_url)
+                redirected = "https://substitute.example/package"
+                self.handler.redirect_request(
+                    request,
+                    None,
+                    302,
+                    "Found",
+                    {},
+                    redirected,
+                )
+                opened.append(redirected)
+                raise AssertionError("the rejected redirect target was opened")
 
         with patch(
-            "tools.release.verify_registry_packages.urlopen",
-            return_value=Response(),
+            "tools.release.verify_registry_packages.build_opener",
+            side_effect=lambda handler: RedirectingOpener(handler),
         ):
-            with self.assertRaisesRegex(RegistryError, "admitted HTTPS host"):
+            with self.assertRaisesRegex(RegistryError, "redirects are not admitted"):
                 fetch_url("https://registry.example/package", 64)
+        self.assertEqual(opened, ["https://registry.example/package"])
 
+    def test_initial_registry_endpoint_rejects_port_credentials_and_fragment(self):
         for rejected in (
             "https://registry.example:444/package",
             "https://user@registry.example/package",
             "https://registry.example/package#substitute",
         ):
             with self.subTest(rejected=rejected):
-                Response.final_url = rejected
                 with patch(
-                    "tools.release.verify_registry_packages.urlopen",
-                    return_value=Response(),
-                ):
-                    with self.assertRaisesRegex(RegistryError, "admitted HTTPS host"):
-                        fetch_url("https://registry.example/package", 64)
+                    "tools.release.verify_registry_packages.build_opener"
+                ) as opener:
+                    with self.assertRaisesRegex(RegistryError, "admitted HTTPS endpoint"):
+                        fetch_url(rejected, 64)
+                    opener.assert_not_called()
 
     def test_registry_metadata_cannot_select_port_or_credentials(self):
         clean = self.registry()
@@ -245,6 +257,59 @@ class RegistryPackageTests(unittest.TestCase):
                 expected_revision=REVISION,
                 fetch=self.registry(),
             )
+
+    def test_sdk_manifest_members_and_version_are_closed(self):
+        manifest_path = self.sdk / "SDK-MANIFEST.json"
+        original = json.loads(manifest_path.read_bytes())
+
+        cases = {}
+        unknown_root = json.loads(json.dumps(original))
+        unknown_root["unknown"] = True
+        cases["SDK manifest members"] = unknown_root
+        unknown_artifact = json.loads(json.dumps(original))
+        unknown_artifact["artifacts"][0]["unknown"] = True
+        cases["SDK artifact members"] = unknown_artifact
+        invalid_version = json.loads(json.dumps(original))
+        invalid_version["version"] = "../../other"
+        cases["invalid SDK version"] = invalid_version
+
+        for expected, value in cases.items():
+            with self.subTest(expected=expected):
+                manifest_path.write_text(json.dumps(value))
+                with self.assertRaisesRegex(RegistryError, expected):
+                    observe(
+                        sdk_directory=self.sdk,
+                        verifier_directory=self.verifier,
+                        expected_revision=REVISION,
+                        fetch=self.registry(),
+                    )
+        manifest_path.write_text(json.dumps(original))
+
+    def test_verifier_manifest_members_are_closed(self):
+        manifest_path = (
+            self.verifier / "VERIFIER-PACKAGE-MANIFEST.projection.json"
+        )
+        original = json.loads(manifest_path.read_bytes())
+
+        cases = {}
+        unknown_root = json.loads(json.dumps(original))
+        unknown_root["unknown"] = True
+        cases["verifier manifest members"] = unknown_root
+        unknown_artifact = json.loads(json.dumps(original))
+        unknown_artifact["artifacts"][0]["unknown"] = True
+        cases["verifier artifact members"] = unknown_artifact
+
+        for expected, value in cases.items():
+            with self.subTest(expected=expected):
+                manifest_path.write_text(json.dumps(value))
+                with self.assertRaisesRegex(RegistryError, expected):
+                    observe(
+                        sdk_directory=self.sdk,
+                        verifier_directory=self.verifier,
+                        expected_revision=REVISION,
+                        fetch=self.registry(),
+                    )
+        manifest_path.write_text(json.dumps(original))
 
     def test_observation_schema_is_closed_and_matches_the_producer(self):
         schema = json.loads(

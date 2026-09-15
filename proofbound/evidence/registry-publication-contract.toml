@@ -5,6 +5,7 @@ kind = "independent-check"
 claims = ["PBR-DISTRIBUTION-018"]
 tier = 1
 assumptions = [
+  "PBR-PACKAGE-TOOLCHAINS-AX-011",
   "PBR-REGISTRY-DISTRIBUTION-AX-014",
   "PBR-SDK-TOOLCHAINS-AX-010",
 ]
@@ -23,9 +24,13 @@ inputs = [
   "Cargo.lock",
   "Cargo.toml",
   "VERSION",
+  "assumptions/PBR-PACKAGE-TOOLCHAINS-AX-011.toml",
+  "assumptions/PBR-REGISTRY-DISTRIBUTION-AX-014.toml",
+  "assumptions/PBR-SDK-TOOLCHAINS-AX-010.toml",
   "crates/proofbound-runtime-sdk/Cargo.toml",
   "crates/proofbound-runtime-verify/Cargo.toml",
   "docs/specs/0014_public_compatibility_and_distribution.md",
+  "docs/threat-model.md",
   "schemas/registry-observations-v1.schema.json",
   "sdk/python/pyproject.toml",
   "sdk/typescript/package.json",

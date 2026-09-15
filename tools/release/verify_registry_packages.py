@@ -12,11 +12,14 @@ from pathlib import Path
 import re
 import sys
 from urllib.parse import quote, urlparse
-from urllib.request import Request, urlopen
+from urllib.request import build_opener, HTTPRedirectHandler, Request
 
 
 SCHEMA = "proofbound-runtime-registry-observations/1"
 REVISION = re.compile(r"[0-9a-f]{40}\Z")
+VERSION = re.compile(
+    r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\Z"
+)
 MAX_METADATA_BYTES = 1_048_576
 USER_AGENT = "proofbound-runtime-registry-observer/1"
 
@@ -77,21 +80,31 @@ def admitted_https_url(url: str, host: str) -> bool:
     )
 
 
+class RejectRedirects(HTTPRedirectHandler):
+    """Reject every redirect before the client can issue the next request."""
+
+    def redirect_request(self, request, file_pointer, code, message, headers, new_url):
+        del request, file_pointer, code, message, headers, new_url
+        raise RegistryError("registry redirects are not admitted")
+
+
 def fetch_url(url: str, maximum: int) -> bytes:
     """Read one HTTPS resource with a strict byte bound."""
 
     if maximum < 0:
         raise RegistryError("invalid download bound")
+    requested_url = urlparse(url)
+    if (
+        requested_url.hostname is None
+        or not admitted_https_url(url, requested_url.hostname)
+    ):
+        raise RegistryError("registry URL is outside the admitted HTTPS endpoint")
     request = Request(url, headers={"User-Agent": USER_AGENT})
-    with urlopen(request, timeout=30) as response:  # noqa: S310 - URL is closed below.
+    opener = build_opener(RejectRedirects())
+    with opener.open(request, timeout=30) as response:  # noqa: S310 - URL is closed above.
         final = response.geturl()
-        requested_url = urlparse(url)
-        if (
-            requested_url.hostname is None
-            or not admitted_https_url(url, requested_url.hostname)
-            or not admitted_https_url(final, requested_url.hostname)
-        ):
-            raise RegistryError("registry redirected outside the admitted HTTPS host")
+        if final != url:
+            raise RegistryError("registry response URL differs from the admitted endpoint")
         data = response.read(maximum + 1)
     if len(data) > maximum:
         raise RegistryError("registry response exceeds the byte bound")
@@ -101,6 +114,8 @@ def fetch_url(url: str, maximum: int) -> bytes:
 def exact_file(directory: Path, name: str, digest: str, size: int) -> bytes:
     """Read one approved regular file and validate its registered identity."""
 
+    if Path(name).name != name:
+        raise RegistryError(f"approved artifact name is not one file name: {name}")
     path = directory / name
     if path.is_symlink() or not path.is_file():
         raise RegistryError(f"approved artifact is not a regular file: {name}")
@@ -122,23 +137,43 @@ def natural(value: object, field: str) -> int:
     return value
 
 
+def exact_keys(value: dict[str, object], expected: set[str], field: str) -> None:
+    if set(value) != expected:
+        raise RegistryError(f"invalid {field} members")
+
+
 def sdk_artifacts(
     directory: Path, expected_revision: str
 ) -> tuple[str, dict[str, tuple[str, int, bytes]]]:
     manifest = load_json(directory / "SDK-MANIFEST.json")
+    exact_keys(
+        manifest,
+        {"artifacts", "schema", "source_revision", "version"},
+        "SDK manifest",
+    )
     if manifest.get("schema") != "proofbound-runtime-sdk-manifest/1":
         raise RegistryError("SDK manifest schema mismatch")
     if manifest.get("source_revision") != expected_revision:
         raise RegistryError("SDK source revision mismatch")
     version = text(manifest.get("version"), "SDK version")
+    if VERSION.fullmatch(version) is None:
+        raise RegistryError("invalid SDK version")
     entries = manifest.get("artifacts")
     if not isinstance(entries, list) or len(entries) != 3:
         raise RegistryError("SDK artifact inventory mismatch")
+    expected = {
+        f"proofbound-runtime-sdk-{version}.crate",
+        f"proofbound-runtime-sdk-{version}.tgz",
+        f"proofbound_runtime_sdk-{version}-py3-none-any.whl",
+    }
     artifacts: dict[str, tuple[str, int, bytes]] = {}
     for entry in entries:
         if not isinstance(entry, dict):
             raise RegistryError("invalid SDK artifact")
+        exact_keys(entry, {"name", "sha256", "size"}, "SDK artifact")
         name = text(entry.get("name"), "SDK artifact name")
+        if name not in expected:
+            raise RegistryError("SDK artifact name is outside the selected set")
         digest = text(entry.get("sha256"), "SDK artifact digest")
         if re.fullmatch(r"[0-9a-f]{64}", digest) is None:
             raise RegistryError("invalid SDK artifact digest")
@@ -146,11 +181,6 @@ def sdk_artifacts(
         if name in artifacts:
             raise RegistryError("duplicate SDK artifact")
         artifacts[name] = (digest, size, exact_file(directory, name, digest, size))
-    expected = {
-        f"proofbound-runtime-sdk-{version}.crate",
-        f"proofbound-runtime-sdk-{version}.tgz",
-        f"proofbound_runtime_sdk-{version}-py3-none-any.whl",
-    }
     if set(artifacts) != expected:
         raise RegistryError("SDK artifact names do not match the selected set")
     return version, artifacts
@@ -160,16 +190,39 @@ def verifier_artifact(
     directory: Path, expected_revision: str, version: str
 ) -> tuple[str, str, int, bytes]:
     manifest = load_json(directory / "VERIFIER-PACKAGE-MANIFEST.projection.json")
+    exact_keys(
+        manifest,
+        {
+            "artifacts",
+            "binary",
+            "package",
+            "schema",
+            "source_revision",
+            "supported_receipt_schemas",
+            "version",
+        },
+        "verifier manifest",
+    )
     if manifest.get("schema") != "proofbound-runtime-verifier-package-manifest/1":
         raise RegistryError("verifier manifest schema mismatch")
     if manifest.get("source_revision") != expected_revision:
         raise RegistryError("verifier source revision mismatch")
     if manifest.get("version") != version:
         raise RegistryError("verifier version mismatch")
+    if manifest.get("binary") != "pbr-verify":
+        raise RegistryError("verifier binary mismatch")
+    if manifest.get("package") != "proofbound-runtime-verify":
+        raise RegistryError("verifier package mismatch")
+    if manifest.get("supported_receipt_schemas") != [
+        "proofbound-runtime-receipt/1",
+        "proofbound-runtime-execution-receipt/2",
+    ]:
+        raise RegistryError("verifier receipt schema inventory mismatch")
     entries = manifest.get("artifacts")
     if not isinstance(entries, list) or len(entries) != 1 or not isinstance(entries[0], dict):
         raise RegistryError("verifier artifact inventory mismatch")
     entry = entries[0]
+    exact_keys(entry, {"name", "sha256", "size"}, "verifier artifact")
     name = text(entry.get("name"), "verifier artifact name")
     expected_name = f"proofbound-runtime-verify-{version}.crate"
     if name != expected_name:

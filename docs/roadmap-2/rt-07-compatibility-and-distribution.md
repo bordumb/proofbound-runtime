@@ -141,12 +141,13 @@ Python SDK, and TypeScript SDK. The exact release workflow has an explicit
 for complete release provenance and the protected `package-publish`
 environment. Rust publication uses a scoped crates.io token only in its two
 Rust publisher steps. PyPI and npm use workflow-specific OIDC trusted
-publishers. No credential is available to the anonymous observation job.
+publishers. The observation job has no registry credential. Its read-only
+checkout credential is removed before it makes anonymous registry requests.
 
 The four publishers run in the selected order. The Rust jobs reproduce their
 upload inputs from the exact checked-out mainline source and compare those
 bytes with the approved release artifacts. After the last publisher, an
-uncredentialed job retrieves all four public artifacts, constrains registry
+registry-credential-free job retrieves all four public artifacts, constrains registry
 metadata and download hosts, and compares downloaded bytes with the approved
 artifacts. A canonical registry-observation record is retained only after all
 four comparisons pass.

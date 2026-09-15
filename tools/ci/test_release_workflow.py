@@ -33,11 +33,13 @@ class ReleaseWorkflowTests(unittest.TestCase):
         publication = workflow[verifier:observe]
         self.assertEqual(publication.count("environment: package-publish"), 4)
         self.assertEqual(publication.count("inputs.publish_packages == true"), 4)
+        self.assertEqual(publication.count("persist-credentials: false"), 2)
         self.assertIn("needs: provenance", publication)
         self.assertIn("needs: publish-verifier-crate", publication)
         self.assertIn("needs: publish-rust-sdk", publication)
         self.assertIn("needs: publish-python-sdk", publication)
-        self.assertIn("cargo publish --locked --no-verify", publication)
+        self.assertEqual(publication.count("cargo publish --locked --no-verify"), 2)
+        self.assertEqual(publication.count("--registry crates-io"), 4)
         self.assertEqual(publication.count("Reproduce the upload input from the exact source"), 2)
         self.assertIn("proofbound-runtime-verifier-package-", publication)
         self.assertIn("proofbound-runtime-sdk-packages-", publication)
@@ -47,9 +49,11 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("pypa/gh-action-pypi-publish@dc37677", publication)
         self.assertIn("actions/setup-node@2499707", publication)
         self.assertIn("npm@11.6.0", publication)
+        self.assertIn("--registry https://registry.npmjs.org", publication)
         observation = workflow[observe:]
         self.assertIn("verify_registry_packages.py", observation)
         self.assertIn("needs: [provenance, publish-typescript-sdk]", observation)
+        self.assertIn("persist-credentials: false", observation)
         self.assertNotIn("CARGO_REGISTRY_TOKEN", observation)
 
     def test_preflight_rejects_non_sha_and_non_mainline_revisions(self) -> None:

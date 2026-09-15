@@ -115,7 +115,7 @@ process, and filesystem premises.
 ## PBR-DISTRIBUTION-018
 
 The subject is the opt-in selected-package route in the exact-source release
-workflow and its uncredentialed registry observer. Its current closure
+workflow and its registry-credential-free observer. Its current closure
 contains:
 
 - a default-off Boolean publication input;

@@ -480,6 +480,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.PBR_RELEASE_REVISION }}
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Confirm the exact approved source
@@ -499,6 +500,7 @@ jobs:
           cargo fetch --locked
           cargo package --locked --no-verify \
             --package proofbound-runtime-verify \
+            --registry crates-io \
             --target-dir target/publish-verifier
           cmp \
             "target/publish-verifier/package/proofbound-runtime-verify-$(cat VERSION).crate" \
@@ -509,7 +511,9 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
           test -n "${CARGO_REGISTRY_TOKEN:-}"
-          cargo publish --locked --no-verify --package proofbound-runtime-verify
+          cargo publish --locked --no-verify \
+            --package proofbound-runtime-verify \
+            --registry crates-io
 
   publish-rust-sdk:
     name: Publish the Rust SDK crate
@@ -526,6 +530,7 @@ jobs:
         with:
           ref: ${{ env.PBR_RELEASE_REVISION }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Confirm the exact approved source
         run: test "$(git rev-parse HEAD)" = "$PBR_RELEASE_REVISION"
@@ -544,6 +549,7 @@ jobs:
           cargo fetch --locked
           cargo package --locked --no-verify \
             --package proofbound-runtime-sdk \
+            --registry crates-io \
             --target-dir target/publish-sdk
           cmp \
             "target/publish-sdk/package/proofbound-runtime-sdk-$(cat VERSION).crate" \
@@ -554,7 +560,9 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
           test -n "${CARGO_REGISTRY_TOKEN:-}"
-          cargo publish --locked --no-verify --package proofbound-runtime-sdk
+          cargo publish --locked --no-verify \
+            --package proofbound-runtime-sdk \
+            --registry crates-io
 
   publish-python-sdk:
     name: Publish the Python SDK wheel
@@ -612,7 +620,9 @@ jobs:
         run: |
           npm install --global npm@11.6.0
           test "$(npm --version)" = 11.6.0
-          npm publish dist/sdk/proofbound-runtime-sdk-*.tgz --access public
+          npm publish dist/sdk/proofbound-runtime-sdk-*.tgz \
+            --access public \
+            --registry https://registry.npmjs.org
 
   observe-registry-packages:
     name: Retrieve and compare all registry packages
@@ -627,6 +637,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.PBR_RELEASE_REVISION }}
+          persist-credentials: false
 
       - name: Confirm the exact approved source
         run: test "$(git rev-parse HEAD)" = "$PBR_RELEASE_REVISION"
