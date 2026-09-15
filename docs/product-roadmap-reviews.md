@@ -1625,3 +1625,26 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, or test bytes. Any later subject change requires a new
 exact-head review.
+
+## RT-8 pure observer protocol rebased review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `4ecb8719d23c0145934a3b0f716b2f744d736d1b`
+- **Reviewed head:** `4ecbad5ac178da94b0febceccfe5c3ece733977d`
+- **Branch:** `codex/rt8-observer-protocol`
+- **Method:** Complete exact-range static review after rebase. The reviewer
+  changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The observer implementation, claim, assumptions, evidence, specification, and
+ADR remain equivalent to the previously approved source, and the producer's
+final unused-import correction creates no semantic integration issue. The
+review found one documentation-resolution blocker: the main Roadmap 2 file and
+RT-8 integration record still identified `edf87bb` as current main and
+described the producer as awaiting hosted admission, although it passed and
+merged as `4ecb871` before this rebase.
+
+The correction must preserve the merged producer identity and hosted result
+while identifying the rebased observer protocol as the active admission wave.
+This verdict is not endorsed. The correction creates a new exact subject that
+requires re-review.

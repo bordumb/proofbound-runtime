@@ -1,12 +1,12 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T07:23:00+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T07:32:00+01:00 (Europe/London, BST)
 - **Runtime baseline:** RT-8 diagnostic artifact producer merge `4ecb871`;
   exact-main Verify run `34936505855` is in progress
-- **Active implementation wave:** the pure observer protocol is rebasing onto
-  the admitted producer mainline; its prior exact-source approval must be
-  confirmed for the rebased head before hosted admission
+- **Active implementation wave:** the pure observer protocol is rebased onto
+  the producer mainline; one stale roadmap-status finding is being corrected
+  before refreshed exact-head review and hosted admission
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the

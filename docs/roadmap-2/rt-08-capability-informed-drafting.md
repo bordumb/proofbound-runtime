@@ -1,12 +1,12 @@
 # RT-8 integration record: capability-informed drafting
 
-**Status:** static scaffold and prelaunch diagnostics merged; diagnostic
-contracts, closed schemas, source-level production non-reuse, and the pure
-diagnostic artifact producer are implemented across the stacked RT-8 branches.
-The producer is independently approved and hosted admission is pending. The
-pure observer protocol is implemented on the next stacked branch. The live
-ptrace adapter, command integration, native attack corpus, and release binding
-remain open.
+**Status:** static scaffold, prelaunch diagnostics, diagnostic contracts,
+closed schemas, source-level production non-reuse, and the pure diagnostic
+artifact producer are merged through Runtime `4ecb871`. The producer passed
+complete exact-head Verify run `34933278521`; exact-main run `34936505855` is
+in progress. The pure observer protocol is implemented and in refreshed
+exact-source review after rebase. The live ptrace adapter, command integration,
+native attack corpus, and release binding remain open.
 
 **Primary owner:** Proofbound Runtime
 
