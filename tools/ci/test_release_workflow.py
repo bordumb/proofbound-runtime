@@ -1,3 +1,4 @@
+import json
 import unittest
 from pathlib import Path
 
@@ -73,6 +74,15 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertEqual(typescript.count("NODE_AUTH_TOKEN"), 3)
         self.assertIn("--provenance", typescript)
         self.assertIn("npm-bootstrap.npmrc", typescript)
+        package = json.loads(
+            (REPOSITORY_ROOT / "sdk/typescript/package.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(
+            package.get("scripts"),
+            {"test": "node --experimental-strip-types tests/test.mjs"},
+        )
         observation = workflow[observe:]
         self.assertIn("verify_registry_packages.py", observation)
         self.assertIn("needs: [provenance, publish-typescript-sdk]", observation)

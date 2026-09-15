@@ -89,8 +89,10 @@ The workflow uses this secret only when both conditions hold:
   returns exactly `404`.
 
 Any other package state, redirect, timeout, or HTTP result fails closed before
-the token-bearing step. A race in which another publisher creates the package
-causes npm to reject the upload.
+the token-bearing step. The source check also requires the exact package script
+inventory to contain no npm publish lifecycle hook that could inherit the
+token. A race in which another publisher creates the package causes npm to
+reject the upload.
 
 ## 5. Dispatch the first protected run
 

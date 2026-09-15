@@ -202,7 +202,9 @@ separate bootstrap route in the same protected exact-source workflow. The
 route is disabled by default, requires the general publication input, checks
 that the anonymous package endpoint returns exactly `404` before the
 token-bearing step, and exposes a shortest-lived external bootstrap token only
-to that step. It cannot run after the package endpoint returns `200`.
+to that step. The selected package metadata contains no npm publish lifecycle
+hook that could consume that environment. The bootstrap cannot run after the
+package endpoint returns `200`.
 
 After the first accepted upload, the release maintainer must configure the
 exact npm OIDC trusted publisher, delete the GitHub bootstrap secret, revoke
@@ -319,6 +321,7 @@ bounded observation for the tested identity tuple.
 - Select npm bootstrap after the package exists, or select OIDC while it is
   absent.
 - Expose the npm bootstrap token to the normal publisher or anonymous observer.
+- Add an npm publish lifecycle hook to the selected package.
 - Substitute registry bytes after release approval.
 - Select an unlisted platform integration tuple.
 - Replace the independent verifier with an unrecorded executable identity.
