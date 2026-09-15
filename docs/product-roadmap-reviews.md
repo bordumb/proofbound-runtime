@@ -1501,3 +1501,27 @@ Clippy also required the path-containment Boolean expression to use its direct
 equivalent form. These corrections do not change the reviewed authority,
 schema, producer, or receipt meaning, but they change the exact subject and
 therefore require a new independent exact-head review.
+
+## RT-8 diagnostic artifact producer hosted-correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `cb52c5115d73c72aebad51c4c0f4a301068d8479`
+- **Reviewed head:** `f79eb39c0f7375c38f3706151b6bb6c94e96de10`
+- **Branch:** `codex/rt8-observer`
+- **Method:** Exact-range static re-review. The reviewer changed no files and
+  ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the import is now test-scoped, the equivalent
+Capsec conditions preserve their precedence and result, path containment is
+equivalent for root and non-root inputs, and the replacement execution
+identifier has the required RFC 4122 version and variant bits. All earlier
+security, schema, bounds, evidence, claim-subject, and falsifier corrections
+remain intact.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`f79eb39c0f7375c38f3706151b6bb6c94e96de10`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.
