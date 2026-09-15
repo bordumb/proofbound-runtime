@@ -147,6 +147,8 @@ class DiagnosticTraceStartupContractTests(unittest.TestCase):
             self.assertNotIn("channel: LauncherChannel", body, state)
             self.assertNotIn("request: InstallRequest", body, state)
         self.assertEqual(self.trace.count("session: self.session"), 6)
+        self.assertNotIn("pub fn child_mut", self.trace)
+        self.assertNotIn("-> &mut Child", self.trace)
 
     def test_session_creates_and_uses_one_private_launcher_channel(self):
         prepare_start = self.trace.index("pub fn prepare_traced_launcher")

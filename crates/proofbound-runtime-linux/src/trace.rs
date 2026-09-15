@@ -172,12 +172,6 @@ pub fn prepare_traced_launcher<'descriptor>(
 #[derive(Debug)]
 struct TraceChild(Child);
 
-impl TraceChild {
-    fn child_mut(&mut self) -> &mut Child {
-        &mut self.0
-    }
-}
-
 impl Drop for TraceChild {
     fn drop(&mut self) {
         let _ = self.0.kill();
@@ -243,11 +237,6 @@ impl LauncherPause {
     #[must_use]
     pub const fn process(&self) -> TraceProcessId {
         self.session.process
-    }
-
-    /// Borrows the stopped launcher for stream and cgroup preparation.
-    pub fn child_mut(&mut self) -> &mut Child {
-        self.session.child.child_mut()
     }
 
     /// Resumes trusted launcher code for production-boundary installation.
@@ -372,11 +361,6 @@ impl ActiveTrace {
     #[must_use]
     pub const fn root(&self) -> TraceProcessId {
         self.session.process
-    }
-
-    /// Borrows the exact traced child for the bounded event loop.
-    pub fn child_mut(&mut self) -> &mut Child {
-        self.session.child.child_mut()
     }
 }
 

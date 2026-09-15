@@ -1904,3 +1904,32 @@ evidence omitted the core identity sources used by `LauncherIdentity`.
 
 This verdict is not endorsed. The correction changes the exact subject and
 requires independent re-review.
+
+## RT-8 diagnostic trace-startup first correction review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `db31e0259bbe708fc8afd8288bb6445b1ad06235`
+- **Reviewed head:** `14361d32e73c8ee2d3b43fa6aa0adb9d52b4a092`
+- **Branch:** `codex/rt8-ptrace-backend`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The review confirmed that the first correction closed the caller-supplied
+command, identity, acknowledgement, and channel substitutions. Preparation now
+revalidates an identified launcher, executes it through the retained descriptor,
+creates the channel internally, and retains one request and channel through one
+private session. The toolchain reciprocal link and identity source closure are
+also complete.
+
+The review found three remaining blockers. Public `child_mut` access still let
+safe code replace the `Child` guarded by the private session, so cleanup could
+target an unrelated process while the exact tracee remained live. The
+session-continuity checker did not reject that mutable escape. The registered
+Python toolchain assumption also described only JSON interpretation although
+its scope included source-structure checks implemented with Python string and
+regular-expression operations.
+
+This verdict is not endorsed. The second correction must remove mutable child
+replacement, add the corresponding falsifier, and align the assumption with
+the checker that depends on it. It requires a new exact-head review.

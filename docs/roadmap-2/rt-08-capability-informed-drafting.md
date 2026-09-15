@@ -83,7 +83,8 @@ values without making a draft an authority object.
   creates and retains one launcher channel and exact install request, receives
   the matching acknowledgement internally, and sends the identity-bound
   release through that same channel. Public transitions do not accept
-  substitute commands, protocol values, or channels.
+  substitute commands, protocol values, or channels, and public states expose
+  no mutable child handle that could replace the guarded process.
 - Automatic candidates require an explicit normalized project or runtime
   scope. System, home, and configured temporary roots remain open review
   items.

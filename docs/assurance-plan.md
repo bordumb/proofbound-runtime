@@ -453,8 +453,10 @@ a descriptor number between preparation and spawn. Every later
 state moves one private session that owns the same child, process identity,
 supervisor channel, and identity-bound request. The session receives the
 acknowledgement internally and sends the release through that same channel. Its
-child guard attempts to kill and reap the child when a transition fails or the
-caller abandons a state.
+public states expose the process identity but no mutable child handle, so safe
+callers cannot replace the child retained by the session. Its child guard
+attempts to kill and reap that child when a transition fails or the caller
+abandons a state.
 
 The bounded evidence path checks that:
 
@@ -470,8 +472,8 @@ The bounded evidence path checks that:
 7. the prepared command has one consuming spawn and retains the lifetime of
    every inherited descriptor through it; and
 8. every spawned state contains the same private session type, every transition
-   moves that session, and its child guard contains the only setup-state kill
-   and wait operations; and
+   moves that session, no public API exposes mutable child replacement, and its
+   child guard contains the only setup-state kill and wait operations; and
 9. invalid descriptors, process identifiers, deadlines, channel operations,
    launcher responses, stops, exits, identities, and operating-system results
    map to closed errors.
