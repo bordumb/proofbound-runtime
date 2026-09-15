@@ -2794,3 +2794,104 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes no reviewed production,
 specification, schema, claim, assumption, evidence, or checker bytes. Any
 later subject change requires a new exact-head review.
+
+## RT-11 signing and identity ADR initial review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `b04382d290924cefe588bb1fbce3830b62db171e`
+- **Reviewed head:** `845d7c00767ec0e9185693712c921d7f64c1d121`
+- **Branch:** `codex/rt11-signing-adr`
+- **Method:** Exact-range static architecture review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The review found five blocking design defects. The signature input omitted the
+outer-envelope schema identity. Revocation cut-offs had no authenticated
+temporal evidence and could not distinguish a genuine old signature from a
+post-compromise forgery. Specification 0013 and ADR 0009 gave conflicting
+mandatory orders for commitment and native verification. The inner
+`COSE_Sign1` object permitted unspecified protected headers and noncanonical
+encodings. Finally, asserted signer aliases could resolve to one key or
+controller and falsely satisfy a signature or witness threshold.
+
+The correction binds the envelope schema into the external authenticated data,
+invalidates every old-key signature in the first profile unless a later profile
+supplies independently authenticated temporal evidence, makes bounded parsing
+precede commitment authentication and native semantic verification, freezes
+the complete inner COSE structure, and counts canonical resolved keys and
+controllers rather than asserted references. This verdict is not endorsed.
+The corrected exact head requires independent re-review.
+
+## RT-11 signing and identity ADR correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `b04382d290924cefe588bb1fbce3830b62db171e`
+- **Reviewed head:** `2a4ca41b0b4c967eb7097b77363f5db55b67ede9`
+- **Branch:** `codex/rt11-signing-adr`
+- **Method:** Complete exact-range static architecture re-review. The reviewer
+  changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that all five blockers are closed. The signed binding
+now authenticates the outer envelope schema and has a schema-substitution
+falsifier. The first lifecycle profile rejects every signature from a retired,
+revoked, or compromised key; historical acceptance is reserved for a later
+profile with independently authenticated temporal evidence bound to the exact
+envelope. Specification 0013 and ADR 0009 now require the same bounded-parse,
+commitment-authentication, native-verification, linkage, and policy order.
+
+The inner object is closed to tagged `COSE_Sign1`, exactly four array items,
+the exact protected Ed25519 `-19` algorithm map, an empty unprotected map, a
+detached `nil` payload, a 64-byte signature, no additional headers, and
+deterministic encoding. Threshold evaluation uses canonical resolved keys and
+controllers. Aliases fail closed, one controller counts once, and witnesses
+must use distinct controllers with disjoint accepted key identities.
+
+The correction preserves role separation, the Auths and KERI semantic
+boundary, offline closure, witness assumptions, and the rule that signatures
+authenticate exact bytes and a role under policy but do not prove execution.
+No new blocker was introduced.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact design
+head `2a4ca41b0b4c967eb7097b77363f5db55b67ede9`. The following approval-only
+commit records the verdict and changes status from proposed to accepted. It
+changes no reviewed protocol design, schema, specification, threat-model,
+falsifier, or identity-policy bytes. Any later design-subject change requires
+a new exact-head review.
+
+## RT-11 signing and identity ADR restack approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `3dc113116f12ac76536a491f0e40645dce083bba`
+- **Reviewed head:** `5a0071ad6dc115556aff271ec5cee28cc4848ca0`
+- **Branch:** `codex/rt11-signing-adr`
+- **Method:** Complete exact-range static replay review. The reviewer changed
+  no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the merge base is the reviewed base and that the
+restacked ADR 0009, Specification 0013, and RT-11 integration-record blobs are
+byte-identical to the previously approved correction at
+`2a4ca41b0b4c967eb7097b77363f5db55b67ede9`. The final reviewed commit changes
+only the intended proposed-to-accepted status and deferred-implementation
+language.
+
+All five original blockers remain closed. The signature input binds the outer
+schema. The first profile rejects old-key signatures unless a later profile
+adds independently authenticated temporal evidence. The verification order is
+consistent across the ADR and specification. The deterministic detached
+`COSE_Sign1` shape and Ed25519 algorithm identifier remain closed. Thresholds
+count canonical resolved keys and controllers and reject alias substitution.
+
+The conflict resolutions retain both the RT-7 review history and the RT-11
+initial rejection and correction approval. The checklist and integration
+record still defer implementation. The threat model keeps the signing roles
+conditional and grants no signing assurance to unsigned objects.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`3dc113116f12ac76536a491f0e40645dce083bba..5a0071ad6dc115556aff271ec5cee28cc4848ca0`.
+The following approval-only commit changes no reviewed protocol design,
+schema, specification, threat-model, falsifier, or identity-policy bytes. Any
+later design-subject change requires a new exact-head review.

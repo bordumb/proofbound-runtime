@@ -390,18 +390,26 @@ service set and every registered cross-service attack fails closed.
 
 ## Parallel decision track: RT-11
 
-- [ ] Draft the signing and transparency ADR while Phases 0 through 2 proceed.
-- [ ] Separate principal, workload, product, release, execution-service,
+- [x] Draft the signing and transparency ADR while Phases 0 through 2 proceed.
+- [x] Separate principal, workload, product, release, execution-service,
   receipt-log, and witness identities.
-- [ ] Decide which identity signs which exact bytes and which verifier resolves
+- [x] Decide which identity signs which exact bytes and which verifier resolves
   the identity.
-- [ ] Define custody, rotation, revocation, offline verification, and consumer
+- [x] Define custody, rotation, revocation, offline verification, and consumer
   pinning rules.
-- [ ] Compare detached envelope and transparency statement options without
+- [x] Compare detached envelope and transparency statement options without
   changing native receipt bytes.
-- [ ] State explicitly that signatures authenticate an origin under policy;
+- [x] State explicitly that signatures authenticate an origin under policy;
   they do not prove execution, correctness, or containment.
-- [ ] Accept or reject the ADR through independent review.
+- [x] Accept the ADR through independent exact-head review.
+
+Decision record: accepted
+[ADR 0009](adr/0009-detached-role-bound-signing.md) selects detached,
+role-bound COSE with fully specified Ed25519, a mixed durable and ephemeral
+identity model, Auths as the first maintained identity-resolver integration,
+and an all-witness checkpoint policy. Independent review approved exact base
+`b04382d` through exact design head `2a4ca41`. Implementation remains a later
+claim-sized wave.
 
 ## Roadmap 1 residual closure
 
