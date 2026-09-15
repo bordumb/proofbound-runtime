@@ -1,0 +1,67 @@
+schema = "proofbound-claim/1"
+id = "PBR-OBSERVER-020"
+title = "Diagnostic target release requires an ordered bounded observer protocol"
+statement = "For the pure diagnostic observer protocol, target release is impossible until ptrace ownership, production-boundary acknowledgement, and the exact closed process-tree trace options are recorded in order; after release, unknown children, duplicate child discovery, unexpected stops, observer failure, or collection-bound exhaustion irreversibly require termination and retain an explicit gap; and artifact completion is impossible until every retained process has a terminal wait result and the adapter confirms that a terminated child tree is empty."
+public_language = "Runtime has a pure state machine for the diagnostic observer lifecycle and process-tree collection bounds. Registered tests cover release ordering, the exact trace-option set, child discovery, complete drain, natural capacity, isolated and simultaneous process and event overflow, duplicate and unknown processes, invalidated drain confirmation, and pre-release versus post-release failure precedence. This is bounded source evidence. It requires but does not prove the future Linux adapter's tree-empty acknowledgement. It does not establish that ptrace calls, syscall decoding, process termination, or native Linux observation are implemented or correct."
+subject = "rust:proofbound_runtime_diagnose::observer::ObserverProtocol"
+profile = "ledger"
+tier = 1
+evidence = [
+  "independent-check:diagnostic-observer-protocol-contract",
+  "example-test:diagnostic-observer-protocol",
+]
+assumptions = [
+  "PBR-DIAGNOSTIC-CONTRACT-AX-015",
+  "PBR-TOOLCHAIN-AX-003",
+]
+open_obligations = [
+  "Run the complete observer-protocol corpus in hosted exact-head verification before merge.",
+  "Implement the safe Linux adapter over raw ptrace, wait, tracee-memory, and process-control calls without linking observer code into production executables.",
+  "Make the Linux adapter derive tree-drain confirmation from identified wait and cgroup state, and falsify a forged or premature acknowledgement.",
+  "Implement architecture-qualified syscall decoding and exact operand capture for the closed diagnostic event set.",
+  "Execute process-tree, race, overflow, symlink, observation-sensitive, and failure-path attacks on both supported native architectures.",
+  "Bind exact released pbr-diagnose artifacts before describing the observer as released.",
+]
+out_of_scope = [
+  "Correctness of Linux ptrace, wait, process termination, or procfs behavior.",
+  "Truth of a tree-drain acknowledgement supplied by the future effectful adapter.",
+  "A claim that the current source state executes or observes a child process.",
+  "Completeness, transparency, or non-interference of diagnostic observation.",
+  "Production execution, production receipt construction, or production receipt acceptance.",
+]
+source_roots = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "assumptions/PBR-DIAGNOSTIC-CONTRACT-AX-015.toml",
+  "assumptions/PBR-TOOLCHAIN-AX-003.toml",
+  "claims/PBR-DRAFT-019.toml",
+  "claims/PBR-OBSERVER-020.toml",
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/diagnostic.rs",
+  "crates/proofbound-runtime-core/src/identity.rs",
+  "crates/proofbound-runtime-core/src/lib.rs",
+  "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-diagnose/Cargo.toml",
+  "crates/proofbound-runtime-diagnose/src/artifact.rs",
+  "crates/proofbound-runtime-diagnose/src/canonical.rs",
+  "crates/proofbound-runtime-diagnose/src/draft.rs",
+  "crates/proofbound-runtime-diagnose/src/lib.rs",
+  "crates/proofbound-runtime-diagnose/src/observer.rs",
+  "crates/proofbound-runtime-diagnose/src/producer.rs",
+  "docs/adr/0008-separate-ptrace-diagnostic-observer.md",
+  "docs/assurance-plan.md",
+  "docs/product-development-checklist.md",
+  "docs/product-roadmap-2.md",
+  "docs/roadmap-2/rt-08-capability-informed-drafting.md",
+  "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",
+  "proofbound/evidence/diagnostic-observer-protocol-contract.toml",
+  "proofbound/evidence/diagnostic-observer-protocol.toml",
+  "schemas/diagnostic-receipt-v1.schema.json",
+  "schemas/plan-draft-v1.schema.json",
+  "schemas/vectors/diagnostic/diagnostic-receipt.json",
+  "schemas/vectors/diagnostic/plan-draft.json",
+  "tools/ci/check_diagnostic_observer_protocol.py",
+  "tools/ci/ci.sh",
+  "tools/ci/pre-commit.sh",
+  "tools/ci/test_diagnostic_observer_protocol.py",
+]

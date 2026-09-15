@@ -9,4 +9,5 @@
 pub mod artifact;
 mod canonical;
 pub mod draft;
+pub mod observer;
 pub mod producer;

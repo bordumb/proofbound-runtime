@@ -1,12 +1,13 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T06:33:25+01:00 (Europe/London, BST)
-- **Runtime baseline:** RT-8 diagnostic-contract foundation merge `edf87bb`;
-  exact-main Verify run `34929775221` passed
-- **Active implementation wave:** RT-8 producer PR 11 is independently
-  approved at corrected exact head `1d4f098`; it awaits an approval-only
-  envelope and a fresh complete hosted gate before unsigned merge
+- **Last updated:** 2026-09-15T08:30:46+01:00 (Europe/London, BST)
+- **Runtime baseline:** RT-8 diagnostic artifact producer merge `4ecb871`;
+  exact-main Verify run `34936505855` passed
+- **Active implementation wave:** pure observer protocol PR 12 passed every
+  implementation lane, but hosted run `34937458920` rejected one obsolete named
+  Cargo test target in its evidence manifest. The selector correction and a
+  source-level regression check are in progress before exact-head re-review.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -141,6 +142,11 @@ manifest describes the supported tuple.
 - [ ] Keep observer implementation out of the production launcher path.
 - [x] Keep the pure diagnostic artifact producer out of the production CLI and
   launcher dependency graphs.
+- [x] Define a pure typed observer protocol that cannot release target code
+  before attachment, boundary acknowledgement, and exact trace options.
+- [x] Keep natural exact-capacity completion distinct from overflow, terminate
+  on attempted overflow, and require terminal waits plus a separate tree-empty
+  acknowledgement before publication.
 - [x] Produce a distinct diagnostic receipt that is always non-reusable from
   validated, bounded observations.
 - [x] Make the independent verifier, composer, and acceptance policy reject a

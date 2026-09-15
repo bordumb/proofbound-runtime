@@ -1567,3 +1567,163 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, or test bytes. Any later subject change requires a new
 exact-head review.
+
+## RT-8 pure observer protocol initial review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `97cdb4f219df90582fc7f729f5d446926d274c30`
+- **Reviewed head:** `e59259dd29915ed5f352b5d27e83b506e5f78f59`
+- **Branch:** `codex/rt8-observer-protocol`
+- **Method:** Exact-range static review. The reviewer changed no files and ran
+  no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The review found one fail-closed drain cluster. A process first observed after
+the lifetime process bound, or through an unknown-process event, entered drain
+without a retained wait obligation. `finish` checked only the bounded process
+map, so it could authorize incomplete publication while that observed process
+was still live. A duplicate child notification returned an error without
+poisoning the released state, which allowed the test path to continue to a
+complete result.
+
+The bounded observation ledger must remain bounded, but publication after any
+termination directive must also require an independently represented complete
+tree-drain condition. Duplicate child discovery must irreversibly enter the
+same terminate-and-drain path and prevent complete publication. This verdict
+is not endorsed; the correction requires a separate exact subject and review.
+
+## RT-8 pure observer protocol correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `97cdb4f219df90582fc7f729f5d446926d274c30`
+- **Reviewed head:** `33f28333085dfeb484acbfd7b7ad69017a055c3a`
+- **Branch:** `codex/rt8-observer-protocol`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that overflow and unknown observations irreversibly
+enter drain, invalidate earlier tree-drain confirmation, and cannot publish
+until every retained process has a terminal wait result and the adapter
+separately confirms an empty complete child tree. Duplicate child discovery
+now retains `ObserverFailed`, enters the same drain path, and permits only
+incomplete publication after drain. Later observations invalidate an earlier
+confirmation. Registered falsifiers cover premature publication, confirmation
+ordering, duplicate discovery, and confirmation invalidation.
+
+Release ordering, the exact ptrace option set, pre-release no-publication,
+post-release incomplete precedence, lifetime bounds, natural exact capacity,
+gap identity, typed errors, pure/effectful separation, production dependency
+separation, claim scope, evidence inventory, specifications, ADRs, and roadmap
+language remain consistent. The future Linux adapter's responsibility for the
+truth and race-free derivation of the acknowledgement remains an explicit open
+obligation and exclusion from the current claim.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`33f28333085dfeb484acbfd7b7ad69017a055c3a`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.
+
+## RT-8 pure observer protocol rebased review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `4ecb8719d23c0145934a3b0f716b2f744d736d1b`
+- **Reviewed head:** `4ecbad5ac178da94b0febceccfe5c3ece733977d`
+- **Branch:** `codex/rt8-observer-protocol`
+- **Method:** Complete exact-range static review after rebase. The reviewer
+  changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The observer implementation, claim, assumptions, evidence, specification, and
+ADR remain equivalent to the previously approved source, and the producer's
+final unused-import correction creates no semantic integration issue. The
+review found one documentation-resolution blocker: the main Roadmap 2 file and
+RT-8 integration record still identified `edf87bb` as current main and
+described the producer as awaiting hosted admission, although it passed and
+merged as `4ecb871` before this rebase.
+
+The correction must preserve the merged producer identity and hosted result
+while identifying the rebased observer protocol as the active admission wave.
+This verdict is not endorsed. The correction creates a new exact subject that
+requires re-review.
+
+## RT-8 pure observer protocol rebased correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `4ecb8719d23c0145934a3b0f716b2f744d736d1b`
+- **Reviewed head:** `057d16a15ea211e8f6e39775706a3024bda969c1`
+- **Branch:** `codex/rt8-observer-protocol`
+- **Method:** Complete exact-range static re-review after the documentation
+  correction. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the Roadmap 2 and RT-8 integration status now
+identify producer merge `4ecb871`, passed exact-head Verify run `34933278521`,
+in-progress exact-main run `34936505855`, and the rebased observer protocol as
+the active review wave. The preceding `REQUEST CHANGES` record binds the exact
+rejected range and accurately explains the stale-status defect.
+
+Only documentation changed after the rejected head. The observer source,
+claim, evidence, assumptions, specification, ADR, and producer semantics remain
+intact and consistent with the prior approved behavior.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`057d16a15ea211e8f6e39775706a3024bda969c1`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, test, or roadmap-status bytes. Any later subject change
+requires a new exact-head review.
+
+## RT-8 pure observer protocol hosted admission rejection
+
+- **Hosted run:** `34937458920`, attempt 2
+- **Exact head:** `cc837538f08856e701c9876fe41f00b04ed7f05f`
+- **Branch:** `codex/rt8-observer-protocol`
+- **Result:** **REJECTED**
+
+Every implementation lane passed at this exact head. The first ledger attempt
+failed while the workflow installed the exact public Proofbound bundle because
+GitHub returned an HTTP 403 API rate limit. A failed-lane retry installed and
+identified the bundle successfully, then Proofbound rejected evidence unit
+`diagnostic-observer-protocol` with `PB-TEST-1004`. Its Cargo operation supplied
+`observer::tests` as a named target even though the current strict adapter
+reserves named Cargo targets for mutation witnesses and uses
+`expected_inventory` for exact ordinary tests.
+
+The correction must retain `--lib` as the Cargo selector, remove the named test
+target, and add a source-level regression check for this manifest contract. It
+must also align the Python checker assumption with the manifest and Rust-source
+interpretation already in scope. This hosted rejection invalidates admission at
+the reviewed head and requires a new exact-head review after correction.
+
+## RT-8 pure observer protocol hosted correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `4ecb8719d23c0145934a3b0f716b2f744d736d1b`
+- **Reviewed head:** `6735230542b8e5a4944337605e068bd900148109`
+- **Branch:** `codex/rt8-observer-protocol`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the Cargo evidence selector is exactly `--lib`, its
+arguments remain empty, and the same ten exact tests remain in
+`expected_inventory`. Those names match the observer tests. The regression
+check scopes its inspection to the operation section, requires the selector,
+and rejects the obsolete named target without confusing it with inventory
+names. The Python assumption now covers the manifest and Rust source-structure
+interpretation on which the checker depends. Hosted status records remain
+accurate and do not claim admission before the corrected run passes.
+
+Observer production code, claim meaning, release ordering, bounds, irreversible
+gap handling, terminal-wait requirement, separate tree-drain confirmation,
+feature isolation, specification, ADR, and contract inventory remain identical
+to the previously approved implementation.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`6735230542b8e5a4944337605e068bd900148109`. The following approval-only
+commit adds this record and changes no reviewed claim-subject bytes. Any later
+subject change requires a new exact-head review.

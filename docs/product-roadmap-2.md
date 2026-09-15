@@ -1,11 +1,12 @@
 # Proofbound Runtime product roadmap 2: deferred capabilities
 
-- **Status:** implementation; RT-7 publication routes merged, external
-  registry setup and publication remain open, and the RT-8 contract foundation
-  is under review; all complete Roadmap 2 epic exits remain open
+- **Status:** implementation; RT-7 publication routes and the RT-8 diagnostic
+  contract and artifact producer are merged, external registry publication
+  remains open, and the RT-8 observer protocol is in ordered admission; all
+  complete Roadmap 2 epic exits remain open
 - **Date:** 2026-09-13
-- **Runtime baseline:** `acf8f24` on `main`; exact-main Verify run
-  `34924535451` is pending, so `4a0cfdb` remains the latest admitted identity
+- **Runtime baseline:** `4ecb871` on `main`; the producer's complete exact-head
+  Verify run `34933278521` and exact-main Verify run `34936505855` passed
 - **Proofbound baseline consumed by Runtime evidence:** public immutable bundle
   for source `9512469`; protected-path cutover merged as Runtime `4a0cfdb` and
   passed exact-main Verify run `34918706960`
@@ -30,7 +31,7 @@ threat-model, ADR, claim, and evidence changes before production code.
 
 ### Execution checkpoint
 
-As of 2026-09-15, Runtime main commit `acf8f24` contains the version 2 memory
+As of 2026-09-15, Runtime main commit `4ecb871` contains the version 2 memory
 and deterministic CBOR wave, receipt composition and acceptance, a bounded
 static plan scaffold,
 typed prelaunch diagnostics, reproducible Rust, Python, and TypeScript SDK
@@ -53,16 +54,23 @@ merged it as unsigned commit `f2a06de`, and passed exact-main Verify run
 independent review and exact-head Verify run `34915891330`, then merged
 unsigned as `4a0cfdb` and passed exact-main Verify run `34918706960`. The four
 selected registry routes and their exact-byte observer contract merged
-unsigned as `acf8f24`; exact-main Verify run `34924535451` is pending. The
+unsigned as `acf8f24`; exact-main Verify run `34924535451` passed after a
+rate-limit-only retry. The
 protected GitHub `package-publish` environment, registry credentials or trusted
 publishers, anonymous retrieval observations, external consumer dogfood, and
 current-integration manifest remain open. No registry package is yet described
 as published. The RT-8 diagnostic contract, observer decision, closed schemas,
-and source-level production non-reuse checks are implemented on
-`codex/rt8-diagnostic-profile`. The pure diagnostic receipt and plan-draft
-producer is implemented on the stacked `codex/rt8-observer` branch. Hosted
-admission, the live ptrace observer, command integration, native attack corpus,
-and release binding remain open.
+and source-level production non-reuse checks passed complete hosted
+verification and merged as `edf87bb`; exact-main Verify run `34929775221`
+passed. The pure diagnostic receipt and plan-draft producer
+passed independent review and complete exact-head Verify run `34933278521`,
+then merged unsigned as `4ecb871`; exact-main Verify run `34936505855` passed.
+The pure ordered observer protocol passed every implementation lane in hosted
+run `34937458920`, but its evidence manifest used a named Cargo test target that
+the current strict Proofbound adapter reserves for mutation witnesses. The
+selector correction and exact-source re-review are in progress. The live ptrace
+adapter, command integration, native attack corpus, and release binding remain
+open.
 RT-9 is blocked until RT-5 implements the accepted single-service network
 decision in production.
 
