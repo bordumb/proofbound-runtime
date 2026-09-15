@@ -92,6 +92,22 @@ observed overflow or unknown process is not added to the bounded retained
 ledger. Its existence invalidates any earlier tree-drain acknowledgement and
 blocks publication until the adapter confirms the tree is empty again.
 
+The effectful trace receives that validated process bound before target
+release. When every retained creator can have at most one process-creation
+event pending while stopped, the exact drain set is bounded by twice the
+declared process count. An attempt to exceed that closed drain capacity fails
+the observer and makes publication ineligible. This capacity argument depends
+on the registered Linux ptrace stop premise; native adversarial evidence must
+test it on each supported architecture.
+
+The trace sets an unreconciled-tree condition before it reads or registers a
+reported child identity. A missing event message, invalid or duplicate
+identity, closed-capacity excess, invalid thread-group identity, or failed
+identity-stable handle acquisition leaves that condition set. The condition is
+permanent for the trace. A terminal wait for every previously registered
+process does not clear it, cannot produce a successful empty-tree report, and
+makes all diagnostic publication ineligible.
+
 The Linux implementation keeps its effectful observer in a separate crate.
 That crate alone enables the diagnostic observer feature on the Linux boundary
 crate. The production CLI uses the default empty feature set. The safe startup
@@ -124,8 +140,37 @@ records trace-option readiness. It authorizes release in the pure protocol
 before the same consuming transition releases target code. The adapter exposes
 process identity and read-only protocol state. It does not expose public owner
 fields, raw trace typestates, or mutable protocol access. This coupling is a
-source property and does not implement or prove the live process-tree event
-loop.
+source property.
+
+The active trace keeps a private set of exact tracee identities. It waits only
+for an identity in that set and never uses a process-global wait. A
+process-creation stop supplies a child identity before the stopped parent can
+resume. The trace reads and retains the child's thread-group identity and an
+identity-stable process handle before it adds the child. It pairs system-call
+entry and exit information before it returns a complete system-call event. A
+successful multithreaded exec requires the exact wait to report its requested
+retained leader and the kernel event message to name a former thread retained
+in that leader's group. It transfers the former state to the reported leader,
+preserves a pending syscall entry for the following exit stop, and removes
+superseded thread state. A terminal
+wait removes exactly one retained tracee. Every returned nonterminal event
+keeps its tracee stopped until the next request.
+
+An unknown stop, invalid event, missing child, failed wait, failed information
+read, or event timeout makes further collection ineligible and requires
+termination and drain. Termination addresses retained thread groups through
+pidfds. It does not send `SIGKILL` through a stored numeric process identifier.
+The active trace continues exact waits after termination and follows any
+process-creation or exec event already pending until its private set is empty.
+Dropping an active trace sends termination through every retained pidfd.
+
+The diagnostic host must provide `PTRACE_GET_SYSCALL_INFO`, procfs `Tgid`
+identity, `pidfd_open`, and `pidfd_send_signal`. Missing support fails before
+release for the root handle or during observation for a child handle. This
+source contract does not prove kernel event completeness, correct procfs or
+pidfd behavior, successful termination, or tree-drain truth. The adapter must
+still couple these events to the pure protocol before it can acknowledge a
+drained tree.
 
 ## 4. Observer contract
 
@@ -281,6 +326,18 @@ Passing evidence establishes only the behavior of the registered bounded
 fixtures on the identified implementations and platforms. It does not prove
 complete observation, equivalent behavior without ptrace, correctness of the
 Linux kernel, absence of unobserved effects, or safety of a completed plan.
+
+`PBR-OBSERVER-023` checks only the active-trace source structure and closed
+value tests. `PBR-DIAGNOSTIC-TRACE-AX-016` retains the Linux ptrace, exact-wait,
+procfs thread-group, pidfd, signal, and terminal-reporting premises. Native
+adversarial evidence on both architectures is required before Runtime claims
+that the effectful observer retains or drains a complete process tree.
+
+`PBR-OBSERVER-024` checks the source-level coupling between complete live trace
+events, the bounded pure protocol, overflow identity retention, the drain-only
+typestate, and the ordering of an effectful empty-tree report before a pure
+tree-empty acknowledgement. It does not strengthen the Linux premise or make
+the diagnostic executable a released artifact.
 
 RT-8 closes only after one maintained dynamic workload displays all available
 provenance classes, requires human completion, passes the independent

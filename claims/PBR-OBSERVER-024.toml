@@ -1,0 +1,74 @@
+schema = "proofbound-claim/1"
+id = "PBR-OBSERVER-024"
+title = "Diagnostic adapter couples live events and exact drain to the pure protocol"
+statement = "For the separate Linux diagnostic observer-adapter source API, the validated lifetime process bound becomes the effectful trace limit before the pure and effectful release transition; each consuming active step obtains one complete event from its privately owned trace and records the corresponding process, exec, terminal, unexpected-stop, and event-count transition in its privately owned pure protocol; a trace failure, unexpected stop, or attempted bound overflow moves the same owned pair into a drain-only typestate; the effectful drain reports pending process creation, exec identity replacement, and terminal observations for pure reconciliation; process identities that exceed the bounded pure ledger remain in a private overflow set; any process-creation message, identity, capacity, thread-group, or handle failure permanently prevents a successful empty-tree report; and the adapter can acknowledge an empty tree and select complete or incomplete publication only after the effectful exact trace is empty, every reported transition is reconciled, and the overflow set is empty."
+public_language = "The separate Linux diagnostic adapter has a source-level live-event coupling contract. It passes the validated process bound into the trace before release, consumes each trace event through one non-copy state, records the matching pure-protocol transition, and moves failures or bound exhaustion into a drain-only state. Drain reports are reconciled before the pure protocol can accept a tree-empty acknowledgement or select publication. Overflow process identities stay private and block publication until terminally drained. A child-registration or identity failure permanently blocks a successful empty-tree report and all publication. Registered Rust tests and independent source checkers with exact-body mutation witnesses cover this structure. They do not prove Linux kernel event completeness, syscall meaning, tracee-memory correctness, cleanup on every kernel, or a released diagnostic executable."
+subject = "rust:proofbound_runtime_diagnose_linux::adapter::ActiveObserver"
+profile = "ledger"
+tier = 1
+evidence = [
+  "example-test:diagnostic-observer-protocol",
+  "example-test:diagnostic-trace-startup",
+  "independent-check:diagnostic-observer-adapter-contract",
+  "independent-check:diagnostic-trace-events-contract",
+]
+assumptions = [
+  "PBR-DIAGNOSTIC-CONTRACT-AX-015",
+  "PBR-DIAGNOSTIC-TRACE-AX-016",
+  "PBR-LINUX-AX-001",
+  "PBR-TOOLCHAIN-AX-003",
+]
+open_obligations = [
+  "Run the complete source, compilation, unit, and independent-check evidence in hosted exact-head verification before merge.",
+  "Implement and falsify architecture-qualified syscall decoding and bounded tracee-memory reads before retaining capability observations.",
+  "Run clone, fork, vfork, multithreaded exec, simultaneous overflow, signal, timeout, PID reuse pressure, and exact-drain cases on both supported native architectures.",
+  "Connect the completed observer to bounded diagnostic receipt construction without making any production receipt reusable.",
+  "Bind exact released diagnostic executable and observer mechanism identities before describing this path as released.",
+]
+out_of_scope = [
+  "Correctness or completeness of Linux ptrace, waitpid, procfs, pidfd, signal, seccomp, cgroup, scheduler, or terminal reporting.",
+  "Architecture-specific syscall decoding, tracee-memory access, filesystem or network object resolution, and capability inference.",
+  "Truth of the effectful tree-empty observation until native adversarial evidence exists for an exact released artifact and host.",
+  "Production execution, production receipt construction, production receipt acceptance, or automatic authority generation.",
+]
+source_roots = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "assumptions/PBR-DIAGNOSTIC-CONTRACT-AX-015.toml",
+  "assumptions/PBR-DIAGNOSTIC-TRACE-AX-016.toml",
+  "assumptions/PBR-LINUX-AX-001.toml",
+  "assumptions/PBR-TOOLCHAIN-AX-003.toml",
+  "claims/PBR-OBSERVER-020.toml",
+  "claims/PBR-OBSERVER-021.toml",
+  "claims/PBR-OBSERVER-022.toml",
+  "claims/PBR-OBSERVER-023.toml",
+  "claims/PBR-OBSERVER-024.toml",
+  "crates/proofbound-runtime-cli/Cargo.toml",
+  "crates/proofbound-runtime-diagnose/Cargo.toml",
+  "crates/proofbound-runtime-diagnose/src/artifact.rs",
+  "crates/proofbound-runtime-diagnose/src/lib.rs",
+  "crates/proofbound-runtime-diagnose/src/observer.rs",
+  "crates/proofbound-runtime-diagnose-linux/Cargo.toml",
+  "crates/proofbound-runtime-diagnose-linux/src/adapter.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/Cargo.toml",
+  "crates/proofbound-runtime-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+  "docs/adr/0008-separate-ptrace-diagnostic-observer.md",
+  "docs/assurance-plan.md",
+  "docs/product-development-checklist.md",
+  "docs/product-roadmap-2.md",
+  "docs/roadmap-2/rt-08-capability-informed-drafting.md",
+  "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",
+  "proofbound/evidence/diagnostic-observer-adapter-contract.toml",
+  "proofbound/evidence/diagnostic-observer-protocol.toml",
+  "proofbound/evidence/diagnostic-trace-events-contract.toml",
+  "proofbound/evidence/diagnostic-trace-startup.toml",
+  "tools/ci/check_diagnostic_observer_adapter.py",
+  "tools/ci/check_diagnostic_trace_events.py",
+  "tools/ci/ci.sh",
+  "tools/ci/pre-commit.sh",
+  "tools/ci/test_diagnostic_observer_adapter.py",
+  "tools/ci/test_diagnostic_trace_events.py",
+]

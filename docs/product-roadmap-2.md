@@ -6,9 +6,10 @@
   trace-startup prerequisites are merged; all complete Roadmap 2 epic exits
   remain open
 - **Date:** 2026-09-13
-- **Runtime baseline:** trace-startup merge `9395050` on `main`; its exact-main
-  Verify run `34962882198` is in progress. Identity-bound exec-release
-  exact-main run `34956564102` passed.
+- **Runtime baseline:** coupled observer adapter merge `d34eab1` on `main`; its
+  exact-main Verify run `34969409215` is in progress. Trace-startup exact-main run
+  `34962882198` and identity-bound exec-release exact-main run `34956564102`
+  passed.
 - **Proofbound baseline consumed by Runtime evidence:** public immutable bundle
   for source `9512469`; protected-path cutover merged as Runtime `4a0cfdb` and
   passed exact-main Verify run `34918706960`
@@ -33,7 +34,7 @@ threat-model, ADR, claim, and evidence changes before production code.
 
 ### Execution checkpoint
 
-As of 2026-09-15, Runtime main commit `9395050` contains the version 2 memory
+As of 2026-09-15, Runtime main commit `d34eab1` contains the version 2 memory
 and deterministic CBOR wave, receipt composition and acceptance, a bounded
 static plan scaffold,
 typed prelaunch diagnostics, reproducible Rust, Python, and TypeScript SDK
@@ -75,14 +76,22 @@ Verify run `34946613122`. The identity-bound exec-release prerequisite passed
 exact-head hosted verification, merged unsigned as `3557cc9`, and passed
 exact-main run `34956564102`. The trace-startup prerequisite passed independent
 exact-head review and complete hosted verification, merged unsigned as
-`9395050`, and is in exact-main run `34962882198`. Its coupled adapter passed
-independent source review; hosted verification rejected only two
-edition-2021-formatted import orders before compilation. The edition-2024-only
-correction and current-state ledger correction passed exact re-review at
-`176b10a`, followed by approval-only commit `e305fb0`; current-main integration
-passed independent exact-head replay at `6579dac`, and a new hosted run remains.
-The live event loop, command integration, native attack corpus, and release
-binding remain open.
+`9395050`, and exact-main run `34962882198` passed. Its coupled adapter passed
+independent review and complete hosted run `34964466007`, then merged unsigned
+as `d34eab1`; exact-main run `34969409215` is in progress. The following active-trace
+source adds exact-set waits, paired syscall stops, process-tree identity
+handling, and validated pidfd-directed termination. It remains byte-identical
+to independently approved source `c20f6e3`; its admitted-main replay at
+`1db68a6` was also independently approved, and approval-only head `c4b88c1` is
+in hosted verification. Event-and-drain restack `45b1c91` passed independent
+review. Hosted run `34972072843` then rejected two warnings-as-errors in the
+shared trace source and was cancelled. The lint-only correction and refreshed
+exact-body checker are pending narrow exact re-review. The wave passes the
+validated process bound into the trace, consumes each complete event into the
+same pure protocol, permanently rejects an unreconciled process tree, and
+orders a successful effectful drain before the pure tree-empty acknowledgement.
+Hosted admission remains open. Syscall decoding, command integration, the
+native attack corpus, and release binding remain open.
 RT-9 is blocked until RT-5 implements the accepted single-service network
 decision in production.
 

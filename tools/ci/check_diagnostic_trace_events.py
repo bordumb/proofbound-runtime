@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Replay the independent RT-8 observer-adapter contract."""
+"""Replay the independent RT-8 active-trace source contract."""
 
 from __future__ import annotations
 
@@ -11,14 +11,12 @@ import sys
 
 
 INVENTORY = [
-    "diagnostic-observer-adapter-bound-inputs",
-    "diagnostic-observer-adapter-drain-coupling",
-    "diagnostic-observer-adapter-event-coupling",
-    "diagnostic-observer-adapter-mutation-witnesses",
-    "diagnostic-observer-adapter-process-capacity",
-    "diagnostic-observer-adapter-production-separation",
-    "diagnostic-observer-adapter-state-continuity",
-    "diagnostic-observer-adapter-transition-order",
+    "diagnostic-trace-events-exact-waits",
+    "diagnostic-trace-events-identity-stable-termination",
+    "diagnostic-trace-events-mutation-witnesses",
+    "diagnostic-trace-events-nonleader-exec",
+    "diagnostic-trace-events-process-tree",
+    "diagnostic-trace-events-syscall-pairing",
 ]
 
 
@@ -31,7 +29,7 @@ def main() -> int:
             sys.executable,
             "-m",
             "unittest",
-            "tools.ci.test_diagnostic_observer_adapter",
+            "tools.ci.test_diagnostic_trace_events",
         ],
         cwd=root,
         env=environment,

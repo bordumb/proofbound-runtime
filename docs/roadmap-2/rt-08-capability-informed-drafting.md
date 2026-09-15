@@ -5,13 +5,24 @@ closed schemas, source-level production non-reuse, the pure diagnostic artifact
 producer, and the pure observer protocol are merged through Runtime `b04382d`.
 Exact-main Verify run `34946613122` passed. The identity-bound launcher
 exec-release prerequisite for race-free trace setup merged as `3557cc9` after
-exact-head hosted verification; exact-main run `34956564102` is in progress.
-A separate feature-gated Linux crate and non-copy trace-startup typestates are
-replayed on that dependency. It retains the earlier correction that binds its
-identified launcher, channel, identity-bound request, acknowledgement, and
-release into one private session. The adapter is replayed on that trace stack
-and privately couples the effectful and pure setup states. The live event loop,
-command integration, native attack corpus, and release binding remain open.
+exact-head hosted verification; exact-main run `34956564102` passed.
+The separate feature-gated Linux trace-startup source merged as `9395050` and
+exact-main run `34962882198` passed. The adapter that privately couples the
+effectful and pure setup states passed hosted run `34964466007`, merged as
+`d34eab1`, and has exact-main run `34969409215` in progress. The active-trace
+admitted-main replay at `1db68a6` passed independent review; approval-only head
+`c4b88c1` is in hosted verification. Event-and-drain source `af9f77d` and
+restacked head `45b1c91` passed independent review. Hosted run `34972072843`
+rejected two warnings-as-errors in the shared trace source and was cancelled.
+The lint-only correction and refreshed exact-body checker require narrow exact
+re-review; hosted admission and merge remain open. The wave passes the
+validated process bound into the effectful trace, consumes complete events into
+the matching pure protocol, permanently rejects an unreconciled process tree,
+and makes successful effectful drain reconciliation precede pure tree-empty
+acknowledgement. Its first exact review requested five corrections; the combined
+correction closed them and received an explicit `APPROVE`.
+Decoding, command integration, the native attack corpus, and release binding
+remain open.
 
 **Primary owner:** Proofbound Runtime
 
@@ -93,6 +104,21 @@ values without making a draft an authority object.
   flow from the successful Linux installation through the closed pure validator
   before option readiness advances; pure authorization precedes target release.
   Public owner fields, raw trace states, and mutable protocol access are absent.
+- The active trace polls only its private known tracee set. It registers a
+  ptrace-created child and identity-stable thread-group handle before its
+  stopped parent resumes, pairs syscall entry and exit information across exec
+  events, reconciles leader and non-leader exec identity replacement, and holds
+  each returned nonterminal event stopped until the next request. Observation
+  failure requires drain. Termination uses retained pidfds and cannot target a
+  reused numeric PID.
+- The same consuming adapter state maps each live event into its matching pure
+  transition. It passes the validated lifetime process bound to the effectful
+  trace before release, retains overflow identities outside the bounded pure
+  ledger, and exposes only a drain state after any failure or bound directive.
+  A successful effectful empty-tree report and an empty overflow set must both
+  precede pure tree-drain acknowledgement and publication selection.
+  Process-creation message, identity, capacity, thread-group, or handle failures
+  permanently prevent a successful effectful empty-tree report.
 - Automatic candidates require an explicit normalized project or runtime
   scope. System, home, and configured temporary roots remain open review
   items.

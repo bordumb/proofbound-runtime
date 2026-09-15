@@ -1,0 +1,17 @@
+schema = "proofbound-assumption/1"
+id = "PBR-DIAGNOSTIC-TRACE-AX-016"
+statement = "On an identified supported Linux host, ptrace process-tree events and stops, syscall information, exact wait results, procfs thread-group identity, pidfds, and pidfd-directed SIGKILL have the documented kernel meaning used by the diagnostic active-trace and adapter source contracts, including that a stopped tracee cannot create another child before the tracer resumes it."
+category = "runtime-environment"
+owner = "Proofbound Runtime platform maintainer"
+rationale = "The source contracts can retain closed state, use a two-times drain capacity based on one pending child per stopped creator, and keep identity-stable handles, but this repository does not prove that the identified Linux kernel reports every event, preserves ptrace stop ownership, implements procfs and pidfd identity correctly, or terminates and reports every tracee as documented."
+scope = "Only the native Linux interpretation of PBR-OBSERVER-023 and PBR-OBSERVER-024. It does not establish architecture-specific syscall meaning, tracee-memory correctness, process-tree completeness on an untested kernel, or a complete diagnostic execution."
+affected_claims = ["PBR-OBSERVER-023", "PBR-OBSERVER-024"]
+review_evidence = [
+  "docs/adr/0008-separate-ptrace-diagnostic-observer.md",
+  "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+]
+discharge_plan = "Retain the kernel premise. Narrow it with native adversarial process-tree tests on each supported architecture and exact released-kernel observations."
+source_citation = "docs/specs/0015_diagnostic_execution_and_plan_drafting.md#9-evidence-meaning"
+status = "active"

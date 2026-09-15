@@ -27,9 +27,11 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-DISTRIBUTION-018` | Tier 1 workflow and registry-observer contract | Publication is explicit, exact-source, protected, ordered, and credential-isolated. Anonymous exact-byte registry observations and external registry setup remain open. |
 | `PBR-DRAFT-017` | Tier 1 bounded contract and source-level non-reuse checks | Closed diagnostic vocabulary and schemas are registered, and verifier, composer, and acceptor paths reject diagnostic receipt reuse. The live observer remains open. |
 | `PBR-DRAFT-019` | Tier 1 bounded producer contract independently reviewed and admitted on exact Runtime main | The pure diagnostic artifact producer preserves non-reuse, provenance, explicit gaps, and mandatory human authority choices. It does not claim live observer coverage. |
-| `PBR-OBSERVER-020` | Tier 1 pure observer-protocol contract independently reviewed and admitted on exact Runtime main | The typed state machine orders diagnostic release, fixes exact process-tree trace options, bounds retained process and event state, and requires termination and explicit gaps after release failures. It does not claim that Linux observation is implemented. |
-| `PBR-OBSERVER-021` | Tier 1 trace-startup source contract; hosted admission pending | A separate feature-gated Linux API uses non-copy typestates to order initial trace ownership, launcher pause, exact boundary identity, exact options, release, and syscall-stop activation. Native ptrace behavior and complete observation remain open. |
-| `PBR-OBSERVER-022` | Tier 1 coupled observer-adapter source contract; exact review pending | The separate diagnostic adapter moves matching effectful trace and pure protocol states together without exposing either mutable owner. The live event loop and native effects remain open. |
+| `PBR-OBSERVER-020` | Tier 1 current exact source independently approved; hosted admission pending | Exact source `af9f77d` preserves the pure observer contract while coupling it to the live adapter. Prior admitted identities remain history; hosted evidence and merge do not yet transfer. |
+| `PBR-OBSERVER-021` | Tier 1 trace-startup baseline admitted; current lint-only trace source pending exact review | Hosted compilation rejected two warnings-as-errors in the shared trace source. The correction preserves behavior but changes the exact source identity. Native ptrace behavior and complete observation remain open. |
+| `PBR-OBSERVER-022` | Tier 1 coupled-adapter baseline admitted; current lint-only trace source pending exact review | The adapter behavior is unchanged. Its claim closure includes the corrected shared trace source, so the current exact subject requires replay review. |
+| `PBR-OBSERVER-023` | Tier 1 active-trace source correction pending exact review | The correction collapses one resume check and uses the vacant-entry API for one process handle without changing the fail-closed decisions. Kernel effects and decoding remain open. |
+| `PBR-OBSERVER-024` | Tier 1 live event-and-drain correction pending exact review | The approved coupling behavior is unchanged, but its claim closure includes the corrected trace source and refreshed exact-body checker. Hosted admission remains open. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -523,6 +525,93 @@ does not establish Linux effect correctness. This claim does not implement or
 prove process-tree waits, child discovery, syscall entry and exit pairing,
 architecture decoding, tracee-memory reads, termination, tree-drain truth, or a
 complete diagnostic execution.
+
+## PBR-OBSERVER-023
+
+The current subject is the feature-gated Linux `ActiveTrace` source API and
+its raw-call wrappers. One private map starts with the exact released root.
+Every wait names an identifier in that map. The implementation never asks the
+kernel for an arbitrary child from the tracer process. Process-creation events
+yield a child identity. Before the parent can resume, the trace records the
+child's procfs thread-group identity, obtains one pidfd for that group, and
+adds the child to the exact wait set.
+
+System-call entry information is retained privately and paired with its exit
+information before the API returns one complete event. The stopped tracee is
+held until the caller asks for another event. An exec event requires the exact
+wait result to name the requested retained thread-group leader. The kernel
+event message can name the former non-leader thread. Both identities must
+belong to the retained surviving thread group. The trace transfers the former
+thread state to the surviving leader, preserves its pending syscall entry for
+the following exit stop, and removes superseded thread state in that group.
+Exact terminal wait results remove tracees and unused process handles.
+
+The bounded evidence path checks that:
+
+1. active waits are selected only from the private tracee map and never use a
+   global `waitpid` target;
+2. child identity and its thread-group pidfd are retained before the parent
+   resumes;
+3. system-call entry and exit information is paired, with missing or duplicate
+   phases rejected;
+4. leader and non-leader exec identity replacement updates the retained set,
+   preserves syscall pairing across the exec event, rejects foreign identities,
+   and removes superseded thread state;
+5. unexpected stops, event errors, and timeouts make further collection require
+   drain; and
+6. active-trace drop and explicit drain address thread groups only through
+   retained pidfds, so PID reuse cannot redirect a termination signal.
+
+The Rust tests check the closed error vocabulary and strict bounded procfs
+`Tgid` parser. The independent checker inspects the registered source
+structure. Hosted compilation can reject type and lint defects. None of these
+establishes the Linux effects. `PBR-DIAGNOSTIC-TRACE-AX-016` retains ptrace,
+wait, procfs, pidfd, signal, scheduler, and terminal-reporting premises. Native
+attack evidence, architecture-specific syscall decoding, and bounded
+tracee-memory reads remain open. PBR-OBSERVER-024 separately registers the
+effectful process-map bound, adapter coupling, and source-level tree-drain
+acknowledgement order.
+
+## PBR-OBSERVER-024
+
+The current subject is the separate Linux adapter's consuming active-observer
+API. Before release, the adapter converts the already validated lifetime
+process bound into the effectful trace's closed process-limit type. Each active
+step then consumes one complete event while the same non-copy state privately
+owns the trace and pure protocol. Process creation, exec identity replacement,
+terminal status, unexpected stops, and reserved event counts advance the pure
+protocol before the adapter returns the next state.
+
+A trace failure or pure termination directive returns only a drain typestate.
+The trace retains at most the declared process capacity plus one stopped child
+per retained creator, which bounds its closed drain capacity at twice the
+declared value. The pure protocol never admits an attempted lifetime overflow.
+The adapter privately retains those overflow identities so they cannot be
+mistaken for entries in the bounded ledger.
+
+A process-creation message, identity, capacity, thread-group, or handle failure
+sets a permanent unreconciled-tree condition before the risky registration
+step. Even if every already registered process later reaches a terminal wait,
+that condition prevents the trace from returning a successful drain report and
+therefore prevents either complete or incomplete publication.
+
+The effectful drain continues exact waits and reports pending child creation,
+exec replacement, and terminal observations. The adapter reconciles those
+reports with the pure protocol and its private overflow set. It can record the
+pure tree-empty acknowledgement and select incomplete publication only after
+the trace returned a successful empty-tree report and no overflow identity
+remains. Natural completion similarly requires the effectful trace and pure
+process map to be empty before complete publication.
+
+The registered Rust tests cover atomic pure exec reconciliation and the closed
+process-limit values. The independent checker byte-pins the load-bearing event
+and drain bodies and executes mutation witnesses for omitted registration,
+false empty reporting, premature overflow clearing, omitted drain reporting,
+and replay bypass. It also fixes the public typestates, dependency separation,
+and source selection. This is a source contract. It does not establish Linux event
+completeness, correct syscall meaning, tracee-memory reads, exact native cleanup,
+or a released diagnostic executable. Those obligations remain explicit under
+PBR-DIAGNOSTIC-TRACE-AX-016 and the RT-8 native evidence wave.
 
 ## Bounded-domain declaration guard
 

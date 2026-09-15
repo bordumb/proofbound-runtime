@@ -2,7 +2,7 @@ schema = "proofbound-claim/1"
 id = "PBR-OBSERVER-022"
 title = "Diagnostic setup keeps effectful trace and pure protocol coupled"
 statement = "For the separate Linux diagnostic observer-adapter source API, validated observation bounds and one exact prepared trace are bound before spawn; the exact spawned process identity seeds the pure protocol only after that process reaches its initial trace stop; after that stop, each non-copy state privately owns one matching effectful trace typestate and one pure observer protocol; boundary readiness is recorded only after acknowledgement; the exact kernel-installed trace-option bits flow back through a closed pure validator before option readiness is recorded; pure release authorization occurs before the same session releases target code; and the public adapter exposes neither its raw trace typestates nor mutable protocol access."
-public_language = "The separate Linux diagnostic adapter has a bounded source-level setup contract. It validates observation bounds before child creation and uses the exact stopped child identity to seed the pure protocol. Each later state couples one private effectful trace-startup state to one private pure observer protocol. Boundary acknowledgement advances the pure state only after the matching effect succeeds. The exact option bits returned after kernel installation must pass the closed pure validator before option readiness advances. Pure release authorization precedes target release in the same consuming transition. The public adapter exposes process identity and read-only protocol status, not raw trace states or mutable protocol access. Registered independent checks cover this source structure and production dependency separation. They do not prove Linux effects, process-tree observation, syscall decoding, tree drain, cleanup, or a complete diagnostic execution."
+public_language = "The separate Linux diagnostic adapter has a bounded source-level setup contract. It validates observation bounds before child creation and uses the exact stopped child identity to seed the pure protocol. Each later state couples one private effectful trace-startup state to one private pure observer protocol. Boundary acknowledgement advances the pure state only after the matching effect succeeds. The exact option bits returned after kernel installation must pass the closed pure validator before option readiness advances. Pure release authorization precedes target release in the same consuming transition. The public adapter exposes process identity and read-only protocol status, not raw trace states or mutable protocol access. Registered independent checks cover this source structure and production dependency separation. This setup claim does not prove Linux effects, process-tree observation, syscall decoding, tree drain, cleanup, or a complete diagnostic execution; PBR-OBSERVER-024 separately describes the live-event source coupling."
 subject = "rust:proofbound_runtime_diagnose_linux::adapter"
 profile = "ledger"
 tier = 1
@@ -13,7 +13,7 @@ assumptions = [
 ]
 open_obligations = [
   "Run the complete adapter source and compile gates in hosted exact-head verification before merge.",
-  "Implement and connect the bounded process-tree wait loop without exposing raw trace states.",
+  "Preserve the setup ownership and ordering while PBR-OBSERVER-024 connects live events and exact drain.",
   "Implement architecture-qualified syscall decoding, bounded tracee-memory reads, and exact operand capture.",
   "Derive and falsify exact tree-drain confirmation from terminal waits and the retained cgroup.",
   "Run the native observer attack corpus on both supported architectures.",
@@ -33,6 +33,7 @@ source_roots = [
   "claims/PBR-OBSERVER-020.toml",
   "claims/PBR-OBSERVER-021.toml",
   "claims/PBR-OBSERVER-022.toml",
+  "claims/PBR-OBSERVER-024.toml",
   "crates/proofbound-runtime-cli/Cargo.toml",
   "crates/proofbound-runtime-diagnose/Cargo.toml",
   "crates/proofbound-runtime-diagnose/src/artifact.rs",
