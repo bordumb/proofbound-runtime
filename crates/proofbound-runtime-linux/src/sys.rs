@@ -2,7 +2,7 @@
 
 use std::ffi::CString;
 use std::io;
-use std::os::fd::{FromRawFd as _, OwnedFd, RawFd};
+use std::os::fd::{AsRawFd as _, FromRawFd as _, OwnedFd, RawFd};
 use std::os::unix::ffi::OsStrExt as _;
 use std::path::Path;
 use std::process::Command;
@@ -25,6 +25,18 @@ const PTRACE_O_TRACECLONE: u32 = 0x0000_0008;
 const PTRACE_O_TRACEEXEC: u32 = 0x0000_0010;
 #[cfg(feature = "diagnostic-observer")]
 const PTRACE_O_EXITKILL: u32 = 0x0010_0000;
+#[cfg(feature = "diagnostic-observer")]
+const PTRACE_EVENT_FORK: u32 = 1;
+#[cfg(feature = "diagnostic-observer")]
+const PTRACE_EVENT_VFORK: u32 = 2;
+#[cfg(feature = "diagnostic-observer")]
+const PTRACE_EVENT_CLONE: u32 = 3;
+#[cfg(feature = "diagnostic-observer")]
+const PTRACE_EVENT_EXEC: u32 = 4;
+#[cfg(feature = "diagnostic-observer")]
+const PTRACE_GETEVENTMSG: libc::c_uint = 0x4201;
+#[cfg(feature = "diagnostic-observer")]
+const PTRACE_GET_SYSCALL_INFO: libc::c_uint = 0x420e;
 #[cfg(feature = "diagnostic-observer")]
 const REQUIRED_DIAGNOSTIC_TRACE_OPTIONS: u32 = PTRACE_O_TRACESYSGOOD
     | PTRACE_O_TRACEFORK
@@ -72,6 +84,17 @@ struct LandlockPathBeneathAttr {
 struct BpfProgram {
     length: u16,
     instructions: *const crate::seccomp::BpfInstruction,
+}
+
+#[cfg(feature = "diagnostic-observer")]
+#[repr(C)]
+struct RawSyscallInfo {
+    operation: u8,
+    _padding: [u8; 3],
+    architecture: u32,
+    instruction_pointer: u64,
+    stack_pointer: u64,
+    data: [u8; 64],
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -451,6 +474,39 @@ pub(crate) enum TraceWaitStatus {
 }
 
 #[cfg(feature = "diagnostic-observer")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct TraceWaitObservation {
+    pub(crate) process_id: u32,
+    pub(crate) status: TraceWaitStatus,
+}
+
+#[cfg(feature = "diagnostic-observer")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum TraceSyscallStop {
+    Entry {
+        architecture: u32,
+        instruction_pointer: u64,
+        stack_pointer: u64,
+        number: u64,
+        arguments: [u64; 6],
+    },
+    Exit {
+        result: i64,
+        is_error: bool,
+    },
+    Seccomp,
+    None,
+}
+
+#[cfg(feature = "diagnostic-observer")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum TraceProcessCreationEvent {
+    Fork,
+    Vfork,
+    Clone,
+}
+
+#[cfg(feature = "diagnostic-observer")]
 pub(crate) fn trace_wait_nonblocking(process_id: u32) -> io::Result<Option<TraceWaitStatus>> {
     const WAIT_ALL_TRACED: libc::c_int = 0x4000_0000;
 
@@ -494,6 +550,250 @@ pub(crate) fn trace_wait_nonblocking(process_id: u32) -> io::Result<Option<Trace
         }));
     }
     Err(io::Error::other("unexpected traced wait status"))
+}
+
+#[cfg(feature = "diagnostic-observer")]
+pub(crate) fn trace_wait_event_nonblocking(
+    process_id: u32,
+) -> io::Result<Option<TraceWaitObservation>> {
+    const WAIT_ALL_TRACED: libc::c_int = 0x4000_0000;
+
+    let process_id =
+        i32::try_from(process_id).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    let mut status = 0;
+    // SAFETY: `status` is valid writable storage. `waitpid` is scoped to one
+    // known tracee. Linux can report a different positive identifier only
+    // when a non-leader thread changes identity during `exec`; the safe trace
+    // state validates that transition before it accepts the observation.
+    let result = unsafe {
+        libc::waitpid(
+            process_id,
+            &raw mut status,
+            libc::WUNTRACED | libc::WNOHANG | WAIT_ALL_TRACED,
+        )
+    };
+    if result < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    if result == 0 {
+        return Ok(None);
+    }
+    let reported_process =
+        u32::try_from(result).map_err(|_| io::Error::from(io::ErrorKind::InvalidData))?;
+    let status = if libc::WIFSTOPPED(status) {
+        let status_bits =
+            u32::try_from(status).map_err(|_| io::Error::from(io::ErrorKind::InvalidData))?;
+        TraceWaitStatus::Stopped {
+            signal: libc::WSTOPSIG(status),
+            event: (status_bits >> 16) & 0xffff,
+        }
+    } else if libc::WIFEXITED(status) {
+        TraceWaitStatus::Exited {
+            code: libc::WEXITSTATUS(status),
+        }
+    } else if libc::WIFSIGNALED(status) {
+        TraceWaitStatus::Signaled {
+            signal: libc::WTERMSIG(status),
+        }
+    } else {
+        return Err(io::Error::other("unexpected traced wait status"));
+    };
+    Ok(Some(TraceWaitObservation {
+        process_id: reported_process,
+        status,
+    }))
+}
+
+#[cfg(feature = "diagnostic-observer")]
+pub(crate) fn trace_event_process(process_id: u32) -> io::Result<u32> {
+    let process_id =
+        i32::try_from(process_id).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    let mut message: libc::c_ulong = 0;
+    // SAFETY: ptrace receives one stopped tracee and writable storage for the
+    // event message selected by the kernel for that exact stop.
+    let result = unsafe {
+        libc::ptrace(
+            PTRACE_GETEVENTMSG,
+            process_id,
+            core::ptr::null_mut::<libc::c_void>(),
+            &raw mut message,
+        )
+    };
+    if result != 0 {
+        return Err(io::Error::last_os_error());
+    }
+    u32::try_from(message).map_err(|_| io::Error::from(io::ErrorKind::InvalidData))
+}
+
+#[cfg(feature = "diagnostic-observer")]
+pub(crate) fn trace_syscall_stop(process_id: u32) -> io::Result<TraceSyscallStop> {
+    const SYSCALL_INFO_NONE: u8 = 0;
+    const SYSCALL_INFO_ENTRY: u8 = 1;
+    const SYSCALL_INFO_EXIT: u8 = 2;
+    const SYSCALL_INFO_SECCOMP: u8 = 3;
+
+    let process_id =
+        i32::try_from(process_id).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    let mut information = RawSyscallInfo {
+        operation: 0,
+        _padding: [0; 3],
+        architecture: 0,
+        instruction_pointer: 0,
+        stack_pointer: 0,
+        data: [0; 64],
+    };
+    // SAFETY: ptrace receives one stopped tracee and a pointer to the complete
+    // Linux `ptrace_syscall_info` storage. The supplied size is the exact
+    // storage size, and the kernel returns the number of available bytes.
+    let result = unsafe {
+        libc::ptrace(
+            PTRACE_GET_SYSCALL_INFO,
+            process_id,
+            core::mem::size_of::<RawSyscallInfo>(),
+            &raw mut information,
+        )
+    };
+    if result < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let available =
+        usize::try_from(result).map_err(|_| io::Error::from(io::ErrorKind::InvalidData))?;
+    if available < 24 {
+        return Err(io::Error::from(io::ErrorKind::InvalidData));
+    }
+    match information.operation {
+        SYSCALL_INFO_NONE => Ok(TraceSyscallStop::None),
+        SYSCALL_INFO_ENTRY => {
+            if available < 80 {
+                return Err(io::Error::from(io::ErrorKind::InvalidData));
+            }
+            let number = trace_read_u64(&information.data, 0)?;
+            let mut arguments = [0_u64; 6];
+            for (index, argument) in arguments.iter_mut().enumerate() {
+                let start = 8 + index * 8;
+                *argument = trace_read_u64(&information.data, start)?;
+            }
+            Ok(TraceSyscallStop::Entry {
+                architecture: information.architecture,
+                instruction_pointer: information.instruction_pointer,
+                stack_pointer: information.stack_pointer,
+                number,
+                arguments,
+            })
+        }
+        SYSCALL_INFO_EXIT => {
+            if available < 33 {
+                return Err(io::Error::from(io::ErrorKind::InvalidData));
+            }
+            let result = trace_read_i64(&information.data, 0)?;
+            match information.data[8] {
+                0 => Ok(TraceSyscallStop::Exit {
+                    result,
+                    is_error: false,
+                }),
+                1 => Ok(TraceSyscallStop::Exit {
+                    result,
+                    is_error: true,
+                }),
+                _ => Err(io::Error::from(io::ErrorKind::InvalidData)),
+            }
+        }
+        SYSCALL_INFO_SECCOMP => Ok(TraceSyscallStop::Seccomp),
+        _ => Err(io::Error::from(io::ErrorKind::InvalidData)),
+    }
+}
+
+#[cfg(feature = "diagnostic-observer")]
+fn trace_read_u64(bytes: &[u8], start: usize) -> io::Result<u64> {
+    let end = start
+        .checked_add(core::mem::size_of::<u64>())
+        .ok_or(io::Error::from(io::ErrorKind::InvalidData))?;
+    let field = bytes
+        .get(start..end)
+        .ok_or(io::Error::from(io::ErrorKind::InvalidData))?;
+    let field =
+        <[u8; 8]>::try_from(field).map_err(|_| io::Error::from(io::ErrorKind::InvalidData))?;
+    Ok(u64::from_ne_bytes(field))
+}
+
+#[cfg(feature = "diagnostic-observer")]
+fn trace_read_i64(bytes: &[u8], start: usize) -> io::Result<i64> {
+    let end = start
+        .checked_add(core::mem::size_of::<i64>())
+        .ok_or(io::Error::from(io::ErrorKind::InvalidData))?;
+    let field = bytes
+        .get(start..end)
+        .ok_or(io::Error::from(io::ErrorKind::InvalidData))?;
+    let field =
+        <[u8; 8]>::try_from(field).map_err(|_| io::Error::from(io::ErrorKind::InvalidData))?;
+    Ok(i64::from_ne_bytes(field))
+}
+
+#[cfg(feature = "diagnostic-observer")]
+pub(crate) const fn trace_event_is_exec(event: u32) -> bool {
+    event == PTRACE_EVENT_EXEC
+}
+
+#[cfg(feature = "diagnostic-observer")]
+pub(crate) const fn trace_process_creation_event(event: u32) -> Option<TraceProcessCreationEvent> {
+    match event {
+        PTRACE_EVENT_FORK => Some(TraceProcessCreationEvent::Fork),
+        PTRACE_EVENT_VFORK => Some(TraceProcessCreationEvent::Vfork),
+        PTRACE_EVENT_CLONE => Some(TraceProcessCreationEvent::Clone),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "diagnostic-observer")]
+pub(crate) fn trace_open_process_handle(process_id: u32) -> io::Result<OwnedFd> {
+    let process_id =
+        i32::try_from(process_id).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    // SAFETY: pidfd_open receives one positive thread-group leader identity
+    // and zero flags. A successful call returns one new close-on-exec file
+    // descriptor whose identity cannot change through PID reuse.
+    let descriptor = unsafe { libc::syscall(libc::SYS_pidfd_open, process_id, 0) };
+    if descriptor < 0 {
+        Err(io::Error::last_os_error())
+    } else {
+        let descriptor =
+            i32::try_from(descriptor).map_err(|_| io::Error::from(io::ErrorKind::InvalidData))?;
+        // SAFETY: pidfd_open returned one new descriptor and ownership
+        // transfers to this value exactly once.
+        let handle = unsafe { OwnedFd::from_raw_fd(descriptor) };
+        trace_signal_process_handle(handle.as_raw_fd(), 0)?;
+        Ok(handle)
+    }
+}
+
+#[cfg(feature = "diagnostic-observer")]
+pub(crate) fn trace_kill_process_handle(process_handle: RawFd) -> io::Result<()> {
+    match trace_signal_process_handle(process_handle, libc::SIGKILL) {
+        Ok(()) => Ok(()),
+        Err(error) if error.raw_os_error() == Some(libc::ESRCH) => Ok(()),
+        Err(error) => Err(error),
+    }
+}
+
+#[cfg(feature = "diagnostic-observer")]
+fn trace_signal_process_handle(process_handle: RawFd, signal: libc::c_int) -> io::Result<()> {
+    // SAFETY: pidfd_send_signal receives one owned process handle, SIGKILL,
+    // or the side-effect-free signal zero, no siginfo pointer, and zero flags.
+    // The handle prevents PID reuse from redirecting a nonzero signal to a
+    // different process.
+    let result = unsafe {
+        libc::syscall(
+            libc::SYS_pidfd_send_signal,
+            process_handle,
+            signal,
+            core::ptr::null::<libc::siginfo_t>(),
+            0,
+        )
+    };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
 }
 
 #[cfg(feature = "diagnostic-observer")]

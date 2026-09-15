@@ -30,6 +30,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-OBSERVER-020` | Tier 1 pure observer-protocol contract independently reviewed and admitted on exact Runtime main | The typed state machine orders diagnostic release, fixes exact process-tree trace options, bounds retained process and event state, and requires termination and explicit gaps after release failures. It does not claim that Linux observation is implemented. |
 | `PBR-OBSERVER-021` | Tier 1 trace-startup source contract; hosted admission pending | A separate feature-gated Linux API uses non-copy typestates to order initial trace ownership, launcher pause, exact boundary identity, exact options, release, and syscall-stop activation. Native ptrace behavior and complete observation remain open. |
 | `PBR-OBSERVER-022` | Tier 1 coupled observer-adapter source contract; exact review pending | The separate diagnostic adapter moves matching effectful trace and pure protocol states together without exposing either mutable owner. The live event loop and native effects remain open. |
+| `PBR-OBSERVER-023` | Tier 1 active-trace source contract; exact review pending | The feature-gated trace polls a private exact tracee set, pairs syscall stops, handles child and exec identity changes, and uses pidfds for termination. Kernel effects, decoding, and adapter drain acknowledgement remain open. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -523,6 +524,48 @@ does not establish Linux effect correctness. This claim does not implement or
 prove process-tree waits, child discovery, syscall entry and exit pairing,
 architecture decoding, tracee-memory reads, termination, tree-drain truth, or a
 complete diagnostic execution.
+
+## PBR-OBSERVER-023
+
+The current subject is the feature-gated Linux `ActiveTrace` source API and
+its raw-call wrappers. One private map starts with the exact released root.
+Every wait names an identifier in that map. The implementation never asks the
+kernel for an arbitrary child from the tracer process. Process-creation events
+yield a child identity. Before the parent can resume, the trace records the
+child's procfs thread-group identity, obtains one pidfd for that group, and
+adds the child to the exact wait set.
+
+System-call entry information is retained privately and paired with its exit
+information before the API returns one complete event. The stopped tracee is
+held until the caller asks for another event. An exec event requires the
+kernel-reported former thread to equal the requested tracee and its retained
+thread group to equal the reported survivor. It retains the surviving entry
+state and removes superseded threads in that group. Exact terminal
+wait results remove tracees and unused process handles.
+
+The bounded evidence path checks that:
+
+1. active waits are selected only from the private tracee map and never use a
+   global `waitpid` target;
+2. child identity and its thread-group pidfd are retained before the parent
+   resumes;
+3. system-call entry and exit information is paired, with missing or duplicate
+   phases rejected;
+4. exec identity replacement updates the retained set and removes superseded
+   thread state;
+5. unexpected stops, event errors, and timeouts make further collection require
+   drain; and
+6. active-trace drop and explicit drain address thread groups only through
+   retained pidfds, so PID reuse cannot redirect a termination signal.
+
+The Rust tests check the closed error vocabulary and strict bounded procfs
+`Tgid` parser. The independent checker inspects the registered source
+structure. Hosted compilation can reject type and lint defects. None of these
+establishes the Linux effects. `PBR-DIAGNOSTIC-TRACE-AX-016` retains ptrace,
+wait, procfs, pidfd, signal, scheduler, and terminal-reporting premises. Native
+attack evidence, architecture-specific syscall decoding, bounded tracee-memory
+reads, an effectful process-map bound, adapter coupling, and exact tree-drain
+acknowledgement remain open.
 
 ## Bounded-domain declaration guard
 

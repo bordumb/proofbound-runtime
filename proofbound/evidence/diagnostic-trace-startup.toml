@@ -2,10 +2,12 @@ schema = "proofbound-evidence-unit/1"
 id = "diagnostic-trace-startup"
 adapter = "rust-test"
 kind = "example-test"
-claims = ["PBR-OBSERVER-021"]
+claims = ["PBR-OBSERVER-021", "PBR-OBSERVER-023"]
 tier = 0
 expected_inventory = [
   "proofbound_runtime_linux::trace::tests::process_ids_deadlines_and_error_codes_are_closed",
+  "proofbound_runtime_linux::trace::tests::observation_errors_have_unique_stable_codes",
+  "proofbound_runtime_linux::trace::tests::thread_group_parser_requires_one_exact_positive_field",
 ]
 inputs = [
   "Cargo.lock",

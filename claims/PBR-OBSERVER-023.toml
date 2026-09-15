@@ -1,0 +1,59 @@
+schema = "proofbound-claim/1"
+id = "PBR-OBSERVER-023"
+title = "Active diagnostic trace retains exact process-tree event ownership"
+statement = "For the feature-gated Linux active-trace source API, one private map starts with the exact released root; event waits name only identifiers retained in that map and never use a global wait; a ptrace process-creation stop yields and registers the child and its thread group before the stopped parent can resume; syscall entry and exit information is paired before one complete event is returned; an exec event validates the former thread and surviving thread-group identities, reconciles Linux thread-identity replacement, and removes superseded thread state; terminal wait results remove exact tracees; every returned nonterminal event leaves its tracee stopped until the caller requests another event; every unexpected or failed observation makes further observation fail closed and require drain; and termination uses validated retained pidfds for exact thread groups so numeric PID reuse cannot redirect SIGKILL."
+public_language = "Runtime has a feature-gated active diagnostic-trace source contract. It polls only its private known tracee set, registers ptrace-created children before resuming the stopped parent, pairs syscall entry and exit information, reconciles exec thread-identity replacement, and removes tracees only after terminal wait results. A returned event leaves its tracee stopped until the next request. An unexpected stop or observation failure requires drain. Process termination uses validated retained pidfds instead of signaling stored numeric PIDs. Registered tests and an independent source checker cover this source structure. They do not prove Linux kernel behavior, bound the effectful tracee map, decode architecture-specific system calls, read tracee memory, or establish complete diagnostic execution."
+subject = "rust:proofbound_runtime_linux::trace::ActiveTrace"
+profile = "ledger"
+tier = 1
+evidence = [
+  "independent-check:diagnostic-trace-events-contract",
+  "example-test:diagnostic-trace-startup",
+]
+assumptions = [
+  "PBR-DIAGNOSTIC-CONTRACT-AX-015",
+  "PBR-DIAGNOSTIC-TRACE-AX-016",
+  "PBR-LINUX-AX-001",
+  "PBR-TOOLCHAIN-AX-003",
+]
+open_obligations = [
+  "Run the complete source, compile, and unit evidence in hosted exact-head verification before merge.",
+  "Connect complete trace events and drain acknowledgement to the pure observer protocol without exposing mutable trace ownership.",
+  "Bind the effectful tracee map to the validated observation and execution process bounds before live adapter or command release.",
+  "Implement and falsify architecture-qualified syscall decoding and bounded tracee-memory reads.",
+  "Exercise clone, fork, vfork, multithreaded exec, signal, timeout, PID reuse pressure, and exact drain on both supported native architectures.",
+  "Bind the released diagnostic executable and observer mechanism identities before describing the observer as released.",
+]
+out_of_scope = [
+  "Correctness or completeness of Linux ptrace, waitpid, procfs, pidfd, signal, seccomp, or scheduler behavior.",
+  "Architecture-specific syscall class decoding, operand meaning, tracee-memory safety, or object resolution.",
+  "Truth of a process-tree drain until native evidence and adapter acknowledgement exist.",
+  "Production execution, production receipts, or production acceptance.",
+]
+source_roots = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "assumptions/PBR-DIAGNOSTIC-CONTRACT-AX-015.toml",
+  "assumptions/PBR-DIAGNOSTIC-TRACE-AX-016.toml",
+  "assumptions/PBR-LINUX-AX-001.toml",
+  "assumptions/PBR-TOOLCHAIN-AX-003.toml",
+  "claims/PBR-OBSERVER-021.toml",
+  "claims/PBR-OBSERVER-022.toml",
+  "claims/PBR-OBSERVER-023.toml",
+  "crates/proofbound-runtime-linux/Cargo.toml",
+  "crates/proofbound-runtime-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+  "docs/adr/0008-separate-ptrace-diagnostic-observer.md",
+  "docs/assurance-plan.md",
+  "docs/product-development-checklist.md",
+  "docs/product-roadmap-2.md",
+  "docs/roadmap-2/rt-08-capability-informed-drafting.md",
+  "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",
+  "proofbound/evidence/diagnostic-trace-events-contract.toml",
+  "proofbound/evidence/diagnostic-trace-startup.toml",
+  "tools/ci/check_diagnostic_trace_events.py",
+  "tools/ci/ci.sh",
+  "tools/ci/pre-commit.sh",
+  "tools/ci/test_diagnostic_trace_events.py",
+]

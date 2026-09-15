@@ -6,12 +6,14 @@ producer, and the pure observer protocol are merged through Runtime `b04382d`.
 Exact-main Verify run `34946613122` passed. The identity-bound launcher
 exec-release prerequisite for race-free trace setup merged as `3557cc9` after
 exact-head hosted verification; exact-main run `34956564102` is in progress.
-A separate feature-gated Linux crate and non-copy trace-startup typestates are
-replayed on that dependency. It retains the earlier correction that binds its
-identified launcher, channel, identity-bound request, acknowledgement, and
-release into one private session. The adapter is replayed on that trace stack
-and privately couples the effectful and pure setup states. The live event loop,
-command integration, native attack corpus, and release binding remain open.
+The separate feature-gated Linux trace-startup source is independently approved
+and in hosted PR 14. The adapter that privately couples the effectful and pure
+setup states is independently approved at exact source head `d0c2520` and is in
+PR 15. The following active-trace source adds exact-set waits, process-creation
+and exec identity validation, paired syscall stops, and validated pidfd
+termination. Its effectful process-map bound, live adapter event coupling,
+decoding, command integration, native attack corpus, and release binding remain
+open.
 
 **Primary owner:** Proofbound Runtime
 
@@ -93,6 +95,12 @@ values without making a draft an authority object.
   flow from the successful Linux installation through the closed pure validator
   before option readiness advances; pure authorization precedes target release.
   Public owner fields, raw trace states, and mutable protocol access are absent.
+- The active trace polls only its private known tracee set. It registers a
+  ptrace-created child and identity-stable thread-group handle before its
+  stopped parent resumes, pairs syscall entry and exit information, reconciles
+  multithreaded exec identity replacement, and holds each returned nonterminal
+  event stopped until the next request. Observation failure requires drain.
+  Termination uses retained pidfds and cannot target a reused numeric PID.
 - Automatic candidates require an explicit normalized project or runtime
   scope. System, home, and configured temporary roots remain open review
   items.

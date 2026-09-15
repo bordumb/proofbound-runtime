@@ -71,9 +71,14 @@ witnesses. The corrected exact source passed independent review and complete
 hosted run `34942545372`, merged unsigned as `b04382d`, and passed exact-main
 Verify run `34946613122`. The identity-bound exec-release prerequisite passed
 exact-head hosted verification and merged unsigned as `3557cc9`; exact-main
-run `34956564102` is in progress. Trace startup is in refreshed review, and its
-coupled adapter is replayed on the following stack. The live event loop,
-command integration, native attack corpus, and release binding remain open.
+run `34956564102` is in progress. Trace startup is independently approved and
+in hosted PR 14. Its coupled adapter is independently approved at exact source
+head `d0c2520` and is in PR 15. The following active-trace source adds exact-set
+waits, paired syscall stops, process-tree identity handling, and validated
+pidfd-directed termination. Its effectful process-map bound, live adapter event
+coupling, syscall decoding, command integration, native attack corpus, and
+release binding remain open.
+
 RT-9 is blocked until RT-5 implements the accepted single-service network
 decision in production.
 

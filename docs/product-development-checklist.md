@@ -1,13 +1,14 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T11:34:00+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T11:39:09+01:00 (Europe/London, BST)
 - **Runtime baseline:** identity-bound exec-release merge `3557cc9`; exact-main
   Verify run `34956564102` is in progress
 - **Active implementation wave:** separate feature-gated Linux trace-startup
-  typestates are in hosted PR 14. The coupled adapter is independently approved
-  at exact source head `d0c2520`; its approval-only record and hosted admission
-  follow on the same exact stack.
+  typestates are in hosted PR 14; one bundle download received a transient HTTP
+  504 and needs a failed-job retry. The coupled adapter is independently
+  approved at exact source head `d0c2520` in PR 15. The active trace event
+  source is restacked on that exact head for review.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -183,6 +184,13 @@ manifest describes the supported tuple.
   correction byte-pins those roots and registers the Linux root. Independent
   re-review approved exact source head `d0c2520`; the approval-only record and
   hosted verification remain open.
+- [ ] Admit the active trace event source. The implementation polls only its
+  private exact tracee set, registers ptrace children before parent resume,
+  pairs syscall entry and exit information, reconciles multithreaded exec, and
+  uses validated pidfds for identity-stable termination. Its source claim
+  explicitly leaves the effectful process-map bound, Linux effects, adapter
+  event coupling, and native attack evidence open. Independent review and
+  hosted compilation remain open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.
