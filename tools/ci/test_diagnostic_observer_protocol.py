@@ -4,6 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 OBSERVER = ROOT / "crates/proofbound-runtime-diagnose/src/observer.rs"
+EVIDENCE = ROOT / "proofbound/evidence/diagnostic-observer-protocol.toml"
 PRODUCTION_MANIFESTS = [
     ROOT / "crates/proofbound-runtime-cli/Cargo.toml",
     ROOT / "crates/proofbound-runtime-linux/Cargo.toml",
@@ -76,6 +77,11 @@ class DiagnosticObserverProtocolContractTests(unittest.TestCase):
             self.assertNotIn(forbidden, self.source)
         for path in PRODUCTION_MANIFESTS:
             self.assertNotIn("proofbound-runtime-diagnose", path.read_text(), path)
+
+    def test_registered_rust_tests_use_inventory_not_named_cargo_targets(self):
+        operation = EVIDENCE.read_text().split("[operation]", 1)[1]
+        self.assertIn('targets = ["--lib"]', operation)
+        self.assertNotIn("observer::tests", operation)
 
 
 if __name__ == "__main__":

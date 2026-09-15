@@ -1,9 +1,9 @@
 schema = "proofbound-assumption/1"
 id = "PBR-DIAGNOSTIC-CONTRACT-AX-015"
-statement = "The identified Python interpreter, JSON implementation, standard library, and filesystem preserve the registered diagnostic schema and canonical-fixture checks."
+statement = "The identified Python interpreter, JSON implementation, regular-expression and string operations, standard library, and filesystem preserve the registered diagnostic schema, canonical-fixture, manifest, and Rust source-structure checks."
 category = "compiler-tcb"
 owner = "Proofbound Runtime release maintainer"
-rationale = "The independent contract checker parses schemas and fixtures and compares canonical JSON through Python behavior that this repository does not prove."
+rationale = "The independent contract checkers parse schemas and fixtures, compare canonical JSON, and inspect Rust, manifest, and assurance source with Python string and regular-expression operations. This repository does not prove that Python behavior."
 scope = "Only the source-level schema, fixture, production-separation, consumer-contract, producer-check, and observer-protocol-check interpretation of PBR-DRAFT-017, PBR-DRAFT-019, and PBR-OBSERVER-020. It does not cover a live observer or diagnostic execution."
 affected_claims = ["PBR-DRAFT-017", "PBR-DRAFT-019", "PBR-OBSERVER-020"]
 review_evidence = [

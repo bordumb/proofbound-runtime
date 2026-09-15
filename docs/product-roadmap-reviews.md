@@ -1675,3 +1675,25 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, test, or roadmap-status bytes. Any later subject change
 requires a new exact-head review.
+
+## RT-8 pure observer protocol hosted admission rejection
+
+- **Hosted run:** `34937458920`, attempt 2
+- **Exact head:** `cc837538f08856e701c9876fe41f00b04ed7f05f`
+- **Branch:** `codex/rt8-observer-protocol`
+- **Result:** **REJECTED**
+
+Every implementation lane passed at this exact head. The first ledger attempt
+failed while the workflow installed the exact public Proofbound bundle because
+GitHub returned an HTTP 403 API rate limit. A failed-lane retry installed and
+identified the bundle successfully, then Proofbound rejected evidence unit
+`diagnostic-observer-protocol` with `PB-TEST-1004`. Its Cargo operation supplied
+`observer::tests` as a named target even though the current strict adapter
+reserves named Cargo targets for mutation witnesses and uses
+`expected_inventory` for exact ordinary tests.
+
+The correction must retain `--lib` as the Cargo selector, remove the named test
+target, and add a source-level regression check for this manifest contract. It
+must also align the Python checker assumption with the manifest and Rust-source
+interpretation already in scope. This hosted rejection invalidates admission at
+the reviewed head and requires a new exact-head review after correction.

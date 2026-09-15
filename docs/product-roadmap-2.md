@@ -6,8 +6,7 @@
   complete Roadmap 2 epic exits remain open
 - **Date:** 2026-09-13
 - **Runtime baseline:** `4ecb871` on `main`; the producer's complete exact-head
-  Verify run `34933278521` passed and exact-main Verify run `34936505855` is in
-  progress
+  Verify run `34933278521` and exact-main Verify run `34936505855` passed
 - **Proofbound baseline consumed by Runtime evidence:** public immutable bundle
   for source `9512469`; protected-path cutover merged as Runtime `4a0cfdb` and
   passed exact-main Verify run `34918706960`
@@ -65,9 +64,11 @@ and source-level production non-reuse checks passed complete hosted
 verification and merged as `edf87bb`; exact-main Verify run `34929775221`
 passed. The pure diagnostic receipt and plan-draft producer
 passed independent review and complete exact-head Verify run `34933278521`,
-then merged unsigned as `4ecb871`; exact-main Verify run `34936505855` is in
-progress. The next branch implements the pure ordered observer protocol and is
-in exact-source review after rebasing onto that producer merge. The live ptrace
+then merged unsigned as `4ecb871`; exact-main Verify run `34936505855` passed.
+The pure ordered observer protocol passed every implementation lane in hosted
+run `34937458920`, but its evidence manifest used a named Cargo test target that
+the current strict Proofbound adapter reserves for mutation witnesses. The
+selector correction and exact-source re-review are in progress. The live ptrace
 adapter, command integration, native attack corpus, and release binding remain
 open.
 RT-9 is blocked until RT-5 implements the accepted single-service network

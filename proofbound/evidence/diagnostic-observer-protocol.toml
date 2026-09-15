@@ -43,7 +43,7 @@ environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
 type = "cargo-test"
 package = "proofbound-runtime-diagnose"
 manifest = "Cargo.toml"
-targets = ["--lib", "observer::tests"]
+targets = ["--lib"]
 paths = []
 arguments = []
 

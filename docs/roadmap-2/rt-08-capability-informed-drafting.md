@@ -4,9 +4,11 @@
 closed schemas, source-level production non-reuse, and the pure diagnostic
 artifact producer are merged through Runtime `4ecb871`. The producer passed
 complete exact-head Verify run `34933278521`; exact-main run `34936505855` is
-in progress. The pure observer protocol is implemented and in refreshed
-exact-source review after rebase. The live ptrace adapter, command integration,
-native attack corpus, and release binding remain open.
+complete. The pure observer protocol passed every implementation lane in hosted
+run `34937458920`, but Proofbound correctly rejected an obsolete named Cargo
+test target in the evidence manifest. Its selector correction and exact-source
+re-review are in progress. The live ptrace adapter, command integration, native
+attack corpus, and release binding remain open.
 
 **Primary owner:** Proofbound Runtime
 
