@@ -11,7 +11,7 @@ evidence = [
   "independent-check:diagnostic-stream-capture-contract",
 ]
 assumptions = [
-  "PBR-DIAGNOSTIC-TRACE-AX-016",
+  "PBR-DIAGNOSTIC-STREAM-AX-022",
   "PBR-DIAGNOSTIC-STREAM-CHECK-AX-020",
 ]
 open_obligations = [
@@ -31,11 +31,16 @@ source_roots = [
   "Cargo.toml",
   "rust-toolchain.toml",
   "assumptions/PBR-DIAGNOSTIC-STREAM-CHECK-AX-020.toml",
-  "assumptions/PBR-DIAGNOSTIC-TRACE-AX-016.toml",
+  "assumptions/PBR-DIAGNOSTIC-STREAM-AX-022.toml",
   "claims/PBR-OBSERVER-027.toml",
   "crates/proofbound-runtime-core/Cargo.toml",
   "crates/proofbound-runtime-core/src/authority.rs",
+  "crates/proofbound-runtime-core/src/lib.rs",
   "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-diagnose/Cargo.toml",
+  "crates/proofbound-runtime-diagnose/src/artifact.rs",
+  "crates/proofbound-runtime-diagnose/src/lib.rs",
+  "crates/proofbound-runtime-diagnose/src/observer.rs",
   "crates/proofbound-runtime-diagnose-linux/Cargo.toml",
   "crates/proofbound-runtime-diagnose-linux/src/adapter.rs",
   "crates/proofbound-runtime-diagnose-linux/src/lib.rs",

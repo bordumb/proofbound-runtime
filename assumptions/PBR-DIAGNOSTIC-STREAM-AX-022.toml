@@ -1,0 +1,17 @@
+schema = "proofbound-assumption/1"
+id = "PBR-DIAGNOSTIC-STREAM-AX-022"
+statement = "On an identified supported Linux host, the exact traced process-tree terminal observations used to select stream collection, nonblocking pipe reads, end-of-file delivery after every writer closes, thread scheduling, atomic cancellation visibility, and thread joins have the documented operating-system and Rust standard-library meaning used by the bounded diagnostic stream source contract."
+category = "runtime-environment"
+owner = "Proofbound Runtime platform maintainer"
+rationale = "The source contract can gate collection on its retained process tree, order nonblocking readers, retain bounded prefixes, continue to end of file, and join both threads, but this repository does not prove ptrace terminal reporting, kernel pipe progress, scheduler fairness, memory-ordering implementation, or standard-library thread behavior."
+scope = "Only the native interpretation of PBR-OBSERVER-027. It does not establish process-tree completeness, cgroup placement, wall-time enforcement, command integration, production execution, or released-artifact behavior."
+affected_claims = ["PBR-OBSERVER-027"]
+review_evidence = [
+  "docs/adr/0008-separate-ptrace-diagnostic-observer.md",
+  "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+]
+discharge_plan = "Retain the ptrace, kernel, scheduler, memory-ordering, and thread premises. Narrow them with native exact-tree, pipe-saturation, asymmetric-output, descendant-writer, cancellation, read-failure, and join-failure fixtures on each supported architecture and exact released-host observations."
+source_citation = "docs/specs/0015_diagnostic_execution_and_plan_drafting.md#9-evidence-meaning"
+status = "active"

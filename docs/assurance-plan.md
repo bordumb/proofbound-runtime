@@ -772,7 +772,10 @@ drop order, weaken exact-tree completion, and move pure publication selection
 ahead of output collection. This is source evidence. Linux pipe behavior,
 scheduler progress, trace-tree truth, cgroup placement, wall-time enforcement,
 native pipe-saturation attacks, command integration, and release binding remain
-open.
+open. `PBR-DIAGNOSTIC-STREAM-AX-022` retains the ptrace terminal-reporting,
+Linux pipe, scheduler, memory-ordering, and thread-runtime premises separately
+from the compiler and checker premises in
+`PBR-DIAGNOSTIC-STREAM-CHECK-AX-020`.
 
 ## Bounded-domain declaration guard
 

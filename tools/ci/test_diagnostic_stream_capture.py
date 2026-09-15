@@ -7,12 +7,17 @@ ROOT = Path(__file__).resolve().parents[2]
 ROOT_MANIFEST = ROOT / "Cargo.toml"
 LOCK = ROOT / "Cargo.lock"
 TOOLCHAIN = ROOT / "rust-toolchain.toml"
-TRACE_ASSUMPTION = ROOT / "assumptions/PBR-DIAGNOSTIC-TRACE-AX-016.toml"
 STREAM_ASSUMPTION = ROOT / "assumptions/PBR-DIAGNOSTIC-STREAM-CHECK-AX-020.toml"
+STREAM_RUNTIME_ASSUMPTION = ROOT / "assumptions/PBR-DIAGNOSTIC-STREAM-AX-022.toml"
 CLAIM = ROOT / "claims/PBR-OBSERVER-027.toml"
 CORE_MANIFEST = ROOT / "crates/proofbound-runtime-core/Cargo.toml"
 AUTHORITY = ROOT / "crates/proofbound-runtime-core/src/authority.rs"
+CORE_LIB = ROOT / "crates/proofbound-runtime-core/src/lib.rs"
 RECEIPT = ROOT / "crates/proofbound-runtime-core/src/receipt.rs"
+DIAGNOSE_MANIFEST = ROOT / "crates/proofbound-runtime-diagnose/Cargo.toml"
+DIAGNOSE_ARTIFACT = ROOT / "crates/proofbound-runtime-diagnose/src/artifact.rs"
+DIAGNOSE_LIB = ROOT / "crates/proofbound-runtime-diagnose/src/lib.rs"
+DIAGNOSE_OBSERVER = ROOT / "crates/proofbound-runtime-diagnose/src/observer.rs"
 ADAPTER_MANIFEST = ROOT / "crates/proofbound-runtime-diagnose-linux/Cargo.toml"
 ADAPTER = ROOT / "crates/proofbound-runtime-diagnose-linux/src/adapter.rs"
 ADAPTER_LIB = ROOT / "crates/proofbound-runtime-diagnose-linux/src/lib.rs"
@@ -168,20 +173,25 @@ EXPECTED_FILES = {
     "adapter-lib": "967270aa9c886b9ead6c80fbeae2c44fce868aa36fbb0c5d6071c77c2fa6ca16",
     "adapter-manifest": "ef7c613a66781c4b64d75435524166329b5239b8172f97b28cff2d6d609c8d78",
     "authority": "9d1945b590a3a9f44f6af95d3090ad0a8d1bc0cfa601c35273cd0a72c86cbddc",
-    "claim": "2692fab5bad0104a45d97f124cb9b20dc7bef590ca53830318823793af5cf6a8",
-    "contract-evidence": "ff704f1339587c05a05836649fe05e92f1eca826412e7cecdbb8334c49def250",
+    "claim": "90729ba496cc037146213651fdbfabecc792d281a0ef3cc3e5efa04985eb3bcd",
+    "contract-evidence": "52ea0e12fbf342e8d22c873e24c8f79fe0e3ac08cc25f826abf1e2db32d3a789",
     "core-manifest": "0d22823a1d4f397fb58693c7d9fe7498969ce242b5da0f372d8cc8f55f960b9b",
+    "core-lib": "2039d8c789844cddaaabbf432a0a6ef465f77300577f3b57922d7bcbcc930450",
+    "diagnose-artifact": "ad7cce45d286623dcfd55c21189cb7d58e29f1943960d0a061d6f85c2640baa3",
+    "diagnose-lib": "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de",
+    "diagnose-manifest": "097ec2b4cef98a43bee09c64c289251ab2060808d4fb8e050de3077f541ff2f1",
+    "diagnose-observer": "e6cfb0a92d7bf7e235c7fac8180f488b7b1d9474986791fac4adf2917dae7d12",
     "linux-lib": "a1d7d31fb602afd59aab41aa4153fa2a6fcc0923518118bf956e5939f29c97a8",
     "linux-manifest": "e7311e3cada91690da87f42910c96e133538439956a0db78de79dea9294d6c9b",
     "lock": "376572c5d111f5ea72e38667b5813a7c051e9fa128d5af355468e5294889a0c6",
     "receipt": "fc27edf189014a49af8af380902fe90b12cbbd71a2b49301064b589c8a4c4024",
     "root-manifest": "1ea75287f62129c6b15038b0c45df42e616fc4c92e59e61bc03358746fd5d7d6",
     "stream-assumption": "b06c323edd3dceaa6c7c52b17b4ecd5c1bfc56dee10a95413f000f090cd69459",
+    "stream-runtime-assumption": "660304ed492713250e1595f2ed19e2b84196240016d857d3265fb6c6a0c9d78d",
     "sys": "c7433f4485aa12829c87ef10210fa766676bc24729361e0a82ac93a2267eb06f",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
     "trace": "461abf2a7640bbda35399d158491e57dd60bbaa99bb95e328f7a1176ba5644f7",
-    "trace-assumption": "40a483142f19a6e3c1ece498b07b55463040354e98172a271abd623363414bb0",
-    "unit-evidence": "93e3d90c452ea85f6d2fdaa1c222d436e8528302f4a6af3508bc008b450b606d",
+    "unit-evidence": "bb5fb600446926f464226a4a01948296513db266639140c9f7695c6327540a63",
 }
 
 
@@ -289,6 +299,11 @@ class DiagnosticStreamCaptureContractTests(unittest.TestCase):
             "adapter-lib": ADAPTER_LIB,
             "adapter-manifest": ADAPTER_MANIFEST,
             "authority": AUTHORITY,
+            "core-lib": CORE_LIB,
+            "diagnose-artifact": DIAGNOSE_ARTIFACT,
+            "diagnose-lib": DIAGNOSE_LIB,
+            "diagnose-manifest": DIAGNOSE_MANIFEST,
+            "diagnose-observer": DIAGNOSE_OBSERVER,
             "claim": CLAIM,
             "contract-evidence": CONTRACT_EVIDENCE,
             "core-manifest": CORE_MANIFEST,
@@ -298,10 +313,10 @@ class DiagnosticStreamCaptureContractTests(unittest.TestCase):
             "receipt": RECEIPT,
             "root-manifest": ROOT_MANIFEST,
             "stream-assumption": STREAM_ASSUMPTION,
+            "stream-runtime-assumption": STREAM_RUNTIME_ASSUMPTION,
             "sys": SYS,
             "toolchain": TOOLCHAIN,
             "trace": TRACE,
-            "trace-assumption": TRACE_ASSUMPTION,
             "unit-evidence": UNIT_EVIDENCE,
         }
         actual_files = {
