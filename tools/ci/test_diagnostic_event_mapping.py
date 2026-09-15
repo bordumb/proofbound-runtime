@@ -5,11 +5,23 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
+ROOT_MANIFEST = ROOT / "Cargo.toml"
+LOCK = ROOT / "Cargo.lock"
+TOOLCHAIN = ROOT / "rust-toolchain.toml"
+DECODE_ASSUMPTION = ROOT / "assumptions/PBR-DIAGNOSTIC-DECODE-AX-017.toml"
+MAP_ASSUMPTION = ROOT / "assumptions/PBR-DIAGNOSTIC-MAP-CHECK-AX-019.toml"
 MAPPING = ROOT / "crates/proofbound-runtime-diagnose-linux/src/mapping.rs"
 TRACE = ROOT / "crates/proofbound-runtime-linux/src/trace.rs"
 ARTIFACT = ROOT / "crates/proofbound-runtime-diagnose/src/artifact.rs"
 LIB = ROOT / "crates/proofbound-runtime-diagnose-linux/src/lib.rs"
 MANIFEST = ROOT / "crates/proofbound-runtime-diagnose-linux/Cargo.toml"
+CORE_MANIFEST = ROOT / "crates/proofbound-runtime-core/Cargo.toml"
+CORE_DIAGNOSTIC = ROOT / "crates/proofbound-runtime-core/src/diagnostic.rs"
+CORE_RECEIPT = ROOT / "crates/proofbound-runtime-core/src/receipt.rs"
+DIAGNOSE_MANIFEST = ROOT / "crates/proofbound-runtime-diagnose/Cargo.toml"
+DIAGNOSE_LIB = ROOT / "crates/proofbound-runtime-diagnose/src/lib.rs"
+LINUX_MANIFEST = ROOT / "crates/proofbound-runtime-linux/Cargo.toml"
+LINUX_LIB = ROOT / "crates/proofbound-runtime-linux/src/lib.rs"
 CLAIM = ROOT / "claims/PBR-OBSERVER-026.toml"
 UNIT_EVIDENCE = ROOT / "proofbound/evidence/diagnostic-event-mapping.toml"
 CONTRACT_EVIDENCE = ROOT / "proofbound/evidence/diagnostic-event-mapping-contract.toml"
@@ -85,6 +97,13 @@ def assert_mapping_contract(mapping: str, trace: str, artifact: str) -> None:
         if mapping.count(constant) != 1 or trace.count(constant) != 1:
             raise AssertionError(f"architecture identity mismatch: {constant}")
     for source, target in [
+        ("AUDIT_ARCH_X86_64", "Architecture::X86_64"),
+        ("AUDIT_ARCH_AARCH64", "Architecture::Aarch64"),
+    ]:
+        term = f"{source} => Ok({target})"
+        if map_architecture.count(term) != 1:
+            raise AssertionError(f"missing exact architecture mapping: {term}")
+    for source, target in [
         ("Bind", "Bind"),
         ("Clone", "Clone"),
         ("Connect", "Connect"),
@@ -125,11 +144,25 @@ EXPECTED_BODIES = {
     "socket-family": "bffe838f3e4eb69b1a34aa55f705f5da8719e1b527d19411093be8de6c074e9d",
 }
 EXPECTED_FILES = {
+    "artifact": "ad7cce45d286623dcfd55c21189cb7d58e29f1943960d0a061d6f85c2640baa3",
     "claim": "e3a324ce603ca6440d21d569c1fb805d24de20f1191a25758278c818f4cc0f4c",
-    "contract-evidence": "d8baa4d7b672b2b570fbf09b42de432c853f7659557a9387c84a1e4d09a04ae7",
+    "contract-evidence": "1cd2dc41e40726ff08a527e17697880185e7073da8fa32aa895139a1317e7e2c",
+    "core-diagnostic": "e0a3f1e3204c5dc5b3b152e6432737e90bf5af93f5024a4e6f1d1c25a4f42918",
+    "core-manifest": "0d22823a1d4f397fb58693c7d9fe7498969ce242b5da0f372d8cc8f55f960b9b",
+    "core-receipt": "fc27edf189014a49af8af380902fe90b12cbbd71a2b49301064b589c8a4c4024",
+    "decode-assumption": "0a71deec98c2cb281170fe85d911eb6dba5947161e8130554b5b922f47457847",
+    "diagnose-lib": "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de",
+    "diagnose-manifest": "097ec2b4cef98a43bee09c64c289251ab2060808d4fb8e050de3077f541ff2f1",
     "lib": "0d660b53e0ebf49bf0a817d9a7dcf7e88bdd7eeb0a522c646bb0de6d5ae723ce",
+    "linux-lib": "5e17e13cfe6da73bc3d22a00cc38909296b0b03c14b2709fe2e70f8b481486e1",
+    "linux-manifest": "e7311e3cada91690da87f42910c96e133538439956a0db78de79dea9294d6c9b",
+    "lock": "376572c5d111f5ea72e38667b5813a7c051e9fa128d5af355468e5294889a0c6",
+    "map-assumption": "e787e8a57b35b174462b2a960a7a91be63e2f2d83da569ecdb1beb26d94b28bd",
     "manifest": "ef7c613a66781c4b64d75435524166329b5239b8172f97b28cff2d6d609c8d78",
     "mapping": "ea3c2765a503708ad4a695224027099db1b9e1cb3ca2a2b3f80e4fcd0c9e87c4",
+    "root-manifest": "1ea75287f62129c6b15038b0c45df42e616fc4c92e59e61bc03358746fd5d7d6",
+    "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
+    "trace": "d014751e6af13aa9c829aa67ab58953423a04a5ea4cfa1032a7d1150e15f1e7d",
     "unit-evidence": "1a046691b447830c74dcf77cb9b41d10e09a6b8e2e400744727ca05abb04c5e4",
 }
 
@@ -184,11 +217,25 @@ class DiagnosticEventMappingContractTests(unittest.TestCase):
         self.assertEqual(actual_bodies, EXPECTED_BODIES)
 
         files = {
+            "artifact": ARTIFACT,
             "claim": CLAIM,
             "contract-evidence": CONTRACT_EVIDENCE,
+            "core-diagnostic": CORE_DIAGNOSTIC,
+            "core-manifest": CORE_MANIFEST,
+            "core-receipt": CORE_RECEIPT,
+            "decode-assumption": DECODE_ASSUMPTION,
+            "diagnose-lib": DIAGNOSE_LIB,
+            "diagnose-manifest": DIAGNOSE_MANIFEST,
             "lib": LIB,
+            "linux-lib": LINUX_LIB,
+            "linux-manifest": LINUX_MANIFEST,
+            "lock": LOCK,
+            "map-assumption": MAP_ASSUMPTION,
             "manifest": MANIFEST,
             "mapping": MAPPING,
+            "root-manifest": ROOT_MANIFEST,
+            "toolchain": TOOLCHAIN,
+            "trace": TRACE,
             "unit-evidence": UNIT_EVIDENCE,
         }
         actual_files = {

@@ -42,12 +42,23 @@ type = "independent-check"
 checker = "tools/ci/check_diagnostic_event_mapping.py"
 arguments = []
 paths = [
+  "Cargo.lock",
+  "Cargo.toml",
   "rust-toolchain.toml",
+  "assumptions/PBR-DIAGNOSTIC-DECODE-AX-017.toml",
+  "assumptions/PBR-DIAGNOSTIC-MAP-CHECK-AX-019.toml",
   "claims/PBR-OBSERVER-026.toml",
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/diagnostic.rs",
+  "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-diagnose/Cargo.toml",
   "crates/proofbound-runtime-diagnose/src/artifact.rs",
+  "crates/proofbound-runtime-diagnose/src/lib.rs",
   "crates/proofbound-runtime-diagnose-linux/Cargo.toml",
   "crates/proofbound-runtime-diagnose-linux/src/lib.rs",
   "crates/proofbound-runtime-diagnose-linux/src/mapping.rs",
+  "crates/proofbound-runtime-linux/Cargo.toml",
+  "crates/proofbound-runtime-linux/src/lib.rs",
   "crates/proofbound-runtime-linux/src/trace.rs",
   "proofbound/evidence/diagnostic-event-mapping.toml",
   "proofbound/evidence/diagnostic-event-mapping-contract.toml",
