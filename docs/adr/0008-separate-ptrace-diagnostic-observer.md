@@ -65,6 +65,19 @@ the acknowledgement internally and sends the release on that same channel. A
 caller cannot supply a command, acknowledgement value, expected identity, or
 different release channel to advance the session.
 
+The trace session creates separate stdout and stderr pipes, makes both
+nonblocking, and starts one cancellable bounded reader for each immediately
+after child creation. Each active reader retains only its independently
+declared prefix but continues reading to end of file so a target cannot block
+on a full pipe after the retained prefix is complete.
+The session exposes both captures only after exact natural tree completion or
+a successful forced tree drain. A missing pipe, reader-thread creation failure,
+read failure, or join failure prevents publication. When a trace typestate is
+abandoned, field ownership orders child termination and wait before cancellation
+and drain-thread join. Nonblocking reads make that cancellation bounded by the
+poll interval. This source order does not prove Linux pipe progress or
+process-tree completeness.
+
 The separate diagnostic Linux crate presents one coupled adapter instead of
 re-exporting the raw trace typestates. It validates observation bounds before
 spawn. After the exact initial trace stop, every consuming adapter transition
@@ -140,6 +153,8 @@ produce a normal plan before `pbr plan check` can succeed.
 - A consumer cannot relabel a diagnostic receipt as production evidence.
 - The observer never runs in the production launcher process or child domain.
 - Missing observer coverage is retained as an explicit gap.
+- A retained stream limit cannot stop the observer from draining later bytes.
+- A stream collection failure cannot produce a diagnostic publication.
 - Network attempts remain open decisions and never become network authority.
 - Environment names, write roots, resource limits, and network mode remain
   human choices.

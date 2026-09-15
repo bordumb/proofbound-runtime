@@ -35,6 +35,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-OBSERVER-024` | Tier 1 decoder identity admitted on exact Runtime main `4783896` | The shared trace, adapter, and observer sources passed exact-head run `34992273744` and exact-main run `34997195939`. |
 | `PBR-OBSERVER-025` | Tier 1 syscall-decoder source admitted on exact Runtime main `4783896` | Approval-only head `db95947` passed complete exact-head run `34992273744`; exact-main run `34997195939` also passed. Kernel ABI truth, memory stability, and native attacks remain open. |
 | `PBR-OBSERVER-026` | Tier 1 event-mapping source pending independent review and hosted admission | The mapper preserves the closed trace identity, operands, and outcome fields, assigns contiguous sequence values, and keeps object resolution unresolved. Linux truth, object resolution, command integration, native attacks, and release binding remain open. |
+| `PBR-OBSERVER-027` | Tier 1 bounded-stream source pending independent review and hosted admission | The trace starts independent stdout and stderr drains after spawn, retains bounded prefixes while reading to EOF, and exposes captures only after terminal tree handling. Linux pipe progress, cgroup placement, wall time, command integration, native attacks, and release binding remain open. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -744,6 +745,34 @@ range, missing class, discarded socket bytes, and weakened exec validation.
 This evidence does not prove the Linux event, operand, or result; it does not
 resolve an object; and it does not yet connect mapping failure or artifact
 publication to a released `pbr-diagnose` command.
+
+## PBR-OBSERVER-027
+
+The current subject is the standard-stream owner inside the separate Linux
+diagnostic trace. The spawn transition takes both configured child pipes, makes
+them nonblocking, and starts one independently bounded, cancellable drain for
+each before it returns the spawned trace state. Each active drain retains no
+more than its declared prefix and continues reading after truncation until end
+of file. The exact stdout and stderr limits remain distinct.
+
+Natural completion collects both streams only after the retained trace tree is
+exactly empty. Forced termination adds them to its report only after the exact
+tree drain succeeds. The coupled adapter obtains the captures before the pure
+protocol selects publication. A missing pipe, reader-thread creation failure,
+read failure, or join failure is typed and prevents publication. On abandoned
+states, declaration and drop order makes the child guard terminate and wait
+before cancellation and join of the outstanding drain handles. Nonblocking
+polling makes the cancellation path independent of pipe closure.
+
+The Rust tests cover independent limits plus exact, truncated, and zero-limit
+capture. The independent checker byte-pins the load-bearing spawn, reader,
+completion, drain, and adapter transitions. Its mutations remove one pipe,
+cross-wire a limit, stop reading at truncation, remove startup rollback, reverse
+drop order, weaken exact-tree completion, and move pure publication selection
+ahead of output collection. This is source evidence. Linux pipe behavior,
+scheduler progress, trace-tree truth, cgroup placement, wall-time enforcement,
+native pipe-saturation attacks, command integration, and release binding remain
+open.
 
 ## Bounded-domain declaration guard
 

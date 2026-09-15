@@ -48,6 +48,24 @@ pub(crate) const RESOLVE_NO_MAGICLINKS: u64 = 0x02;
 pub(crate) const RESOLVE_NO_SYMLINKS: u64 = 0x04;
 pub(crate) const RESOLVE_BENEATH: u64 = 0x08;
 
+#[cfg(feature = "diagnostic-observer")]
+pub(crate) fn set_nonblocking(descriptor: RawFd) -> io::Result<()> {
+    // SAFETY: `fcntl` receives only an integer descriptor and F_GETFL does not
+    // read or write caller memory.
+    let flags = unsafe { libc::fcntl(descriptor, libc::F_GETFL) };
+    if flags < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    // SAFETY: `fcntl` receives only an integer descriptor and the flags that
+    // the same descriptor returned, with O_NONBLOCK added.
+    let result = unsafe { libc::fcntl(descriptor, libc::F_SETFL, flags | libc::O_NONBLOCK) };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
 #[repr(C)]
 struct OpenHow {
     flags: u64,

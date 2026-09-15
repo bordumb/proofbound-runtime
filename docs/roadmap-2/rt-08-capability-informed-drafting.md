@@ -47,8 +47,12 @@ exact-head run `34992273744` and merged unsigned as `4783896`. Exact-main run
 `34997195939` passed. The following `PBR-OBSERVER-026` wave maps the complete
 registered trace events into closed diagnostic artifact events without
 inventing object resolution. Its source and evidence are implemented and await
-independent review and hosted admission. Object resolution, command integration,
-the native attack corpus, and release binding remain open.
+independent review and hosted admission. The dependent `PBR-OBSERVER-027`
+source and evidence start independent bounded stdout and stderr drains before
+the spawned trace state returns, continue draining after a retained prefix is
+full, and gate publication on terminal collection. They also await independent
+review and hosted admission. Cgroup and wall-time coupling, object resolution,
+command integration, the native attack corpus, and release binding remain open.
 
 **Primary owner:** Proofbound Runtime
 
@@ -174,26 +178,32 @@ Complete RT-8 in these claim-sized waves:
 
 1. Admit `PBR-OBSERVER-026`, which maps complete trace events into unresolved
    diagnostic artifact events.
-2. Give the trace session a bounded concurrent stdout and stderr collector.
-   Retain the same stopped child, place it in the prepared cgroup before target
-   release, apply the plan wall-time limit, and make every collection or cleanup
-   failure select drain. This must precede the command because unread launcher
-   pipes can otherwise block a target before the observer reaches completion.
-3. Resolve a successful descriptor or executable only from the still-stopped
+2. Admit `PBR-OBSERVER-027`, which gives the trace session independent bounded,
+   cancellable, nonblocking stdout and stderr drains. Continue reading after
+   either retained prefix is full, collect both streams only after terminal tree
+   handling, and make pipe setup, reader startup, reads, or joins fail closed.
+   This must
+   precede the command because unread launcher pipes can otherwise block a
+   target before the observer reaches completion.
+3. Retain the same stopped child, place it in the prepared cgroup before target
+   release, apply one absolute plan wall-time limit through observation and
+   drain, finish resource observations after the tree is empty, and make every
+   stream or cleanup failure block publication.
+4. Resolve a successful descriptor or executable only from the still-stopped
    tracee. Resolve a denied path only as a bounded stable candidate with before
    and after identities. Preserve races and unsupported forms as explicit gaps.
-4. Add the separate `pbr-diagnose` command. Reuse the seed plan's exact
+5. Add the separate `pbr-diagnose` command. Reuse the seed plan's exact
    production authority, publish neither output before release, and publish the
    diagnostic receipt and draft with the existing no-replace durability model.
-5. Run the registered native attack corpus on x86_64 and aarch64, including
+6. Run the registered native attack corpus on x86_64 and aarch64, including
    pipe saturation, wall-time expiry, process-tree races, observation-sensitive
    behavior, path drift, malformed operands, and publication interruption.
-6. Add the exact diagnostic executable to release provenance and artifact
+7. Add the exact diagnostic executable to release provenance and artifact
    inspection. Finish with one maintained dynamic workload that displays every
    available provenance class, requires human completion, and produces no
    reusable production evidence.
 
-Do not merge waves 2 through 6 into one review subject. Each wave changes a
+Do not merge waves 2 through 7 into one review subject. Each wave changes a
 different security boundary and must retain its own exact-head review and
 hosted admission before the next dependent wave is called complete.
 

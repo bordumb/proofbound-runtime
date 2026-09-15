@@ -2,14 +2,17 @@
 
 use core::fmt;
 use std::collections::BTreeMap;
+use std::io;
 use std::num::NonZeroU32;
 #[cfg(target_os = "linux")]
 use std::os::fd::AsRawFd as _;
 use std::os::fd::{BorrowedFd, OwnedFd};
 use std::process::{Child, Command};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use proofbound_runtime_core::ArtifactRole;
+use proofbound_runtime_core::{ArtifactRole, OutputByteLimit, StreamCapture};
 
 use crate::{
     Architecture, ExecRelease, InstallRequest, LauncherChannel, LauncherError, LauncherMessage,
@@ -81,6 +84,33 @@ pub struct TraceCaptureLimits {
     path_bytes: NonZeroU32,
     socket_address_bytes: NonZeroU32,
     tracee_string_bytes: NonZeroU32,
+}
+
+/// Contains the standard-stream byte limits for one diagnostic trace.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TraceOutputLimits {
+    stdout: OutputByteLimit,
+    stderr: OutputByteLimit,
+}
+
+impl TraceOutputLimits {
+    /// Creates independent standard-output and standard-error byte limits.
+    #[must_use]
+    pub fn new(stdout: OutputByteLimit, stderr: OutputByteLimit) -> Self {
+        Self { stdout, stderr }
+    }
+
+    /// Returns the standard-output byte limit.
+    #[must_use]
+    pub fn stdout(self) -> OutputByteLimit {
+        self.stdout
+    }
+
+    /// Returns the standard-error byte limit.
+    #[must_use]
+    pub fn stderr(self) -> OutputByteLimit {
+        self.stderr
+    }
 }
 
 impl TraceCaptureLimits {
@@ -157,6 +187,7 @@ pub struct PreparedTraceCommand<'descriptor> {
     supervisor_channel: LauncherChannel,
     launcher_channel: LauncherChannel,
     request: InstallRequest,
+    output_limits: TraceOutputLimits,
     _descriptors: Vec<BorrowedFd<'descriptor>>,
 }
 
@@ -170,12 +201,14 @@ impl PreparedTraceCommand<'_> {
             .command
             .spawn()
             .map_err(|_| TraceStartupError::SpawnFailed)?;
-        let child = TraceChild(child);
+        let mut child = TraceChild(child);
         let process = TraceProcessId::new(child.0.id())?;
+        let streams = TraceStreamReaders::start(&mut child, self.output_limits)?;
         drop(self.launcher_channel);
         Ok(SpawnedTrace {
             session: TraceSession {
                 _child: child,
+                streams,
                 process,
                 channel: self.supervisor_channel,
                 request: self.request,
@@ -191,6 +224,7 @@ pub fn prepare_traced_launcher<'descriptor>(
     inherited_descriptors: &[BorrowedFd<'descriptor>],
     architecture: Architecture,
     landlock_abi: NonZeroU32,
+    output_limits: TraceOutputLimits,
 ) -> Result<PreparedTraceCommand<'descriptor>, TraceStartupError> {
     #[cfg(target_os = "linux")]
     {
@@ -244,6 +278,7 @@ pub fn prepare_traced_launcher<'descriptor>(
             supervisor_channel,
             launcher_channel,
             request,
+            output_limits,
             _descriptors: retained_descriptors,
         })
     }
@@ -255,6 +290,7 @@ pub fn prepare_traced_launcher<'descriptor>(
             inherited_descriptors,
             architecture,
             landlock_abi,
+            output_limits,
         );
         Err(TraceStartupError::UnsupportedOperatingSystem)
     }
@@ -263,19 +299,177 @@ pub fn prepare_traced_launcher<'descriptor>(
 #[derive(Debug)]
 struct TraceChild(Child);
 
-impl Drop for TraceChild {
-    fn drop(&mut self) {
+impl TraceChild {
+    fn terminate_and_wait(&mut self) {
         let _ = self.0.kill();
         let _ = self.0.wait();
     }
 }
 
+impl Drop for TraceChild {
+    fn drop(&mut self) {
+        self.terminate_and_wait();
+    }
+}
+
+#[derive(Debug)]
+struct TraceStreamReaders {
+    stdout: Option<std::thread::JoinHandle<io::Result<TraceCapturedStream>>>,
+    stderr: Option<std::thread::JoinHandle<io::Result<TraceCapturedStream>>>,
+    cancellation: Arc<AtomicBool>,
+}
+
+impl TraceStreamReaders {
+    fn start(child: &mut TraceChild, limits: TraceOutputLimits) -> Result<Self, TraceStartupError> {
+        #[cfg(not(target_os = "linux"))]
+        {
+            let _ = (child, limits);
+            Err(TraceStartupError::UnsupportedOperatingSystem)
+        }
+        #[cfg(target_os = "linux")]
+        {
+            let stdout = child
+                .0
+                .stdout
+                .take()
+                .ok_or(TraceStartupError::StreamUnavailable)?;
+            let stderr = child
+                .0
+                .stderr
+                .take()
+                .ok_or(TraceStartupError::StreamUnavailable)?;
+            crate::sys::set_nonblocking(stdout.as_raw_fd())
+                .map_err(|_| TraceStartupError::StreamConfigurationFailed)?;
+            crate::sys::set_nonblocking(stderr.as_raw_fd())
+                .map_err(|_| TraceStartupError::StreamConfigurationFailed)?;
+            let cancellation = Arc::new(AtomicBool::new(false));
+            let stdout =
+                spawn_trace_capture("stdout", stdout, limits.stdout(), Arc::clone(&cancellation))?;
+            let stderr = match spawn_trace_capture(
+                "stderr",
+                stderr,
+                limits.stderr(),
+                Arc::clone(&cancellation),
+            ) {
+                Ok(stderr) => stderr,
+                Err(error) => {
+                    cancellation.store(true, Ordering::Release);
+                    child.terminate_and_wait();
+                    let _ = stdout.join();
+                    return Err(error);
+                }
+            };
+            Ok(Self {
+                stdout: Some(stdout),
+                stderr: Some(stderr),
+                cancellation,
+            })
+        }
+    }
+
+    fn finish(&mut self) -> Result<TraceOutputCapture, TraceObservationError> {
+        let stdout = join_trace_capture(self.stdout.take());
+        let stderr = join_trace_capture(self.stderr.take());
+        Ok(TraceOutputCapture {
+            stdout: stdout?,
+            stderr: stderr?,
+        })
+    }
+}
+
+impl Drop for TraceStreamReaders {
+    fn drop(&mut self) {
+        self.cancellation.store(true, Ordering::Release);
+        if let Some(stdout) = self.stdout.take() {
+            let _ = stdout.join();
+        }
+        if let Some(stderr) = self.stderr.take() {
+            let _ = stderr.join();
+        }
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn spawn_trace_capture(
+    name: &str,
+    reader: impl io::Read + Send + 'static,
+    limit: OutputByteLimit,
+    cancellation: Arc<AtomicBool>,
+) -> Result<std::thread::JoinHandle<io::Result<TraceCapturedStream>>, TraceStartupError> {
+    std::thread::Builder::new()
+        .name(format!("proofbound-diagnostic-{name}-drain"))
+        .spawn(move || capture_trace_stream(reader, limit, &cancellation))
+        .map_err(|_| TraceStartupError::StreamDrainStartFailed)
+}
+
+fn join_trace_capture(
+    handle: Option<std::thread::JoinHandle<io::Result<TraceCapturedStream>>>,
+) -> Result<TraceCapturedStream, TraceObservationError> {
+    handle
+        .ok_or(TraceObservationError::StreamReadFailed)?
+        .join()
+        .map_err(|_| TraceObservationError::StreamReadFailed)?
+        .map_err(|_| TraceObservationError::StreamReadFailed)
+}
+
+#[cfg(any(test, target_os = "linux"))]
+fn capture_trace_stream(
+    mut reader: impl io::Read,
+    limit: OutputByteLimit,
+    cancellation: &AtomicBool,
+) -> io::Result<TraceCapturedStream> {
+    let mut bytes = Vec::new();
+    let mut truncated = false;
+    let mut buffer = [0; 8192];
+    loop {
+        if cancellation.load(Ordering::Acquire) {
+            return Err(io::Error::new(
+                io::ErrorKind::Interrupted,
+                "diagnostic stream drain cancelled",
+            ));
+        }
+        let count = match reader.read(&mut buffer) {
+            Ok(count) => count,
+            Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
+            Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                std::thread::sleep(TRACE_POLL_INTERVAL);
+                continue;
+            }
+            Err(error) => return Err(error),
+        };
+        if count == 0 {
+            break;
+        }
+        let remaining = limit
+            .get()
+            .saturating_sub(u64::try_from(bytes.len()).unwrap_or(u64::MAX));
+        let retained = count.min(usize::try_from(remaining).unwrap_or(usize::MAX));
+        bytes.extend_from_slice(&buffer[..retained]);
+        truncated |= retained < count;
+    }
+    Ok(TraceCapturedStream {
+        bytes,
+        capture: if truncated {
+            StreamCapture::Truncated
+        } else {
+            StreamCapture::Complete
+        },
+    })
+}
+
 #[derive(Debug)]
 struct TraceSession {
     _child: TraceChild,
+    streams: TraceStreamReaders,
     process: TraceProcessId,
     channel: LauncherChannel,
     request: InstallRequest,
+}
+
+impl TraceSession {
+    fn finish_streams(&mut self) -> Result<TraceOutputCapture, TraceObservationError> {
+        self.streams.finish()
+    }
 }
 
 /// Owns the exact spawned child before its mandatory post-exec trace stop.
@@ -495,6 +689,17 @@ impl ActiveTrace {
         self.processes.is_empty() && !self.tree_reconciliation_failed
     }
 
+    /// Collects both bounded streams after exact natural tree completion.
+    pub fn finish(mut self) -> Result<CompletedTrace, TraceObservationError> {
+        if !self.is_drained() {
+            self.must_drain = true;
+            return Err(TraceObservationError::DrainRequired);
+        }
+        Ok(CompletedTrace {
+            output: self.session.finish_streams()?,
+        })
+    }
+
     /// Waits for the next complete event from the exact known process tree.
     #[cfg(target_os = "linux")]
     pub fn next_event(
@@ -604,13 +809,16 @@ impl ActiveTrace {
 
     #[cfg(target_os = "linux")]
     fn complete_drain(
-        &self,
+        &mut self,
         observations: Vec<TraceDrainObservation>,
     ) -> Result<TraceDrainReport, TraceObservationError> {
         if self.tree_reconciliation_failed {
             return Err(TraceObservationError::TreeReconciliationFailed);
         }
-        Ok(TraceDrainReport { observations })
+        Ok(TraceDrainReport {
+            observations,
+            output: self.session.finish_streams()?,
+        })
     }
 
     #[cfg(target_os = "linux")]
@@ -1668,10 +1876,73 @@ pub enum TraceDrainObservation {
     },
 }
 
+/// Contains one bounded standard stream from a diagnostic trace.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TraceCapturedStream {
+    bytes: Vec<u8>,
+    capture: StreamCapture,
+}
+
+impl TraceCapturedStream {
+    /// Returns the retained prefix of the observed stream.
+    #[must_use]
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+
+    /// Reports whether bytes after the retained prefix were discarded.
+    #[must_use]
+    pub const fn capture(&self) -> StreamCapture {
+        self.capture
+    }
+}
+
+/// Contains both bounded standard streams from a diagnostic trace.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TraceOutputCapture {
+    stdout: TraceCapturedStream,
+    stderr: TraceCapturedStream,
+}
+
+impl TraceOutputCapture {
+    /// Returns the bounded standard-output capture.
+    #[must_use]
+    pub const fn stdout(&self) -> &TraceCapturedStream {
+        &self.stdout
+    }
+
+    /// Returns the bounded standard-error capture.
+    #[must_use]
+    pub const fn stderr(&self) -> &TraceCapturedStream {
+        &self.stderr
+    }
+}
+
+/// Contains one naturally completed trace and its bounded output.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CompletedTrace {
+    output: TraceOutputCapture,
+}
+
+impl CompletedTrace {
+    /// Returns both bounded standard streams.
+    #[must_use]
+    pub const fn output(&self) -> &TraceOutputCapture {
+        &self.output
+    }
+
+    /// Consumes the completed trace and returns both bounded streams.
+    #[must_use]
+    pub fn into_output(self) -> TraceOutputCapture {
+        self.output
+    }
+}
+
 /// Contains every terminal observation from one successful exact drain.
 #[derive(Debug, Eq, PartialEq)]
 pub struct TraceDrainReport {
     observations: Vec<TraceDrainObservation>,
+    output: TraceOutputCapture,
 }
 
 impl TraceDrainReport {
@@ -1679,6 +1950,12 @@ impl TraceDrainReport {
     #[must_use]
     pub fn observations(&self) -> &[TraceDrainObservation] {
         &self.observations
+    }
+
+    /// Consumes the report and returns both bounded standard streams.
+    #[must_use]
+    pub fn into_output(self) -> TraceOutputCapture {
+        self.output
     }
 }
 
@@ -1949,6 +2226,8 @@ pub enum TraceObservationError {
     DrainFailed,
     /// The known process tree did not drain before the deadline.
     DrainTimedOut,
+    /// One standard-stream drain failed or could not be joined.
+    StreamReadFailed,
 }
 
 impl TraceObservationError {
@@ -1982,6 +2261,7 @@ impl TraceObservationError {
             Self::ThreadGroupInvalid => "diagnostic.trace.thread-group.invalid",
             Self::DrainFailed => "diagnostic.trace.drain.failed",
             Self::DrainTimedOut => "diagnostic.trace.drain.timed-out",
+            Self::StreamReadFailed => "diagnostic.trace.stream.read-failed",
         }
     }
 }
@@ -2086,6 +2366,12 @@ pub enum TraceStartupError {
     ChannelCreationFailed,
     /// The prepared traced launcher could not be spawned.
     SpawnFailed,
+    /// A configured standard stream was unavailable after spawn.
+    StreamUnavailable,
+    /// A standard-stream drain thread could not be started.
+    StreamDrainStartFailed,
+    /// A standard-stream pipe could not be made cancellable.
+    StreamConfigurationFailed,
     /// The traced process status could not be read.
     WaitFailed,
     /// The traced process did not stop before the deadline.
@@ -2132,6 +2418,9 @@ impl TraceStartupError {
             Self::LauncherIdentityInvalid => "diagnostic.trace.launcher-identity.invalid",
             Self::ChannelCreationFailed => "diagnostic.trace.channel.creation-failed",
             Self::SpawnFailed => "diagnostic.trace.spawn.failed",
+            Self::StreamUnavailable => "diagnostic.trace.stream.unavailable",
+            Self::StreamDrainStartFailed => "diagnostic.trace.stream-drain.start-failed",
+            Self::StreamConfigurationFailed => "diagnostic.trace.stream.configuration-failed",
             Self::WaitFailed => "diagnostic.trace.wait.failed",
             Self::WaitTimedOut => "diagnostic.trace.wait.timed-out",
             Self::TraceeExited => "diagnostic.trace.tracee.exited",
@@ -2203,6 +2492,9 @@ mod tests {
             TraceStartupError::LauncherIdentityInvalid,
             TraceStartupError::ChannelCreationFailed,
             TraceStartupError::SpawnFailed,
+            TraceStartupError::StreamUnavailable,
+            TraceStartupError::StreamDrainStartFailed,
+            TraceStartupError::StreamConfigurationFailed,
             TraceStartupError::WaitFailed,
             TraceStartupError::WaitTimedOut,
             TraceStartupError::TraceeExited,
@@ -2253,10 +2545,44 @@ mod tests {
             TraceObservationError::ThreadGroupInvalid,
             TraceObservationError::DrainFailed,
             TraceObservationError::DrainTimedOut,
+            TraceObservationError::StreamReadFailed,
         ]
         .map(TraceObservationError::code);
         codes.sort_unstable();
         assert!(codes.windows(2).all(|pair| pair[0] != pair[1]));
+    }
+
+    #[test]
+    fn diagnostic_stream_capture_drains_after_its_retained_prefix() {
+        let cancellation = AtomicBool::new(false);
+        let exact = capture_trace_stream(&b"abc"[..], OutputByteLimit::new(3), &cancellation)
+            .expect("exact diagnostic stream capture");
+        assert_eq!(exact.bytes(), b"abc");
+        assert_eq!(exact.capture(), StreamCapture::Complete);
+
+        let truncated =
+            capture_trace_stream(&b"abcdef"[..], OutputByteLimit::new(3), &cancellation)
+                .expect("truncated diagnostic stream capture");
+        assert_eq!(truncated.bytes(), b"abc");
+        assert_eq!(truncated.capture(), StreamCapture::Truncated);
+
+        let zero = capture_trace_stream(&b"x"[..], OutputByteLimit::new(0), &cancellation)
+            .expect("zero-limit diagnostic stream drain");
+        assert!(zero.bytes().is_empty());
+        assert_eq!(zero.capture(), StreamCapture::Truncated);
+
+        cancellation.store(true, Ordering::Release);
+        let cancelled =
+            capture_trace_stream(&b"unread"[..], OutputByteLimit::new(6), &cancellation)
+                .expect_err("cancelled diagnostic stream drain");
+        assert_eq!(cancelled.kind(), io::ErrorKind::Interrupted);
+    }
+
+    #[test]
+    fn diagnostic_output_limits_keep_streams_independent() {
+        let limits = TraceOutputLimits::new(OutputByteLimit::new(17), OutputByteLimit::new(29));
+        assert_eq!(limits.stdout().get(), 17);
+        assert_eq!(limits.stderr().get(), 29);
     }
 
     #[cfg(target_os = "linux")]

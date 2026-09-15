@@ -14,8 +14,8 @@ use proofbound_runtime_linux::{
     AcknowledgedTraceStop, ActiveTrace, ActiveTraceEvent, Architecture, BoundaryRunning,
     InitialExecStop, InstallRequest, LauncherPause, PreparedTraceCommand, ResolvedFile,
     SpawnedTrace, TraceCaptureLimits, TraceDeadline, TraceDrainObservation, TraceObservationError,
-    TraceProcessCreationKind, TraceProcessId, TraceProcessLimit, TraceReady, TraceStartupError,
-    prepare_traced_launcher,
+    TraceOutputCapture, TraceOutputLimits, TraceProcessCreationKind, TraceProcessId,
+    TraceProcessLimit, TraceReady, TraceStartupError, prepare_traced_launcher,
 };
 
 /// Contains a validated observer request before child creation.
@@ -32,6 +32,7 @@ pub fn prepare_observer<'descriptor>(
     inherited_descriptors: &[BorrowedFd<'descriptor>],
     architecture: Architecture,
     landlock_abi: NonZeroU32,
+    output_limits: TraceOutputLimits,
     bounds: ObservationBounds,
 ) -> Result<PreparedObserver<'descriptor>, ObserverAdapterError> {
     let bounds = bounds
@@ -43,6 +44,7 @@ pub fn prepare_observer<'descriptor>(
         inherited_descriptors,
         architecture,
         landlock_abi,
+        output_limits,
     )?;
     Ok(PreparedObserver { trace, bounds })
 }
@@ -304,11 +306,13 @@ impl ActiveObserver {
             ));
         }
         if self.trace.is_drained() {
+            let output = self.trace.finish()?.into_output();
             let publication = self.protocol.finish()?;
             return Ok(ActiveObserverStep::Complete {
                 observer: CompletedObserver {
                     protocol: self.protocol,
                     publication,
+                    output,
                 },
                 event,
             });
@@ -413,11 +417,13 @@ impl DrainingObserver {
                 ObserverProtocolError::ProcessTreeChanged,
             ));
         }
+        let output = report.into_output();
         self.protocol.confirm_tree_drained()?;
         let publication = self.protocol.finish()?;
         Ok(CompletedObserver {
             protocol: self.protocol,
             publication,
+            output,
         })
     }
 }
@@ -427,6 +433,7 @@ impl DrainingObserver {
 pub struct CompletedObserver {
     protocol: ObserverProtocol,
     publication: ObserverDirective,
+    output: TraceOutputCapture,
 }
 
 impl CompletedObserver {
@@ -440,6 +447,12 @@ impl CompletedObserver {
     #[must_use]
     pub const fn publication(&self) -> ObserverDirective {
         self.publication
+    }
+
+    /// Returns both bounded standard streams from the exact trace session.
+    #[must_use]
+    pub const fn output(&self) -> &TraceOutputCapture {
+        &self.output
     }
 }
 

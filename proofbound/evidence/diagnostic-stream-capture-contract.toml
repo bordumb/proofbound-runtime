@@ -1,0 +1,67 @@
+schema = "proofbound-evidence-unit/1"
+id = "diagnostic-stream-capture-contract"
+adapter = "independent-check"
+kind = "independent-check"
+claims = ["PBR-OBSERVER-027"]
+tier = 0
+expected_inventory = [
+  "diagnostic-stream-capture-adapter-order",
+  "diagnostic-stream-capture-bounded-drain",
+  "diagnostic-stream-capture-drop-order",
+  "diagnostic-stream-capture-exact-source",
+  "diagnostic-stream-capture-fail-closed",
+  "diagnostic-stream-capture-mutation-witnesses",
+  "diagnostic-stream-capture-terminal-gating",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "rust-toolchain.toml",
+  "assumptions/PBR-DIAGNOSTIC-STREAM-CHECK-AX-020.toml",
+  "assumptions/PBR-DIAGNOSTIC-TRACE-AX-016.toml",
+  "claims/PBR-OBSERVER-027.toml",
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/authority.rs",
+  "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-diagnose-linux/Cargo.toml",
+  "crates/proofbound-runtime-diagnose-linux/src/adapter.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/Cargo.toml",
+  "crates/proofbound-runtime-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+  "tools/ci/check_diagnostic_stream_capture.py",
+  "tools/ci/test_diagnostic_stream_capture.py",
+]
+outputs = []
+environment_allowlist = ["PATH"]
+
+[operation]
+type = "independent-check"
+checker = "tools/ci/check_diagnostic_stream_capture.py"
+arguments = []
+paths = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "rust-toolchain.toml",
+  "assumptions/PBR-DIAGNOSTIC-STREAM-CHECK-AX-020.toml",
+  "assumptions/PBR-DIAGNOSTIC-TRACE-AX-016.toml",
+  "claims/PBR-OBSERVER-027.toml",
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/authority.rs",
+  "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-diagnose-linux/Cargo.toml",
+  "crates/proofbound-runtime-diagnose-linux/src/adapter.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/Cargo.toml",
+  "crates/proofbound-runtime-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+  "proofbound/evidence/diagnostic-stream-capture.toml",
+  "proofbound/evidence/diagnostic-stream-capture-contract.toml",
+]
+
+[resource_budget]
+time_seconds = 30
+disk_bytes = 134217728
+memory_bytes = 536870912

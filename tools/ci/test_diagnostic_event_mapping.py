@@ -155,8 +155,8 @@ EXPECTED_FILES = {
     "decode-assumption": "0a71deec98c2cb281170fe85d911eb6dba5947161e8130554b5b922f47457847",
     "diagnose-lib": "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de",
     "diagnose-manifest": "097ec2b4cef98a43bee09c64c289251ab2060808d4fb8e050de3077f541ff2f1",
-    "lib": "0d660b53e0ebf49bf0a817d9a7dcf7e88bdd7eeb0a522c646bb0de6d5ae723ce",
-    "linux-lib": "5e17e13cfe6da73bc3d22a00cc38909296b0b03c14b2709fe2e70f8b481486e1",
+    "lib": "967270aa9c886b9ead6c80fbeae2c44fce868aa36fbb0c5d6071c77c2fa6ca16",
+    "linux-lib": "a1d7d31fb602afd59aab41aa4153fa2a6fcc0923518118bf956e5939f29c97a8",
     "linux-manifest": "e7311e3cada91690da87f42910c96e133538439956a0db78de79dea9294d6c9b",
     "lock": "376572c5d111f5ea72e38667b5813a7c051e9fa128d5af355468e5294889a0c6",
     "map-assumption": "e787e8a57b35b174462b2a960a7a91be63e2f2d83da569ecdb1beb26d94b28bd",
@@ -164,8 +164,8 @@ EXPECTED_FILES = {
     "mapping": "ea3c2765a503708ad4a695224027099db1b9e1cb3ca2a2b3f80e4fcd0c9e87c4",
     "root-manifest": "1ea75287f62129c6b15038b0c45df42e616fc4c92e59e61bc03358746fd5d7d6",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "d014751e6af13aa9c829aa67ab58953423a04a5ea4cfa1032a7d1150e15f1e7d",
-    "unit-evidence": "c1628a6afa1a191c17c71debd3a8e4f224e31e406f6c280b5ccb1e03371bfa92",
+    "trace": "461abf2a7640bbda35399d158491e57dd60bbaa99bb95e328f7a1176ba5644f7",
+    "unit-evidence": "1a046691b447830c74dcf77cb9b41d10e09a6b8e2e400744727ca05abb04c5e4",
 }
 
 

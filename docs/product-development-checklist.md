@@ -1,7 +1,7 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T18:27:09+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T20:07:04+01:00 (Europe/London, BST)
 - **Runtime baseline:** the architecture-qualified decoder passed complete
   exact-head Verify run `34992273744` at approval-only head `db95947` and
   merged unsigned as `4783896`. Exact-main Verify run `34997195939` passed.
@@ -293,9 +293,18 @@ manifest describes the supported tuple.
   registered Rust tests, independent checks, and mutation witnesses are
   implemented; independent review and hosted exact-head admission remain open.
 - [ ] Add bounded concurrent stdout and stderr collection to the traced session
-  before command integration. Keep the same stopped child, place it in the
-  prepared cgroup, enforce wall time, and make stream or cleanup failure select
-  drain. A command without this wave can deadlock when a target fills a pipe.
+  before command integration. The `PBR-OBSERVER-027` source wave starts both
+  nonblocking cancellable drains after spawn, retains independent bounded
+  prefixes while continuing to end of file, collects them only after terminal
+  tree handling, and makes pipe setup, reader startup, read, or join failures
+  block publication.
+  Registered Rust tests and an independent source checker are implemented;
+  independent review and hosted exact-head admission remain open. A command
+  without this wave can deadlock when a target fills a pipe.
+- [ ] Keep the same stopped child, place it in the prepared cgroup before target
+  release, apply one absolute plan wall-time deadline through observation and
+  drain, finish resource observation after the tree is empty, and block
+  publication after stream or cleanup failure.
 - [ ] Add stopped-tracee filesystem object resolution. Successful descriptor or
   executable results may become `kernel-selected`; denied paths may become
   `stable-candidate` only after bounded before-and-after identity checks. Races

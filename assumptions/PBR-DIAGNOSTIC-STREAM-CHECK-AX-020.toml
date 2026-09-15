@@ -1,0 +1,19 @@
+schema = "proofbound-assumption/1"
+id = "PBR-DIAGNOSTIC-STREAM-CHECK-AX-020"
+statement = "The identified Rust compiler and standard library preserve the registered bounded concurrent diagnostic stream behavior, and the identified Python interpreter, hashing, string, regular-expression, subprocess, and filesystem operations preserve the independent stream-capture source check."
+category = "compiler-tcb"
+owner = "Proofbound Runtime release maintainer"
+rationale = "Rust tests and an independent Python checker can reject registered source defects, but this repository does not prove the compiler, standard library, thread implementation, interpreter, hashing implementation, subprocess runner, or filesystem used to produce that evidence."
+scope = "Only the source, test, and independent-check interpretation of PBR-OBSERVER-027. It does not establish Linux pipe behavior, scheduler progress, ptrace event truth, process-tree completeness, cgroup placement, wall-time enforcement, command integration, or released-artifact behavior."
+affected_claims = ["PBR-OBSERVER-027"]
+review_evidence = [
+  "rust-toolchain.toml",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/adapter.rs",
+  "tools/ci/check_diagnostic_stream_capture.py",
+  "tools/ci/test_diagnostic_stream_capture.py",
+]
+discharge_plan = "Retain the compiler, thread, and checker premises. Narrow them through exact tool identities, independent implementation review, native pipe-saturation and failure fixtures, command integration, and exact released-artifact observations."
+source_citation = "docs/specs/0015_diagnostic_execution_and_plan_drafting.md#9-evidence-meaning"
+status = "active"

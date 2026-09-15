@@ -120,9 +120,13 @@ Exact re-review approved head `fbd2d66`; approval-only head `db95947` passed
 complete exact-head run `34992273744` and merged unsigned as `4783896`.
 Exact-main Verify run `34997195939` passed. The `PBR-OBSERVER-026` source wave
 now maps registered trace events into diagnostic artifact events while keeping
-all object resolution explicitly unresolved; independent review and hosted
-admission remain open. Object resolution, command integration, the native
-attack corpus, and release binding remain open.
+all object resolution explicitly unresolved. It passed exact-head Verify run
+`35018691928` and merged unsigned as `a89b92d`; exact-main verification is in
+progress. The dependent `PBR-OBSERVER-027` source wave adds independently
+bounded, cancellable, nonblocking stdout and stderr drains so pipe saturation
+cannot block on an unread stream; its review and hosted admission are open.
+Object resolution, command integration, the native attack corpus, and release
+binding remain open.
 The RT-7 current-integration source merged as `47c5ad2` and passed exact-main
 Verify run `35006872460`. RT-11's accepted signing decision merged as
 `08b8dbe` and passed exact-main Verify run `35012954812`; signing

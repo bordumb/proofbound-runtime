@@ -128,6 +128,23 @@ channel. The child guard attempts to kill and reap the child when a state is
 abandoned. This source property does not prove the corresponding Linux effects,
 successful cleanup, or complete process-tree cleanup.
 
+Child creation also takes the exact configured stdout and stderr pipes, makes
+both nonblocking, and starts an independent cancellable concurrent drain for
+each before the spawned trace state becomes available. The byte limits come
+from the seed plan's separate stdout and stderr resource limits. An active
+drain retains at most its limit but continues to read and discard bytes until
+end of file. It reports `complete` only when no
+bytes were discarded and `truncated` otherwise. A zero limit is valid, retains
+no bytes, and still drains the stream. Natural completion can return the two
+captures only after the trace tree is exactly empty. Forced termination can
+return them only after the exact drain succeeds. A missing configured pipe,
+drain-thread creation failure, read failure, or join failure is a closed
+observer failure and permits no publication. Early typestate destruction
+terminates and waits for the child before it cancels and joins outstanding
+drains. A cancelled nonblocking drain observes the cancellation no later than
+the next poll. These are source-order and bounded-memory properties. They do
+not establish Linux pipe progress, scheduler fairness, or process-tree truth.
+
 The separate diagnostic Linux adapter is the supported composition surface for
 these trace-startup typestates. It validates the observation bounds before child
 creation. After the exact initial trace stop, each adapter state privately
@@ -163,6 +180,12 @@ pidfds. It does not send `SIGKILL` through a stored numeric process identifier.
 The active trace continues exact waits after termination and follows any
 process-creation or exec event already pending until its private set is empty.
 Dropping an active trace sends termination through every retained pidfd.
+
+Stream collection does not replace the command's wall-time or resource
+lifecycle. The command must place the same stopped child in its prepared cgroup
+before target release, use one absolute plan wall-time deadline across setup,
+observation, and drain, finish the cgroup after the exact tree drain, and block
+publication after stream or resource cleanup failure.
 
 The diagnostic host must provide `PTRACE_GET_SYSCALL_INFO`, procfs `Tgid`
 identity, `pidfd_open`, and `pidfd_send_signal`. Missing support fails before

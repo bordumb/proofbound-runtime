@@ -30,7 +30,7 @@ def body_sha256(source: str, signature: str) -> str:
 EXPECTED_LOAD_BEARING_BODIES = {
     "active-next-event": "5a281f37642e52df2bc1a5187c3ee7ff741f2e751a4f977fcc70b0e44b9c59f2",
     "active-drain": "62659a1112bba90d37df808430b41097415df6ad2d0849dda65999310c486229",
-    "active-complete-drain": "745c353bb08f35c76e390fb67f252af94510f24873ad616b92db52c9e371863f",
+    "active-complete-drain": "cbf23efa7521a4e7d5d9e1e1257fe777fa12c2a127a71e78e3508788952c173f",
     "active-wait-observation": "6197d2734de504cd1419cf47fad0457c0edb91d4f198666a09e4d3e3792f1257",
     "active-drain-observation": "dceb35ed4c886eb36161331cf7106b07145a37d67e6714e359531e8fee06a7c9",
     "active-register-child": "e749a7f47624f313ba624ca850657240f2c0558e2f3b0b1544566b734eb6f3aa",
