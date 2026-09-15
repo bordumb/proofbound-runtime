@@ -2694,3 +2694,103 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 `fbd2d6679bfc609759783d9b54275ead3acd9731`. The following approval-only commit
 changes no reviewed production, claim, assumption, evidence, or checker bytes.
 Any later subject change requires a new exact-head review.
+## RT-7 current-integration initial exact-head review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `b2cb4b9bf10398ca5559dc476c492c3bd6d46c0b`
+- **Reviewed head:** `5b4893c3f6fa41c7f1cc19f6e13bebfb1d7d0866`
+- **Branch:** `codex/rt7-current-integration-manifest`
+- **Method:** Complete exact-range static security and product review. The
+  reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review found three blockers. First, the CDDL bounded the Runtime product
+label and package version to 64 bytes and registry source URLs to 4096 bytes,
+but both implementations accepted longer values. Second, JSON and CBOR inputs
+were materialized before their bounds were enforced, archive members were
+materialized before the exact-five check, and pathname checks were separated
+from later opens. Third, `PBR-DISTRIBUTION-025` consumed a synthetic registry
+observation without causally replaying or closing the admitted registry
+observer implementation and falsifiers.
+
+The remaining reviewed behavior was coherent: the implementation bound four
+Runtime artifacts and eight embedded executables, fixed package order and
+hosts, preserved registry-credential isolation, validated the exact
+Proofbound pin inventory, independently reconstructed the record, and did not
+claim that an external tuple had already been published.
+
+## RT-7 current-integration correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `b2cb4b9bf10398ca5559dc476c492c3bd6d46c0b`
+- **Reviewed head:** `a81e25903869b45677677d26828a677288e6dc6c`
+- **Branch:** `codex/rt7-current-integration-manifest`
+- **Method:** Complete exact-range static re-review of the three requested
+  corrections. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that both independent implementations enforce the
+CDDL text and integer limits; JSON, CBOR, artifact, and archive inputs use
+bounded no-follow descriptor reads; the archive inspector streams and rejects
+a sixth member; and the current-integration claim directly cites and replays
+the admitted registry-publication evidence. The correction preserves
+deterministic CBOR, independent verifier ownership, exact four-artifact and
+eight-executable binding, package and host closure, credential isolation,
+Proofbound pin closure, and workflow order.
+
+External registry publication, hosted admission, and unrelated-consumer
+dogfood remain open. As maintainer, I endorse this independent `APPROVE`
+verdict for exact subject `a81e25903869b45677677d26828a677288e6dc6c`.
+The following approval-only commit changes no production, schema,
+specification, claim, assumption, evidence, or test bytes. A replay onto a
+different admitted main requires a new exact-head review.
+
+## RT-7 current-integration replay and npm-bootstrap approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `4783896723d18a34eb033414e0d33305f963f05a`
+- **Reviewed head:** `03e5175e1dae694cd3574ad23f85c75d4fe406f4`
+- **Branch:** `codex/rt7-current-integration-manifest`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the approved current-integration producer,
+independent verifier, CDDL, registry observer, and focused tests remain
+byte-identical to approved source `a81e25903869b45677677d26828a677288e6dc6c`.
+The replay preserves the bounded CDDL fields, bounded no-follow reads,
+streaming exact-five archive inspection, causal registry-evidence replay,
+deterministic CBOR, and closed Runtime and Proofbound identities.
+
+The npm correction supplies the missing first-publication route without
+weakening normal publication. Bootstrap is default-off, requires package
+publication, follows release provenance, and uses the protected publication
+environment. It can run only after an immediate anonymous HTTP 404. Normal
+publication requires HTTP 200 and uses the configured trusted publisher.
+The one-time token is confined to the bootstrap step. Both routes disable npm
+lifecycle scripts, and the selected package has a closed hook-free script
+inventory.
+
+The causal source checks reject job-wide token exposure, misplaced script
+suppression, disabled status rejection, redirects, disabled route conditions,
+and credentialed publication before the registry-state check. The claim,
+assumption, specification, threat model, operator guide, assurance plan,
+roadmap, and checklist consistently treat HTTP 404 and 200 as route-selection
+observations. They do not treat 404 as proof of package absence or atomic
+registry state.
+
+External environment protection, registry ownership and behavior, npm token
+scope, custody, and revocation, PyPI and npm trusted-publisher configuration,
+DNS and TLS, final anonymous byte observations, unrelated-consumer dogfood,
+and retention of the current-integration tuple remain explicit completion
+gates.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`4783896723d18a34eb033414e0d33305f963f05a..03e5175e1dae694cd3574ad23f85c75d4fe406f4`.
+The following approval-only commit changes no reviewed production,
+specification, schema, claim, assumption, evidence, or checker bytes. Any
+later subject change requires a new exact-head review.

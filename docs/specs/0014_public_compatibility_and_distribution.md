@@ -196,6 +196,33 @@ Publication from a developer machine or a non-release workflow is unsupported.
 Package labels are tooling metadata. They do not select, approve, or identify
 the authoritative package bytes.
 
+npm does not accept a trusted-publisher configuration for a package that does
+not yet exist. The first `@proofbound/runtime-sdk` upload therefore has one
+separate bootstrap route in the same protected exact-source workflow. The
+route is disabled by default, requires the general publication input, checks
+that the anonymous package endpoint returns exactly `404` immediately before
+the token-bearing step, and exposes a shortest-lived external bootstrap token
+only to that step. The selected package metadata contains no npm publish
+lifecycle hook that could consume that environment, and both npm publication
+routes use `--ignore-scripts`. The normal route requires an immediate `200`
+observation.
+
+The anonymous observation is a route selector, not a statement of package
+absence. A private or restricted package can be hidden from anonymous access,
+and registry state can change between the observation and publication. The
+release maintainer must inspect the package through the authenticated scope
+before approving bootstrap. The registry can still accept this version after
+another version appears in that interval. Final exact-byte observation remains
+mandatory and no current tuple exists if the sequence is ambiguous.
+
+After the first accepted upload, the release maintainer must configure the
+exact npm OIDC trusted publisher, delete the GitHub bootstrap secret, revoke
+the npm token, and leave the bootstrap input disabled. The normal route
+requires the package endpoint to return exactly `200` and has no token
+reference. PyPI uses a pending trusted publisher and needs no corresponding
+bootstrap credential. The maintained external procedure is
+[the RT-7 initial registry publication guide](../guides/rt7-initial-registry-publication.md).
+
 ## 8. Prelaunch replacement policy
 
 No compatibility, deprecation, migration-window, or long-term-support policy is
@@ -223,6 +250,61 @@ and a human rendering. The record names:
 An absent tuple is unsupported, not implicitly compatible. The record is a
 distribution artifact and does not authenticate itself.
 
+### 9.1 Current carrier and closed identity
+
+The machine record is deterministic CBOR with schema
+`proofbound-runtime-current-integration/1`. Its closed CDDL is
+`schemas/current-integration-v1.cddl`. The JSON projection and Markdown
+document are views. They are not verification inputs and have no independent
+commitment meaning.
+
+The current Runtime-only record contains exactly:
+
+- the exact Runtime source revision and product label;
+- the release bundle and separate acceptor artifact identity for both
+  `linux/aarch64` and `linux/x86_64`, plus the exact four executable identities
+  read and checked from each bundle's closed release manifest;
+- the exact four selected registry package observations;
+- separate emitted and accepted schema inventories for plans, execution
+  receipts, composed receipts, acceptance policies, acceptance decisions, and
+  machine run results;
+- the minimum Rust, Python, and Node.js versions and the complete stable SDK
+  error-code vocabulary for each language;
+- the two supported Linux target triples;
+- the complete pinned Proofbound tool-bundle identity and the exact Proofbound
+  release-envelope, verification-report, and compiled-release schemas; and
+- an empty optional-integration inventory.
+
+The record does not infer compatibility from a package label, target name, or
+newer schema number. An optional Auths, Capsec, guest, service, or other
+profile remains unsupported until its exact typed tuple replaces the empty
+inventory in a separately reviewed schema wave.
+
+### 9.2 Production order
+
+The release workflow builds the current-integration record only after all four
+selected packages pass anonymous registry retrieval and exact-byte comparison.
+The producer consumes the closed registry observation, the four Runtime
+artifact files, and the canonical Runtime-owned Proofbound pin. A separately
+owned decoder and semantic validator then compares the record with every input
+before either projection is retained.
+
+Partial registry publication, an incomplete Runtime artifact inventory, a
+changed SDK error vocabulary, a different source revision, a substituted
+Proofbound pin, a noncanonical carrier, an unknown member, or an unlisted
+optional tuple prevents publication of the record. The source implementation
+does not establish that this release path has run. A tuple becomes current
+only when the exact protected workflow retains its successful registry
+observations and current-integration artifacts.
+
+The producer and verifier open every local input through a no-follow file
+descriptor, require a regular file, and enforce the declared byte ceiling
+before they materialize its contents. They stream the closed Runtime archive
+in order and stop after the five expected entries plus one overflow sentinel.
+Every CDDL text and integer bound is enforced independently by both
+implementations. A pathname check followed by a separate open, an unbounded
+JSON or CBOR read, or an unbounded archive-member inventory is not admitted.
+
 ## 10. Consumer support
 
 - Provide one minimal consumer for each published package.
@@ -244,6 +326,12 @@ bounded observation for the tested identity tuple.
 - Build package bytes whose inventory differs from the exact selected revision.
 - Attempt publication from a non-release context.
 - Publish one package from an incomplete selected first-party package set.
+- Select npm bootstrap while general publication is disabled.
+- Select npm bootstrap after an immediate anonymous response other than `404`.
+- Select the normal npm OIDC route after an immediate anonymous response other
+  than `200`.
+- Expose the npm bootstrap token to the normal publisher or anonymous observer.
+- Add an npm publish lifecycle hook to the selected package.
 - Substitute registry bytes after release approval.
 - Select an unlisted platform integration tuple.
 - Replace the independent verifier with an unrecorded executable identity.

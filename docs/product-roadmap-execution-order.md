@@ -4,8 +4,8 @@
 - **Date:** 2026-09-15
 - **Applies to:** Roadmap 1 release closure, Roadmap 2, and Roadmap 3 candidate
   promotion
-- **Current admitted Runtime main:** `7f989d3`; exact-main Verify run
-  `34896209689` passed
+- **Current Runtime main:** `4783896`; exact-head Verify run `34992273744` and
+  exact-main Verify run `34997195939` passed
 - **Current reviewed Roadmap 1 source head:** `d76f3b8`
 - **Lifecycle:** prelaunch; zero external users; package labels are tooling
   metadata rather than compatibility promises
@@ -18,9 +18,10 @@ review updates it.
 
 ## 1. Current boundary
 
-Roadmap 1 source work is merged and admitted at exact Runtime main commit
-`7f989d3`. Roadmap 2 delivery is active; no complete Roadmap 2 epic has closed.
-Roadmap 3 contains candidates, not scheduled implementation.
+Roadmap 1 source work is merged. Runtime main `4783896` also contains the
+reviewed and exact-main-admitted RT-8 decoder; run `34997195939` passed.
+Roadmap 2 delivery is active; no complete Roadmap 2 epic has closed. Roadmap 3
+contains candidates, not scheduled implementation.
 
 The immediate objective is to finish RT-7 distribution, then remove the
 first-run and useful-network barriers in that order. No version cut,
@@ -113,8 +114,10 @@ Merge order:
 4. Prepare the selected pure crates and existing SDK packages.
 5. Add exact-source package byte and file-list comparison.
 6. Add registry publication only from the exact approved release workflow.
-7. Dogfood every package from an unrelated consumer repository.
-8. Publish the Runtime current-integration manifest.
+7. Implement and independently verify the Runtime current-integration record.
+8. Publish and anonymously observe every selected package.
+9. Dogfood every package from an unrelated consumer repository.
+10. Retain the current-integration record from that exact successful release.
 
 The Runtime-only package set ships before optional Auths or Capsec integration
 profiles. Platform support remains an explicit exact tuple. Maintaining older
@@ -124,8 +127,7 @@ interfaces is not a prelaunch gate.
 
 The first independent-verifier package slice passed independent exact-head
 review, hosted verification, and merged to Runtime `main` as `7f989d3`.
-Exact-main Verify run `34896209689` passed. No registry publication step
-exists.
+Exact-main Verify run `34896209689` passed.
 The generic Proofbound tool-bundle source was independently approved at PR 10
 head `693976f`, passed its hosted gate, and merged as `dd481a3`. Exact-main
 Verify run `34887427661` and both jobs in tool-bundle run `34889426459` passed.
@@ -139,9 +141,16 @@ merged as Runtime `f2a06de`, and passed exact-main Verify run `34908515545`.
 The protected-path cutover passed independent review at production subject
 `9d0cbb2`, passed exact-head Verify run `34915891330` at approval-envelope head
 `515fcbc`, and merged unsigned as `4a0cfdb`. Exact-main Verify run
-`34918706960` is pending. The next isolated RT-7 wave adds an explicit,
-protected registry route and anonymous exact-byte retrieval; it does not claim
-that registry publication or external configuration has occurred.
+`34918706960` passed. The protected registry route and anonymous exact-byte
+observer are now merged. The deterministic-CBOR current-integration producer
+and independent verifier passed independent review at source `a81e259` and are
+replayed on current main under `PBR-DISTRIBUTION-025`. Current npm registry
+rules exposed a missing first-publication route, so the active wave also adds
+an immediate-`404`-gated one-time bootstrap token and mandatory transition to
+OIDC. That status does not prove package absence or lock registry state.
+Exact-head review and hosted verification remain open.
+External registry configuration, publication, anonymous observations, and
+unrelated consumer dogfood remain separate completion gates.
 This work follows the admitted foundation as a separate exact-source wave. It
 does not require a version transition or preserve an older candidate surface.
 

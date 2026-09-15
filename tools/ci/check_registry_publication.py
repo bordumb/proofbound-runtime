@@ -17,6 +17,7 @@ INVENTORY = [
     "registry-publication-ordered-package-set",
     "registry-publication-credential-separation",
     "registry-publication-upload-input-reproduction",
+    "registry-publication-npm-bootstrap-gate",
     "registry-publication-anonymous-retrieval",
     "registry-publication-exact-byte-comparison",
 ]
@@ -35,6 +36,14 @@ def main() -> int:
             (
                 "tools.ci.test_release_workflow.ReleaseWorkflowTests."
                 "test_registry_publication_is_explicit_protected_and_ordered"
+            ),
+            (
+                "tools.ci.test_release_workflow.ReleaseWorkflowTests."
+                "test_npm_bootstrap_cannot_run_without_package_publication"
+            ),
+            (
+                "tools.ci.test_release_workflow.ReleaseWorkflowTests."
+                "test_npm_bootstrap_bypass_mutations_fail_closed"
             ),
             (
                 "tools.ci.test_release_workflow.ReleaseWorkflowTests."

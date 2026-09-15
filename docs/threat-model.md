@@ -153,14 +153,25 @@ premises. They do not authenticate GitHub independently, prove the upstream
 tools, or remove the trusted roles.
 
 Selected package publication additionally trusts GitHub Actions environment
-protection, the scoped crates.io token, the PyPI and npm OIDC trusted-publisher
-records, the three registries, DNS, TLS, and the pinned package clients. The
-release workflow limits publication to one explicit exact-mainline request
+protection, the scoped crates.io token, the PyPI pending trusted publisher, the
+one-time npm bootstrap token and its revocation, the later npm OIDC
+trusted-publisher record, the three registries, DNS, TLS, and the pinned package
+clients. npm cannot bind that OIDC identity until the package exists. The
+release workflow therefore requires a separate default-off bootstrap input and
+an immediate anonymous `404` observation before it exposes the token to the
+first npm publish step. That response does not exclude a private or restricted
+package and does not lock registry state. The registered package metadata has no publish lifecycle
+hook that could inherit the token, and the publish command disables lifecycle
+scripts. The normal route requires `200` and has no token reference.
+
+The release workflow limits publication to one explicit exact-mainline request
 after complete release provenance. It reproduces the Rust upload inputs and
 anonymously compares all four downloaded registry artifacts with the approved
-bytes. These observations do not prove registry service behavior, publisher
-identity, account custody, availability, or atomic publication across the
-independent registries. RT-11 owns any later signing and transparency claim.
+bytes. The status check does not prevent a registry race, prove package
+absence or name control, or prove token scope or revocation. These observations do not prove registry
+service behavior, publisher identity, account custody, availability, or atomic
+publication across the independent registries. RT-11 owns any later signing
+and transparency claim.
 
 ## Versioned enforced boundary
 

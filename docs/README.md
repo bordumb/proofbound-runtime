@@ -91,6 +91,9 @@ revision requires explicit review because it can change claim meaning.
 
 ## User guides
 
+- [Prepare the first RT-7 registry publication](guides/rt7-initial-registry-publication.md)
+  defines the protected external environment, registry identity, one-time npm
+  bootstrap, OIDC transition, and retained evidence procedure.
 - [Install and prepare version 0.1](guides/install-v0.1.md) verifies one exact
   release archive and prepares the supported systemd cgroup delegation.
 - [Build and run the maintained static example](guides/maintained-example.md)

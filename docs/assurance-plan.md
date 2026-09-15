@@ -24,15 +24,16 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-SDK-014` | Tier 1, independently checked source and package contract | Rust, Python, and TypeScript SDKs preserve the separate-process boundary; registry publication and consumer dogfood remain open. |
 | `PBR-DISTRIBUTION-015` | Tier 1 independently reviewed and admitted on exact Runtime main | The verifier package has a closed preflight, source-payload comparison, byte reproduction, local consumer, and release-retention path; no registry or publisher claim is admitted. |
 | `PBR-DISTRIBUTION-016` | Tier 1 public-bundle consumer independently reviewed and admitted on exact Runtime main | Runtime pins one immutable public Proofbound release and rejects identity, inventory, manifest, checksum, archive, installer, and installed-byte substitution. Every protected evidence and release job installs that exact bundle independently. |
-| `PBR-DISTRIBUTION-018` | Tier 1 workflow and registry-observer contract | Publication is explicit, exact-source, protected, ordered, and credential-isolated. Anonymous exact-byte registry observations and external registry setup remain open. |
+| `PBR-DISTRIBUTION-018` | Tier 1 npm-bootstrap correction pending exact review | Publication is explicit, exact-source, protected, ordered, and credential-isolated. The active correction adds the missing one-time npm bootstrap gate; external configuration and observations remain open. |
+| `PBR-DISTRIBUTION-025` | Tier 1 implementation previously approved at `a81e259`; registry-route dependency changed and exact re-review is required | A deterministic-CBOR producer and independent verifier close one Runtime-only integration tuple after complete registry observation. No tuple is published until an exact protected run retains it. |
 | `PBR-DRAFT-017` | Tier 1 bounded contract and source-level non-reuse checks | Closed diagnostic vocabulary and schemas are registered, and verifier, composer, and acceptor paths reject diagnostic receipt reuse. The live observer remains open. |
 | `PBR-DRAFT-019` | Tier 1 bounded producer contract independently reviewed and admitted on exact Runtime main | The pure diagnostic artifact producer preserves non-reuse, provenance, explicit gaps, and mandatory human authority choices. It does not claim live observer coverage. |
-| `PBR-OBSERVER-020` | Tier 1 admitted through active event-and-drain main `b2cb4b9`; current decoder identity pending | The admitted event-and-drain sources passed exact-head run `34973401808`. The decoder batch changes the observer source to expose validated capture limits, so only that new exact identity is pending review and hosted admission. |
-| `PBR-OBSERVER-021` | Tier 1 admitted through active event-and-drain main `b2cb4b9`; current decoder identity pending | The admitted event-and-drain sources passed exact-head run `34973401808`. The decoder batch changes the shared trace source, so only that new exact identity is pending review and hosted admission. |
-| `PBR-OBSERVER-022` | Tier 1 admitted through active event-and-drain main `b2cb4b9`; current decoder identity pending | The admitted adapter coupling passed exact-head run `34973401808`. The decoder batch changes the adapter release transition to derive capture limits from the same validated protocol, so only that identity is pending. |
-| `PBR-OBSERVER-023` | Tier 1 active-trace source admitted on main `b2cb4b9`; current decoder identity pending | The active event source and drain coupling passed exact-head run `34973401808`. The decoder batch changes `ActiveTrace` to decode and capture operands at entry, so only that identity is pending. |
-| `PBR-OBSERVER-024` | Tier 1 event-and-drain coupling admitted on main `b2cb4b9`; current decoder identity pending | The combined correction passed exact-head run `34973401808` and merged. The decoder changes shared trace, adapter, and observer sources, so only the new exact identity is pending review and hosted admission. |
-| `PBR-OBSERVER-025` | Tier 1 syscall-decoder source implementation independently approved; replacement hosted admission pending | Exact source `fbd2d66` closes the second hosted large-enum lint by adding one box only for the terminal drain-selection event; it adds no boxing allocation to normal wait, continue, or natural-completion events. Run `34988148920` otherwise passed formal, native, and all non-rate-limited evidence lanes. Kernel ABI truth, memory stability, native attacks, and artifact mapping remain open. |
+| `PBR-OBSERVER-020` | Tier 1 decoder identity admitted on exact Runtime main `4783896` | The complete decoder subject passed exact-head run `34992273744` and exact-main run `34997195939`. |
+| `PBR-OBSERVER-021` | Tier 1 decoder identity admitted on exact Runtime main `4783896` | The shared trace source passed exact-head run `34992273744` and exact-main run `34997195939`. |
+| `PBR-OBSERVER-022` | Tier 1 decoder identity admitted on exact Runtime main `4783896` | The adapter derives capture limits from the same validated protocol and passed exact-head run `34992273744` and exact-main run `34997195939`. |
+| `PBR-OBSERVER-023` | Tier 1 decoder identity admitted on exact Runtime main `4783896` | Entry-time operand capture passed exact-head run `34992273744` and exact-main run `34997195939`. |
+| `PBR-OBSERVER-024` | Tier 1 decoder identity admitted on exact Runtime main `4783896` | The shared trace, adapter, and observer sources passed exact-head run `34992273744` and exact-main run `34997195939`. |
+| `PBR-OBSERVER-025` | Tier 1 syscall-decoder source admitted on exact Runtime main `4783896` | Approval-only head `db95947` passed complete exact-head run `34992273744`; exact-main run `34997195939` also passed. Kernel ABI truth, memory stability, native attacks, and artifact mapping remain open. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -113,8 +114,8 @@ Verify run `34899222179`, and bundle run `34900896450`.
 The isolated dogfood wave passed exact-head review and merged as Runtime
 commit `f2a06de`. Exact-main Verify run `34908515545` passed. The protected
 cutover passed independent review and exact-head Verify run `34915891330`,
-then merged unsigned as `4a0cfdb`. Exact-main Verify run `34918706960` remains
-the admission gate. This does not prove Proofbound correctness or independently
+then merged unsigned as `4a0cfdb`. Exact-main Verify run `34918706960` passed.
+This does not prove Proofbound correctness or independently
 authenticate GitHub or a publisher. `PBR-BUNDLE-DISTRIBUTION-AX-012` retains
 the GitHub, repository control, DNS, and TLS premises.
 `PBR-BUNDLE-TOOLCHAIN-AX-013` retains the Python, digest, installer, runner,
@@ -131,7 +132,14 @@ contains:
 - a protected `package-publish` environment on every publisher;
 - ordered verifier, Rust SDK, Python SDK, and TypeScript SDK publishers;
 - a crates.io token exposed only to each Rust publisher step;
-- PyPI and npm OIDC identities scoped by external trusted-publisher records;
+- a PyPI pending trusted publisher;
+- an independently selected, default-off npm first-publication input that is
+  selected only after an immediate anonymous `404` observation;
+- a one-time npm bootstrap token exposed only to that initial publish step;
+- an exact selected npm script inventory with no publish lifecycle hook and
+  `--ignore-scripts` on both publication routes;
+- a normal npm OIDC route that requires the package endpoint to return exactly
+  `200` immediately before publication and has no bootstrap-token reference;
 - exact reproduction of each Rust upload input against its approved retained
   artifact; and
 - anonymous retrieval and exact byte comparison of all four registry
@@ -140,11 +148,49 @@ contains:
 The bounded evidence mutates the approved source revision, package manifests,
 downloaded bytes, metadata hosts, package inventory, and workflow gates. It
 does not publish a package or test external configuration. Registry ownership,
-protected-environment rules, the scoped crates.io token, and the two OIDC
-trusted-publisher records remain explicit external obligations. Partial
+protected-environment rules, the scoped crates.io token, the PyPI pending
+publisher, npm scope control, the bootstrap token and its revocation, and the
+post-bootstrap npm OIDC record remain explicit external obligations. Partial
 publication can occur because the registries do not provide one atomic
 transaction; the current-integration manifest must remain absent until the
-complete selected set passes anonymous observation.
+complete selected set passes anonymous observation. The npm status probe does
+not prove package absence, reveal a private package, or lock registry state.
+
+## PBR-DISTRIBUTION-025
+
+The subject is the current-integration producer, independently owned verifier,
+and their placement after the anonymous registry observer in the exact-source
+release workflow. Its current closure contains:
+
+- one deterministic-CBOR record with a closed CDDL and no unknown-member or
+  noncanonical fallback;
+- exact identity of one Runtime source revision, both supported Linux release
+  bundles, both separate acceptor artifacts, and all eight embedded executable
+  identities;
+- all four registry package observations for that same source revision;
+- separate emitted and accepted schema profiles for plans, receipts,
+  composition, acceptance, and machine results;
+- source-checked Rust, Python, and Node.js minimums and closed SDK error-code
+  inventories;
+- both explicit Linux target profiles;
+- the complete exact Proofbound source, public tool-bundle, and composed-release
+  schema identities; and
+- an empty optional-integration inventory that implies no Auths, Capsec, guest,
+  service, or other support.
+
+The independent verifier shares no decoder or semantic table with the producer.
+It re-derives the complete expected record from the registry observation,
+Runtime artifact files, and canonical Proofbound pin before it emits the JSON
+and Markdown views. The bounded evidence substitutes artifacts and record
+members and an embedded verifier, removes a registry observation, injects an
+unknown member, supplies a noncanonical carrier, compares every SDK error
+vocabulary with source, and checks workflow ordering.
+
+This source wave does not publish a package or current tuple. External registry
+configuration and behavior, package and SDK tools, Proofbound distribution,
+Python, hashing, filesystems, and hosted workflow behavior remain explicit
+premises. RT-7 still requires one successful protected publication and
+anonymous observation plus unrelated consumer dogfood.
 
 ## PBR-POLICY-002
 
@@ -665,8 +711,9 @@ The Rust lane exposed a distinct large-enum lint in the adapter's public drain
 observation. The current correction uses one boxed event only when an event
 selects terminal drain. It adds no boxing allocation to normal continue,
 natural-completion, or trace-wait events. The affected exact-body checks are
-refreshed. Independent re-review approved exact head `fbd2d66`. The following
-approval-only record and replacement hosted admission remain open.
+refreshed. Independent re-review approved exact head `fbd2d66`. Approval-only
+head `db95947` passed complete exact-head run `34992273744` and merged unsigned
+as `4783896`. Exact-main Verify run `34997195939` passed.
 
 ## Bounded-domain declaration guard
 
