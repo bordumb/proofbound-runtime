@@ -50,6 +50,8 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("actions/setup-node@2499707", publication)
         self.assertIn("npm@11.6.0", publication)
         self.assertIn("--registry https://registry.npmjs.org", publication)
+        typescript = workflow[typescript_sdk:observe]
+        self.assertNotIn("registry-url:", typescript)
         observation = workflow[observe:]
         self.assertIn("verify_registry_packages.py", observation)
         self.assertIn("needs: [provenance, publish-typescript-sdk]", observation)
