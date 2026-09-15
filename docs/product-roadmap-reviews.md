@@ -1784,3 +1784,35 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, or test bytes. Any later subject change requires a new
 exact-head review.
+
+## RT-8 launcher exec-release gate rebased approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `cc837538f08856e701c9876fe41f00b04ed7f05f`
+- **Reviewed head:** `f70bea91f83632e4704f81eeec7de077d5114893`
+- **Branch:** `codex/rt8-linux-observer`
+- **Method:** Complete exact-range static re-review after rebase. The reviewer
+  changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the earlier blockers remain closed.
+`ExecRelease::verify` is defined on and called through the release type.
+Execution, policy, and cgroup substitutions fail distinctly. A missing,
+malformed, oversized, or out-of-order release cannot authorize exec. Boundary
+installation, acknowledgement, release, final executable revalidation, and
+exec remain ordered. Post-seccomp channel reads remain permitted, and the
+one-byte-over-bound receive buffer detects oversized sequence packets.
+
+The schema, codec, supervisor, falsifiers, claim, evidence, and source roots
+agree. Specification 0007 applies the atomic prelaunch replacement rule
+without compatibility machinery. Diagnostic observer behavior remains outside
+the production launcher and dependency graph. Rebase status and historical
+review records are coherent. The relevant security-contract files are
+byte-identical to the previously approved corrected implementation.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`f70bea91f83632e4704f81eeec7de077d5114893`. This approval-only commit changes
+no reviewed production, schema, specification, claim, assumption, evidence,
+test, or prior review-record bytes. Any later subject change requires a new
+exact-head review.
