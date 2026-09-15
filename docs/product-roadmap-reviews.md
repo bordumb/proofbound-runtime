@@ -1959,3 +1959,62 @@ ownership-only role, and the structural falsifier must require that form.
 
 This verdict is not endorsed. The correction changes the exact subject and
 requires one more exact-head review.
+
+## RT-8 diagnostic trace-startup third correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `db31e0259bbe708fc8afd8288bb6445b1ad06235`
+- **Reviewed head:** `55f7c787bf2bcb1cd7469c72fe842c1217e5eea5`
+- **Branch:** `codex/rt8-ptrace-backend`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the ownership-only `_child` field preserves the
+exact `TraceChild` drop guard while avoiding the private-field dead-code warning,
+and that the structural checker requires both the field and its initialization.
+Every prior command, protocol, channel, identity, mutable-child, session,
+assumption, source-closure, raw-call, feature-isolation, ordering, and closed
+error finding remains resolved. Claims, evidence, specifications, ADRs,
+checklists, roadmap records, and rejection history remain consistent.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`55f7c787bf2bcb1cd7469c72fe842c1217e5eea5`. The following approval-only
+commit adds this record and changes no reviewed claim-subject bytes. Any later
+subject change, including a prerequisite rebase, requires a new exact-head
+review.
+
+## RT-8 diagnostic observer-adapter initial review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `98be91872a263b4c9f6683f4f028695372be7fdf`
+- **Reviewed head:** `4ea747f16d18c74c833d8196f8ff7b3477fc2ed3`
+- **Branch:** `codex/rt8-observer-adapter`
+- **Method:** Complete exact-range static review. The reviewer changed no files
+  and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The review confirmed that the implementation validates bounds before trace
+preparation, advances pure state only after each matching effect, authorizes
+pure release before target release, keeps diagnostic dependencies out of the
+production executables, and introduces no unsupported runtime or release
+claim.
+
+The review found two blocking evidence and coupling gaps. First, the structural
+checker accepted public state fields and rejected only three named mutable
+escape methods. A renamed accessor, a mutable return from the existing protocol
+accessor, or a differently spelled raw re-export could expose the privately
+owned protocol or trace typestate without failing the registered evidence.
+Second, the checker did not bind protocol construction to the exact spawned
+process or bind pure option readiness to the exact bits installed by the Linux
+operation. An unrelated process identifier, removal of the new spawned-process
+accessor, or drift between independently constructed pure and Linux option sets
+could pass.
+
+The correction must enforce exact private fields and non-escaping public
+signatures, scope identity checks to `SpawnedTrace`, carry the exact installed
+option bits through `TraceReady` and the closed pure validator, and include the
+raw Linux option source in the claim and evidence closures. This verdict is not
+endorsed. The correction changes the exact subject and requires independent
+re-review.

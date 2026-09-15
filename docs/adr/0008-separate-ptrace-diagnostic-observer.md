@@ -68,10 +68,14 @@ different release channel to advance the session.
 The separate diagnostic Linux crate presents one coupled adapter instead of
 re-exporting the raw trace typestates. It validates observation bounds before
 spawn. After the exact initial trace stop, every consuming adapter transition
-moves one private trace typestate and one pure protocol. Effectful boundary and
-option success precede their pure records. Pure release authorization precedes
-the effectful release. The public surface provides process identity and
-read-only protocol status, but no raw trace state or mutable protocol handle.
+moves one private trace typestate and one pure protocol. The pure protocol is
+seeded from the exact spawned process only after that process reaches the stop.
+Effectful boundary success precedes its pure record. The Linux option operation
+returns the exact installed bits through the trace state, and the adapter passes
+those bits through the closed pure validator before it records option readiness.
+Pure release authorization precedes the effectful release. The public surface
+provides process identity and read-only protocol status, but no raw trace state,
+public owner field, or mutable protocol handle.
 The future event loop extends the active coupled state rather than splitting
 these owners.
 

@@ -157,8 +157,9 @@ impl AcknowledgedObserver {
     /// Records option readiness only after exact option installation.
     pub fn install_options(self) -> Result<ReadyObserver, ObserverAdapterError> {
         let trace = self.trace.install_options()?;
+        let options = DiagnosticTraceOptions::from_bits(trace.options())?;
         let mut protocol = self.protocol;
-        protocol.enable_trace_options(DiagnosticTraceOptions::required())?;
+        protocol.enable_trace_options(options)?;
         Ok(ReadyObserver { trace, protocol })
     }
 }

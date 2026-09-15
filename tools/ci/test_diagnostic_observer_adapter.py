@@ -8,6 +8,7 @@ ADAPTER = ROOT / "crates/proofbound-runtime-diagnose-linux/src/adapter.rs"
 ADAPTER_LIB = ROOT / "crates/proofbound-runtime-diagnose-linux/src/lib.rs"
 ADAPTER_MANIFEST = ROOT / "crates/proofbound-runtime-diagnose-linux/Cargo.toml"
 TRACE = ROOT / "crates/proofbound-runtime-linux/src/trace.rs"
+SYS = ROOT / "crates/proofbound-runtime-linux/src/sys.rs"
 PRODUCTION_MANIFESTS = [
     ROOT / "crates/proofbound-runtime-cli/Cargo.toml",
     ROOT / "crates/proofbound-runtime-linux/Cargo.toml",
@@ -26,26 +27,43 @@ def structure(source: str, type_name: str) -> str:
     return source[start:end]
 
 
+def compact(source: str) -> str:
+    return re.sub(r"\s+", "", source)
+
+
+def private_fields(source: str, type_name: str) -> list[str]:
+    body = structure(source, type_name).split("{", 1)[1]
+    return [line.strip() for line in body.splitlines() if ":" in line]
+
+
 class DiagnosticObserverAdapterContractTests(unittest.TestCase):
     def setUp(self):
         self.adapter = ADAPTER.read_text()
         self.adapter_lib = ADAPTER_LIB.read_text()
         self.trace = TRACE.read_text()
+        self.sys = SYS.read_text()
 
     def test_preparation_binds_validated_bounds_to_one_trace(self):
         prepare_start = self.adapter.index("pub fn prepare_observer")
         prepare_end = self.adapter.index("\n}\n\nimpl PreparedObserver", prepare_start)
         prepare = self.adapter[prepare_start:prepare_end]
-        compact = re.sub(r"\s+", "", prepare)
+        compact_prepare = compact(prepare)
         self.assertLess(
-            compact.index("bounds.validate()"),
-            compact.index("prepare_traced_launcher"),
+            compact_prepare.index("bounds.validate()"),
+            compact_prepare.index("prepare_traced_launcher"),
         )
         self.assertIn("PreparedObserver { trace, bounds }", prepare)
-        prepared = structure(self.adapter, "PreparedObserver")
-        self.assertIn("trace: PreparedTraceCommand", prepared)
-        self.assertIn("bounds: ObservationBounds", prepared)
-        self.assertNotIn("protocol: ObserverProtocol", prepared)
+        self.assertEqual(
+            private_fields(self.adapter, "PreparedObserver"),
+            [
+                "trace: PreparedTraceCommand<'descriptor>,",
+                "bounds: ObservationBounds,",
+            ],
+        )
+        self.assertEqual(
+            private_fields(self.adapter, "SpawnedObserver"),
+            ["trace: SpawnedTrace,", "bounds: ObservationBounds,"],
+        )
 
     def test_states_move_one_private_trace_and_protocol_pair(self):
         for state, trace_type in [
@@ -56,26 +74,56 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
             ("ReadyObserver", "TraceReady"),
             ("ActiveObserver", "ActiveTrace"),
         ]:
-            body = structure(self.adapter, state)
-            self.assertIn(f"trace: {trace_type}", body, state)
-            self.assertIn("protocol: ObserverProtocol", body, state)
+            self.assertEqual(
+                private_fields(self.adapter, state),
+                [f"trace: {trace_type},", "protocol: ObserverProtocol,"],
+                state,
+            )
             declaration = self.adapter[: self.adapter.index(f"pub struct {state}")]
             derive = declaration.rsplit("#[derive(", 1)[-1].split(")]", 1)[0]
             self.assertNotIn("Copy", derive, state)
             self.assertNotIn("Clone", derive, state)
 
-        public_functions = re.findall(r"pub (?:const )?fn ([a-z_]+)", self.adapter)
-        self.assertNotIn("into_parts", public_functions)
-        self.assertNotIn("trace_mut", public_functions)
-        self.assertNotIn("protocol_mut", public_functions)
+        public_signatures = re.findall(
+            r"pub\s+(?:const\s+)?fn\s+[^\{]+\{", self.adapter
+        )
+        for signature in public_signatures:
+            self.assertNotRegex(signature, r"->\s*&\s*mut\b")
+            self.assertNotRegex(
+                signature,
+                r"->[^\{]*(?:PreparedTraceCommand|SpawnedTrace|InitialExecStop|"
+                r"LauncherPause|BoundaryRunning|AcknowledgedTraceStop|TraceReady|"
+                r"ActiveTrace)(?:\s|,|>|\{)",
+            )
+            if "ObserverProtocol" in signature:
+                self.assertIn("-> &ObserverProtocol", signature)
+        active = implementation(self.adapter, "ActiveObserver")
+        self.assertIn(
+            "pub const fn protocol(&self) -> &ObserverProtocol",
+            active,
+        )
+        self.assertNotIn("&mut ObserverProtocol", self.adapter)
 
     def test_effects_and_pure_transitions_have_one_closed_order(self):
         initial = implementation(self.adapter, "SpawnedObserver")
-        self.assertLess(
-            initial.index("wait_for_initial_exec_stop"),
-            initial.index("ObserverProtocol::new"),
+        compact_initial = compact(initial)
+        exact_process_flow = (
+            "letprocess=self.trace.process();"
+            "lettrace=self.trace.wait_for_initial_exec_stop(deadline)?;"
+            "letroot=DiagnosticProcessId::new(process.get())?;"
         )
-        self.assertLess(initial.index("ObserverProtocol::new"), initial.index("attach_root"))
+        self.assertIn(exact_process_flow, compact_initial)
+        self.assertEqual(
+            compact_initial.count("DiagnosticProcessId::new(process.get())"), 1
+        )
+        self.assertLess(
+            compact_initial.index("DiagnosticProcessId::new(process.get())"),
+            compact_initial.index("ObserverProtocol::new(root,self.bounds)"),
+        )
+        self.assertLess(
+            compact_initial.index("ObserverProtocol::new(root,self.bounds)"),
+            compact_initial.index("attach_root"),
+        )
 
         boundary = implementation(self.adapter, "BoundaryRunningObserver")
         self.assertLess(
@@ -84,8 +132,15 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
         )
 
         acknowledged = implementation(self.adapter, "AcknowledgedObserver")
-        self.assertLess(acknowledged.index("install_options"), acknowledged.index("enable_trace_options"))
-        self.assertIn("DiagnosticTraceOptions::required()", acknowledged)
+        compact_acknowledged = compact(acknowledged)
+        exact_option_flow = (
+            "lettrace=self.trace.install_options()?;"
+            "letoptions=DiagnosticTraceOptions::from_bits(trace.options())?;"
+            "letmutprotocol=self.protocol;"
+            "protocol.enable_trace_options(options)?;"
+        )
+        self.assertIn(exact_option_flow, compact_acknowledged)
+        self.assertNotIn("DiagnosticTraceOptions::required()", self.adapter)
 
         ready = implementation(self.adapter, "ReadyObserver")
         self.assertLess(ready.index("release_target"), ready.index("self.trace.release"))
@@ -93,14 +148,58 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
 
     def test_adapter_is_separate_and_hides_raw_trace_typestates(self):
         self.assertNotIn("unsafe", self.adapter)
-        self.assertNotIn("pub use proofbound_runtime_linux::trace", self.adapter_lib)
+        public_uses = "\n".join(
+            re.findall(r"pub use [^;]+;", self.adapter_lib, re.DOTALL)
+        )
+        public_use_identifiers = set(re.findall(r"[A-Za-z_][A-Za-z0-9_]*", public_uses))
+        for raw_type in [
+            "prepare_traced_launcher",
+            "AcknowledgedTraceStop",
+            "ActiveTrace",
+            "BoundaryRunning",
+            "InitialExecStop",
+            "LauncherPause",
+            "PreparedTraceCommand",
+            "SpawnedTrace",
+            "TraceReady",
+            "TraceStartupError",
+        ]:
+            self.assertNotIn(raw_type, public_use_identifiers)
         self.assertIn("proofbound-runtime-diagnose.workspace = true", ADAPTER_MANIFEST.read_text())
-        self.assertIn("pub const fn process(&self) -> TraceProcessId", self.trace)
+        spawned_trace = implementation(self.trace, "SpawnedTrace")
+        self.assertIn(
+            "pub const fn process(&self) -> TraceProcessId",
+            spawned_trace,
+        )
         self.assertNotIn("-> &mut Child", self.trace)
         for manifest in PRODUCTION_MANIFESTS:
             source = manifest.read_text()
             self.assertNotIn("proofbound-runtime-diagnose-linux", source, manifest)
             self.assertNotIn("proofbound-runtime-diagnose", source, manifest)
+
+    def test_exact_installed_option_bits_cross_the_pure_validation_boundary(self):
+        install_start = self.sys.index("pub(crate) fn install_diagnostic_trace_options")
+        install_end = self.sys.index("\n}\n", install_start)
+        install = compact(self.sys[install_start:install_end])
+        self.assertIn("->io::Result<u32>", install)
+        self.assertIn("REQUIRED_DIAGNOSTIC_TRACE_OPTIONSasusize", install)
+        self.assertIn("Ok(REQUIRED_DIAGNOSTIC_TRACE_OPTIONS)", install)
+
+        acknowledged_trace = compact(implementation(self.trace, "AcknowledgedTraceStop"))
+        self.assertIn(
+            "letoptions=crate::sys::install_diagnostic_trace_options("
+            "self.session.process.get()).map_err(|_|"
+            "TraceStartupError::OptionsInstallFailed)?;",
+            acknowledged_trace,
+        )
+        self.assertIn("Ok(TraceReady{session:self.session,options,})", acknowledged_trace)
+        self.assertEqual(
+            private_fields(self.trace, "TraceReady"),
+            ["session: TraceSession,", "options: u32,"],
+        )
+        ready_trace = implementation(self.trace, "TraceReady")
+        self.assertIn("pub const fn options(&self) -> u32", ready_trace)
+        self.assertIn("self.options", ready_trace)
 
 
 if __name__ == "__main__":

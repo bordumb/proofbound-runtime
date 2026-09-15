@@ -14,19 +14,19 @@ const PR_CAP_AMBIENT: libc::c_int = 47;
 const PR_CAP_AMBIENT_IS_SET: libc::c_ulong = 1;
 const PR_CAP_AMBIENT_CLEAR_ALL: libc::c_ulong = 4;
 #[cfg(feature = "diagnostic-observer")]
-const PTRACE_O_TRACESYSGOOD: libc::c_ulong = 0x0000_0001;
+const PTRACE_O_TRACESYSGOOD: u32 = 0x0000_0001;
 #[cfg(feature = "diagnostic-observer")]
-const PTRACE_O_TRACEFORK: libc::c_ulong = 0x0000_0002;
+const PTRACE_O_TRACEFORK: u32 = 0x0000_0002;
 #[cfg(feature = "diagnostic-observer")]
-const PTRACE_O_TRACEVFORK: libc::c_ulong = 0x0000_0004;
+const PTRACE_O_TRACEVFORK: u32 = 0x0000_0004;
 #[cfg(feature = "diagnostic-observer")]
-const PTRACE_O_TRACECLONE: libc::c_ulong = 0x0000_0008;
+const PTRACE_O_TRACECLONE: u32 = 0x0000_0008;
 #[cfg(feature = "diagnostic-observer")]
-const PTRACE_O_TRACEEXEC: libc::c_ulong = 0x0000_0010;
+const PTRACE_O_TRACEEXEC: u32 = 0x0000_0010;
 #[cfg(feature = "diagnostic-observer")]
-const PTRACE_O_EXITKILL: libc::c_ulong = 0x0010_0000;
+const PTRACE_O_EXITKILL: u32 = 0x0010_0000;
 #[cfg(feature = "diagnostic-observer")]
-const REQUIRED_DIAGNOSTIC_TRACE_OPTIONS: libc::c_ulong = PTRACE_O_TRACESYSGOOD
+const REQUIRED_DIAGNOSTIC_TRACE_OPTIONS: u32 = PTRACE_O_TRACESYSGOOD
     | PTRACE_O_TRACEFORK
     | PTRACE_O_TRACEVFORK
     | PTRACE_O_TRACECLONE
@@ -542,7 +542,7 @@ pub(crate) fn trace_stop(process_id: u32) -> io::Result<()> {
 }
 
 #[cfg(feature = "diagnostic-observer")]
-pub(crate) fn install_diagnostic_trace_options(process_id: u32) -> io::Result<()> {
+pub(crate) fn install_diagnostic_trace_options(process_id: u32) -> io::Result<u32> {
     let process_id =
         i32::try_from(process_id).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
     // SAFETY: ptrace receives one stopped traced process ID, a null address,
@@ -556,7 +556,7 @@ pub(crate) fn install_diagnostic_trace_options(process_id: u32) -> io::Result<()
         )
     };
     if result == 0 {
-        Ok(())
+        Ok(REQUIRED_DIAGNOSTIC_TRACE_OPTIONS)
     } else {
         Err(io::Error::last_os_error())
     }

@@ -88,9 +88,11 @@ values without making a draft an authority object.
   no mutable child handle that could replace the guarded process.
 - The separate diagnostic adapter validates observation bounds before spawn.
   After the exact initial trace stop, each non-copy adapter state privately
-  couples one trace typestate to the same pure protocol. Boundary and option
-  effects precede their pure records; pure authorization precedes target
-  release. Raw trace states and mutable protocol access are not public.
+  couples one trace typestate to the same pure protocol, seeded from that exact
+  stopped process. Boundary success precedes its pure record. Exact option bits
+  flow from the successful Linux installation through the closed pure validator
+  before option readiness advances; pure authorization precedes target release.
+  Public owner fields, raw trace states, and mutable protocol access are absent.
 - Automatic candidates require an explicit normalized project or runtime
   scope. System, home, and configured temporary roots remain open review
   items.

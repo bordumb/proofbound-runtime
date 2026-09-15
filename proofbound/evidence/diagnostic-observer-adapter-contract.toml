@@ -22,6 +22,7 @@ inputs = [
   "crates/proofbound-runtime-diagnose-linux/src/adapter.rs",
   "crates/proofbound-runtime-diagnose-linux/src/lib.rs",
   "crates/proofbound-runtime-linux/Cargo.toml",
+  "crates/proofbound-runtime-linux/src/sys.rs",
   "crates/proofbound-runtime-linux/src/trace.rs",
   "tools/ci/check_diagnostic_observer_adapter.py",
   "tools/ci/test_diagnostic_observer_adapter.py",
@@ -35,6 +36,7 @@ checker = "tools/ci/check_diagnostic_observer_adapter.py"
 arguments = []
 paths = [
   "crates/proofbound-runtime-diagnose-linux/src/adapter.rs",
+  "crates/proofbound-runtime-linux/src/sys.rs",
   "crates/proofbound-runtime-linux/src/trace.rs",
 ]
 

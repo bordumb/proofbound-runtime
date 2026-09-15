@@ -165,8 +165,11 @@ manifest describes the supported tuple.
   in the separate diagnostic adapter. Validate bounds before spawn, move one
   private pair after the exact initial stop, advance pure states only in the
   declared effect order, and expose neither raw trace states nor mutable protocol
-  access. Source implementation and focused source checks are complete under
-  `PBR-OBSERVER-022`; exact review is pending.
+  access. The initial exact review at `4ea747f` required stronger falsifiers for
+  private ownership and public escape paths, exact stopped-child identity flow,
+  and exact installed-option flow. The correction carries Linux-installed bits
+  through the closed pure validator and strengthens the registered source
+  checks; exact re-review remains open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.

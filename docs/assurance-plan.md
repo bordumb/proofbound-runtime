@@ -492,21 +492,28 @@ require the next adapter, native attack, and release-binding waves.
 The current subject is the separate diagnostic Linux adapter's setup surface.
 It replaces the crate's raw trace-typestate re-exports with one consuming set of
 adapter states. Observation bounds are validated before trace preparation and
-child creation. After the exact initial trace stop, every state owns one private
-effectful trace typestate and the same pure observer protocol. Public access is
-limited to the process identity and immutable protocol status.
+child creation. The exact spawned process identity seeds the pure protocol only
+after that process reaches its initial trace stop. Every later state owns one
+private effectful trace typestate and the same private pure observer protocol.
+The option-install operation returns the exact installed bits through the trace
+typestate; the adapter parses those bits through the closed pure type before it
+records option readiness. Public access is limited to process identity and
+immutable protocol status.
 
 The bounded evidence path checks that:
 
 1. bounds are validated before the exact trace session is prepared;
-2. ptrace ownership is established before the pure protocol records attachment;
+2. the exact spawned process reaches its initial stop before that same process
+   identity seeds the pure protocol and attachment is recorded;
 3. every post-attachment adapter state privately owns the matching trace state
    and one pure protocol without copy or clone derivation;
-4. acknowledgement and exact option effects complete before their pure states
-   advance;
+4. acknowledgement completes before its pure state advances, and the exact
+   option bits returned after Linux installation pass the closed pure validator
+   before option readiness advances;
 5. pure release authorization precedes effectful target release in one
    consuming transition;
-6. no public method exposes raw trace parts or mutable protocol access; and
+6. exact private field declarations, return types, and re-export checks prevent
+   public raw trace ownership or mutable protocol access; and
 7. neither production executable depends on the diagnostic adapter or pure
    diagnostic crate.
 
