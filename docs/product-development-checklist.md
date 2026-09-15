@@ -1,7 +1,7 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T02:01:58+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T02:04:26+01:00 (Europe/London, BST)
 - **Runtime baseline:** admitted `main` at `f2a06de`
 - **Active worktree:** `codex/rt7-public-bundle-cutover`
 - **Lifecycle:** prelaunch with zero external users
@@ -71,10 +71,12 @@ implementation remain behind their recorded demand gates.
   filesystem premises in the claim closure.
 - [x] Make every focused workflow, consumer, documentation, and claim-inventory
   test pass without a local Rust, Lean, Kani, or native build.
-- [ ] Commit the implementation as one unsigned exact review subject.
-- [ ] Obtain an independent exact-head review with an explicit verdict.
-- [ ] If approved, add the non-author approval envelope as a separate unsigned
-  commit without changing the reviewed production subject.
+- [x] Commit the implementation and isolated review correction as an unsigned
+  exact review series ending at `9d0cbb2`.
+- [x] Obtain an independent exact-head review with an explicit verdict.
+- [x] Record and endorse the non-author exact-subject approval in a separate
+  unsigned documentation-only commit without changing the reviewed production
+  subject.
 - [ ] Push once and pass the complete hosted exact-head Verify gate.
 - [ ] Merge unsigned and pass the exact-main Verify gate.
 - [ ] Close `PBR-DISTRIBUTION-016` only after the review and hosted evidence
@@ -86,6 +88,12 @@ Review history:
   checker named the release-production cutover but did not invoke its release
   workflow falsifier. The required fix is isolated to adding
   `tools.ci.test_release_workflow` to that checker before re-review.
+- Exact base `f2a06de`, corrected subject `9d0cbb2`: `APPROVE`. Independent
+  reviewer task `/root/review_runtime_pr4` found no remaining blockers and
+  confirmed the complete cutover properties after the checker correction.
+  The maintainer endorses this exact-subject verdict. It records independent
+  model review, not independent human review, and does not replace the pending
+  hosted execution evidence.
 
 ### Package publication and consumer closure
 
