@@ -1,7 +1,7 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T01:53:41+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T02:01:58+01:00 (Europe/London, BST)
 - **Runtime baseline:** admitted `main` at `f2a06de`
 - **Active worktree:** `codex/rt7-public-bundle-cutover`
 - **Lifecycle:** prelaunch with zero external users
@@ -79,6 +79,13 @@ implementation remain behind their recorded demand gates.
 - [ ] Merge unsigned and pass the exact-main Verify gate.
 - [ ] Close `PBR-DISTRIBUTION-016` only after the review and hosted evidence
   above exist.
+
+Review history:
+
+- Exact base `f2a06de`, subject `ea5d8a2`: `REQUEST CHANGES`. The registered
+  checker named the release-production cutover but did not invoke its release
+  workflow falsifier. The required fix is isolated to adding
+  `tools.ci.test_release_workflow` to that checker before re-review.
 
 ### Package publication and consumer closure
 

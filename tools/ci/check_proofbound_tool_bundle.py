@@ -37,6 +37,7 @@ def main() -> int:
             "-m",
             "unittest",
             "tools.ci.test_install_proofbound_tool_bundle",
+            "tools.ci.test_release_workflow",
             "tools.ci.test_required_workflow",
         ],
     )
