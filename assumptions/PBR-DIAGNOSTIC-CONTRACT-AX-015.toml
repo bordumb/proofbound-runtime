@@ -4,8 +4,8 @@ statement = "The identified Python interpreter, JSON implementation, standard li
 category = "compiler-tcb"
 owner = "Proofbound Runtime release maintainer"
 rationale = "The independent contract checker parses schemas and fixtures and compares canonical JSON through Python behavior that this repository does not prove."
-scope = "Only the source-level schema, fixture, production-separation, and consumer-contract interpretation of PBR-DRAFT-017. It does not cover a live observer or diagnostic execution."
-affected_claims = ["PBR-DRAFT-017"]
+scope = "Only the source-level schema, fixture, production-separation, consumer-contract, and independent producer-check interpretation of PBR-DRAFT-017 and PBR-DRAFT-019. It does not cover a live observer or diagnostic execution."
+affected_claims = ["PBR-DRAFT-017", "PBR-DRAFT-019"]
 review_evidence = [
   "schemas/diagnostic-receipt-v1.schema.json",
   "schemas/plan-draft-v1.schema.json",
@@ -13,6 +13,8 @@ review_evidence = [
   "schemas/vectors/diagnostic/plan-draft.json",
   "tools/ci/check_diagnostic_contract.py",
   "tools/ci/test_diagnostic_drafting_contract.py",
+  "tools/ci/check_diagnostic_artifact_producer.py",
+  "tools/ci/test_diagnostic_artifact_producer.py",
 ]
 discharge_plan = "Pin the interpreter used by release evidence and retain this premise after exact source and artifact binding."
 source_citation = "docs/specs/0015_diagnostic_execution_and_plan_drafting.md#9-evidence-meaning"

@@ -59,8 +59,10 @@ publishers, anonymous retrieval observations, external consumer dogfood, and
 current-integration manifest remain open. No registry package is yet described
 as published. The RT-8 diagnostic contract, observer decision, closed schemas,
 and source-level production non-reuse checks are implemented on
-`codex/rt8-diagnostic-profile`; final review, hosted admission, the live
-observer, and the plan-draft producer remain open.
+`codex/rt8-diagnostic-profile`. The pure diagnostic receipt and plan-draft
+producer is implemented on the stacked `codex/rt8-observer` branch. Hosted
+admission, the live ptrace observer, command integration, native attack corpus,
+and release binding remain open.
 RT-9 is blocked until RT-5 implements the accepted single-service network
 decision in production.
 

@@ -1,13 +1,12 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T04:23:08+01:00 (Europe/London, BST)
-- **Runtime baseline:** unsigned RT-7 registry-publication merge `acf8f24`;
-  exact-main Verify run `34924535451` is pending, so `4a0cfdb` remains the
-  latest admitted identity
-- **Active implementation wave:** RT-8 contract and diagnostic non-reuse on
-  `codex/rt8-diagnostic-profile`; the rebased source-only foundation is
-  complete and final exact-head review and hosted admission remain open
+- **Last updated:** 2026-09-15T06:33:25+01:00 (Europe/London, BST)
+- **Runtime baseline:** RT-8 diagnostic-contract foundation merge `edf87bb`;
+  exact-main Verify run `34929775221` passed
+- **Active implementation wave:** RT-8 producer PR 11 is independently
+  approved at corrected exact head `1d4f098`; it awaits an approval-only
+  envelope and a fresh complete hosted gate before unsigned merge
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -140,15 +139,19 @@ manifest describes the supported tuple.
 - [x] Define closed diagnostic-profile, observation, provenance, and failure
   types without changing production-receipt meaning.
 - [ ] Keep observer implementation out of the production launcher path.
-- [ ] Produce a distinct diagnostic receipt that is always non-reusable.
+- [x] Keep the pure diagnostic artifact producer out of the production CLI and
+  launcher dependency graphs.
+- [x] Produce a distinct diagnostic receipt that is always non-reusable from
+  validated, bounded observations.
 - [x] Make the independent verifier, composer, and acceptance policy reject a
   diagnostic receipt for production reuse with an exact typed reason.
-- [ ] Convert observed file and execution effects into provenance-tagged draft
-  entries without granting plan authority.
-- [ ] Keep network, environment, write roots, and resource limits as explicit
+- [x] Convert validated file and execution observations into
+  provenance-tagged draft entries without granting plan authority.
+- [x] Keep network, environment, write roots, and resource limits as explicit
   human decisions.
-- [ ] Accept optional Capsec observations only when their schema, source, and
-  analyzer identities match; retain missing or incomplete coverage visibly.
+- [x] Accept optional Capsec observations only when their schema, source,
+  analyzer, and report identities match; retain missing or incomplete coverage
+  visibly.
 - [ ] Run the adversarial corpus for stale source, symlink redirection,
   observation-sensitive behavior, missing events, and attempted provenance
   relabeling.

@@ -1,0 +1,15 @@
+[package]
+name = "proofbound-runtime-diagnose"
+description = "Non-production diagnostic artifact construction for Proofbound Runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+proofbound-runtime-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true

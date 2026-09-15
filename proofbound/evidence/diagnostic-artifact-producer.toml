@@ -1,0 +1,53 @@
+schema = "proofbound-evidence-unit/1"
+id = "diagnostic-artifact-producer"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-DRAFT-019"]
+tier = 0
+expected_inventory = [
+  "proofbound_runtime_diagnose::artifact::tests::receipt_constructor_enforces_bounds_order_and_completion",
+  "proofbound_runtime_diagnose::artifact::tests::receipt_constructor_rejects_bound_and_gap_inconsistency",
+  "proofbound_runtime_diagnose::artifact::tests::receipt_bytes_match_the_canonical_contract_vector",
+  "proofbound_runtime_diagnose::artifact::tests::redaction_and_path_normalization_fail_closed",
+  "proofbound_runtime_diagnose::draft::tests::broad_roots_are_excluded_from_automatic_candidates",
+  "proofbound_runtime_diagnose::draft::tests::capsec_usability_is_derived_from_exact_identities",
+  "proofbound_runtime_diagnose::draft::tests::draft_keeps_authority_choices_open",
+  "proofbound_runtime_diagnose::draft::tests::draft_output_is_bounded_by_the_diagnostic_receipt",
+  "proofbound_runtime_diagnose::draft::tests::draft_preserves_provenance_and_network_non_grant",
+  "proofbound_runtime_diagnose::draft::tests::path_scope_excludes_nested_system_home_and_temporary_roots",
+  "proofbound_runtime_diagnose::producer::tests::aggregate_subject_matches_both_canonical_vectors",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/diagnostic.rs",
+  "crates/proofbound-runtime-core/src/identity.rs",
+  "crates/proofbound-runtime-core/src/lib.rs",
+  "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-diagnose/Cargo.toml",
+  "crates/proofbound-runtime-diagnose/src/artifact.rs",
+  "crates/proofbound-runtime-diagnose/src/canonical.rs",
+  "crates/proofbound-runtime-diagnose/src/draft.rs",
+  "crates/proofbound-runtime-diagnose/src/lib.rs",
+  "crates/proofbound-runtime-diagnose/src/producer.rs",
+  "schemas/diagnostic-receipt-v1.schema.json",
+  "schemas/plan-draft-v1.schema.json",
+  "schemas/vectors/diagnostic/diagnostic-receipt.json",
+  "schemas/vectors/diagnostic/plan-draft.json",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-diagnose"
+manifest = "Cargo.toml"
+targets = ["--lib"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

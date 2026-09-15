@@ -1339,3 +1339,231 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 adds no reviewed production, schema, specification, claim, assumption,
 evidence, or test bytes. Any later subject change requires a new exact-head
 review.
+
+## RT-8 diagnostic artifact producer initial review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `cb52c5115d73c72aebad51c4c0f4a301068d8479`
+- **Reviewed head:** `ed9c6ca105748b409fe85a243975c51c80ccdb51`
+- **Branch:** `codex/rt8-observer`
+- **Method:** Exact-head static review. The reviewer changed no files and ran
+  no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The review found seven blocking clusters:
+
+1. the registered Rust evidence imported private re-exports and one broad-root
+   fixture constructed an invalid outcome and resolution pair;
+2. Capsec usability did not bind the selected report identity;
+3. a redacted socket event could retain raw address bytes;
+4. absolute-path validation admitted traversal-shaped values and candidate
+   selection did not require an explicit project or runtime scope or exclude
+   nested system, home, and configured temporary roots;
+5. tracee-string, symlink, count-gap, and draft-output bounds were incomplete;
+6. the claim named the wrong Rust subject and omitted imported core sources,
+   Specification 0013, and the Python/JSON/filesystem checker assumption; and
+7. public evidence language described negative coverage that the registered
+   falsifiers did not yet contain.
+
+Architecture separation, fixed `safe_policy: false` and `reusable: false`,
+mandatory human authority choices, network non-grant, and production-consumer
+non-reuse remained intact. The producer cannot proceed until each blocker is
+corrected in a separate subject and re-reviewed at its exact head.
+
+## RT-8 diagnostic artifact producer first correction re-review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `cb52c5115d73c72aebad51c4c0f4a301068d8479`
+- **Reviewed head:** `2c0d86aea8386358c9694a381d5ac94885c9e297`
+- **Branch:** `codex/rt8-observer`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The re-review confirmed closure of the private-import and invalid-fixture
+failures, exact Capsec report identity, redacted socket and path payloads in
+both producer and schema, and normalized explicitly scoped candidate
+selection. It found six remaining blocking clusters:
+
+1. exact event or process capacity incorrectly forced a coverage gap even when
+   the run ended naturally without omission;
+2. a stable candidate could omit both its supplied path and symlink-hop
+   evidence;
+3. output bounds were checked after construction of potentially enormous
+   complete JSON values instead of during encoding;
+4. direct `str.as_bytes().len()` expressions would fail the required Clippy
+   warnings-as-errors gate;
+5. the claim subject named only plan-draft construction while claiming both
+   receipt and draft production; and
+6. registered falsifiers did not yet cover process and per-process bounds, all
+   four Capsec identities and incomplete reports, or nested system, home, and
+   configured temporary roots.
+
+This verdict is not endorsed. The findings require another separate correction
+subject and exact-head review before the producer branch can proceed.
+
+## RT-8 diagnostic artifact producer second correction re-review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `cb52c5115d73c72aebad51c4c0f4a301068d8479`
+- **Reviewed head:** `75b3f62d115cb01b7c7e8fac1842a76b128dc24d`
+- **Branch:** `codex/rt8-observer`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The re-review confirmed that the count-gap meaning is now one-way, reusable
+path resolutions require complete path and symlink evidence, redacted targets
+remain closed, bounded encoding is incremental, the aggregate producer is the
+exact claim subject, Capsec mutations cover all registered identities and
+incomplete reports, and the new source and evidence files are registered.
+
+It found three remaining blocking boundaries:
+
+1. the diagnose manifest's direct `serde` dependency was absent from its
+   `Cargo.lock` package entry;
+2. natural exact-capacity completion was not isolated for the per-process and
+   process-count branches; and
+3. the missing path and symlink evidence mutation covered only stable
+   candidates, while the configured-home test used a path already excluded by
+   the independent system-root rule.
+
+This verdict is not endorsed. A separate correction must synchronize the
+locked graph and add discriminating falsifiers for all three boundaries before
+another exact-head review.
+
+## RT-8 diagnostic artifact producer third correction re-review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `cb52c5115d73c72aebad51c4c0f4a301068d8479`
+- **Reviewed head:** `99ee74cde4dde465119cd255be95d1ef898f19e1`
+- **Branch:** `codex/rt8-observer`
+- **Method:** Exact-range static re-review. The reviewer changed no files and
+  ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The re-review confirmed that the locked `serde` dependency, all three natural
+exact-capacity cases, both Rust reusable-path resolution branches, both schema
+structures, and the nested configured-home exclusion are corrected.
+
+One falsifier remained non-discriminating. The new kernel-selected schema
+mutation added an unknown `outcome` field and retained the stable-candidate
+`error` and `result` values. It therefore failed for unrelated closed-schema
+and outcome reasons before testing the missing path or symlink evidence. The
+mutation must use the declared wire fields for a successful kernel outcome
+before removing each target field independently.
+
+This verdict is not endorsed. The falsifier correction requires a separate
+commit and exact-head re-review.
+
+## RT-8 diagnostic artifact producer final approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `cb52c5115d73c72aebad51c4c0f4a301068d8479`
+- **Reviewed head:** `07c1b13e89560a9e0df95cdc0da7e1404f62531e`
+- **Branch:** `codex/rt8-observer`
+- **Method:** Exact-range static re-review. The reviewer changed no files and
+  ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that each kernel-selected schema mutation now uses the
+declared successful-outcome wire fields and independently removes either path
+or symlink evidence. Each rejection is therefore caused by the intended rule.
+All earlier blockers remain closed: locked dependency synchronization,
+one-way count-gap semantics, natural-capacity and overflow cases for all count
+bounds, complete reusable-path evidence in Rust and schema, bounded streaming
+encoding, aggregate claim identity, exact Capsec identities, redaction,
+normalized scoped paths, and discriminating system, home, and temporary-root
+exclusions.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`07c1b13e89560a9e0df95cdc0da7e1404f62531e`. The following approval-only
+commit adds no reviewed production, schema, specification, claim, assumption,
+evidence, or test bytes. Any later subject change requires a new exact-head
+review.
+
+## RT-8 diagnostic artifact producer hosted correction
+
+Hosted Verify run `34930489605` tested approval envelope
+`7154acd69cc95ffabd8fcace3ac2de216fe00023`. Both native boundary lanes passed,
+but the Rust and ledger lanes found three source defects:
+
+1. `DiagnosticGap` was imported into non-test draft code but used only by the
+   test module, which failed the warnings-as-errors gate;
+2. adjacent Capsec report-identity and structural-validity branches returned
+   the same result and failed the Clippy identical-branch gate; and
+3. the broad-root Rust evidence fixture used bytes that were not a valid typed
+   execution identifier, so the registered test failed before reaching its
+   path-scope assertion.
+
+Clippy also required the path-containment Boolean expression to use its direct
+equivalent form. These corrections do not change the reviewed authority,
+schema, producer, or receipt meaning, but they change the exact subject and
+therefore require a new independent exact-head review.
+
+## RT-8 diagnostic artifact producer hosted-correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `cb52c5115d73c72aebad51c4c0f4a301068d8479`
+- **Reviewed head:** `f79eb39c0f7375c38f3706151b6bb6c94e96de10`
+- **Branch:** `codex/rt8-observer`
+- **Method:** Exact-range static re-review. The reviewer changed no files and
+  ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the import is now test-scoped, the equivalent
+Capsec conditions preserve their precedence and result, path containment is
+equivalent for root and non-root inputs, and the replacement execution
+identifier has the required RFC 4122 version and variant bits. All earlier
+security, schema, bounds, evidence, claim-subject, and falsifier corrections
+remain intact.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`f79eb39c0f7375c38f3706151b6bb6c94e96de10`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.
+
+## RT-8 diagnostic artifact producer second hosted correction
+
+Hosted Verify run `34931523063` tested approval envelope
+`97cdb4f219df90582fc7f729f5d446926d274c30`. Both native lanes and the
+completed formal, ledger, binding, and policy lanes passed. The Rust lane
+found that moving `DiagnosticGap` from the production import set to the test
+import set was insufficient because no test in `draft.rs` uses that name. The
+warnings-as-errors gate therefore rejected the residual unused test import.
+
+The correction removes only that unused import. It changes source bytes in the
+reviewed range, so the corrected exact head requires a new independent static
+review and complete hosted verification before merge.
+
+## RT-8 diagnostic artifact producer final hosted-correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `cb52c5115d73c72aebad51c4c0f4a301068d8479`
+- **Reviewed head:** `1d4f0986e41993255a6516e377669c5139ca3ce2`
+- **Branch:** `codex/rt8-observer`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the final correction removes only the unused
+`DiagnosticGap` test import while retaining the separate diagnostic-gap open
+item. All prior blockers remain closed: receipt roles, bounds, gap
+consistency, reusable-path evidence, redaction, event ordering, complete TCB
+roles, incremental bounded canonical output, automatic-candidate path scopes,
+Capsec identity and completeness binding, aggregate claim identity, locked
+dependencies, and registered evidence inventory.
+
+The documentation continues to leave exact-head hosted admission, the live
+observer, native attack evidence, and release binding open. No new blocker was
+found.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`1d4f0986e41993255a6516e377669c5139ca3ce2`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.

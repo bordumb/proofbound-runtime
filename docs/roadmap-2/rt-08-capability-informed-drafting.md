@@ -1,9 +1,10 @@
 # RT-8 integration record: capability-informed drafting
 
 **Status:** static scaffold and prelaunch diagnostics merged; diagnostic
-contracts, closed schemas, and source-level production non-reuse are
-implemented on `codex/rt8-diagnostic-profile`; final review and hosted
-admission are pending, and the live observer and draft producer remain open
+contracts, closed schemas, source-level production non-reuse, and the pure
+diagnostic artifact producer are implemented across the stacked RT-8 branches.
+Hosted admission is pending. The live ptrace observer, command integration,
+native attack corpus, and release binding remain open.
 
 **Primary owner:** Proofbound Runtime
 
@@ -41,19 +42,29 @@ values without making a draft an authority object.
 
 ## Required behavior
 
-- Capsec reports are optional, content-identified, and bound to exact source.
+- Capsec reports are optional and usable only when their schema, source,
+  analyzer, and report identities match the selected integration profile.
 - Runtime parses Capsec output outside the pure authority core.
 - A report can suggest review items. It cannot add plan authority.
 - Runtime displays requirements absent from the plan, plan authority absent
   from requirements, and observed effects absent from requirements.
-- Unknown Capsec schema identities and stale source identities remain visible and
-  unusable for automated comparison.
+- Unknown Capsec schema identities, stale source identities, and mismatched
+  analyzer or report identities remain visible and unusable for automated
+  comparison.
 - Network, environment, write-root, and resource-limit choices remain human
   decisions.
 - The observer is a separate ptrace-based diagnostic executable. Production
   Runtime and launcher artifacts contain no observer entry point.
 - Diagnostic receipts are JSON diagnostic objects and are never accepted by
   the production verifier, composer, or acceptance policy.
+- The pure producer accepts validated observations. It cannot observe a
+  process, install a boundary, or add production authority.
+- One aggregate producer owns receipt and plan-draft construction. It streams
+  both canonical objects through the declared output bound instead of
+  materializing an unbounded complete JSON tree.
+- Automatic candidates require an explicit normalized project or runtime
+  scope. System, home, and configured temporary roots remain open review
+  items.
 
 ## Additional falsifiers
 

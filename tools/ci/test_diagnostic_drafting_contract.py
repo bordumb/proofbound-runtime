@@ -147,6 +147,7 @@ class DiagnosticDraftingContractTests(unittest.TestCase):
         self.assertEqual(receipt["mechanism"], "linux-ptrace-syscall-v1")
         self.assertEqual(receipt["arguments"], ["--fixture", "π"])
         self.assertEqual(receipt["events"][0]["operands"]["kind"], "path")
+        self.assertEqual(receipt["events"][0]["operands"]["symlink_hops"], 0)
         self.assertEqual(
             receipt["events"][0]["object_before"], receipt["events"][0]["object_after"]
         )
@@ -160,12 +161,26 @@ class DiagnosticDraftingContractTests(unittest.TestCase):
         self.assertIsNone(draft["capsec"])
         self.assertEqual(draft["differences"], [])
         self.assertEqual(
+            draft["candidates"],
+            [
+                {
+                    "kind": "read",
+                    "path": "/workspace/config",
+                    "provenance": ["diagnostic-runtime-observation"],
+                }
+            ],
+        )
+        self.assertEqual(
             {item["code"] for item in draft["open_items"]},
             {
+                "capsec-missing",
                 "choose-environment",
                 "choose-limits",
                 "choose-network-mode",
                 "choose-write-roots",
+                "diagnostic-gap",
+                "network-attempt",
+                "observation-unresolved",
             },
         )
 
@@ -203,7 +218,10 @@ class DiagnosticDraftingContractTests(unittest.TestCase):
                 role,
             )
         self.assertEqual(len(diagnostic["$defs"]["event"]["oneOf"]), 2)
-        self.assertEqual(len(diagnostic["$defs"]["event"]["allOf"]), 6)
+        self.assertEqual(len(diagnostic["$defs"]["event"]["allOf"]), 7)
+        self.assertIn(
+            "symlink_hops", diagnostic["$defs"]["pathOperands"]["required"]
+        )
         self.assertEqual(len(diagnostic["allOf"]), 2)
         self.assertEqual(
             draft["properties"]["schema"]["const"],
@@ -251,6 +269,43 @@ class DiagnosticDraftingContractTests(unittest.TestCase):
         draft = json.loads(DRAFT_VECTOR.read_bytes())
         _validate(diagnostic, diagnostic_schema, diagnostic_schema)
         _validate(draft, draft_schema, draft_schema)
+
+        redacted_path = json.loads(json.dumps(diagnostic))
+        redacted_path["events"][0]["resolution"] = "redacted"
+        redacted_path["events"][0]["object_before"] = None
+        redacted_path["events"][0]["object_after"] = None
+        redacted_path["events"][0]["resolved_path"] = None
+        self.assertFalse(_matches(redacted_path, diagnostic_schema, diagnostic_schema))
+        redacted_path["events"][0]["operands"]["path"] = None
+        _validate(redacted_path, diagnostic_schema, diagnostic_schema)
+
+        redacted_socket = json.loads(json.dumps(diagnostic))
+        redacted_socket["events"][1]["resolution"] = "redacted"
+        self.assertFalse(_matches(redacted_socket, diagnostic_schema, diagnostic_schema))
+        redacted_socket["events"][1]["operands"]["address"] = None
+        _validate(redacted_socket, diagnostic_schema, diagnostic_schema)
+
+        incomplete_stable_path = json.loads(json.dumps(diagnostic))
+        incomplete_stable_path["events"][0]["operands"]["path"] = None
+        self.assertFalse(
+            _matches(incomplete_stable_path, diagnostic_schema, diagnostic_schema)
+        )
+        incomplete_stable_path = json.loads(json.dumps(diagnostic))
+        incomplete_stable_path["events"][0]["operands"]["symlink_hops"] = None
+        self.assertFalse(
+            _matches(incomplete_stable_path, diagnostic_schema, diagnostic_schema)
+        )
+
+        for missing_field in ["path", "symlink_hops"]:
+            incomplete_kernel_path = json.loads(json.dumps(diagnostic))
+            incomplete_kernel_path["events"][0]["error"] = None
+            incomplete_kernel_path["events"][0]["result"] = 3
+            incomplete_kernel_path["events"][0]["resolution"] = "kernel-selected"
+            incomplete_kernel_path["events"][0]["object_before"] = None
+            incomplete_kernel_path["events"][0]["operands"][missing_field] = None
+            self.assertFalse(
+                _matches(incomplete_kernel_path, diagnostic_schema, diagnostic_schema)
+            )
 
         capsec_candidate = json.loads(json.dumps(draft))
         capsec_candidate["candidates"] = [
