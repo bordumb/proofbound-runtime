@@ -1,11 +1,14 @@
 # Proofbound Runtime product and delivery roadmap
 
-- **Status:** branch implementation complete; external review, mainline release,
-  and adopter-dogfood gates remain
-- **Date:** 2026-09-09
-- **Runtime baseline:** `0b83bfe` (`v0.1.0` is `c78e189`)
-- **Proofbound baseline consumed by Runtime:** `1084e0d`
-- **Planning horizon:** post-0.1 product and assurance waves
+- **Status:** foundation merged and admitted; production networking,
+  publication, and external adopter gates remain
+- **Date:** 2026-09-15
+- **Runtime baseline:** current admitted `main` at `f2a06de`
+- **Proofbound distribution baseline:** immutable public bundle for source
+  `9512469`
+- **Planning horizon:** prelaunch product and assurance waves
+- **Lifecycle rule:** zero external users; do not add compatibility layers,
+  migration windows, deprecation periods, or coordinated release numbering
 
 This roadmap turns the version 0.1 implementation into an adoptable execution
 gateway without weakening its assurance boundary. It is not a normative
@@ -13,6 +16,28 @@ specification. A change to authority, receipt meaning, public schemas, the
 trusted computing base, or repository structure still requires the applicable
 specification, threat-model, ADR, claim, and evidence changes before production
 code.
+
+## Current Roadmap 1 closure status
+
+This table distinguishes merged source and admitted evidence from external
+release or adoption facts. A green source gate does not manufacture a registry
+publication or an unrelated adopter.
+
+| Work | Current result | Remaining exit |
+| --- | --- | --- |
+| RT-0 delivery mechanics | Required lanes, exact-head gating, timing, and exact tool-cache controls are merged and admitted. | Complete the retained two-week latency and cache-retention decision when its observation window closes. |
+| RT-1 memory and swap | Merged and admitted on both supported native architectures. | None for the selected claim wave. |
+| RT-2 receipt acceptance | Policy, CLI, standalone acceptor, and Action source are merged. | Observe the exact release artifact and dogfood the Action from an unrelated adopter. |
+| RT-3 first-run and SDK workflow | Preflight, scaffold, typed diagnostics, and reproducible Rust, Python, and TypeScript packages are merged. | Publish the selected current packages and dogfood them from an unrelated consumer. |
+| RT-4 network decision | The complete experiment and measurement series selected the connector-owned authenticated service session. | The decision authorizes RT-5; it does not provide production networking. |
+| RT-5 one authenticated service | Not implemented. | Implement the production bridge, bypass corpus, receipts, verifiers, composition, acceptance, and one maintained real API client. |
+| RT-6 evidence-based expansion | CPU and output-quota decisions are recorded; the performance baseline is complete. | Implement a deferred control only when observed demand satisfies its decision gate. |
+
+Milestone B, bounded local execution, is achieved. Milestone A is operationally
+usable and retains only its time-window measurement. Milestone C has its source
+foundation but lacks public-registry and unrelated-consumer observations.
+Milestone D is blocked on RT-5. Milestone E's decisions and baseline are
+complete; its demand-gated implementations are intentionally not scheduled.
 
 The roadmap uses these sources:
 

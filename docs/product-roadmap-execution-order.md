@@ -134,8 +134,11 @@ subject `6072127` and approval envelope `5f190e0` merged as `9512469`;
 exact-main Verify run `34899222179` and bundle/publication run `34900896450`
 passed. Public release `388736918` is immutable and binds that exact source.
 Runtime's isolated public-bundle dogfood wave pins those identities without
-changing the existing evidence path. The later source-build cutover remains a
-separate reviewed change.
+changing the existing evidence path. That wave passed independent review,
+merged as Runtime `f2a06de`, and passed exact-main Verify run `34908515545`.
+The current separate wave replaces protected evidence and release source builds
+with independent exact-bundle installation. It remains incomplete until its
+own independent review and exact-head hosted gate pass.
 This work follows the admitted foundation as a separate exact-source wave. It
 does not require a version transition or preserve an older candidate surface.
 

@@ -1,14 +1,14 @@
 # Proofbound Runtime product roadmap 2: deferred capabilities
 
-- **Status:** planning; first-roadmap source foundation merged, all Roadmap 2
-  exit conditions open
+- **Status:** implementation; first-roadmap source foundation merged, RT-7
+  distribution work active, all complete Roadmap 2 epic exits still open
 - **Date:** 2026-09-13
 - **Runtime baseline:** current admitted `main`; exact source and artifact
   identities control each implementation wave
-- **Proofbound baseline consumed by Runtime evidence:** `1084e0d` (merged to
-  Proofbound `main` as `3a78873`) until the reviewed bundle cutover
+- **Proofbound baseline consumed by Runtime evidence:** public immutable bundle
+  for source `9512469`; protected-path cutover pending review and hosted proof
 - **Proofbound distribution source:** `9512469`; exact-main Verify and public
-  immutable bundle run passed; Runtime's isolated bundle dogfood is active
+  immutable bundle run passed; Runtime dogfood merged as `f2a06de`
 - **Prerequisite:** [Product and delivery roadmap](product-roadmap.md)
   Milestones A through E, except where an epic below names a narrower
   prerequisite
@@ -28,7 +28,7 @@ threat-model, ADR, claim, and evidence changes before production code.
 
 ### Execution checkpoint
 
-As of 2026-09-14, Runtime main commit `7f989d3` contains the version 2 memory
+As of 2026-09-15, Runtime main commit `f2a06de` contains the version 2 memory
 and deterministic CBOR wave, receipt composition and acceptance, a bounded
 static plan scaffold,
 typed prelaunch diagnostics, reproducible Rust, Python, and TypeScript SDK
@@ -44,10 +44,12 @@ hosted verification, merged as unsigned Runtime commit `7f989d3`, and passed
 exact-main Verify run `34896209689`. It does not authorize registry
 publication. Proofbound's public bundle path passed independent review, merged
 as `9512469`, passed exact-main Verify run `34899222179`, and published
-immutable release `388736918` from bundle run `34900896450`. Runtime's current
-claim-sized wave pins that exact seven-asset release and exercises it in an
-isolated required CI job. The admitted evidence path stays on its exact source
-build until this dogfood wave passes and a separate cutover is reviewed.
+immutable release `388736918` from bundle run `34900896450`. Runtime pinned
+that exact seven-asset release, passed independent review and hosted dogfood,
+merged it as unsigned commit `f2a06de`, and passed exact-main Verify run
+`34908515545`. The current wave replaces protected evidence and release source
+builds with independent installation of those exact public bytes; its claim
+remains open until review and exact-head hosted verification pass.
 RT-9 is blocked until RT-5 implements the accepted single-service network
 decision in production.
 

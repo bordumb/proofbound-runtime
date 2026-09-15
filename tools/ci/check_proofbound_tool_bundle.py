@@ -21,7 +21,8 @@ INVENTORY = [
     "tool-bundle-publication-manifest-linkage",
     "tool-bundle-checksum-order-and-identity",
     "tool-bundle-verify-before-execute",
-    "tool-bundle-ci-dogfood",
+    "tool-bundle-protected-evidence-cutover",
+    "tool-bundle-release-production-cutover",
 ]
 
 

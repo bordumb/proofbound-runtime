@@ -19,10 +19,12 @@ expected_inventory = [
   "tool-bundle-publication-manifest-linkage",
   "tool-bundle-checksum-order-and-identity",
   "tool-bundle-verify-before-execute",
-  "tool-bundle-ci-dogfood",
+  "tool-bundle-protected-evidence-cutover",
+  "tool-bundle-release-production-cutover",
 ]
 inputs = [
   ".github/workflows/ci.yml",
+  ".github/workflows/release.yml",
   "docs/proofbound-feedback/pbf-0013-versioned-proofbound-tool-distribution.md",
   "docs/roadmap-2/rt-07-compatibility-and-distribution.md",
   "docs/specs/0014_public_compatibility_and_distribution.md",
@@ -33,6 +35,7 @@ inputs = [
   "tools/ci/install_proofbound_tool_bundle.py",
   "tools/ci/manifests.sh",
   "tools/ci/test_install_proofbound_tool_bundle.py",
+  "tools/ci/test_release_workflow.py",
   "tools/ci/test_required_workflow.py",
 ]
 outputs = []
@@ -44,6 +47,7 @@ checker = "tools/ci/check_proofbound_tool_bundle.py"
 arguments = []
 paths = [
   ".github/workflows/ci.yml",
+  ".github/workflows/release.yml",
   "proofbound/toolchains/proofbound-tool-bundle-pin.json",
 ]
 

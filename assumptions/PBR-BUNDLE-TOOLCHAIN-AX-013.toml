@@ -1,17 +1,19 @@
 schema = "proofbound-assumption/1"
 id = "PBR-BUNDLE-TOOLCHAIN-AX-013"
-statement = "The identified Python interpreter and standard library, cryptographic digest implementation, pinned Proofbound installer, Linux hosted runner, process behavior, and filesystem preserve the registered bundle parsing, verification, installation, isolation, and execution behavior."
+statement = "The identified Python interpreter and standard library, cryptographic digest implementation, pinned Proofbound installer, Linux hosted runners, process behavior, and filesystems preserve the registered bundle parsing, verification, installation, isolation, and execution behavior."
 category = "compiler-tcb"
 owner = "Proofbound Runtime release maintainer"
-rationale = "The consumer and its evidence execute Python networking, JSON, hashing, archive, filesystem, and subprocess behavior, then execute an exact upstream installer. The isolated CI job also depends on runner and workflow isolation to keep dogfood bytes outside the Runtime evidence path."
-scope = "Only the consumer, installed-byte, and isolated-dogfood interpretation of PBR-DISTRIBUTION-016."
+rationale = "The consumer and its evidence execute Python networking, JSON, hashing, archive, filesystem, and subprocess behavior, then execute an exact upstream installer. Protected evidence and release jobs depend on runner, workflow, process, and filesystem behavior to preserve the verified installed bytes through execution."
+scope = "Only the consumer, installed-byte, protected-evidence, and release-production interpretation of PBR-DISTRIBUTION-016."
 affected_claims = ["PBR-DISTRIBUTION-016"]
 review_evidence = [
   ".github/workflows/ci.yml",
+  ".github/workflows/release.yml",
   "proofbound/toolchains/proofbound-tool-bundle-pin.json",
   "tools/ci/check_proofbound_tool_bundle.py",
   "tools/ci/install_proofbound_tool_bundle.py",
   "tools/ci/test_install_proofbound_tool_bundle.py",
+  "tools/ci/test_release_workflow.py",
 ]
 discharge_plan = "Pin executable tool identities where practical, retain every remaining runtime and host premise, and add an independent implementation only when its assurance value exceeds the added trusted surface."
 source_citation = "docs/threat-model.md#trusted-computing-base"

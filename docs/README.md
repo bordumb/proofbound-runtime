@@ -6,6 +6,12 @@ The document type determines its authority.
 
 ## Delivery tracking
 
+- [Product development checklist](product-development-checklist.md) is the
+  timestamped live execution ledger for the active dependency path, exact
+  evidence checkpoints, external gates, and intentionally deferred work.
+- [Proof-carrying agent software vision](vision-proof-carrying-agent-software.md)
+  describes the non-normative ecosystem thesis across Proofbound, Runtime,
+  Auths, and Capsec.
 - [Product roadmap execution order](product-roadmap-execution-order.md) is the
   durable dependency order across Roadmap 1 release closure, Roadmap 2, and
   Roadmap 3 candidate promotion.

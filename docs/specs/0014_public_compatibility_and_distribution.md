@@ -174,18 +174,21 @@ default `crates.io` registry only.
 The workflow must:
 
 1. verify the exact requested `main` revision and workflow identity;
-2. build each package twice in clean independent directories;
-3. require byte equality;
-4. compare the package file inventory and retained source bytes with that exact
+2. install the exact platform-specific public Proofbound bundle from the
+   Runtime-owned canonical pin, verify its hosted release and byte identities,
+   and reject any incomplete tool inventory before Proofbound runs;
+3. build each package twice in clean independent directories;
+4. require byte equality;
+5. compare the package file inventory and retained source bytes with that exact
    revision;
-5. reject undeclared generated, credential, local configuration, build output,
+6. reject undeclared generated, credential, local configuration, build output,
    or version-control files;
-6. record package name, version, digest, size, source revision, and schema
+7. record package name, version, digest, size, source revision, and schema
    support in one closed manifest;
-7. upload the packages for release review;
-8. publish only after all required release and independent review gates pass;
+8. upload the packages for release review;
+9. publish only after all required release and independent review gates pass;
    and
-9. retrieve the registry packages and compare them with the approved package
+10. retrieve the registry packages and compare them with the approved package
    identities.
 
 Publication from a developer machine or a non-release workflow is unsupported.
