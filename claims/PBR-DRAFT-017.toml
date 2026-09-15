@@ -5,7 +5,7 @@ statement = "The pure Runtime core accepts only the registered production and di
 public_language = "Runtime has an accepted, closed diagnostic-profile contract and distinct diagnostic receipt and plan-draft schemas. Registered tests cover the independent verifier rejection and the isolated composer and acceptance failure-code mappings. They do not yet execute the complete composer or acceptance publication path. This is contract and bounded test evidence only: the live ptrace observer and draft producer are not yet implemented, and no diagnostic output is a safe policy or production receipt."
 subject = "rust:proofbound_runtime_core::diagnostic::ExecutionProfile"
 profile = "ledger"
-tier = 0
+tier = 1
 evidence = [
   "independent-check:diagnostic-schema-contract",
   "example-test:diagnostic-acceptance-non-reuse",

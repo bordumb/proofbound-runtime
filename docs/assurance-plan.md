@@ -25,7 +25,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-DISTRIBUTION-015` | Tier 1 independently reviewed and admitted on exact Runtime main | The verifier package has a closed preflight, source-payload comparison, byte reproduction, local consumer, and release-retention path; no registry or publisher claim is admitted. |
 | `PBR-DISTRIBUTION-016` | Tier 1 public-bundle consumer merged; exact-main admission pending | Runtime pins one immutable public Proofbound release and rejects identity, inventory, manifest, checksum, archive, installer, and installed-byte substitution. Every protected evidence and release job installs that exact bundle independently. |
 | `PBR-DISTRIBUTION-018` | Tier 1 workflow and registry-observer contract | Publication is explicit, exact-source, protected, ordered, and credential-isolated. Anonymous exact-byte registry observations and external registry setup remain open. |
-| `PBR-DRAFT-017` | Tier 0 contract and source-level non-reuse tests | Closed diagnostic vocabulary and schemas are registered, and verifier, composer, and acceptor paths reject diagnostic receipt reuse. The live observer and draft producer remain open. |
+| `PBR-DRAFT-017` | Tier 1 bounded contract and source-level non-reuse checks | Closed diagnostic vocabulary and schemas are registered, and verifier, composer, and acceptor paths reject diagnostic receipt reuse. The live observer and draft producer remain open. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact

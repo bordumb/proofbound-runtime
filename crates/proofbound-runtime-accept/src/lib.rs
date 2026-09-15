@@ -951,9 +951,11 @@ mod tests {
             toml::from_str(include_str!("../../../tests/attacks/acceptance/v1.toml"))
                 .expect("attack catalog is closed TOML");
         assert_eq!(catalog.schema, "proofbound-runtime-acceptance-attacks/1");
-        assert!(RejectionReason::all_codes()
-            .windows(2)
-            .all(|pair| pair[0].as_bytes() < pair[1].as_bytes()));
+        assert!(
+            RejectionReason::all_codes()
+                .windows(2)
+                .all(|pair| pair[0].as_bytes() < pair[1].as_bytes())
+        );
         assert_eq!(
             catalog
                 .cases
