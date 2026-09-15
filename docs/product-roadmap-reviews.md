@@ -2221,3 +2221,33 @@ reported survivor and former thread against the same retained thread group,
 and add regression cases for entry-to-exec-to-exit pairing and non-leader exec.
 This verdict is not endorsed. The correction changes the exact subject and
 requires another independent review.
+
+## RT-8 active-trace event source correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `17bb2b4c38cfeb18e2c8d75c372e6c06d6dd2656`
+- **Reviewed head:** `c20f6e3040cd035208622e05baf57fd248011b7c`
+- **Branch:** `codex/rt8-live-events`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that an exec event reads but does not remove the
+pending syscall invocation. Reconciliation transfers the former thread's
+complete state, and the following syscall-exit stop consumes that retained
+entry. The exact wait result must match its requested retained leader. The
+reported survivor and kernel-reported former thread must both belong to that
+leader's retained thread group. A valid non-leader exec is accepted, while a
+wrong wait owner or foreign former thread fails closed.
+
+The correction preserves the previously reviewed raw-syscall confinement, ABI
+decoding, child-before-parent-resume ordering, private ownership, pidfd
+termination, drain behavior, closed errors, production feature isolation,
+assumption and source closure, CI wiring, and explicitly open downstream scope.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`c20f6e3040cd035208622e05baf57fd248011b7c`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.

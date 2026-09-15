@@ -192,7 +192,8 @@ manifest describes the supported tuple.
   explicitly leaves the effectful process-map bound, Linux effects, adapter
   event coupling, and native attack evidence open. The first independent review
   found incorrect syscall-pair retention and non-leader exec identity checks;
-  the correction and exact re-review remain open.
+  exact re-review approved corrected head `c20f6e3`. Hosted verification remains
+  open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.
