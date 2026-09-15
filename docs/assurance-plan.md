@@ -27,6 +27,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-DISTRIBUTION-018` | Tier 1 workflow and registry-observer contract | Publication is explicit, exact-source, protected, ordered, and credential-isolated. Anonymous exact-byte registry observations and external registry setup remain open. |
 | `PBR-DRAFT-017` | Tier 1 bounded contract and source-level non-reuse checks | Closed diagnostic vocabulary and schemas are registered, and verifier, composer, and acceptor paths reject diagnostic receipt reuse. The live observer remains open. |
 | `PBR-DRAFT-019` | Tier 1 bounded producer contract; hosted admission pending | The pure diagnostic artifact producer preserves non-reuse, provenance, explicit gaps, and mandatory human authority choices. It does not claim live observer coverage. |
+| `PBR-OBSERVER-020` | Tier 1 pure observer-protocol contract; hosted admission pending | The typed state machine orders diagnostic release, fixes exact process-tree trace options, bounds retained process and event state, and requires termination and explicit gaps after release failures. It does not claim that Linux observation is implemented. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -399,6 +400,35 @@ This claim starts at Tier 1 because its independent checker has a Tier 1
 minimum. It does not establish that a ptrace observer sees
 all effects, that a suggested path is safe or complete, or that a diagnostic
 artifact can be accepted as production evidence.
+
+## PBR-OBSERVER-020
+
+The current subject is the pure diagnostic observer protocol. It owns no
+process, filesystem, clock, environment, network, or raw system-call effect.
+It permits target release only after the caller records ptrace ownership, the
+production boundary acknowledgement, and the exact closed process-tree trace
+options in order.
+
+The bounded evidence path checks that:
+
+1. missing, extra, or out-of-order setup state cannot release target code;
+2. total event, per-process event, and lifetime process bounds cause explicit
+   gaps only when another item arrives after the bound is full;
+3. natural completion at each exact capacity remains complete;
+4. draining never resumes collection, retains newly discovered children only
+   within the process bound, and cannot finish before all tracked processes
+   have terminal wait results;
+5. duplicate processes, unknown children, unexpected stops, observer failure,
+   invalid identifiers, invalid bounds, and terminal-state reuse fail closed;
+   and
+6. the production CLI and Linux launcher do not depend on the diagnostic
+   crate.
+
+The setup-failure directive requires termination of the stopped child tree and
+publishes no artifact. A post-release failure requires termination and may
+publish only an incomplete diagnostic result after drain. This claim does not
+establish correctness of ptrace, wait handling, syscall decoding, tracee-memory
+reads, process termination, or the future Linux adapter.
 
 ## Bounded-domain declaration guard
 

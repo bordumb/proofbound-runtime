@@ -69,6 +69,21 @@ stop, lost child, or observer failure after step 9 terminates the execution,
 marks the result incomplete where publication remains possible, and never
 falls back to unobserved execution.
 
+The pure observer protocol represents this order with closed states for
+prepared, attached, boundary-ready, options-enabled, released, draining,
+complete, incomplete, and failed-before-release. A setup failure directs the
+adapter to terminate the stopped tree and publish nothing. A post-release gap
+directs the adapter to terminate and drain the tree. The protocol permits
+complete or incomplete publication only after every retained process has a
+terminal wait result.
+
+The root process counts against the lifetime process bound. An exited process
+does not release a process slot for later reuse. Reaching an event or process
+capacity naturally does not create a gap. An attempted item after capacity
+creates the exact gap and starts drain. During drain, the protocol collects no
+more events. It retains a newly discovered child only while the lifetime
+process bound permits that state, and it continues to direct termination.
+
 ## 4. Observer contract
 
 The first observer mechanism identity is `linux-ptrace-syscall-v1`. It uses

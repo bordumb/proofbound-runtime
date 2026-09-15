@@ -1,0 +1,52 @@
+schema = "proofbound-evidence-unit/1"
+id = "diagnostic-observer-protocol"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-OBSERVER-020"]
+tier = 0
+expected_inventory = [
+  "proofbound_runtime_diagnose::observer::tests::collection_bounds_require_termination_and_explicit_gaps",
+  "proofbound_runtime_diagnose::observer::tests::complete_tree_requires_every_terminal_wait_result",
+  "proofbound_runtime_diagnose::observer::tests::drain_tracks_children_until_the_process_bound",
+  "proofbound_runtime_diagnose::observer::tests::each_collection_bound_has_one_exact_gap",
+  "proofbound_runtime_diagnose::observer::tests::failures_keep_pre_release_and_post_release_publication_distinct",
+  "proofbound_runtime_diagnose::observer::tests::invalid_inputs_duplicates_and_terminal_reuse_fail_closed",
+  "proofbound_runtime_diagnose::observer::tests::natural_exact_capacity_completion_adds_no_gap",
+  "proofbound_runtime_diagnose::observer::tests::target_release_requires_boundary_and_exact_trace_options",
+  "proofbound_runtime_diagnose::observer::tests::total_process_and_event_bounds_do_not_reset_during_drain",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/diagnostic.rs",
+  "crates/proofbound-runtime-core/src/identity.rs",
+  "crates/proofbound-runtime-core/src/lib.rs",
+  "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-diagnose/Cargo.toml",
+  "crates/proofbound-runtime-diagnose/src/artifact.rs",
+  "crates/proofbound-runtime-diagnose/src/canonical.rs",
+  "crates/proofbound-runtime-diagnose/src/draft.rs",
+  "crates/proofbound-runtime-diagnose/src/lib.rs",
+  "crates/proofbound-runtime-diagnose/src/observer.rs",
+  "crates/proofbound-runtime-diagnose/src/producer.rs",
+  "schemas/diagnostic-receipt-v1.schema.json",
+  "schemas/plan-draft-v1.schema.json",
+  "schemas/vectors/diagnostic/diagnostic-receipt.json",
+  "schemas/vectors/diagnostic/plan-draft.json",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-diagnose"
+manifest = "Cargo.toml"
+targets = ["--lib", "observer::tests"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

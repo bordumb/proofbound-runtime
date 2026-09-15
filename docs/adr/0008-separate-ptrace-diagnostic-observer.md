@@ -53,6 +53,12 @@ child, observer overflow, tracee-memory read failure, identity drift, or
 unexpected stop marks the diagnostic result incomplete. It never causes the
 production receipt path to accept weaker evidence.
 
+A pure protocol owns release order, lifetime process and event accounting,
+gap accumulation, drain eligibility, and publication eligibility. The Linux
+adapter owns ptrace, wait, memory-read, signal, and process-cleanup effects.
+This separation lets the ordered decisions receive bounded source evidence
+without presenting effectful Linux behavior as proved.
+
 For a successful descriptor-producing file open, the observer records the
 kernel-selected target through `/proc/<pid>/fd/<fd>` while the tracee is still
 stopped. For a denied operation, it records the supplied path and an explicit

@@ -3,8 +3,10 @@
 **Status:** static scaffold and prelaunch diagnostics merged; diagnostic
 contracts, closed schemas, source-level production non-reuse, and the pure
 diagnostic artifact producer are implemented across the stacked RT-8 branches.
-Hosted admission is pending. The live ptrace observer, command integration,
-native attack corpus, and release binding remain open.
+The producer is independently approved and hosted admission is pending. The
+pure observer protocol is implemented on the next stacked branch. The live
+ptrace adapter, command integration, native attack corpus, and release binding
+remain open.
 
 **Primary owner:** Proofbound Runtime
 
@@ -62,6 +64,9 @@ values without making a draft an authority object.
 - One aggregate producer owns receipt and plan-draft construction. It streams
   both canonical objects through the declared output bound instead of
   materializing an unbounded complete JSON tree.
+- A pure observer protocol orders attachment, boundary acknowledgement, exact
+  trace options, target release, bounded collection, termination, drain, and
+  publication eligibility before the Linux adapter exists.
 - Automatic candidates require an explicit normalized project or runtime
   scope. System, home, and configured temporary roots remain open review
   items.

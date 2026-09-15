@@ -22,6 +22,7 @@ affected_claims = [
   "PBR-SDK-014",
   "PBR-DRAFT-017",
   "PBR-DRAFT-019",
+  "PBR-OBSERVER-020",
 ]
 review_evidence = [
   "rust-toolchain.toml",
