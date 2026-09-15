@@ -327,8 +327,9 @@ bounded observation for the tested identity tuple.
 - Attempt publication from a non-release context.
 - Publish one package from an incomplete selected first-party package set.
 - Select npm bootstrap while general publication is disabled.
-- Select npm bootstrap after the package exists, or select OIDC while it is
-  absent.
+- Select npm bootstrap after an immediate anonymous response other than `404`.
+- Select the normal npm OIDC route after an immediate anonymous response other
+  than `200`.
 - Expose the npm bootstrap token to the normal publisher or anonymous observer.
 - Add an npm publish lifecycle hook to the selected package.
 - Substitute registry bytes after release approval.
