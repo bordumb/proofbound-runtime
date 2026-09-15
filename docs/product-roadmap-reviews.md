@@ -3090,3 +3090,28 @@ makes the receiver mutable. It changes no runtime transition, receipt meaning,
 claim, assumption, or evidence semantics, but it changes a reviewed production
 source file and therefore requires a new exact-head independent review and a
 fresh hosted verification run.
+
+## RT-8 diagnostic stream compilation-correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `a89b92daa0a6f977c4a090b3f9a2e553fc94884d`
+- **Reviewed head:** `745379cd74a22fa5e63ee006c197c77970d480d8`
+- **Branch:** `codex/rt8-diagnostic-streams`
+- **Method:** Complete exact-range static security and source-identity
+  re-review. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the mutable receiver is required for the session
+identity-handle record and closes hosted compiler error E0596 without changing
+release order or security behavior. The exact-body and whole-file fingerprints
+are synchronized across the stream, mapping, and syscall-decoder checkers. The
+full range retains the previously reviewed cancellation and deadline behavior,
+cleanup ownership, bounded stream capture, terminal publication gate, claim and
+evidence closure, and production separation.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`a89b92daa0a6f977c4a090b3f9a2e553fc94884d..745379cd74a22fa5e63ee006c197c77970d480d8`.
+The following approval-only commit changes no reviewed production,
+specification, claim, assumption, evidence, checker, or source-closure bytes.
+Fresh hosted verification remains required before merge.
