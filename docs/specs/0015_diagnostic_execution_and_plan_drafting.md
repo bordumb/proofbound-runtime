@@ -129,8 +129,9 @@ abandoned. This source property does not prove the corresponding Linux effects,
 successful cleanup, or complete process-tree cleanup.
 
 Child creation also takes the exact configured stdout and stderr pipes, makes
-both nonblocking, and starts an independent cancellable concurrent drain for
-each before the spawned trace state becomes available. The byte limits come
+both nonblocking, and starts one concurrent drain for each before the spawned
+trace state becomes available. The drains have independent byte bounds and one
+shared cancellation signal. The byte limits come
 from the seed plan's separate stdout and stderr resource limits. An active
 drain retains at most its limit but continues to read and discard bytes until
 end of file. It reports `complete` only when no
@@ -140,10 +141,13 @@ captures only after the trace tree is exactly empty. Forced termination can
 return them only after the exact drain succeeds. A missing configured pipe,
 drain-thread creation failure, read failure, or join failure is a closed
 observer failure and permits no publication. Early typestate destruction
-terminates and waits for the child before it cancels and joins outstanding
-drains. A cancelled nonblocking drain observes the cancellation no later than
-the next poll. These are source-order and bounded-memory properties. They do
-not establish Linux pipe progress, scheduler fairness, or process-tree truth.
+attempts child termination and wait before it cancels and joins outstanding
+drains. A terminal setup wait that reaps the exact root disarms later numeric
+child cleanup before it returns. A cancelled nonblocking drain observes the
+cancellation no later than the next poll under the registered scheduler and
+atomic-visibility premises. These are source-order and bounded-memory
+properties. They do not establish Linux pipe progress, scheduler fairness, or
+process-tree truth.
 
 The separate diagnostic Linux adapter is the supported composition surface for
 these trace-startup typestates. It validates the observation bounds before child

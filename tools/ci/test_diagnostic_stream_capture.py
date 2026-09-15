@@ -79,6 +79,7 @@ def assert_stream_contract(trace: str, adapter: str, sys: str) -> None:
         trace, "fn disarm_after_identity_stable_handle("
     )
     record_terminal = implementation(trace, "fn record_terminal_process(")
+    exact_stop = implementation(trace, "fn wait_for_exact_stop(")
     release = implementation(trace, "pub fn release(")
     reader_drop = implementation(trace, "impl Drop for TraceStreamReaders")
     set_nonblocking = implementation(sys, "pub(crate) fn set_nonblocking(")
@@ -198,6 +199,10 @@ def assert_stream_contract(trace: str, adapter: str, sys: str) -> None:
         raise AssertionError("terminal child cleanup is not confined to the exact root")
     if "self.terminate_and_wait()" not in child_drop:
         raise AssertionError("child drop does not terminate and wait")
+    if "session: &mut TraceSession" not in exact_stop:
+        raise AssertionError("setup wait cannot update child cleanup ownership")
+    if exact_stop.count("session.record_root_reaped();") != 2:
+        raise AssertionError("terminal setup waits leave numeric child cleanup armed")
 
     before(natural_finish, "if !self.is_drained()", "self.session.finish_streams()?")
     before(
@@ -243,6 +248,7 @@ EXPECTED_BODIES = {
     "record-terminal": "1b039cd8a628df661083e7f65b8aeb4b691b7a476b851d06ab531826ca7365fa",
     "release": "df095da595cfa93125993d6697f0989faecbf1dae1b9d1d4b5fc3f0c09cdebaa",
     "spawn": "6c62b3ede796721a78fa93b322fd58395317596d95fc69d6c69ee382fbe301f9",
+    "wait-for-exact-stop": "ee7155892109c7e6103ad845db801ad1d397551863dda1f23ba590b38cd75d23",
 }
 
 EXPECTED_FILES = {
@@ -269,7 +275,7 @@ EXPECTED_FILES = {
     "stream-runtime-assumption": "ce57e1cab085cbd7b4f60ab03a607166a2dc77bdb924228b1f7c949a72bfeb19",
     "sys": "c7433f4485aa12829c87ef10210fa766676bc24729361e0a82ac93a2267eb06f",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "b016c9fdda71e8a8621546bd4ac7a6db810b5ddf02652265cf973335ae4476be",
+    "trace": "f490dd4398cff760aef70d1f305f4f98a26663b282cf45a86fab78f185b3df27",
     "unit-evidence": "aa412bdc666a1817f18e8a8df227ff356100147635f5a996068b8f3672aaeda7",
 }
 
@@ -346,6 +352,11 @@ class DiagnosticStreamCaptureContractTests(unittest.TestCase):
                 self.sys,
             ),
             (
+                self.trace.replace("session.record_root_reaped();", "", 1),
+                self.adapter,
+                self.sys,
+            ),
+            (
                 self.trace.replace(
                     "self.session.record_root_identity_stable_handle();", "", 1
                 ),
@@ -416,6 +427,9 @@ class DiagnosticStreamCaptureContractTests(unittest.TestCase):
             ),
             "release": implementation(self.trace, "pub fn release("),
             "spawn": implementation(self.trace, "pub fn spawn(mut self)"),
+            "wait-for-exact-stop": implementation(
+                self.trace, "fn wait_for_exact_stop("
+            ),
         }
         actual_bodies = {
             name: hashlib.sha256(body.encode()).hexdigest()

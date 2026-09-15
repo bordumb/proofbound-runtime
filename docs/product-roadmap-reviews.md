@@ -2981,3 +2981,33 @@ separation, and honest pending status. This verdict is not endorsed. The
 deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
+
+## RT-8 diagnostic stream admitted-base re-review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `a89b92daa0a6f977c4a090b3f9a2e553fc94884d`
+- **Reviewed head:** `c2da771450f30c63ba88951bb0615dff7616d8db`
+- **Branch:** `codex/rt8-diagnostic-streams`
+- **Method:** Complete exact-range static security and product re-review. The
+  reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The fixed-deadline stream completion, shared cancellation, independent byte
+bounds, read-through after truncation, active-trace numeric-cleanup disarming,
+aggregate subject, path-receipt closure, terminal publication order, and exact
+source fingerprints were coherent under the registered scheduler and
+nonblocking-I/O premise. Pre-join and post-join deadline checks correctly reject
+late completion.
+
+Three blockers remained. First, a terminal wait during setup reaped the root
+without disarming the still-live numeric child guard. Later destruction could
+therefore kill a reused PID before pidfd ownership began. Second, Specification
+0015 still described independent cancellation and infallible early cleanup,
+despite one shared cancellation signal and best-effort drop cleanup. Third, the
+checklist, assurance table, and RT-8 integration record still described the
+already reviewed, verified, and merged event mapper and RT-7 bootstrap work as
+pending. The correction must disarm cleanup in both setup terminal branches,
+add a causal checker mutation, use the accurate normative wording, and align
+the execution status before another exact-head review.

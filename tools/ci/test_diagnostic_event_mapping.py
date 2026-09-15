@@ -169,7 +169,7 @@ EXPECTED_FILES = {
     "mapping": "ea3c2765a503708ad4a695224027099db1b9e1cb3ca2a2b3f80e4fcd0c9e87c4",
     "root-manifest": "1ea75287f62129c6b15038b0c45df42e616fc4c92e59e61bc03358746fd5d7d6",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "b016c9fdda71e8a8621546bd4ac7a6db810b5ddf02652265cf973335ae4476be",
+    "trace": "f490dd4398cff760aef70d1f305f4f98a26663b282cf45a86fab78f185b3df27",
     "unit-evidence": "c1628a6afa1a191c17c71debd3a8e4f224e31e406f6c280b5ccb1e03371bfa92",
 }
 

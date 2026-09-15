@@ -46,8 +46,9 @@ approved head `fbd2d66`; approval-only head `db95947` passed complete
 exact-head run `34992273744` and merged unsigned as `4783896`. Exact-main run
 `34997195939` passed. The following `PBR-OBSERVER-026` wave maps the complete
 registered trace events into closed diagnostic artifact events without
-inventing object resolution. Its source and evidence are implemented and await
-independent review and hosted admission. The dependent `PBR-OBSERVER-027`
+inventing object resolution. It passed exact-head Verify run `35018691928` and
+merged unsigned as `a89b92d`; exact-main run `35025687602` was started for that
+merge. The dependent `PBR-OBSERVER-027`
 source and evidence start independent bounded stdout and stderr drains before
 the spawned trace state returns, continue draining after a retained prefix is
 full, and gate publication on fixed-deadline terminal collection that cancels
@@ -177,8 +178,8 @@ values without making a draft an authority object.
 
 Complete RT-8 in these claim-sized waves:
 
-1. Admit `PBR-OBSERVER-026`, which maps complete trace events into unresolved
-   diagnostic artifact events.
+1. `PBR-OBSERVER-026` is admitted on `a89b92d`. It maps complete trace events
+   into unresolved diagnostic artifact events.
 2. Admit `PBR-OBSERVER-027`, which gives the trace session independent bounded,
    cancellable, nonblocking stdout and stderr drains. Continue reading after
    either retained prefix is full, collect both streams only after terminal tree

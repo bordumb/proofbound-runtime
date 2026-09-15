@@ -1,21 +1,19 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T20:07:04+01:00 (Europe/London, BST)
-- **Runtime baseline:** the architecture-qualified decoder passed complete
-  exact-head Verify run `34992273744` at approval-only head `db95947` and
-  merged unsigned as `4783896`. Exact-main Verify run `34997195939` passed.
-- **Active implementation wave:** the `PBR-DISTRIBUTION-025`
-  current-integration source passed independent review at exact subject
-  `a81e259`. Its four unsigned commits are replayed on Runtime main with the
-  approved implementation and schema preserved. Current npm documentation and
-  an anonymous package check exposed a missing first-publication route: npm
-  cannot bind OIDC until the package exists. A narrow protected bootstrap
-  correction is active and requires a new exact-head review.
-- **Current implementation batch:** close RT-7's machine-readable supported
-  tuple before external publication. Registry configuration, protected
-  publication, anonymous observations, unrelated consumer dogfood, and a
-  retained current-integration artifact remain external completion gates.
+- **Last updated:** 2026-09-15T22:41:25+01:00 (Europe/London, BST)
+- **Runtime baseline:** the RT-8 event mapper passed exact-head Verify run
+  `35018691928` and merged unsigned as `a89b92d`. Exact-main Verify run
+  `35025687602` was started for that merge.
+- **Active implementation wave:** `PBR-OBSERVER-027` bounded diagnostic stream
+  collection is restacked on `a89b92d`. Its initial independent review found
+  terminal-deadline, cleanup-ownership, wording, and status defects. Separate
+  unsigned corrections are receiving exact-head re-review.
+- **Current implementation batch:** admit the bounded stream collector before
+  lifecycle, object-resolution, and command work. RT-7 protected routes and
+  current-integration source are merged; registry configuration, actual public
+  package publication, anonymous observations, consumer dogfood, and a retained
+  current-integration artifact remain external completion gates.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -284,14 +282,15 @@ manifest describes the supported tuple.
   exact head `fbd2d66`. Approval-only head `db95947` passed complete hosted run
   `34992273744` and merged unsigned as `4783896`; exact-main run `34997195939`
   passed.
-- [ ] Admit exact trace-to-artifact mapping. The `PBR-OBSERVER-026` source wave
+- [x] Admit exact trace-to-artifact mapping. The `PBR-OBSERVER-026` source wave
   preserves process identity, architecture, class, bounded entry operands, and
   consistent outcomes with contiguous sequence values. It maps no lifecycle
   event to a syscall, invents no object resolution, and fails closed for an
   unknown architecture, malformed outcome, invalid exec entry, non-UTF-8
   version 1 path, artifact inconsistency, or sequence overflow. Source,
-  registered Rust tests, independent checks, and mutation witnesses are
-  implemented; independent review and hosted exact-head admission remain open.
+  registered Rust tests, independent checks, and mutation witnesses passed
+  exact-head Verify run `35018691928`, then merged unsigned as `a89b92d`.
+  Exact-main Verify run `35025687602` was started for that merge.
 - [ ] Add bounded concurrent stdout and stderr collection to the traced session
   before command integration. The `PBR-OBSERVER-027` source wave starts both
   nonblocking cancellable drains after spawn, retains independent bounded

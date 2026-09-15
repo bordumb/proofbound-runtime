@@ -571,10 +571,10 @@ impl SpawnedTrace {
 
     /// Waits for the exact post-exec trace stop of the spawned child.
     pub fn wait_for_initial_exec_stop(
-        self,
+        mut self,
         deadline: TraceDeadline,
     ) -> Result<InitialExecStop, TraceStartupError> {
-        wait_for_exact_stop(self.session.process, deadline, SIGNAL_TRAP, 0)?;
+        wait_for_exact_stop(&mut self.session, deadline, SIGNAL_TRAP, 0)?;
         Ok(InitialExecStop {
             session: self.session,
         })
@@ -590,11 +590,11 @@ pub struct InitialExecStop {
 impl InitialExecStop {
     /// Resumes the trusted launcher until its declared self-stop.
     pub fn continue_to_launcher_pause(
-        self,
+        mut self,
         deadline: TraceDeadline,
     ) -> Result<LauncherPause, TraceStartupError> {
         continue_trace(self.session.process)?;
-        wait_for_exact_stop(self.session.process, deadline, SIGNAL_STOP, 0)?;
+        wait_for_exact_stop(&mut self.session, deadline, SIGNAL_STOP, 0)?;
         Ok(LauncherPause {
             session: self.session,
         })
@@ -636,7 +636,7 @@ pub struct BoundaryRunning {
 impl BoundaryRunning {
     /// Receives the exact boundary acknowledgement and stops before release.
     pub fn receive_acknowledgement_and_stop(
-        self,
+        mut self,
         deadline: TraceDeadline,
     ) -> Result<AcknowledgedTraceStop, TraceStartupError> {
         if deadline.expired() {
@@ -664,7 +664,7 @@ impl BoundaryRunning {
             }
         }
         stop_trace(self.session.process)?;
-        wait_for_exact_stop(self.session.process, deadline, SIGNAL_STOP, 0)?;
+        wait_for_exact_stop(&mut self.session, deadline, SIGNAL_STOP, 0)?;
         Ok(AcknowledgedTraceStop {
             session: self.session,
         })
@@ -2397,13 +2397,14 @@ fn stop_trace(process: TraceProcessId) -> Result<(), TraceStartupError> {
 }
 
 fn wait_for_exact_stop(
-    process: TraceProcessId,
+    session: &mut TraceSession,
     deadline: TraceDeadline,
     expected_signal: i32,
     expected_event: u32,
 ) -> Result<(), TraceStartupError> {
     #[cfg(target_os = "linux")]
     {
+        let process = session.process;
         loop {
             match crate::sys::trace_wait_nonblocking(process.get())
                 .map_err(|_| TraceStartupError::WaitFailed)?
@@ -2418,10 +2419,12 @@ fn wait_for_exact_stop(
                 }
                 Some(crate::sys::TraceWaitStatus::Exited { code }) => {
                     let _ = code;
+                    session.record_root_reaped();
                     return Err(TraceStartupError::TraceeExited);
                 }
                 Some(crate::sys::TraceWaitStatus::Signaled { signal }) => {
                     let _ = signal;
+                    session.record_root_reaped();
                     return Err(TraceStartupError::TraceeExited);
                 }
                 None if deadline.expired() => return Err(TraceStartupError::WaitTimedOut),
@@ -2431,7 +2434,7 @@ fn wait_for_exact_stop(
     }
     #[cfg(not(target_os = "linux"))]
     {
-        let _ = (process, deadline, expected_signal, expected_event);
+        let _ = (session, deadline, expected_signal, expected_event);
         Err(TraceStartupError::UnsupportedOperatingSystem)
     }
 }
