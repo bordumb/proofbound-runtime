@@ -5,8 +5,8 @@
 mod adapter;
 
 pub use adapter::{
-    prepare_observer, AcknowledgedObserver, ActiveObserver, BoundaryRunningObserver,
-    InitialObserver, LauncherPausedObserver, ObserverAdapterError, PreparedObserver, ReadyObserver,
-    SpawnedObserver,
+    AcknowledgedObserver, ActiveObserver, BoundaryRunningObserver, InitialObserver,
+    LauncherPausedObserver, ObserverAdapterError, PreparedObserver, ReadyObserver, SpawnedObserver,
+    prepare_observer,
 };
 pub use proofbound_runtime_linux::{TraceDeadline, TraceProcessId};

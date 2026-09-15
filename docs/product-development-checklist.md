@@ -1,13 +1,13 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T11:34:00+01:00 (Europe/London, BST)
-- **Runtime baseline:** identity-bound exec-release merge `3557cc9`; exact-main
-  Verify run `34956564102` is in progress
-- **Active implementation wave:** separate feature-gated Linux trace-startup
-  typestates are in hosted PR 14. The coupled adapter is independently approved
-  at exact source head `d0c2520`; its approval-only record and hosted admission
-  follow on the same exact stack.
+- **Last updated:** 2026-09-15T12:23:05+01:00 (Europe/London, BST)
+- **Runtime baseline:** trace-startup merge `9395050`; its exact-main Verify run
+  is pending. Identity-bound exec-release exact-main run `34956564102` passed.
+- **Active implementation wave:** the coupled setup adapter is in PR 15. Its
+  hosted run reached the Rust lane and rejected two files formatted with the
+  wrong Rust edition. The edition-2024-only correction passes the focused
+  formatter and source contract; exact re-review and failed-lane retry remain.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -181,8 +181,9 @@ manifest describes the supported tuple.
   dependency, target, and pure module-selection sources. Its review found
   conditional path redirection at both dependency crate roots. The sixth
   correction byte-pins those roots and registers the Linux root. Independent
-  re-review approved exact source head `d0c2520`; the approval-only record and
-  hosted verification remain open.
+  re-review approved exact source head `d0c2520`. Hosted verification then
+  rejected only edition-2021 import ordering before compilation. The
+  edition-2024-only correction and exact re-review remain open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.
