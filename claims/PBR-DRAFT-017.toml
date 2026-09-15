@@ -7,13 +7,17 @@ subject = "rust:proofbound_runtime_core::diagnostic::ExecutionProfile"
 profile = "ledger"
 tier = 0
 evidence = [
+  "independent-check:diagnostic-schema-contract",
   "example-test:diagnostic-acceptance-non-reuse",
   "example-test:diagnostic-composer-non-reuse",
   "example-test:diagnostic-core-vocabulary",
   "example-test:diagnostic-verifier-cli-non-reuse",
   "example-test:diagnostic-verifier-non-reuse",
 ]
-assumptions = ["PBR-TOOLCHAIN-AX-003"]
+assumptions = [
+  "PBR-DIAGNOSTIC-CONTRACT-AX-015",
+  "PBR-TOOLCHAIN-AX-003",
+]
 open_obligations = [
   "Implement the separate bounded ptrace observer and diagnostic artifact producer without adding an observer entry point or dependency to the production Runtime or launcher binaries.",
   "Implement provenance-preserving draft construction, mandatory human choices, optional exact-identity Capsec comparison, and the complete adversarial mutation corpus.",
@@ -29,6 +33,8 @@ out_of_scope = [
 source_roots = [
   "Cargo.lock",
   "Cargo.toml",
+  "assumptions/PBR-DIAGNOSTIC-CONTRACT-AX-015.toml",
+  "assumptions/PBR-TOOLCHAIN-AX-003.toml",
   "claims/PBR-DRAFT-017.toml",
   "crates/proofbound-runtime-accept/src/lib.rs",
   "crates/proofbound-runtime-accept/src/main.rs",
@@ -48,6 +54,7 @@ source_roots = [
   "proofbound/evidence/diagnostic-acceptance-non-reuse.toml",
   "proofbound/evidence/diagnostic-composer-non-reuse.toml",
   "proofbound/evidence/diagnostic-core-vocabulary.toml",
+  "proofbound/evidence/diagnostic-schema-contract.toml",
   "proofbound/evidence/diagnostic-verifier-cli-non-reuse.toml",
   "proofbound/evidence/diagnostic-verifier-non-reuse.toml",
   "schemas/acceptance-decision-v1.cddl",
@@ -56,6 +63,7 @@ source_roots = [
   "schemas/vectors/diagnostic/diagnostic-receipt.json",
   "schemas/vectors/diagnostic/plan-draft.json",
   "tools/ci/ci.sh",
+  "tools/ci/check_diagnostic_contract.py",
   "tools/ci/pre-commit.sh",
   "tools/ci/test_diagnostic_drafting_contract.py",
 ]
