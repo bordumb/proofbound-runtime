@@ -21,6 +21,7 @@ affected_claims = [
   "PBR-SCAFFOLD-013",
   "PBR-SDK-014",
   "PBR-DRAFT-017",
+  "PBR-DRAFT-019",
 ]
 review_evidence = [
   "rust-toolchain.toml",

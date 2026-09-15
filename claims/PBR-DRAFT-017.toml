@@ -2,7 +2,7 @@ schema = "proofbound-claim/1"
 id = "PBR-DRAFT-017"
 title = "Diagnostic artifacts remain distinct from production authority"
 statement = "The pure Runtime core accepts only the registered production and diagnostic profiles, observer mechanism, draft provenance, observation-resolution, and completion values; the independent verifier rejects a canonical diagnostic receipt before commitment or production-receipt decoding; and the composer and acceptance adapters define closed mappings for that exact verifier failure."
-public_language = "Runtime has an accepted, closed diagnostic-profile contract and distinct diagnostic receipt and plan-draft schemas. Registered tests cover the independent verifier rejection and the isolated composer and acceptance failure-code mappings. They do not yet execute the complete composer or acceptance publication path. This is contract and bounded test evidence only: the live ptrace observer and draft producer are not yet implemented, and no diagnostic output is a safe policy or production receipt."
+public_language = "Runtime has an accepted, closed diagnostic-profile contract and distinct diagnostic receipt and plan-draft schemas. Registered tests cover the independent verifier rejection and the isolated composer and acceptance failure-code mappings. A separately registered pure producer constructs the diagnostic artifacts from validated observations without granting authority. The tests do not yet execute a live ptrace observer or the complete composer and acceptance publication paths. This is contract and bounded source evidence only, and no diagnostic output is a safe policy or production receipt."
 subject = "rust:proofbound_runtime_core::diagnostic::ExecutionProfile"
 profile = "ledger"
 tier = 1
@@ -20,12 +20,12 @@ assumptions = [
 ]
 open_obligations = [
   "Add end-to-end composer and acceptance command falsifiers that submit a diagnostic receipt, observe the exact typed rejection, and prove that no composition or acceptance output is published.",
-  "Implement the separate bounded ptrace observer and diagnostic artifact producer without adding an observer entry point or dependency to the production Runtime or launcher binaries.",
-  "Implement provenance-preserving draft construction, mandatory human choices, optional exact-identity Capsec comparison, and the complete adversarial mutation corpus.",
+  "Implement the separate bounded ptrace observer and connect it to the pure diagnostic producer without adding an observer entry point or dependency to the production Runtime or launcher binaries.",
+  "Complete live falsifiers for symlink redirection, observation-sensitive behavior, missing events, truncation, and process-tree escape.",
   "Execute the live diagnostic attack corpus on both supported architectures and bind exact released pbr-diagnose artifacts before describing the profile as released.",
 ]
 out_of_scope = [
-  "A claim that the current repository can execute a diagnostic profile or produce either diagnostic artifact.",
+  "A claim that the current repository can execute a live diagnostic profile or produce observations from a child process.",
   "Completeness, transparency, or non-interference of ptrace observation.",
   "Safety or authority of a generated plan draft.",
   "Correctness of a Capsec report or conversion of a Capsec observation into Runtime authority.",
@@ -37,6 +37,7 @@ source_roots = [
   "assumptions/PBR-DIAGNOSTIC-CONTRACT-AX-015.toml",
   "assumptions/PBR-TOOLCHAIN-AX-003.toml",
   "claims/PBR-DRAFT-017.toml",
+  "claims/PBR-DRAFT-019.toml",
   "crates/proofbound-runtime-accept/src/lib.rs",
   "crates/proofbound-runtime-accept/src/main.rs",
   "crates/proofbound-runtime-cli/Cargo.toml",

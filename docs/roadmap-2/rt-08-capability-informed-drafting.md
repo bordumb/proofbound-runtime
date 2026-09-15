@@ -1,9 +1,10 @@
 # RT-8 integration record: capability-informed drafting
 
 **Status:** static scaffold and prelaunch diagnostics merged; diagnostic
-contracts, closed schemas, and source-level production non-reuse are
-implemented on `codex/rt8-diagnostic-profile`; final review and hosted
-admission are pending, and the live observer and draft producer remain open
+contracts, closed schemas, source-level production non-reuse, and the pure
+diagnostic artifact producer are implemented across the stacked RT-8 branches.
+Hosted admission is pending. The live ptrace observer, command integration,
+native attack corpus, and release binding remain open.
 
 **Primary owner:** Proofbound Runtime
 
@@ -54,6 +55,8 @@ values without making a draft an authority object.
   Runtime and launcher artifacts contain no observer entry point.
 - Diagnostic receipts are JSON diagnostic objects and are never accepted by
   the production verifier, composer, or acceptance policy.
+- The pure producer accepts validated observations. It cannot observe a
+  process, install a boundary, or add production authority.
 
 ## Additional falsifiers
 

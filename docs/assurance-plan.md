@@ -25,7 +25,8 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-DISTRIBUTION-015` | Tier 1 independently reviewed and admitted on exact Runtime main | The verifier package has a closed preflight, source-payload comparison, byte reproduction, local consumer, and release-retention path; no registry or publisher claim is admitted. |
 | `PBR-DISTRIBUTION-016` | Tier 1 public-bundle consumer merged; exact-main admission pending | Runtime pins one immutable public Proofbound release and rejects identity, inventory, manifest, checksum, archive, installer, and installed-byte substitution. Every protected evidence and release job installs that exact bundle independently. |
 | `PBR-DISTRIBUTION-018` | Tier 1 workflow and registry-observer contract | Publication is explicit, exact-source, protected, ordered, and credential-isolated. Anonymous exact-byte registry observations and external registry setup remain open. |
-| `PBR-DRAFT-017` | Tier 1 bounded contract and source-level non-reuse checks | Closed diagnostic vocabulary and schemas are registered, and verifier, composer, and acceptor paths reject diagnostic receipt reuse. The live observer and draft producer remain open. |
+| `PBR-DRAFT-017` | Tier 1 bounded contract and source-level non-reuse checks | Closed diagnostic vocabulary and schemas are registered, and verifier, composer, and acceptor paths reject diagnostic receipt reuse. The live observer remains open. |
+| `PBR-DRAFT-019` | Tier 1 bounded producer contract; hosted admission pending | The pure diagnostic artifact producer preserves non-reuse, provenance, explicit gaps, and mandatory human authority choices. It does not claim live observer coverage. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -363,10 +364,33 @@ The bounded evidence path checks that:
    observer dependency.
 
 This claim does not say that `pbr-diagnose` exists or that the composer and
-acceptance tests exercise their complete command and publication paths. Those
-end-to-end falsifiers, the ptrace observer, diagnostic producer, plan-draft
-builder, Capsec comparison, native attack corpus, and exact artifact binding
-remain explicit obligations.
+acceptance tests exercise their complete command and publication paths. The
+pure artifact producer and Capsec identity comparison are registered under
+`PBR-DRAFT-019`. The end-to-end command falsifiers, ptrace observer, native
+attack corpus, and exact released-artifact binding remain explicit
+obligations.
+
+## PBR-DRAFT-019
+
+The production subject is the pure constructor that turns already validated,
+bounded diagnostic observations into the two distinct RT-8 artifacts. The
+constructor cannot install a boundary, observe a process, or grant plan
+authority. Its diagnostic receipt is always non-reusable. Its plan draft keeps
+network attempts and unresolved observations open and requires a person to
+choose write roots, environment names, resource limits, and network mode.
+
+The initial evidence path must falsify event and per-process bounds, sequence
+ordering, result and error exclusivity, resolution and identity consistency,
+completion and gap consistency, unsafe path collapse, network-to-authority
+conversion, missing human choices, provenance relabeling, noncanonical JSON,
+and drift from both registered schema vectors. The independent checker must
+also confirm that neither the production CLI nor the native launcher depends
+on the diagnostic producer.
+
+This claim starts at Tier 1 because its independent checker has a Tier 1
+minimum. It does not establish that a ptrace observer sees
+all effects, that a suggested path is safe or complete, or that a diagnostic
+artifact can be accepted as production evidence.
 
 ## Bounded-domain declaration guard
 

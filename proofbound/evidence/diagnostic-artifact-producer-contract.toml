@@ -1,0 +1,40 @@
+schema = "proofbound-evidence-unit/1"
+id = "diagnostic-artifact-producer-contract"
+adapter = "independent-check"
+kind = "independent-check"
+claims = ["PBR-DRAFT-019"]
+tier = 0
+expected_inventory = [
+  "diagnostic-artifact-canonical-agreement",
+  "diagnostic-artifact-closed-authority-surface",
+  "diagnostic-artifact-production-separation",
+]
+inputs = [
+  "claims/PBR-DRAFT-019.toml",
+  "crates/proofbound-runtime-diagnose/Cargo.toml",
+  "crates/proofbound-runtime-diagnose/src/artifact.rs",
+  "crates/proofbound-runtime-diagnose/src/draft.rs",
+  "crates/proofbound-runtime-diagnose/src/lib.rs",
+  "schemas/diagnostic-receipt-v1.schema.json",
+  "schemas/plan-draft-v1.schema.json",
+  "schemas/vectors/diagnostic/diagnostic-receipt.json",
+  "schemas/vectors/diagnostic/plan-draft.json",
+  "tools/ci/check_diagnostic_artifact_producer.py",
+  "tools/ci/test_diagnostic_artifact_producer.py",
+]
+outputs = []
+environment_allowlist = ["PATH"]
+
+[operation]
+type = "independent-check"
+checker = "tools/ci/check_diagnostic_artifact_producer.py"
+arguments = []
+paths = [
+  "schemas/diagnostic-receipt-v1.schema.json",
+  "schemas/plan-draft-v1.schema.json",
+]
+
+[resource_budget]
+time_seconds = 30
+disk_bytes = 134217728
+memory_bytes = 536870912

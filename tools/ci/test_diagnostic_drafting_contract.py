@@ -160,12 +160,26 @@ class DiagnosticDraftingContractTests(unittest.TestCase):
         self.assertIsNone(draft["capsec"])
         self.assertEqual(draft["differences"], [])
         self.assertEqual(
+            draft["candidates"],
+            [
+                {
+                    "kind": "read",
+                    "path": "/workspace/config",
+                    "provenance": ["diagnostic-runtime-observation"],
+                }
+            ],
+        )
+        self.assertEqual(
             {item["code"] for item in draft["open_items"]},
             {
+                "capsec-missing",
                 "choose-environment",
                 "choose-limits",
                 "choose-network-mode",
                 "choose-write-roots",
+                "diagnostic-gap",
+                "network-attempt",
+                "observation-unresolved",
             },
         )
 
