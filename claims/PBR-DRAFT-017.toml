@@ -1,8 +1,8 @@
 schema = "proofbound-claim/1"
 id = "PBR-DRAFT-017"
 title = "Diagnostic artifacts remain distinct from production authority"
-statement = "The pure Runtime core accepts only the registered production and diagnostic profiles, observer mechanism, draft provenance, observation-resolution, and completion values; the independent verifier rejects a canonical diagnostic receipt before commitment or production-receipt decoding; the composer propagates that exact failure without producing output; and the acceptance command maps it to one closed diagnostic non-reuse decision reason."
-public_language = "Runtime has an accepted, closed diagnostic-profile contract and distinct diagnostic receipt and plan-draft schemas. The registered source-level tests reject diagnostic receipt reuse through verification, composition, and acceptance with typed reasons. This is contract and bounded test evidence only: the live ptrace observer and draft producer are not yet implemented, and no diagnostic output is a safe policy or production receipt."
+statement = "The pure Runtime core accepts only the registered production and diagnostic profiles, observer mechanism, draft provenance, observation-resolution, and completion values; the independent verifier rejects a canonical diagnostic receipt before commitment or production-receipt decoding; and the composer and acceptance adapters define closed mappings for that exact verifier failure."
+public_language = "Runtime has an accepted, closed diagnostic-profile contract and distinct diagnostic receipt and plan-draft schemas. Registered tests cover the independent verifier rejection and the isolated composer and acceptance failure-code mappings. They do not yet execute the complete composer or acceptance publication path. This is contract and bounded test evidence only: the live ptrace observer and draft producer are not yet implemented, and no diagnostic output is a safe policy or production receipt."
 subject = "rust:proofbound_runtime_core::diagnostic::ExecutionProfile"
 profile = "ledger"
 tier = 0
@@ -19,6 +19,7 @@ assumptions = [
   "PBR-TOOLCHAIN-AX-003",
 ]
 open_obligations = [
+  "Add end-to-end composer and acceptance command falsifiers that submit a diagnostic receipt, observe the exact typed rejection, and prove that no composition or acceptance output is published.",
   "Implement the separate bounded ptrace observer and diagnostic artifact producer without adding an observer entry point or dependency to the production Runtime or launcher binaries.",
   "Implement provenance-preserving draft construction, mandatory human choices, optional exact-identity Capsec comparison, and the complete adversarial mutation corpus.",
   "Execute the live diagnostic attack corpus on both supported architectures and bind exact released pbr-diagnose artifacts before describing the profile as released.",
@@ -50,6 +51,7 @@ source_roots = [
   "crates/proofbound-runtime-verify/src/main.rs",
   "docs/adr/0008-separate-ptrace-diagnostic-observer.md",
   "docs/roadmap-2/rt-08-capability-informed-drafting.md",
+  "docs/specs/0013_platform_integration_contract.md",
   "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",
   "proofbound/evidence/diagnostic-acceptance-non-reuse.toml",
   "proofbound/evidence/diagnostic-composer-non-reuse.toml",

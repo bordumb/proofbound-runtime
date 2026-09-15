@@ -174,6 +174,96 @@
         "mode": {"type": "string", "pattern": "^[0-7]{4}$"}
       }
     },
+    "objectIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["device_major", "device_minor", "inode", "mode", "mount_id"],
+      "properties": {
+        "device_major": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "device_minor": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "inode": {"type": "integer", "minimum": 0},
+        "mode": {"type": "string", "pattern": "^[0-7]{6}$"},
+        "mount_id": {"type": "integer", "minimum": 0}
+      }
+    },
+    "socketAddress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bytes_hex", "family", "length_bytes"],
+      "properties": {
+        "bytes_hex": {
+          "type": "string",
+          "maxLength": 8192,
+          "pattern": "^(?:[0-9a-f]{2})*$"
+        },
+        "family": {"enum": ["inet", "inet6", "netlink", "other", "unix"]},
+        "length_bytes": {"type": "integer", "minimum": 0, "maximum": 4096}
+      }
+    },
+    "pathOperands": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "buffer_bytes",
+        "directory_fd",
+        "flags",
+        "kind",
+        "mask",
+        "mode",
+        "path",
+        "resolve"
+      ],
+      "properties": {
+        "buffer_bytes": {"type": ["integer", "null"], "minimum": 0},
+        "directory_fd": {
+          "type": ["integer", "null"],
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "flags": {"type": ["integer", "null"], "minimum": 0},
+        "kind": {"const": "path"},
+        "mask": {"type": ["integer", "null"], "minimum": 0},
+        "mode": {"type": ["integer", "null"], "minimum": 0},
+        "path": {"type": ["string", "null"], "maxLength": 1048576},
+        "resolve": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "processOperands": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["flags", "kind"],
+      "properties": {
+        "flags": {"type": ["integer", "null"], "minimum": 0},
+        "kind": {"const": "process-create"}
+      }
+    },
+    "socketAddressOperands": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["address", "descriptor", "kind", "payload_bytes"],
+      "properties": {
+        "address": {
+          "oneOf": [
+            {"$ref": "#/$defs/socketAddress"},
+            {"type": "null"}
+          ]
+        },
+        "descriptor": {"type": "integer", "minimum": 0},
+        "kind": {"const": "socket-address"},
+        "payload_bytes": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "socketCreateOperands": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["domain", "kind", "protocol", "socket_type"],
+      "properties": {
+        "domain": {"type": "integer", "minimum": 0},
+        "kind": {"const": "socket-create"},
+        "protocol": {"type": "integer", "minimum": 0},
+        "socket_type": {"type": "integer", "minimum": 0}
+      }
+    },
     "event": {
       "type": "object",
       "additionalProperties": false,
@@ -191,7 +281,98 @@
           }
         }
       ],
-      "required": ["architecture", "class", "error", "path", "process", "resolution", "result", "sequence"],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "class": {
+                "enum": [
+                  "creat",
+                  "execve",
+                  "execveat",
+                  "newfstatat",
+                  "open",
+                  "openat",
+                  "openat2",
+                  "readlink",
+                  "readlinkat",
+                  "statx"
+                ]
+              }
+            },
+            "required": ["class"]
+          },
+          "then": {"properties": {"operands": {"$ref": "#/$defs/pathOperands"}}}
+        },
+        {
+          "if": {
+            "properties": {"class": {"enum": ["bind", "connect", "sendto"]}},
+            "required": ["class"]
+          },
+          "then": {
+            "properties": {"operands": {"$ref": "#/$defs/socketAddressOperands"}}
+          }
+        },
+        {
+          "if": {
+            "properties": {"class": {"const": "socket"}},
+            "required": ["class"]
+          },
+          "then": {
+            "properties": {"operands": {"$ref": "#/$defs/socketCreateOperands"}}
+          }
+        },
+        {
+          "if": {
+            "properties": {"class": {"enum": ["clone", "fork", "vfork"]}},
+            "required": ["class"]
+          },
+          "then": {
+            "properties": {"operands": {"$ref": "#/$defs/processOperands"}}
+          }
+        },
+        {
+          "if": {
+            "properties": {"resolution": {"const": "stable-candidate"}},
+            "required": ["resolution"]
+          },
+          "then": {
+            "properties": {
+              "error": {"type": "integer", "minimum": 1},
+              "object_after": {"$ref": "#/$defs/objectIdentity"},
+              "object_before": {"$ref": "#/$defs/objectIdentity"},
+              "resolved_path": {"type": "string", "maxLength": 1048576},
+              "result": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {"resolution": {"const": "kernel-selected"}},
+            "required": ["resolution"]
+          },
+          "then": {
+            "properties": {
+              "object_after": {"$ref": "#/$defs/objectIdentity"},
+              "resolved_path": {"type": "string", "maxLength": 1048576},
+              "result": {"type": "integer", "minimum": 0}
+            }
+          }
+        }
+      ],
+      "required": [
+        "architecture",
+        "class",
+        "error",
+        "object_after",
+        "object_before",
+        "operands",
+        "process",
+        "resolution",
+        "resolved_path",
+        "result",
+        "sequence"
+      ],
       "properties": {
         "sequence": {"type": "integer", "minimum": 0},
         "process": {"type": "integer", "minimum": 1},
@@ -217,11 +398,31 @@
             "vfork"
           ]
         },
-        "path": {"type": ["string", "null"], "maxLength": 1048576},
+        "object_after": {
+          "oneOf": [
+            {"$ref": "#/$defs/objectIdentity"},
+            {"type": "null"}
+          ]
+        },
+        "object_before": {
+          "oneOf": [
+            {"$ref": "#/$defs/objectIdentity"},
+            {"type": "null"}
+          ]
+        },
+        "operands": {
+          "oneOf": [
+            {"$ref": "#/$defs/pathOperands"},
+            {"$ref": "#/$defs/processOperands"},
+            {"$ref": "#/$defs/socketAddressOperands"},
+            {"$ref": "#/$defs/socketCreateOperands"}
+          ]
+        },
         "resolution": {
           "enum": ["kernel-selected", "redacted", "stable-candidate", "unresolved"]
         },
-        "result": {"type": ["integer", "null"]},
+        "resolved_path": {"type": ["string", "null"], "maxLength": 1048576},
+        "result": {"type": ["integer", "null"], "minimum": 0},
         "error": {"type": ["integer", "null"], "minimum": 1}
       }
     },

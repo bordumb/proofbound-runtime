@@ -42,8 +42,8 @@ encounters a denial.
 Both output paths must be absent regular-file candidates outside the child
 write authority. Publication uses the existing no-replace durability pattern.
 A partial observer result may be published only when it is structurally valid,
-states `complete: false`, and lists the exact gaps. Setup failure before target
-release publishes neither output.
+states `completion: "incomplete"`, and lists the exact gaps. Setup failure
+before target release publishes neither output.
 
 ## 3. Boundary order
 
@@ -160,6 +160,14 @@ An optional Capsec report is usable for comparison only when its closed schema,
 source identity, analyzer identity, and report identity match the selected
 integration profile. A missing, stale, unknown, or incomplete report remains a
 visible open item. Capsec observations never become Runtime authority.
+
+The draft always carries `capsec` as either `null` or one closed identity
+record. A record retains the schema identity, exact source, analyzer, and
+report content identities, plus one closed usability result. A candidate can
+carry `capsec-source-observation` only when that result is `usable`. The draft
+also carries a closed `differences` list with the three comparison classes from
+Specification 0013. These entries are review information and cannot grant
+authority.
 
 ## 7. Mandatory rejection
 

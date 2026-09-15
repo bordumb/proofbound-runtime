@@ -20,6 +20,7 @@ inputs = [
   "crates/proofbound-runtime-linux/Cargo.toml",
   "crates/proofbound-runtime-linux/src/bin/pbr-native-launcher.rs",
   "crates/proofbound-runtime-verify/src/error.rs",
+  "docs/specs/0013_platform_integration_contract.md",
   "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",
   "schemas/acceptance-decision-v2.cddl",
   "schemas/diagnostic-receipt-v1.schema.json",

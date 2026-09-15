@@ -345,23 +345,28 @@ and a non-policy draft.
 
 The bounded evidence path checks that:
 
-1. the independent schema contract closes artifact roles, event result states,
-   completion and gap consistency, retained draft context, and each mandatory
-   human choice;
+1. the independent schema contract validates canonical vectors against closed
+   nested objects, typed path, process, and socket operands, drift identities,
+   event result states, completion and gap consistency, exact Capsec input
+   identities, the three comparison classes, retained draft context, and each
+   mandatory human choice;
 2. unknown profile, mechanism, provenance, resolution, and completion values
    fail closed;
 3. the independent verifier recognizes a canonical diagnostic receipt only to
    reject it with `profile.diagnostic.not-reusable` before commitment or
    production receipt decoding;
-4. the composer propagates the same reason and produces no composition;
-5. the acceptance CLI maps that verifier result to the closed
-   `diagnostic-profile-not-reusable` decision reason; and
+4. an isolated composer adapter test maps the same verifier reason to its
+   closed command error;
+5. an isolated acceptance adapter test maps that verifier result to the closed
+   `diagnostic-profile-not-reusable` reason; and
 6. the production CLI and native launcher manifests contain no diagnostic
    observer dependency.
 
-This claim does not say that `pbr-diagnose` exists. The ptrace observer,
-diagnostic producer, plan-draft builder, Capsec comparison, native attack
-corpus, and exact artifact binding remain explicit obligations.
+This claim does not say that `pbr-diagnose` exists or that the composer and
+acceptance tests exercise their complete command and publication paths. Those
+end-to-end falsifiers, the ptrace observer, diagnostic producer, plan-draft
+builder, Capsec comparison, native attack corpus, and exact artifact binding
+remain explicit obligations.
 
 ## Bounded-domain declaration guard
 
