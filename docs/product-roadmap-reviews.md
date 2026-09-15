@@ -1648,3 +1648,30 @@ The correction must preserve the merged producer identity and hosted result
 while identifying the rebased observer protocol as the active admission wave.
 This verdict is not endorsed. The correction creates a new exact subject that
 requires re-review.
+
+## RT-8 pure observer protocol rebased correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `4ecb8719d23c0145934a3b0f716b2f744d736d1b`
+- **Reviewed head:** `057d16a15ea211e8f6e39775706a3024bda969c1`
+- **Branch:** `codex/rt8-observer-protocol`
+- **Method:** Complete exact-range static re-review after the documentation
+  correction. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the Roadmap 2 and RT-8 integration status now
+identify producer merge `4ecb871`, passed exact-head Verify run `34933278521`,
+in-progress exact-main run `34936505855`, and the rebased observer protocol as
+the active review wave. The preceding `REQUEST CHANGES` record binds the exact
+rejected range and accurately explains the stale-status defect.
+
+Only documentation changed after the rejected head. The observer source,
+claim, evidence, assumptions, specification, ADR, and producer semantics remain
+intact and consistent with the prior approved behavior.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`057d16a15ea211e8f6e39775706a3024bda969c1`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, test, or roadmap-status bytes. Any later subject change
+requires a new exact-head review.
