@@ -626,6 +626,41 @@ pub(crate) fn trace_event_process(process_id: u32) -> io::Result<u32> {
 }
 
 #[cfg(feature = "diagnostic-observer")]
+pub(crate) fn trace_read_process_memory(
+    process_id: u32,
+    remote_address: u64,
+    bytes: &mut [u8],
+) -> io::Result<usize> {
+    if bytes.is_empty() {
+        return Ok(0);
+    }
+    let process_id =
+        i32::try_from(process_id).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    let remote_address = usize::try_from(remote_address)
+        .map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    let local = libc::iovec {
+        iov_base: bytes.as_mut_ptr().cast(),
+        iov_len: bytes.len(),
+    };
+    let remote = libc::iovec {
+        iov_base: remote_address as *mut libc::c_void,
+        iov_len: bytes.len(),
+    };
+    // SAFETY: both iovec values remain live for the call. The local vector
+    // identifies the complete writable byte slice. The remote vector is an
+    // address in the exact stopped tracee and is never dereferenced locally.
+    let result = unsafe { libc::process_vm_readv(process_id, &local, 1, &remote, 1, 0) };
+    if result < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let count = usize::try_from(result).map_err(|_| io::Error::from(io::ErrorKind::InvalidData))?;
+    if count > bytes.len() {
+        return Err(io::Error::from(io::ErrorKind::InvalidData));
+    }
+    Ok(count)
+}
+
+#[cfg(feature = "diagnostic-observer")]
 pub(crate) fn trace_syscall_stop(process_id: u32) -> io::Result<TraceSyscallStop> {
     const SYSCALL_INFO_NONE: u8 = 0;
     const SYSCALL_INFO_ENTRY: u8 = 1;

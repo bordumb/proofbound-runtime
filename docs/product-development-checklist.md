@@ -10,6 +10,10 @@
   live event-and-drain batch changes the same exact source. Its first review of
   head `4af215a` requested five corrections; one combined correction is in
   exact re-review preparation.
+- **Following implementation batch:** architecture-qualified syscall decoding
+  and bounded operand capture are implemented locally as `PBR-OBSERVER-025`.
+  Exact review, hosted admission, artifact mapping, and native attacks remain
+  open.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -206,6 +210,11 @@ manifest describes the supported tuple.
   load-bearing bodies with five mutation classes, restores typed unsupported
   paths, closes assumption links, and marks every changed exact subject pending.
   Exact re-review and hosted admission remain open.
+- [ ] Admit architecture-qualified syscall decoding and bounded operand capture.
+  The current source has separate x86_64 and aarch64 tables, rejects x32 and
+  unsupported registered forms, captures path and socket-address bytes before
+  resume under three independent limits, completes partial reads or fails, and
+  never reads payload bytes. Exact review and hosted admission remain open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.

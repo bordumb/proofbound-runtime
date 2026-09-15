@@ -80,8 +80,10 @@ consumes each complete event into the same pure protocol, permanently rejects
 an unreconciled process tree, and orders successful effectful drain before the
 pure tree-empty acknowledgement. Its first exact review requested corrections;
 the combined correction is pending exact re-review.
-Syscall decoding, command integration, the native attack corpus, and release
-binding remain open.
+The architecture-qualified syscall decoder and bounded entry-time operand
+capture are implemented locally under `PBR-OBSERVER-025`; exact review and
+hosted admission remain open. Artifact mapping, command integration, the native
+attack corpus, and release binding remain open.
 
 RT-9 is blocked until RT-5 implements the accepted single-service network
 decision in production.
@@ -296,6 +298,10 @@ can identify review differences but can never grant Runtime authority.
 
 ### RT-8.2 Turn observations into a draft
 
+- Decode only the registered x86_64 and aarch64 syscall families. Capture path
+  and socket-address operands before resume under independent limits. Reject
+  unsupported ABI forms and read failures. Record payload length when needed,
+  but never read payload bytes.
 - Start from the RT-3.3 static scaffold. Add observed entries with a distinct
   provenance kind, so a reviewer can tell an ELF-resolved dependency from an
   observed file access.

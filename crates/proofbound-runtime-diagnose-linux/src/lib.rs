@@ -11,5 +11,6 @@ pub use adapter::{
     prepare_observer,
 };
 pub use proofbound_runtime_linux::{
-    ActiveTraceEvent, TraceDeadline, TraceObservationError, TraceProcessId,
+    ActiveTraceEvent, TraceCapturedOperands, TraceDeadline, TraceObservationError, TraceProcessId,
+    TraceSyscallClass, TraceSyscallInvocation,
 };

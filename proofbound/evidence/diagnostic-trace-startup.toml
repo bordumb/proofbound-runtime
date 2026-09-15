@@ -2,7 +2,7 @@ schema = "proofbound-evidence-unit/1"
 id = "diagnostic-trace-startup"
 adapter = "rust-test"
 kind = "example-test"
-claims = ["PBR-OBSERVER-021", "PBR-OBSERVER-023", "PBR-OBSERVER-024"]
+claims = ["PBR-OBSERVER-021", "PBR-OBSERVER-023", "PBR-OBSERVER-024", "PBR-OBSERVER-025"]
 tier = 0
 expected_inventory = [
   "proofbound_runtime_linux::trace::tests::process_ids_deadlines_and_error_codes_are_closed",
@@ -10,6 +10,8 @@ expected_inventory = [
   "proofbound_runtime_linux::trace::tests::nonleader_exec_preserves_pending_syscall_until_exit_pair",
   "proofbound_runtime_linux::trace::tests::exec_identity_rejects_wrong_wait_owner_and_foreign_former_thread",
   "proofbound_runtime_linux::trace::tests::thread_group_parser_requires_one_exact_positive_field",
+  "proofbound_runtime_linux::trace::tests::syscall_decoder_qualifies_numbers_by_architecture",
+  "proofbound_runtime_linux::trace::tests::syscall_decoder_rejects_unknown_architecture_and_x32_form",
 ]
 inputs = [
   "Cargo.lock",

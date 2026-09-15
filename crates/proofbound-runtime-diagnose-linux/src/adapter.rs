@@ -13,7 +13,7 @@ use proofbound_runtime_diagnose::observer::{
 use proofbound_runtime_linux::{
     AcknowledgedTraceStop, ActiveTrace, ActiveTraceEvent, Architecture, BoundaryRunning,
     InitialExecStop, InstallRequest, LauncherPause, PreparedTraceCommand, ResolvedFile,
-    SpawnedTrace, TraceDeadline, TraceDrainObservation, TraceObservationError,
+    SpawnedTrace, TraceCaptureLimits, TraceDeadline, TraceDrainObservation, TraceObservationError,
     TraceProcessCreationKind, TraceProcessId, TraceProcessLimit, TraceReady, TraceStartupError,
     prepare_traced_launcher,
 };
@@ -179,9 +179,14 @@ impl ReadyObserver {
     /// Authorizes release in the pure protocol before it releases target code.
     pub fn release(self) -> Result<ActiveObserver, ObserverAdapterError> {
         let process_limit = TraceProcessLimit::new(self.protocol.process_limit())?;
+        let capture_limits = TraceCaptureLimits::new(
+            self.protocol.path_byte_limit(),
+            self.protocol.socket_address_byte_limit(),
+            self.protocol.tracee_string_byte_limit(),
+        )?;
         let mut protocol = self.protocol;
         protocol.release_target()?;
-        let trace = self.trace.release(process_limit)?;
+        let trace = self.trace.release(process_limit, capture_limits)?;
         Ok(ActiveObserver { trace, protocol })
     }
 }

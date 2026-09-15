@@ -32,6 +32,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-OBSERVER-022` | Tier 1 historically approved setup source; changed exact source is in current coupling review | The prior setup review remains history. This branch extends the same adapter module with active and drain states, so the changed subject is pending exact review and hosted evidence. |
 | `PBR-OBSERVER-023` | Tier 1 historically approved active-trace source; changed exact source is in current coupling review | The prior trace-event review remains history. This branch changes `ActiveTrace`; kernel effects, decoding, and native evidence remain open. |
 | `PBR-OBSERVER-024` | Tier 1 corrected live event-and-drain source contract; exact review pending | The separate adapter consumes complete trace events into the matching pure protocol, transfers failures and bounds into a drain-only state, rejects an unreconciled tree, and gates pure tree-empty acknowledgement on successful effectful drain reconciliation. |
+| `PBR-OBSERVER-025` | Tier 1 syscall-decoder source implementation; exact review and hosted admission pending | Closed x86_64 and aarch64 tables capture bounded path and socket operands before resume, reject unsupported forms, confine read-only tracee-memory access, and never read payload bytes. Kernel ABI truth, memory stability, native attacks, and artifact mapping remain open. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -612,6 +613,33 @@ and source selection. This is a source contract. It does not establish Linux eve
 completeness, correct syscall meaning, tracee-memory reads, exact native cleanup,
 or a released diagnostic executable. Those obligations remain explicit under
 PBR-DIAGNOSTIC-TRACE-AX-016 and the RT-8 native evidence wave.
+
+## PBR-OBSERVER-025
+
+The current subject is the separate Linux active trace syscall-entry decoder.
+It selects one closed table from the Linux audit architecture before it
+interprets a syscall number. The table contains only the filesystem, socket,
+process-creation, and execution families registered by Specification 0015 for
+x86_64 and aarch64. It rejects x32, unknown architectures, and unsupported
+`openat2` or `clone3` structure forms.
+
+The trace captures a registered operand before it resumes the stopped tracee.
+Path strings must terminate within the tracee-string read bound and fit the
+independent retained-path bound. Socket addresses must fit their independent
+bound. The raw module performs only `process_vm_readv`; the safe trace module
+completes a partial read or returns a typed failure. `sendto` retains a payload
+length but never reads the payload pointer or bytes. Other unregistered syscall
+numbers resume without producing a retained event.
+
+The Rust tests cover architecture-qualified table selection, unknown
+architecture rejection, x32 rejection, bound constructors, and the closed error
+vocabulary. The independent checker byte-pins the load-bearing decoder and read
+bodies and mutates architecture numbers, each operand bound, the payload
+pointer selection, and the raw read-only operation. These source checks do not
+prove the Linux ABI, `process_vm_readv`, memory stability, or event completeness.
+`PBR-DIAGNOSTIC-DECODE-AX-017` retains those premises. Native decoder fixtures,
+artifact mapping, object resolution, command integration, and release binding
+remain open.
 
 ## Bounded-domain declaration guard
 

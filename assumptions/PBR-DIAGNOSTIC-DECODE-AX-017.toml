@@ -1,0 +1,17 @@
+schema = "proofbound-assumption/1"
+id = "PBR-DIAGNOSTIC-DECODE-AX-017"
+statement = "On an identified supported Linux architecture, the kernel audit architecture value, system-call number table, PTRACE_GET_SYSCALL_INFO entry registers, and process_vm_readv bytes have the documented meaning used by the diagnostic decoder."
+category = "runtime-environment"
+owner = "Proofbound Runtime platform maintainer"
+rationale = "The source fixes architecture-qualified tables and bounded read behavior, but it does not prove the Linux ABI, ptrace register report, process_vm_readv, or the relationship between bytes observed by the tracer and bytes later consumed by a concurrently mutable tracee address space."
+scope = "Only the native Linux interpretation of PBR-OBSERVER-025 on the registered x86_64 and aarch64 ABI forms. It does not establish syscall completeness, filesystem or network object identity, absence of concurrent operand mutation, or a complete diagnostic execution."
+affected_claims = ["PBR-OBSERVER-025"]
+review_evidence = [
+  "docs/adr/0008-separate-ptrace-diagnostic-observer.md",
+  "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+]
+discharge_plan = "Retain the ABI and kernel premise. Narrow it with native decoder fixtures on each exact supported architecture and keep concurrent mutation explicit in diagnostic provenance."
+source_citation = "docs/specs/0015_diagnostic_execution_and_plan_drafting.md#9-evidence-meaning"
+status = "active"

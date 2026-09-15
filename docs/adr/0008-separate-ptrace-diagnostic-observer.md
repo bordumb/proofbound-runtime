@@ -87,6 +87,21 @@ child, observer overflow, tracee-memory read failure, identity drift, or
 unexpected stop marks the diagnostic result incomplete. It never causes the
 production receipt path to accept weaker evidence.
 
+The initial decoder recognizes only Linux x86_64 audit architecture
+`0xc000003e` and aarch64 audit architecture `0xc00000b7`. It uses separate
+number tables for those architectures and rejects x32. It reads a registered
+path or socket address at the syscall-entry stop under independent string,
+path, and socket-address bounds. It reads `open_how` only in its registered
+24-byte form and reads only the first flags word from a registered `clone3`
+form. It records the `sendto` payload length but never reads payload bytes.
+All raw tracee-memory access stays in the Linux syscall module and is read-only.
+
+The traced thread is stopped during an operand read, but another thread in the
+same address space can still mutate shared bytes before kernel consumption.
+The operand is an observation of supplied bytes at one stop, not proof of the
+kernel-selected object. Descriptor-producing and image-replacing success need
+a later identity-resolution wave before they can use `kernel-selected`.
+
 A pure protocol owns release order, lifetime process and event accounting,
 gap accumulation, drain ordering, and publication eligibility. It requires a
 closed tree-empty acknowledgement after it directs termination. The Linux

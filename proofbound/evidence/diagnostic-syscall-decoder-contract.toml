@@ -1,0 +1,50 @@
+schema = "proofbound-evidence-unit/1"
+id = "diagnostic-syscall-decoder-contract"
+adapter = "independent-check"
+kind = "independent-check"
+claims = ["PBR-OBSERVER-025"]
+tier = 0
+expected_inventory = [
+  "diagnostic-syscall-decoder-architecture-tables",
+  "diagnostic-syscall-decoder-bounded-operands",
+  "diagnostic-syscall-decoder-entry-order",
+  "diagnostic-syscall-decoder-mutation-witnesses",
+  "diagnostic-syscall-decoder-no-payload",
+  "diagnostic-syscall-decoder-raw-read-confinement",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "assumptions/PBR-DIAGNOSTIC-CONTRACT-AX-015.toml",
+  "assumptions/PBR-DIAGNOSTIC-DECODE-AX-017.toml",
+  "assumptions/PBR-TOOLCHAIN-AX-003.toml",
+  "claims/PBR-OBSERVER-025.toml",
+  "crates/proofbound-runtime-diagnose/src/artifact.rs",
+  "crates/proofbound-runtime-diagnose/src/observer.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/adapter.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+  "tools/ci/check_diagnostic_syscall_decoder.py",
+  "tools/ci/test_diagnostic_syscall_decoder.py",
+]
+outputs = []
+environment_allowlist = ["PATH"]
+
+[operation]
+type = "independent-check"
+checker = "tools/ci/check_diagnostic_syscall_decoder.py"
+arguments = []
+paths = [
+  "crates/proofbound-runtime-diagnose/src/observer.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/adapter.rs",
+  "crates/proofbound-runtime-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+]
+
+[resource_budget]
+time_seconds = 30
+disk_bytes = 134217728
+memory_bytes = 536870912

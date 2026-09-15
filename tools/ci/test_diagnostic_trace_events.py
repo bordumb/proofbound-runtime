@@ -31,7 +31,7 @@ EXPECTED_LOAD_BEARING_BODIES = {
     "active-next-event": "3c25cd51193c4034775ea5bda645f0df5150687db8a9be08b4383a698e9c7148",
     "active-drain": "62659a1112bba90d37df808430b41097415df6ad2d0849dda65999310c486229",
     "active-complete-drain": "745c353bb08f35c76e390fb67f252af94510f24873ad616b92db52c9e371863f",
-    "active-wait-observation": "ad42bbab053e073b1610e2049dbb1d4cedac5b42dd28477559aca436b435c9db",
+    "active-wait-observation": "e88d13c007109d64a62c74501cf5b5c5df11617156d17f0e587e25d5828cb6b5",
     "active-drain-observation": "dceb35ed4c886eb36161331cf7106b07145a37d67e6714e359531e8fee06a7c9",
     "active-register-child": "e749a7f47624f313ba624ca850657240f2c0558e2f3b0b1544566b734eb6f3aa",
 }
@@ -73,7 +73,9 @@ class DiagnosticTraceEventContractTests(unittest.TestCase):
         syscall = implementation(self.trace, "fn handle_syscall_stop")
         self.assertIn("TraceSyscallStop::Entry", syscall)
         self.assertIn("TraceSyscallStop::Exit", syscall)
-        self.assertIn("state.pending = Some(TraceSyscallInvocation", syscall)
+        self.assertIn("capture_syscall_invocation", syscall)
+        self.assertIn("PendingTraceSyscall::Captured", syscall)
+        self.assertIn("PendingTraceSyscall::Ignored", syscall)
         self.assertIn(".pending\n                    .take()", syscall)
         self.assertIn("self.held_process = Some(process)", syscall)
         self.assertIn("ActiveTraceEvent::SyscallCompleted", syscall)
@@ -173,7 +175,7 @@ class DiagnosticTraceEventContractTests(unittest.TestCase):
         self.assertIn("state.pending", wait)
         self.assertNotIn("state.pending.take()", wait)
         self.assertIn("reconcile_exec_processes", regression)
-        self.assertIn("pending: Some(invocation)", regression)
+        self.assertIn("pending: Some(pending.clone())", regression)
         self.assertIn("state.pending.take()", regression)
 
     def test_exec_identity_falsifiers_cover_wrong_owner_and_foreign_thread(self):
@@ -208,7 +210,7 @@ class DiagnosticTraceEventContractTests(unittest.TestCase):
         release = implementation(self.trace, "pub fn release")
         active = implementation(self.trace, "impl ActiveTrace")
         self.assertNotIn("process_limit", install)
-        self.assertIn("let _ = process_limit", release)
+        self.assertIn("let _ = (process_limit, capture_limits)", release)
         self.assertEqual(active.count("TraceObservationError::UnsupportedOperatingSystem"), 2)
 
     def test_raw_syscall_decoding_has_no_panicking_shortcuts(self):

@@ -186,6 +186,49 @@ closed initial event set is:
 - process creation and image replacement events needed to retain tree
   coverage.
 
+The decoder accepts Linux audit architecture `0xc000003e` for x86_64 and
+`0xc00000b7` for aarch64. The initial architecture-qualified syscall numbers
+are:
+
+| Class | x86_64 | aarch64 |
+| --- | ---: | ---: |
+| `open` | 2 | absent |
+| `socket` | 41 | 198 |
+| `connect` | 42 | 203 |
+| `sendto` | 44 | 206 |
+| `bind` | 49 | 200 |
+| `clone` | 56 | 220 |
+| `fork` | 57 | absent |
+| `vfork` | 58 | absent |
+| `execve` | 59 | 221 |
+| `creat` | 85 | absent |
+| `readlink` | 89 | absent |
+| `openat` | 257 | 56 |
+| `newfstatat` | 262 | 79 |
+| `readlinkat` | 267 | 78 |
+| `execveat` | 322 | 281 |
+| `statx` | 332 | 291 |
+| `clone3` | 435 | 435 |
+| `openat2` | 437 | 437 |
+
+The x32 syscall form is unsupported. `openat2` accepts the 24-byte `open_how`
+form. `clone3` reads only its first flags word and accepts a multiple-of-eight
+structure size from 8 through 88 bytes. Other registered forms fail closed.
+An unregistered syscall number on a supported architecture produces no retained
+event. An unknown architecture cannot distinguish registered from unregistered
+numbers and therefore fails observation.
+
+The observer reads operands only while the tracee is stopped at syscall entry.
+A path read must find its terminating NUL within `tracee_string_bytes`, and the
+bytes before that NUL must fit `path_bytes`. A socket address must fit
+`socket_address_bytes`. A partial `process_vm_readv` result is completed by
+another bounded read or rejected. `sendto` retains the supplied payload length
+but never reads the payload pointer. No request body, response body, file
+content, environment value, or credential value is read through this path.
+Another tracee thread can mutate shared operand memory between the observer read
+and kernel consumption. The captured value is therefore a bounded supplied
+operand observation, not a kernel-selected identity.
+
 An event records the architecture, process identity, monotonically increasing
 sequence, syscall class, supplied operands within the read bound, result or
 error, and one closed resolution state. The states are:
@@ -338,6 +381,12 @@ events, the bounded pure protocol, overflow identity retention, the drain-only
 typestate, and the ordering of an effectful empty-tree report before a pure
 tree-empty acknowledgement. It does not strengthen the Linux premise or make
 the diagnostic executable a released artifact.
+
+`PBR-OBSERVER-025` checks the closed x86_64 and aarch64 decoder tables,
+entry-before-resume ordering, supported structure sizes, independent operand
+bounds, exact-or-error tracee reads, raw read-only syscall confinement, and
+payload exclusion. It does not establish the Linux ABI, tracee-memory
+stability, kernel-selected object identity, or native observation completeness.
 
 RT-8 closes only after one maintained dynamic workload displays all available
 provenance classes, requires human completion, passes the independent

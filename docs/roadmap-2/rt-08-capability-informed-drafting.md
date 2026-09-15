@@ -16,8 +16,10 @@ complete events into the matching pure protocol, permanently rejects an
 unreconciled process tree, and makes successful effectful drain reconciliation
 precede pure tree-empty acknowledgement. Its first exact review requested
 corrections; the combined correction is pending exact re-review.
-Decoding, command integration, the native attack corpus, and release binding
-remain open.
+The architecture-qualified syscall decoder and bounded entry-time operand
+capture are implemented locally under `PBR-OBSERVER-025`; exact review and
+hosted admission remain open. Artifact mapping, command integration, the native
+attack corpus, and release binding remain open.
 
 **Primary owner:** Proofbound Runtime
 
@@ -114,6 +116,11 @@ values without making a draft an authority object.
   precede pure tree-drain acknowledgement and publication selection.
   Process-creation message, identity, capacity, thread-group, or handle failures
   permanently prevent a successful effectful empty-tree report.
+- The active trace chooses a closed x86_64 or aarch64 decoder from the Linux
+  audit architecture before it interprets a syscall number. It rejects x32 and
+  unsupported registered forms. It captures bounded path and socket-address
+  operands before resume, completes partial read-only tracee-memory reads or
+  fails, and retains only the `sendto` payload length, never payload bytes.
 - Automatic candidates require an explicit normalized project or runtime
   scope. System, home, and configured temporary roots remain open review
   items.
