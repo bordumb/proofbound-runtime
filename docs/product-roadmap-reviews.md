@@ -3439,3 +3439,36 @@ set were incomplete. The correction requires a new exact-head independent
 review. The reviewer found no additional blocker in feature isolation,
 raw-syscall confinement, typed publication gating, status language, or
 historical admission accounting.
+
+## RT-8 diagnostic stream initial review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `63318b57ea33269df2d0cc2818ddc54ca60cede9`
+- **Reviewed head:** `661144da497163d5e2746a7b49f861a466612877`
+- **Branch:** `codex/rt8-diagnostic-streams`
+- **Method:** Complete exact-range static review. The reviewer changed no files
+  and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The review found that terminal collection joined both readers without a
+deadline or cancellation. A writer outside the retained trace tree could
+withhold end of file indefinitely. Because the raw wait path had already reaped
+the root while the retained standard-library child guard still believed that
+the child was live, later guard destruction could also send a numeric-PID kill
+after PID reuse. The correction must bound and cancel terminal joins and disarm
+the child guard when the raw exact wait reaps the root.
+
+The review also found that the claim named only the passive output carrier
+instead of its aggregate trace, raw nonblocking operation, and adapter subject.
+The source closure omitted the path receipt crate that defines `StreamCapture`.
+Finally, the statement called the readers independently cancellable even though
+they intentionally share one cancellation signal, and it described infallible
+early termination even though drop cleanup can only attempt kill and wait.
+
+Otherwise, the reviewer confirmed the two concurrent nonblocking readers,
+independent retained-byte limits, read-through after truncation, exact-capacity
+natural completion, fail-closed publication order, feature-gated production
+separation, and honest pending status. This verdict is not endorsed. The
+deadline, child-guard, subject-closure, evidence, and claim-language corrections
+require a new exact-head independent review after restacking on admitted RT-8
+mapping work.

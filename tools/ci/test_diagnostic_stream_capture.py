@@ -7,12 +7,19 @@ ROOT = Path(__file__).resolve().parents[2]
 ROOT_MANIFEST = ROOT / "Cargo.toml"
 LOCK = ROOT / "Cargo.lock"
 TOOLCHAIN = ROOT / "rust-toolchain.toml"
-TRACE_ASSUMPTION = ROOT / "assumptions/PBR-DIAGNOSTIC-TRACE-AX-016.toml"
 STREAM_ASSUMPTION = ROOT / "assumptions/PBR-DIAGNOSTIC-STREAM-CHECK-AX-020.toml"
+STREAM_RUNTIME_ASSUMPTION = ROOT / "assumptions/PBR-DIAGNOSTIC-STREAM-AX-022.toml"
 CLAIM = ROOT / "claims/PBR-OBSERVER-027.toml"
 CORE_MANIFEST = ROOT / "crates/proofbound-runtime-core/Cargo.toml"
 AUTHORITY = ROOT / "crates/proofbound-runtime-core/src/authority.rs"
+CORE_LIB = ROOT / "crates/proofbound-runtime-core/src/lib.rs"
 RECEIPT = ROOT / "crates/proofbound-runtime-core/src/receipt.rs"
+PATH_RECEIPT_MANIFEST = ROOT / "crates/proofbound-runtime-receipt/Cargo.toml"
+PATH_RECEIPT_LIB = ROOT / "crates/proofbound-runtime-receipt/src/lib.rs"
+DIAGNOSE_MANIFEST = ROOT / "crates/proofbound-runtime-diagnose/Cargo.toml"
+DIAGNOSE_ARTIFACT = ROOT / "crates/proofbound-runtime-diagnose/src/artifact.rs"
+DIAGNOSE_LIB = ROOT / "crates/proofbound-runtime-diagnose/src/lib.rs"
+DIAGNOSE_OBSERVER = ROOT / "crates/proofbound-runtime-diagnose/src/observer.rs"
 ADAPTER_MANIFEST = ROOT / "crates/proofbound-runtime-diagnose-linux/Cargo.toml"
 ADAPTER = ROOT / "crates/proofbound-runtime-diagnose-linux/src/adapter.rs"
 ADAPTER_LIB = ROOT / "crates/proofbound-runtime-diagnose-linux/src/lib.rs"
@@ -61,10 +68,16 @@ def assert_stream_contract(trace: str, adapter: str, sys: str) -> None:
     start = implementation(trace, "fn start(")
     capture = implementation(trace, "fn capture_trace_stream(")
     reader_finish = implementation(trace, "fn finish(&mut self)")
+    reader_finish_before = implementation(trace, "fn finish_before(")
+    reader_cancel = implementation(trace, "fn cancel_and_join(")
     natural_finish = implementation(trace, "pub fn finish(mut self)")
     complete_drain = implementation(trace, "fn complete_drain(")
     child_drop = implementation(trace, "impl Drop for TraceChild")
     child_terminate = implementation(trace, "fn terminate_and_wait(")
+    child_disarm = implementation(trace, "fn disarm_after_trace_wait(")
+    child_pidfd_disarm = implementation(trace, "fn disarm_after_identity_stable_handle(")
+    record_terminal = implementation(trace, "fn record_terminal_process(")
+    release = implementation(trace, "pub fn release(")
     reader_drop = implementation(trace, "impl Drop for TraceStreamReaders")
     set_nonblocking = implementation(sys, "pub(crate) fn set_nonblocking(")
     session = structure(trace, "TraceSession")
@@ -122,14 +135,60 @@ def assert_stream_contract(trace: str, adapter: str, sys: str) -> None:
         if term not in set_nonblocking:
             raise AssertionError(f"missing nonblocking pipe configuration: {term}")
 
-    before(reader_finish, "let stdout = join_trace_capture", "stdout: stdout?")
-    before(reader_finish, "let stderr = join_trace_capture", "stdout: stdout?")
+    for term in [
+        "checked_add(TRACE_STREAM_FINISH_TIMEOUT)",
+        "TraceObservationError::StreamDrainTimedOut",
+        "self.finish_before(deadline)",
+    ]:
+        if term not in reader_finish:
+            raise AssertionError(f"missing terminal stream deadline term: {term}")
+    for term in [
+        "while !self.capture_threads_finished()",
+        "Instant::now() >= deadline",
+        "self.cancel_and_join()",
+        "return Err(TraceObservationError::StreamDrainTimedOut)",
+        "std::thread::sleep(TRACE_POLL_INTERVAL)",
+    ]:
+        if term not in reader_finish_before:
+            raise AssertionError(f"missing terminal stream timeout term: {term}")
+    before(
+        reader_finish_before,
+        "self.cancel_and_join()",
+        "return Err(TraceObservationError::StreamDrainTimedOut)",
+    )
+    before(reader_finish_before, "let stdout = join_trace_capture", "stdout: stdout?")
+    before(reader_finish_before, "let stderr = join_trace_capture", "stdout: stdout?")
     for stream in ["stdout", "stderr"]:
-        if f"self.{stream}.take()" not in reader_drop or f"let _ = {stream}.join()" not in reader_drop:
-            raise AssertionError(f"drop does not join {stream}")
-    before(reader_drop, "cancellation.store(true, Ordering::Release)", "stdout.join()")
+        if (
+            f"self.{stream}.take()" not in reader_cancel
+            or f"let _ = {stream}.join()" not in reader_cancel
+        ):
+            raise AssertionError(f"cancellation does not join {stream}")
+    before(reader_cancel, "cancellation.store(true, Ordering::Release)", "stdout.join()")
+    if "self.cancel_and_join()" not in reader_drop:
+        raise AssertionError("reader drop does not cancel and join")
     before(session, "_child: TraceChild", "streams: TraceStreamReaders")
     before(child_terminate, "self.0.kill()", "self.0.wait()")
+    before(child_terminate, "requires_cleanup()", "self.0.kill()")
+    before(child_terminate, "self.0.wait()", "record_trace_wait_reap()")
+    if "self.1.record_trace_wait_reap()" not in child_disarm:
+        raise AssertionError("raw trace wait cannot disarm numeric child cleanup")
+    if "self.1.record_identity_stable_handle()" not in child_pidfd_disarm:
+        raise AssertionError("pidfd ownership cannot disarm numeric child cleanup")
+    before(
+        release,
+        "trace_open_process_handle(root.get())",
+        "record_root_identity_stable_handle()",
+    )
+    before(
+        release,
+        "trace_syscall(root.get())",
+        "record_root_identity_stable_handle()",
+    )
+    before(release, "record_root_identity_stable_handle()", "Ok(ActiveTrace")
+    before(record_terminal, "self.processes.remove", "self.session.record_root_reaped()")
+    if "if process == self.session.process" not in record_terminal:
+        raise AssertionError("terminal child cleanup is not confined to the exact root")
     if "self.terminate_and_wait()" not in child_drop:
         raise AssertionError("child drop does not terminate and wait")
 
@@ -140,6 +199,7 @@ def assert_stream_contract(trace: str, adapter: str, sys: str) -> None:
         "StreamDrainStartFailed",
         "StreamConfigurationFailed",
         "StreamReadFailed",
+        "StreamDrainTimedOut",
     ]:
         if variant not in trace:
             raise AssertionError(f"missing closed stream failure: {variant}")
@@ -156,12 +216,18 @@ EXPECTED_BODIES = {
     "adapter-drain-finish": "5f5ee9835cf2bacc73f10cd50b0e9a20f6d91d23c4d2905c84af181e22d05848",
     "capture": "a6783ae914ce32557ca90f72c44b56efc617958bfb6587514ba6de9a3542299c",
     "child-drop": "4b0736ae93ba2cc1524cce0bd88b7750ed536ff7fc5c6f2066c5ea7d8e01e786",
-    "child-terminate": "d4a0ffbd63170c1856fa0f813f83f384a2b15115b4de2e06137dbdd3a1906a5b",
+    "child-disarm": "573522b819713c764133d1ee66fa52cd8b9d9c7d085cf75a201773849c5b2df2",
+    "child-pidfd-disarm": "47d90711e30be1b77dd750af5d39be069df6f33734dac1aa8db0a3ebaf50962d",
+    "child-terminate": "8cacb6f54d429d3319a586ef2a0afcec3aa53ee709406798de2aef17374fe5aa",
     "complete-drain": "db92609df0e5e00a33ce9848422783d7ce5e2ef8b4157c7e7bdafae6bfb1e49e",
     "natural-finish": "b1feb2846c2a896e67a10874aa44e8f1675c76f8ba992d06a232538ec191324d",
-    "reader-finish": "ae999a795d79ff901cb4a33b1dcbb3865b055cb0c754770aa5da813826174024",
+    "reader-finish": "fd900504cf37bbf8ceb94f1cdb1c330b1e7822e68cd56512973b8ce545196710",
+    "reader-finish-before": "0a8574bca5ab821a1430ae1d7eaf9da65253e21828afa8f04c8b199901d3e8be",
+    "reader-cancel": "f8d1f73f2d46e508fe3a6dcb6ae5a3bb2749082808f368f9c21ba871c3e1ecdb",
     "reader-start": "8d00f7968b3498b8c59e4cac187a38908673edb446ad20b600aacab971e21f5c",
-    "spawn": "5b97c0af4ae4000f43dd8b7eb1288edb03bbc61df89f77f0c332c81fbf16a071",
+    "record-terminal": "1b039cd8a628df661083e7f65b8aeb4b691b7a476b851d06ab531826ca7365fa",
+    "release": "9291677b73a2de86abc96f7e79f9089ebbe2a218fea9a1e4394b2297579006e5",
+    "spawn": "f5c98f713e65d47d0e64b7cbfb5c6950c348f1eee9a4e6fd4a06d4b790a8f4f3",
 }
 
 EXPECTED_FILES = {
@@ -169,20 +235,27 @@ EXPECTED_FILES = {
     "adapter-lib": "ccad4545cfd41802c32d66a692d65aca9a69d0e59b0a3cb7c5c34da42830a198",
     "adapter-manifest": "ef7c613a66781c4b64d75435524166329b5239b8172f97b28cff2d6d609c8d78",
     "authority": "9d1945b590a3a9f44f6af95d3090ad0a8d1bc0cfa601c35273cd0a72c86cbddc",
-    "claim": "2692fab5bad0104a45d97f124cb9b20dc7bef590ca53830318823793af5cf6a8",
-    "contract-evidence": "ff704f1339587c05a05836649fe05e92f1eca826412e7cecdbb8334c49def250",
+    "claim": "f633143ff992f9de3001626074690af2ed95c01bd9aeb64d8f1a55f3f7066113",
+    "contract-evidence": "8efddeb82d8cfcea95e6967b5d4b995f77215e159fc74b45a8f9cc0450a512c8",
     "core-manifest": "0d22823a1d4f397fb58693c7d9fe7498969ce242b5da0f372d8cc8f55f960b9b",
+    "core-lib": "2039d8c789844cddaaabbf432a0a6ef465f77300577f3b57922d7bcbcc930450",
+    "diagnose-artifact": "ad7cce45d286623dcfd55c21189cb7d58e29f1943960d0a061d6f85c2640baa3",
+    "diagnose-lib": "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de",
+    "diagnose-manifest": "097ec2b4cef98a43bee09c64c289251ab2060808d4fb8e050de3077f541ff2f1",
+    "diagnose-observer": "e6cfb0a92d7bf7e235c7fac8180f488b7b1d9474986791fac4adf2917dae7d12",
     "linux-lib": "47ef2cdd61b7c0854f0ee9fcfb5d32ffcebfec5b5820477636a3d513a7ccf33d",
     "linux-manifest": "e7311e3cada91690da87f42910c96e133538439956a0db78de79dea9294d6c9b",
     "lock": "376572c5d111f5ea72e38667b5813a7c051e9fa128d5af355468e5294889a0c6",
     "receipt": "fc27edf189014a49af8af380902fe90b12cbbd71a2b49301064b589c8a4c4024",
+    "path-receipt-lib": "f2f103cbc2c928f9a69211963788c1472c62a936de63a8f53dca2cd9c5469b01",
+    "path-receipt-manifest": "4cb9c84da77bd72e3a49e2be1cbf52f2e5841ab15d9ae8fb07c2022f788518d6",
     "root-manifest": "1ea75287f62129c6b15038b0c45df42e616fc4c92e59e61bc03358746fd5d7d6",
     "stream-assumption": "b06c323edd3dceaa6c7c52b17b4ecd5c1bfc56dee10a95413f000f090cd69459",
+    "stream-runtime-assumption": "ce57e1cab085cbd7b4f60ab03a607166a2dc77bdb924228b1f7c949a72bfeb19",
     "sys": "c7433f4485aa12829c87ef10210fa766676bc24729361e0a82ac93a2267eb06f",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "3c766e2767d8622ee40e45825b863c75d3be49aa52aa62b6dd41bd311da6bd07",
-    "trace-assumption": "40a483142f19a6e3c1ece498b07b55463040354e98172a271abd623363414bb0",
-    "unit-evidence": "93e3d90c452ea85f6d2fdaa1c222d436e8528302f4a6af3508bc008b450b606d",
+    "trace": "228a18c115c9130d095285da1cca15d5300f1a425d391dd463b2de949b5aa181",
+    "unit-evidence": "aa412bdc666a1817f18e8a8df227ff356100147635f5a996068b8f3672aaeda7",
 }
 
 
@@ -225,6 +298,36 @@ class DiagnosticStreamCaptureContractTests(unittest.TestCase):
                     "truncated |= retained < count;",
                     "if retained < count { break; }",
                     1,
+                ),
+                self.adapter,
+                self.sys,
+            ),
+            (
+                "terminal deadline removed",
+                self.trace.replace(
+                    ".checked_add(TRACE_STREAM_FINISH_TIMEOUT)",
+                    ".checked_add(Duration::MAX)",
+                    1,
+                ),
+                self.adapter,
+                self.sys,
+            ),
+            (
+                "terminal timeout skips cancellation",
+                self.trace.replace("self.cancel_and_join();", "", 1),
+                self.adapter,
+                self.sys,
+            ),
+            (
+                "raw root reap leaves numeric cleanup armed",
+                self.trace.replace("self.session.record_root_reaped();", "", 1),
+                self.adapter,
+                self.sys,
+            ),
+            (
+                "pidfd ownership leaves numeric cleanup armed",
+                self.trace.replace(
+                    "self.session.record_root_identity_stable_handle();", "", 1
                 ),
                 self.adapter,
                 self.sys,
@@ -284,11 +387,19 @@ class DiagnosticStreamCaptureContractTests(unittest.TestCase):
             "adapter-drain-finish": implementation(self.adapter, "pub fn finish("),
             "capture": implementation(self.trace, "fn capture_trace_stream("),
             "child-drop": implementation(self.trace, "impl Drop for TraceChild"),
+            "child-disarm": implementation(self.trace, "fn disarm_after_trace_wait("),
+            "child-pidfd-disarm": implementation(
+                self.trace, "fn disarm_after_identity_stable_handle("
+            ),
             "child-terminate": implementation(self.trace, "fn terminate_and_wait("),
             "complete-drain": implementation(self.trace, "fn complete_drain("),
             "natural-finish": implementation(self.trace, "pub fn finish(mut self)"),
             "reader-finish": implementation(self.trace, "fn finish(&mut self)"),
+            "reader-finish-before": implementation(self.trace, "fn finish_before("),
+            "reader-cancel": implementation(self.trace, "fn cancel_and_join("),
             "reader-start": implementation(self.trace, "fn start("),
+            "record-terminal": implementation(self.trace, "fn record_terminal_process("),
+            "release": implementation(self.trace, "pub fn release("),
             "spawn": implementation(self.trace, "pub fn spawn(mut self)"),
         }
         actual_bodies = {
@@ -304,16 +415,23 @@ class DiagnosticStreamCaptureContractTests(unittest.TestCase):
             "claim": CLAIM,
             "contract-evidence": CONTRACT_EVIDENCE,
             "core-manifest": CORE_MANIFEST,
+            "core-lib": CORE_LIB,
+            "diagnose-artifact": DIAGNOSE_ARTIFACT,
+            "diagnose-lib": DIAGNOSE_LIB,
+            "diagnose-manifest": DIAGNOSE_MANIFEST,
+            "diagnose-observer": DIAGNOSE_OBSERVER,
             "linux-lib": LINUX_LIB,
             "linux-manifest": LINUX_MANIFEST,
             "lock": LOCK,
             "receipt": RECEIPT,
+            "path-receipt-lib": PATH_RECEIPT_LIB,
+            "path-receipt-manifest": PATH_RECEIPT_MANIFEST,
             "root-manifest": ROOT_MANIFEST,
             "stream-assumption": STREAM_ASSUMPTION,
+            "stream-runtime-assumption": STREAM_RUNTIME_ASSUMPTION,
             "sys": SYS,
             "toolchain": TOOLCHAIN,
             "trace": TRACE,
-            "trace-assumption": TRACE_ASSUMPTION,
             "unit-evidence": UNIT_EVIDENCE,
         }
         actual_files = {
