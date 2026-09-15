@@ -84,7 +84,7 @@ impl PreparedTraceCommand<'_> {
         drop(self.launcher_channel);
         Ok(SpawnedTrace {
             session: TraceSession {
-                child,
+                _child: child,
                 process,
                 channel: self.supervisor_channel,
                 request: self.request,
@@ -181,7 +181,7 @@ impl Drop for TraceChild {
 
 #[derive(Debug)]
 struct TraceSession {
-    child: TraceChild,
+    _child: TraceChild,
     process: TraceProcessId,
     channel: LauncherChannel,
     request: InstallRequest,

@@ -1933,3 +1933,29 @@ regular-expression operations.
 This verdict is not endorsed. The second correction must remove mutable child
 replacement, add the corresponding falsifier, and align the assumption with
 the checker that depends on it. It requires a new exact-head review.
+
+## RT-8 diagnostic trace-startup second correction review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `db31e0259bbe708fc8afd8288bb6445b1ad06235`
+- **Reviewed head:** `f8032ddb9d04b5b608fa53ea2c6a0ad2d713fac1`
+- **Branch:** `codex/rt8-ptrace-backend`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The review confirmed that every cumulative security and assurance blocker was
+closed. Public mutable child access is absent and the checker rejects its
+return. The exact launcher, child, request, process identity, and internally
+created channel remain bound through one private session. Protocol ordering,
+source closure, reciprocal assumptions, raw-call confinement, feature
+isolation, closed errors, claims, and evidence remain aligned.
+
+The review found one compile-gate blocker. Once mutable access was removed, the
+private child field became ownership-only and no longer had a read. Rust's
+default dead-code lint therefore warns, and the required Clippy command promotes
+warnings to errors. The field must explicitly identify its intentional
+ownership-only role, and the structural falsifier must require that form.
+
+This verdict is not endorsed. The correction changes the exact subject and
+requires one more exact-head review.

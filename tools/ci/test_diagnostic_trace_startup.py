@@ -126,7 +126,7 @@ class DiagnosticTraceStartupContractTests(unittest.TestCase):
     ):
         session = structure(self.trace, "TraceSession")
         for field in [
-            "child: TraceChild",
+            "_child: TraceChild",
             "process: TraceProcessId",
             "channel: LauncherChannel",
             "request: InstallRequest",
@@ -149,6 +149,7 @@ class DiagnosticTraceStartupContractTests(unittest.TestCase):
         self.assertEqual(self.trace.count("session: self.session"), 6)
         self.assertNotIn("pub fn child_mut", self.trace)
         self.assertNotIn("-> &mut Child", self.trace)
+        self.assertIn("_child: child", self.trace)
 
     def test_session_creates_and_uses_one_private_launcher_channel(self):
         prepare_start = self.trace.index("pub fn prepare_traced_launcher")

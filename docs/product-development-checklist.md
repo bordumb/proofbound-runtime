@@ -157,8 +157,10 @@ manifest describes the supported tuple.
   session channel, request, acknowledgement, and release to share one private
   owner and required complete evidence and identity source closure. Its next
   review found a public mutable-child replacement escape, a missing falsifier,
-  and incomplete checker-assumption language. Those corrections are retained;
-  refreshed review, hosted admission, and native effect evidence remain open.
+  and incomplete checker-assumption language. The following review found that
+  the ownership-only private child field would fail the warnings-as-errors
+  gate. Those corrections are retained; refreshed review, hosted admission,
+  and native effect evidence remain open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.
