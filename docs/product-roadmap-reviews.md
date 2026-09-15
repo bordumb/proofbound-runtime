@@ -3135,3 +3135,28 @@ Cargo argument `--features=diagnostic-observer`, matching the already admitted
 trace-startup evidence-unit form. The correction changes registered evidence
 bytes and therefore requires a new exact-head independent review and fresh
 hosted verification.
+
+## RT-8 diagnostic stream evidence-operation approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `a89b92daa0a6f977c4a090b3f9a2e553fc94884d`
+- **Reviewed head:** `f1384dc09c23378f01ef3756c1e5c434a74a4c9d`
+- **Branch:** `codex/rt8-diagnostic-streams`
+- **Method:** Complete exact-range static security and evidence-operation
+  re-review. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the evidence unit keeps only the supported `--lib`
+selector in `targets` and supplies `--features=diagnostic-observer` through
+`operation.arguments`, as required by the pinned Proofbound Cargo adapter. Its
+exact fingerprint is synchronized. The earlier mutable-receiver compiler fix
+and its cross-checker body and file identities remain intact. No production,
+claim, assumption, specification, ADR, or security-contract bytes changed, and
+all previously closed stream security findings remain closed.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`a89b92daa0a6f977c4a090b3f9a2e553fc94884d..f1384dc09c23378f01ef3756c1e5c434a74a4c9d`.
+The following approval-only commit changes no reviewed production, claim,
+assumption, specification, evidence, checker, or source-closure bytes. Fresh
+hosted verification remains required before merge.
