@@ -2309,3 +2309,140 @@ this independent `APPROVE` verdict for exact head
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, or test bytes. An admitted-stack replay, hosted evidence,
 and merge are still required before this source is described as admitted.
+
+## RT-8 coupled observer adapter edition correction review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `17bb2b4c38cfeb18e2c8d75c372e6c06d6dd2656`
+- **Reviewed head:** `e92732ee71881d1110a3566c539aaee3fc736ad1`
+- **Branch:** `codex/rt8-observer-adapter-v2`
+- **Method:** Exact-range static re-review of the hosted formatting correction
+  and its operational status update. The reviewer changed no files and ran no
+  builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The reviewer confirmed that the Rust source changes are edition-2024-only
+formatting corrections. They change no semantic behavior, security boundary,
+public API, claim, or evidence meaning. The focused source-contract checker and
+documentation update correctly match the formatted source.
+
+One documentation blocker remained. `docs/product-roadmap-2.md` still named
+`3557cc9` as the Runtime baseline, described exact-main run `34956564102` as in
+progress, and described trace startup as in review. The operational checklist
+correctly recorded that the exec-release run passed and trace startup merged as
+`9395050`. The roadmap therefore contradicted the current execution ledger.
+
+This verdict is not endorsed. The correction updates the roadmap to the exact
+merged identities and current run states and requires one exact re-review.
+
+## RT-8 coupled observer adapter edition correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `17bb2b4c38cfeb18e2c8d75c372e6c06d6dd2656`
+- **Reviewed head:** `176b10a075f4ea815d020be0d48a9b947584ecdd`
+- **Branch:** `codex/rt8-observer-adapter-v2`
+- **Method:** Complete exact-range static re-review after the documentation
+  correction. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the Rust source changes only reorder the same
+imports and re-exports under the repository's edition-2024 formatter. They
+change no names, visibility, types, control flow, ownership, security behavior,
+or public API. The focused checker matches the exact formatted bytes and public
+use order. The roadmap, operational checklist, and rejected-review record now
+agree on the exact merged identities and run states. The complete base-to-head
+range introduces no semantic, security, public-surface, or evidence regression.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`176b10a075f4ea815d020be0d48a9b947584ecdd`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.
+
+## RT-8 diagnostic trace-startup admitted-base approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `3557cc9dc7d620a0dee011d5ce161357924e30ea`
+- **Reviewed head:** `a848b706b1c80b2394defda9f3d739b91a1770e5`
+- **Branch:** `codex/rt8-trace-startup`
+- **Method:** Complete exact-range static re-review after replay onto the
+  admitted dependency stack. The reviewer changed no files and ran no builds
+  or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that preparation controls the command, retained
+launcher descriptor, private channel, and exact request. Every typestate moves
+one private `TraceSession`; the ownership-only child guard remains bound to the
+same session and safe callers have no mutable child escape. Boundary identity,
+acknowledgement identity, stop state, exact trace options, release, and
+descriptor-relative exec remain ordered and fail closed.
+
+Raw trace calls remain confined to `sys.rs` and behind an empty-by-default
+feature that is absent from the production launcher dependency graph. The
+registered checker retains the session-continuity, ownership, mutable-child,
+internal-channel, source-closure, and production-isolation falsifiers. Claim
+language stays limited to trace startup; hosted compilation, native cleanup,
+process-tree accounting, and live event capture remain explicit open work.
+The admitted-base replay preserves the corrected source subject and its
+historical review record.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`a848b706b1c80b2394defda9f3d739b91a1770e5`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.
+
+## RT-8 coupled observer adapter admitted-main replay approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `9395050b5c3a8e968d4e162bfdde1709e33e0989`
+- **Reviewed head:** `6579dacab85746b6d2eef0af06add803320815e1`
+- **Branch:** `codex/rt8-observer-adapter-v2`
+- **Method:** Narrow exact-range static replay review after current-main
+  integration. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed by direct tree comparison that the Rust, checker,
+claim, evidence, schema, and manifest subject is byte-identical to approved
+head `176b10a075f4ea815d020be0d48a9b947584ecdd`. Only the roadmap, checklist,
+and review ledger changed during main integration. The conflict resolution
+preserves the complete adapter review history and the admitted trace-startup
+approval while reporting the current main identity and pending hosted gate.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact merge
+head `6579dacab85746b6d2eef0af06add803320815e1`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.
+
+## RT-8 active-trace admitted-main replay approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `d34eab1abaeffe5d2b0e6cde8d13a5ad5f90c568`
+- **Reviewed head:** `1db68a63c4ff300f78760693b91a27db784439f8`
+- **Branch:** `codex/rt8-live-events`
+- **Method:** Exact-range static re-review after replay onto admitted main and
+  correction of the operational status documents. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the prior P2 documentation blocker is closed. The
+checklist, Roadmap 2, and assurance summary now agree on admitted main
+`d34eab1`, passed trace-startup run `34962882198`, queued adapter exact-main
+run `34969409215`, and the active-trace wave's still-open hosted admission.
+
+Production Rust, claim, assumptions, evidence, independent checker, and
+regression tests are byte-identical to rejected replay head `43353bc3`. The
+previously approved pending-syscall retention across exec and non-leader exec
+identity reconciliation remain intact. The correction introduces no semantic,
+security, public-API, evidence, or claim-language regression.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`1db68a63c4ff300f78760693b91a27db784439f8`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.
