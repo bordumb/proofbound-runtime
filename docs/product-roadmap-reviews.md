@@ -2359,3 +2359,32 @@ head `6579dacab85746b6d2eef0af06add803320815e1`. The following approval-only
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, or test bytes. Any later subject change requires a new
 exact-head review.
+
+## RT-8 active-trace admitted-main replay approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `d34eab1abaeffe5d2b0e6cde8d13a5ad5f90c568`
+- **Reviewed head:** `1db68a63c4ff300f78760693b91a27db784439f8`
+- **Branch:** `codex/rt8-live-events`
+- **Method:** Exact-range static re-review after replay onto admitted main and
+  correction of the operational status documents. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the prior P2 documentation blocker is closed. The
+checklist, Roadmap 2, and assurance summary now agree on admitted main
+`d34eab1`, passed trace-startup run `34962882198`, queued adapter exact-main
+run `34969409215`, and the active-trace wave's still-open hosted admission.
+
+Production Rust, claim, assumptions, evidence, independent checker, and
+regression tests are byte-identical to rejected replay head `43353bc3`. The
+previously approved pending-syscall retention across exec and non-leader exec
+identity reconciliation remain intact. The correction introduces no semantic,
+security, public-API, evidence, or claim-language regression.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`1db68a63c4ff300f78760693b91a27db784439f8`. The following approval-only
+commit changes no reviewed production, schema, specification, claim,
+assumption, evidence, or test bytes. Any later subject change requires a new
+exact-head review.
