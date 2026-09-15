@@ -27,6 +27,15 @@ def _matches(instance, schema, root):
     return True
 
 
+def _canonical_json_bytes(value):
+    try:
+        return json.dumps(
+            value, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+    except UnicodeEncodeError as error:
+        raise ValueError("JSON contains an unpaired surrogate") from error
+
+
 def _validate(instance, schema, root):
     if "$ref" in schema:
         _validate(instance, _resolve_reference(root, schema["$ref"]), root)
@@ -88,6 +97,10 @@ def _validate(instance, schema, root):
                 assert matches <= schema["maxContains"]
 
     if isinstance(instance, str):
+        try:
+            instance.encode("utf-8")
+        except UnicodeEncodeError as error:
+            raise AssertionError("string is not valid Unicode scalar text") from error
         if "minLength" in schema:
             assert len(instance) >= schema["minLength"]
         if "maxLength" in schema:
@@ -120,17 +133,19 @@ class DiagnosticDraftingContractTests(unittest.TestCase):
         for path in [DIAGNOSTIC_VECTOR, DRAFT_VECTOR]:
             raw = path.read_bytes().removesuffix(b"\n")
             value = json.loads(raw, object_pairs_hook=self._closed_object)
-            canonical = json.dumps(
-                value, sort_keys=True, separators=(",", ":"), ensure_ascii=True
-            ).encode()
+            canonical = _canonical_json_bytes(value)
             self.assertEqual(raw, canonical, path)
             self.assertFalse(value["safe_policy"])
+
+        with self.assertRaises(ValueError):
+            _canonical_json_bytes({"argument": "\ud800"})
 
         receipt = json.loads(DIAGNOSTIC_VECTOR.read_bytes())
         self.assertEqual(receipt["execution_profile"], "diagnostic")
         self.assertFalse(receipt["reusable"])
         self.assertIn(receipt["completion"], {"complete", "incomplete"})
         self.assertEqual(receipt["mechanism"], "linux-ptrace-syscall-v1")
+        self.assertEqual(receipt["arguments"], ["--fixture", "π"])
         self.assertEqual(receipt["events"][0]["operands"]["kind"], "path")
         self.assertEqual(
             receipt["events"][0]["object_before"], receipt["events"][0]["object_after"]
