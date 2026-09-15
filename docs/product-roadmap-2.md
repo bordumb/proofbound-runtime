@@ -1,15 +1,16 @@
 # Proofbound Runtime product roadmap 2: deferred capabilities
 
 - **Status:** implementation; RT-7 publication routes and the RT-8 diagnostic
-  contract, artifact producer, and pure observer protocol are merged, external
-  registry publication remains open, and the RT-8 exec-release and
-  trace-startup prerequisites are merged; all complete Roadmap 2 epic exits
-  remain open
+  contract, artifact producer, observer protocol, trace startup, active event
+  source, and event-and-drain coupling are merged. External registry
+  publication, the decoder admission, and every complete Roadmap 2 epic exit
+  remain open.
 - **Date:** 2026-09-13
-- **Runtime baseline:** coupled observer adapter merge `d34eab1` on `main`; its
-  exact-main Verify run `34969409215` is in progress. Trace-startup exact-main run
-  `34962882198` and identity-bound exec-release exact-main run `34956564102`
-  passed.
+- **Runtime baseline:** combined active trace and event-and-drain merge
+  `b2cb4b9` on `main`; exact-head Verify run `34973401808` passed and exact-main
+  run `34978365970` is in progress. Coupled-adapter run `34969409215`,
+  trace-startup run `34962882198`, and identity-bound exec-release run
+  `34956564102` passed.
 - **Proofbound baseline consumed by Runtime evidence:** public immutable bundle
   for source `9512469`; protected-path cutover merged as Runtime `4a0cfdb` and
   passed exact-main Verify run `34918706960`
@@ -34,14 +35,14 @@ threat-model, ADR, claim, and evidence changes before production code.
 
 ### Execution checkpoint
 
-As of 2026-09-15, Runtime main commit `d34eab1` contains the version 2 memory
+As of 2026-09-15, Runtime main commit `b2cb4b9` contains the version 2 memory
 and deterministic CBOR wave, receipt composition and acceptance, a bounded
 static plan scaffold,
 typed prelaunch diagnostics, reproducible Rust, Python, and TypeScript SDK
 packages, the network-mechanism decision, the performance baseline, and the
 pure RT-8 observer protocol. These are prerequisites or partial foundations
 for RT-7, RT-8, RT-9, and RT-13. They do not close a Roadmap 2 exit condition.
-Registry publication, consumer dogfood, the live diagnostic observer,
+Registry publication, consumer dogfood, the complete diagnostic planner,
 production authenticated networking, the guest profile, the signing ADR, the
 receipt log, and the execution service remain open. RT-7.1 is governed by
 [Specification 0014](specs/0014_public_compatibility_and_distribution.md).
@@ -91,15 +92,16 @@ process bound into the trace, consumes each complete event into the same pure
 protocol, permanently rejects an unreconciled process tree, and orders a
 successful effectful drain before the pure tree-empty acknowledgement. Restacked
 head `45b1c91` passed exact replay review. The behavior-preserving Rust-lint
-correction `a3f56b5` also passed exact review; approval-only head `9f82afa` is in
-replacement Verify run `34973401808`, where preflight, Rust, and both native
-lanes passed while formal and evidence continue. The following decoder changes
-these shared sources again. Its architecture-qualified tables and bounded
+correction `a3f56b5` also passed exact review. Approval-only head `9f82afa`
+passed replacement Verify run `34973401808`, then the combined series merged
+unsigned as `b2cb4b9`; exact-main run `34978365970` is in progress. The
+following decoder changes these shared sources again. Its architecture-qualified tables and bounded
 entry-time operand capture are implemented under `PBR-OBSERVER-025`; the exact
 aggregate subject, compiler and crate-selection closure, adapter build
 evidence, all load-bearing decoder bodies, and the zero-reserved exact-size
-syscall-information parser are registered. Exact review and hosted admission
-of the combined current sources remain open. Artifact
+syscall-information parser are registered. The decoder is restacked without
+content conflict on admitted main as candidate `ca670bb`; exact review and
+hosted admission of that current source remain open. Artifact
 mapping, command integration, the native attack corpus, and release binding
 remain open.
 RT-9 is blocked until RT-5 implements the accepted single-service network

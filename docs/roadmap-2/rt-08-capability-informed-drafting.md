@@ -2,8 +2,7 @@
 
 **Status:** static scaffold, prelaunch diagnostics, diagnostic contracts,
 closed schemas, source-level production non-reuse, the pure diagnostic artifact
-producer, and the pure observer protocol are merged through Runtime `b04382d`.
-Exact-main Verify run `34946613122` passed. The identity-bound launcher
+producer, and the pure observer protocol are admitted. The identity-bound launcher
 exec-release prerequisite for race-free trace setup merged as `3557cc9` after
 exact-head hosted verification; exact-main run `34956564102` passed.
 The separate feature-gated Linux trace-startup source merged as `9395050` and
@@ -14,22 +13,24 @@ Active-trace approval-only head `c4b88c1` is not admitted alone: run
 reviewed batch.
 The event-and-drain correction at `af9f77d` and its restacked exact head
 `45b1c91` passed independent review. Its behavior-preserving Rust-lint
-correction `a3f56b5` also passed exact review; approval-only head `9f82afa` is
-in replacement Verify run `34973401808`. Preflight, Rust, and both native lanes
-passed while formal and evidence continue. It passes the validated process
+correction `a3f56b5` also passed exact review. Approval-only head `9f82afa`
+passed replacement Verify run `34973401808`, and the combined active event and
+drain series merged unsigned as Runtime `b2cb4b9`; exact-main run `34978365970`
+is in progress. It passes the validated process
 bound into the effectful trace, consumes complete events into the matching
 pure protocol, permanently
 rejects an unreconciled process tree, and makes successful effectful drain
-reconciliation precede pure tree-empty acknowledgement. The following decoder
-changes the same source identities and requires a combined exact review.
+reconciliation precede pure tree-empty acknowledgement. Only the following
+decoder identity remains pending review and hosted admission.
 The architecture-qualified syscall decoder and bounded entry-time operand
 capture are implemented locally under `PBR-OBSERVER-025`. The exact aggregate
 subject, compiler and crate-selection closure, adapter build evidence, and all
 load-bearing decoder bodies are registered in response to independent review.
 The raw syscall-information parser also rejects nonzero reserved or flags
 fields and any non-exact operation size, so a future UAPI extension fails
-closed. Exact review and hosted admission of the combined current sources
-remain open. Artifact mapping, command integration, the native attack corpus,
+closed. It is restacked without content conflict on admitted main as candidate
+`ca670bb`; exact review and hosted admission remain open. Artifact mapping,
+command integration, the native attack corpus,
 and release binding remain open.
 
 **Primary owner:** Proofbound Runtime

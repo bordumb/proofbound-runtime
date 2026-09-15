@@ -1,22 +1,18 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T14:35:11+01:00 (Europe/London, BST)
-- **Runtime baseline:** coupled setup adapter merged as `d34eab1`; exact-main
-  Verify run `34969409215` passed. Trace-startup exact-main run
-  `34962882198` and identity-bound exec-release exact-main run `34956564102`
-  passed.
-- **Active implementation wave:** the active-trace admitted-main replay at
-  `1db68a6` is independently approved. Its approval-only head `c4b88c1` failed
-  run `34970508987` only on the two Rust lints corrected by the following
-  reviewed batch, so it is superseded rather than admitted alone.
-  Event-and-drain source `af9f77d`, restacked head `45b1c91`, and lint
-  correction `a3f56b5` are independently approved. Combined approval-only head
-  `9f82afa` is in replacement Verify run `34973401808`; preflight, Rust, and
-  both native lanes passed while the formal and evidence lanes continue.
-  The following decoder batch changes the same trace, adapter, and observer
-  sources, so the combined current identity is pending exact review and hosted
-  admission.
+- **Last updated:** 2026-09-15T14:59:00+01:00 (Europe/London, BST)
+- **Runtime baseline:** the combined active trace and event-drain batch passed
+  exact-head Verify run `34973401808` at `9f82afa` and merged unsigned as
+  `b2cb4b9`; exact-main run `34978365970` is in progress. The coupled setup
+  adapter exact-main run `34969409215`, trace-startup run `34962882198`, and
+  identity-bound exec-release run `34956564102` passed.
+- **Active implementation wave:** active trace and event-and-drain coupling are
+  merged together as `b2cb4b9`. The earlier `c4b88c1` run `34970508987`
+  failed only on two Rust lints fixed by the combined reviewed batch and is
+  superseded by the green `9f82afa` run. The decoder series is restacked on
+  exact main with no content conflict at `ca670bb`; final exact review is in
+  progress before the single hosted admission run.
 - **Current implementation batch:** architecture-qualified syscall decoding and
   bounded operand capture are implemented locally as `PBR-OBSERVER-025`. The
   exact aggregate subject, compiler and crate-selection closure, adapter build
@@ -210,8 +206,9 @@ manifest describes the supported tuple.
   event coupling, and native attack evidence open. The first independent review
   found incorrect syscall-pair retention and non-leader exec identity checks;
   exact re-review approved corrected head `c20f6e3`. Its admitted-main replay
-  at `1db68a6` also passed independent review; approval-only head `c4b88c1` is
-  in hosted verification.
+  at `1db68a6` also passed independent review. The combined correction passed
+  exact-head run `34973401808` at `9f82afa` and merged unsigned as `b2cb4b9`;
+  exact-main run `34978365970` is in progress.
 - [ ] Admit live event-and-drain coupling. Exact source `af9f77d` passed
   independent review with an explicit `APPROVE`. The adapter passes the validated
   lifetime process bound to the effectful trace before release, consumes each
@@ -225,16 +222,17 @@ manifest describes the supported tuple.
   load-bearing bodies with five mutation classes, restores typed unsupported
   paths, closes assumption links, and marks every changed exact subject pending.
   The `af9f77d`, restacked `45b1c91`, and lint-corrected `a3f56b5` approvals are
-  recorded. Combined approval-only head `9f82afa` is in replacement Verify run
-  `34973401808`. The following decoder changes the same exact sources, so
-  combined exact review and hosted admission remain open.
+  recorded. Combined approval-only head `9f82afa` passed replacement Verify run
+  `34973401808` and merged unsigned as `b2cb4b9`; exact-main run `34978365970`
+  is in progress. The following decoder changes the same exact sources, so its
+  exact review and hosted admission remain open.
 - [ ] Admit architecture-qualified syscall decoding and bounded operand capture.
   The current source has separate x86_64 and aarch64 tables, rejects x32 and
   unsupported registered forms, captures path and socket-address bytes before
   resume under three independent limits, completes partial reads or fails, and
   never reads payload bytes. The raw parser rejects nonzero reserved and flags
   fields and all non-exact syscall-information sizes. Exact review and hosted
-  admission remain open.
+  admission remain open at restacked candidate `ca670bb`.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.
