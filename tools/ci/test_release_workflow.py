@@ -8,6 +8,56 @@ WORKFLOW = REPOSITORY_ROOT / ".github" / "workflows" / "release.yml"
 
 
 class ReleaseWorkflowTests(unittest.TestCase):
+    def _npm_publication_blocks(self, workflow: str) -> tuple[str, str, str, str]:
+        job_start = workflow.index("\n  publish-typescript-sdk:\n")
+        job_end = workflow.index("\n  observe-registry-packages:\n")
+        job = workflow[job_start:job_end]
+        route_start = job.index(
+            "      - name: Confirm the selected npm authentication route\n"
+        )
+        bootstrap_start = job.index(
+            "      - name: Bootstrap the missing npm package once\n"
+        )
+        normal_start = job.index(
+            "      - name: Publish through the configured npm trusted publisher\n"
+        )
+        self.assertLess(route_start, bootstrap_start)
+        self.assertLess(bootstrap_start, normal_start)
+        return (
+            job[:route_start],
+            job[route_start:bootstrap_start],
+            job[bootstrap_start:normal_start],
+            job[normal_start:],
+        )
+
+    def _assert_npm_publication_contract(self, workflow: str) -> None:
+        prefix, route, bootstrap, normal = self._npm_publication_blocks(workflow)
+        for token_free in (prefix, route, normal):
+            self.assertNotIn("secrets.NPM_INITIAL_PUBLISH_TOKEN", token_free)
+            self.assertNotIn("NODE_AUTH_TOKEN", token_free)
+            self.assertNotIn("npm-bootstrap.npmrc", token_free)
+
+        self.assertEqual(bootstrap.count("secrets.NPM_INITIAL_PUBLISH_TOKEN"), 1)
+        self.assertEqual(bootstrap.count("NODE_AUTH_TOKEN"), 3)
+        self.assertIn("inputs.bootstrap_npm_package == true", bootstrap)
+        self.assertIn("inputs.bootstrap_npm_package != true", normal)
+
+        self.assertIn('PBR_NPM_PACKAGE: "@proofbound/runtime-sdk"', route)
+        self.assertIn('packageName !== "@proofbound/runtime-sdk"', route)
+        self.assertIn("encodeURIComponent(packageName)", route)
+        self.assertIn('redirect: "error"', route)
+        self.assertIn('const expected = mode === "true" ? 404 : 200;', route)
+        self.assertIn("if (response.status !== expected) {", route)
+        self.assertIn("await response.body?.cancel();", route)
+
+        for publisher in (bootstrap, normal):
+            self.assertEqual(publisher.count("npm publish"), 1)
+            self.assertEqual(publisher.count("--ignore-scripts"), 1)
+            self.assertEqual(publisher.count("--provenance"), 1)
+            self.assertEqual(
+                publisher.count("--registry https://registry.npmjs.org"), 1
+            )
+
     def test_dispatch_requires_one_exact_revision(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
 
@@ -63,18 +113,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("--registry https://registry.npmjs.org", publication)
         typescript = workflow[typescript_sdk:observe]
         self.assertNotIn("registry-url:", typescript)
-        self.assertIn("Confirm the selected npm authentication route", typescript)
-        self.assertIn('PBR_NPM_PACKAGE: "@proofbound/runtime-sdk"', typescript)
-        self.assertIn('packageName !== "@proofbound/runtime-sdk"', typescript)
-        self.assertIn("encodeURIComponent(packageName)", typescript)
-        self.assertIn('const expected = mode === "true" ? 404 : 200;', typescript)
-        self.assertIn("inputs.bootstrap_npm_package == true", typescript)
-        self.assertIn("inputs.bootstrap_npm_package != true", typescript)
-        self.assertEqual(typescript.count("secrets.NPM_INITIAL_PUBLISH_TOKEN"), 1)
-        self.assertEqual(typescript.count("NODE_AUTH_TOKEN"), 3)
-        self.assertEqual(typescript.count("--ignore-scripts"), 2)
-        self.assertIn("--provenance", typescript)
-        self.assertIn("npm-bootstrap.npmrc", typescript)
+        self._assert_npm_publication_contract(workflow)
         package = json.loads(
             (REPOSITORY_ROOT / "sdk/typescript/package.json").read_text(
                 encoding="utf-8"
@@ -100,6 +139,74 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("PBR_PUBLISH_PACKAGES:$PBR_BOOTSTRAP_NPM_PACKAGE", validation)
         self.assertIn("true:true|true:false|false:false", validation)
         self.assertIn("npm bootstrap requires package publication", validation)
+
+    def test_npm_bootstrap_bypass_mutations_fail_closed(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        job_start = workflow.index("\n  publish-typescript-sdk:\n")
+        job_end = workflow.index("\n  observe-registry-packages:\n")
+        prefix, route, bootstrap, normal = self._npm_publication_blocks(workflow)
+
+        step_secret = (
+            "        env:\n"
+            "          NODE_AUTH_TOKEN: "
+            "${{ secrets.NPM_INITIAL_PUBLISH_TOKEN }}\n"
+        )
+        job_secret = (
+            "    env:\n"
+            "      NODE_AUTH_TOKEN: ${{ secrets.NPM_INITIAL_PUBLISH_TOKEN }}\n"
+        )
+        self.assertIn(step_secret, bootstrap)
+        moved_secret_job = (
+            prefix.replace("    steps:\n", job_secret + "    steps:\n", 1)
+            + route
+            + bootstrap.replace(step_secret, "", 1)
+            + normal
+        )
+
+        ignore = "            --ignore-scripts \\\n"
+        self.assertEqual(bootstrap.count(ignore), 1)
+        self.assertEqual(normal.count(ignore), 1)
+        concentrated_flags_job = (
+            prefix
+            + route
+            + bootstrap.replace(ignore, ignore + ignore, 1)
+            + normal.replace(ignore, "", 1)
+        )
+
+        mutations = {
+            "job-scoped bootstrap secret": moved_secret_job,
+            "both ignore flags on bootstrap": concentrated_flags_job,
+            "status rejection disabled": prefix
+            + route.replace("if (response.status !== expected) {", "if (false) {", 1)
+            + bootstrap
+            + normal,
+            "redirects followed": prefix
+            + route.replace('redirect: "error"', 'redirect: "follow"', 1)
+            + bootstrap
+            + normal,
+            "bootstrap condition disabled": prefix
+            + route
+            + bootstrap.replace(
+                "if: ${{ inputs.bootstrap_npm_package == true }}",
+                "if: ${{ always() }}",
+                1,
+            )
+            + normal,
+            "normal condition disabled": prefix
+            + route
+            + bootstrap
+            + normal.replace(
+                "if: ${{ inputs.bootstrap_npm_package != true }}",
+                "if: ${{ always() }}",
+                1,
+            ),
+            "token step before status check": prefix + bootstrap + route + normal,
+        }
+        for name, mutated_job in mutations.items():
+            with self.subTest(name=name):
+                mutated = workflow[:job_start] + mutated_job + workflow[job_end:]
+                with self.assertRaises(AssertionError):
+                    self._assert_npm_publication_contract(mutated)
 
     def test_current_integration_requires_complete_anonymous_observation(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")

@@ -39,6 +39,14 @@ def main() -> int:
             ),
             (
                 "tools.ci.test_release_workflow.ReleaseWorkflowTests."
+                "test_npm_bootstrap_cannot_run_without_package_publication"
+            ),
+            (
+                "tools.ci.test_release_workflow.ReleaseWorkflowTests."
+                "test_npm_bootstrap_bypass_mutations_fail_closed"
+            ),
+            (
+                "tools.ci.test_release_workflow.ReleaseWorkflowTests."
                 "test_preflight_rejects_non_sha_and_non_mainline_revisions"
             ),
         ],
