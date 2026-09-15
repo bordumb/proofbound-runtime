@@ -2194,3 +2194,28 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, or test bytes. Any later subject change requires a new
 exact-head review.
+
+## RT-8 coupled observer adapter edition correction review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `17bb2b4c38cfeb18e2c8d75c372e6c06d6dd2656`
+- **Reviewed head:** `e92732ee71881d1110a3566c539aaee3fc736ad1`
+- **Branch:** `codex/rt8-observer-adapter-v2`
+- **Method:** Exact-range static re-review of the hosted formatting correction
+  and its operational status update. The reviewer changed no files and ran no
+  builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The reviewer confirmed that the Rust source changes are edition-2024-only
+formatting corrections. They change no semantic behavior, security boundary,
+public API, claim, or evidence meaning. The focused source-contract checker and
+documentation update correctly match the formatted source.
+
+One documentation blocker remained. `docs/product-roadmap-2.md` still named
+`3557cc9` as the Runtime baseline, described exact-main run `34956564102` as in
+progress, and described trace startup as in review. The operational checklist
+correctly recorded that the exec-release run passed and trace startup merged as
+`9395050`. The roadmap therefore contradicted the current execution ledger.
+
+This verdict is not endorsed. The correction updates the roadmap to the exact
+merged identities and current run states and requires one exact re-review.

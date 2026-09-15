@@ -1,13 +1,15 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T12:23:05+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T12:30:39+01:00 (Europe/London, BST)
 - **Runtime baseline:** trace-startup merge `9395050`; its exact-main Verify run
-  is pending. Identity-bound exec-release exact-main run `34956564102` passed.
+  `34962882198` is in progress. Identity-bound exec-release exact-main run
+  `34956564102` passed.
 - **Active implementation wave:** the coupled setup adapter is in PR 15. Its
   hosted run reached the Rust lane and rejected two files formatted with the
   wrong Rust edition. The edition-2024-only correction passes the focused
-  formatter and source contract; exact re-review and failed-lane retry remain.
+  formatter and source contract; exact re-review and a new exact-head hosted
+  run remain.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -146,13 +148,13 @@ manifest describes the supported tuple.
   launcher dependency graphs.
 - [x] Define a pure typed observer protocol that cannot release target code
   before attachment, boundary acknowledgement, and exact trace options.
-- [ ] Complete review and hosted admission of the identity-bound supervisor
+- [x] Complete review and hosted admission of the identity-bound supervisor
   exec release that lets the diagnostic adapter stop the acknowledged launcher
   and install exact trace options before target exec. Source implementation and
   registered falsifiers passed exact-head review and hosted verification, then
-  merged unsigned as `3557cc9`. Exact-main Verify run `34956564102` remains the
-  admission gate.
-- [ ] Complete independent review and hosted admission of the non-copy Linux
+  merged unsigned as `3557cc9`, then passed exact-main Verify run
+  `34956564102`.
+- [x] Complete independent review and hosted admission of the non-copy Linux
   trace-startup typestates. Source implementation and bounded contract checks
   are replayed on exact main `3557cc9`. The earlier exact review required the
   session channel, request, acknowledgement, and release to share one private
@@ -160,8 +162,10 @@ manifest describes the supported tuple.
   review found a public mutable-child replacement escape, a missing falsifier,
   and incomplete checker-assumption language. The following review found that
   the ownership-only private child field would fail the warnings-as-errors
-  gate. Those corrections are retained; refreshed review, hosted admission,
-  and native effect evidence remain open.
+  gate. Those corrections passed refreshed independent review and complete
+  hosted verification, then merged unsigned as `9395050`. Exact-main Verify
+  run `34962882198` is in progress. Native effect evidence remains open under
+  the later live-observer claim waves.
 - [ ] Couple the approved trace-startup typestates to the pure observer protocol
   in the separate diagnostic adapter. Validate bounds before spawn, move one
   private pair after the exact initial stop, advance pure states only in the

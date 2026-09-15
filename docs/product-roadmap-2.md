@@ -2,11 +2,13 @@
 
 - **Status:** implementation; RT-7 publication routes and the RT-8 diagnostic
   contract, artifact producer, and pure observer protocol are merged, external
-  registry publication remains open, and the RT-8 exec-release prerequisite is
-  in ordered admission; all complete Roadmap 2 epic exits remain open
+  registry publication remains open, and the RT-8 exec-release and
+  trace-startup prerequisites are merged; all complete Roadmap 2 epic exits
+  remain open
 - **Date:** 2026-09-13
-- **Runtime baseline:** `3557cc9` on `main`; its exact-main Verify run
-  `34956564102` is in progress
+- **Runtime baseline:** trace-startup merge `9395050` on `main`; its exact-main
+  Verify run `34962882198` is in progress. Identity-bound exec-release
+  exact-main run `34956564102` passed.
 - **Proofbound baseline consumed by Runtime evidence:** public immutable bundle
   for source `9512469`; protected-path cutover merged as Runtime `4a0cfdb` and
   passed exact-main Verify run `34918706960`
@@ -31,7 +33,7 @@ threat-model, ADR, claim, and evidence changes before production code.
 
 ### Execution checkpoint
 
-As of 2026-09-15, Runtime main commit `3557cc9` contains the version 2 memory
+As of 2026-09-15, Runtime main commit `9395050` contains the version 2 memory
 and deterministic CBOR wave, receipt composition and acceptance, a bounded
 static plan scaffold,
 typed prelaunch diagnostics, reproducible Rust, Python, and TypeScript SDK
@@ -70,10 +72,15 @@ Cargo test selector that the strict Proofbound adapter reserves for mutation
 witnesses. The corrected exact source passed independent review and complete
 hosted run `34942545372`, merged unsigned as `b04382d`, and passed exact-main
 Verify run `34946613122`. The identity-bound exec-release prerequisite passed
-exact-head hosted verification and merged unsigned as `3557cc9`; exact-main
-run `34956564102` is in progress. Trace startup is in refreshed review, and its
-coupled adapter is replayed on the following stack. The live event loop,
-command integration, native attack corpus, and release binding remain open.
+exact-head hosted verification, merged unsigned as `3557cc9`, and passed
+exact-main run `34956564102`. The trace-startup prerequisite passed independent
+exact-head review and complete hosted verification, merged unsigned as
+`9395050`, and is in exact-main run `34962882198`. Its coupled adapter passed
+independent source review; hosted verification rejected only two
+edition-2021-formatted import orders before compilation. The edition-2024-only
+correction and current-state ledger correction are in exact re-review. The live
+event loop, command integration, native attack corpus, and release binding
+remain open.
 RT-9 is blocked until RT-5 implements the accepted single-service network
 decision in production.
 
