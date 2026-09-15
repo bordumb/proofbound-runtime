@@ -2694,6 +2694,7 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 `fbd2d6679bfc609759783d9b54275ead3acd9731`. The following approval-only commit
 changes no reviewed production, claim, assumption, evidence, or checker bytes.
 Any later subject change requires a new exact-head review.
+
 ## RT-7 current-integration initial exact-head review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
@@ -3070,3 +3071,22 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes no reviewed production,
 specification, claim, assumption, evidence, checker, or source-closure bytes.
 Any later subject change requires a new exact-head review.
+
+## RT-8 diagnostic stream hosted compilation rejection
+
+- **Reviewed base:** `a89b92daa0a6f977c4a090b3f9a2e553fc94884d`
+- **Rejected head:** `a31c955a44420413dc43ceefe9e93b9f7927ebdc`
+- **GitHub run:** `35027798762`
+- **Observed on:** 2026-09-15
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **WITHDRAWN**. The earlier independent approval
+  does not authorize this rejected source subject.
+
+The hosted Rust lane found that `TraceReady::release` mutates the trace session
+to record acquisition of the root identity-stable handle but did not own its
+receiver mutably. The Rust lane and both native lanes therefore stopped at the
+same compilation error before their test corpora could execute. The correction
+makes the receiver mutable. It changes no runtime transition, receipt meaning,
+claim, assumption, or evidence semantics, but it changes a reviewed production
+source file and therefore requires a new exact-head independent review and a
+fresh hosted verification run.

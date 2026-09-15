@@ -246,7 +246,7 @@ EXPECTED_BODIES = {
     "reader-cancel": "f8d1f73f2d46e508fe3a6dcb6ae5a3bb2749082808f368f9c21ba871c3e1ecdb",
     "reader-start": "8d00f7968b3498b8c59e4cac187a38908673edb446ad20b600aacab971e21f5c",
     "record-terminal": "1b039cd8a628df661083e7f65b8aeb4b691b7a476b851d06ab531826ca7365fa",
-    "release": "df095da595cfa93125993d6697f0989faecbf1dae1b9d1d4b5fc3f0c09cdebaa",
+    "release": "33409206cf9f000d1e93b99610609b789ec8b1be18ad5bc64203922369b66837",
     "spawn": "6c62b3ede796721a78fa93b322fd58395317596d95fc69d6c69ee382fbe301f9",
     "wait-for-exact-stop": "ee7155892109c7e6103ad845db801ad1d397551863dda1f23ba590b38cd75d23",
 }
@@ -275,7 +275,7 @@ EXPECTED_FILES = {
     "stream-runtime-assumption": "ce57e1cab085cbd7b4f60ab03a607166a2dc77bdb924228b1f7c949a72bfeb19",
     "sys": "c7433f4485aa12829c87ef10210fa766676bc24729361e0a82ac93a2267eb06f",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "f490dd4398cff760aef70d1f305f4f98a26663b282cf45a86fab78f185b3df27",
+    "trace": "355f78d6d982f8385b88b66c39e9688958d31894d2c2f1649391a7b964252693",
     "unit-evidence": "aa412bdc666a1817f18e8a8df227ff356100147635f5a996068b8f3672aaeda7",
 }
 
