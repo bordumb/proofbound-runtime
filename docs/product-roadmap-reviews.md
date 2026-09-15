@@ -1697,3 +1697,33 @@ target, and add a source-level regression check for this manifest contract. It
 must also align the Python checker assumption with the manifest and Rust-source
 interpretation already in scope. This hosted rejection invalidates admission at
 the reviewed head and requires a new exact-head review after correction.
+
+## RT-8 pure observer protocol hosted correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `4ecb8719d23c0145934a3b0f716b2f744d736d1b`
+- **Reviewed head:** `6735230542b8e5a4944337605e068bd900148109`
+- **Branch:** `codex/rt8-observer-protocol`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the Cargo evidence selector is exactly `--lib`, its
+arguments remain empty, and the same ten exact tests remain in
+`expected_inventory`. Those names match the observer tests. The regression
+check scopes its inspection to the operation section, requires the selector,
+and rejects the obsolete named target without confusing it with inventory
+names. The Python assumption now covers the manifest and Rust source-structure
+interpretation on which the checker depends. Hosted status records remain
+accurate and do not claim admission before the corrected run passes.
+
+Observer production code, claim meaning, release ordering, bounds, irreversible
+gap handling, terminal-wait requirement, separate tree-drain confirmation,
+feature isolation, specification, ADR, and contract inventory remain identical
+to the previously approved implementation.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`6735230542b8e5a4944337605e068bd900148109`. The following approval-only
+commit adds this record and changes no reviewed claim-subject bytes. Any later
+subject change requires a new exact-head review.
