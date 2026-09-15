@@ -32,7 +32,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-OBSERVER-022` | Tier 1 admitted through active event-and-drain main `b2cb4b9`; current decoder identity pending | The admitted adapter coupling passed exact-head run `34973401808`. The decoder batch changes the adapter release transition to derive capture limits from the same validated protocol, so only that identity is pending. |
 | `PBR-OBSERVER-023` | Tier 1 active-trace source admitted on main `b2cb4b9`; current decoder identity pending | The active event source and drain coupling passed exact-head run `34973401808`. The decoder batch changes `ActiveTrace` to decode and capture operands at entry, so only that identity is pending. |
 | `PBR-OBSERVER-024` | Tier 1 event-and-drain coupling admitted on main `b2cb4b9`; current decoder identity pending | The combined correction passed exact-head run `34973401808` and merged. The decoder changes shared trace, adapter, and observer sources, so only the new exact identity is pending review and hosted admission. |
-| `PBR-OBSERVER-025` | Tier 1 syscall-decoder source implementation; second hosted lint correction pending review | Approved correction head `4f66fc4` reached run `34988148920`; formal, native, and all non-rate-limited evidence lanes passed, but Rust lint rejected the separate public adapter observation enum. The current narrow correction boxes only the terminal drain-selection event and leaves the normal trace wait path allocation-free. Kernel ABI truth, memory stability, native attacks, and artifact mapping remain open. |
+| `PBR-OBSERVER-025` | Tier 1 syscall-decoder source implementation; second hosted lint correction pending review | Approved correction head `4f66fc4` reached run `34988148920`; formal, native, and all non-rate-limited evidence lanes passed, but Rust lint rejected the separate public adapter observation enum. The current narrow correction adds one box only for the terminal drain-selection event; it adds no boxing allocation to normal wait, continue, or natural-completion events. Kernel ABI truth, memory stability, native attacks, and artifact mapping remain open. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -663,8 +663,9 @@ and every fresh-evidence lane except the receipt lane, whose anonymous
 Proofbound release request hit GitHub's rate limit before evidence execution.
 The Rust lane exposed a distinct large-enum lint in the adapter's public drain
 observation. The current correction uses one boxed event only when an event
-selects terminal drain. Normal continue, natural completion, and trace-wait
-events remain unboxed. The affected exact-body checks are refreshed. This
+selects terminal drain. It adds no boxing allocation to normal continue,
+natural-completion, or trace-wait events. The affected exact-body checks are
+refreshed. This
 changed source requires independent re-review and replacement hosted admission.
 
 ## Bounded-domain declaration guard

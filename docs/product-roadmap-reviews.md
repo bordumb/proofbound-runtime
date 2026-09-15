@@ -2633,7 +2633,7 @@ The Rust lane found a second large-enum lint in the public adapter's
 `ObserverObservation`. Its event variant held the 224-byte
 `ActiveTraceEvent` inline while its failure variant carried a small closed
 error. The approved `Option<ActiveTraceEvent>` correction remains sound and
-allocation-free in the normal wait path, but this separate adapter type means
+adds no boxing allocation to the normal wait path, but this separate adapter type means
 exact head `4f66fc4` is not admitted.
 
 The narrow correction boxes only the single event retained when that event
@@ -2643,3 +2643,27 @@ selects terminal drain. Continue and natural-completion events remain inline in
 changed `next_event` body, and a regression requires exactly one
 `Box::new(event)` in the drain-selection path. Independent exact-head re-review
 and replacement hosted admission are required.
+
+## RT-8 terminal-observation lint correction initial re-review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `b2cb4b9bf10398ca5559dc476c492c3bd6d46c0b`
+- **Reviewed head:** `2eec428fd78fe1e65e081e2944c00a69ba078a4c`
+- **Branch:** `codex/rt8-syscall-decoder`
+- **Method:** Complete exact-range static re-review after hosted run
+  `34988148920`. The reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The implementation correction is sound. Boxing the event variant closes the
+public large-enum lint, and the one `Box::new(event)` is reached only after the
+pure protocol selects terminal drain. Continue and natural-completion events
+remain inline. Both affected exact-body guards and the regression that fixes
+the boxed shape and single construction site are current. The run result and
+separate anonymous GitHub rate-limit failure are recorded accurately.
+
+The blocker is documentation precision. Three status summaries describe the
+normal trace or continuing path as allocation-free. The new boxing allocation
+is absent from those paths, but pre-existing process-snapshot and
+image-replacement conversions can allocate there. The correction must say
+that this change adds no boxing allocation to the normal path. This verdict is
+not endorsed. The exact corrected head requires independent re-review.
