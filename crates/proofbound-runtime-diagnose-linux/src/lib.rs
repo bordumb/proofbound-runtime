@@ -3,6 +3,7 @@
 //! Owns the separate effectful Linux diagnostic-observer path.
 
 mod adapter;
+mod mapping;
 
 pub use adapter::{
     AcknowledgedObserver, ActiveObserver, ActiveObserverStep, BoundaryRunningObserver,
@@ -10,6 +11,7 @@ pub use adapter::{
     ObserverAdapterError, ObserverObservation, PreparedObserver, ReadyObserver, SpawnedObserver,
     prepare_observer,
 };
+pub use mapping::{DiagnosticEventMapError, DiagnosticEventMapper};
 pub use proofbound_runtime_linux::{
     ActiveTraceEvent, TraceCapturedOperands, TraceDeadline, TraceObservationError, TraceProcessId,
     TraceSyscallClass, TraceSyscallInvocation,

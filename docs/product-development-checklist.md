@@ -181,7 +181,9 @@ manifest describes the supported tuple.
   profile and observer mechanism.
 - [x] Define closed diagnostic-profile, observation, provenance, and failure
   types without changing production-receipt meaning.
-- [ ] Keep observer implementation out of the production launcher path.
+- [x] Keep observer implementation out of the production launcher path at the
+  source and dependency-graph boundary. Exact released-artifact inspection
+  remains part of the release-binding wave.
 - [x] Put Linux trace-startup code behind an empty-by-default feature selected
   only by the separate diagnostic Linux crate; keep raw calls in `sys.rs`.
 - [x] Keep the pure diagnostic artifact producer out of the production CLI and
@@ -277,6 +279,14 @@ manifest describes the supported tuple.
   exact head `fbd2d66`. Approval-only head `db95947` passed complete hosted run
   `34992273744` and merged unsigned as `4783896`; exact-main run `34997195939`
   passed.
+- [ ] Admit exact trace-to-artifact mapping. The `PBR-OBSERVER-026` source wave
+  preserves process identity, architecture, class, bounded entry operands, and
+  consistent outcomes with contiguous sequence values. It maps no lifecycle
+  event to a syscall, invents no object resolution, and fails closed for an
+  unknown architecture, malformed outcome, invalid exec entry, non-UTF-8
+  version 1 path, artifact inconsistency, or sequence overflow. Source,
+  registered Rust tests, independent checks, and mutation witnesses are
+  implemented; independent review and hosted exact-head admission remain open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.

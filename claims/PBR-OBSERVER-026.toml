@@ -1,0 +1,60 @@
+schema = "proofbound-claim/1"
+id = "PBR-OBSERVER-026"
+title = "Diagnostic trace events map without inventing resolution"
+statement = "For the separate Linux diagnostic event-mapping source API, each complete registered syscall event maps its exact process identity, closed audit architecture, syscall class, bounded entry operands, and consistent nonnegative result or positive Linux error into one diagnostic artifact event; an exec image replacement maps only when it retains a matching execve or execveat entry; mapped events receive contiguous sequence values; lifecycle-only events create no syscall record; every mapped object resolution remains unresolved; socket payload bytes are never introduced; and an unknown architecture, inconsistent result marker, invalid exec invocation, non-UTF-8 version 1 path, artifact inconsistency, or sequence overflow returns a closed error instead of publishing a weakened event."
+public_language = "The separate Linux diagnostic observer has a source-level mapping from complete trace events to non-reusable diagnostic artifact events. The mapping preserves process, architecture, syscall class, bounded entry operands, and outcome, assigns contiguous event sequence values, and does not invent filesystem or network object resolution. Registered Rust tests and an independent exact-source checker cover the closed mapping and fail-closed cases. They do not prove Linux observations, object identity, complete execution, command integration, or released-artifact behavior."
+subject = "rust:proofbound_runtime_diagnose_linux::mapping::DiagnosticEventMapper"
+profile = "ledger"
+tier = 1
+evidence = [
+  "example-test:diagnostic-event-mapping",
+  "independent-check:diagnostic-event-mapping-contract",
+]
+assumptions = [
+  "PBR-DIAGNOSTIC-DECODE-AX-017",
+  "PBR-DIAGNOSTIC-MAP-CHECK-AX-019",
+]
+open_obligations = [
+  "Run the complete source, compilation, unit, and independent-check evidence in hosted exact-head verification before merge.",
+  "Resolve successful filesystem results to kernel-selected identities and denied operands only to stable candidates after bounded drift checks.",
+  "Couple mapping failure to diagnostic drain and explicit incomplete publication in the pbr-diagnose command.",
+  "Run every registered event, malformed outcome, path-encoding, socket-address, exec, and sequence case on both supported native architectures.",
+  "Bind the exact released diagnostic executable and observer mechanism identity before describing this mapper as released.",
+]
+out_of_scope = [
+  "Correctness or completeness of Linux ptrace, syscall numbers, results, captured operands, process identity, or tracee memory.",
+  "Filesystem or socket object resolution, path safety, capability inference, automatic authority generation, or reusable receipt production.",
+  "Command orchestration, output publication, native attack evidence, production execution, or released-artifact behavior.",
+]
+source_roots = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "rust-toolchain.toml",
+  "assumptions/PBR-DIAGNOSTIC-DECODE-AX-017.toml",
+  "assumptions/PBR-DIAGNOSTIC-MAP-CHECK-AX-019.toml",
+  "claims/PBR-OBSERVER-026.toml",
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/diagnostic.rs",
+  "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-diagnose/Cargo.toml",
+  "crates/proofbound-runtime-diagnose/src/artifact.rs",
+  "crates/proofbound-runtime-diagnose/src/lib.rs",
+  "crates/proofbound-runtime-diagnose-linux/Cargo.toml",
+  "crates/proofbound-runtime-diagnose-linux/src/lib.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/mapping.rs",
+  "crates/proofbound-runtime-linux/Cargo.toml",
+  "crates/proofbound-runtime-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+  "docs/adr/0008-separate-ptrace-diagnostic-observer.md",
+  "docs/assurance-plan.md",
+  "docs/product-development-checklist.md",
+  "docs/product-roadmap-2.md",
+  "docs/roadmap-2/rt-08-capability-informed-drafting.md",
+  "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",
+  "proofbound/evidence/diagnostic-event-mapping-contract.toml",
+  "proofbound/evidence/diagnostic-event-mapping.toml",
+  "tools/ci/check_diagnostic_event_mapping.py",
+  "tools/ci/ci.sh",
+  "tools/ci/pre-commit.sh",
+  "tools/ci/test_diagnostic_event_mapping.py",
+]

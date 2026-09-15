@@ -135,6 +135,7 @@ EXPECTED_ADAPTER_LIB = """#![deny(unsafe_code)]
 //! Owns the separate effectful Linux diagnostic-observer path.
 
 mod adapter;
+mod mapping;
 
 pub use adapter::{
     AcknowledgedObserver, ActiveObserver, ActiveObserverStep, BoundaryRunningObserver,
@@ -142,6 +143,7 @@ pub use adapter::{
     ObserverAdapterError, ObserverObservation, PreparedObserver, ReadyObserver, SpawnedObserver,
     prepare_observer,
 };
+pub use mapping::{DiagnosticEventMapError, DiagnosticEventMapper};
 pub use proofbound_runtime_linux::{
     ActiveTraceEvent, TraceCapturedOperands, TraceDeadline, TraceObservationError, TraceProcessId,
     TraceSyscallClass, TraceSyscallInvocation,
@@ -176,6 +178,7 @@ rust-version.workspace = true
 publish = false
 
 [dependencies]
+proofbound-runtime-core.workspace = true
 proofbound-runtime-diagnose.workspace = true
 proofbound-runtime-linux = { workspace = true, features = ["diagnostic-observer"] }
 """
@@ -562,6 +565,7 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
                 "DrainingObserver,InitialObserver,LauncherPausedObserver,ObserverAdapterError,"
                 "ObserverObservation,PreparedObserver,ReadyObserver,SpawnedObserver,"
                 "prepare_observer,};",
+                "pubusemapping::{DiagnosticEventMapError,DiagnosticEventMapper};",
                 "pubuseproofbound_runtime_linux::{ActiveTraceEvent,TraceCapturedOperands,"
                 "TraceDeadline,TraceObservationError,TraceProcessId,TraceSyscallClass,"
                 "TraceSyscallInvocation,};",

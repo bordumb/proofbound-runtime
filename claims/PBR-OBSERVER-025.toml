@@ -18,9 +18,9 @@ assumptions = [
 ]
 open_obligations = [
   "Run the complete source, compilation, unit, and independent-check evidence in hosted exact-head verification before merge.",
-  "Map each captured operand and result into the closed diagnostic artifact event without weakening its provenance or resolution state.",
   "Falsify every registered syscall family, limit, malformed pointer, partial read, page boundary, x32 form, and structure-size case on both supported native architectures.",
   "Resolve successful filesystem results to kernel-selected identities while the tracee remains stopped.",
+  "Couple the separate PBR-OBSERVER-026 artifact mapper to command publication without weakening its fail-closed error path.",
   "Bind the exact released diagnostic executable and observer mechanism identity before describing this decoder as released.",
 ]
 out_of_scope = [

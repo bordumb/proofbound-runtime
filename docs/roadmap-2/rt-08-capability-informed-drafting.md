@@ -44,8 +44,11 @@ single event that selects terminal drain; normal trace waits and continuing
 events receive no new boxing allocation. Independent exact-head re-review
 approved head `fbd2d66`; approval-only head `db95947` passed complete
 exact-head run `34992273744` and merged unsigned as `4783896`. Exact-main run
-`34997195939` passed. Artifact mapping, command integration, the
-native attack corpus, and release binding remain open.
+`34997195939` passed. The following `PBR-OBSERVER-026` wave maps the complete
+registered trace events into closed diagnostic artifact events without
+inventing object resolution. Its source and evidence are implemented and await
+independent review and hosted admission. Object resolution, command integration,
+the native attack corpus, and release binding remain open.
 
 **Primary owner:** Proofbound Runtime
 
@@ -147,6 +150,13 @@ values without making a draft an authority object.
   unsupported registered forms. It captures bounded path and socket-address
   operands before resume, completes partial read-only tracee-memory reads or
   fails, and retains only the `sendto` payload length, never payload bytes.
+- The separate event mapper assigns contiguous sequence values and preserves
+  the process, audit architecture, syscall class, bounded entry operands, and
+  consistent result or Linux error. It emits an exec event only from a retained
+  `execve` or `execveat` entry. Lifecycle-only observations do not become
+  syscall records. Every mapped object remains `unresolved`; an unknown
+  architecture, malformed result, invalid exec entry, non-UTF-8 version 1 path,
+  artifact inconsistency, or sequence overflow fails closed.
 - Automatic candidates require an explicit normalized project or runtime
   scope. System, home, and configured temporary roots remain open review
   items.

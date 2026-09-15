@@ -1,0 +1,49 @@
+schema = "proofbound-evidence-unit/1"
+id = "diagnostic-event-mapping"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-OBSERVER-026"]
+tier = 0
+expected_inventory = [
+  "proofbound_runtime_diagnose_linux::mapping::tests::architecture_and_class_mappings_are_closed",
+  "proofbound_runtime_diagnose_linux::mapping::tests::invalid_path_encoding_fails_closed",
+  "proofbound_runtime_diagnose_linux::mapping::tests::lifecycle_events_do_not_consume_artifact_sequences",
+  "proofbound_runtime_diagnose_linux::mapping::tests::result_mapping_rejects_inconsistent_linux_outcomes",
+  "proofbound_runtime_diagnose_linux::mapping::tests::socket_family_mapping_uses_closed_linux_values",
+  "proofbound_runtime_diagnose_linux::mapping::tests::unresolved_mapping_preserves_bounded_entry_operands",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "rust-toolchain.toml",
+  "assumptions/PBR-DIAGNOSTIC-DECODE-AX-017.toml",
+  "assumptions/PBR-DIAGNOSTIC-MAP-CHECK-AX-019.toml",
+  "claims/PBR-OBSERVER-026.toml",
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/diagnostic.rs",
+  "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-diagnose/Cargo.toml",
+  "crates/proofbound-runtime-diagnose/src/artifact.rs",
+  "crates/proofbound-runtime-diagnose/src/lib.rs",
+  "crates/proofbound-runtime-diagnose-linux/Cargo.toml",
+  "crates/proofbound-runtime-diagnose-linux/src/lib.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/mapping.rs",
+  "crates/proofbound-runtime-linux/Cargo.toml",
+  "crates/proofbound-runtime-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-diagnose-linux"
+manifest = "Cargo.toml"
+targets = ["--lib"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824
