@@ -108,8 +108,12 @@ Every formal, native, and fresh-evidence lane passed, but the Rust lane rejected
 a large private enum. Correction `5d479bd` replaces that private state with
 `Option<ActiveTraceEvent>` without per-event allocation and refreshes both exact
 source guards. Independent re-review approved exact head `b027ddd`; the
-following approval-only status commit and replacement hosted admission remain
-open. Artifact
+approval-only head `4f66fc4` reached replacement run `34988148920`. That run
+passed preflight, formal, both native lanes, and all fresh-evidence lanes except
+one anonymous GitHub rate-limit failure, but Rust lint found a separate large
+public adapter observation enum. The current correction boxes only the terminal
+drain-selection event and leaves the normal trace path allocation-free. Exact
+re-review and replacement hosted admission remain open. Artifact
 mapping, command integration, the native attack corpus, and release binding
 remain open.
 RT-9 is blocked until RT-5 implements the accepted single-service network

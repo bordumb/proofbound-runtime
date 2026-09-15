@@ -66,7 +66,7 @@ def body_sha256(source: str, signature: str) -> str:
 
 
 EXPECTED_LOAD_BEARING_BODIES = {
-    "active-next-event": "8feed0c364401f4506ee0874106d2f0482b16c01a2c07f73b7957f66c6e04d7c",
+    "active-next-event": "f61bba9dcbf6d975378b59c51fa51c14fcdf7c227a7b12cb0dcc5e44b137e3b6",
     "draining-finish": "2af9c106cbc227f9525aeb4e57309bc37b8560b861f76c0c35d0cbcc355aeeb6",
 }
 
@@ -481,6 +481,10 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
         self.assertIn("ActiveObserverStep::Continue", active)
         self.assertIn("ActiveObserverStep::Drain", active)
         self.assertIn("ActiveObserverStep::Complete", active)
+        observation = enum_structure(self.adapter, "ObserverObservation")
+        self.assertIn("Event(Box<ActiveTraceEvent>)", compact(observation))
+        self.assertEqual(active.count("Box::new(event)"), 1)
+        self.assertNotIn("Box::new(event)", implementation(self.adapter, "DrainingObserver"))
         self.assertNotIn("self.trace.clone()", active)
         self.assertNotIn("self.protocol.clone()", active)
 

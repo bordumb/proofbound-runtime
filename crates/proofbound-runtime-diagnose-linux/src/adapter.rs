@@ -295,7 +295,7 @@ impl ActiveObserver {
                     protocol: self.protocol,
                     untracked_processes,
                 },
-                observation: ObserverObservation::Event(event),
+                observation: ObserverObservation::Event(Box::new(event)),
             });
         }
         if directive != ObserverDirective::Continue {
@@ -324,7 +324,7 @@ impl ActiveObserver {
 #[derive(Debug, Eq, PartialEq)]
 pub enum ObserverObservation {
     /// One complete effectful trace event.
-    Event(ActiveTraceEvent),
+    Event(Box<ActiveTraceEvent>),
     /// One trace failure that forced termination and drain.
     Failure(TraceObservationError),
 }

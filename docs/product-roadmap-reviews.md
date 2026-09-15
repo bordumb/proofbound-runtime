@@ -2560,8 +2560,9 @@ private enum and represents the same continue-or-event decision as
 `Option<ActiveTraceEvent>`. It does not allocate each event on the heap. Both
 exact-body checkers pin the corrected next-event, wait-router, and syscall-stop
 bodies, and a source regression rejects restoration of the large enum or a
-boxed event. The focused source-contract tests pass. Independent exact-head
-re-review and replacement hosted admission remain required.
+boxed event in the trace wait path. The focused source-contract tests pass.
+Independent exact-head re-review and replacement hosted admission remain
+required.
 
 ## RT-8 hosted-lint correction initial re-review
 
@@ -2614,3 +2615,31 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 `b027dddcd600170917ceba313b27adb644a06d5a`. The following approval-only commit
 changes no reviewed production, claim, evidence, or checker bytes. Any later
 subject change requires a new exact-head review.
+
+## RT-8 decoder replacement hosted rejection
+
+- **Hosted run:** `34988148920`
+- **Exact head:** `4f66fc40e09ea2caecb7c8896950ab8c9fa02d3b`
+- **Branch:** `codex/rt8-syscall-decoder`
+- **Result:** **REJECTED**
+
+Preflight, the formal lane, both native Linux lanes, and the authority,
+binding, policy, and ledger fresh-evidence lanes passed. The receipt evidence
+lane failed before evidence execution because anonymous GitHub release access
+returned HTTP 403 for rate exhaustion. That external retrieval failure is not
+a decoder finding.
+
+The Rust lane found a second large-enum lint in the public adapter's
+`ObserverObservation`. Its event variant held the 224-byte
+`ActiveTraceEvent` inline while its failure variant carried a small closed
+error. The approved `Option<ActiveTraceEvent>` correction remains sound and
+allocation-free in the normal wait path, but this separate adapter type means
+exact head `4f66fc4` is not admitted.
+
+The narrow correction boxes only the single event retained when that event
+selects terminal drain. Continue and natural-completion events remain inline in
+`ActiveObserverStep`, and the effectful trace wait loop remains
+`Option<ActiveTraceEvent>`. The adapter and aggregate decoder checkers pin the
+changed `next_event` body, and a regression requires exactly one
+`Box::new(event)` in the drain-selection path. Independent exact-head re-review
+and replacement hosted admission are required.

@@ -34,9 +34,15 @@ closed. Independently approved source `5d82dcd` and approval-only head
 fresh-evidence lanes passed, but the Rust lane rejected a large private enum.
 Correction `5d479bd` uses the existing optional event state directly, adds no
 per-event allocation, and refreshes the exact-body guards. Independent
-re-review approved exact head `b027ddd`; the following approval-only status
-commit and replacement hosted admission remain open. Artifact mapping,
-command integration, the native attack corpus,
+re-review approved exact head `b027ddd`; approval-only head `4f66fc4` then
+reached replacement run `34988148920`. Preflight, formal, both native lanes,
+and all non-rate-limited fresh-evidence lanes passed. The receipt lane was
+blocked by anonymous GitHub API rate exhaustion, and Rust lint found a separate
+large public adapter observation enum. The current correction boxes only the
+single event that selects terminal drain; normal trace waits and continuing
+events remain allocation-free. Independent exact-head re-review and
+replacement hosted admission remain open. Artifact mapping, command
+integration, the native attack corpus,
 and release binding remain open.
 
 **Primary owner:** Proofbound Runtime

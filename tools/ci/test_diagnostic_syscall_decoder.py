@@ -49,7 +49,7 @@ def body_sha256(source: str, signature: str) -> str:
 
 EXPECTED_LOAD_BEARING_BODIES = {
     "adapter-release": "d065697972422e21df3fe679539ec72bb4094c49e21577a24cc12230cb8f8a6e",
-    "adapter-next-event": "8feed0c364401f4506ee0874106d2f0482b16c01a2c07f73b7957f66c6e04d7c",
+    "adapter-next-event": "f61bba9dcbf6d975378b59c51fa51c14fcdf7c227a7b12cb0dcc5e44b137e3b6",
     "aarch64-table": "45fe041bd934a083c660e316a30c289c5d2ce3d1b3dcf1d2ce430cd30b0b9c11",
     "capture": "e03c8d8f690304b9865ea829f026da17babea4c3175f8aff81b0a8c472a1dd48",
     "capture-path-limit-accessor": "e21f1d9a95771bd5e2a3c7d36ed6bfe6879d2d2c9ab17433a40cf5e15e94ce5a",
