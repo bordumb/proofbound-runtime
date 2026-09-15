@@ -298,7 +298,8 @@ class DiagnosticDraftingContractTests(unittest.TestCase):
 
         for missing_field in ["path", "symlink_hops"]:
             incomplete_kernel_path = json.loads(json.dumps(diagnostic))
-            incomplete_kernel_path["events"][0]["outcome"] = {"returned": 3}
+            incomplete_kernel_path["events"][0]["error"] = None
+            incomplete_kernel_path["events"][0]["result"] = 3
             incomplete_kernel_path["events"][0]["resolution"] = "kernel-selected"
             incomplete_kernel_path["events"][0]["object_before"] = None
             incomplete_kernel_path["events"][0]["operands"][missing_field] = None

@@ -1,13 +1,13 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T05:47:22+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-15T05:49:36+01:00 (Europe/London, BST)
 - **Runtime baseline:** RT-8 diagnostic-contract foundation merge `edf87bb`;
   exact-main Verify run `34929775221` is in progress, while the complete
   exact-head Verify run `34927183354` passed before merge
 - **Active implementation wave:** the pure RT-8 artifact producer on stacked
-  branch `codex/rt8-observer`; the third review correction is source-checked
-  and awaits an independent exact-head re-review
+  branch `codex/rt8-observer`; a fourth, falsifier-only review correction is
+  source-checked and awaits an independent exact-head re-review
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the

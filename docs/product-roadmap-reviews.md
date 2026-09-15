@@ -1431,3 +1431,27 @@ It found three remaining blocking boundaries:
 This verdict is not endorsed. A separate correction must synchronize the
 locked graph and add discriminating falsifiers for all three boundaries before
 another exact-head review.
+
+## RT-8 diagnostic artifact producer third correction re-review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `cb52c5115d73c72aebad51c4c0f4a301068d8479`
+- **Reviewed head:** `99ee74cde4dde465119cd255be95d1ef898f19e1`
+- **Branch:** `codex/rt8-observer`
+- **Method:** Exact-range static re-review. The reviewer changed no files and
+  ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The re-review confirmed that the locked `serde` dependency, all three natural
+exact-capacity cases, both Rust reusable-path resolution branches, both schema
+structures, and the nested configured-home exclusion are corrected.
+
+One falsifier remained non-discriminating. The new kernel-selected schema
+mutation added an unknown `outcome` field and retained the stable-candidate
+`error` and `result` values. It therefore failed for unrelated closed-schema
+and outcome reasons before testing the missing path or symlink evidence. The
+mutation must use the declared wire fields for a successful kernel outcome
+before removing each target field independently.
+
+This verdict is not endorsed. The falsifier correction requires a separate
+commit and exact-head re-review.
