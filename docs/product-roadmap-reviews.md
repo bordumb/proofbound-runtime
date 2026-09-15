@@ -1216,3 +1216,34 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 `cf55085378d5d71ec12b1ec4b471217cc7331900`. This approval-only envelope adds
 no reviewed production, schema, specification, claim, or evidence bytes. Any
 later change to those bytes requires a new exact-head review.
+
+## RT-7 registry-publication approval after workflow-count correction
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `4a0cfdb19d436f05b1c0391e0d5050b9eb0fd584`
+- **Reviewed head:** `9422165568fae0349a3d086fdfab8545d7f3b18a`
+- **Branch:** `codex/rt7-registry-publication`
+- **Method:** Static inspection only; no builds, preflight wrapper, or tests
+  were run by the reviewer.
+- **Findings:** No P0, P1, or P2 findings.
+- **Verdict:** **APPROVE**
+
+Hosted preflight showed that the two new registry Rust publisher jobs added two
+uses of the pinned Rust toolchain action while the global workflow invariant
+still expected nine. The reviewer confirmed that the direct child of the prior
+approval envelope changes only `tools/ci/test_required_workflow.py`, increasing
+that exact count from 9 to 11. The exact branch range contains precisely two
+new uses, and all 11 uses retain the same exact 40-character action pin.
+
+The only other post-subject change is the accurate approval record above. No
+production, workflow, schema, specification, claim, assumption, or evidence
+bytes changed after `cf55085378d5d71ec12b1ec4b471217cc7331900`.
+All prior conclusions about default-off publication, exact-source and
+provenance ordering, protected environments, registry selection, credential
+isolation, redirect and endpoint closure, manifest and schema closure,
+exact-byte observation, and residual assumptions remain valid.
+
+As maintainer, I endorse this independent `APPROVE` verdict for exact head
+`9422165568fae0349a3d086fdfab8545d7f3b18a`. This approval-only envelope adds
+no reviewed production, workflow, schema, specification, claim, assumption,
+evidence, or test bytes.
