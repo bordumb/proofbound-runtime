@@ -37,6 +37,14 @@ The production `pbr` and `pbr-native-launcher` executables contain no observer
 entry point and do not depend on the diagnostic crate. A source-closure check
 enforces this separation.
 
+The effectful observer has its own `proofbound-runtime-diagnose-linux` crate.
+It alone enables the `diagnostic-observer` feature on the Linux boundary crate.
+The production CLI uses the default empty feature set. Raw ptrace, wait, and
+signal calls remain in the Linux syscall module, while the safe feature-gated
+surface uses non-copy typestates. This split keeps raw Linux calls under the
+existing unsafe-code boundary without adding an observer entry point to either
+production executable.
+
 The diagnostic supervisor creates and attaches to the launcher process before
 the launch protocol can release target code. After it receives the launcher's
 boundary acknowledgement, it stops the launcher and enables the exact trace

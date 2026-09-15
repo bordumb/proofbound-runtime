@@ -1,0 +1,56 @@
+schema = "proofbound-claim/1"
+id = "PBR-OBSERVER-021"
+title = "Diagnostic trace startup keeps target release behind exact setup"
+statement = "For the feature-gated Linux diagnostic trace-startup source API, a prepared command retains every borrowed inherited descriptor through its single consuming spawn; each non-copy state retains the exact spawned child; an active trace value cannot be constructed until that child reaches its exact exec and self-stop states, the production-boundary acknowledgement matches the expected execution, policy, and cgroup identity, the exact closed process-tree ptrace options are installed, the identity-bound exec release is sent, and syscall-stop observation is requested in order; and dropping or failing any spawned state attempts to kill and reap that exact child without authorizing an unobserved fallback."
+public_language = "Runtime has a separate feature-gated Linux diagnostic trace-startup API. Its non-copy typestates retain one exact child and order initial trace ownership, the trusted launcher pause, production-boundary acknowledgement, exact trace options, identity-bound release, and syscall-stop activation. Abandoned and failed setup states attempt to kill and reap that child. Registered tests and an independent source checker cover this bounded source contract and production dependency separation. They do not prove Linux ptrace behavior, successful cleanup, complete process-tree cleanup, syscall decoding, tracee-memory reads, or a complete diagnostic execution."
+subject = "rust:proofbound_runtime_linux::trace"
+profile = "ledger"
+tier = 1
+evidence = [
+  "independent-check:diagnostic-trace-startup-contract",
+  "example-test:diagnostic-trace-startup",
+]
+assumptions = [
+  "PBR-DIAGNOSTIC-CONTRACT-AX-015",
+  "PBR-TOOLCHAIN-AX-003",
+]
+open_obligations = [
+  "Run the complete trace-startup evidence in hosted exact-head verification before merge.",
+  "Exercise initial exec stop, launcher self-stop, acknowledgement stop, option installation, release, timeout, tracer death, and cleanup on both supported native architectures.",
+  "Connect the startup typestates to the pure observer protocol in the separate diagnostic adapter.",
+  "Implement the bounded process-tree event loop, architecture-qualified syscall decoding, tracee-memory reads, and exact tree-drain acknowledgement.",
+  "Bind the separate diagnostic executable bytes before describing the observer as released.",
+]
+out_of_scope = [
+  "Correctness of Linux ptrace, waitpid, signal, process termination, procfs, or seccomp behavior.",
+  "A claim that the current source completes a diagnostic execution or observes one syscall.",
+  "Process-tree completeness, tracee cleanup, syscall decoding, tracee-memory safety, or tree-drain truth.",
+  "Production execution, production receipt construction, or production receipt acceptance.",
+]
+source_roots = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "assumptions/PBR-DIAGNOSTIC-CONTRACT-AX-015.toml",
+  "assumptions/PBR-TOOLCHAIN-AX-003.toml",
+  "claims/PBR-OBSERVER-021.toml",
+  "crates/proofbound-runtime-cli/Cargo.toml",
+  "crates/proofbound-runtime-diagnose-linux/Cargo.toml",
+  "crates/proofbound-runtime-diagnose-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/Cargo.toml",
+  "crates/proofbound-runtime-linux/src/bin/pbr-native-launcher.rs",
+  "crates/proofbound-runtime-linux/src/launcher.rs",
+  "crates/proofbound-runtime-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+  "docs/adr/0008-separate-ptrace-diagnostic-observer.md",
+  "docs/assurance-plan.md",
+  "docs/product-development-checklist.md",
+  "docs/roadmap-2/rt-08-capability-informed-drafting.md",
+  "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",
+  "proofbound/evidence/diagnostic-trace-startup-contract.toml",
+  "proofbound/evidence/diagnostic-trace-startup.toml",
+  "tools/ci/check_diagnostic_trace_startup.py",
+  "tools/ci/ci.sh",
+  "tools/ci/pre-commit.sh",
+  "tools/ci/test_diagnostic_trace_startup.py",
+]

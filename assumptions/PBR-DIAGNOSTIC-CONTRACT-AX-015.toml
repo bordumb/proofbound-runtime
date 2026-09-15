@@ -4,8 +4,13 @@ statement = "The identified Python interpreter, JSON implementation, regular-exp
 category = "compiler-tcb"
 owner = "Proofbound Runtime release maintainer"
 rationale = "The independent contract checkers parse schemas and fixtures, compare canonical JSON, and inspect Rust, manifest, and assurance source with Python string and regular-expression operations. This repository does not prove that Python behavior."
-scope = "Only the source-level schema, fixture, production-separation, consumer-contract, producer-check, and observer-protocol-check interpretation of PBR-DRAFT-017, PBR-DRAFT-019, and PBR-OBSERVER-020. It does not cover a live observer or diagnostic execution."
-affected_claims = ["PBR-DRAFT-017", "PBR-DRAFT-019", "PBR-OBSERVER-020"]
+scope = "Only the source-level schema, fixture, production-separation, consumer-contract, producer-check, observer-protocol-check, and trace-startup-check interpretation of PBR-DRAFT-017, PBR-DRAFT-019, PBR-OBSERVER-020, and PBR-OBSERVER-021. It does not cover a live observer or diagnostic execution."
+affected_claims = [
+  "PBR-DRAFT-017",
+  "PBR-DRAFT-019",
+  "PBR-OBSERVER-020",
+  "PBR-OBSERVER-021",
+]
 review_evidence = [
   "schemas/diagnostic-receipt-v1.schema.json",
   "schemas/plan-draft-v1.schema.json",
@@ -17,6 +22,8 @@ review_evidence = [
   "tools/ci/test_diagnostic_artifact_producer.py",
   "tools/ci/check_diagnostic_observer_protocol.py",
   "tools/ci/test_diagnostic_observer_protocol.py",
+  "tools/ci/check_diagnostic_trace_startup.py",
+  "tools/ci/test_diagnostic_trace_startup.py",
 ]
 discharge_plan = "Pin the interpreter used by release evidence and retain this premise after exact source and artifact binding."
 source_citation = "docs/specs/0015_diagnostic_execution_and_plan_drafting.md#9-evidence-meaning"

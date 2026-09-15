@@ -1,0 +1,44 @@
+schema = "proofbound-evidence-unit/1"
+id = "diagnostic-trace-startup-contract"
+adapter = "independent-check"
+kind = "independent-check"
+claims = ["PBR-OBSERVER-021"]
+tier = 0
+expected_inventory = [
+  "diagnostic-trace-startup-fail-closed-surface",
+  "diagnostic-trace-startup-feature-isolation",
+  "diagnostic-trace-startup-raw-call-confinement",
+  "diagnostic-trace-startup-release-order",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "claims/PBR-OBSERVER-021.toml",
+  "crates/proofbound-runtime-cli/Cargo.toml",
+  "crates/proofbound-runtime-diagnose-linux/Cargo.toml",
+  "crates/proofbound-runtime-diagnose-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/Cargo.toml",
+  "crates/proofbound-runtime-linux/src/bin/pbr-native-launcher.rs",
+  "crates/proofbound-runtime-linux/src/launcher.rs",
+  "crates/proofbound-runtime-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+  "tools/ci/check_diagnostic_trace_startup.py",
+  "tools/ci/test_diagnostic_trace_startup.py",
+]
+outputs = []
+environment_allowlist = ["PATH"]
+
+[operation]
+type = "independent-check"
+checker = "tools/ci/check_diagnostic_trace_startup.py"
+arguments = []
+paths = [
+  "crates/proofbound-runtime-diagnose-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+]
+
+[resource_budget]
+time_seconds = 30
+disk_bytes = 134217728
+memory_bytes = 536870912

@@ -1,0 +1,12 @@
+[package]
+name = "proofbound-runtime-diagnose-linux"
+description = "Separate Linux diagnostic observer for Proofbound Runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+proofbound-runtime-linux = { workspace = true, features = ["diagnostic-observer"] }

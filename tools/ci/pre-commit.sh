@@ -20,6 +20,7 @@ python3 -m unittest tools.ci.test_plan_scaffold_contract
 python3 -m unittest tools.ci.test_diagnostic_drafting_contract
 python3 -m unittest tools.ci.test_diagnostic_artifact_producer
 python3 -m unittest tools.ci.test_diagnostic_observer_protocol
+python3 -m unittest tools.ci.test_diagnostic_trace_startup
 python3 -m unittest tools.ci.test_sdk_contract tools.ci.test_sdk_packages
 python3 -m unittest tools.ci.test_registry_packages
 python3 tools/release/build_verifier_package.py --check

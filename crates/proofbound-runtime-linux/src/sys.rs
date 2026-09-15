@@ -13,6 +13,25 @@ const LINUX_CAPABILITY_VERSION_3: u32 = 0x2008_0522;
 const PR_CAP_AMBIENT: libc::c_int = 47;
 const PR_CAP_AMBIENT_IS_SET: libc::c_ulong = 1;
 const PR_CAP_AMBIENT_CLEAR_ALL: libc::c_ulong = 4;
+#[cfg(feature = "diagnostic-observer")]
+const PTRACE_O_TRACESYSGOOD: libc::c_ulong = 0x0000_0001;
+#[cfg(feature = "diagnostic-observer")]
+const PTRACE_O_TRACEFORK: libc::c_ulong = 0x0000_0002;
+#[cfg(feature = "diagnostic-observer")]
+const PTRACE_O_TRACEVFORK: libc::c_ulong = 0x0000_0004;
+#[cfg(feature = "diagnostic-observer")]
+const PTRACE_O_TRACECLONE: libc::c_ulong = 0x0000_0008;
+#[cfg(feature = "diagnostic-observer")]
+const PTRACE_O_TRACEEXEC: libc::c_ulong = 0x0000_0010;
+#[cfg(feature = "diagnostic-observer")]
+const PTRACE_O_EXITKILL: libc::c_ulong = 0x0010_0000;
+#[cfg(feature = "diagnostic-observer")]
+const REQUIRED_DIAGNOSTIC_TRACE_OPTIONS: libc::c_ulong = PTRACE_O_TRACESYSGOOD
+    | PTRACE_O_TRACEFORK
+    | PTRACE_O_TRACEVFORK
+    | PTRACE_O_TRACECLONE
+    | PTRACE_O_TRACEEXEC
+    | PTRACE_O_EXITKILL;
 pub(crate) const RESOLVE_NO_MAGICLINKS: u64 = 0x02;
 pub(crate) const RESOLVE_NO_SYMLINKS: u64 = 0x04;
 pub(crate) const RESOLVE_BENEATH: u64 = 0x08;
@@ -392,6 +411,154 @@ pub(crate) fn inherit_descriptors_for_exec(command: &mut Command, descriptors: V
             }
             Ok(())
         });
+    }
+}
+
+#[cfg(feature = "diagnostic-observer")]
+pub(crate) fn prepare_traced_exec(command: &mut Command, descriptors: Vec<RawFd>) {
+    use std::os::unix::process::CommandExt as _;
+
+    // SAFETY: the closure runs after fork and before exec. It calls only
+    // fcntl and ptrace, performs no allocation, and returns an io::Error
+    // created from errno. PTRACE_TRACEME affects only this future child.
+    unsafe {
+        command.pre_exec(move || {
+            for descriptor in &descriptors {
+                if libc::fcntl(*descriptor, libc::F_SETFD, 0) < 0 {
+                    return Err(io::Error::last_os_error());
+                }
+            }
+            if libc::ptrace(
+                libc::PTRACE_TRACEME,
+                0,
+                core::ptr::null_mut::<libc::c_void>(),
+                core::ptr::null_mut::<libc::c_void>(),
+            ) < 0
+            {
+                return Err(io::Error::last_os_error());
+            }
+            Ok(())
+        });
+    }
+}
+
+#[cfg(feature = "diagnostic-observer")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum TraceWaitStatus {
+    Stopped { signal: i32, event: u32 },
+    Exited { code: i32 },
+    Signaled { signal: i32 },
+}
+
+#[cfg(feature = "diagnostic-observer")]
+pub(crate) fn trace_wait_nonblocking(process_id: u32) -> io::Result<Option<TraceWaitStatus>> {
+    const WAIT_ALL_TRACED: libc::c_int = 0x4000_0000;
+
+    let process_id =
+        i32::try_from(process_id).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    let mut status = 0;
+    // SAFETY: `status` is valid writable storage and waitpid is scoped to the
+    // exact traced child. The flags request stopped tracees without blocking.
+    let result = unsafe {
+        libc::waitpid(
+            process_id,
+            &raw mut status,
+            libc::WUNTRACED | libc::WNOHANG | WAIT_ALL_TRACED,
+        )
+    };
+    if result < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    if result == 0 {
+        return Ok(None);
+    }
+    if result != process_id {
+        return Err(io::Error::other("wait returned an unexpected process"));
+    }
+    if libc::WIFSTOPPED(status) {
+        let status_bits =
+            u32::try_from(status).map_err(|_| io::Error::from(io::ErrorKind::InvalidData))?;
+        return Ok(Some(TraceWaitStatus::Stopped {
+            signal: libc::WSTOPSIG(status),
+            event: (status_bits >> 16) & 0xffff,
+        }));
+    }
+    if libc::WIFEXITED(status) {
+        return Ok(Some(TraceWaitStatus::Exited {
+            code: libc::WEXITSTATUS(status),
+        }));
+    }
+    if libc::WIFSIGNALED(status) {
+        return Ok(Some(TraceWaitStatus::Signaled {
+            signal: libc::WTERMSIG(status),
+        }));
+    }
+    Err(io::Error::other("unexpected traced wait status"))
+}
+
+#[cfg(feature = "diagnostic-observer")]
+pub(crate) fn trace_continue(process_id: u32) -> io::Result<()> {
+    ptrace_resume(libc::PTRACE_CONT, process_id)
+}
+
+#[cfg(feature = "diagnostic-observer")]
+pub(crate) fn trace_syscall(process_id: u32) -> io::Result<()> {
+    ptrace_resume(libc::PTRACE_SYSCALL, process_id)
+}
+
+#[cfg(feature = "diagnostic-observer")]
+fn ptrace_resume(request: libc::c_uint, process_id: u32) -> io::Result<()> {
+    let process_id =
+        i32::try_from(process_id).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    // SAFETY: ptrace receives one traced process ID. Null address and data
+    // request continuation without changing registers or injecting a signal.
+    let result = unsafe {
+        libc::ptrace(
+            request,
+            process_id,
+            core::ptr::null_mut::<libc::c_void>(),
+            core::ptr::null_mut::<libc::c_void>(),
+        )
+    };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+#[cfg(feature = "diagnostic-observer")]
+pub(crate) fn trace_stop(process_id: u32) -> io::Result<()> {
+    let process_id =
+        i32::try_from(process_id).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    // SAFETY: kill receives only a process ID and SIGSTOP. The trace adapter
+    // consumes this exact stop without delivering it to target code.
+    let result = unsafe { libc::kill(process_id, libc::SIGSTOP) };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+#[cfg(feature = "diagnostic-observer")]
+pub(crate) fn install_diagnostic_trace_options(process_id: u32) -> io::Result<()> {
+    let process_id =
+        i32::try_from(process_id).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    // SAFETY: ptrace receives one stopped traced process ID, a null address,
+    // and the exact closed option bit set encoded in the data word.
+    let result = unsafe {
+        libc::ptrace(
+            libc::PTRACE_SETOPTIONS,
+            process_id,
+            core::ptr::null_mut::<libc::c_void>(),
+            REQUIRED_DIAGNOSTIC_TRACE_OPTIONS as usize as *mut libc::c_void,
+        )
+    };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
     }
 }
 

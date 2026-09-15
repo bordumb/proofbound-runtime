@@ -28,6 +28,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-DRAFT-017` | Tier 1 bounded contract and source-level non-reuse checks | Closed diagnostic vocabulary and schemas are registered, and verifier, composer, and acceptor paths reject diagnostic receipt reuse. The live observer remains open. |
 | `PBR-DRAFT-019` | Tier 1 bounded producer contract independently reviewed and admitted on exact Runtime main | The pure diagnostic artifact producer preserves non-reuse, provenance, explicit gaps, and mandatory human authority choices. It does not claim live observer coverage. |
 | `PBR-OBSERVER-020` | Tier 1 pure observer-protocol contract independently reviewed and admitted on exact Runtime main | The typed state machine orders diagnostic release, fixes exact process-tree trace options, bounds retained process and event state, and requires termination and explicit gaps after release failures. It does not claim that Linux observation is implemented. |
+| `PBR-OBSERVER-021` | Tier 1 trace-startup source contract; hosted admission pending | A separate feature-gated Linux API uses non-copy typestates to order initial trace ownership, launcher pause, exact boundary identity, exact options, release, and syscall-stop activation. Native ptrace behavior and complete observation remain open. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -432,6 +433,41 @@ publish only an incomplete diagnostic result after drain. This claim does not
 establish correctness of ptrace, wait handling, syscall decoding, tracee-memory
 reads, process termination, the tree-empty acknowledgement, or the future Linux
 adapter.
+
+## PBR-OBSERVER-021
+
+The current subject is the feature-gated Linux trace-startup API. The
+production CLI does not enable the feature or depend on the separate Linux
+diagnostic crate. Raw ptrace, wait, and signal calls remain confined to the
+existing Linux syscall module. The public safe layer exposes non-copy
+typestates for the prepared child, exact initial exec stop, trusted launcher
+self-stop, boundary-running state, identity-checked acknowledgement stop,
+installed exact options, and active syscall-stop trace. The prepared command
+retains every borrowed inherited descriptor through one consuming spawn, so a
+descriptor number cannot be deliberately closed and reused between preparation
+and spawn through this safe API. Every later state owns that exact child. Its
+internal guard attempts to kill and reap the child when a transition fails or
+the caller abandons a state.
+
+The bounded evidence path checks that:
+
+1. only the separate diagnostic Linux crate selects the observer feature;
+2. raw calls and `unsafe` blocks remain confined to the Linux syscall module;
+3. acknowledgement identity is checked before the launcher is stopped;
+4. the exact closed option set is installed before a release can be sent;
+5. syscall-stop observation is requested before `ActiveTrace` is constructed;
+   and
+6. the prepared command has one consuming spawn and retains the lifetime of
+   every inherited descriptor through it; and
+7. every spawned state retains the same exact child, and abandonment or a
+   transition error invokes kill and wait on it; and
+8. invalid descriptors, process identifiers, deadlines, stops, exits,
+   identities, and operating-system results map to closed errors.
+
+This is a source-level startup claim. It does not establish Linux ptrace
+correctness, tracer-death behavior, successful process cleanup, process-tree coverage, syscall
+decoding, tracee-memory reads, or a complete diagnostic execution. Those
+properties require the next adapter, native attack, and release-binding waves.
 
 ## Bounded-domain declaration guard
 

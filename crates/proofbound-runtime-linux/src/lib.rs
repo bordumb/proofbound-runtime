@@ -13,6 +13,8 @@ pub mod probe;
 pub mod resolve;
 pub mod seccomp;
 pub mod supervisor;
+#[cfg(feature = "diagnostic-observer")]
+pub mod trace;
 
 #[cfg(target_os = "linux")]
 #[allow(unsafe_code)]
@@ -52,4 +54,10 @@ pub use seccomp::{
 pub use supervisor::{
     CapturedStream, LauncherBootstrap, SupervisedExecution, SupervisorError, SupervisorTimings,
     parse_launcher_bootstrap, supervise_launcher,
+};
+#[cfg(feature = "diagnostic-observer")]
+pub use trace::{
+    AcknowledgedTraceStop, ActiveTrace, BoundaryRunning, InitialExecStop, LauncherPause,
+    PreparedTraceCommand, SpawnedTrace, TraceDeadline, TraceProcessId, TraceReady,
+    TraceStartupError, prepare_traced_launcher,
 };

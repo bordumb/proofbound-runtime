@@ -92,6 +92,18 @@ observed overflow or unknown process is not added to the bounded retained
 ledger. Its existence invalidates any earlier tree-drain acknowledgement and
 blocks publication until the adapter confirms the tree is empty again.
 
+The Linux implementation keeps its effectful observer in a separate crate.
+That crate alone enables the diagnostic observer feature on the Linux boundary
+crate. The production CLI uses the default empty feature set. The safe startup
+API uses non-copy typestates and can construct an active trace only after the
+exact initial exec stop, trusted launcher pause, matching boundary identity,
+closed ptrace option set, identity-bound release, and syscall-stop activation
+occur in order. Its prepared command retains every borrowed inherited
+descriptor through one consuming spawn. Every later state retains that exact
+child and has a guard that attempts to kill and reap it when abandoned. This
+source property does not prove the corresponding Linux effects, successful
+cleanup, or complete process-tree cleanup.
+
 ## 4. Observer contract
 
 The first observer mechanism identity is `linux-ptrace-syscall-v1`. It uses
