@@ -98,11 +98,19 @@ crate. The production CLI uses the default empty feature set. The safe startup
 API uses non-copy typestates and can construct an active trace only after the
 exact initial exec stop, trusted launcher pause, matching boundary identity,
 closed ptrace option set, identity-bound release, and syscall-stop activation
-occur in order. Its prepared command retains every borrowed inherited
-descriptor through one consuming spawn. Every later state retains that exact
-child and has a guard that attempts to kill and reap it when abandoned. This
-source property does not prove the corresponding Linux effects, successful
-cleanup, or complete process-tree cleanup.
+occur in order. Preparation accepts one identified launcher file, revalidates
+it during preparation and immediately before spawn, executes it through its
+retained descriptor, and creates the launcher
+command and private channel as one session. The session retains the exact
+install request, both channel ends, the launcher descriptor, and every borrowed
+inherited descriptor through one consuming spawn. After
+spawn, every state moves the same private child, process identity, supervisor
+channel, and request. It receives and verifies the boundary acknowledgement
+internally and sends the release through that same channel. No safe transition
+accepts a caller-supplied acknowledgement, expected identity, or release
+channel. The child guard attempts to kill and reap the child when a state is
+abandoned. This source property does not prove the corresponding Linux effects,
+successful cleanup, or complete process-tree cleanup.
 
 ## 4. Observer contract
 

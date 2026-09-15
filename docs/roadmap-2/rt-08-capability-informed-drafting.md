@@ -7,8 +7,10 @@ Exact-main Verify run `34946613122` passed. The identity-bound launcher
 exec-release prerequisite for race-free trace setup merged as `3557cc9` after
 exact-head hosted verification; exact-main run `34956564102` is in progress.
 A separate feature-gated Linux crate and non-copy trace-startup typestates are
-replayed on that dependency. The live event loop, command integration, native
-attack corpus, and release binding remain open.
+replayed on that dependency. It retains the earlier correction that binds its
+identified launcher, channel, identity-bound request, acknowledgement, and
+release into one private session. The live event loop, command integration,
+native attack corpus, and release binding remain open.
 
 **Primary owner:** Proofbound Runtime
 
@@ -77,6 +79,11 @@ values without making a draft an authority object.
 - Only the separate Linux diagnostic crate enables the observer feature. The
   production CLI retains the Linux boundary crate's empty default feature set,
   and raw ptrace calls remain in the existing syscall module.
+- The trace-startup session revalidates and retains one identified launcher,
+  creates and retains one launcher channel and exact install request, receives
+  the matching acknowledgement internally, and sends the identity-bound
+  release through that same channel. Public transitions do not accept
+  substitute commands, protocol values, or channels.
 - Automatic candidates require an explicit normalized project or runtime
   scope. System, home, and configured temporary roots remain open review
   items.

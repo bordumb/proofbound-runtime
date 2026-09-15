@@ -6,7 +6,12 @@ use std::os::fd::BorrowedFd;
 use std::process::{Child, Command};
 use std::time::{Duration, Instant};
 
-use crate::{BoundaryInstalled, ExecRelease, LauncherChannel, LauncherIdentity, LauncherMessage};
+use proofbound_runtime_core::ArtifactRole;
+
+use crate::{
+    Architecture, ExecRelease, InstallRequest, LauncherChannel, LauncherError, LauncherMessage,
+    ResolvedFile,
+};
 
 const TRACE_POLL_INTERVAL: Duration = Duration::from_millis(1);
 const SIGNAL_STOP: i32 = 19;
@@ -48,7 +53,6 @@ impl TraceDeadline {
             .ok_or(TraceStartupError::DeadlineInvalid)
     }
 
-    #[cfg(target_os = "linux")]
     fn expired(self) -> bool {
         Instant::now() >= self.0
     }
@@ -58,51 +62,109 @@ impl TraceDeadline {
 #[derive(Debug)]
 pub struct PreparedTraceCommand<'descriptor> {
     command: Command,
+    launcher: &'descriptor ResolvedFile,
+    supervisor_channel: LauncherChannel,
+    launcher_channel: LauncherChannel,
+    request: InstallRequest,
     _descriptors: Vec<BorrowedFd<'descriptor>>,
 }
 
 impl PreparedTraceCommand<'_> {
     /// Spawns exactly one child whose first exec requests tracing.
     pub fn spawn(mut self) -> Result<SpawnedTrace, TraceStartupError> {
+        self.launcher
+            .revalidate_identity()
+            .map_err(|_| TraceStartupError::LauncherIdentityInvalid)?;
         let child = self
             .command
             .spawn()
             .map_err(|_| TraceStartupError::SpawnFailed)?;
         let child = TraceChild(child);
         let process = TraceProcessId::new(child.0.id())?;
-        Ok(SpawnedTrace { child, process })
+        drop(self.launcher_channel);
+        Ok(SpawnedTrace {
+            session: TraceSession {
+                child,
+                process,
+                channel: self.supervisor_channel,
+                request: self.request,
+            },
+        })
     }
 }
 
-/// Prepares inherited descriptors and `PTRACE_TRACEME` for one child exec.
+/// Prepares one exact launcher session whose first exec requests tracing.
 pub fn prepare_traced_launcher<'descriptor>(
-    command: Command,
+    launcher: &'descriptor ResolvedFile,
+    request: InstallRequest,
     inherited_descriptors: &[BorrowedFd<'descriptor>],
+    architecture: Architecture,
+    landlock_abi: NonZeroU32,
 ) -> Result<PreparedTraceCommand<'descriptor>, TraceStartupError> {
     #[cfg(target_os = "linux")]
     {
         use std::os::fd::AsRawFd as _;
+        use std::process::Stdio;
 
-        let mut command = command;
+        if launcher.identity().role() != ArtifactRole::LauncherBinary
+            || launcher.identity().mode().get() & 0o111 == 0
+        {
+            return Err(TraceStartupError::LauncherIdentityInvalid);
+        }
+        launcher
+            .revalidate_identity()
+            .map_err(|_| TraceStartupError::LauncherIdentityInvalid)?;
+        crate::supervisor::validate_descriptor_set(&request, inherited_descriptors)
+            .map_err(|_| TraceStartupError::DescriptorSetInvalid)?;
+        let launcher_fd = launcher.as_fd().as_raw_fd();
+        if launcher_fd < 3 {
+            return Err(TraceStartupError::DescriptorSetInvalid);
+        }
+        let (supervisor_channel, launcher_channel) =
+            LauncherChannel::pair().map_err(|_| TraceStartupError::ChannelCreationFailed)?;
+        let supervisor_channel_fd = supervisor_channel.as_fd().as_raw_fd();
+        let launcher_channel_fd = launcher_channel.as_fd().as_raw_fd();
+        if supervisor_channel_fd < 3 || launcher_channel_fd < 3 {
+            return Err(TraceStartupError::DescriptorSetInvalid);
+        }
+        let mut command = Command::new(format!("/proc/self/fd/{launcher_fd}"));
+        command
+            .args(crate::supervisor::bootstrap_arguments(
+                launcher_channel_fd,
+                request.identity(),
+                architecture,
+                landlock_abi,
+            ))
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
         let mut descriptors = inherited_descriptors
             .iter()
             .map(|descriptor| descriptor.as_raw_fd())
             .collect::<Vec<_>>();
-        descriptors.sort_unstable();
-        if descriptors.iter().any(|descriptor| *descriptor < 3)
-            || descriptors.windows(2).any(|pair| pair[0] == pair[1])
-        {
-            return Err(TraceStartupError::DescriptorSetInvalid);
-        }
+        descriptors.push(launcher_fd);
+        descriptors.push(launcher_channel_fd);
         crate::sys::prepare_traced_exec(&mut command, descriptors);
+        let mut retained_descriptors = inherited_descriptors.to_vec();
+        retained_descriptors.push(launcher.as_fd());
         Ok(PreparedTraceCommand {
             command,
-            _descriptors: inherited_descriptors.to_vec(),
+            launcher,
+            supervisor_channel,
+            launcher_channel,
+            request,
+            _descriptors: retained_descriptors,
         })
     }
     #[cfg(not(target_os = "linux"))]
     {
-        let _ = (command, inherited_descriptors);
+        let _ = (
+            launcher,
+            request,
+            inherited_descriptors,
+            architecture,
+            landlock_abi,
+        );
         Err(TraceStartupError::UnsupportedOperatingSystem)
     }
 }
@@ -123,11 +185,18 @@ impl Drop for TraceChild {
     }
 }
 
+#[derive(Debug)]
+struct TraceSession {
+    child: TraceChild,
+    process: TraceProcessId,
+    channel: LauncherChannel,
+    request: InstallRequest,
+}
+
 /// Owns the exact spawned child before its mandatory post-exec trace stop.
 #[derive(Debug)]
 pub struct SpawnedTrace {
-    child: TraceChild,
-    process: TraceProcessId,
+    session: TraceSession,
 }
 
 impl SpawnedTrace {
@@ -136,10 +205,9 @@ impl SpawnedTrace {
         self,
         deadline: TraceDeadline,
     ) -> Result<InitialExecStop, TraceStartupError> {
-        wait_for_exact_stop(self.process, deadline, SIGNAL_TRAP, 0)?;
+        wait_for_exact_stop(self.session.process, deadline, SIGNAL_TRAP, 0)?;
         Ok(InitialExecStop {
-            child: self.child,
-            process: self.process,
+            session: self.session,
         })
     }
 }
@@ -147,8 +215,7 @@ impl SpawnedTrace {
 /// Owns the exact child at the mandatory post-exec trace stop.
 #[derive(Debug)]
 pub struct InitialExecStop {
-    child: TraceChild,
-    process: TraceProcessId,
+    session: TraceSession,
 }
 
 impl InitialExecStop {
@@ -157,11 +224,10 @@ impl InitialExecStop {
         self,
         deadline: TraceDeadline,
     ) -> Result<LauncherPause, TraceStartupError> {
-        continue_trace(self.process)?;
-        wait_for_exact_stop(self.process, deadline, SIGNAL_STOP, 0)?;
+        continue_trace(self.session.process)?;
+        wait_for_exact_stop(self.session.process, deadline, SIGNAL_STOP, 0)?;
         Ok(LauncherPause {
-            child: self.child,
-            process: self.process,
+            session: self.session,
         })
     }
 }
@@ -169,28 +235,30 @@ impl InitialExecStop {
 /// Owns the launcher at its pre-policy self-stop.
 #[derive(Debug)]
 pub struct LauncherPause {
-    child: TraceChild,
-    process: TraceProcessId,
+    session: TraceSession,
 }
 
 impl LauncherPause {
     /// Returns the exact stopped launcher process identifier.
     #[must_use]
     pub const fn process(&self) -> TraceProcessId {
-        self.process
+        self.session.process
     }
 
     /// Borrows the stopped launcher for stream and cgroup preparation.
     pub fn child_mut(&mut self) -> &mut Child {
-        self.child.child_mut()
+        self.session.child.child_mut()
     }
 
     /// Resumes trusted launcher code for production-boundary installation.
     pub fn continue_for_boundary(self) -> Result<BoundaryRunning, TraceStartupError> {
-        continue_trace(self.process)?;
+        continue_trace(self.session.process)?;
+        self.session
+            .channel
+            .send(&LauncherMessage::Install(self.session.request.clone()))
+            .map_err(|_| TraceStartupError::InstallSendFailed)?;
         Ok(BoundaryRunning {
-            child: self.child,
-            process: self.process,
+            session: self.session,
         })
     }
 }
@@ -198,27 +266,43 @@ impl LauncherPause {
 /// Owns a launcher that can install its production boundary but cannot exec.
 #[derive(Debug)]
 pub struct BoundaryRunning {
-    child: TraceChild,
-    process: TraceProcessId,
+    session: TraceSession,
 }
 
 impl BoundaryRunning {
-    /// Stops the acknowledged launcher at the pre-release trace point.
-    pub fn stop_after_acknowledgement(
+    /// Receives the exact boundary acknowledgement and stops before release.
+    pub fn receive_acknowledgement_and_stop(
         self,
-        acknowledgement: BoundaryInstalled,
-        expected: LauncherIdentity,
         deadline: TraceDeadline,
     ) -> Result<AcknowledgedTraceStop, TraceStartupError> {
-        if acknowledgement.identity() != expected {
-            return Err(TraceStartupError::BoundaryIdentityMismatch);
+        if deadline.expired() {
+            return Err(TraceStartupError::AcknowledgementTimedOut);
         }
-        stop_trace(self.process)?;
-        wait_for_exact_stop(self.process, deadline, SIGNAL_STOP, 0)?;
+        let response = self
+            .session
+            .channel
+            .receive_timeout(deadline.0.saturating_duration_since(Instant::now()))
+            .map_err(map_acknowledgement_receive_error)?;
+        match response {
+            LauncherMessage::BoundaryInstalled(acknowledgement) => {
+                if acknowledgement.identity() != self.session.request.identity() {
+                    return Err(TraceStartupError::BoundaryIdentityMismatch);
+                }
+            }
+            LauncherMessage::Failure(failure) => {
+                if failure.identity() != self.session.request.identity() {
+                    return Err(TraceStartupError::BoundaryIdentityMismatch);
+                }
+                return Err(TraceStartupError::LauncherReportedFailure);
+            }
+            LauncherMessage::Install(_) | LauncherMessage::ExecRelease(_) => {
+                return Err(TraceStartupError::AcknowledgementInvalid);
+            }
+        }
+        stop_trace(self.session.process)?;
+        wait_for_exact_stop(self.session.process, deadline, SIGNAL_STOP, 0)?;
         Ok(AcknowledgedTraceStop {
-            child: self.child,
-            process: self.process,
-            identity: expected,
+            session: self.session,
         })
     }
 }
@@ -226,9 +310,7 @@ impl BoundaryRunning {
 /// Owns an acknowledged launcher stopped before the supervisor release.
 #[derive(Debug)]
 pub struct AcknowledgedTraceStop {
-    child: TraceChild,
-    process: TraceProcessId,
-    identity: LauncherIdentity,
+    session: TraceSession,
 }
 
 impl AcknowledgedTraceStop {
@@ -236,12 +318,10 @@ impl AcknowledgedTraceStop {
     pub fn install_options(self) -> Result<TraceReady, TraceStartupError> {
         #[cfg(target_os = "linux")]
         {
-            crate::sys::install_diagnostic_trace_options(self.process.get())
+            crate::sys::install_diagnostic_trace_options(self.session.process.get())
                 .map_err(|_| TraceStartupError::OptionsInstallFailed)?;
             Ok(TraceReady {
-                child: self.child,
-                process: self.process,
-                identity: self.identity,
+                session: self.session,
             })
         }
         #[cfg(not(target_os = "linux"))]
@@ -254,26 +334,24 @@ impl AcknowledgedTraceStop {
 /// Owns a stopped launcher with the exact trace options installed.
 #[derive(Debug)]
 pub struct TraceReady {
-    child: TraceChild,
-    process: TraceProcessId,
-    identity: LauncherIdentity,
+    session: TraceSession,
 }
 
 impl TraceReady {
     /// Sends the bound exec release and starts syscall-stop observation.
-    pub fn release(self, channel: &LauncherChannel) -> Result<ActiveTrace, TraceStartupError> {
-        channel
+    pub fn release(self) -> Result<ActiveTrace, TraceStartupError> {
+        self.session
+            .channel
             .send(&LauncherMessage::ExecRelease(ExecRelease::new(
-                self.identity,
+                self.session.request.identity(),
             )))
             .map_err(|_| TraceStartupError::ReleaseSendFailed)?;
         #[cfg(target_os = "linux")]
         {
-            crate::sys::trace_syscall(self.process.get())
+            crate::sys::trace_syscall(self.session.process.get())
                 .map_err(|_| TraceStartupError::ResumeFailed)?;
             Ok(ActiveTrace {
-                child: self.child,
-                root: self.process,
+                session: self.session,
             })
         }
         #[cfg(not(target_os = "linux"))]
@@ -286,20 +364,26 @@ impl TraceReady {
 /// Identifies an active diagnostic process-tree trace.
 #[derive(Debug)]
 pub struct ActiveTrace {
-    child: TraceChild,
-    root: TraceProcessId,
+    session: TraceSession,
 }
 
 impl ActiveTrace {
     /// Returns the diagnostic process-tree root.
     #[must_use]
     pub const fn root(&self) -> TraceProcessId {
-        self.root
+        self.session.process
     }
 
     /// Borrows the exact traced child for the bounded event loop.
     pub fn child_mut(&mut self) -> &mut Child {
-        self.child.child_mut()
+        self.session.child.child_mut()
+    }
+}
+
+fn map_acknowledgement_receive_error(error: LauncherError) -> TraceStartupError {
+    match error {
+        LauncherError::ChannelTimeout => TraceStartupError::AcknowledgementTimedOut,
+        _ => TraceStartupError::AcknowledgementReceiveFailed,
     }
 }
 
@@ -378,6 +462,10 @@ pub enum TraceStartupError {
     DeadlineInvalid,
     /// An inherited descriptor is standard, invalid, or duplicated.
     DescriptorSetInvalid,
+    /// The launcher is not one exact executable launcher artifact.
+    LauncherIdentityInvalid,
+    /// The private launcher channel pair could not be created.
+    ChannelCreationFailed,
     /// The prepared traced launcher could not be spawned.
     SpawnFailed,
     /// The traced process status could not be read.
@@ -392,8 +480,18 @@ pub enum TraceStartupError {
     ResumeFailed,
     /// The acknowledged launcher could not be stopped before release.
     StopFailed,
+    /// The exact install request could not be sent on the retained channel.
+    InstallSendFailed,
+    /// The boundary acknowledgement did not arrive before the deadline.
+    AcknowledgementTimedOut,
+    /// The retained channel could not return a boundary acknowledgement.
+    AcknowledgementReceiveFailed,
+    /// The retained channel returned a different launcher message.
+    AcknowledgementInvalid,
     /// The boundary acknowledgement identities did not match.
     BoundaryIdentityMismatch,
+    /// The launcher reported a typed failure instead of an acknowledgement.
+    LauncherReportedFailure,
     /// The exact diagnostic trace options could not be installed.
     OptionsInstallFailed,
     /// The identity-bound exec release could not be sent.
@@ -409,6 +507,8 @@ impl TraceStartupError {
             Self::ProcessIdInvalid => "diagnostic.trace.process-id.invalid",
             Self::DeadlineInvalid => "diagnostic.trace.deadline.invalid",
             Self::DescriptorSetInvalid => "diagnostic.trace.descriptor-set.invalid",
+            Self::LauncherIdentityInvalid => "diagnostic.trace.launcher-identity.invalid",
+            Self::ChannelCreationFailed => "diagnostic.trace.channel.creation-failed",
             Self::SpawnFailed => "diagnostic.trace.spawn.failed",
             Self::WaitFailed => "diagnostic.trace.wait.failed",
             Self::WaitTimedOut => "diagnostic.trace.wait.timed-out",
@@ -416,7 +516,12 @@ impl TraceStartupError {
             Self::StopInvalid => "diagnostic.trace.stop.invalid",
             Self::ResumeFailed => "diagnostic.trace.resume.failed",
             Self::StopFailed => "diagnostic.trace.stop.failed",
+            Self::InstallSendFailed => "diagnostic.trace.install.send-failed",
+            Self::AcknowledgementTimedOut => "diagnostic.trace.acknowledgement.timed-out",
+            Self::AcknowledgementReceiveFailed => "diagnostic.trace.acknowledgement.receive-failed",
+            Self::AcknowledgementInvalid => "diagnostic.trace.acknowledgement.invalid",
             Self::BoundaryIdentityMismatch => "diagnostic.trace.boundary-identity.mismatch",
+            Self::LauncherReportedFailure => "diagnostic.trace.launcher.reported-failure",
             Self::OptionsInstallFailed => "diagnostic.trace.options.install-failed",
             Self::ReleaseSendFailed => "diagnostic.trace.release.send-failed",
         }
@@ -454,6 +559,8 @@ mod tests {
             TraceStartupError::ProcessIdInvalid,
             TraceStartupError::DeadlineInvalid,
             TraceStartupError::DescriptorSetInvalid,
+            TraceStartupError::LauncherIdentityInvalid,
+            TraceStartupError::ChannelCreationFailed,
             TraceStartupError::SpawnFailed,
             TraceStartupError::WaitFailed,
             TraceStartupError::WaitTimedOut,
@@ -461,7 +568,12 @@ mod tests {
             TraceStartupError::StopInvalid,
             TraceStartupError::ResumeFailed,
             TraceStartupError::StopFailed,
+            TraceStartupError::InstallSendFailed,
+            TraceStartupError::AcknowledgementTimedOut,
+            TraceStartupError::AcknowledgementReceiveFailed,
+            TraceStartupError::AcknowledgementInvalid,
             TraceStartupError::BoundaryIdentityMismatch,
+            TraceStartupError::LauncherReportedFailure,
             TraceStartupError::OptionsInstallFailed,
             TraceStartupError::ReleaseSendFailed,
         ]

@@ -442,32 +442,47 @@ diagnostic crate. Raw ptrace, wait, and signal calls remain confined to the
 existing Linux syscall module. The public safe layer exposes non-copy
 typestates for the prepared child, exact initial exec stop, trusted launcher
 self-stop, boundary-running state, identity-checked acknowledgement stop,
-installed exact options, and active syscall-stop trace. The prepared command
-retains every borrowed inherited descriptor through one consuming spawn, so a
-descriptor number cannot be deliberately closed and reused between preparation
-and spawn through this safe API. Every later state owns that exact child. Its
-internal guard attempts to kill and reap the child when a transition fails or
-the caller abandons a state.
+installed exact options, and active syscall-stop trace. Preparation accepts an
+identified launcher file, revalidates its exact identity during preparation
+and again immediately before spawn, and creates the private launcher channel
+and command together. It executes through the retained
+launcher descriptor and retains both channel ends, the exact install request,
+and every borrowed inherited descriptor through one consuming spawn. Safe
+callers cannot substitute a command or channel or deliberately close and reuse
+a descriptor number between preparation and spawn. Every later
+state moves one private session that owns the same child, process identity,
+supervisor channel, and identity-bound request. The session receives the
+acknowledgement internally and sends the release through that same channel. Its
+child guard attempts to kill and reap the child when a transition fails or the
+caller abandons a state.
 
 The bounded evidence path checks that:
 
 1. only the separate diagnostic Linux crate selects the observer feature;
 2. raw calls and `unsafe` blocks remain confined to the Linux syscall module;
-3. acknowledgement identity is checked before the launcher is stopped;
-4. the exact closed option set is installed before a release can be sent;
-5. syscall-stop observation is requested before `ActiveTrace` is constructed;
+3. one internally created channel carries the install request, matching
+   acknowledgement, and identity-bound release without a caller-supplied
+   protocol value or channel;
+4. acknowledgement identity is checked before the launcher is stopped;
+5. the exact closed option set is installed before a release can be sent;
+6. syscall-stop observation is requested before `ActiveTrace` is constructed;
    and
-6. the prepared command has one consuming spawn and retains the lifetime of
+7. the prepared command has one consuming spawn and retains the lifetime of
    every inherited descriptor through it; and
-7. every spawned state retains the same exact child, and abandonment or a
-   transition error invokes kill and wait on it; and
-8. invalid descriptors, process identifiers, deadlines, stops, exits,
-   identities, and operating-system results map to closed errors.
+8. every spawned state contains the same private session type, every transition
+   moves that session, and its child guard contains the only setup-state kill
+   and wait operations; and
+9. invalid descriptors, process identifiers, deadlines, channel operations,
+   launcher responses, stops, exits, identities, and operating-system results
+   map to closed errors.
 
-This is a source-level startup claim. It does not establish Linux ptrace
-correctness, tracer-death behavior, successful process cleanup, process-tree coverage, syscall
-decoding, tracee-memory reads, or a complete diagnostic execution. Those
-properties require the next adapter, native attack, and release-binding waves.
+The Rust test checks only closed value validation and distinct error codes. The
+independent checker inspects the declared ownership and transition structure.
+Neither executes the Linux trace lifecycle. This is a source-level startup
+claim. It does not establish Linux ptrace correctness, tracer-death behavior,
+successful process cleanup, process-tree coverage, syscall decoding,
+tracee-memory reads, or a complete diagnostic execution. Those properties
+require the next adapter, native attack, and release-binding waves.
 
 ## Bounded-domain declaration guard
 

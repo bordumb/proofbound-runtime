@@ -9,6 +9,8 @@ expected_inventory = [
   "diagnostic-trace-startup-feature-isolation",
   "diagnostic-trace-startup-raw-call-confinement",
   "diagnostic-trace-startup-release-order",
+  "diagnostic-trace-startup-session-continuity",
+  "diagnostic-trace-startup-channel-binding",
 ]
 inputs = [
   "Cargo.lock",
@@ -17,10 +19,14 @@ inputs = [
   "crates/proofbound-runtime-cli/Cargo.toml",
   "crates/proofbound-runtime-diagnose-linux/Cargo.toml",
   "crates/proofbound-runtime-diagnose-linux/src/lib.rs",
+  "crates/proofbound-runtime-core/src/identity.rs",
+  "crates/proofbound-runtime-core/src/receipt.rs",
   "crates/proofbound-runtime-linux/Cargo.toml",
   "crates/proofbound-runtime-linux/src/bin/pbr-native-launcher.rs",
   "crates/proofbound-runtime-linux/src/launcher.rs",
   "crates/proofbound-runtime-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/resolve.rs",
+  "crates/proofbound-runtime-linux/src/supervisor.rs",
   "crates/proofbound-runtime-linux/src/sys.rs",
   "crates/proofbound-runtime-linux/src/trace.rs",
   "tools/ci/check_diagnostic_trace_startup.py",

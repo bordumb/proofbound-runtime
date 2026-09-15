@@ -56,6 +56,15 @@ results, inject a descriptor, skip a syscall, or grant a path. Ptrace is an
 observation mechanism and a trusted diagnostic role. It is not an enforcement
 mechanism.
 
+The safe startup session accepts an identified launcher file, revalidates it
+during preparation and immediately before spawn, executes it through the
+retained descriptor, and creates the launcher command and private channel
+together. It retains the exact install request and
+supervisor channel across every non-copy setup state. It receives and verifies
+the acknowledgement internally and sends the release on that same channel. A
+caller cannot supply a command, acknowledgement value, expected identity, or
+different release channel to advance the session.
+
 The observer follows the complete child tree with the closed clone, fork,
 vfork, and exec options. It records only the syscall families defined by the
 diagnostic specification. Every count, string read, process, event, and output

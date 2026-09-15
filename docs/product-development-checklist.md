@@ -153,8 +153,11 @@ manifest describes the supported tuple.
   admission gate.
 - [ ] Complete independent review and hosted admission of the non-copy Linux
   trace-startup typestates. Source implementation and bounded contract checks
-  are replayed on exact main `3557cc9`; refreshed review, hosted admission, and
-  native effect evidence remain open.
+  are replayed on exact main `3557cc9`. The earlier exact review required the
+  session channel, request, acknowledgement, and release to share one private
+  owner and required complete evidence and identity source closure. Those
+  corrections are retained; refreshed review, hosted admission, and native
+  effect evidence remain open.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
   on attempted overflow, and require terminal waits plus a separate tree-empty
   acknowledgement before publication.

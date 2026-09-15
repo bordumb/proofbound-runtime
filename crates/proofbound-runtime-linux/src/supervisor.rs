@@ -374,7 +374,7 @@ impl Drop for ChildGuard {
 }
 
 #[cfg(target_os = "linux")]
-fn validate_descriptor_set(
+pub(crate) fn validate_descriptor_set(
     request: &InstallRequest,
     descriptors: &[std::os::fd::BorrowedFd<'_>],
 ) -> Result<(), SupervisorError> {
@@ -479,7 +479,7 @@ pub fn parse_launcher_bootstrap(args: &[String]) -> Result<LauncherBootstrap, La
 }
 
 #[cfg(any(test, target_os = "linux"))]
-fn bootstrap_arguments(
+pub(crate) fn bootstrap_arguments(
     channel_descriptor: i32,
     identity: LauncherIdentity,
     architecture: crate::Architecture,

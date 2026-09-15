@@ -1876,3 +1876,31 @@ As maintainer, I endorse this independent `APPROVE` verdict for exact head
 commit changes no reviewed production, schema, specification, claim,
 assumption, evidence, test, or current-status bytes. Any later subject change
 requires a new exact-head review.
+
+## RT-8 diagnostic trace-startup initial review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `db31e0259bbe708fc8afd8288bb6445b1ad06235`
+- **Reviewed head:** `3fa73a2b00168da7a9fe6c7622d1b45ac81d774b`
+- **Branch:** `codex/rt8-ptrace-backend`
+- **Method:** Complete exact-range static review. The reviewer changed no files
+  and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+
+The review found three blockers. First, the public typestate API accepted an
+arbitrary command, caller-supplied acknowledgement and expected identity, and
+caller-supplied release channel. A safe caller could therefore advance an
+unrelated trace session with a decoded acknowledgement and send the release on
+a different channel. The session must create and retain the exact launcher
+channel and request, receive and verify the acknowledgement internally, and
+release through that same channel.
+
+Second, the registered evidence overstated exact-child retention and cleanup.
+It checked non-copy declarations, operation ordering, and cleanup strings, but
+did not check that every spawned state owns one common session or that each
+transition moves that same guard. Third, the claim cited the toolchain
+assumption without listing itself in that assumption, and both the claim and
+evidence omitted the core identity sources used by `LauncherIdentity`.
+
+This verdict is not endorsed. The correction changes the exact subject and
+requires independent re-review.

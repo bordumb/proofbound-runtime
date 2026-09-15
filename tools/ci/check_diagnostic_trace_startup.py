@@ -15,6 +15,8 @@ INVENTORY = [
     "diagnostic-trace-startup-feature-isolation",
     "diagnostic-trace-startup-raw-call-confinement",
     "diagnostic-trace-startup-release-order",
+    "diagnostic-trace-startup-session-continuity",
+    "diagnostic-trace-startup-channel-binding",
 ]
 
 
