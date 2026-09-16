@@ -1,8 +1,8 @@
 schema = "proofbound-claim/1"
 id = "PBR-DISTRIBUTION-016"
 title = "Runtime consumes one exact immutable Proofbound tool bundle"
-statement = "Under the registered distribution and toolchain premises, the Runtime consumer accepts one canonical pin for a public immutable Proofbound exact-source release, resolves the hosted tag to the pinned source, rechecks the exact release identity and closed asset inventory, binds the detached and embedded platform manifests, verifies every selected byte identity and publication link before execution, and configures each protected Runtime evidence shard and release-production architecture to use only those verified bytes."
-public_language = "Under its registered GitHub, TLS, Python, installer, runner, process, filesystem, and digest premises, Runtime's Proofbound tool consumer rejects noncanonical pins, wrong tag targets, mutable or substituted releases, changed inventories, carriers, manifests, checksums, archives, installers, and installed executable bytes. The protected evidence and release workflows require each job to install the exact public bundle identity committed in Runtime before it executes Proofbound. This is bounded distribution-consumer and workflow evidence; it does not authenticate GitHub independently or prove that the upstream build system produced correct behavior."
+statement = "Under the registered distribution and toolchain premises, the Runtime consumer accepts one canonical pin for a public immutable Proofbound exact-source release, uses only the workflow-scoped read-only credential for GitHub API metadata, resolves the hosted tag to the pinned source, rechecks the exact release identity and closed asset inventory, downloads release assets without that credential, binds the detached and embedded platform manifests, verifies every selected byte identity and publication link before execution, and configures each protected Runtime evidence shard and release-production architecture to use only those verified bytes."
+public_language = "Under its registered GitHub, workflow-token, TLS, Python, installer, runner, process, filesystem, and digest premises, Runtime's Proofbound tool consumer rejects noncanonical pins, wrong tag targets, mutable or substituted releases, changed inventories, carriers, manifests, checksums, archives, installers, and installed executable bytes. Protected evidence and release jobs use their read-only workflow credential only for GitHub API metadata, download public release assets without that credential, and install the exact bundle identity committed in Runtime before executing Proofbound. This is bounded distribution-consumer and workflow evidence; it does not authenticate GitHub independently or prove that the upstream build system produced correct behavior."
 subject = "distribution:proofbound-tool-bundle"
 profile = "ledger"
 tier = 1
@@ -14,7 +14,7 @@ assumptions = [
   "PBR-BUNDLE-TOOLCHAIN-AX-013",
 ]
 open_obligations = [
-  "Confirm the protected evidence and release-production cutover through independent exact-head review and one successful exact-head hosted Verify run before recording this claim as complete.",
+  "Pass independent exact-head review and one complete exact-head hosted Verify run for the workflow-credential-scoping correction. Do not transfer the historical admission at Runtime main 4a0cfdb to the changed claim or assumption identities.",
 ]
 out_of_scope = [
   "Correctness of the Proofbound binaries, pinned Proofbound installer, Rust compiler, GitHub Actions runner, GitHub release service, TLS implementation, Python interpreter, archive implementation, cryptographic digest implementation, filesystem, process implementation, or operating system.",

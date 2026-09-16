@@ -18,7 +18,7 @@ assumptions = [
   "PBR-SDK-TOOLCHAINS-AX-010",
 ]
 open_obligations = [
-  "Pass independent exact-head review and the complete exact-head hosted Verify gate before merging the current-integration route.",
+  "Repeat independent exact-head review and the complete exact-head hosted Verify gate after the inherited PBR-BUNDLE-DISTRIBUTION-AX-012 credential-scoping change before restoring admission to the current-integration route.",
   "Configure the protected publication environment, publish all four selected packages from one exact mainline revision, and retain its successful registry observations and current-integration artifacts.",
   "Exercise every selected registry package from an unrelated consumer before closing RT-7.",
 ]

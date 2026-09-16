@@ -34,6 +34,27 @@ RUST_TOOLCHAIN_ACTION = (
 )
 
 
+def _fresh_evidence_job(workflow: str) -> str:
+    return workflow[
+        workflow.index("\n  fresh-evidence:\n") : workflow.index("\n  native:\n")
+    ]
+
+
+def _assert_bundle_credential_boundary(job: str) -> None:
+    checkout_end = job.index("      - name: Confirm the exact event head\n")
+    checkout = job[:checkout_end]
+    assert "persist-credentials: false" in checkout
+
+    install_start = job.index(
+        "      - name: Install the exact public Proofbound bundle\n"
+    )
+    install_end = job.index("      - name:", install_start + 8)
+    install = job[install_start:install_end]
+    credential = "GITHUB_TOKEN: ${{ github.token }}"
+    assert job.count(credential) == 1
+    assert install.count(credential) == 1
+
+
 class RequiredWorkflowTests(unittest.TestCase):
     def test_required_workflow_has_one_fail_closed_aggregate(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
@@ -65,15 +86,15 @@ class RequiredWorkflowTests(unittest.TestCase):
 
     def test_public_tool_bundle_is_identity_checked_before_fresh_evidence(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        job = workflow[
-            workflow.index("\n  fresh-evidence:\n") : workflow.index("\n  native:\n")
-        ]
+        job = _fresh_evidence_job(workflow)
 
+        _assert_bundle_credential_boundary(job)
         self.assertIn("name: Fresh Proofbound evidence", job)
         self.assertIn("needs: preflight", job)
         self.assertIn("install_proofbound_tool_bundle.py", job)
         self.assertIn("--platform linux-x86_64", job)
         self.assertIn('--destination "$RUNNER_TEMP/proofbound-tools"', job)
+        self.assertEqual(job.count("GITHUB_TOKEN: ${{ github.token }}"), 1)
         install = job.index("install_proofbound_tool_bundle.py")
         path = job.index('echo "$RUNNER_TEMP/proofbound-tools" >> "$GITHUB_PATH"')
         verify = job.index("Verify Proofbound executables")
@@ -94,6 +115,29 @@ class RequiredWorkflowTests(unittest.TestCase):
         self.assertNotIn("Install pinned Proofbound tools", job)
         self.assertNotIn("actions/download-artifact", job)
         self.assertNotIn("https://github.com/bordumb/proof-bound", job)
+
+    def test_public_tool_bundle_credential_boundary_mutations_fail_closed(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        job = _fresh_evidence_job(workflow)
+        credential = "          GITHUB_TOKEN: ${{ github.token }}\n"
+
+        mutations = {
+            "checkout credential persisted": job.replace(
+                "          persist-credentials: false\n", "", 1
+            ),
+            "credential moved to job": job.replace(credential, "", 1).replace(
+                "    steps:\n",
+                "    env:\n"
+                "      GITHUB_TOKEN: ${{ github.token }}\n"
+                "    steps:\n",
+                1,
+            ),
+            "credential duplicated": job.replace(credential, credential * 2, 1),
+        }
+        for name, mutation in mutations.items():
+            with self.subTest(name=name):
+                with self.assertRaises(AssertionError):
+                    _assert_bundle_credential_boundary(mutation)
 
     def test_native_matrix_is_part_of_the_partition(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
@@ -133,6 +177,7 @@ class RequiredWorkflowTests(unittest.TestCase):
         self.assertIn("install_proofbound_tool_bundle.py", evidence)
         self.assertIn("--platform linux-x86_64", evidence)
         self.assertIn('--destination "$RUNNER_TEMP/proofbound-tools"', evidence)
+        self.assertEqual(evidence.count("GITHUB_TOKEN: ${{ github.token }}"), 1)
         self.assertIn('echo "$RUNNER_TEMP/proofbound-tools" >> "$GITHUB_PATH"', evidence)
         self.assertNotIn("proofbound-tools-linux-x86_64.sha256", workflow)
         self.assertNotIn(f"uses: {DOWNLOAD_ARTIFACT_ACTION}", evidence)

@@ -16,8 +16,8 @@ import sys
 import tarfile
 import tempfile
 from typing import Callable
-from urllib.parse import quote
-from urllib.request import Request, urlopen
+from urllib.parse import quote, urlsplit
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 
 PIN_SCHEMA = "proofbound-runtime-proofbound-tool-pin/1"
@@ -539,17 +539,43 @@ def _parse_checksums(data: bytes, pin: dict[str, object]) -> None:
         raise ToolBundleError("published checksums differ from the pin")
 
 
+def _request_headers(url: str) -> dict[str, str]:
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "proofbound-runtime-ci",
+    }
+    token = os.environ.get("GITHUB_TOKEN")
+    parsed = urlsplit(url)
+    if token and parsed.hostname == "api.github.com":
+        if parsed.scheme != "https" or parsed.netloc != "api.github.com":
+            raise ToolBundleError("GitHub API credential origin is invalid")
+        if token != token.strip() or any(character in token for character in "\0\n\r"):
+            raise ToolBundleError("GitHub API credential is malformed")
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
+class _CredentialRedirectHandler(HTTPRedirectHandler):
+    def redirect_request(
+        self, request, file_pointer, code, message, headers, new_url
+    ):
+        if request.has_header("Authorization"):
+            raise ToolBundleError("credential-bearing GitHub API request redirected")
+        return super().redirect_request(
+            request, file_pointer, code, message, headers, new_url
+        )
+
+
 def _fetch(url: str, limit: int) -> bytes:
     request = Request(
         url,
-        headers={
-            "Accept": "application/vnd.github+json",
-            "User-Agent": "proofbound-runtime-ci",
-        },
+        headers=_request_headers(url),
     )
     try:
-        with urlopen(request, timeout=30) as response:
-            if not str(response.geturl()).startswith("https://"):
+        with build_opener(_CredentialRedirectHandler()).open(
+            request, timeout=30
+        ) as response:
+            if urlsplit(str(response.geturl())).scheme != "https":
                 raise ToolBundleError("download redirected outside HTTPS")
             data = response.read(limit + 1)
     except OSError as error:
@@ -626,6 +652,7 @@ def install(
                 str(destination),
             ],
             check=False,
+            cwd=root,
             env={"PATH": os.environ.get("PATH", "")},
         )
     if completed.returncode != 0:

@@ -1,9 +1,10 @@
 # RT-7 integration record: prelaunch packaging and distribution
 
-**Status:** package, public Proofbound bundle, and protected cutover contracts
-are admitted. The current-integration and one-time npm bootstrap source merged
-unsigned as `47c5ad2` and passed exact-main Verify run `35006872460`; external
-registry publication and consumer observations remain open
+**Status:** package, one-time npm bootstrap, and current-integration source are
+admitted through exact Runtime main `47c5ad2`. The public Proofbound bundle
+credential-scoping correction is independently approved, passed exact-head PR
+23 Verify, and merged unsigned as `a8df83d`; exact-main admission is pending.
+External registry publication and consumer observations remain open
 
 **Primary owner:** Proofbound Runtime
 
@@ -134,6 +135,15 @@ The registered premises keep GitHub, repository controls, DNS, TLS, Python,
 the digest implementation, the pinned upstream installer, the hosted runner,
 process behavior, and filesystem behavior visible. The checks bind exact
 identities under those premises; they do not discharge them.
+
+The credential-scoping correction makes each protected job supply its
+workflow-scoped read-only credential only to GitHub API metadata requests.
+Release assets remain public downloads without that credential and retain exact
+pin, size, digest, manifest, and installed-byte checks. The correction avoids
+shared anonymous API quotas without converting the public asset path into a
+credential-dependent distribution claim. It passed independent review and PR
+23 Verify run `35034962830`, merged unsigned as `a8df83d`, and awaits exact-main
+admission in run `35038304369`.
 
 ## Registry publication implementation checkpoint
 

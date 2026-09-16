@@ -23,9 +23,9 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-SCAFFOLD-013` | Tested/model-only on the development branch | Static ELF scaffolding is bounded diagnostic evidence, not a safe policy or a complete dynamic-load inventory. |
 | `PBR-SDK-014` | Tier 1, independently checked source and package contract | Rust, Python, and TypeScript SDKs preserve the separate-process boundary; registry publication and consumer dogfood remain open. |
 | `PBR-DISTRIBUTION-015` | Tier 1 independently reviewed and admitted on exact Runtime main | The verifier package has a closed preflight, source-payload comparison, byte reproduction, local consumer, and release-retention path; no registry or publisher claim is admitted. |
-| `PBR-DISTRIBUTION-016` | Tier 1 public-bundle consumer independently reviewed and admitted on exact Runtime main | Runtime pins one immutable public Proofbound release and rejects identity, inventory, manifest, checksum, archive, installer, and installed-byte substitution. Every protected evidence and release job installs that exact bundle independently. |
+| `PBR-DISTRIBUTION-016` | Tier 1 credential-scoped consumer independently approved and passed exact-head PR 23 Verify; exact-main admission pending | Runtime pins one immutable public Proofbound release, confines its read-only workflow credential to canonical GitHub API metadata, keeps release assets anonymous, and rejects identity, inventory, manifest, checksum, archive, installer, and installed-byte substitution. |
 | `PBR-DISTRIBUTION-018` | Tier 1 protected publication routes admitted on exact Runtime main `47c5ad2` | Publication is explicit, exact-source, protected, ordered, and credential-isolated. The one-time npm bootstrap route and its fail-closed cutover are admitted; external registry configuration, publication, and observations remain open. |
-| `PBR-DISTRIBUTION-025` | Tier 1 current-integration source admitted on exact Runtime main `47c5ad2` | A deterministic-CBOR producer and independent verifier close one Runtime-only integration tuple after complete registry observation. Exact-main Verify run `35006872460` passed. No tuple is published until an exact protected run retains it. |
+| `PBR-DISTRIBUTION-025` | Tier 1 current-integration source admitted at `47c5ad2`; credential-dependency replay passed exact-head PR 23 Verify and awaits exact-main admission | A deterministic-CBOR producer and independent verifier close one Runtime-only integration tuple after complete registry observation. The tuple remains unpublished until an exact protected run retains it. |
 | `PBR-DRAFT-017` | Tier 1 bounded contract and source-level non-reuse checks | Closed diagnostic vocabulary and schemas are registered, and verifier, composer, and acceptor paths reject diagnostic receipt reuse. The live observer remains open. |
 | `PBR-DRAFT-019` | Tier 1 bounded producer contract independently reviewed and admitted on exact Runtime main | The pure diagnostic artifact producer preserves non-reuse, provenance, explicit gaps, and mandatory human authority choices. It does not claim live observer coverage. |
 | `PBR-OBSERVER-020` | Tier 1 decoder identity admitted on exact Runtime main `4783896` | The complete decoder subject passed exact-head run `34992273744` and exact-main run `34997195939`. |
@@ -92,9 +92,10 @@ Proofbound tool bundle. Its intended closure contains:
   verification run, producing bundle run, release ID, tag, and seven assets;
 - a closed pin parser that rejects duplicate keys, unknown fields,
   noncanonical bytes, invalid roles, and non-exact inventories;
-- anonymous re-reading of the hosted release ID, tag, target commit,
+- workflow-credential-scoped re-reading of the hosted release ID, tag, target commit,
   publication state, immutability state, and asset identities, plus independent
-  resolution of the tag object to the pinned source commit;
+  resolution of the tag object to the pinned source commit, with anonymous
+  release-asset downloads;
 - exact checks of the checksum set, publication manifest, selected platform
   manifest, archive, and installer before installer execution, including
   byte-for-byte equality of the detached and embedded platform manifests;
@@ -117,6 +118,12 @@ The isolated dogfood wave passed exact-head review and merged as Runtime
 commit `f2a06de`. Exact-main Verify run `34908515545` passed. The protected
 cutover passed independent review and exact-head Verify run `34915891330`,
 then merged unsigned as `4a0cfdb`. Exact-main Verify run `34918706960` passed.
+That admission remains historical and applies only to the anonymous metadata
+consumer at that exact identity. The credential-scoping correction changed the
+claim and `PBR-BUNDLE-DISTRIBUTION-AX-012`, passed independent review and PR 23
+Verify run `35034962830`, and merged unsigned as `a8df83d`. Exact-main run
+`35038304369` remains pending. No status transfers from `4a0cfdb` without the
+new exact evidence.
 This does not prove Proofbound correctness or independently
 authenticate GitHub or a publisher. `PBR-BUNDLE-DISTRIBUTION-AX-012` retains
 the GitHub, repository control, DNS, and TLS premises.

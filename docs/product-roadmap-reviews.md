@@ -3160,3 +3160,116 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes no reviewed production, claim,
 assumption, specification, evidence, checker, or source-closure bytes. Fresh
 hosted verification remains required before merge.
+
+## RT-7 Proofbound metadata credential initial review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `a89b92daa0a6f977c4a090b3f9a2e553fc94884d`
+- **Reviewed head:** `4a6df5236ec64881af1ade5fed832e003b11c805`
+- **Branch:** `codex/ci-proofbound-api-quota`
+- **Method:** Complete exact-range static security review. The reviewer changed
+  no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review found four blocking defects. First, the default HTTP redirect
+handler could forward the GitHub API authorization header before the final URL
+scheme check. Second, the protected evidence and release checkout steps kept
+their repository credentials while the upstream installer inherited the
+repository working directory. Third, the falsifiers did not causally reject
+redirect leakage, job-level token movement, persisted checkout credentials,
+or installer environment and working-directory widening. Fourth, the claim,
+assumption, assurance plan, and RT-7 record transferred the earlier anonymous
+consumer's admission to a changed credential-bearing subject.
+
+The correction must reject every credential-bearing redirect, admit only the
+canonical HTTPS GitHub API origin, remove persisted checkout credentials from
+each protected bundle job, and run the upstream installer in its extracted
+temporary directory with a closed environment. It must add causal falsifiers
+for those boundaries and retain `4a0cfdb` only as the historical admission.
+`PBR-DISTRIBUTION-016` and inherited `PBR-DISTRIBUTION-025` remain pending until
+the corrected exact subject receives independent review and hosted admission.
+
+## RT-7 Proofbound metadata credential correction review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `a89b92daa0a6f977c4a090b3f9a2e553fc94884d`
+- **Reviewed head:** `f2c2af8f99cb57392fc49510ed4820ece847db74`
+- **Branch:** `codex/ci-proofbound-api-quota`
+- **Method:** Complete exact-range static security re-review. The reviewer
+  changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review confirmed that original blockers one, two, and four are closed. The
+workflow-placement and installer environment and working-directory checks close
+part of original blocker three. Its redirect-leakage falsifier remains open:
+the test calls the guard directly instead of reaching it through the production
+`_fetch` path. Removing the production guard would therefore leave the
+purported falsifier green.
+
+The correction must drive a controlled redirect through `_fetch`, prove that
+the production opener installs the guard, prove that no redirected URL is
+opened, and use that production path to confirm that a public release-asset
+request carries no authorization header. The corrected exact head requires a
+new independent review.
+
+## RT-7 Proofbound metadata causal-falsifier review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `a89b92daa0a6f977c4a090b3f9a2e553fc94884d`
+- **Reviewed head:** `159311f2983f6139f2b4c1a87d9109e5c64b3436`
+- **Branch:** `codex/ci-proofbound-api-quota`
+- **Method:** Complete exact-range static security re-review. The reviewer
+  changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The production and evidence blocker from the preceding review is closed. The
+test now enters `_fetch`, confirms that it installs the credential redirect
+handler, proves that no redirect target is opened, and sends a public asset
+request through that same path without an authorization header. The canonical
+API origin, protected checkout isolation, installer working-directory and
+environment closure, workflow-placement falsifiers, and pending status for both
+affected distribution claims remain intact.
+
+One documentation blocker remains. The preceding review record inaccurately
+called the redirect falsifier gap new and said all four original blockers were
+closed. The initial review had included causal redirect coverage in blocker
+three. The history must state that original blockers one, two, and four were
+closed and that blocker three was only partially closed. The corrected exact
+head requires a new independent review.
+
+## RT-7 Proofbound metadata credential approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `a89b92daa0a6f977c4a090b3f9a2e553fc94884d`
+- **Reviewed head:** `f5a5e94a0954198fe4060f458dd04d375d427e09`
+- **Branch:** `codex/ci-proofbound-api-quota`
+- **Method:** Complete exact-range static security re-review. The reviewer
+  changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that credentials are confined to the canonical HTTPS
+GitHub API origin, credential-bearing redirects fail closed, and public asset
+requests carry no authorization. Each protected checkout removes persisted
+credentials. The upstream installer runs in its extracted temporary directory
+with an environment containing only `PATH`.
+
+The workflow-placement, installer-isolation, and production `_fetch` tests are
+causal. The fetch test confirms that the redirect handler is installed, proves
+that no redirect target opens, and sends the public asset request through the
+same production path. The historical anonymous consumer admission remains
+bound to `4a0cfdb`; both changed distribution claims remain pending hosted
+admission. All preceding rejection records preserve their exact findings and
+non-endorsement. No new blocker was introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`a89b92daa0a6f977c4a090b3f9a2e553fc94884d..f5a5e94a0954198fe4060f458dd04d375d427e09`.
+The following approval-only commit changes no reviewed workflow, installer,
+claim, assumption, specification, checker, or falsifier bytes. Any later
+subject change requires a new exact-head review.

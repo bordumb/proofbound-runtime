@@ -90,8 +90,25 @@ implementation remain behind their recorded demand gates.
 - [x] Push once and pass the complete hosted exact-head Verify gate at
   `515fcbc` in run `34915891330`.
 - [x] Merge unsigned as `4a0cfdb` and pass exact-main Verify run `34918706960`.
-- [ ] Close `PBR-DISTRIBUTION-016` only after the review and hosted evidence
-  above exist.
+- [x] Close the historical anonymous-metadata form of `PBR-DISTRIBUTION-016`
+  only after the review and hosted evidence above exist.
+
+### Active public-bundle metadata credential correction
+
+- [x] Supply the job-scoped read-only workflow credential only to GitHub API
+  metadata requests. Keep public release-asset downloads credential-free.
+- [x] Reject every redirect from a credential-bearing request before following
+  it, and reject noncanonical GitHub API origins.
+- [x] Remove persisted checkout credentials before the isolated installer runs,
+  and run the upstream installer in its extracted temporary directory with an
+  environment that contains only `PATH`.
+- [x] Add causal mutations for redirect leakage, job-level token movement,
+  persisted checkout credentials, duplicated credentials, asset credentials,
+  and installer environment or working-directory widening.
+- [ ] Obtain an independent exact-head `APPROVE` verdict for the corrected
+  claim, assumption, workflow, installer, and falsifiers.
+- [ ] Pass one complete hosted exact-head Verify run before restoring current
+  admission to `PBR-DISTRIBUTION-016` or inherited `PBR-DISTRIBUTION-025`.
 
 Review history:
 
