@@ -372,6 +372,10 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
             re.findall(r"#\[[^\]]+\]", self.adapter),
             [
                 "#[derive(Debug)]",
+                "#[allow(\n"
+                "    clippy::too_many_arguments,\n"
+                "    reason = \"the boundary keeps each authority, lifecycle, and observation input explicit\"\n"
+                ")]",
                 "#[derive(Debug)]",
                 "#[must_use]",
                 "#[derive(Debug)]",

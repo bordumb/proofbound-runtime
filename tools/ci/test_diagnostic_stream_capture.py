@@ -259,7 +259,7 @@ EXPECTED_BODIES = {
 }
 
 EXPECTED_FILES = {
-    "adapter": "a049d12f15f7b9800d6cd6996c41e8dc44190594efff8a893d80208ae2bac690",
+    "adapter": "e020b20e97040ca553f28aea10a97d033ff0df04bfd5dab006b9763226d5f192",
     "adapter-lib": "ccad4545cfd41802c32d66a692d65aca9a69d0e59b0a3cb7c5c34da42830a198",
     "adapter-manifest": "ef7c613a66781c4b64d75435524166329b5239b8172f97b28cff2d6d609c8d78",
     "authority": "9d1945b590a3a9f44f6af95d3090ad0a8d1bc0cfa601c35273cd0a72c86cbddc",

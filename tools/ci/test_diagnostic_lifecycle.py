@@ -424,7 +424,7 @@ EXPECTED_BODIES = {
     "wait-for-exact-stop": "d7d42625b210d8aeed50f75176c09c728887bcd085d9311789a73a0a0ff7a831",
 }
 EXPECTED_FILES = {
-    "adapter": "a049d12f15f7b9800d6cd6996c41e8dc44190594efff8a893d80208ae2bac690",
+    "adapter": "e020b20e97040ca553f28aea10a97d033ff0df04bfd5dab006b9763226d5f192",
     "adapter-evidence": "87bc8da1a2cab8f6e3b380d38e2017852abe4cee0039854a4ea0dd3b8571d8b4",
     "adapter-lib": "ccad4545cfd41802c32d66a692d65aca9a69d0e59b0a3cb7c5c34da42830a198",
     "adapter-manifest": "ef7c613a66781c4b64d75435524166329b5239b8172f97b28cff2d6d609c8d78",

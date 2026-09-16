@@ -27,6 +27,10 @@ pub struct PreparedObserver<'descriptor> {
 }
 
 /// Prepares one trace and pure-protocol session from the same validated inputs.
+#[allow(
+    clippy::too_many_arguments,
+    reason = "the boundary keeps each authority, lifecycle, and observation input explicit"
+)]
 pub fn prepare_observer<'descriptor>(
     launcher: &'descriptor ResolvedFile,
     request: InstallRequest,
