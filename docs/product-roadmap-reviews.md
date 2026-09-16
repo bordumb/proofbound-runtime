@@ -2983,6 +2983,40 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-8 diagnostic lifecycle restacked re-review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `e8473bde6da2e7e567a47aa93f51725473f9081f`
+- **Reviewed head:** `606c3d70ca2ad904a53622ea1799fa43452cf3f8`
+- **Branch:** `codex/rt8-lifecycle-final`
+- **Method:** Complete exact-range static security and assurance review. The
+  reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review confirmed that four earlier blockers are closed: cgroup freshness is
+revalidated before diagnostic ownership, expiry wins over late-ready progress,
+pidfd signal failures remain terminal, and the inherited runtime premises are
+registered. Two blockers remain.
+
+First, the three exact setup waits no longer receive the owning trace session.
+When an exact wait reaps an exited or signalled root, it therefore cannot disarm
+the numeric child cleanup guard. Later destruction can send a numeric-PID kill
+after PID reuse. The correction must record every terminal setup reap before a
+post-wait deadline or error return and must add a causal mutation for both
+terminal result forms.
+
+Second, terminal cgroup cleanup or incomplete resource observation returns
+before deadline-aware stream completion. Stream cancellation and joins then
+fall through to an unbounded destructor path. The correction must attempt both
+terminal components with the same absolute deadline, retain the first typed
+resource error after the stream attempt, and add a mutation witness that a
+resource error cannot skip deadline-aware stream cleanup.
+
+The reviewer found no additional blocker before stopping this known-blocked
+review. A corrected exact head requires a new independent review.
+
 ## RT-8 diagnostic stream admitted-base re-review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
