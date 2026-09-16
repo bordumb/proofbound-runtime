@@ -3017,6 +3017,37 @@ resource error cannot skip deadline-aware stream cleanup.
 The reviewer found no additional blocker before stopping this known-blocked
 review. A corrected exact head requires a new independent review.
 
+## RT-8 diagnostic lifecycle corrected re-review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
+- **Reviewed base:** `e8473bde6da2e7e567a47aa93f51725473f9081f`
+- **Reviewed head:** `7dbce961696a8c1b8dbcb540fd93b60e9d2cf5ca`
+- **Branch:** `codex/rt8-lifecycle-final`
+- **Method:** Complete exact-range static security and assurance review. The
+  reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review confirmed that all six original blockers and both blockers from the
+restacked re-review are closed. Terminal setup reaps now disarm numeric cleanup
+before post-wait expiry, resource errors cannot skip deadline-aware stream
+cleanup, the first resource error is retained, and both causal mutations fail
+for their intended structural reason.
+
+One new blocker remains. Active execution-deadline expiry, including a
+late-ready event, returns `WaitTimedOut` from the trace. The adapter converts
+every active trace error into an ordinary observer gap and, after successful
+cleanup, can select `PublishIncomplete`. This contradicts the registered claim,
+specification, ADR, and assurance plan, which require deadline failure to
+prevent both complete and incomplete publication. The correction must retain
+bounded cleanup while carrying a typed no-publication disposition through the
+drain and must add a causal falsifier that `WaitTimedOut` cannot reach
+`CompletedObserver` or `PublishIncomplete`.
+
+The reviewer found no other blocker. A corrected exact head requires a new
+independent review.
+
 ## RT-8 diagnostic stream admitted-base re-review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
