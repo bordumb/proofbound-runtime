@@ -3127,6 +3127,29 @@ The following approval-only commit changes no reviewed production, claim,
 assumption, specification, ADR, checker, falsifier, or evidence bytes. Any
 later subject change requires a new exact-head review.
 
+## RT-8 diagnostic lifecycle hosted-regression re-review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `e8473bde6da2e7e567a47aa93f51725473f9081f`
+- **Reviewed head:** `2b7153233853859aeaed5986e53d52508c6e9cfa`
+- **Branch:** `codex/rt8-lifecycle-final`
+- **Method:** Complete read-only exact-range static security, lifecycle, claim,
+  and evidence review. The reviewer changed no files and ran no builds or
+  tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The correction restored bounded drain-before-remove fallback cleanup for an
+abandoned cgroup owner, fixed mutable child-guard ownership during release, and
+confined a diagnostic-only import to its feature. One blocker remained.
+`finish_before` owned a local cgroup whose destructor restarted the normal
+5,000-poll fallback after a deadline, drain, observation, or removal error.
+That second budget escaped the single terminal cleanup deadline and could
+delay stream cancellation and joins. The correction must distinguish a
+genuinely abandoned owner from an owner already governed by deadline-bound
+terminal cleanup, and the checker must falsify that distinction directly.
+
 ## RT-8 diagnostic stream admitted-base re-review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr6`

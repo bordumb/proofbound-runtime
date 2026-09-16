@@ -435,11 +435,20 @@ pub struct FreshCgroup {
     #[cfg(target_os = "linux")]
     removed: bool,
     #[cfg(target_os = "linux")]
+    drop_cleanup: DropCleanup,
+    #[cfg(target_os = "linux")]
     name: PathBuf,
     #[cfg(target_os = "linux")]
     parent: std::os::fd::OwnedFd,
     #[cfg(target_os = "linux")]
     descriptor: std::os::fd::OwnedFd,
+}
+
+#[cfg(target_os = "linux")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum DropCleanup {
+    Abandoned,
+    DeadlineBound,
 }
 
 impl FreshCgroup {
@@ -510,6 +519,7 @@ impl FreshCgroup {
                 configured_resources: None,
                 initial_resources: None,
                 removed: false,
+                drop_cleanup: DropCleanup::Abandoned,
                 name,
                 parent,
                 descriptor,
@@ -612,6 +622,7 @@ impl FreshCgroup {
                 configured_resources: Some(configured_resources),
                 initial_resources: Some(initial_resources),
                 removed: false,
+                drop_cleanup: DropCleanup::Abandoned,
                 name,
                 parent,
                 descriptor,
@@ -791,6 +802,7 @@ impl FreshCgroup {
         #[cfg(target_os = "linux")]
         {
             let mut group = self;
+            group.drop_cleanup = DropCleanup::DeadlineBound;
             group.drain_in_place_before(deadline)?;
             if Instant::now() >= deadline {
                 return Err(CgroupError::DrainFailed);
@@ -883,7 +895,17 @@ impl Drop for FreshCgroup {
     fn drop(&mut self) {
         #[cfg(target_os = "linux")]
         if !self.removed {
-            let _ = self.cleanup_in_place();
+            match self.drop_cleanup {
+                DropCleanup::Abandoned => {
+                    let _ = self.cleanup_in_place();
+                }
+                DropCleanup::DeadlineBound => {
+                    if populated(&self.descriptor).unwrap_or(true) {
+                        let _ = write_control(&self.descriptor, "cgroup.kill", b"1");
+                    }
+                    let _ = self.remove_in_place();
+                }
+            }
         }
     }
 }

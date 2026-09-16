@@ -284,6 +284,25 @@ def assert_lifecycle_contract(
         raise AssertionError("resource failure can skip deadline-aware stream cleanup")
     if "let _ = self.cleanup_in_place();" not in cgroup_drop:
         raise AssertionError("fallback cgroup cleanup can remove before bounded drain")
+    for term in [
+        "group.drop_cleanup = DropCleanup::DeadlineBound;",
+        "group.drain_in_place_before(deadline)?",
+    ]:
+        if term not in cgroup_finish:
+            raise AssertionError(f"deadline cleanup can restart in Drop: {term}")
+    before(
+        cgroup_finish,
+        "group.drop_cleanup = DropCleanup::DeadlineBound;",
+        "group.drain_in_place_before(deadline)?",
+    )
+    for term in [
+        "DropCleanup::Abandoned =>",
+        "DropCleanup::DeadlineBound =>",
+        "let _ = self.cleanup_in_place();",
+        "let _ = self.remove_in_place();",
+    ]:
+        if term not in cgroup_drop:
+            raise AssertionError(f"cgroup Drop cleanup mode is incomplete: {term}")
     before(
         natural_finish,
         "if !self.is_drained()",
@@ -392,8 +411,8 @@ EXPECTED_BODIES = {
     "adapter-drain": "abd829e86e881f9c28981c43d3832c6b707dd90aad22500109f3d25b384a7ab0",
     "adapter-next": "98e8b121729094ec65ba7fedb38da6c11e3dc6c3666e9c529cfc2d01a1647825",
     "cgroup-drain-before": "caa3f99baee132f20cfb3ca42fda7d8b93c046f83e6d3fa35d2fcea3d4deeda5",
-    "cgroup-drop": "ddbf691cd54d67209824fe22d6d590f9d2901e8bd35a322852947103a5821352",
-    "cgroup-finish-before": "328db0a2d73eb4ea614b52b9620fc35f1f3678d15b30595b10acdff453e77c36",
+    "cgroup-drop": "d465d1417bf071e6abc9619a4b08c738b17e3e53968e4f5582745322638153df",
+    "cgroup-finish-before": "65d19b3c9ebec391228d2068d88fb4857e437bc5cb0c02d8e7ddaa736c3b6037",
     "revalidate-resources": "30ecf689ab0e1c1846169130bf9c5efc2ef19d1208420023816df84ddee06fdf",
     "revalidate-fresh": "277b2ee0776fb7942d6d63a91183bc88cd9531716b5f1078d06f46d622e18c9e",
     "finish-terminal": "5ebf6b5b98b5809b6278e342806e6d0b0cb9b952d6f743bd6755358b39676ced",
@@ -414,7 +433,7 @@ EXPECTED_FILES = {
     "contract-evidence": "deda6ad938018d660fc4f8fd4bd83e2123936023ff73cca64ab12f13c69ea5b2",
     "core-manifest": "0d22823a1d4f397fb58693c7d9fe7498969ce242b5da0f372d8cc8f55f960b9b",
     "core-lib": "2039d8c789844cddaaabbf432a0a6ef465f77300577f3b57922d7bcbcc930450",
-    "cgroup": "ddb18f2754ece23194522b67e036e1b9e3253663a43f02f26167f041b141c5fa",
+    "cgroup": "a2cd61a76501d0c7d03d6f46a8e2ddd6d8681679952a282c98d587032698433e",
     "diagnose-artifact": "ad7cce45d286623dcfd55c21189cb7d58e29f1943960d0a061d6f85c2640baa3",
     "diagnose-lib": "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de",
     "diagnose-manifest": "097ec2b4cef98a43bee09c64c289251ab2060808d4fb8e050de3077f541ff2f1",
@@ -502,6 +521,18 @@ class DiagnosticLifecycleContractTests(unittest.TestCase):
                 self.cgroup.replace(
                     "            let _ = self.cleanup_in_place();",
                     "            let _ = self.remove_in_place();",
+                    1,
+                ),
+                self.linux_lib,
+                self.adapter_lib,
+            ),
+            (
+                "deadline cgroup failure restarts fallback wait budget",
+                self.trace,
+                self.adapter,
+                self.cgroup.replace(
+                    "            group.drop_cleanup = DropCleanup::DeadlineBound;",
+                    "            group.drop_cleanup = DropCleanup::Abandoned;",
                     1,
                 ),
                 self.linux_lib,
