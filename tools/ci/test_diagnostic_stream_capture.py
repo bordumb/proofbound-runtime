@@ -241,7 +241,7 @@ def assert_stream_contract(trace: str, adapter: str, sys: str) -> None:
 
 
 EXPECTED_BODIES = {
-    "adapter-active-step": "c55f42761e2cbaa93561514d8a66313804cf9d6ba3722f94b816801a608dc13e",
+    "adapter-active-step": "98e8b121729094ec65ba7fedb38da6c11e3dc6c3666e9c529cfc2d01a1647825",
     "adapter-drain-finish": "abd829e86e881f9c28981c43d3832c6b707dd90aad22500109f3d25b384a7ab0",
     "capture": "a6783ae914ce32557ca90f72c44b56efc617958bfb6587514ba6de9a3542299c",
     "child-drop": "4b0736ae93ba2cc1524cce0bd88b7750ed536ff7fc5c6f2066c5ea7d8e01e786",
@@ -259,7 +259,7 @@ EXPECTED_BODIES = {
 }
 
 EXPECTED_FILES = {
-    "adapter": "39bb09f84b33939727db22ae57e75516ad3f01b82e271439348ae2ede66ce2d0",
+    "adapter": "a049d12f15f7b9800d6cd6996c41e8dc44190594efff8a893d80208ae2bac690",
     "adapter-lib": "ccad4545cfd41802c32d66a692d65aca9a69d0e59b0a3cb7c5c34da42830a198",
     "adapter-manifest": "ef7c613a66781c4b64d75435524166329b5239b8172f97b28cff2d6d609c8d78",
     "authority": "9d1945b590a3a9f44f6af95d3090ad0a8d1bc0cfa601c35273cd0a72c86cbddc",

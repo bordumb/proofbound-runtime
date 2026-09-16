@@ -217,9 +217,7 @@ impl ActiveObserver {
             Ok(event) => event,
             Err(error) => {
                 let publication = match error {
-                    TraceObservationError::WaitTimedOut => {
-                        DrainPublication::Forbidden(error)
-                    }
+                    TraceObservationError::WaitTimedOut => DrainPublication::Forbidden(error),
                     _ => DrainPublication::Eligible,
                 };
                 let directive = self.protocol.record_observer_failure()?;

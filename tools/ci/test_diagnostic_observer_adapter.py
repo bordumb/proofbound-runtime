@@ -66,7 +66,7 @@ def body_sha256(source: str, signature: str) -> str:
 
 
 EXPECTED_LOAD_BEARING_BODIES = {
-    "active-next-event": "c55f42761e2cbaa93561514d8a66313804cf9d6ba3722f94b816801a608dc13e",
+    "active-next-event": "98e8b121729094ec65ba7fedb38da6c11e3dc6c3666e9c529cfc2d01a1647825",
     "draining-finish": "abd829e86e881f9c28981c43d3832c6b707dd90aad22500109f3d25b384a7ab0",
 }
 
@@ -529,9 +529,7 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
 
         mutations = {
             "timeout publication allowed": self.adapter.replace(
-                "TraceObservationError::WaitTimedOut => {\n"
-                "                        DrainPublication::Forbidden(error)\n"
-                "                    }",
+                "TraceObservationError::WaitTimedOut => DrainPublication::Forbidden(error)",
                 "TraceObservationError::WaitTimedOut => DrainPublication::Eligible",
                 1,
             ),

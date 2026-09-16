@@ -388,7 +388,7 @@ EXPECTED_BODIES = {
     "active-finish": "dc2f63886b0d9bb418062462f69f3b4c9073cb079be36b7a883f37599fb8f64c",
     "active-next": "d338650ed48b9e795519e78b67f2b23052c42f5d09de1c2fe76f019688d98efb",
     "adapter-drain": "abd829e86e881f9c28981c43d3832c6b707dd90aad22500109f3d25b384a7ab0",
-    "adapter-next": "c55f42761e2cbaa93561514d8a66313804cf9d6ba3722f94b816801a608dc13e",
+    "adapter-next": "98e8b121729094ec65ba7fedb38da6c11e3dc6c3666e9c529cfc2d01a1647825",
     "cgroup-drain-before": "caa3f99baee132f20cfb3ca42fda7d8b93c046f83e6d3fa35d2fcea3d4deeda5",
     "cgroup-drop": "c9534897bad7882ee2591148643c0f02910ed23c2c3fbdd227b2115fbb84c95d",
     "cgroup-finish-before": "328db0a2d73eb4ea614b52b9620fc35f1f3678d15b30595b10acdff453e77c36",
@@ -403,7 +403,7 @@ EXPECTED_BODIES = {
     "wait-for-exact-stop": "d7d42625b210d8aeed50f75176c09c728887bcd085d9311789a73a0a0ff7a831",
 }
 EXPECTED_FILES = {
-    "adapter": "39bb09f84b33939727db22ae57e75516ad3f01b82e271439348ae2ede66ce2d0",
+    "adapter": "a049d12f15f7b9800d6cd6996c41e8dc44190594efff8a893d80208ae2bac690",
     "adapter-evidence": "87bc8da1a2cab8f6e3b380d38e2017852abe4cee0039854a4ea0dd3b8571d8b4",
     "adapter-lib": "ccad4545cfd41802c32d66a692d65aca9a69d0e59b0a3cb7c5c34da42830a198",
     "adapter-manifest": "ef7c613a66781c4b64d75435524166329b5239b8172f97b28cff2d6d609c8d78",
@@ -683,9 +683,7 @@ class DiagnosticLifecycleContractTests(unittest.TestCase):
                 "execution timeout remains publication eligible",
                 self.trace,
                 self.adapter.replace(
-                    "TraceObservationError::WaitTimedOut => {\n"
-                    "                        DrainPublication::Forbidden(error)\n"
-                    "                    }",
+                    "TraceObservationError::WaitTimedOut => DrainPublication::Forbidden(error)",
                     "TraceObservationError::WaitTimedOut => DrainPublication::Eligible",
                     1,
                 ),
