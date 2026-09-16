@@ -62,9 +62,9 @@ The diagnostic launch protocol performs these transitions:
    options;
 9. send the identity-bound exec release and release target code;
 10. observe bounded events without changing target behavior;
-11. drain the child tree and resource observations;
-12. construct and publish the diagnostic receipt and draft; and
-13. remove the cgroup through the existing cleanup contract.
+11. drain the child tree, remove the cgroup, and collect complete resource and
+    stream observations through the existing cleanup contract; and
+12. construct and publish the diagnostic receipt and draft.
 
 Failure at steps 1 through 8 starts no target code. A ptrace detach, unknown
 stop, lost child, or observer failure after step 9 terminates the execution,

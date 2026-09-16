@@ -876,13 +876,15 @@ impl ActiveTrace {
 
     /// Collects both bounded streams after exact natural tree completion.
     pub fn finish(mut self) -> Result<CompletedTrace, TraceObservationError> {
-        if self.session.deadline.expired() {
-            self.must_drain = true;
-            return Err(TraceObservationError::WaitTimedOut);
-        }
         if !self.is_drained() {
             self.must_drain = true;
             return Err(TraceObservationError::DrainRequired);
+        }
+        if self.session.deadline.expired() {
+            self.must_drain = true;
+            let deadline = TraceDeadline::cleanup()?;
+            self.session.finish_terminal(deadline)?;
+            return Err(TraceObservationError::WaitTimedOut);
         }
         let deadline = self.session.deadline;
         Ok(CompletedTrace {

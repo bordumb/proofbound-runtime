@@ -287,6 +287,19 @@ def assert_lifecycle_contract(
         "if !self.is_drained()",
         "self.session.finish_terminal(deadline)?",
     )
+    for term in [
+        "if self.session.deadline.expired()",
+        "let deadline = TraceDeadline::cleanup()?",
+        "self.session.finish_terminal(deadline)?",
+        "return Err(TraceObservationError::WaitTimedOut)",
+    ]:
+        if term not in natural_finish:
+            raise AssertionError(f"terminal-event timeout escapes bounded cleanup: {term}")
+    before(
+        natural_finish,
+        "self.session.finish_terminal(deadline)?",
+        "return Err(TraceObservationError::WaitTimedOut)",
+    )
     before(
         complete_drain,
         "if self.tree_reconciliation_failed",
@@ -372,7 +385,7 @@ def assert_lifecycle_contract(
 EXPECTED_BODIES = {
     "active-begin-termination": "e52f7855e3e0bd7d538fa18963b1a404be004736fd029db4c1af4e092c495ed2",
     "active-drain": "93fb4ec3a1af8abcc2ad31dba4c23eb498b43a743137cbe3d0d1e04afdbd6ee3",
-    "active-finish": "e1c023f8009923758a6e37f4cc77e6e88e1f7c92e346ac08f98197a5c9e1d9a5",
+    "active-finish": "dc2f63886b0d9bb418062462f69f3b4c9073cb079be36b7a883f37599fb8f64c",
     "active-next": "d338650ed48b9e795519e78b67f2b23052c42f5d09de1c2fe76f019688d98efb",
     "adapter-drain": "abd829e86e881f9c28981c43d3832c6b707dd90aad22500109f3d25b384a7ab0",
     "adapter-next": "c55f42761e2cbaa93561514d8a66313804cf9d6ba3722f94b816801a608dc13e",
@@ -420,7 +433,7 @@ EXPECTED_FILES = {
     "supervisor": "5f1b80181b01c3ea189643995617aeab60f390c1f5fc6930cf0acd577b88cdd8",
     "sys": "c7433f4485aa12829c87ef10210fa766676bc24729361e0a82ac93a2267eb06f",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "d4b7a3a51a940da966ee15a4feaee55a7d0044aaf331b4642b608a716010d68c",
+    "trace": "eaff2b414b4d1af8c662af06bd42f1eb70e0d1a0d8a4d6e92c1637af9f42c629",
     "unit-evidence": "04a73555049ca93388dd4fbf2ac77ff28f5e718d1f84cedd11255ebd63ca24d0",
 }
 
@@ -527,6 +540,20 @@ class DiagnosticLifecycleContractTests(unittest.TestCase):
                     "                    return Err(TraceObservationError::WaitTimedOut);\n"
                     "                }",
                     "let handled = self.handle_wait_observation(requested, observation);",
+                    1,
+                ),
+                self.adapter,
+                self.cgroup,
+                self.linux_lib,
+                self.adapter_lib,
+            ),
+            (
+                "terminal-event timeout bypasses bounded cleanup",
+                self.trace.replace(
+                    "            let deadline = TraceDeadline::cleanup()?;\n"
+                    "            self.session.finish_terminal(deadline)?;\n"
+                    "            return Err(TraceObservationError::WaitTimedOut);",
+                    "            return Err(TraceObservationError::WaitTimedOut);",
                     1,
                 ),
                 self.adapter,

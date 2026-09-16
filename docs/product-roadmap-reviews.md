@@ -3048,6 +3048,30 @@ drain and must add a causal falsifier that `WaitTimedOut` cannot reach
 The reviewer found no other blocker. A corrected exact head requires a new
 independent review.
 
+## RT-8 diagnostic lifecycle full-range re-review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `e8473bde6da2e7e567a47aa93f51725473f9081f`
+- **Reviewed head:** `cb42b0ab094fad4fccdd9a9a6e1e8a9f4ea0bf31`
+- **Branch:** `codex/rt8-lifecycle-final`
+- **Method:** Complete exact-range static security, correctness, and assurance
+  review. The reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review confirmed that all six original lifecycle blockers, the later
+numeric-child-cleanup and stream-cleanup blockers, and the active-timeout
+publication blocker are closed. It found two remaining blockers. A deadline
+that expires after the final trace event but before natural terminal collection
+returned directly from `ActiveTrace::finish`, so the cgroup, resource, and
+stream owners received only best-effort destructor cleanup instead of the
+claimed fixed cleanup deadline. Specification 0015 also retained an obsolete
+top-level order that published both artifacts before cgroup removal, while its
+current lifecycle contract requires successful cgroup removal before every
+publication decision. Both corrections require a new exact-head independent
+review.
+
 ## RT-8 diagnostic stream admitted-base re-review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr6`

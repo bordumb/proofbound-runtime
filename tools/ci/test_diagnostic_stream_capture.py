@@ -210,6 +210,8 @@ def assert_stream_contract(trace: str, adapter: str, sys: str) -> None:
         "if !self.is_drained()",
         "self.session.finish_terminal(deadline)?",
     )
+    if natural_finish.count("self.session.finish_terminal(") != 2:
+        raise AssertionError("natural completion lacks bounded timeout cleanup")
     before(
         complete_drain,
         "if self.tree_reconciliation_failed",
@@ -247,7 +249,7 @@ EXPECTED_BODIES = {
     "child-pidfd-disarm": "47d90711e30be1b77dd750af5d39be069df6f33734dac1aa8db0a3ebaf50962d",
     "child-terminate": "8cacb6f54d429d3319a586ef2a0afcec3aa53ee709406798de2aef17374fe5aa",
     "complete-drain": "aaeab9d4290dd85e24d981b32d84061041a0c2eb2d80b68e9810fe3c7e63b546",
-    "natural-finish": "e1c023f8009923758a6e37f4cc77e6e88e1f7c92e346ac08f98197a5c9e1d9a5",
+    "natural-finish": "dc2f63886b0d9bb418062462f69f3b4c9073cb079be36b7a883f37599fb8f64c",
     "reader-finish-before": "ca94b24d17e16baa9f7c89b784593aa021aa1dcf21241a565dec71be8893dd8e",
     "reader-cancel": "f8d1f73f2d46e508fe3a6dcb6ae5a3bb2749082808f368f9c21ba871c3e1ecdb",
     "reader-start": "8d00f7968b3498b8c59e4cac187a38908673edb446ad20b600aacab971e21f5c",
@@ -280,7 +282,7 @@ EXPECTED_FILES = {
     "stream-runtime-assumption": "ce57e1cab085cbd7b4f60ab03a607166a2dc77bdb924228b1f7c949a72bfeb19",
     "sys": "c7433f4485aa12829c87ef10210fa766676bc24729361e0a82ac93a2267eb06f",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "d4b7a3a51a940da966ee15a4feaee55a7d0044aaf331b4642b608a716010d68c",
+    "trace": "eaff2b414b4d1af8c662af06bd42f1eb70e0d1a0d8a4d6e92c1637af9f42c629",
     "unit-evidence": "c3265aa232ccf65fda04efd5706f3b85ca5d2fd006bf632dde4815090d076ccb",
 }
 
