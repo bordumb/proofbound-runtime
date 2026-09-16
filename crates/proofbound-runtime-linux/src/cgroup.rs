@@ -883,10 +883,7 @@ impl Drop for FreshCgroup {
     fn drop(&mut self) {
         #[cfg(target_os = "linux")]
         if !self.removed {
-            if populated(&self.descriptor).unwrap_or(true) {
-                let _ = write_control(&self.descriptor, "cgroup.kill", b"1");
-            }
-            let _ = self.remove_in_place();
+            let _ = self.cleanup_in_place();
         }
     }
 }

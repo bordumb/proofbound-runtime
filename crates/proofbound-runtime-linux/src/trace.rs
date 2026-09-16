@@ -802,7 +802,7 @@ impl TraceReady {
 
     /// Sends the bound exec release and starts syscall-stop observation.
     pub fn release(
-        self,
+        mut self,
         process_limit: TraceProcessLimit,
         capture_limits: TraceCaptureLimits,
     ) -> Result<ActiveTrace, TraceStartupError> {

@@ -254,7 +254,7 @@ EXPECTED_BODIES = {
     "reader-cancel": "f8d1f73f2d46e508fe3a6dcb6ae5a3bb2749082808f368f9c21ba871c3e1ecdb",
     "reader-start": "8d00f7968b3498b8c59e4cac187a38908673edb446ad20b600aacab971e21f5c",
     "record-terminal": "1b039cd8a628df661083e7f65b8aeb4b691b7a476b851d06ab531826ca7365fa",
-    "release": "abf4ad5e46246918501f3f120f43d6202c37e5ddffded053d69d3242dce18526",
+    "release": "7fe1e9880ad31c0e2298358870886cedbd6d4bba43f3a29e90eaa2c765fb4937",
     "spawn": "1faca0106ae138c1f98807b3d21371eace9a69d41892a8a13c6d94a72b30f681",
 }
 
@@ -280,9 +280,9 @@ EXPECTED_FILES = {
     "root-manifest": "1ea75287f62129c6b15038b0c45df42e616fc4c92e59e61bc03358746fd5d7d6",
     "stream-assumption": "b06c323edd3dceaa6c7c52b17b4ecd5c1bfc56dee10a95413f000f090cd69459",
     "stream-runtime-assumption": "ce57e1cab085cbd7b4f60ab03a607166a2dc77bdb924228b1f7c949a72bfeb19",
-    "sys": "c7433f4485aa12829c87ef10210fa766676bc24729361e0a82ac93a2267eb06f",
+    "sys": "256629304f9d132291986c558ef1d2224deb7125c0940d5db5734276853d12cb",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "eaff2b414b4d1af8c662af06bd42f1eb70e0d1a0d8a4d6e92c1637af9f42c629",
+    "trace": "12c7751a62c9fb4f5b3c70f6668b3b9baf2ad0dce25453d0e7eb82c9226fd9e0",
     "unit-evidence": "c3265aa232ccf65fda04efd5706f3b85ca5d2fd006bf632dde4815090d076ccb",
 }
 

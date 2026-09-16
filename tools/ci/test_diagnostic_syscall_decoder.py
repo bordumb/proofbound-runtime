@@ -79,7 +79,7 @@ EXPECTED_LOAD_BEARING_BODIES = {
     "tracee-string-read": "54fec5ee2c46ba8bd614c0da4e769b311ca6ff65637e7685be6e086369f7189c",
     "resume-before-deadline": "bff9c1e06b805663e587a4dd5a5313bb7e04a6aceeb68aa017e4c09a4953f502",
     "trace-next-event": "d338650ed48b9e795519e78b67f2b23052c42f5d09de1c2fe76f019688d98efb",
-    "trace-ready-release": "abf4ad5e46246918501f3f120f43d6202c37e5ddffded053d69d3242dce18526",
+    "trace-ready-release": "7fe1e9880ad31c0e2298358870886cedbd6d4bba43f3a29e90eaa2c765fb4937",
     "uapi-i64-reader": "62197020cc4c5b8faac0c4f44c81291f12e7986681a3e7c08080ef7be4e0f938",
     "uapi-u64-reader": "aa2b02fd921a14e0fb178214da9ea0183bddde4b7d5d3b2305cffe9abe5ca63e",
     "wait-observation-router": "43f872fced14df3e3c29b9ff335acc52500a45613cb54c7cb7b001594530cda7",
@@ -168,7 +168,7 @@ def assert_load_bearing_bodies(
         "tracee-string-read": body_sha256(trace, "fn read_tracee_string"),
         "trace-next-event": body_sha256(trace, "pub fn next_event(&mut self)"),
         "trace-ready-release": body_sha256(
-            trace, "pub fn release(\n        self,\n        process_limit"
+            trace, "pub fn release(\n        mut self,\n        process_limit"
         ),
         "uapi-i64-reader": body_sha256(sys, "fn trace_read_i64"),
         "uapi-u64-reader": body_sha256(sys, "fn trace_read_u64"),

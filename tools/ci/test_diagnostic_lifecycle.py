@@ -282,6 +282,8 @@ def assert_lifecycle_contract(
     )
     if "resources?" in finish_terminal[:stream_index]:
         raise AssertionError("resource failure can skip deadline-aware stream cleanup")
+    if "let _ = self.cleanup_in_place();" not in cgroup_drop:
+        raise AssertionError("fallback cgroup cleanup can remove before bounded drain")
     before(
         natural_finish,
         "if !self.is_drained()",
@@ -378,8 +380,8 @@ def assert_lifecycle_contract(
             raise AssertionError(
                 f"terminal cgroup work is outside the deadline: {term}"
             )
-    if "cleanup_in_place()" in cgroup_drop or "sleep(" in cgroup_drop:
-        raise AssertionError("cgroup drop can restart a blocking cleanup deadline")
+    if "sleep(" in cgroup_drop:
+        raise AssertionError("cgroup drop embeds an unbounded wait loop")
 
 
 EXPECTED_BODIES = {
@@ -390,7 +392,7 @@ EXPECTED_BODIES = {
     "adapter-drain": "abd829e86e881f9c28981c43d3832c6b707dd90aad22500109f3d25b384a7ab0",
     "adapter-next": "98e8b121729094ec65ba7fedb38da6c11e3dc6c3666e9c529cfc2d01a1647825",
     "cgroup-drain-before": "caa3f99baee132f20cfb3ca42fda7d8b93c046f83e6d3fa35d2fcea3d4deeda5",
-    "cgroup-drop": "c9534897bad7882ee2591148643c0f02910ed23c2c3fbdd227b2115fbb84c95d",
+    "cgroup-drop": "ddbf691cd54d67209824fe22d6d590f9d2901e8bd35a322852947103a5821352",
     "cgroup-finish-before": "328db0a2d73eb4ea614b52b9620fc35f1f3678d15b30595b10acdff453e77c36",
     "revalidate-resources": "30ecf689ab0e1c1846169130bf9c5efc2ef19d1208420023816df84ddee06fdf",
     "revalidate-fresh": "277b2ee0776fb7942d6d63a91183bc88cd9531716b5f1078d06f46d622e18c9e",
@@ -412,7 +414,7 @@ EXPECTED_FILES = {
     "contract-evidence": "deda6ad938018d660fc4f8fd4bd83e2123936023ff73cca64ab12f13c69ea5b2",
     "core-manifest": "0d22823a1d4f397fb58693c7d9fe7498969ce242b5da0f372d8cc8f55f960b9b",
     "core-lib": "2039d8c789844cddaaabbf432a0a6ef465f77300577f3b57922d7bcbcc930450",
-    "cgroup": "445a17fa958e673180bcebc2c2314897503563a4a709d7600442eee1dee7c2ae",
+    "cgroup": "ddb18f2754ece23194522b67e036e1b9e3253663a43f02f26167f041b141c5fa",
     "diagnose-artifact": "ad7cce45d286623dcfd55c21189cb7d58e29f1943960d0a061d6f85c2640baa3",
     "diagnose-lib": "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de",
     "diagnose-manifest": "097ec2b4cef98a43bee09c64c289251ab2060808d4fb8e050de3077f541ff2f1",
@@ -431,9 +433,9 @@ EXPECTED_FILES = {
     "probe": "2bf141cf9ee8b2943cd3e63305399030ae8829a040ed06c9cc65de8533e0a692",
     "resolve": "66ab088fbadbff3b71deb6edc76d3f7069932949f6cdde08f1fa3cf133892eca",
     "supervisor": "5f1b80181b01c3ea189643995617aeab60f390c1f5fc6930cf0acd577b88cdd8",
-    "sys": "c7433f4485aa12829c87ef10210fa766676bc24729361e0a82ac93a2267eb06f",
+    "sys": "256629304f9d132291986c558ef1d2224deb7125c0940d5db5734276853d12cb",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "eaff2b414b4d1af8c662af06bd42f1eb70e0d1a0d8a4d6e92c1637af9f42c629",
+    "trace": "12c7751a62c9fb4f5b3c70f6668b3b9baf2ad0dce25453d0e7eb82c9226fd9e0",
     "unit-evidence": "04a73555049ca93388dd4fbf2ac77ff28f5e718d1f84cedd11255ebd63ca24d0",
 }
 
@@ -490,6 +492,18 @@ class DiagnosticLifecycleContractTests(unittest.TestCase):
                 ),
                 self.adapter,
                 self.cgroup,
+                self.linux_lib,
+                self.adapter_lib,
+            ),
+            (
+                "fallback cgroup removal bypasses bounded drain",
+                self.trace,
+                self.adapter,
+                self.cgroup.replace(
+                    "            let _ = self.cleanup_in_place();",
+                    "            let _ = self.remove_in_place();",
+                    1,
+                ),
                 self.linux_lib,
                 self.adapter_lib,
             ),

@@ -2,7 +2,9 @@
 
 use std::ffi::CString;
 use std::io;
-use std::os::fd::{AsRawFd as _, FromRawFd as _, OwnedFd, RawFd};
+#[cfg(feature = "diagnostic-observer")]
+use std::os::fd::AsRawFd as _;
+use std::os::fd::{FromRawFd as _, OwnedFd, RawFd};
 use std::os::unix::ffi::OsStrExt as _;
 use std::path::Path;
 use std::process::Command;
