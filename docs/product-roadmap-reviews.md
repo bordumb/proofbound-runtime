@@ -3150,6 +3150,34 @@ delay stream cancellation and joins. The correction must distinguish a
 genuinely abandoned owner from an owner already governed by deadline-bound
 terminal cleanup, and the checker must falsify that distinction directly.
 
+## RT-8 diagnostic lifecycle hosted-regression approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `e8473bde6da2e7e567a47aa93f51725473f9081f`
+- **Reviewed head:** `78660e7fedceea0310d924de6a86bf17ef11d6c8`
+- **Branch:** `codex/rt8-lifecycle-final`
+- **Method:** Complete read-only exact-range static security, lifecycle, claim,
+  evidence, feature-isolation, and mutation-causality review. The reviewer
+  changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that every prior lifecycle blocker remains closed.
+Abandoned cgroup owners use the existing bounded drain-before-remove fallback.
+Deadline-governed cleanup switches mode before its first fallible operation and
+cannot restart that fallback budget in `Drop`. The hosted compile corrections
+retain mutable child-guard ownership and confine diagnostic-only APIs and
+imports to the diagnostic feature. The default Linux, diagnostic Linux, and
+non-Linux diagnostic source surfaces remain coherent. All registered file and
+body fingerprints match, and both cleanup-mode mutations are unique and
+causal. No new blocker was introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`e8473bde6da2e7e567a47aa93f51725473f9081f..78660e7fedceea0310d924de6a86bf17ef11d6c8`.
+The following approval-only commit changes no reviewed production, claim,
+assumption, specification, ADR, checker, falsifier, or evidence bytes. Any
+later subject change requires a new exact-head review.
+
 ## RT-8 diagnostic stream admitted-base re-review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
