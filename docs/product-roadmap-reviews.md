@@ -3072,6 +3072,35 @@ current lifecycle contract requires successful cgroup removal before every
 publication decision. Both corrections require a new exact-head independent
 review.
 
+## RT-8 diagnostic lifecycle final approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `e8473bde6da2e7e567a47aa93f51725473f9081f`
+- **Reviewed head:** `29d64dcf552f8365ff59233d63b6c287bb175b8b`
+- **Branch:** `codex/rt8-lifecycle-final`
+- **Method:** Complete read-only exact-range static security, correctness,
+  specification, claim, and evidence re-review. The reviewer changed no files
+  and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that all six original lifecycle blockers and every
+later cleanup and publication blocker are closed. Setup reaps disarm numeric
+cleanup. Resource failures cannot skip deadline-aware stream completion.
+Forced cleanup shares one private deadline. Signal failures remain terminal.
+Active timeouts cannot reach protocol publication. Expiry after the final
+trace event creates a fixed cleanup deadline, completes cgroup removal,
+resource capture, and both stream joins, and only then returns `WaitTimedOut`.
+The top-level diagnostic protocol now orders that complete cleanup transaction
+before artifact construction and publication. The causal mutation and exact
+source fingerprints cover the correction. No new blocker was introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`e8473bde6da2e7e567a47aa93f51725473f9081f..29d64dcf552f8365ff59233d63b6c287bb175b8b`.
+The following approval-only commit changes no reviewed production, claim,
+assumption, specification, ADR, checker, falsifier, or evidence bytes. Any
+later subject change requires a new exact-head review.
+
 ## RT-8 diagnostic stream admitted-base re-review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
