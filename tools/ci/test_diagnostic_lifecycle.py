@@ -299,6 +299,13 @@ def assert_lifecycle_contract(
         raise AssertionError(
             "adapter does not start termination before returning drain state"
         )
+    for term in [
+        "TraceObservationError::WaitTimedOut =>",
+        "DrainPublication::Forbidden(error)",
+        "publication,",
+    ]:
+        if term not in adapter_next:
+            raise AssertionError(f"execution timeout can reach publication: {term}")
     before(
         adapter_finish,
         "report.into_terminal()",
@@ -307,6 +314,17 @@ def assert_lifecycle_contract(
     before(
         adapter_finish,
         "self.protocol.confirm_tree_drained()?",
+        "self.protocol.finish()?",
+    )
+    for term in [
+        "if let DrainPublication::Forbidden(error) = self.publication",
+        "return Err(ObserverAdapterError::Observation(error));",
+    ]:
+        if term not in adapter_finish:
+            raise AssertionError(f"forbidden drain can reach publication: {term}")
+    before(
+        adapter_finish,
+        "if let DrainPublication::Forbidden(error) = self.publication",
         "self.protocol.finish()?",
     )
     if adapter.count("terminal: TraceTerminalCapture") != 1:
@@ -356,8 +374,8 @@ EXPECTED_BODIES = {
     "active-drain": "93fb4ec3a1af8abcc2ad31dba4c23eb498b43a743137cbe3d0d1e04afdbd6ee3",
     "active-finish": "e1c023f8009923758a6e37f4cc77e6e88e1f7c92e346ac08f98197a5c9e1d9a5",
     "active-next": "d338650ed48b9e795519e78b67f2b23052c42f5d09de1c2fe76f019688d98efb",
-    "adapter-drain": "5f5ee9835cf2bacc73f10cd50b0e9a20f6d91d23c4d2905c84af181e22d05848",
-    "adapter-next": "e7d57ca91f85832b6fb3310418e2a0df9ee0fb4b40fa29203bac66423c8620cb",
+    "adapter-drain": "abd829e86e881f9c28981c43d3832c6b707dd90aad22500109f3d25b384a7ab0",
+    "adapter-next": "c55f42761e2cbaa93561514d8a66313804cf9d6ba3722f94b816801a608dc13e",
     "cgroup-drain-before": "caa3f99baee132f20cfb3ca42fda7d8b93c046f83e6d3fa35d2fcea3d4deeda5",
     "cgroup-drop": "c9534897bad7882ee2591148643c0f02910ed23c2c3fbdd227b2115fbb84c95d",
     "cgroup-finish-before": "328db0a2d73eb4ea614b52b9620fc35f1f3678d15b30595b10acdff453e77c36",
@@ -372,7 +390,7 @@ EXPECTED_BODIES = {
     "wait-for-exact-stop": "d7d42625b210d8aeed50f75176c09c728887bcd085d9311789a73a0a0ff7a831",
 }
 EXPECTED_FILES = {
-    "adapter": "72b8868fb0d50a65e4306f754051dec1e3aace4ee7da33825bb990f4d7bab70b",
+    "adapter": "39bb09f84b33939727db22ae57e75516ad3f01b82e271439348ae2ede66ce2d0",
     "adapter-evidence": "87bc8da1a2cab8f6e3b380d38e2017852abe4cee0039854a4ea0dd3b8571d8b4",
     "adapter-lib": "ccad4545cfd41802c32d66a692d65aca9a69d0e59b0a3cb7c5c34da42830a198",
     "adapter-manifest": "ef7c613a66781c4b64d75435524166329b5239b8172f97b28cff2d6d609c8d78",
@@ -628,6 +646,34 @@ class DiagnosticLifecycleContractTests(unittest.TestCase):
                 self.adapter.replace(
                     "let trace = self.trace.begin_termination()?;",
                     "let trace = self.trace.terminate_and_drain()?;",
+                    1,
+                ),
+                self.cgroup,
+                self.linux_lib,
+                self.adapter_lib,
+            ),
+            (
+                "execution timeout remains publication eligible",
+                self.trace,
+                self.adapter.replace(
+                    "TraceObservationError::WaitTimedOut => {\n"
+                    "                        DrainPublication::Forbidden(error)\n"
+                    "                    }",
+                    "TraceObservationError::WaitTimedOut => DrainPublication::Eligible",
+                    1,
+                ),
+                self.cgroup,
+                self.linux_lib,
+                self.adapter_lib,
+            ),
+            (
+                "forbidden timeout drain reaches protocol publication",
+                self.trace,
+                self.adapter.replace(
+                    "        if let DrainPublication::Forbidden(error) = self.publication {\n"
+                    "            return Err(ObserverAdapterError::Observation(error));\n"
+                    "        }\n",
+                    "",
                     1,
                 ),
                 self.cgroup,

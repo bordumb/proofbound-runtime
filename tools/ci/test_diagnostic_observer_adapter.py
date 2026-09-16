@@ -66,8 +66,8 @@ def body_sha256(source: str, signature: str) -> str:
 
 
 EXPECTED_LOAD_BEARING_BODIES = {
-    "active-next-event": "e7d57ca91f85832b6fb3310418e2a0df9ee0fb4b40fa29203bac66423c8620cb",
-    "draining-finish": "5f5ee9835cf2bacc73f10cd50b0e9a20f6d91d23c4d2905c84af181e22d05848",
+    "active-next-event": "c55f42761e2cbaa93561514d8a66313804cf9d6ba3722f94b816801a608dc13e",
+    "draining-finish": "abd829e86e881f9c28981c43d3832c6b707dd90aad22500109f3d25b384a7ab0",
 }
 
 
@@ -78,6 +78,28 @@ def assert_load_bearing_bodies(adapter: str) -> None:
     }
     if actual != EXPECTED_LOAD_BEARING_BODIES:
         raise AssertionError(f"load-bearing adapter body mismatch: {actual!r}")
+
+
+def assert_timeout_publication_contract(adapter: str) -> None:
+    active = implementation(adapter, "ActiveObserver")
+    draining = implementation(adapter, "DrainingObserver")
+    for term in [
+        "TraceObservationError::WaitTimedOut =>",
+        "DrainPublication::Forbidden(error)",
+        "publication,",
+    ]:
+        if term not in active:
+            raise AssertionError(f"active timeout can reach publication: {term}")
+    for term in [
+        "if let DrainPublication::Forbidden(error) = self.publication",
+        "return Err(ObserverAdapterError::Observation(error));",
+    ]:
+        if term not in draining:
+            raise AssertionError(f"forbidden drain can reach publication: {term}")
+    if draining.index("DrainPublication::Forbidden") > draining.index(
+        "let publication = self.protocol.finish()?"
+    ):
+        raise AssertionError("publication is selected before the timeout prohibition")
 
 
 def private_fields(source: str, type_name: str) -> list[str]:
@@ -284,6 +306,7 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
                 "trace: DrainingTrace,",
                 "protocol: ObserverProtocol,",
                 "untracked_processes: BTreeSet<DiagnosticProcessId>,",
+                "publication: DrainPublication,",
             ],
         )
         self.assertEqual(
@@ -363,6 +386,7 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
                 "#[derive(Debug, Eq, PartialEq)]",
                 "#[derive(Debug)]",
                 "#[derive(Debug)]",
+                "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
                 "#[derive(Debug)]",
                 "#[must_use]",
                 "#[must_use]",
@@ -499,6 +523,31 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
 
     def test_load_bearing_event_and_drain_bodies_are_exact(self):
         assert_load_bearing_bodies(self.adapter)
+
+    def test_execution_timeout_cannot_select_publication(self):
+        assert_timeout_publication_contract(self.adapter)
+
+        mutations = {
+            "timeout publication allowed": self.adapter.replace(
+                "TraceObservationError::WaitTimedOut => {\n"
+                "                        DrainPublication::Forbidden(error)\n"
+                "                    }",
+                "TraceObservationError::WaitTimedOut => DrainPublication::Eligible",
+                1,
+            ),
+            "forbidden drain reaches protocol finish": self.adapter.replace(
+                "        if let DrainPublication::Forbidden(error) = self.publication {\n"
+                "            return Err(ObserverAdapterError::Observation(error));\n"
+                "        }\n",
+                "",
+                1,
+            ),
+        }
+        for name, mutation in mutations.items():
+            with self.subTest(name=name):
+                self.assertNotEqual(mutation, self.adapter)
+                with self.assertRaises(AssertionError):
+                    assert_timeout_publication_contract(mutation)
 
     def test_mutation_witnesses_reject_overflow_clear_and_replay_bypass(self):
         mutations = {

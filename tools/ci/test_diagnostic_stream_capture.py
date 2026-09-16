@@ -239,8 +239,8 @@ def assert_stream_contract(trace: str, adapter: str, sys: str) -> None:
 
 
 EXPECTED_BODIES = {
-    "adapter-active-step": "e7d57ca91f85832b6fb3310418e2a0df9ee0fb4b40fa29203bac66423c8620cb",
-    "adapter-drain-finish": "5f5ee9835cf2bacc73f10cd50b0e9a20f6d91d23c4d2905c84af181e22d05848",
+    "adapter-active-step": "c55f42761e2cbaa93561514d8a66313804cf9d6ba3722f94b816801a608dc13e",
+    "adapter-drain-finish": "abd829e86e881f9c28981c43d3832c6b707dd90aad22500109f3d25b384a7ab0",
     "capture": "a6783ae914ce32557ca90f72c44b56efc617958bfb6587514ba6de9a3542299c",
     "child-drop": "4b0736ae93ba2cc1524cce0bd88b7750ed536ff7fc5c6f2066c5ea7d8e01e786",
     "child-disarm": "573522b819713c764133d1ee66fa52cd8b9d9c7d085cf75a201773849c5b2df2",
@@ -257,7 +257,7 @@ EXPECTED_BODIES = {
 }
 
 EXPECTED_FILES = {
-    "adapter": "72b8868fb0d50a65e4306f754051dec1e3aace4ee7da33825bb990f4d7bab70b",
+    "adapter": "39bb09f84b33939727db22ae57e75516ad3f01b82e271439348ae2ede66ce2d0",
     "adapter-lib": "ccad4545cfd41802c32d66a692d65aca9a69d0e59b0a3cb7c5c34da42830a198",
     "adapter-manifest": "ef7c613a66781c4b64d75435524166329b5239b8172f97b28cff2d6d609c8d78",
     "authority": "9d1945b590a3a9f44f6af95d3090ad0a8d1bc0cfa601c35273cd0a72c86cbddc",

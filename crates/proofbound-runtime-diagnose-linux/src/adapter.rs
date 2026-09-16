@@ -216,6 +216,12 @@ impl ActiveObserver {
         let event = match self.trace.next_event() {
             Ok(event) => event,
             Err(error) => {
+                let publication = match error {
+                    TraceObservationError::WaitTimedOut => {
+                        DrainPublication::Forbidden(error)
+                    }
+                    _ => DrainPublication::Eligible,
+                };
                 let directive = self.protocol.record_observer_failure()?;
                 if directive != ObserverDirective::TerminateAndDrain {
                     return Err(ObserverAdapterError::Protocol(
@@ -228,6 +234,7 @@ impl ActiveObserver {
                         trace,
                         protocol: self.protocol,
                         untracked_processes: BTreeSet::new(),
+                        publication,
                     },
                     observation: ObserverObservation::Failure(error),
                 });
@@ -293,6 +300,7 @@ impl ActiveObserver {
                     trace,
                     protocol: self.protocol,
                     untracked_processes,
+                    publication: DrainPublication::Eligible,
                 },
                 observation: ObserverObservation::Event(Box::new(event)),
             });
@@ -362,6 +370,13 @@ pub struct DrainingObserver {
     trace: DrainingTrace,
     protocol: ObserverProtocol,
     untracked_processes: BTreeSet<DiagnosticProcessId>,
+    publication: DrainPublication,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum DrainPublication {
+    Eligible,
+    Forbidden(TraceObservationError),
 }
 
 impl DrainingObserver {
@@ -413,6 +428,9 @@ impl DrainingObserver {
         }
         let terminal = report.into_terminal();
         self.protocol.confirm_tree_drained()?;
+        if let DrainPublication::Forbidden(error) = self.publication {
+            return Err(ObserverAdapterError::Observation(error));
+        }
         let publication = self.protocol.finish()?;
         Ok(CompletedObserver {
             protocol: self.protocol,
