@@ -253,7 +253,7 @@ EXPECTED_FILES = {
     "adapter-lib": "ccad4545cfd41802c32d66a692d65aca9a69d0e59b0a3cb7c5c34da42830a198",
     "adapter-manifest": "ef7c613a66781c4b64d75435524166329b5239b8172f97b28cff2d6d609c8d78",
     "authority": "9d1945b590a3a9f44f6af95d3090ad0a8d1bc0cfa601c35273cd0a72c86cbddc",
-    "claim": "9ea76c092760e3aa9350474770066ccbf5d218f11b6e4812310ca22db32d862a",
+    "claim": "ca9d5bece8e1859cab3ee3173e72dd70652ce8edf8a19204a57d3c335af8ec1f",
     "contract-evidence": "8efddeb82d8cfcea95e6967b5d4b995f77215e159fc74b45a8f9cc0450a512c8",
     "core-manifest": "0d22823a1d4f397fb58693c7d9fe7498969ce242b5da0f372d8cc8f55f960b9b",
     "core-lib": "2039d8c789844cddaaabbf432a0a6ef465f77300577f3b57922d7bcbcc930450",
@@ -273,7 +273,7 @@ EXPECTED_FILES = {
     "sys": "c7433f4485aa12829c87ef10210fa766676bc24729361e0a82ac93a2267eb06f",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
     "trace": "83ac6a80b1e3be2e5b44fe5ce4edc1ade1e10f7332f13bc81a3d1db86077cc90",
-    "unit-evidence": "aa412bdc666a1817f18e8a8df227ff356100147635f5a996068b8f3672aaeda7",
+    "unit-evidence": "c3265aa232ccf65fda04efd5706f3b85ca5d2fd006bf632dde4815090d076ccb",
 }
 
 

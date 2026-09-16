@@ -28,12 +28,12 @@ def body_sha256(source: str, signature: str) -> str:
 
 
 EXPECTED_LOAD_BEARING_BODIES = {
-    "active-begin-termination": "1674fee75a1464bc9c3a2444044cc8774cb33b80e0a64d2b08050101da6aa090",
-    "active-next-event": "975c888931c1f6bde654679101536fbb522cbc770347fdc0bbf8de975657baf0",
+    "active-begin-termination": "e52f7855e3e0bd7d538fa18963b1a404be004736fd029db4c1af4e092c495ed2",
+    "active-next-event": "d338650ed48b9e795519e78b67f2b23052c42f5d09de1c2fe76f019688d98efb",
     "active-drain": "93fb4ec3a1af8abcc2ad31dba4c23eb498b43a743137cbe3d0d1e04afdbd6ee3",
-    "active-complete-drain": "db92609df0e5e00a33ce9848422783d7ce5e2ef8b4157c7e7bdafae6bfb1e49e",
-    "draining-finish": "887b3f1d3af522f0c221175bfc0fa2f70b89a0920e8ff2ce255cf1cafacf5024",
-    "active-wait-observation": "6197d2734de504cd1419cf47fad0457c0edb91d4f198666a09e4d3e3792f1257",
+    "active-complete-drain": "aaeab9d4290dd85e24d981b32d84061041a0c2eb2d80b68e9810fe3c7e63b546",
+    "draining-finish": "b253199d4f51364a3db4af3c15d5e268a2c0be72d13cbbbb2de9aa3d485cf432",
+    "active-wait-observation": "43f872fced14df3e3c29b9ff335acc52500a45613cb54c7cb7b001594530cda7",
     "active-drain-observation": "dceb35ed4c886eb36161331cf7106b07145a37d67e6714e359531e8fee06a7c9",
     "active-register-child": "e749a7f47624f313ba624ca850657240f2c0558e2f3b0b1544566b734eb6f3aa",
 }
@@ -148,7 +148,7 @@ class DiagnosticTraceEventContractTests(unittest.TestCase):
             wait.index("self.register_child(child)?"),
             wait.index("self.tree_reconciliation_failed = false"),
         )
-        self.assertIn("self.trace.complete_drain(observations)", drain)
+        self.assertIn("self.trace.complete_drain(observations, self.deadline)", drain)
         self.assertIn("if self.tree_reconciliation_failed", complete)
         self.assertIn("TreeReconciliationFailed", complete)
 
