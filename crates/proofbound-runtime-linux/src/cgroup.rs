@@ -2,6 +2,7 @@
 
 use core::fmt;
 use std::path::{Path, PathBuf};
+#[cfg(feature = "diagnostic-observer")]
 use std::time::Instant;
 
 use proofbound_runtime_core::{
@@ -448,6 +449,7 @@ pub struct FreshCgroup {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum DropCleanup {
     Abandoned,
+    #[cfg(feature = "diagnostic-observer")]
     DeadlineBound,
 }
 
@@ -681,6 +683,7 @@ impl FreshCgroup {
     }
 
     /// Verifies that the version 2 cgroup remains unused with its zero snapshot.
+    #[cfg(feature = "diagnostic-observer")]
     pub(crate) fn revalidate_fresh(&self) -> Result<(), CgroupError> {
         #[cfg(target_os = "linux")]
         {
@@ -795,6 +798,7 @@ impl FreshCgroup {
     }
 
     /// Drains, observes, and removes the exact group before an absolute deadline.
+    #[cfg(feature = "diagnostic-observer")]
     pub(crate) fn finish_before(
         self,
         deadline: Instant,
@@ -856,6 +860,7 @@ impl FreshCgroup {
     }
 
     #[cfg(target_os = "linux")]
+    #[cfg(feature = "diagnostic-observer")]
     fn drain_in_place_before(&mut self, deadline: Instant) -> Result<(), CgroupError> {
         if self.removed {
             return Ok(());
@@ -899,6 +904,7 @@ impl Drop for FreshCgroup {
                 DropCleanup::Abandoned => {
                     let _ = self.cleanup_in_place();
                 }
+                #[cfg(feature = "diagnostic-observer")]
                 DropCleanup::DeadlineBound => {
                     if populated(&self.descriptor).unwrap_or(true) {
                         let _ = write_control(&self.descriptor, "cgroup.kill", b"1");
