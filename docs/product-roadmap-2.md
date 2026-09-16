@@ -122,7 +122,8 @@ Exact-main Verify run `34997195939` passed. The `PBR-OBSERVER-026` source wave
 now maps registered trace events into diagnostic artifact events while keeping
 all object resolution explicitly unresolved. It passed exact-head Verify run
 `35018691928` and merged unsigned as `a89b92d`; exact-main verification is in
-progress. The dependent `PBR-OBSERVER-027` source wave adds independently
+complete in successful run `35025687602`. The dependent `PBR-OBSERVER-027`
+source wave adds independently
 bounded, cancellable, nonblocking stdout and stderr drains so pipe saturation
 cannot block on an unread stream, and terminal collection cancels and fails
 closed at a fixed monotonic deadline instead of waiting indefinitely; its

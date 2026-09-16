@@ -1,10 +1,10 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-15T22:41:25+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-16T01:11:30+01:00 (Europe/London, BST)
 - **Runtime baseline:** the RT-8 event mapper passed exact-head Verify run
   `35018691928` and merged unsigned as `a89b92d`. Exact-main Verify run
-  `35025687602` was started for that merge.
+  `35025687602` passed for that merge.
 - **Active implementation wave:** `PBR-OBSERVER-027` bounded diagnostic stream
   collection is restacked on `a89b92d`. Its initial independent review found
   terminal-deadline, cleanup-ownership, wording, and status defects. Separate
@@ -307,7 +307,7 @@ manifest describes the supported tuple.
   version 1 path, artifact inconsistency, or sequence overflow. Source,
   registered Rust tests, independent checks, and mutation witnesses passed
   exact-head Verify run `35018691928`, then merged unsigned as `a89b92d`.
-  Exact-main Verify run `35025687602` was started for that merge.
+  Exact-main Verify run `35025687602` passed for that merge.
 - [ ] Add bounded concurrent stdout and stderr collection to the traced session
   before command integration. The `PBR-OBSERVER-027` source wave starts both
   nonblocking cancellable drains after spawn, retains independent bounded

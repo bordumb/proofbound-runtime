@@ -47,7 +47,7 @@ exact-head run `34992273744` and merged unsigned as `4783896`. Exact-main run
 `34997195939` passed. The following `PBR-OBSERVER-026` wave maps the complete
 registered trace events into closed diagnostic artifact events without
 inventing object resolution. It passed exact-head Verify run `35018691928` and
-merged unsigned as `a89b92d`; exact-main run `35025687602` was started for that
+merged unsigned as `a89b92d`; exact-main run `35025687602` passed for that
 merge. The dependent `PBR-OBSERVER-027`
 source and evidence start independent bounded stdout and stderr drains before
 the spawned trace state returns, continue draining after a retained prefix is

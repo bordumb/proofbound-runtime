@@ -3161,6 +3161,30 @@ The following approval-only commit changes no reviewed production, claim,
 assumption, specification, evidence, checker, or source-closure bytes. Fresh
 hosted verification remains required before merge.
 
+## RT-8 diagnostic stream CI-base integration review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `a8df83d7dab62006389e85eb0bb3c31bfc4a2914`
+- **Reviewed head:** `adf98ec25e302e51760dc7c7cfe1cf45b51882a6`
+- **Branch:** `codex/rt8-diagnostic-streams`
+- **Method:** Complete exact-range static security and integration review. The
+  reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The reviewer found no production, evidence, credential, dependency, or review
+history regression. The previously approved stream behavior, compilation fix,
+evidence operation, and source fingerprints remain intact. The authenticated
+metadata base is byte-identical to merged Runtime main `a8df83d`, and both RT-7
+and RT-8 review histories are preserved.
+
+One blocking status defect remains. Event-mapping exact-main Verify run
+`35025687602` passed, but the assurance plan, execution checklist, Roadmap 2,
+and RT-8 integration record still describe it as started or in progress. Those
+files participate in the reviewed claim closure. They must record the exact
+successful run before the integrated head can be approved.
+
 ## RT-7 Proofbound metadata credential initial review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
