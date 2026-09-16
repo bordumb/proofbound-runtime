@@ -1,16 +1,17 @@
 # Proofbound Runtime product roadmap 2: deferred capabilities
 
-- **Status:** implementation; RT-7 current-integration source and the RT-11
-  signing decision are merged and admitted. RT-7 publication routes and the RT-8 diagnostic
+- **Status:** implementation; RT-7 current-integration source, protected
+  credential retrieval, and the RT-11 signing decision are merged and admitted.
+  RT-7 publication routes and the RT-8 diagnostic
   contract, artifact producer, observer protocol, trace startup, active event
-  source, event-and-drain coupling, and architecture-qualified decoder are
-  merged. The current-integration source closes npm's missing first-publication route. External
+  source, event-and-drain coupling, architecture-qualified decoder, exact event
+  mapping, and bounded stream collector are merged. The current-integration
+  source closes npm's missing first-publication route. External
   registry publication and every complete Roadmap 2 epic exit remain open.
-- **Date:** 2026-09-15
-- **Runtime baseline:** RT-11 signing-decision merge
-  `08b8dbe` on `main`; exact-main Verify run `35012954812` passed. The
-  architecture-qualified diagnostic decoder remains admitted by exact-head
-  Verify run `34992273744` and exact-main Verify run `34997195939`.
+- **Date:** 2026-09-16
+- **Runtime baseline:** RT-8 bounded-stream merge `17458ad` on `main`;
+  exact-head Verify run `35039326242` and exact-main Verify run `35042895100`
+  passed
 - **Proofbound baseline consumed by Runtime evidence:** public immutable bundle
   for source `9512469`; protected-path cutover merged as Runtime `4a0cfdb` and
   passed exact-main Verify run `34918706960`
@@ -35,14 +36,16 @@ threat-model, ADR, claim, and evidence changes before production code.
 
 ### Execution checkpoint
 
-As of 2026-09-15, Runtime main commit `08b8dbe` contains the version 2 memory
+As of 2026-09-16, Runtime main commit `17458ad` contains the version 2 memory
 and deterministic CBOR wave, receipt composition and acceptance, a bounded
 static plan scaffold,
 typed prelaunch diagnostics, reproducible Rust, Python, and TypeScript SDK
 packages, the network-mechanism decision, the performance baseline, and the
 pure RT-8 observer protocol. These are prerequisites or partial foundations
 for RT-7, RT-8, RT-9, and RT-13. They do not close a Roadmap 2 exit condition.
-Registry publication, consumer dogfood, the complete diagnostic planner,
+It also contains the exact diagnostic event mapper and bounded concurrent
+stdout and stderr collector. Registry publication, consumer dogfood, the
+complete diagnostic planner,
 production authenticated networking, the guest profile, signing implementation, the
 receipt log, and the execution service remain open. RT-7.1 is governed by
 [Specification 0014](specs/0014_public_compatibility_and_distribution.md).
@@ -126,8 +129,10 @@ completed successfully in run `35025687602`. The dependent `PBR-OBSERVER-027`
 source wave adds independently
 bounded, cancellable, nonblocking stdout and stderr drains so pipe saturation
 cannot block on an unread stream, and terminal collection cancels and fails
-closed at a fixed monotonic deadline instead of waiting indefinitely; its
-re-review and hosted admission are open.
+closed at a fixed monotonic deadline instead of waiting indefinitely.
+Independently approved source `5d296fb` and approval-only head `17458ad` passed
+PR 22 Verify run `35039326242`; unsigned exact main `17458ad` passed run
+`35042895100`.
 Object resolution, command integration, the native attack corpus, and release
 binding remain open.
 The RT-7 current-integration source merged as `47c5ad2` and passed exact-main

@@ -256,7 +256,7 @@ EXPECTED_FILES = {
     "adapter-lib": "967270aa9c886b9ead6c80fbeae2c44fce868aa36fbb0c5d6071c77c2fa6ca16",
     "adapter-manifest": "ef7c613a66781c4b64d75435524166329b5239b8172f97b28cff2d6d609c8d78",
     "authority": "9d1945b590a3a9f44f6af95d3090ad0a8d1bc0cfa601c35273cd0a72c86cbddc",
-    "claim": "9ea76c092760e3aa9350474770066ccbf5d218f11b6e4812310ca22db32d862a",
+    "claim": "ca9d5bece8e1859cab3ee3173e72dd70652ce8edf8a19204a57d3c335af8ec1f",
     "contract-evidence": "8efddeb82d8cfcea95e6967b5d4b995f77215e159fc74b45a8f9cc0450a512c8",
     "core-manifest": "0d22823a1d4f397fb58693c7d9fe7498969ce242b5da0f372d8cc8f55f960b9b",
     "core-lib": "2039d8c789844cddaaabbf432a0a6ef465f77300577f3b57922d7bcbcc930450",

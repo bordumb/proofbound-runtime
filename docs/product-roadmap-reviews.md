@@ -3351,3 +3351,23 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes no reviewed workflow, installer,
 claim, assumption, specification, checker, or falsifier bytes. Any later
 subject change requires a new exact-head review.
+
+## RT-7 credential and RT-8 stream hosted admission closure
+
+This is an admission record, not a new independent review.
+
+- RT-7 reviewed source `f5a5e94a0954198fe4060f458dd04d375d427e09`
+  was wrapped only by approval commit `a8df83d7dab62006389e85eb0bb3c31bfc4a2914`.
+  PR 23 exact-head Verify run `35034962830` passed all 11 jobs. The unsigned
+  fast-forward merge is `a8df83d7dab62006389e85eb0bb3c31bfc4a2914`;
+  exact-main Verify run `35038304369` passed all 11 jobs.
+- RT-8 reviewed source `5d296fbcfe52ba5565d61a0b8d8d79265bed225d`
+  was wrapped only by approval commit `17458ad0aaa627789e67a3a62adbbe0767de39cf`.
+  PR 22 exact-head Verify run `35039326242` passed all 11 jobs. The unsigned
+  fast-forward merge is `17458ad0aaa627789e67a3a62adbbe0767de39cf`;
+  exact-main Verify run `35042895100` passed all 11 jobs.
+
+These hosted results admit the exact subjects already covered by the recorded
+independent approvals. They do not close registry publication, external
+consumer, native diagnostic attack, command-integration, or released-artifact
+obligations.

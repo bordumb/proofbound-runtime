@@ -1,19 +1,19 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-16T01:11:30+01:00 (Europe/London, BST)
-- **Runtime baseline:** the RT-8 event mapper passed exact-head Verify run
-  `35018691928` and merged unsigned as `a89b92d`. Exact-main Verify run
-  `35025687602` passed for that merge.
-- **Active implementation wave:** `PBR-OBSERVER-027` bounded diagnostic stream
-  collection is restacked on `a89b92d`. Its initial independent review found
-  terminal-deadline, cleanup-ownership, wording, and status defects. Separate
-  unsigned corrections are receiving exact-head re-review.
-- **Current implementation batch:** admit the bounded stream collector before
-  lifecycle, object-resolution, and command work. RT-7 protected routes and
-  current-integration source are merged; registry configuration, actual public
-  package publication, anonymous observations, consumer dogfood, and a retained
-  current-integration artifact remain external completion gates.
+- **Last updated:** 2026-09-16T18:47:47+01:00 (Europe/London, BST)
+- **Runtime baseline:** the RT-8 bounded stream collector passed exact-head PR
+  22 Verify run `35039326242`, merged unsigned as `17458ad`, and passed
+  exact-main Verify run `35042895100`.
+- **Active implementation wave:** `PBR-OBSERVER-028` diagnostic execution
+  lifecycle: stopped-child cgroup placement, one absolute deadline, resource
+  observation, and fail-closed cleanup before command integration.
+- **Current batch:** restack the independently developed lifecycle series on
+  exact admitted main, then repeat exact-source review and hosted admission.
+- **Parallel external gates:** RT-7 protected routes and current-integration
+  source are merged; registry configuration, actual public package publication,
+  anonymous observations, consumer dogfood, and a retained current-integration
+  artifact remain external completion gates.
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the current operational view of the development path in the
@@ -105,10 +105,12 @@ implementation remain behind their recorded demand gates.
 - [x] Add causal mutations for redirect leakage, job-level token movement,
   persisted checkout credentials, duplicated credentials, asset credentials,
   and installer environment or working-directory widening.
-- [ ] Obtain an independent exact-head `APPROVE` verdict for the corrected
+- [x] Obtain an independent exact-head `APPROVE` verdict for the corrected
   claim, assumption, workflow, installer, and falsifiers.
-- [ ] Pass one complete hosted exact-head Verify run before restoring current
+- [x] Pass one complete hosted exact-head Verify run before restoring current
   admission to `PBR-DISTRIBUTION-016` or inherited `PBR-DISTRIBUTION-025`.
+  PR 23 run `35034962830` passed; unsigned merge `a8df83d` passed exact-main
+  Verify run `35038304369`.
 
 Review history:
 
@@ -308,15 +310,17 @@ manifest describes the supported tuple.
   registered Rust tests, independent checks, and mutation witnesses passed
   exact-head Verify run `35018691928`, then merged unsigned as `a89b92d`.
   Exact-main Verify run `35025687602` passed for that merge.
-- [ ] Add bounded concurrent stdout and stderr collection to the traced session
+- [x] Add bounded concurrent stdout and stderr collection to the traced session
   before command integration. The `PBR-OBSERVER-027` source wave starts both
   nonblocking cancellable drains after spawn, retains independent bounded
   prefixes while continuing to end of file, collects them only after terminal
   tree handling, and makes pipe setup, reader startup, read, or join failures
   block publication.
-  Registered Rust tests and an independent source checker are implemented;
-  independent review and hosted exact-head admission remain open. A command
-  without this wave can deadlock when a target fills a pipe.
+  Registered Rust tests and an independent source checker passed exact-source
+  review. Reviewed source `5d296fb` and approval-only head `17458ad` passed PR
+  22 Verify run `35039326242`; the unsigned merge is `17458ad`, and exact-main
+  Verify run `35042895100` passed. A command without this wave can deadlock when
+  a target fills a pipe.
 - [ ] Keep the same stopped child, place it in the prepared cgroup before target
   release, apply one absolute plan wall-time deadline through observation and
   drain, finish resource observation after the tree is empty, and block

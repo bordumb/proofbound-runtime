@@ -3,7 +3,8 @@
 **Status:** package, one-time npm bootstrap, and current-integration source are
 admitted through exact Runtime main `47c5ad2`. The public Proofbound bundle
 credential-scoping correction is independently approved, passed exact-head PR
-23 Verify, and merged unsigned as `a8df83d`; exact-main admission is pending.
+23 Verify, merged unsigned as `a8df83d`, and passed exact-main Verify run
+`35038304369`.
 External registry publication and consumer observations remain open
 
 **Primary owner:** Proofbound Runtime
@@ -142,8 +143,8 @@ Release assets remain public downloads without that credential and retain exact
 pin, size, digest, manifest, and installed-byte checks. The correction avoids
 shared anonymous API quotas without converting the public asset path into a
 credential-dependent distribution claim. It passed independent review and PR
-23 Verify run `35034962830`, merged unsigned as `a8df83d`, and awaits exact-main
-admission in run `35038304369`.
+23 Verify run `35034962830`, merged unsigned as `a8df83d`, and passed exact-main
+Verify run `35038304369`.
 
 ## Registry publication implementation checkpoint
 

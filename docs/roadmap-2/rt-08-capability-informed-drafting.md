@@ -48,13 +48,15 @@ exact-head run `34992273744` and merged unsigned as `4783896`. Exact-main run
 registered trace events into closed diagnostic artifact events without
 inventing object resolution. It passed exact-head Verify run `35018691928` and
 merged unsigned as `a89b92d`; exact-main run `35025687602` passed for that
-merge. The dependent `PBR-OBSERVER-027`
-source and evidence start independent bounded stdout and stderr drains before
+merge. The dependent `PBR-OBSERVER-027` source and evidence start independent
+bounded stdout and stderr drains before
 the spawned trace state returns, continue draining after a retained prefix is
 full, and gate publication on fixed-deadline terminal collection that cancels
-and fails closed when either reader withholds completion. They also await independent
-review and hosted admission. Cgroup and wall-time coupling, object resolution,
-command integration, the native attack corpus, and release binding remain open.
+and fails closed when either reader withholds completion. Independently
+approved source `5d296fb` and approval-only head `17458ad` passed PR 22 Verify
+run `35039326242`; the unsigned merge `17458ad` passed exact-main Verify run
+`35042895100`. Cgroup and wall-time coupling, object resolution, command
+integration, the native attack corpus, and release binding remain open.
 
 **Primary owner:** Proofbound Runtime
 

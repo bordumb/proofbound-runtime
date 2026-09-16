@@ -216,7 +216,7 @@ and superseded items in the table.
 | [PBF-0010](pbf-0010-translation-cache-state-exclusion.md) | Translation cache state exclusion | `workflow` | `blocking` | `resolved` | Version 0.1 release linkage | `proof-bound@585c0e0` |
 | [PBF-0011](pbf-0011-contextual-semantic-artifact-binding.md) | Contextual semantic artifact binding | `evidence-semantics` | `blocking` | `resolved` | Version 0.1 release linkage | `proof-bound` ADR 0022; `3ec98f5..70af5e6` |
 | [PBF-0012](pbf-0012-deterministic-parallel-evidence-scheduling.md) | Deterministic parallel evidence scheduling | `workflow` | `near-term` | `upstream-ready` | Milestone A | Not upstreamed |
-| [PBF-0013](pbf-0013-versioned-proofbound-tool-distribution.md) | Exact-identity Proofbound tool distribution | `workflow` | `near-term` | `upstreamed` | Milestone A | Proofbound PR 10 merged `dd481a3`; PR 12 merged `9512469`; Runtime dogfood `f2a06de`; protected cutover pending |
+| [PBF-0013](pbf-0013-versioned-proofbound-tool-distribution.md) | Exact-identity Proofbound tool distribution | `workflow` | `near-term` | `upstreamed` | Milestone A | Proofbound PR 10 merged `dd481a3`; PR 12 merged `9512469`; Runtime dogfood `f2a06de`; protected cutover `4a0cfdb`; credential-scoped retrieval `a8df83d` |
 
 ## Rules for agents
 

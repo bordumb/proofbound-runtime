@@ -1,11 +1,11 @@
 # Product roadmap execution order
 
 - **Status:** active delivery order
-- **Date:** 2026-09-15
+- **Date:** 2026-09-16
 - **Applies to:** Roadmap 1 release closure, Roadmap 2, and Roadmap 3 candidate
   promotion
-- **Current Runtime main:** `4783896`; exact-head Verify run `34992273744` and
-  exact-main Verify run `34997195939` passed
+- **Current Runtime main:** `17458ad`; exact-head Verify run `35039326242` and
+  exact-main Verify run `35042895100` passed
 - **Current reviewed Roadmap 1 source head:** `d76f3b8`
 - **Lifecycle:** prelaunch; zero external users; package labels are tooling
   metadata rather than compatibility promises
@@ -18,13 +18,15 @@ review updates it.
 
 ## 1. Current boundary
 
-Roadmap 1 source work is merged. Runtime main `4783896` also contains the
-reviewed and exact-main-admitted RT-8 decoder; run `34997195939` passed.
+Roadmap 1 source work is merged. Runtime main `17458ad` also contains the
+reviewed and exact-main-admitted RT-8 decoder, event mapper, and bounded stream
+collector; run `35042895100` passed.
 Roadmap 2 delivery is active; no complete Roadmap 2 epic has closed. Roadmap 3
 contains candidates, not scheduled implementation.
 
-The immediate objective is to finish RT-7 distribution, then remove the
-first-run and useful-network barriers in that order. No version cut,
+The immediate internal objective is to finish RT-8 drafting while RT-7's
+registry publication and unrelated-consumer observations proceed as external
+gates, then remove the useful-network barrier with RT-5. No version cut,
 compatibility layer, or migration window is a prelaunch dependency.
 
 ## 2. Delivery graph
@@ -145,10 +147,12 @@ The protected-path cutover passed independent review at production subject
 observer are now merged. The deterministic-CBOR current-integration producer
 and independent verifier passed independent review at source `a81e259` and are
 replayed on current main under `PBR-DISTRIBUTION-025`. Current npm registry
-rules exposed a missing first-publication route, so the active wave also adds
+rules exposed a missing first-publication route, so the admitted source also adds
 an immediate-`404`-gated one-time bootstrap token and mandatory transition to
-OIDC. That status does not prove package absence or lock registry state.
-Exact-head review and hosted verification remain open.
+OIDC. That status does not prove package absence or lock registry state. The
+later credential-scoping correction passed independent review and exact-head
+PR 23 Verify run `35034962830`, merged unsigned as `a8df83d`, and passed
+exact-main Verify run `35038304369`.
 External registry configuration, publication, anonymous observations, and
 unrelated consumer dogfood remain separate completion gates.
 This work follows the admitted foundation as a separate exact-source wave. It

@@ -15,7 +15,6 @@ assumptions = [
   "PBR-DIAGNOSTIC-STREAM-CHECK-AX-020",
 ]
 open_obligations = [
-  "Run the complete source, compilation, unit, and independent-check evidence in hosted exact-head verification before merge.",
   "Place the same stopped traced child in its prepared cgroup before target release, apply one absolute plan wall-time deadline, and couple cleanup failure to incomplete publication.",
   "Exercise pipe saturation, asymmetric limits, read failure, terminal stream timeout, forced drain, and descendant-held pipe descriptors on both supported native architectures.",
   "Connect both bounded captures to the separate pbr-diagnose command without treating diagnostic output as reusable production evidence.",
