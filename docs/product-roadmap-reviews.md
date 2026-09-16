@@ -3390,3 +3390,29 @@ remain. The detailed `PBR-DISTRIBUTION-016` assurance record still calls
 successful exact-main run `35038304369` pending, and RT-8's remaining-order
 section still instructs maintainers to admit already-admitted
 `PBR-OBSERVER-027`. The corrected exact head requires a new independent review.
+
+## Roadmap admission-state synchronization approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `17458ad0aaa627789e67a3a62adbbe0767de39cf`
+- **Reviewed head:** `d1f3079e28e3aa99de4a1cb4a06504d92847aa9f`
+- **Branch:** `codex/roadmap-status-sync`
+- **Method:** Complete exact-range static assurance and status re-review. The
+  reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the assurance plan binds successful exact-main run
+`35038304369` specifically to `a8df83d`, and that RT-8's remaining order begins
+with `PBR-OBSERVER-028` after recording `PBR-OBSERVER-027` as admitted. The
+preceding rejection record preserves its exact identities, findings, and
+non-endorsement. The distribution and observer obligation closures are
+justified, their external obligations remain open, the dependency order is
+consistent, and the stream checker fingerprint is exact. No new blocker was
+introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`17458ad0aaa627789e67a3a62adbbe0767de39cf..d1f3079e28e3aa99de4a1cb4a06504d92847aa9f`.
+The following approval-only commit changes no reviewed claim, obligation,
+roadmap status, dependency order, checker fingerprint, or hosted admission
+identity. Any later subject change requires a new exact-head review.
