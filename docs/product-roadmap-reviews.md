@@ -3208,6 +3208,37 @@ in successful run,” which is grammatically invalid and can be read as an
 incomplete result. It must state unambiguously that exact-main verification
 completed successfully. The corrected exact head requires re-review.
 
+## RT-8 diagnostic stream integrated-base approval
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `a8df83d7dab62006389e85eb0bb3c31bfc4a2914`
+- **Reviewed head:** `5d296fbcfe52ba5565d61a0b8d8d79265bed225d`
+- **Branch:** `codex/rt8-diagnostic-streams`
+- **Method:** Complete exact-range static security and integration re-review.
+  The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that both status blockers are closed. The assurance
+plan, execution checklist, Roadmap 2, and RT-8 integration record consistently
+record successful event-mapping exact-main run `35025687602`, and Roadmap 2
+states the result unambiguously. Both preceding rejection records preserve
+their exact identities, findings, and non-endorsement.
+
+The stream production, claim, assumptions, specification, evidence units,
+Cargo-operation correction, and source checkers remain byte-identical to
+approved head `f1384dc`. Their exact fingerprints remain synchronized. The
+credential-hardening workflows, installer, claims, premise, tests, and
+specification remain byte-identical to admitted base `a8df83d`. No new
+security, evidence, dependency, status, or review-history blocker was
+introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`a8df83d7dab62006389e85eb0bb3c31bfc4a2914..5d296fbcfe52ba5565d61a0b8d8d79265bed225d`.
+The following approval-only commit changes no reviewed production, workflow,
+claim, assumption, specification, evidence, checker, or status bytes. Any
+later subject change requires a new exact-head review.
+
 ## RT-7 Proofbound metadata credential initial review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
