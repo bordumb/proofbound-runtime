@@ -3178,6 +3178,34 @@ The following approval-only commit changes no reviewed production, claim,
 assumption, specification, ADR, checker, falsifier, or evidence bytes. Any
 later subject change requires a new exact-head review.
 
+## RT-8 diagnostic lifecycle explicit-input lint approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `b432ea7d05fde7088011443b43dbe6a109ca566e`
+- **Reviewed head:** `c623de6d34af5c6dbe7528f40688aef0418d2a8f`
+- **Branch:** `codex/rt8-lifecycle-final`
+- **Method:** Read-only exact-range review of the hosted Clippy correction,
+  closed attribute inventory, and exact adapter fingerprints. The reviewer
+  changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the reasoned `clippy::too_many_arguments`
+allowance is attached only to `prepare_observer`. Its eight typed inputs keep
+distinct authority, host-capability, lifecycle-ownership, resource, and
+observation-bound values visible at the construction boundary. The signature,
+function body, validation, ordering, ownership transfer, runtime behavior,
+claims, specifications, assumptions, and evidence meanings do not change. The
+observer-adapter checker admits exactly this attribute, the lifecycle and
+stream checkers update only the exact adapter file fingerprint, and no stale
+fingerprint remains.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`b432ea7d05fde7088011443b43dbe6a109ca566e..c623de6d34af5c6dbe7528f40688aef0418d2a8f`.
+The following approval-only commit changes no reviewed production, checker,
+claim, assumption, specification, ADR, or evidence bytes. Any later subject
+change requires a new exact-head review.
+
 ## RT-8 diagnostic stream admitted-base re-review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
