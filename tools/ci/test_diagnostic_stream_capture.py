@@ -78,6 +78,7 @@ def assert_stream_contract(trace: str, adapter: str, sys: str) -> None:
         trace, "fn disarm_after_identity_stable_handle("
     )
     record_terminal = implementation(trace, "fn record_terminal_process(")
+    exact_stop = implementation(trace, "fn wait_for_exact_stop(")
     release = implementation(trace, "pub fn release(")
     reader_drop = implementation(trace, "impl Drop for TraceStreamReaders")
     set_nonblocking = implementation(sys, "pub(crate) fn set_nonblocking(")
@@ -196,6 +197,13 @@ def assert_stream_contract(trace: str, adapter: str, sys: str) -> None:
         raise AssertionError("terminal child cleanup is not confined to the exact root")
     if "self.terminate_and_wait()" not in child_drop:
         raise AssertionError("child drop does not terminate and wait")
+    if "session: &mut TraceSession" not in exact_stop:
+        raise AssertionError("setup wait cannot update child cleanup ownership")
+    for terminal in ["TraceWaitStatus::Exited { .. }", "TraceWaitStatus::Signaled { .. }"]:
+        if terminal not in exact_stop:
+            raise AssertionError(f"setup wait omits terminal reap form: {terminal}")
+    post_wait = exact_stop[exact_stop.index("let observation =") :]
+    before(post_wait, "session.record_root_reaped();", "if deadline.expired()")
 
     before(
         natural_finish,
@@ -272,7 +280,7 @@ EXPECTED_FILES = {
     "stream-runtime-assumption": "ce57e1cab085cbd7b4f60ab03a607166a2dc77bdb924228b1f7c949a72bfeb19",
     "sys": "c7433f4485aa12829c87ef10210fa766676bc24729361e0a82ac93a2267eb06f",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "83ac6a80b1e3be2e5b44fe5ce4edc1ade1e10f7332f13bc81a3d1db86077cc90",
+    "trace": "d4b7a3a51a940da966ee15a4feaee55a7d0044aaf331b4642b608a716010d68c",
     "unit-evidence": "c3265aa232ccf65fda04efd5706f3b85ca5d2fd006bf632dde4815090d076ccb",
 }
 
@@ -353,6 +361,12 @@ class DiagnosticStreamCaptureContractTests(unittest.TestCase):
             (
                 "raw root reap leaves numeric cleanup armed",
                 self.trace.replace("self.session.record_root_reaped();", "", 1),
+                self.adapter,
+                self.sys,
+            ),
+            (
+                "setup root reap leaves numeric cleanup armed",
+                self.trace.replace("                session.record_root_reaped();\n", "", 1),
                 self.adapter,
                 self.sys,
             ),

@@ -158,8 +158,8 @@ def assert_lifecycle_contract(
     if lifecycle_type_test.count("TraceDeadline") != 0:
         raise AssertionError("typed lifecycle method accepts a deadline")
 
-    initial_wait = implementation(trace, "pub fn wait_for_initial_exec_stop(self)")
-    launcher_continue = implementation(trace, "pub fn continue_to_launcher_pause(self)")
+    initial_wait = implementation(trace, "pub fn wait_for_initial_exec_stop(mut self)")
+    launcher_continue = implementation(trace, "pub fn continue_to_launcher_pause(mut self)")
     boundary_continue = implementation(trace, "pub fn continue_for_boundary(self)")
     acknowledgement = implementation(trace, "pub fn receive_acknowledgement_and_stop(")
     install_options = implementation(trace, "pub fn install_options(self)")
@@ -215,6 +215,16 @@ def assert_lifecycle_contract(
     if exact_stop.count("if deadline.expired()") != 2:
         raise AssertionError("exact setup wait does not reject a late-ready stop")
     for term in [
+        "session: &mut TraceSession",
+        "TraceWaitStatus::Exited { .. }",
+        "TraceWaitStatus::Signaled { .. }",
+        "session.record_root_reaped();",
+    ]:
+        if term not in exact_stop:
+            raise AssertionError(f"terminal setup wait leaves numeric cleanup armed: {term}")
+    post_wait = exact_stop[exact_stop.index("let observation =") :]
+    before(post_wait, "session.record_root_reaped();", "if deadline.expired()")
+    for term in [
         "if self.session.deadline.expired()",
         "TraceObservationError::WaitTimedOut",
         "trace_syscall(process.get())",
@@ -243,12 +253,15 @@ def assert_lifecycle_contract(
         )
 
     for term in [
-        ".cgroup\n            .take()",
+        "let resources = self.cgroup.take().map_or_else(",
+        "|| Err(TraceObservationError::ResourceCleanupFailed)",
         ".finish_before(deadline.instant())",
+        "let output = self.streams.finish_before(deadline.instant());",
+        "let resources = match resources?",
         "ResourceObservation::Complete(resources)",
         "ResourceObservation::Legacy | ResourceObservation::Incomplete(_)",
         "TraceObservationError::ResourceObservationIncomplete",
-        "output: self.streams.finish_before(deadline.instant())?",
+        "output: output?",
     ]:
         if term not in finish_terminal:
             raise AssertionError(f"missing terminal resource gate: {term}")
@@ -257,8 +270,18 @@ def assert_lifecycle_contract(
     before(
         finish_terminal,
         ".finish_before(deadline.instant())",
-        "self.streams.finish_before(deadline.instant())?",
+        "let output = self.streams.finish_before(deadline.instant());",
     )
+    before(
+        finish_terminal,
+        "let output = self.streams.finish_before(deadline.instant());",
+        "let resources = match resources?",
+    )
+    stream_index = finish_terminal.index(
+        "let output = self.streams.finish_before(deadline.instant());"
+    )
+    if "resources?" in finish_terminal[:stream_index]:
+        raise AssertionError("resource failure can skip deadline-aware stream cleanup")
     before(
         natural_finish,
         "if !self.is_drained()",
@@ -340,13 +363,13 @@ EXPECTED_BODIES = {
     "cgroup-finish-before": "328db0a2d73eb4ea614b52b9620fc35f1f3678d15b30595b10acdff453e77c36",
     "revalidate-resources": "30ecf689ab0e1c1846169130bf9c5efc2ef19d1208420023816df84ddee06fdf",
     "revalidate-fresh": "277b2ee0776fb7942d6d63a91183bc88cd9531716b5f1078d06f46d622e18c9e",
-    "finish-terminal": "94c3e1fdd35bae6143dcd4dea5a971e18f641e995ce83e793de217bb61d28877",
+    "finish-terminal": "5ebf6b5b98b5809b6278e342806e6d0b0cb9b952d6f743bd6755358b39676ced",
     "draining-trace-finish": "57620c4257f982a79a1396b1d7e9c3d31dda4b7217ea2ba796e986c73fd61148",
     "prepare": "3274dfd85f027ca69c6cf0d95ff359f630d43c2c813292e52881cdb6490091af",
     "resume-before-deadline": "bff9c1e06b805663e587a4dd5a5313bb7e04a6aceeb68aa017e4c09a4953f502",
     "signal-all-process-groups": "cc6ac7670b610a46d35cdcdb6e720ab44f75e29479fcec88e3a2fe7ca6eb6244",
     "spawn": "1faca0106ae138c1f98807b3d21371eace9a69d41892a8a13c6d94a72b30f681",
-    "wait-for-exact-stop": "99c67c1edf78873218595650823de8559301aeba8be62443102a7383b9bfeaaa",
+    "wait-for-exact-stop": "d7d42625b210d8aeed50f75176c09c728887bcd085d9311789a73a0a0ff7a831",
 }
 EXPECTED_FILES = {
     "adapter": "72b8868fb0d50a65e4306f754051dec1e3aace4ee7da33825bb990f4d7bab70b",
@@ -379,7 +402,7 @@ EXPECTED_FILES = {
     "supervisor": "5f1b80181b01c3ea189643995617aeab60f390c1f5fc6930cf0acd577b88cdd8",
     "sys": "c7433f4485aa12829c87ef10210fa766676bc24729361e0a82ac93a2267eb06f",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "83ac6a80b1e3be2e5b44fe5ce4edc1ade1e10f7332f13bc81a3d1db86077cc90",
+    "trace": "d4b7a3a51a940da966ee15a4feaee55a7d0044aaf331b4642b608a716010d68c",
     "unit-evidence": "04a73555049ca93388dd4fbf2ac77ff28f5e718d1f84cedd11255ebd63ca24d0",
 }
 
@@ -496,15 +519,41 @@ class DiagnosticLifecycleContractTests(unittest.TestCase):
             (
                 "late-ready setup stop wins over deadline",
                 self.trace.replace(
-                    "let observation = crate::sys::trace_wait_nonblocking(process.get());\n"
+                    "let observation = crate::sys::trace_wait_nonblocking(process.get())\n"
+                    "                .map_err(|_| TraceStartupError::WaitFailed)?;\n"
+                    "            if matches!(\n"
+                    "                observation,\n"
+                    "                Some(\n"
+                    "                    crate::sys::TraceWaitStatus::Exited { .. }\n"
+                    "                        | crate::sys::TraceWaitStatus::Signaled { .. }\n"
+                    "                )\n"
+                    "            ) {\n"
+                    "                session.record_root_reaped();\n"
+                    "            }\n"
                     "            if deadline.expired() {\n"
                     "                return Err(TraceStartupError::WaitTimedOut);\n"
-                    "            }\n"
-                    "            let observation = observation.map_err(|_| TraceStartupError::WaitFailed)?;",
+                    "            }",
                     "let observation = crate::sys::trace_wait_nonblocking(process.get())\n"
-                    "                .map_err(|_| TraceStartupError::WaitFailed)?;",
+                    "                .map_err(|_| TraceStartupError::WaitFailed)?;\n"
+                    "            if matches!(\n"
+                    "                observation,\n"
+                    "                Some(\n"
+                    "                    crate::sys::TraceWaitStatus::Exited { .. }\n"
+                    "                        | crate::sys::TraceWaitStatus::Signaled { .. }\n"
+                    "                )\n"
+                    "            ) {\n"
+                    "                session.record_root_reaped();\n"
+                    "            }",
                     1,
                 ),
+                self.adapter,
+                self.cgroup,
+                self.linux_lib,
+                self.adapter_lib,
+            ),
+            (
+                "terminal setup reap leaves numeric cleanup armed",
+                self.trace.replace("                session.record_root_reaped();\n", "", 1),
                 self.adapter,
                 self.cgroup,
                 self.linux_lib,
@@ -525,8 +574,21 @@ class DiagnosticLifecycleContractTests(unittest.TestCase):
             (
                 "stream completion receives a fresh deadline",
                 self.trace.replace(
-                    "self.streams.finish_before(deadline.instant())?",
-                    "self.streams.finish_before(Instant::now())?",
+                    "self.streams.finish_before(deadline.instant())",
+                    "self.streams.finish_before(Instant::now())",
+                    1,
+                ),
+                self.adapter,
+                self.cgroup,
+                self.linux_lib,
+                self.adapter_lib,
+            ),
+            (
+                "resource failure skips deadline-aware stream cleanup",
+                self.trace.replace(
+                    "let output = self.streams.finish_before(deadline.instant());",
+                    "let _ = resources?;\n"
+                    "        let output = self.streams.finish_before(deadline.instant());",
                     1,
                 ),
                 self.adapter,
