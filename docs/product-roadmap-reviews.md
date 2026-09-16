@@ -3101,6 +3101,32 @@ The following approval-only commit changes no reviewed production, claim,
 assumption, specification, ADR, checker, falsifier, or evidence bytes. Any
 later subject change requires a new exact-head review.
 
+## RT-8 diagnostic lifecycle formatting correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `e8473bde6da2e7e567a47aa93f51725473f9081f`
+- **Reviewed head:** `7a297f2241148a19c819f85d69049ebac63495c1`
+- **Branch:** `codex/rt8-lifecycle-final`
+- **Method:** Complete read-only exact-range static security, correctness,
+  evidence, and mutation-causality re-review. The reviewer changed no files and
+  ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The production delta from reviewed source `29d64dcf552f8365ff59233d63b6c287bb175b8b`
+is the rustfmt-required brace and newline removal around the existing
+`DrainPublication::Forbidden(error)` expression. The selected value and control
+flow are unchanged. The exact adapter and active-transition fingerprints match
+all dependent checkers, both timeout mutations target the corrected source
+once and remain causal, and every prior blocker remains closed. No new blocker
+was introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`e8473bde6da2e7e567a47aa93f51725473f9081f..7a297f2241148a19c819f85d69049ebac63495c1`.
+The following approval-only commit changes no reviewed production, claim,
+assumption, specification, ADR, checker, falsifier, or evidence bytes. Any
+later subject change requires a new exact-head review.
+
 ## RT-8 diagnostic stream admitted-base re-review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
