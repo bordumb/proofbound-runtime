@@ -3206,6 +3206,33 @@ The following approval-only commit changes no reviewed production, checker,
 claim, assumption, specification, ADR, or evidence bytes. Any later subject
 change requires a new exact-head review.
 
+## RT-8 diagnostic lifecycle evidence-operation approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `0a72a69cf9a51553854240017b06c47e87fdcc25`
+- **Reviewed head:** `7f7ffc1d6dbec33499654b2f7abcef69444f03db`
+- **Branch:** `codex/rt8-lifecycle-final`
+- **Method:** Read-only exact-range review of the hosted Proofbound evidence
+  operation correction and its exact evidence-file fingerprint. The reviewer
+  changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the corrected operation selects the
+`proofbound-runtime-linux` package, workspace manifest, `--lib` target,
+`diagnostic-observer` feature, and exactly the registered lifecycle test. The
+feature and test filter now use typed operation arguments, while the target
+list contains only the supported `--lib` selector. This matches the already
+admitted diagnostic trace-startup evidence form. The correction neither
+broadens nor skips evidence and changes no production, claim, assumption,
+specification, ADR, or lifecycle-checker behavior.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`0a72a69cf9a51553854240017b06c47e87fdcc25..7f7ffc1d6dbec33499654b2f7abcef69444f03db`.
+The following approval-only commit changes no reviewed production, evidence
+operation, checker, claim, assumption, specification, or ADR bytes. Any later
+subject change requires a new exact-head review.
+
 ## RT-8 diagnostic stream admitted-base re-review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
