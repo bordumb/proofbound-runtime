@@ -3371,3 +3371,22 @@ These hosted results admit the exact subjects already covered by the recorded
 independent approvals. They do not close registry publication, external
 consumer, native diagnostic attack, command-integration, or released-artifact
 obligations.
+
+## Roadmap admission-state synchronization review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `17458ad0aaa627789e67a3a62adbbe0767de39cf`
+- **Reviewed head:** `3d414138f74697b2b916081ca48c75e984053622`
+- **Branch:** `codex/roadmap-status-sync`
+- **Method:** Complete exact-range static assurance and status review. The
+  reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The claim-obligation closures, exact hosted run identities, stream-checker
+fingerprint, and external obligations are correct. Two documentation blockers
+remain. The detailed `PBR-DISTRIBUTION-016` assurance record still calls
+successful exact-main run `35038304369` pending, and RT-8's remaining-order
+section still instructs maintainers to admit already-admitted
+`PBR-OBSERVER-027`. The corrected exact head requires a new independent review.

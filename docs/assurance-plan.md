@@ -122,8 +122,9 @@ That admission remains historical and applies only to the anonymous metadata
 consumer at that exact identity. The credential-scoping correction changed the
 claim and `PBR-BUNDLE-DISTRIBUTION-AX-012`, passed independent review and PR 23
 Verify run `35034962830`, and merged unsigned as `a8df83d`. Exact-main run
-`35038304369` remains pending. No status transfers from `4a0cfdb` without the
-new exact evidence.
+`35038304369` passed. That exact evidence admits the credential-scoped subject
+at `a8df83d`; it does not transfer the historical `4a0cfdb` admission to any
+other source identity.
 This does not prove Proofbound correctness or independently
 authenticate GitHub or a publisher. `PBR-BUNDLE-DISTRIBUTION-AX-012` retains
 the GitHub, repository control, DNS, and TLS premises.

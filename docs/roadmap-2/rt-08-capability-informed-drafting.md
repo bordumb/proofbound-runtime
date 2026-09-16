@@ -178,36 +178,32 @@ values without making a draft an authority object.
 
 ## Remaining implementation order
 
-Complete RT-8 in these claim-sized waves:
+`PBR-OBSERVER-026` is admitted on `a89b92d`. It maps complete trace events into
+unresolved diagnostic artifact events. `PBR-OBSERVER-027` is admitted on
+`17458ad`. It gives the trace session independent bounded, cancellable,
+nonblocking stdout and stderr drains before command integration.
 
-1. `PBR-OBSERVER-026` is admitted on `a89b92d`. It maps complete trace events
-   into unresolved diagnostic artifact events.
-2. Admit `PBR-OBSERVER-027`, which gives the trace session independent bounded,
-   cancellable, nonblocking stdout and stderr drains. Continue reading after
-   either retained prefix is full, collect both streams only after terminal tree
-   handling, and make pipe setup, reader startup, reads, or joins fail closed.
-   This must
-   precede the command because unread launcher pipes can otherwise block a
-   target before the observer reaches completion.
-3. Retain the same stopped child, place it in the prepared cgroup before target
-   release, apply one absolute plan wall-time limit through observation and
-   drain, finish resource observations after the tree is empty, and make every
-   stream or cleanup failure block publication.
-4. Resolve a successful descriptor or executable only from the still-stopped
+Complete the remaining RT-8 work in these claim-sized waves:
+
+1. Admit `PBR-OBSERVER-028`. Retain the same stopped child and place it in the
+   prepared cgroup before target release. Apply one absolute plan wall-time
+   limit through observation and drain. Finish resource observations after the
+   tree is empty. Make every stream or cleanup failure block publication.
+2. Resolve a successful descriptor or executable only from the still-stopped
    tracee. Resolve a denied path only as a bounded stable candidate with before
    and after identities. Preserve races and unsupported forms as explicit gaps.
-5. Add the separate `pbr-diagnose` command. Reuse the seed plan's exact
+3. Add the separate `pbr-diagnose` command. Reuse the seed plan's exact
    production authority, publish neither output before release, and publish the
    diagnostic receipt and draft with the existing no-replace durability model.
-6. Run the registered native attack corpus on x86_64 and aarch64, including
+4. Run the registered native attack corpus on x86_64 and aarch64, including
    pipe saturation, wall-time expiry, process-tree races, observation-sensitive
    behavior, path drift, malformed operands, and publication interruption.
-7. Add the exact diagnostic executable to release provenance and artifact
+5. Add the exact diagnostic executable to release provenance and artifact
    inspection. Finish with one maintained dynamic workload that displays every
    available provenance class, requires human completion, and produces no
    reusable production evidence.
 
-Do not merge waves 2 through 7 into one review subject. Each wave changes a
+Do not merge waves 1 through 5 into one review subject. Each wave changes a
 different security boundary and must retain its own exact-head review and
 hosted admission before the next dependent wave is called complete.
 
