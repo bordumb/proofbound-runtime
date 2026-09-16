@@ -3185,6 +3185,29 @@ and RT-8 integration record still describe it as started or in progress. Those
 files participate in the reviewed claim closure. They must record the exact
 successful run before the integrated head can be approved.
 
+## RT-8 diagnostic stream admission-status correction review
+
+- **Reviewer:** Independent Codex task `/root/review_runtime_pr6`
+- **Reviewed base:** `a8df83d7dab62006389e85eb0bb3c31bfc4a2914`
+- **Reviewed head:** `6e3191f066cbb578db3a9817af4d66f820377bdf`
+- **Branch:** `codex/rt8-diagnostic-streams`
+- **Method:** Complete exact-range static security and status re-review. The
+  reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The assurance plan, execution checklist, and RT-8 integration record now
+correctly record successful exact-main event-mapping run `35025687602`. The
+preceding rejection record preserves its exact identities and finding. No
+production, evidence, checker, credential, dependency, claim, assumption,
+specification, or ADR bytes changed from their previously approved subjects.
+
+One documentation blocker remains. Roadmap 2 says “verification is in complete
+in successful run,” which is grammatically invalid and can be read as an
+incomplete result. It must state unambiguously that exact-main verification
+completed successfully. The corrected exact head requires re-review.
+
 ## RT-7 Proofbound metadata credential initial review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
