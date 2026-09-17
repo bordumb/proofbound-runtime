@@ -3337,6 +3337,31 @@ This approval-only commit changes no reviewed schema, vector, generator,
 checker, claim, assumption, specification, roadmap status, or production code.
 Any later subject change requires a new exact-head review.
 
+### PR 33 assumption-category correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `13b3300a1f44dd63fd29aca4859c41c7fcc4a08c`
+- **Reviewed head:** `ffeabfe4911e1b6186a64f868b51c23cca71ef48`
+- **Method:** Focused read-only static exact-delta review. The reviewer changed
+  no files and ran no builds or tests.
+- **Findings:** None blocking.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that `external-provider` honestly categorizes the DNS
+resolver and network premise in `PBR-DNS-AX-004`. TLS, not DNS, retains service
+identity authority. The reviewer also confirmed that `cryptographic-library`
+honestly categorizes the primary TLS implementation and cryptographic premise
+in `PBR-TLS-AX-005`, while the unchanged statement, rationale, and scope keep
+the residual public-key-infrastructure, trust-root, and remote-peer premises
+visible. Both values belong to Proofbound's closed category vocabulary.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`13b3300a1f44dd63fd29aca4859c41c7fcc4a08c..ffeabfe4911e1b6186a64f868b51c23cca71ef48`.
+This approval-only commit changes no reviewed assumption, schema, vector,
+checker, claim, evidence closure, or production code. The earlier receipt
+approval remains valid. Hosted admission is still required for the corrected
+exact head.
+
 ## RT-5 service launcher preliminary review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
