@@ -3,10 +3,10 @@
 - **Status:** foundation merged and admitted; production networking,
   publication, and external adopter gates remain
 - **Date:** 2026-09-17
-- **Runtime baseline:** current admitted `main` at
-  `2ddb4a9543988b41848fd41fc723331b2d3538af`; the RT-5 observation and
-  launcher source-contract batch passed PR 32 Verify run `35248987742` and
-  exact-main Verify run `35254613508`
+- **Runtime baseline:** current `main` at
+  `8513ca7e096bc762b8e7d6c3977130a1da8f31f1`; PR 33 receipt-contract head
+  `c361cb1` passed exact-head Verify run `35262967214`, merged as `8513ca7`,
+  and passed exact-main Verify run `35267321804`
 - **Proofbound distribution baseline:** immutable public bundle for source
   `9512469`
 - **Planning horizon:** prelaunch product and assurance waves
@@ -33,7 +33,7 @@ publication or an unrelated adopter.
 | RT-2 receipt acceptance | Policy, CLI, standalone acceptor, and Action source are merged. | Observe the exact release artifact and dogfood the Action from an unrelated adopter. |
 | RT-3 first-run and SDK workflow | The deny-network and non-executable service-session SDK subjects are admitted on exact main `d48122b`. The pure-policy clarification is admitted on `a94c21a`, and the lifecycle closure is admitted on `1da65a5`. | Publish the selected current packages and dogfood them from an unrelated consumer. |
 | RT-4 network decision | The complete experiment and measurement series selected the connector-owned authenticated service session. | The decision authorizes RT-5; it does not provide production networking. |
-| RT-5 one authenticated service | Specification 0016 and the closed non-executable plan/parser and SDK are admitted on `d48122b`; the pure policy is admitted on `a94c21a`, the lifecycle on `1da65a5`, and the observation and launcher source-contract baseline on `2ddb4a9`. The current receipt-integration closure is staged next. Production execution remains denied. | Admit the receipt-integration contract batch, then implement the connector, launcher, bypass corpus, production receipts, verifiers, composition, acceptance, and one maintained real API client. |
+| RT-5 one authenticated service | The non-executable contract, pure policy, lifecycle, observation, launcher, and receipt-contract baselines are admitted. PR 33 receipt-contract head `c361cb1` passed exact-head verification, merged as `8513ca7`, and passed exact-main run `35267321804`. The connector candidate is pending exact review and admission. Production execution remains denied. | Admit the connector engine, then implement the identified connector process, launcher, bypass corpus, production receipts, verifiers, composition, acceptance, and one maintained real API client. |
 | RT-6 evidence-based expansion | CPU and output-quota decisions are recorded; the performance baseline is complete. | Implement a deferred control only when observed demand satisfies its decision gate. |
 
 Milestone B, bounded local execution, is achieved. Milestone A is operationally
@@ -1068,11 +1068,13 @@ This epic exists only if RT-4 accepts a mechanism.
 
 **2026-09-17 observation-contract checkpoint:** the staged
 `proofbound-runtime-service-session-observation/1` fragment freezes one
-successful session's policy, connector, bounded DNS and endpoint attempts,
+successful session's policy, connector, per-link CNAME identity and lifetime,
+terminal-record and effective answer expiry, bounded DNS and endpoint attempts,
 authenticated TLS result, registered channel, traffic counters, forward
 lifecycle, terminal cleanup, and credential-source identity. Its independent
-checker rejects 25 causal omission, substitution, expiry, bound, lifecycle, cleanup,
-cross-service, and retained-content mutations. `PBR-NETWORK-035` is a Tier 1
+checker rejects the registered causal omission, substitution, expiry, bound,
+lifecycle, cleanup, cross-service, and retained-content mutations.
+`PBR-NETWORK-035` is a Tier 1
 proposed source contract because its registered independent checker and causal
 mutation corpus exceed Tier 0. The fragment is not a production receipt,
 shipping verifier input, or claim that any network effect occurred.
@@ -1098,6 +1100,24 @@ observation, and zero child exit. Every failure is non-reusable and preserves
 a phase-consistent reason, boundary and release state, and cleanup result.
 Production receipt, separate Rust verifier, composition, acceptance, effects,
 native attacks, and release-artifact linkage remain open.
+
+**2026-09-17 connector-engine checkpoint:** `PBR-NETWORK-038` registers the
+first isolated Rust connector engine at Tier 1. The candidate carries one
+complete validated authority through resolution and authentication, sends DNS
+only to its declared numeric TCP resolver under absolute deadlines, rejects
+contradictory or expired CNAME paths, applies the shortest reconciled alias
+lifetime across both query families, and selects a deterministic canonical
+answer prefix with earliest-expiry duplicate handling.
+It selects the ring provider explicitly, requires an exact non-wildcard DNS SAN
+with caller-supplied trust-root bytes and the declared minimum TLS version,
+disables TLS resumption and early data, and proxies only opaque directionally
+bounded bytes without reconnect. Tier 1 here means bounded independent source-
+mutation evidence; it does not establish effectful or artifact behavior. The
+production CLI still rejects the authority. A separately
+identified connector process, resolver and trust-root artifact binding,
+supervisor and launcher binding, credential
+release, native attacks, receipt integration, and release-artifact evidence
+remain required before any product claim is available.
 
 ### RT-5.2 Keep the security boundary explicit
 

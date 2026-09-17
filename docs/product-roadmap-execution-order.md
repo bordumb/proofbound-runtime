@@ -4,10 +4,10 @@
 - **Date:** 2026-09-17
 - **Applies to:** Roadmap 1 release closure, Roadmap 2, and Roadmap 3 candidate
   promotion
-- **Current Runtime main:** `2ddb4a9543988b41848fd41fc723331b2d3538af`;
-  the RT-5 observation and launcher source-contract batch passed PR 32
-  exact-head Verify run `35248987742`; exact-main Verify run `35254613508`
-  passed
+- **Current Runtime main:** `8513ca7e096bc762b8e7d6c3977130a1da8f31f1`;
+  PR 33 receipt-contract head `c361cb1` passed exact-head Verify run
+  `35262967214`, merged as `8513ca7`, and passed exact-main Verify run
+  `35267321804`
 - **Current reviewed Roadmap 1 source head:** `4aba43e`; approval-only record
   `3e32b87`
 - **Lifecycle:** prelaunch; zero external users; package labels are tooling
@@ -21,12 +21,12 @@ review updates it.
 
 ## 1. Current boundary
 
-Runtime main `2ddb4a9` contains the complete reviewed RT-8 diagnostic workflow,
+Runtime main `8513ca7` contains the complete reviewed RT-8 diagnostic workflow,
 native adversarial corpus, RT-5 non-executable authenticated-service contract,
 SDK construction, pure policy compiler, pure lifecycle model, and admitted
-observation and launcher source-contract baseline. PR 32 exact-head run
-`35248987742` and exact-main run `35254613508` passed. Roadmap 1 RT-5 remains
-open beyond the non-effectful contracts.
+observation, launcher, and receipt source-contract baseline. PR 33 exact-head
+run `35262967214` and exact-main run `35267321804` passed. Roadmap 1
+RT-5 remains open beyond the non-effectful contracts.
 Roadmap 2 delivery is active; RT-8 is complete, RT-7 retains external
 publication gates, and later epics remain open. Roadmap 3 contains candidates,
 not scheduled implementation.

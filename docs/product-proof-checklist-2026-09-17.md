@@ -2,10 +2,11 @@
 
 - **Status:** active implementation
 - **Created:** 2026-09-17T19:31:00+01:00 (Europe/London, BST)
-- **Last updated:** 2026-09-17T19:31:00+01:00 (Europe/London, BST)
-- **Current admitted Runtime main:**
-  `2ddb4a9543988b41848fd41fc723331b2d3538af`
-- **Current implementation wave:** RT-5 service-session receipt contract
+- **Last updated:** 2026-09-17T21:46:00+01:00 (Europe/London, BST)
+- **Current Runtime main:**
+  `8513ca7e096bc762b8e7d6c3977130a1da8f31f1`; exact-main Verify run
+  `35267321804` passed
+- **Current implementation wave:** RT-5 authenticated connector engine
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the focused path from the existing assurance foundation to
@@ -67,11 +68,16 @@ or relabel an unavailable enforcement mechanism.
   and trusted-computing-base mutations.
 - [x] Obtain a preliminary independent `APPROVE` before restacking.
 - [x] Update all exact-main admission records after the restack.
-- [ ] Obtain a final independent `APPROVE` for the restacked exact head.
-- [ ] Add and endorse the approval-only review record.
-- [ ] Push the reviewed branch with an active CI monitor.
-- [ ] Pass complete exact-head hosted verification.
-- [ ] Merge unsigned and pass complete exact-main verification.
+- [x] Obtain a final independent `APPROVE` for restacked receipt-contract head
+  `ad2a80e`.
+- [x] Add and endorse the receipt-contract approval-only review record in
+  commit `c361cb1`.
+- [x] Push receipt-contract commit `c361cb1` with an active CI monitor.
+- [x] Pass complete exact-head hosted verification. Verify run `35262967214`
+  passed every required lane and the final gate at exact head `c361cb1`.
+- [x] Merge PR 33 as exact main `8513ca7`.
+- [x] Pass complete exact-main verification for `8513ca7`. Verify run
+  `35267321804` passed every required lane and the final gate.
 
 Exit: the current `PBR-NETWORK-035`, `PBR-NETWORK-036`, and
 `PBR-NETWORK-037` source closures are admitted together. Production service
@@ -93,6 +99,26 @@ execution and production receipt acceptance remain disabled.
   services, and arbitrary protocols out of scope.
 
 ### 1.2 Implement the connector
+
+Wave status: `PBR-NETWORK-038` now registers the isolated connector-engine
+candidate, its Tier 0 Rust tests, and its Tier 1 bounded independent source-
+mutation check. The initial exact-head review at
+`450453d` requested changes for authority binding, exact SAN matching, absolute
+deadlines, explicit TLS-provider selection, CNAME validity, source closure, and
+causal falsifiers. The first correction head `cd8b16e` was rejected for one
+compile defect, incomplete DNS lifetime reconciliation, terminal deadline
+classification, non-causal gate tests, stale source status, and incomplete
+local-dependency closure. The second correction head `ed7445c` was rejected
+for final success-path deadline placement, non-causal per-arm and directional-
+limit guards, an omitted pending `PBR-OBSERVER-030` source identity, and a
+strict-lint candidate. The consolidated third correction batch is in progress.
+The third correction head `60ca678` closed those findings but was rejected
+because four mandatory RT-8 diagnostic suites still pinned the pre-connector
+root manifest and lock identities. The exact-source closure refresh is in
+progress.
+Keep every checkbox below open until the engine runs as the exact
+identified production process and the relevant behavior passes hosted and
+native admission.
 
 - [ ] Add a minimal connector executable with one purpose: establish one
   bounded authenticated TLS session for one normalized service identity.

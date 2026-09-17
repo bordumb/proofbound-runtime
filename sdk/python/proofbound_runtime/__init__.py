@@ -240,16 +240,16 @@ def _validate_network(
             "tls_handshake_bytes",
         },
     )
-    for field, maximum in (
-        ("setup_time_ms", _MAX_U64),
-        ("session_time_ms", _MAX_U64),
-        ("child_to_service_bytes", _MAX_U64),
-        ("service_to_child_bytes", _MAX_U64),
-        ("dns_messages", 65_535),
-        ("endpoint_attempts", 65_535),
-        ("tls_handshake_bytes", _MAX_U64),
+    for field, minimum, maximum in (
+        ("setup_time_ms", 1, _MAX_U64),
+        ("session_time_ms", 1, _MAX_U64),
+        ("child_to_service_bytes", 1, _MAX_U64),
+        ("service_to_child_bytes", 1, _MAX_U64),
+        ("dns_messages", 2, 65_535),
+        ("endpoint_attempts", 1, 65_535),
+        ("tls_handshake_bytes", 1, _MAX_U64),
     ):
-        _network_int(limits[field], 1, maximum, f"limits.{field}")
+        _network_int(limits[field], minimum, maximum, f"limits.{field}")
     if limits["endpoint_attempts"] > resolver["maximum_answer_count"]:
         raise SdkError("sdk.plan.network-invalid", "limits.endpoint_attempts")
     if resolver["resolution_deadline_ms"] > limits["setup_time_ms"]:

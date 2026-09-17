@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Replay the proposed service-session observation contract checks."""
+"""Replay the independent RT-5 connector source contract."""
 
 from __future__ import annotations
 
@@ -11,17 +11,12 @@ import sys
 
 
 INVENTORY = [
-    "service-observation-canonical-vector",
-    "service-observation-cname-effective-expiry-binding",
-    "service-observation-closed-schema",
-    "service-observation-complete-success-lifecycle",
-    "service-observation-connector-runtime-closure-binding",
-    "service-observation-endpoint-and-tls-binding",
-    "service-observation-tls-implementation-binding",
-    "service-observation-bounded-counters",
-    "service-observation-complete-cleanup",
-    "service-observation-secret-and-payload-exclusion",
-    "service-observation-causal-mutation-rejection",
+    "connector-source-dns-merged-lifetime",
+    "connector-source-dns-wire-guards",
+    "connector-source-exact-san-call",
+    "connector-source-explicit-tls-provider",
+    "connector-source-handshake-session-deadlines",
+    "connector-source-proxy-directional-limits",
 ]
 
 
@@ -30,7 +25,7 @@ def main() -> int:
     environment = dict(os.environ)
     environment["PYTHONDONTWRITEBYTECODE"] = "1"
     completed = subprocess.run(
-        [sys.executable, "-m", "unittest", "tools.ci.test_service_observation_contract"],
+        [sys.executable, "-m", "unittest", "tools.ci.test_connector_source_contract"],
         cwd=root,
         env=environment,
         stdin=subprocess.DEVNULL,

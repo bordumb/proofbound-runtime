@@ -355,6 +355,9 @@ impl ServiceSessionLimits {
         {
             return Err(NetworkAuthorityError::ZeroSessionBound);
         }
+        if dns_messages < 2 {
+            return Err(NetworkAuthorityError::DnsMessageCountInsufficient);
+        }
         if endpoint_attempts > maximum_answer_count {
             return Err(NetworkAuthorityError::AttemptCountExceedsAnswers);
         }
@@ -685,6 +688,8 @@ pub enum NetworkAuthorityError {
     ResolutionDeadlineExceedsSetup,
     /// A service-session bound is zero.
     ZeroSessionBound,
+    /// The DNS-message bound cannot cover the required A and AAAA queries.
+    DnsMessageCountInsufficient,
     /// The endpoint-attempt limit exceeds the DNS answer limit.
     AttemptCountExceedsAnswers,
     /// The local-channel descriptor overlaps a standard stream.
@@ -712,6 +717,9 @@ impl NetworkAuthorityError {
                 "plan.authority.network.resolver.deadline.exceeds-setup"
             }
             Self::ZeroSessionBound => "plan.authority.network.session.bound.zero",
+            Self::DnsMessageCountInsufficient => {
+                "plan.authority.network.session.dns-messages.insufficient"
+            }
             Self::AttemptCountExceedsAnswers => {
                 "plan.authority.network.session.attempts.exceed-answers"
             }
@@ -787,7 +795,7 @@ mod tests {
     #[test]
     fn limits_only_get_smaller() {
         let narrow =
-            ServiceSessionLimits::new(1, 1, 1, 1, 1, 1, 1, 2).expect("fixture limits are valid");
+            ServiceSessionLimits::new(1, 1, 1, 1, 2, 1, 1, 2).expect("fixture limits are valid");
         let broad =
             ServiceSessionLimits::new(2, 2, 2, 2, 2, 2, 2, 2).expect("fixture limits are valid");
         assert!(narrow.is_no_more_permissive_than(broad));
@@ -816,7 +824,7 @@ mod tests {
             ServiceNameVerification::DnsSanExact,
             RevocationPolicy::NotCheckedRecordedAssumption,
         );
-        let limits = ServiceSessionLimits::new(1, 1, 1, 1, 1, 2, 1, 2)
+        let limits = ServiceSessionLimits::new(1, 1, 1, 1, 2, 2, 1, 2)
             .expect("detached limits accept their declared answer count");
         assert_eq!(
             AuthenticatedServiceSession::new(
@@ -832,6 +840,14 @@ mod tests {
                 None,
             ),
             Err(NetworkAuthorityError::AttemptCountExceedsAnswers)
+        );
+    }
+
+    #[test]
+    fn dns_message_limit_must_cover_a_and_aaaa_queries() {
+        assert_eq!(
+            ServiceSessionLimits::new(1, 1, 1, 1, 1, 1, 1, 2),
+            Err(NetworkAuthorityError::DnsMessageCountInsufficient)
         );
     }
 }

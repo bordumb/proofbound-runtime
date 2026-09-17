@@ -5,6 +5,7 @@ kind = "example-test"
 claims = ["PBR-NETWORK-032"]
 tier = 0
 expected_inventory = [
+  "proofbound_runtime_core::network::tests::dns_message_limit_must_cover_a_and_aaaa_queries",
   "proofbound_runtime_core::network::tests::limits_only_get_smaller",
   "proofbound_runtime_core::network::tests::service_names_are_canonical_dns_names",
   "proofbound_runtime_core::network::tests::session_rechecks_cross_object_attempt_bound",

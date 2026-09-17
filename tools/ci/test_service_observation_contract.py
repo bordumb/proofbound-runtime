@@ -17,8 +17,6 @@ PROJECTION = ROOT / "schemas/vectors/v2/service-session-observation.projection.j
 
 def move_dns_message_before_resolution(value: dict) -> None:
     value["dns"]["messages"][0]["observed_ns"] = 900
-    for answer in value["dns"]["answers"]:
-        answer["expires_ns"] = 60_000_000_900
 
 
 def overlap_endpoint_attempts(value: dict) -> None:
@@ -41,7 +39,8 @@ def overlap_endpoint_attempts(value: dict) -> None:
 def attempt_expired_endpoint(value: dict) -> None:
     answer = value["dns"]["answers"][0]
     answer["ttl_seconds"] = 1
-    answer["expires_ns"] = 1_000_001_500
+    answer["record_expires_ns"] = 1_000_001_300
+    answer["effective_expires_ns"] = 1_000_001_300
     attempt = value["dns"]["attempts"][0]
     attempt["started_ns"] = 1_000_001_500
     attempt["finished_ns"] = 1_000_001_600
@@ -95,10 +94,18 @@ class ServiceObservationContractTests(unittest.TestCase):
         self.assertNotIn('"request_bytes":', schema)
         self.assertNotIn('"response_bytes":', schema)
 
+    def test_direct_answer_without_cname_chain_is_valid(self) -> None:
+        self.value["dns"]["cname_chain"] = []
+        for answer in self.value["dns"]["answers"]:
+            answer["name"] = "api.anthropic.com"
+            answer["effective_expires_ns"] = answer["record_expires_ns"]
+        validate_observation(self.value)
+
     def test_registered_mutations_fail_for_their_causal_reason(self) -> None:
         mutations = {
             "unknown-field": lambda value: value.update({"ambient_network": True}),
             "oversized-dns-message-limit": lambda value: value["limits"].__setitem__("dns_messages", 65_536),
+            "insufficient-dns-message-limit": lambda value: value["limits"].__setitem__("dns_messages", 1),
             "attempt-limit-exceeds-answers": lambda value: value["limits"].__setitem__("endpoint_attempts", 17),
             "resolution-deadline-exceeds-setup": lambda value: value["dns"].__setitem__("resolution_deadline_ms", 10_001),
             "dns-message-before-resolution": move_dns_message_before_resolution,
@@ -109,7 +116,11 @@ class ServiceObservationContractTests(unittest.TestCase):
             "attempt-before-resolution": lambda value: value["dns"]["attempts"][0].__setitem__("started_ns", 1_900),
             "overlapping-attempts": overlap_endpoint_attempts,
             "endpoint-event-mismatch": lambda value: value["lifecycle"][2].__setitem__("observed_ns", 3_001),
-            "ttl-expiry-mismatch": lambda value: value["dns"]["answers"][0].__setitem__("expires_ns", 4_000),
+            "ttl-expiry-mismatch": lambda value: value["dns"]["answers"][0].__setitem__("record_expires_ns", 4_000),
+            "cname-expiry-mismatch": lambda value: value["dns"]["cname_chain"][0].__setitem__("expires_ns", 4_000),
+            "cname-message-substitution": lambda value: value["dns"]["cname_chain"][0].__setitem__("message_sha256", bytes([0x99]) * 32),
+            "cname-owner-substitution": lambda value: value["dns"]["cname_chain"][0].__setitem__("owner", "other.example.com"),
+            "effective-expiry-omits-cname": lambda value: value["dns"]["answers"][0].__setitem__("effective_expires_ns", value["dns"]["answers"][0]["record_expires_ns"]),
             "attempt-expired-endpoint": attempt_expired_endpoint,
             "tls-name-mismatch": lambda value: value["tls"].__setitem__("service_name_verification", "mismatch"),
             "tls-implementation-width": lambda value: value["tls"].__setitem__("implementation_sha256", bytes(31)),

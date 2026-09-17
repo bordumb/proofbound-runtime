@@ -29,7 +29,7 @@ service-session-limits = {
   "session_time_ms": uint64-nonzero,
   "child_to_service_bytes": uint64-nonzero,
   "service_to_child_bytes": uint64-nonzero,
-  "dns_messages": 1..65535,
+  "dns_messages": 2..65535,
   "endpoint_attempts": 1..65535,
   "tls_handshake_bytes": uint64-nonzero
 }
@@ -50,8 +50,8 @@ dns-observation = {
   "resolution_deadline_ms": uint64-nonzero,
   "attempt_deadline_ms": uint64-nonzero,
   "address_order": "ipv4-then-ipv6-lexicographic",
-  "messages": [+ dns-message],
-  "cname_chain": [* dns-name],
+  "messages": [2*65535 dns-message],
+  "cname_chain": [* dns-cname],
   "answers": [+ dns-answer],
   "attempts": [+ endpoint-attempt],
   "selected_endpoint": endpoint
@@ -63,12 +63,21 @@ dns-message = {
   "observed_ns": uint64
 }
 
+dns-cname = {
+  "owner": dns-name,
+  "target": dns-name,
+  "message_sha256": bstr .size 32,
+  "ttl_seconds": uint32-nonzero,
+  "expires_ns": uint64-nonzero
+}
+
 dns-answer = {
   "name": dns-name,
   "endpoint": endpoint,
   "message_sha256": bstr .size 32,
   "ttl_seconds": uint32-nonzero,
-  "expires_ns": uint64
+  "record_expires_ns": uint64-nonzero,
+  "effective_expires_ns": uint64-nonzero
 }
 
 endpoint-attempt = {

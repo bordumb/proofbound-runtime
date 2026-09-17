@@ -2983,6 +2983,208 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-5 connector engine hosted-ledger correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `c361cb11eefec4b03b55385caf2977552a34e97a`
+- **Reviewed head:** `b9ad56a3b387f687b2ab6b6e2f9f3fc07639b62f`
+- **Branch:** `codex/rt5-production-connector`
+- **Method:** Complete exact-range static re-review after hosted run
+  `35274583129`. The reviewer changed no files and ran no builds, Rust tests,
+  Lean, Kani, native checks, or Proofbound commands.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The correction declares `PBR-NETWORK-038` and its independent source-contract
+evidence at Tier 1, which matches the adapter's effective minimum. The ordinary
+Rust test evidence remains Tier 0. Current public language consistently limits
+Tier 1 to bounded independent source-mutation evidence and explicitly excludes
+supervised execution, launcher binding, native enforcement, receipt production,
+and release-artifact behavior. No production, schema, vector, generator, or
+source-checker code changed, and every earlier finding remains closed.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`c361cb11eefec4b03b55385caf2977552a34e97a..b9ad56a3b387f687b2ab6b6e2f9f3fc07639b62f`.
+The following approval-only commit changes no reviewed production, schema,
+claim, assumption, evidence, vector, generator, or source-checker bytes. Any
+later subject change requires a new exact-head review.
+
+## RT-5 connector engine hosted-Clippy correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `c361cb11eefec4b03b55385caf2977552a34e97a`
+- **Reviewed head:** `f7424c52a6568cdd6eb6cdf74196f46bb33c515f`
+- **Branch:** `codex/rt5-production-connector`
+- **Method:** Complete exact-range static re-review after hosted run
+  `35273679587`. The reviewer changed no files and ran no builds, Rust tests,
+  Lean, Kani, or native checks.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The correction combines two identical CNAME-chain selection branches. The
+reviewer confirmed exact equivalence for IPv4-empty, IPv6-empty, matching-path,
+and conflicting-path cases, including the prior short-circuit behavior. No
+authority, DNS, CNAME lifetime, deadline, TLS, byte-limit, evidence, schema, or
+production-reachability semantic changed. Every earlier finding remains closed.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`c361cb11eefec4b03b55385caf2977552a34e97a..f7424c52a6568cdd6eb6cdf74196f46bb33c515f`.
+The following approval-only commit changes no reviewed production, test,
+schema, claim, assumption, evidence, vector, or source-checker bytes. Any later
+subject change requires a new exact-head review.
+
+## RT-5 connector engine hosted-compile correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `c361cb11eefec4b03b55385caf2977552a34e97a`
+- **Reviewed head:** `b210d49956f42bdbc7d0d155f71b7004ed179191`
+- **Branch:** `codex/rt5-production-connector`
+- **Method:** Complete exact-range static re-review after hosted run
+  `35272695025`. The reviewer changed no files and ran no builds, Rust tests,
+  Lean, Kani, or native checks.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+Hosted Rust compilation found two ambiguous test-only IP address parses. The
+correction explicitly selects `IpAddr` for all 13 DNS test address parses, and
+no untyped parse remains in the connector crate. Parsed values and assertions
+are unchanged. No production, schema, claim, assumption, evidence, vector, or
+source-checker behavior changed. Every earlier connector finding remains
+closed, and production service-session execution remains fail closed.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`c361cb11eefec4b03b55385caf2977552a34e97a..b210d49956f42bdbc7d0d155f71b7004ed179191`.
+The following approval-only commit changes no reviewed production, test,
+schema, claim, assumption, evidence, vector, or source-checker bytes. Any later
+subject change requires a new exact-head review.
+
+## RT-5 connector engine approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `c361cb11eefec4b03b55385caf2977552a34e97a`
+- **Reviewed head:** `fdad3fdc7afd9c6638c6dd2514d342808e90104e`
+- **Branch:** `codex/rt5-production-connector`
+- **Method:** Complete exact-range static security and assurance re-review. The
+  reviewer changed no files and ran no builds, Rust tests, Lean, Kani, or
+  native checks.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that all four mandatory diagnostic suites bind the
+exact current root manifest and lock identities while retaining their causal
+equality and production-mutation rejection behavior. Every prior connector
+blocker remains closed: complete authority binding, exact SAN validation,
+explicit TLS-provider selection, absolute DNS and TLS deadlines, bounded and
+deterministic CNAME/address handling, terminal connection classification,
+exact directional accounting, schema/vector agreement, pending changed-source
+status, and the complete transitive source closure. No new blocker was found.
+Production still cannot invoke the connector, so service-session execution
+continues to fail closed until the later process and launcher wave.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`c361cb11eefec4b03b55385caf2977552a34e97a..fdad3fdc7afd9c6638c6dd2514d342808e90104e`.
+The following approval-only commit changes no reviewed production, schema,
+claim, assumption, evidence, vector, or source-checker bytes. Any later subject
+change requires a new exact-head review.
+
+## RT-5 connector engine third correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `c361cb11eefec4b03b55385caf2977552a34e97a`
+- **Reviewed head:** `60ca678ffc434e3bb6bb1e9d019c81f78093f966`
+- **Branch:** `codex/rt5-production-connector`
+- **Method:** Complete exact-range static security and assurance re-review. The
+  reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval record, hosted
+  admission, or merge can use this subject.
+
+The review confirmed that all specifically requested second-correction
+blockers were closed and that every earlier connector invariant remained
+intact. One new exact-source blocker remained: the four mandatory diagnostic
+syscall-decoder, event-mapping, stream-capture, and lifecycle suites still
+pinned the root `Cargo.toml` and `Cargo.lock` identities from before this
+branch. Because hosted preflight runs all four suites, the candidate could not
+pass or truthfully carry the intersecting diagnostic closures. All four
+identity pairs require one atomic refresh while retaining their existing
+mutation and rejection behavior, followed by a new exact-head review.
+
+## RT-5 connector engine second correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `c361cb11eefec4b03b55385caf2977552a34e97a`
+- **Reviewed head:** `ed7445cf6d0ab9d58893ce4203ebe9dddf5df6bc`
+- **Branch:** `codex/rt5-production-connector`
+- **Method:** Complete exact-range static security and assurance re-review. The
+  reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval record, hosted
+  admission, or merge can use this subject.
+
+The review confirmed that the first correction's compilation, observation,
+cross-family lifetime, duplicate-answer, terminal connect-deadline, source-
+closure, and status defects were substantially corrected. Four blockers
+remained. Successful DNS and TLS setup lacked a final deadline check after all
+load-bearing parsing and hashing. The source checker did not independently
+falsify both connection-result arms or bind the exact directional byte-limit
+operations. The pending exact-source overlay omitted `PBR-OBSERVER-030`, whose
+registered closure includes changed root dependency files. Finally, a one-item
+`Vec` in a DNS unit test was a likely strict-Clippy failure. The consolidated
+correction requires a new exact-head independent review.
+
+## RT-5 connector engine first correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `c361cb11eefec4b03b55385caf2977552a34e97a`
+- **Reviewed head:** `cd8b16eece7f32cbff856eea9b44175f1d52db76`
+- **Branch:** `codex/rt5-production-connector`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval record, hosted
+  admission, or merge can use this subject.
+
+The review confirmed that complete authority binding, exact post-WebPKI leaf
+SAN matching, absolute per-operation timeouts, explicit ring-provider
+selection, zero or conflicting CNAME rejection, DNS-message minimums,
+dependency pins, and continued production unreachability were corrected. It
+found seven remaining blockers: one DNS map type mismatch and one unused
+import that would fail strict compilation; an observation contract that could
+not represent per-link CNAME facts and effective expiry; incomplete
+cross-family alias-lifetime propagation and nondeterministic duplicate-answer
+retention; terminal connect-timeout misclassification; non-causal source tests
+for load-bearing production calls; stale exact-source status for every
+intersecting claim; and an incomplete transitive local source closure for the
+connector evidence. The consolidated correction requires a new exact-head
+independent review.
+
+## RT-5 connector engine initial review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `c361cb11eefec4b03b55385caf2977552a34e97a`
+- **Reviewed head:** `450453d18c3b1258c6be0928a8724d9afda191e9`
+- **Branch:** `codex/rt5-production-connector`
+- **Method:** Complete exact-range static security and assurance review. The
+  reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review found seven blockers. The public API did not bind DNS resolution,
+TLS authentication, and limits to one complete authority. The default rustls
+name verifier admitted wildcard DNS subject-alternative names despite the
+`dns-san-exact` contract. DNS, TLS-handshake, and direct session I/O timeouts
+were not absolute deadlines. TLS provider selection was process-global even
+though the observation named ring, and the builder could panic. CNAME TTLs were
+discarded and a response could combine a CNAME with address data. The claim and
+evidence closures omitted local core inputs. Finally, the registered tests did
+not falsify the load-bearing binding, CNAME, exact-name, provider, deadline,
+limit, close, and reconnect surfaces.
+
+Production remained fail closed because no production crate used the new
+connector. Exact dependency pins, licenses, and advisory configuration added no
+separate blocker. The corrected exact head requires a new independent review.
+
 ## RT-5 consolidated observation and launcher final review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

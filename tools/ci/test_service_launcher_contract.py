@@ -104,6 +104,7 @@ class ServiceLauncherContractTests(unittest.TestCase):
         add("executable-rule-omission", lambda request, _installed, _release: request["filesystem"].pop(0))
         add("filesystem-order-substitution", lambda request, _installed, _release: request["filesystem"].reverse())
         add("limit-substitution", lambda _request, installed, _release: installed["service"]["limits"].__setitem__("session_time_ms", 30_001))
+        add("insufficient-dns-message-limit", lambda request, _installed, _release: request["service"]["limits"].__setitem__("dns_messages", 1))
         add("argument-nul", lambda request, _installed, _release: request["arguments"].__setitem__(0, "bin/client\0substitute"))
         add("filter-substitution", lambda request, _installed, _release: request.__setitem__("seccomp_program", bytes([0x82]) * 64))
         add("binding-digest-substitution", lambda _request, _installed, release: release.__setitem__("service_binding_sha256", bytes(32)))

@@ -121,10 +121,15 @@ service-setup deadline. The first profile does not use UDP, DNS-over-HTTPS,
 search domains, local host files, multicast DNS, a system resolver fallback, or
 automatic resolver discovery.
 
-The connector records the complete bounded CNAME chain, all admitted A and
-AAAA answers, their TTL values, the response-message identity, and the resolver
-endpoint. It rejects truncation, malformed messages, loops, excessive depth,
-excess answers, excess bytes, an undeclared terminal name, and expiration.
+The connector records every bounded CNAME link as its owner, target, TTL,
+expiry, and response-message identity. It records every admitted A and AAAA
+answer with its terminal-record TTL and expiry and a separate effective expiry.
+The effective expiry is the minimum of the terminal-record expiry and every
+link expiry in the reconciled A and AAAA alias path. Duplicate numeric answers
+retain the deterministic record with the earliest expiry. The connector also
+records the resolver endpoint. It rejects truncation, malformed messages,
+loops, conflicting A and AAAA alias paths, excessive depth, excess answers,
+excess bytes, an undeclared terminal name, and expiration.
 
 After canonical deduplication, connection attempts use this total order:
 
@@ -164,6 +169,10 @@ The session-limit record contains nonzero bounds for:
 - DNS messages;
 - endpoint attempts; and
 - TLS handshake bytes.
+
+The DNS-message bound MUST be at least two because the fixed first profile
+queries both A and AAAA records. A larger value is required when either query
+follows a CNAME chain.
 
 The endpoint-attempt bound MUST NOT exceed the answer-count bound. The first
 profile permits exactly one authenticated session and no reconnect. Exceeding a
@@ -359,7 +368,8 @@ The execution receipt records:
 - the normalized authority and compiled policy identities;
 - connector executable and runtime-closure identities;
 - resolver endpoint and configuration identity;
-- bounded CNAME, answer, TTL, message-identity, attempt, and timing records;
+- bounded per-link CNAME, terminal-answer, TTL, record-expiry,
+  effective-expiry, message-identity, attempt, and timing records;
 - selected endpoint;
 - negotiated TLS version, exact-name verification result, certificate-chain
   identity, trust-root identity, and recorded revocation assumption;

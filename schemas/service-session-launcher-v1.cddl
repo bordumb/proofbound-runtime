@@ -101,7 +101,7 @@ service-session-limits = {
   "session_time_ms": uint64-nonzero,
   "child_to_service_bytes": uint64-nonzero,
   "service_to_child_bytes": uint64-nonzero,
-  "dns_messages": 1..65535,
+  "dns_messages": 2..65535,
   "endpoint_attempts": 1..65535,
   "tls_handshake_bytes": uint64-nonzero
 }
