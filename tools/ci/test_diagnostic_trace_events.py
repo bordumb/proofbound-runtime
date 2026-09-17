@@ -36,6 +36,8 @@ EXPECTED_LOAD_BEARING_BODIES = {
     "active-wait-observation": "a185c9d1ffac7131bc194c6e1d6a70eb7bce5bb2235d16bce0538808f2d51050",
     "active-drain-observation": "dceb35ed4c886eb36161331cf7106b07145a37d67e6714e359531e8fee06a7c9",
     "active-register-child": "e749a7f47624f313ba624ca850657240f2c0558e2f3b0b1544566b734eb6f3aa",
+    "active-handle-syscall-stop": "add1a3d7b4724d30a0fde7c57d9110711085306d8fadc31319a8a83d83540885",
+    "tracee-state": "b4adca861c59b83215fc545fcc386b94555589206c8e8f0d77638c958ebec6ee",
 }
 
 
@@ -49,6 +51,8 @@ def assert_load_bearing_bodies(trace: str) -> None:
         "active-wait-observation": body_sha256(trace, "fn handle_wait_observation"),
         "active-drain-observation": body_sha256(trace, "fn handle_drain_observation"),
         "active-register-child": body_sha256(trace, "fn register_child"),
+        "active-handle-syscall-stop": body_sha256(trace, "fn handle_syscall_stop"),
+        "tracee-state": body_sha256(trace, "impl TraceeState"),
     }
     if actual != EXPECTED_LOAD_BEARING_BODIES:
         raise AssertionError(f"load-bearing trace body mismatch: {actual!r}")
@@ -80,10 +84,15 @@ class DiagnosticTraceEventContractTests(unittest.TestCase):
         self.assertIn("capture_syscall_invocation", syscall)
         self.assertIn("PendingTraceSyscall::Captured", syscall)
         self.assertIn("PendingTraceSyscall::Ignored", syscall)
-        self.assertIn(".pending\n                    .take()", syscall)
+        self.assertIn(".begin_syscall(pending)?", syscall)
+        self.assertIn(".finish_syscall()?", syscall)
         self.assertIn("self.held_process = Some(process)", syscall)
         self.assertIn("ActiveTraceEvent::SyscallCompleted", syscall)
-        self.assertIn("SyscallOrderInvalid", syscall)
+        tracee_state = implementation(self.trace, "impl TraceeState")
+        self.assertIn("allow_initial_exit: true", tracee_state)
+        self.assertIn("self.allow_initial_exit = false", tracee_state)
+        self.assertIn("if let Some(pending) = self.pending.take()", tracee_state)
+        self.assertIn("Err(TraceObservationError::SyscallOrderInvalid)", tracee_state)
         for required in [
             "PTRACE_GET_SYSCALL_INFO",
             "available != SYSCALL_INFO_ENTRY_BYTES",
@@ -170,6 +179,12 @@ class DiagnosticTraceEventContractTests(unittest.TestCase):
             "omitted drain report": self.trace.replace(
                 "observations.push(observation);",
                 "let _ = observation;",
+                1,
+            ),
+            "repeated unmatched initial exit": self.trace.replace(
+                "            self.allow_initial_exit = false;\n"
+                "            return Ok(None);",
+                "            return Ok(None);",
                 1,
             ),
         }
