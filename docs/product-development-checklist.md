@@ -1,14 +1,14 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-17T15:49:08+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-17T17:22:00+01:00 (Europe/London, BST)
 - **Runtime baseline:** RT-8 and the RT-5 non-executable contract are admitted.
-  The RT-5 pure-policy wave passed PR 30 Verify run `35226379485` and merged as
-  exact unsigned main `a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca`.
-  Exact-main Verify run `35231003515` passed.
+  The RT-5 lifecycle wave passed PR 31 Verify run `35236845497` and merged as
+  exact admitted main `1da65a5c53f27b97a15f95ed1a9fb01170121444`.
+  Exact-main Verify run `35241672716` passed.
 - **Active implementation wave:** RT-5 one authenticated service.
-- **Current batch:** admit the closed forward-only service lifecycle and its
-  candidate formal model before any connector or launcher effect is added.
+- **Current batch:** admit the observation and launcher source contracts as one
+  non-production batch before any connector or launcher effect is enabled.
 - **Parallel external gates:** RT-7 protected routes and current-integration
   source are merged; registry configuration, actual public package publication,
   anonymous observations, consumer dogfood, and a retained current-integration
@@ -390,8 +390,9 @@ draft, while no diagnostic output can become reusable production evidence.
   `35216056050`, merged as exact main `d48122b`, and passed exact-main Verify
   run `35220098639`. The pure-policy wave clarifies that the canonical compiled
   bytes bind each security role separately; PR 30 run `35226379485` and
-  exact-main run `35231003515` admitted that `a94c21a` closure. The later
-  lifecycle closure remains pending.
+  exact-main run `35231003515` admitted that `a94c21a` closure. The lifecycle
+  subject passed PR 31 run `35236845497`, merged as `1da65a5`, and passed
+  exact-main run `35241672716`.
 - [ ] Specify one authenticated-service plan, authority, policy, receipt,
   verifier, composition, acceptance, and error contract.
 - [x] Identify resolver, address-attempt order, TLS policy, service, connector,
@@ -402,13 +403,28 @@ draft, while no diagnostic output can become reusable production evidence.
   `PBR-NETWORK-033` now stage the non-executing parser, strict domain, pure
   compiler, and frozen plan and policy vectors. Their current pure-policy
   closures passed PR 30 run `35226379485`, merged as `a94c21a`, and passed
-  exact-main run `35231003515`. The later lifecycle closure remains pending.
-- [ ] Admit the closed forward-only service lifecycle. `PBR-NETWORK-034` and
-  its exhaustive phase/event tests are staged on the current branch. Its Lean
-  theorem is a candidate until separately registered and admitted; neither
-  source executes a resolver, connector, TLS session, launcher, or child. The
-  branch also clarifies that only nonterminal states can enter typed failure;
-  the intersecting `PBR-SDK-014` closure therefore requires fresh admission.
+  exact-main run `35231003515`. The later lifecycle closure passed PR 31 run
+  `35236845497` and exact-main run `35241672716` at `1da65a5`.
+- [x] Admit the closed forward-only service lifecycle. `PBR-NETWORK-034` and
+  its exhaustive phase/event tests passed PR 31 run `35236845497` and merged
+  as `1da65a5`; exact-main run `35241672716` passed. Its Lean theorem remains a
+  candidate rather than admitted theorem evidence. Neither source executes a
+  resolver, connector, TLS session, launcher, or child.
+- [ ] Admit the closed successful-session observation fragment.
+  `PBR-NETWORK-035` freezes one deterministic-CBOR projection and an
+  independently checked mutation corpus for service, connector, DNS, endpoint,
+  TLS, channel, counters, lifecycle, cleanup, and credential-source identity.
+  It is intentionally not yet a production receipt or shipping-verifier
+  contract, and failed-session forms remain open. It will share one final
+  exact-source review and hosted admission with `PBR-NETWORK-036`; either
+  claim's failure blocks the complete batch.
+- [ ] Admit the service-specific launcher handshake. `PBR-NETWORK-036` freezes
+  the proposed install, complete boundary acknowledgement, and release binding
+  with 29 causal mutation classes, including service substitution,
+  early credential release, and descriptor substitution. The production
+  launcher remains unchanged; the failure handshake and native implementation
+  remain open. This non-production contract shares the consolidated admission
+  batch described for `PBR-NETWORK-035`.
 - [ ] Model and prove the selected pure non-amplification, identity, and state
   transition properties in Lean where the subject is tractable.
 - [ ] Link selected pure Rust decisions to their formal models without

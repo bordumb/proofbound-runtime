@@ -84,6 +84,8 @@ if selected "preflight"; then
   timed_unit lean-toolchain-tests python3 -m unittest tools.ci.test_lean_toolchain
   timed_unit wire-transition-tests python3 -m unittest tools.ci.test_wire_transition
   timed_unit wire-v2-vector-tests python3 -m unittest tools.ci.test_wire_v2_vectors
+  timed_unit service-observation-contract-tests python3 -m unittest tools.ci.test_service_observation_contract
+  timed_unit service-launcher-contract-tests python3 -m unittest tools.ci.test_service_launcher_contract
   timed_unit independent-cbor-vector-tests python3 -m unittest tools.ci.test_cbor2_goldens
   timed_unit performance-workflow-tests python3 -m unittest tools.ci.test_performance_workflow
   timed_unit resource-expansion-contract-tests python3 -m unittest tools.ci.test_resource_expansion_contract

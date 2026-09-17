@@ -1,0 +1,152 @@
+; Proposed service-session launcher binding protocol version 1.
+; Production launcher-message-v1 remains unchanged and does not accept these
+; messages until the connector and child-boundary wave is admitted.
+; Each encoded message is one frame no larger than 1,048,576 bytes.
+
+service-session-launcher-transcript-v1 =
+  [service-install-request, service-boundary-installed, service-exec-release] /
+  [service-install-request, service-boundary-installed,
+   service-credential-release, service-exec-release]
+
+service-session-launcher-message-v1 =
+  service-install-request /
+  service-boundary-installed /
+  service-credential-release /
+  service-exec-release
+
+service-install-request = {
+  "schema": "proofbound-runtime-service-launcher-install/1",
+  "execution_id": execution-id,
+  "policy_sha256": sha256,
+  "cgroup": cgroup-identity,
+  "executable": artifact-identity,
+  "executable_fd": uint,
+  "working_directory_fd": uint,
+  "arguments": [1*4096 text],
+  "environment": {* environment-name => text},
+  "filesystem": [1*4096 filesystem-rule],
+  "seccomp_program": bstr .size (1..1048576),
+  "close_file_descriptors_from": uint,
+  "service": service-binding
+}
+
+service-boundary-installed = {
+  "schema": "proofbound-runtime-service-launcher-boundary-installed/1",
+  "state": "installed",
+  "execution_id": execution-id,
+  "policy_sha256": sha256,
+  "cgroup": cgroup-identity,
+  "install_request_sha256": sha256,
+  "service": service-binding
+}
+
+service-exec-release = {
+  "schema": "proofbound-runtime-service-launcher-exec-release/1",
+  "state": "released",
+  "execution_id": execution-id,
+  "policy_sha256": sha256,
+  "cgroup": cgroup-identity,
+  "install_request_sha256": sha256,
+  "service_binding_sha256": sha256,
+  "credential_state": "not-declared" / credential-release-state
+}
+
+; This message is sensitive transient input. Its bytes MUST NOT enter a plan,
+; receipt, diagnostic, log, fixture, retained vector, or value-derived digest.
+service-credential-release = {
+  "schema": "proofbound-runtime-service-launcher-credential-release/1",
+  "execution_id": execution-id,
+  "policy_sha256": sha256,
+  "cgroup": cgroup-identity,
+  "install_request_sha256": sha256,
+  "service_binding_sha256": sha256,
+  "source_id": credential-source-id,
+  "environment": environment-name,
+  "value": bstr .size (1..65536)
+}
+
+service-binding = {
+  "service": service-identity,
+  "connector": connector-binding,
+  "dns_observation_sha256": sha256,
+  "selected_endpoint": endpoint,
+  "tls_observation_sha256": sha256,
+  "channel": channel-binding,
+  "limits": service-session-limits,
+  "child_filter_sha256": sha256,
+  "credential_source": null / credential-source
+}
+
+service-identity = {
+  "name": text .size (1..253),
+  "port": 1..65535
+}
+
+connector-binding = {
+  "executable": artifact-identity,
+  "runtime_closure_sha256": sha256,
+  "process_generation": 1..18446744073709551615
+}
+
+channel-binding = {
+  "protocol": "unix-stream-v1",
+  "connector_endpoint_id": bstr .size 16,
+  "child_endpoint_id": bstr .size 16,
+  "child_descriptor": 3..65535,
+  "role": "service-session-channel"
+}
+
+service-session-limits = {
+  "setup_time_ms": uint64-nonzero,
+  "session_time_ms": uint64-nonzero,
+  "child_to_service_bytes": uint64-nonzero,
+  "service_to_child_bytes": uint64-nonzero,
+  "dns_messages": 1..65535,
+  "endpoint_attempts": 1..65535,
+  "tls_handshake_bytes": uint64-nonzero
+}
+
+endpoint = {
+  "family": "ipv4",
+  "address": bstr .size 4,
+  "port": 1..65535
+} / {
+  "family": "ipv6",
+  "address": bstr .size 16,
+  "port": 1..65535
+}
+
+execution-id = bstr .size 16
+sha256 = bstr .size 32
+
+cgroup-identity = {
+  "mount_id": uint,
+  "inode": uint
+}
+
+artifact-identity = {
+  "role": "runtime-executable" / "connector-executable",
+  "sha256": sha256,
+  "size": uint,
+  "mode": uint
+}
+
+filesystem-rule = {
+  "fd": uint,
+  "access": [+ "read" / "write" / "execute"]
+}
+
+environment-name = text .size (1..255)
+credential-source-id = text .regexp "^[a-z]$" /
+  text .regexp "^[a-z][a-z0-9.-]{0,126}[a-z0-9]$"
+credential-source = {
+  "id": credential-source-id,
+  "service": text .size (1..253),
+  "environment": environment-name
+}
+credential-release-state = {
+  "state": "released",
+  "source_id": credential-source-id,
+  "environment": environment-name
+}
+uint64-nonzero = 1..18446744073709551615

@@ -279,6 +279,22 @@ Child code MUST NOT execute before step 16. A failure in any earlier step closes
 the channel, terminates the connector and launcher, drains bounded observations,
 and produces no reusable success receipt.
 
+The proposed service-specific handshake is
+`proofbound-runtime-service-launcher/1`. Its install request and installed
+acknowledgement carry the complete service binding. Every later message carries
+the SHA-256 identity of the complete deterministic-CBOR install request. The
+credential and release messages also carry the SHA-256 identity of the service-
+binding map. Together, the outer message identities and service map bind the
+execution, policy, cgroup, connector generation and closure, DNS and TLS
+observation identities, selected endpoint, private-channel endpoints and child
+descriptor, session limits, and exact child-filter identity. Each private
+launcher frame is at most 1,048,576 bytes. The
+optional credential-release message is sensitive transient input after the
+installed acknowledgement. No credential value or value-derived digest can
+enter a retained vector, receipt, diagnostic, or log. The production launcher
+protocol does not accept these messages until the native implementation and
+failure handshake are admitted.
+
 ## 7. Child boundary
 
 The service-session seccomp profile denies at least:
@@ -354,6 +370,15 @@ The independent verifier owns a separate decoder and separate semantic checks.
 It rejects a service-session receipt when any identity, bound, transition,
 observation, acknowledgement binding, cleanup result, or premise is absent or
 inconsistent. It MUST NOT depend on a Runtime producer crate.
+
+The proposed closed observation fragment is
+`proofbound-runtime-service-session-observation/1`. It freezes the successful
+session projection before production receipt integration. The fragment is not
+a reusable receipt and cannot be accepted by the production verifier,
+composer, or acceptance engine. A later integration MUST embed the same facts,
+add non-reusable failure forms, and retain the outer receipt's exact plan,
+policy, boundary, outcome, resource, assumption, and trusted-computing-base
+bindings.
 
 Composition retains the complete service authority, service observations,
 limits, assumptions, and trusted-computing-base roles. Consumer acceptance uses

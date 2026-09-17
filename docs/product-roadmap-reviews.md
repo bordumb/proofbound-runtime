@@ -2983,6 +2983,307 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-5 consolidated observation and launcher final review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `1da65a5c53f27b97a15f95ed1a9fb01170121444`
+- **Reviewed head:** `9fe30096eaaf5ec7bf6f1b881d5d6c588cb034d4`
+- **Branch:** `codex/rt5-launcher-contract`
+- **Method:** Complete exact-range static schema, vector, generator, checker,
+  mutation, claim, evidence, admission-ledger, and roadmap review. The reviewer
+  changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The contract code had no blocking finding. Both contract subjects were
+byte-identical to their previously approved corrected heads. Their claims,
+evidence units, schemas, vectors, generators, checkers, and mutation corpora
+remained distinct and fail closed as one batch. Every earlier semantic and
+causal-mutation blocker remained closed. Credential values and application
+content remained excluded. Production crates were unchanged, so service
+execution and production launcher decoding remained rejected.
+
+One status-truthfulness blocker remained. The detailed `PBR-NETWORK-032`
+section in the assurance plan still said the lifecycle closure required fresh
+admission. That contradicted the current summary and ledger, PR 31 run
+`35236845497`, merge `1da65a5c53f27b97a15f95ed1a9fb01170121444`, and passed
+exact-main run `35241672716`. The stale statement required correction and a new
+exact-head review.
+
+## RT-5 consolidated observation and launcher final approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `1da65a5c53f27b97a15f95ed1a9fb01170121444`
+- **Reviewed head:** `1ae00ce1fd499c4e846512c34a37734d4d924004`
+- **Branch:** `codex/rt5-launcher-contract`
+- **Method:** Complete exact-range static correction and consolidated subject
+  re-review. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the detailed `PBR-NETWORK-032` section now records
+PR 31 run `35236845497`, merge
+`1da65a5c53f27b97a15f95ed1a9fb01170121444`, and passed exact-main run
+`35241672716`. The preceding rejection accurately identifies and rejects head
+`9fe30096eaaf5ec7bf6f1b881d5d6c588cb034d4`. The correction changed only the
+assurance plan and review ledger.
+
+All contract, schema, vector, generator, checker, claim, evidence, and
+production-crate bytes remain unchanged from the corrected preliminary
+subjects. Every prior semantic and causal-mutation blocker remains closed. The
+two claims remain distinct and fail closed as one admission batch. Credential
+values and application content remain excluded, and production service
+execution and launcher decoding remain rejected.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`1da65a5c53f27b97a15f95ed1a9fb01170121444..1ae00ce1fd499c4e846512c34a37734d4d924004`.
+The following approval-only commit changes only this review record. Any later
+contract, schema, vector, generator, checker, claim, evidence, production, or
+admission-subject change requires a new exact-head review.
+
+## RT-5 consolidated contract hosted-preflight correction
+
+- **Pull request:** Runtime PR 32
+- **Failed exact head:** `3977d30abd06c94878569aabf6be566b6c47bc14`
+- **Hosted run:** `35246840055`
+- **Failed job:** Preflight `105289092377`
+- **Admission result:** **NOT ADMITTED**. Downstream jobs correctly skipped.
+
+The full preflight found that the closed global CBOR vector-inventory test did
+not yet name the four new observation and launcher vectors. The dedicated
+contract checkers and their targeted tests passed, but
+`tools.ci.test_wire_transition` rejected the unexpected retained vector names.
+The correction must register all four vector pairs in that global closed
+inventory. Because the correction changes a required test subject after the
+approval-only commit, it requires a new exact-head independent review before
+push. The failed run completed; there is no active superseded run to cancel.
+
+## RT-5 consolidated contract hosted-preflight correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `1da65a5c53f27b97a15f95ed1a9fb01170121444`
+- **Reviewed head:** `0a45e3239e8baafd05a71cb281f6f82009d2ec50`
+- **Branch:** `codex/rt5-launcher-contract`
+- **Method:** Complete exact-range static correction and consolidated-subject
+  re-review. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The global inventory still requires exact set equality for both encoded and
+projection vectors. It preserves every existing entry and adds exactly the
+launcher install, installed, release, and service-session observation vector
+pairs. An omitted or unexpected future vector still fails closed. The hosted
+failure record correctly identifies final approval-only head `3977d30`, run
+`35246840055`, job `105289092377`, the inventory mismatch, and the skipped
+downstream admission jobs.
+
+Since approved subject head `1ae00ce`, only the failure review record and the
+global inventory test changed. Contract, schema, vector, generator, checker,
+claim, evidence, and production bytes remain unchanged. The consolidated
+contract approval therefore remains valid.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`1da65a5c53f27b97a15f95ed1a9fb01170121444..0a45e3239e8baafd05a71cb281f6f82009d2ec50`.
+The following approval-only commit changes only this review record. Any later
+subject change requires a new exact-head review.
+
+## RT-5 consolidated contract evidence-tier correction
+
+- **Pull request:** Runtime PR 32
+- **Failed exact head:** `0b0bff99d7bed87a837bda10256b04ee438e4d1e`
+- **Hosted run:** `35247248205`
+- **Failed job:** Ledger evidence `105290805421`
+- **Admission result:** **NOT ADMITTED**. The remaining in-progress evidence
+  jobs were cancelled after the decisive ledger failure.
+
+The ledger correctly rejected both proposed claims with
+`PB_CORE_TIER_EXCEEDED`. `PBR-NETWORK-035` and `PBR-NETWORK-036` each cited an
+`independent-check` adapter, whose minimum evidence strength is Tier 1, while
+the claim and evidence records declared Tier 0. Preflight, Rust, both native
+architectures, and binding passed before the failure.
+
+The correction raises only these two proposed source-contract claims and their
+matching evidence units to Tier 1 and synchronizes current roadmap language.
+It does not strengthen the public product claim: production service execution
+and launcher decoding remain rejected, and receipt, verifier, composition,
+acceptance, effectful, native-attack, and release-artifact obligations remain
+open. The corrected exact head requires a new independent review and hosted
+admission.
+
+## RT-5 consolidated contract evidence-tier correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `1da65a5c53f27b97a15f95ed1a9fb01170121444`
+- **Reviewed head:** `d764c57f0735d052ec50703ef59ed46ce9103065`
+- **Branch:** `codex/rt5-launcher-contract`
+- **Method:** Complete exact-range static evidence-tier, claim-language,
+  admission-status, and prior-blocker re-review. The reviewer changed no files
+  and ran no builds or tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed hosted run `35247248205` at exact head `0b0bff9` and
+ledger job `105290805421`. Preflight, Rust, both native architectures, and
+binding passed; the ledger correctly rejected both claims because an
+`independent-check` requires Tier 1. The remaining in-progress evidence lanes
+were cancelled after that decisive failure, and current assurance did not
+admit the source.
+
+Raising each proposed claim and its matching evidence unit to Tier 1 is exact
+and semantically appropriate for bounded independent conformance and mutation
+evidence. Public language, open obligations, exclusions, production rejection,
+and non-effect claims remain unchanged. Roadmap and assurance language now
+agree and remain pending first admission. Since approved head `0a45e32`, no
+schema, vector, generator, checker, or production bytes changed. Every prior
+contract blocker remains closed and no new blocker was introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`1da65a5c53f27b97a15f95ed1a9fb01170121444..d764c57f0735d052ec50703ef59ed46ce9103065`.
+The following approval-only commit changes only this review record. Any later
+subject change requires a new exact-head review.
+
+## RT-5 service launcher preliminary review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `f98eb8f0108bbf68dfe2aba84644bf0d157f53aa`
+- **Reviewed head:** `6e435329818f5ecf8fa0ae6dee4524f4d21e8fc0`
+- **Branch:** `codex/rt5-launcher-contract`
+- **Method:** Complete exact-range static protocol, schema, vector, checker,
+  mutation, claim, evidence, and roadmap review. The reviewer changed no files
+  and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review found four blocking defects. First, the aggregate checker did not
+represent message order and could not reject credential or release messages
+before the installed acknowledgement. Second, the proposed messages did not
+enforce the existing 1,048,576-byte whole-frame limit. Third, later messages
+bound only the service map, not the complete install request, so executable,
+argument, environment, filesystem, and descriptor changes could retain the
+same acknowledgement and release. Fourth, argument and environment validation
+was stricter than the accepted plan and launcher domains while the CDDL itself
+did not impose those restrictions. The corrected exact head requires a new
+independent review.
+
+The reviewer found no additional blocker in the service, connector, DNS, TLS,
+channel, limit, filter, or descriptor bindings. Credential values and derived
+digests stayed out of retained artifacts. Production crates were unchanged,
+so production service execution and launcher decoding remained rejected.
+
+## RT-5 service launcher correction preliminary review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `f98eb8f0108bbf68dfe2aba84644bf0d157f53aa`
+- **Reviewed head:** `3d3c01036ac3796d5bc8354a9f927990292a4b37`
+- **Branch:** `codex/rt5-launcher-contract`
+- **Method:** Complete exact-range static protocol, schema, vector, checker,
+  mutation, claim, evidence, and roadmap review. The reviewer changed no files
+  and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The reviewer confirmed that the four prior semantic blockers were closed: the
+checker now represents transcript order, enforces the whole-frame bound, binds
+every later message to the complete install request, and agrees with the
+current argument and environment domains. One evidence blocker remained.
+Several mutations retained stale dependent install digests, so validation
+rejected those cases at an earlier binding check instead of the intended
+credential-order or descriptor invariant. The mutations must refresh dependent
+service and install identities when they target a local invariant, while a
+separate stale-digest mutation must continue to falsify complete-install
+binding.
+
+The reviewer found no other blocker. Credential values remained outside
+retained vectors and digests. Production crates were unchanged, so production
+service execution and launcher decoding remained rejected.
+
+## RT-5 service launcher correction preliminary approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `f98eb8f0108bbf68dfe2aba84644bf0d157f53aa`
+- **Reviewed head:** `f4a17fce48acd46618601edb7d757cf0ae528eca`
+- **Branch:** `codex/rt5-launcher-contract`
+- **Method:** Complete exact-range static protocol, schema, vector, checker,
+  mutation, claim, evidence, and roadmap review. The reviewer changed no files
+  and ran no builds or tests.
+- **Verdict:** **APPROVE**
+- **Maintainer endorsement:** **ENDORSED FOR RESTACKING ONLY**. This approval
+  confirms the stacked subject, but it is not a merge authorization. A fresh
+  exact-head review is required after the preceding lifecycle and observation
+  waves merge and this subject is restacked on admitted `main`.
+
+The reviewer confirmed that the descriptor-overlap and close-range mutations
+refresh the installed service and dependent install and service identities, so
+they reach the intended local descriptor guards. The early-credential mutation
+refreshes the installed, release, and transient identities and reaches the
+pre-acknowledgement environment guard. A separate stale complete-install
+digest mutation remains and specifically falsifies complete-request binding.
+
+The ordered transcript, whole-frame bound, schema, generated vectors, checker,
+transient credential-value exclusion, claim, evidence, and documentation agree.
+No production crate changed, so production service execution and launcher
+decoding remain rejected. The reviewer found no blocking finding.
+
+## RT-5 service observation preliminary review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da6b2da4223f7d466b24fce96d88c56bf619b997`
+- **Reviewed head:** `78bc5b0da4d9e5d5250c7a6b448b90ba86ba7a8c`
+- **Branch:** `codex/rt5-effect-contracts`
+- **Method:** Complete exact-range static review. The reviewer changed no files
+  and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review found four blocking defects. First, the semantic checker admitted
+service-session count limits outside the CDDL and Rust domain and omitted the
+attempt-to-answer and resolution-to-setup cross-field bounds. Second, DNS
+messages and endpoint attempts were not fully ordered inside the lifecycle,
+attempts could overlap, and the endpoint-connected transition was not bound to
+the selected attempt. Third, answer expiry was not derived from its exact DNS
+message observation and TTL; the vector also used incorrect time units. Fourth,
+credential-source identifiers admitted values rejected by the existing closed
+domain grammar. The correction requires a new exact-head independent review.
+
+The reviewer found no additional blocker. Production crates were unchanged,
+production execution still rejected the service-session profile, the fragment
+remained honestly non-reusable and pending, and its closed shape excluded
+credential values and application bytes.
+
+## RT-5 service observation correction preliminary approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da6b2da4223f7d466b24fce96d88c56bf619b997`
+- **Reviewed head:** `f98eb8f0108bbf68dfe2aba84644bf0d157f53aa`
+- **Branch:** `codex/rt5-effect-contracts`
+- **Method:** Complete exact-range static schema, vector, checker, mutation,
+  claim, evidence, and roadmap review. The reviewer changed no files and ran no
+  builds or tests.
+- **Verdict:** **APPROVE**
+- **Maintainer endorsement:** **ENDORSED FOR RESTACKING ONLY**. This approval
+  confirms the stacked subject, but it is not a merge authorization. A fresh
+  exact-head review is required after the preceding lifecycle wave merges and
+  this subject is restacked on admitted `main`.
+
+The reviewer confirmed that the closed count domain and the attempt-to-answer
+and resolution-to-setup cross-bounds agree across the schema and checker. DNS
+messages, non-overlapping ordered attempts, the selected terminal connection,
+the lifecycle endpoint event, TLS, and traffic timings are coherently bound.
+Each answer expiry is exactly its recorded message time plus its TTL in
+nanoseconds with overflow rejection, and neither an attempt nor TLS can use an
+expired answer. Credential-source identifiers use the same closed ASCII
+grammar in the schema and checker with negative coverage.
+
+The reviewer found no new blocker. The closed shape retains only identities,
+counters, and timing; it excludes credential and application content. The
+claim and documentation keep the fragment at Tier 0, pending, non-reusable,
+and outside production receipt, verifier, and effect claims. Production crates
+remain unchanged, so production service execution remains rejected.
+
 ## RT-5 authenticated-service contract approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

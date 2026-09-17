@@ -4,9 +4,9 @@
   publication, and external adopter gates remain
 - **Date:** 2026-09-17
 - **Runtime baseline:** current admitted `main` at
-  `a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca`; the RT-5 pure-policy wave
-  passed PR 30 Verify run `35226379485` and exact-main Verify run
-  `35231003515`
+  `1da65a5c53f27b97a15f95ed1a9fb01170121444`; the RT-5 lifecycle wave
+  passed PR 31 Verify run `35236845497` and exact-main Verify run
+  `35241672716`
 - **Proofbound distribution baseline:** immutable public bundle for source
   `9512469`
 - **Planning horizon:** prelaunch product and assurance waves
@@ -31,9 +31,9 @@ publication or an unrelated adopter.
 | RT-0 delivery mechanics | Required lanes, exact-head gating, timing, and exact tool-cache controls are merged and admitted. | Complete the retained two-week latency and cache-retention decision when its observation window closes. |
 | RT-1 memory and swap | Merged and admitted on both supported native architectures. | None for the selected claim wave. |
 | RT-2 receipt acceptance | Policy, CLI, standalone acceptor, and Action source are merged. | Observe the exact release artifact and dogfood the Action from an unrelated adopter. |
-| RT-3 first-run and SDK workflow | The deny-network and non-executable service-session SDK subjects are admitted on exact main `d48122b`. The pure-policy clarification passed PR 30 and exact main `a94c21a`. The lifecycle branch clarifies terminal transitions in Specification 0016 and reopens the intersecting SDK source closure. | Admit the lifecycle closure, then publish the selected current packages and dogfood them from an unrelated consumer. |
+| RT-3 first-run and SDK workflow | The deny-network and non-executable service-session SDK subjects are admitted on exact main `d48122b`. The pure-policy clarification is admitted on `a94c21a`, and the lifecycle closure is admitted on `1da65a5`. | Publish the selected current packages and dogfood them from an unrelated consumer. |
 | RT-4 network decision | The complete experiment and measurement series selected the connector-owned authenticated service session. | The decision authorizes RT-5; it does not provide production networking. |
-| RT-5 one authenticated service | Specification 0016 and the closed non-executable plan/parser and SDK are admitted on `d48122b`. The pure-policy compiler passed PR 30 and exact main `a94c21a`. A forward-only pure lifecycle and candidate Lean theorem are staged next. Production execution remains denied. | Admit the lifecycle and formal evidence, then implement the connector, launcher, bypass corpus, receipts, verifiers, composition, acceptance, and one maintained real API client. |
+| RT-5 one authenticated service | Specification 0016 and the closed non-executable plan/parser and SDK are admitted on `d48122b`; the pure policy is admitted on `a94c21a`, and the lifecycle is admitted on `1da65a5`. Observation and launcher contracts are staged as the next non-production batch. Production execution remains denied. | Admit the combined source-contract batch, then implement the connector, launcher, bypass corpus, receipts, verifiers, composition, acceptance, and one maintained real API client. |
 | RT-6 evidence-based expansion | CPU and output-quota decisions are recorded; the performance baseline is complete. | Implement a deferred control only when observed demand satisfies its decision gate. |
 
 Milestone B, bounded local execution, is achieved. Milestone A is operationally
@@ -70,11 +70,11 @@ and closed deny-network Rust, Python, and TypeScript SDKs. The non-executable
 service-session constructors passed PR 29 exact-head run `35216056050`, merged
 as exact main `d48122b06c4880aeba45291a107c51ad381067a4`, and passed exact-main
 run `35220098639`. The pure-policy specification clarification passed PR 30
-run `35226379485` and exact-main run `35231003515`. The current lifecycle
-branch changes the intersecting exact SDK closure and remains pending fresh
-evidence and admission. The scaffold, preflight, and
-five-case diagnostic corpus now execute on both native architectures and are
-bound into the exact-binary release-observation procedure. All three SDK
+run `35226379485` and exact-main run `35231003515`. The lifecycle closure
+passed PR 31 run `35236845497` and exact-main run `35241672716` at exact main
+`1da65a5`. The scaffold, preflight, and five-case diagnostic corpus now execute
+on both native architectures and are bound into the exact-binary
+release-observation procedure. All three SDK
 packages are built twice, byte-compared, checksummed, and retained by an exact-
 revision release job. `PBR-ACCEPT-012`, `PBR-DIAGNOSTIC-011`,
 `PBR-PREFLIGHT-009`, `PBR-SCAFFOLD-013`, and `PBR-SDK-014` deliberately retain
@@ -1061,6 +1061,27 @@ This epic exists only if RT-4 accepts a mechanism.
   verifier, composition, and acceptance-policy schemas together.
 - Reject unknown modes and incomplete destination records. Never fall back to
   `Deny` or broad egress after an unsupported allow mode is requested.
+
+**2026-09-17 observation-contract checkpoint:** the staged
+`proofbound-runtime-service-session-observation/1` fragment freezes one
+successful session's policy, connector, bounded DNS and endpoint attempts,
+authenticated TLS result, registered channel, traffic counters, forward
+lifecycle, terminal cleanup, and credential-source identity. Its independent
+checker rejects 23 causal omission, substitution, expiry, bound, lifecycle, cleanup,
+cross-service, and retained-content mutations. `PBR-NETWORK-035` is a Tier 1
+proposed source contract because its registered independent checker and causal
+mutation corpus exceed Tier 0. The fragment is not a production receipt,
+shipping verifier input, or claim that any network effect occurred.
+
+**2026-09-17 launcher-contract checkpoint:** the staged
+`proofbound-runtime-service-launcher/1` handshake binds one execution, policy,
+cgroup, executable, connector generation and closure, DNS and TLS observations,
+selected endpoint, private channel, limits, retained descriptor set, and exact
+child filter through an ordered, whole-frame-bounded transcript whose later
+messages bind the complete install request. `PBR-NETWORK-036` is a Tier 1
+proposed source contract because its registered independent checker and causal
+mutation corpus exceed Tier 0. Production launcher messages remain unchanged and reject this form;
+no connector, launcher, or child effect is enabled.
 
 ### RT-5.2 Keep the security boundary explicit
 
