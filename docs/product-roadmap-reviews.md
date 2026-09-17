@@ -2983,6 +2983,32 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-5 connector engine hosted-ledger correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `c361cb11eefec4b03b55385caf2977552a34e97a`
+- **Reviewed head:** `b9ad56a3b387f687b2ab6b6e2f9f3fc07639b62f`
+- **Branch:** `codex/rt5-production-connector`
+- **Method:** Complete exact-range static re-review after hosted run
+  `35274583129`. The reviewer changed no files and ran no builds, Rust tests,
+  Lean, Kani, native checks, or Proofbound commands.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The correction declares `PBR-NETWORK-038` and its independent source-contract
+evidence at Tier 1, which matches the adapter's effective minimum. The ordinary
+Rust test evidence remains Tier 0. Current public language consistently limits
+Tier 1 to bounded independent source-mutation evidence and explicitly excludes
+supervised execution, launcher binding, native enforcement, receipt production,
+and release-artifact behavior. No production, schema, vector, generator, or
+source-checker code changed, and every earlier finding remains closed.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`c361cb11eefec4b03b55385caf2977552a34e97a..b9ad56a3b387f687b2ab6b6e2f9f3fc07639b62f`.
+The following approval-only commit changes no reviewed production, schema,
+claim, assumption, evidence, vector, generator, or source-checker bytes. Any
+later subject change requires a new exact-head review.
+
 ## RT-5 connector engine hosted-Clippy correction approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
