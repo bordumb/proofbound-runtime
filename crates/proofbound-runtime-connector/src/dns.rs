@@ -57,7 +57,7 @@ pub struct DnsAnswer {
     effective_expires_ns: u64,
 }
 
-/// Records one validated CNAME link and its effective lifetime.
+/// Records one validated CNAME link and its record lifetime.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DnsCnameObservation {
     owner: ServiceName,
