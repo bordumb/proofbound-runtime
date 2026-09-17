@@ -35,7 +35,9 @@ def assert_static_scaffold_contract(command):
         "report.host_profile.supports(architecture)",
         "static_artifact_matches_file(&report.executable, target.executable())",
         "static_artifact_matches_file(interpreter, loader)",
+        ".is_some_and(|loader| static_artifact_matches_file(&dependency.selected, loader))",
         "static_artifact_matches_resolved(&dependency.selected, path)",
+        "if !identified_paths.insert(dependency.selected.resolved.clone())",
     ]:
         assert marker in scaffold
 
@@ -269,6 +271,16 @@ class DiagnosticCommandContractTests(unittest.TestCase):
             self.sources["command"].replace(
                 "static_artifact_matches_resolved(&dependency.selected, path)",
                 "true",
+                1,
+            ),
+            self.sources["command"].replace(
+                ".is_some_and(|loader| static_artifact_matches_file(&dependency.selected, loader))",
+                ".is_some_and(|_| true)",
+                1,
+            ),
+            self.sources["command"].replace(
+                "if !identified_paths.insert(dependency.selected.resolved.clone())",
+                "if false",
                 1,
             ),
             self.sources["command"].replace(

@@ -47,9 +47,14 @@ retained identified descriptor, rejects a directory, oversized input, identity
 drift, duplicate or unknown JSON members, an unsupported closed value, and a
 scaffold whose executable identity or resolved target differs from the
 diagnostic target. The selected host profile must match the probed architecture,
-the interpreter must match the retained executable closure, and each dependency
-must match one exact regular-file runtime library already declared by the seed
-plan. A valid scaffold contributes only its exact report commitment and an
+the interpreter must match the retained executable closure, and each selected
+dependency must match either that exact retained interpreter or one exact
+regular-file runtime library already declared by the seed plan. A dependency
+edge that selects the interpreter is already declared by the executable
+closure. It retains the interpreter role and is not duplicated as a
+runtime-library closure entry. Repeated dependency edges for one exact selected
+file produce one closure entry. A valid scaffold contributes only its exact
+report commitment and an
 `identified_closure` review section that is separate from authority candidates.
 Each closure entry retains its exact path, digest, size, mode, and role. The
 scaffold executable has `static-executable-closure` provenance. Its interpreter

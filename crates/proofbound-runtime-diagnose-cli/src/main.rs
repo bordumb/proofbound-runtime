@@ -947,19 +947,25 @@ fn load_static_scaffold(
     validate_static_scaffold(&report, target, readable, architecture)?;
 
     let mut identified_closure = Vec::with_capacity(2 + report.dependencies.len());
+    let mut identified_paths = BTreeSet::new();
     identified_closure.push(closure_entry(
         IdentifiedClosureRole::Executable,
         &report.executable,
         DraftProvenance::StaticExecutableClosure,
     )?);
+    identified_paths.insert(report.executable.resolved.clone());
     if let Some(interpreter) = &report.interpreter {
         identified_closure.push(closure_entry(
             IdentifiedClosureRole::Interpreter,
             interpreter,
             DraftProvenance::PlatformRequiredClosure,
         )?);
+        identified_paths.insert(interpreter.resolved.clone());
     }
     for dependency in &report.dependencies {
+        if !identified_paths.insert(dependency.selected.resolved.clone()) {
+            continue;
+        }
         identified_closure.push(closure_entry(
             IdentifiedClosureRole::RuntimeLibrary,
             &dependency.selected,
@@ -1045,11 +1051,16 @@ fn validate_static_scaffold(
     }
     for dependency in &report.dependencies {
         validate_static_dependency(dependency)?;
-        if !readable.iter().any(|path| {
-            matches!(path, ResolvedReadPath::File(_))
-                && path.identity().role() == ArtifactRole::RuntimeLibrary
-                && static_artifact_matches_resolved(&dependency.selected, path)
-        }) {
+        let already_declared_loader = target
+            .loader()
+            .is_some_and(|loader| static_artifact_matches_file(&dependency.selected, loader));
+        if !already_declared_loader
+            && !readable.iter().any(|path| {
+                matches!(path, ResolvedReadPath::File(_))
+                    && path.identity().role() == ArtifactRole::RuntimeLibrary
+                    && static_artifact_matches_resolved(&dependency.selected, path)
+            })
+        {
             return Err(DiagnoseError::invalid(
                 "diagnostic.static-scaffold.dependency-not-declared",
             ));
