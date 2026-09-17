@@ -2983,6 +2983,47 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-8 product-exit extension approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `d60d1f3485c6f050027a6cace9def943cbb958dc`
+- **Reviewed head:** `6b3c39c59afe3cd767808764c6d247260bc3b5f0`
+- **Branch:** `codex/rt8-exit-wave`
+- **Method:** Complete exact-range static security, product, schema, evidence,
+  native-workflow, and roadmap review. The reviewer changed no files and ran no
+  builds or tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The reviewer first requested changes at exact head `919832f` because valid
+relative scaffold inputs could not become absolute draft inputs, an unbound
+public candidate path could counterfeit closure provenance, and roadmap status
+was contradictory. The reviewer requested changes again at exact head
+`8a0efc4` because candidate binding changed the established Capsec error,
+role/kind binding lacked causal falsifiers, and scaffold identity-revalidation
+evidence was incomplete. Both rejection records remain non-endorsed.
+
+At the approved head, scaffold lookup retains the declared relative project
+input while draft serialization uses its retained absolute resolved target.
+Closure-tagged candidates require explicit scope and exact path, role, kind,
+and provenance binding to an identified closure entry. Positive and negative
+cases cover executable, interpreter, and runtime-library combinations. Stale
+Capsec relabeling retains `CapsecProvenanceInvalid`. Independent mutations
+cover both binding branches and the load-bearing scaffold gates, including the
+descriptor-bound identity-revalidating read.
+
+The reviewer also confirmed canonical schema, vector, and producer agreement;
+no extension of installed authority; non-reusable diagnostic output; the
+maintained dynamically linked workload in both native architecture lanes; all
+currently available provenance classes; visible unavailable Capsec status; and
+truthful roadmap and assurance language.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`d60d1f3485c6f050027a6cace9def943cbb958dc..6b3c39c59afe3cd767808764c6d247260bc3b5f0`.
+The following approval-only commit changes no reviewed production, schema,
+vector, evidence, native-workflow, specification, roadmap, or assurance bytes.
+Any later subject change requires a new exact-head review.
+
 ## RT-8 consolidated object, candidate, and command approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
