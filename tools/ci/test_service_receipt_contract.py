@@ -252,6 +252,7 @@ class ServiceReceiptContractTests(unittest.TestCase):
 
     def test_launcher_to_observation_cross_bindings_are_causal(self) -> None:
         cases = {
+            "connector closure": lambda service: service["connector"].__setitem__("runtime_closure_sha256", bytes([0x26]) * 32),
             "connector generation": lambda service: service["connector"].__setitem__("process_generation", 2),
             "selected endpoint": lambda service: service.__setitem__(
                 "selected_endpoint",
@@ -285,6 +286,22 @@ class ServiceReceiptContractTests(unittest.TestCase):
         bindings = self.refreshed_success(receipt, install, installed, release)
         with self.assertRaisesRegex(ContractError, "credential source is inconsistent with the launcher"):
             validate_receipt(receipt, **bindings)
+
+    def test_receipt_to_observation_identity_bindings_are_causal(self) -> None:
+        cases = {
+            "execution": ("execution_id", bytes([0x92]) * 16),
+            "policy": ("policy_sha256", bytes([0x93]) * 32),
+        }
+        for name, (field, identity) in cases.items():
+            receipt = copy.deepcopy(self.success)
+            observation = decode_strict(receipt["result"]["observation_cbor"])
+            observation[field] = identity
+            self.replace_observation(receipt, observation)
+            with self.subTest(name=name), self.assertRaisesRegex(
+                ContractError,
+                "observation execution or policy identity is substituted",
+            ):
+                self.validate(receipt)
 
     def test_observation_to_tcb_cross_bindings_are_causal(self) -> None:
         def executable(observation, service):
