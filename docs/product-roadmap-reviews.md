@@ -3119,6 +3119,30 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes only this review record. Any later
 subject change requires a new exact-head review.
 
+## RT-8 selected-object pairing evidence approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `ee80b0baf066620939ae752a520de3b183f20da4`
+- **Reviewed head:** `78c36c479b3100be838edab844f6a2a3f2ee1a98`
+- **Branch:** `codex/rt8-object-resolution-final`
+- **Method:** Read-only exact-range causal-evidence review after hosted preflight
+  run `35170794789`. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the object-resolution checker binds
+`finish_syscall` before selected-descriptor resolution and event construction.
+It isolates the captured-syscall arm so the legitimate initial synchronization
+resume cannot weaken the stopped-tracee guarantee, while any resume before
+selected-object resolution or `SyscallCompleted` in that arm remains forbidden.
+The existing causal pre-selection-resume mutant is rejected, and exec
+reconciliation-before-selection ordering remains intact.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`ee80b0baf066620939ae752a520de3b183f20da4..78c36c479b3100be838edab844f6a2a3f2ee1a98`.
+The following approval-only commit changes only this review record. Any later
+subject change requires a new exact-head review.
+
 ## RT-8 diagnostic lifecycle restacked re-review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
