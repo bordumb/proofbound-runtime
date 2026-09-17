@@ -134,6 +134,12 @@ test("service session is closed and validated", async () => {
     () => buildPlan({ ...plan, network: numericName }),
     (error) => error instanceof SdkError && error.code === "sdk.plan.network-invalid",
   );
+  const nonCanonicalPath = serviceNetwork();
+  nonCanonicalPath.connector_runtime_read = ["/usr//lib"];
+  assert.throws(
+    () => buildPlan({ ...plan, network: nonCanonicalPath }),
+    (error) => error instanceof SdkError && error.code === "sdk.plan.network-invalid",
+  );
 });
 
 test("run-result projection is closed", () => {

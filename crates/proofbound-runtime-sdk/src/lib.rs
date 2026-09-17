@@ -639,6 +639,11 @@ fn encode_network_input(network: NetworkAuthorityV2Input) -> Cbor {
 fn canonical_absolute_path(value: &str) -> bool {
     let path = Path::new(value);
     path.is_absolute()
+        && (value == "/"
+            || (!value.ends_with('/')
+                && value
+                    .strip_prefix('/')
+                    .is_some_and(|suffix| !suffix.split('/').any(str::is_empty))))
         && !path.components().any(|component| {
             matches!(
                 component,

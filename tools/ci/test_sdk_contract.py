@@ -73,6 +73,8 @@ class SdkContractTests(unittest.TestCase):
                 "credential-service-substitution",
                 "credential-environment-omission",
                 "resolver-address-width-substitution",
+                "service-setup-deadline-inversion",
+                "service-support-path-alias",
             ],
         )
 

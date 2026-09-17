@@ -679,6 +679,12 @@ fn canonical_absolute_network_path(value: String) -> Result<AuthorityPath, PlanE
     let path = AuthorityPath::new(value)?;
     let filesystem_path = Path::new(path.as_str());
     if !filesystem_path.is_absolute()
+        || (path.as_str() != "/"
+            && (path.as_str().ends_with('/')
+                || path
+                    .as_str()
+                    .strip_prefix('/')
+                    .is_none_or(|suffix| suffix.split('/').any(str::is_empty))))
         || filesystem_path
             .components()
             .any(|component| matches!(component, Component::CurDir | Component::ParentDir))
@@ -829,6 +835,7 @@ mod tests {
         address_bytes: Vec<u8>,
         resolution_deadline_ms: u64,
         setup_time_ms: u64,
+        connector_runtime_read: &str,
     ) -> Vec<u8> {
         let environment = if include_environment {
             vec![CborValue::Text("API_KEY".to_owned())]
@@ -914,7 +921,7 @@ mod tests {
             ),
             (
                 "connector_runtime_read",
-                CborValue::Array(vec![CborValue::Text("/usr/lib".to_owned())]),
+                CborValue::Array(vec![CborValue::Text(connector_runtime_read.to_owned())]),
             ),
             (
                 "local_channel",
@@ -1052,6 +1059,7 @@ processes = 1
                 vec![1, 1, 1, 1],
                 5_000,
                 10_000,
+                "/usr/lib",
             )),
             Err(PlanError::NetworkAuthority(
                 NetworkAuthorityError::InvalidServiceName
@@ -1065,6 +1073,7 @@ processes = 1
                 vec![1, 1, 1, 1],
                 5_000,
                 10_000,
+                "/usr/lib",
             )),
             Err(PlanError::CredentialEnvironmentMissing)
         );
@@ -1076,6 +1085,7 @@ processes = 1
                 vec![1, 1, 1, 1],
                 5_000,
                 10_000,
+                "/usr/lib",
             )),
             Err(PlanError::NetworkAuthority(
                 NetworkAuthorityError::CredentialServiceMismatch
@@ -1089,6 +1099,7 @@ processes = 1
                 vec![1, 1, 1],
                 5_000,
                 10_000,
+                "/usr/lib",
             )),
             Err(PlanError::InvalidSchema)
         );
@@ -1100,10 +1111,23 @@ processes = 1
                 vec![1, 1, 1, 1],
                 5_000,
                 4_999,
+                "/usr/lib",
             )),
             Err(PlanError::NetworkAuthority(
                 NetworkAuthorityError::ResolutionDeadlineExceedsSetup
             ))
+        );
+        assert_eq!(
+            parse_service_execution_plan(&service_plan(
+                "api.anthropic.com",
+                "api.anthropic.com",
+                true,
+                vec![1, 1, 1, 1],
+                5_000,
+                10_000,
+                "/usr//lib",
+            )),
+            Err(PlanError::NetworkSupportPathInvalid)
         );
     }
 

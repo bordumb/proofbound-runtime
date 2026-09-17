@@ -19,6 +19,9 @@ VERSION_TWO_OBJECTS = (
 NEW_CBOR_OBJECTS = {
     "acceptance-policy": 1,
 }
+ADDITIONAL_VERSION_TWO_VECTORS = {
+    "execution-plan-service-session",
+}
 
 
 class WireTransitionTests(unittest.TestCase):
@@ -65,8 +68,9 @@ class WireTransitionTests(unittest.TestCase):
             path.name.removesuffix(".projection.json")
             for path in VECTOR_ROOT.glob("*.projection.json")
         }
-        self.assertTrue(all_objects <= encoded_vectors)
-        self.assertEqual(encoded_vectors, projected_vectors)
+        expected_vectors = all_objects | ADDITIONAL_VERSION_TWO_VECTORS
+        self.assertEqual(encoded_vectors, expected_vectors)
+        self.assertEqual(projected_vectors, expected_vectors)
 
     def test_every_execution_entry_point_uses_the_v2_plan_decoder(self) -> None:
         for relative in (

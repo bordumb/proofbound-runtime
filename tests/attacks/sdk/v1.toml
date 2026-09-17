@@ -64,3 +64,13 @@ expected = "sdk.plan.network-invalid"
 id = "resolver-address-width-substitution"
 mutation = "supply resolver address bytes with a width that disagrees with the declared family"
 expected = "sdk.plan.network-invalid"
+
+[[case]]
+id = "service-setup-deadline-inversion"
+mutation = "make the DNS resolution deadline exceed the total service setup deadline"
+expected = "sdk.plan.network-invalid"
+
+[[case]]
+id = "service-support-path-alias"
+mutation = "supply a service support path with an empty, dot, parent, or trailing component"
+expected = "sdk.plan.network-invalid"

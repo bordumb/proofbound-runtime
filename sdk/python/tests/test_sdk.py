@@ -114,6 +114,12 @@ class PythonSdkTests(unittest.TestCase):
             build_plan(**plan)
 
         invalid = service_network()
+        invalid["connector_runtime_read"] = ["/usr//lib"]
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
+        invalid = service_network()
         invalid["service"] = {"name": "001.002.003.004", "port": 443}
         plan["network"] = invalid
         with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):

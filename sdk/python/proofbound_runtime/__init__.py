@@ -314,6 +314,11 @@ def _canonical_absolute(value: Any) -> bool:
     return (
         isinstance(value, str)
         and Path(value).is_absolute()
+        and value.startswith("/")
+        and (
+            value == "/"
+            or (not value.endswith("/") and all(part for part in value[1:].split("/")))
+        )
         and "." not in Path(value).parts
         and ".." not in Path(value).parts
     )

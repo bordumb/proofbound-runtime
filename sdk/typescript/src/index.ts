@@ -293,7 +293,12 @@ function networkUnsigned(value, minimum, maximum, name) {
 }
 
 function canonicalAbsolute(value) {
-  return typeof value === "string" && path.isAbsolute(value) && !value.split(path.sep).some((part) => part === "." || part === "..");
+  return typeof value === "string" &&
+    path.posix.isAbsolute(value) &&
+    (value === "/" || (
+      !value.endsWith("/") &&
+      !value.slice(1).split("/").some((part) => part === "" || part === "." || part === "..")
+    ));
 }
 
 function validServiceName(value) {
