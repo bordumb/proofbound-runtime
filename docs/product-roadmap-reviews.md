@@ -3047,6 +3047,30 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes only this review record. Any later
 subject change requires another exact-head review.
 
+### RT-8 diagnostic closure lock-identity correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `d60d1f3485c6f050027a6cace9def943cbb958dc`
+- **Reviewed head:** `d81e160d01a6754398e2a3b62dcca78ca640b082`
+- **Method:** Exact-range static re-review after hosted preflight exposed four
+  diagnostic source-closure pins that still named the preceding lock identity.
+  The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The four changed source checkers now pin the exact current `Cargo.lock`
+SHA-256,
+`d66c3088b3aa5b9aca096f0c8bb46d746485d949a398cc5052be33687421b989`.
+No other closure identity changed. Production code, schemas, vectors, evidence
+semantics, native workflow, specifications, and roadmap meaning remain
+unchanged from the previously approved subject. All preceding findings remain
+closed.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`d60d1f3485c6f050027a6cace9def943cbb958dc..d81e160d01a6754398e2a3b62dcca78ca640b082`.
+The following approval-only commit changes only this review record. Any later
+subject change requires another exact-head review.
+
 ## RT-8 consolidated object, candidate, and command approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
