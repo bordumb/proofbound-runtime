@@ -652,6 +652,9 @@ fn valid_service_name(value: &str) -> bool {
         || value.len() > 253
         || value.ends_with('.')
         || value.parse::<std::net::IpAddr>().is_ok()
+        || value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || byte == b'.')
     {
         return false;
     }

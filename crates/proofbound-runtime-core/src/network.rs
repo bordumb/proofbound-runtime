@@ -14,7 +14,11 @@ impl ServiceName {
         if value.is_empty() || value.len() > 253 || value.ends_with('.') {
             return Err(NetworkAuthorityError::InvalidServiceName);
         }
-        if value.parse::<IpAddr>().is_ok() {
+        if value.parse::<IpAddr>().is_ok()
+            || value
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || byte == b'.')
+        {
             return Err(NetworkAuthorityError::ServiceNameIsAddress);
         }
         for label in value.split('.') {
@@ -713,6 +717,7 @@ mod tests {
             "-api.example.com",
             "api-.example.com",
             "127.0.0.1",
+            "001.002.003.004",
             "::1",
         ] {
             assert!(ServiceName::new(invalid).is_err(), "accepted {invalid}");
