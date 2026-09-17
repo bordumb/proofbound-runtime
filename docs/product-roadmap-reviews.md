@@ -3127,6 +3127,37 @@ The following approval-only commit changes only this review record. Hosted
 evidence is still required before merge, and any later subject change requires
 another exact-head review.
 
+## RT-8 adversarial case-isolation correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `e60beb8dfe1d168c282d9f2c9ca9a830c90442ac`
+- **Reviewed head:** `15d8177284653cebea0c8fc403fa0f3cef9178c7`
+- **Method:** Exact-range correction review after both hosted native lanes
+  exposed cross-case state. The reviewer changed no files and ran no builds or
+  tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+Both architectures passed the 11-case native unit corpus, then the newly added
+shell corpus stopped before its observation-sensitive case. The preceding
+symlink-redirection attack intentionally created
+`redirected-plan-scaffold.json`, but did not remove that symlink after its exact
+rejection and no-child-start assertions. The following case shared the same
+temporary root and therefore rejected during resolution.
+
+The approved correction unlinks only that explicit path below the temporary
+adversarial root after every symlink-case assertion. It does not follow the
+symlink. Shell fail-fast behavior exits before cleanup if any assertion fails,
+so the correction cannot hide a failed attack. It restores test isolation and
+changes no production behavior, authority, receipt meaning, claim, or evidence
+semantics.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`e60beb8dfe1d168c282d9f2c9ca9a830c90442ac..15d8177284653cebea0c8fc403fa0f3cef9178c7`.
+The following approval-only commit changes only this review record. Hosted
+evidence is still required before merge, and any later subject change requires
+another exact-head review.
+
 ## RT-8 consolidated object, candidate, and command approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
