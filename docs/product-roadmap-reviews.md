@@ -3042,6 +3042,23 @@ The following approval-only commit changes only this review record. Any later
 contract, schema, vector, generator, checker, claim, evidence, production, or
 admission-subject change requires a new exact-head review.
 
+## RT-5 consolidated contract hosted-preflight correction
+
+- **Pull request:** Runtime PR 32
+- **Failed exact head:** `3977d30abd06c94878569aabf6be566b6c47bc14`
+- **Hosted run:** `35246840055`
+- **Failed job:** Preflight `105289092377`
+- **Admission result:** **NOT ADMITTED**. Downstream jobs correctly skipped.
+
+The full preflight found that the closed global CBOR vector-inventory test did
+not yet name the four new observation and launcher vectors. The dedicated
+contract checkers and their targeted tests passed, but
+`tools.ci.test_wire_transition` rejected the unexpected retained vector names.
+The correction must register all four vector pairs in that global closed
+inventory. Because the correction changes a required test subject after the
+approval-only commit, it requires a new exact-head independent review before
+push. The failed run completed; there is no active superseded run to cancel.
+
 ## RT-5 service launcher preliminary review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

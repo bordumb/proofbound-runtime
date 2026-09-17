@@ -19,9 +19,13 @@ VERSION_TWO_OBJECTS = (
 NEW_CBOR_OBJECTS = {
     "acceptance-policy": 1,
 }
-ADDITIONAL_VERSION_TWO_VECTORS = {
+ADDITIONAL_CBOR_VECTORS = {
     "compiled-policy-service-session",
     "execution-plan-service-session",
+    "service-launcher-install",
+    "service-launcher-installed",
+    "service-launcher-release",
+    "service-session-observation",
 }
 
 
@@ -69,7 +73,7 @@ class WireTransitionTests(unittest.TestCase):
             path.name.removesuffix(".projection.json")
             for path in VECTOR_ROOT.glob("*.projection.json")
         }
-        expected_vectors = all_objects | ADDITIONAL_VERSION_TWO_VECTORS
+        expected_vectors = all_objects | ADDITIONAL_CBOR_VECTORS
         self.assertEqual(encoded_vectors, expected_vectors)
         self.assertEqual(projected_vectors, expected_vectors)
 
