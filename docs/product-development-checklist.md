@@ -1,15 +1,14 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-17T15:06:00+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-17T15:49:08+01:00 (Europe/London, BST)
 - **Runtime baseline:** RT-8 and the RT-5 non-executable contract are admitted.
   The RT-5 pure-policy wave passed PR 30 Verify run `35226379485` and merged as
   exact unsigned main `a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca`.
-  Exact-main Verify run `35231003515` is in progress.
+  Exact-main Verify run `35231003515` passed.
 - **Active implementation wave:** RT-5 one authenticated service.
-- **Current batch:** complete the pure-policy exact-main replay, then admit the
-  closed forward-only service lifecycle and its candidate formal model before
-  any connector or launcher effect is added.
+- **Current batch:** admit the closed forward-only service lifecycle and its
+  candidate formal model before any connector or launcher effect is added.
 - **Parallel external gates:** RT-7 protected routes and current-integration
   source are merged; registry configuration, actual public package publication,
   anonymous observations, consumer dogfood, and a retained current-integration
@@ -401,7 +400,7 @@ draft, while no diagnostic output can become reusable production evidence.
   `PBR-NETWORK-033` now stage the non-executing parser, strict domain, pure
   compiler, and frozen plan and policy vectors. `PBR-NETWORK-032` is admitted
   on exact main `d48122b`. `PBR-NETWORK-033` passed PR 30 run `35226379485`,
-  merged as `a94c21a`, and awaits exact-main run `35231003515`.
+  merged as `a94c21a`, and passed exact-main run `35231003515`.
 - [ ] Admit the closed forward-only service lifecycle. `PBR-NETWORK-034` and
   its exhaustive phase/event tests are staged on the current branch. Its Lean
   theorem is a candidate until separately registered and admitted; neither

@@ -6,8 +6,9 @@
   promotion
 - **Current Runtime main:** `a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca`;
   the RT-5 pure-policy wave passed PR 30 exact-head Verify run `35226379485`;
-  exact-main Verify run `35231003515` is in progress
-- **Current reviewed Roadmap 1 source head:** `d76f3b8`
+  exact-main Verify run `35231003515` passed
+- **Current reviewed Roadmap 1 source head:** `38d00d2`; approval-only record
+  `da6b2da`
 - **Lifecycle:** prelaunch; zero external users; package labels are tooling
   metadata rather than compatibility promises
 
@@ -22,7 +23,7 @@ review updates it.
 Runtime main `a94c21a` contains the complete reviewed RT-8 diagnostic workflow,
 native adversarial corpus, RT-5 non-executable authenticated-service contract,
 SDK construction, and pure policy compiler. PR 30 exact-head run `35226379485`
-passed; exact-main run `35231003515` is in progress. Roadmap 1 RT-5 remains
+passed; exact-main run `35231003515` also passed. Roadmap 1 RT-5 remains
 open beyond the non-executable policy. Roadmap 2 delivery is active; RT-8 is
 complete, RT-7 retains external publication gates, and later epics remain
 open. Roadmap 3 contains candidates, not scheduled implementation.

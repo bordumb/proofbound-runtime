@@ -21,7 +21,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-DIAGNOSTIC-011` | Tested/model-only on the development branch | The closed run phase and rule mapping is tested without inferring a kernel denial or changing receipt meaning. |
 | `PBR-ACCEPT-012` | Tested/model-only on the development branch | Adopter policy decisions bind independently verified inputs; exact released acceptor observation and external Action dogfood remain open. |
 | `PBR-SCAFFOLD-013` | Tested/model-only on the development branch | Static ELF scaffolding is bounded diagnostic evidence, not a safe policy or a complete dynamic-load inventory. |
-| `PBR-SDK-014` | Prior service-session source admitted; current lifecycle-spec closure pending | PR 30 run `35226379485` passed and merged as `a94c21a`; exact-main run `35231003515` is in progress. The lifecycle branch clarifies terminal transitions in Specification 0016 and requires fresh admission. Registry publication and consumer dogfood remain open. |
+| `PBR-SDK-014` | Prior service-session source admitted; current lifecycle-spec closure pending | PR 30 run `35226379485` and exact-main run `35231003515` passed at `a94c21a`. The lifecycle branch clarifies terminal transitions in Specification 0016 and requires fresh admission. Registry publication and consumer dogfood remain open. |
 | `PBR-DISTRIBUTION-015` | Tier 1 current contract closure admitted on exact Runtime main `d48122b` | The changed deterministic-CBOR helper closure passed PR 29 run `35216056050` and exact-main run `35220098639`; registry publication remains external. |
 | `PBR-DISTRIBUTION-016` | Tier 1 credential-scoped consumer admitted on exact Runtime main `a8df83d` | Runtime pins one immutable public Proofbound release, confines its read-only workflow credential to canonical GitHub API metadata, keeps release assets anonymous, and rejects identity, inventory, manifest, checksum, archive, installer, and installed-byte substitution. Exact-head PR 23 run `35034962830` and exact-main run `35038304369` passed. |
 | `PBR-DISTRIBUTION-018` | Tier 1 protected publication routes admitted on exact Runtime main `47c5ad2` | Publication is explicit, exact-source, protected, ordered, and credential-isolated. The one-time npm bootstrap route and its fail-closed cutover are admitted; external registry configuration, publication, and observations remain open. |
@@ -40,8 +40,8 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-OBSERVER-029` | Tier 1 current contract closure admitted on exact Runtime main `d48122b` | The current object-resolution closure passed PR 29 run `35216056050` and exact-main run `35220098639`; Linux pathname completeness remains open. |
 | `PBR-OBSERVER-030` | Tier 1 candidate-resolution source admitted on exact Runtime main `d60d1f3` | Failed path operations produce only advisory stable candidates after two bounded root-confined observations agree; drift and hop exhaustion remain explicit gaps. Independently approved PR 26 head `2fc82ff` passed run `35172227506`, including both native architectures. Exact-main run `35175269953` passed. Linux pathname completeness remains pending. |
 | `PBR-OBSERVER-031` | Prior Tier 1 RT-8 subject admitted; current lifecycle closure pending | The lifecycle branch changes the shared core export identity and requires fresh exact admission without reopening RT-8 product behavior. |
-| `PBR-NETWORK-032` | Tier 0 contract admitted on exact Runtime main `d48122b`; current lifecycle closure pending | PR 30 passed and merged; its exact-main replay is in progress. The lifecycle branch changes the shared core export identity again. |
-| `PBR-NETWORK-033` | Tier 0 pure policy passed PR 30; exact-main and lifecycle closure pending | The compiler separately binds child denial, the channel-only profile, and complete connector authority. Run `35226379485` passed and merged as `a94c21a`; run `35231003515` is in progress. The lifecycle branch changes its shared export closure. |
+| `PBR-NETWORK-032` | Tier 0 contract admitted on exact Runtime main `a94c21a`; current lifecycle closure pending | PR 30 and exact-main run `35231003515` passed. The lifecycle branch changes the shared core export identity again. |
+| `PBR-NETWORK-033` | Tier 0 pure policy admitted on exact Runtime main `a94c21a`; current lifecycle closure pending | The compiler separately binds child denial, the channel-only profile, and complete connector authority. Run `35226379485` and exact-main run `35231003515` passed. The lifecycle branch changes its shared export closure. |
 | `PBR-NETWORK-034` | Tier 0 proposed pure lifecycle pending first exact admission | Exhaustive source tests cover the closed forward path and typed terminal failure. A candidate Lean theorem characterizes the same transitions but is not yet registered as admitted evidence. Every effectful wave remains open. |
 
 ### Current changed subjects pending exact admission
@@ -54,8 +54,8 @@ changed by the contract wave, including the first Tier 0 admission of
 
 The pure-policy wave passed exact-head run `35226379485` and merged as exact
 Runtime main `a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca`. Exact-main run
-`35231003515` is in progress. No status transfers from the green pull-request
-head until that replay passes.
+`35231003515` passed. That exact subject admits `PBR-NETWORK-033` and the
+intersecting pure-policy closure without transferring status to later source.
 
 The current lifecycle wave changes the shared core export again. The pending
 existing claims are `PBR-BINDING-005`, `PBR-DRAFT-017`, `PBR-DRAFT-019`,
@@ -993,7 +993,7 @@ release waves are admitted.
 
 The pure-policy subject passed PR 30 exact-head run `35226379485` and merged as
 exact Runtime main `a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca`. Exact-main run
-`35231003515` is in progress. The current lifecycle branch changes the shared
+`35231003515` passed. The current lifecycle branch changes the shared
 core export identity and therefore requires its own admission without changing
 the compiler's behavior.
 
