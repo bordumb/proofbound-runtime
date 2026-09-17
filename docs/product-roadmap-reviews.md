@@ -3263,6 +3263,38 @@ exact-head run `35216056050`, and exact-main run `35220098639` consistently
 with the assurance plan, product roadmap, and checklist. The corrected exact
 head requires a new independent review.
 
+## RT-5 authenticated-service pure-policy approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `d48122b06c4880aeba45291a107c51ad381067a4`
+- **Reviewed head:** `48fd014ea226e7125af6e5c24f6eca5378c73882`
+- **Branch:** `codex/rt5-pure-policy`
+- **Method:** Complete exact-range static security, canonical-policy,
+  evidence-inventory, assurance-status, and roadmap re-review. The reviewer
+  changed no files and ran no builds or tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the controlling execution-order ledger records
+current main `d48122b`, PR 29 exact-head run `35216056050`, and exact-main run
+`35220098639` while distinguishing the admitted non-executable contract and SDK
+construction from remaining RT-5 work. The evidence inventory uses the
+crate-qualified test identity. Canonical policy bytes separately bind direct
+child denial, `ChannelOnlyV1`, and the complete connector authority. Admission
+and pending-subject ledgers include `PBR-NETWORK-033` accurately.
+
+Production execution still rejects service plans with `UnsupportedNetwork`,
+and the compiled child base remains `DenyNetworkV1`. The preceding rejection
+records preserve their exact findings and non-endorsement. No new security,
+semantic, schema, evidence-closure, roadmap, or fail-closed blocker was
+introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`d48122b06c4880aeba45291a107c51ad381067a4..48fd014ea226e7125af6e5c24f6eca5378c73882`.
+The following approval-only commit changes only this review record. Any later
+production, schema, claim, evidence, checker, SDK, or status-subject change
+requires a new exact-head review.
+
 ## RT-8 product-exit extension approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
