@@ -1,0 +1,29 @@
+schema = "proofbound-claim/1"
+id = "PBR-NETWORK-034"
+title = "Service-session lifecycle is forward-only and terminal"
+statement = "The proposed pure service-session lifecycle accepts only the registered forward setup, release, and close order; permits a typed failure from each nonterminal phase; and rejects backward, skipped, reconnect, and post-terminal transitions."
+public_language = "Runtime has a proposed pure service-session lifecycle decision with a closed forward path and typed terminal failures. Exhaustive source tests cover every phase and non-failure event pair. This is source test evidence only. It does not run a resolver, connector, TLS session, launcher, child, or cleanup operation."
+subject = "rust:proofbound_runtime_core::ServiceSessionLifecycle::transition"
+profile = "ledger"
+tier = 0
+evidence = [
+  "example-test:authenticated-service-lifecycle-contract",
+]
+assumptions = []
+open_obligations = [
+  "Add formal state-transition and selected Rust refinement evidence for the admitted pure lifecycle subject.",
+  "Connect each effectful connector and supervisor operation to the matching transition without exposing an unobserved fallback.",
+  "Independently verify the complete transition and terminal-observation record in each reusable receipt.",
+]
+out_of_scope = [
+  "Execution of DNS, endpoint, TLS, connector, channel, launcher, child, or cleanup effects.",
+  "Correctness of the kernel, network, TLS implementation, remote service, or effect observations.",
+  "Endpoint retry counters, reconnect, multiple services, or application-operation semantics.",
+]
+source_roots = [
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/lib.rs",
+  "crates/proofbound-runtime-core/src/service_lifecycle.rs",
+  "docs/specs/0016_authenticated_service_session.md",
+  "proofbound/evidence/authenticated-service-lifecycle-contract.toml",
+]

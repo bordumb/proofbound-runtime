@@ -1,0 +1,34 @@
+schema = "proofbound-evidence-unit/1"
+id = "authenticated-service-lifecycle-contract"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-NETWORK-034"]
+tier = 0
+expected_inventory = [
+  "proofbound_runtime_core::service_lifecycle::tests::failure_is_typed_and_terminal_from_every_nonterminal_phase",
+  "proofbound_runtime_core::service_lifecycle::tests::lifecycle_rejects_every_unregistered_non_failure_transition",
+  "proofbound_runtime_core::service_lifecycle::tests::lifecycle_requires_complete_forward_release_order",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/lib.rs",
+  "crates/proofbound-runtime-core/src/service_lifecycle.rs",
+  "docs/specs/0016_authenticated_service_session.md",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-core"
+manifest = "Cargo.toml"
+targets = ["--lib"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824
