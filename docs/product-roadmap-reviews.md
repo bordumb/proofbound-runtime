@@ -3011,6 +3011,33 @@ The following approval-only commit changes no reviewed production, checker,
 claim, assumption, specification, ADR, or evidence bytes. Any later subject
 change requires a new exact-head review.
 
+## RT-8 native-CI correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `33241ac85327a7abac3e20f2561f0c8aa27065c6`
+- **Reviewed head:** `7d90b0c702162cf48dc874202db00bfa69793662`
+- **Branch:** `codex/rt8-object-resolution-final`
+- **Method:** Read-only exact-range correction review against the previously
+  approved RT-8 implementation. The reviewer changed no files and ran no builds
+  or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the owned component queue fixes the Rust lifetime
+error without changing component classification, traversal order, root
+confinement, symlink-hop accounting, target-byte bounds, or final escape
+rejection. The reviewer also confirmed that both corrected assumptions use the
+admitted and semantically accurate `runtime-environment` category, remain bound
+through their relevant claims and evidence closures, and do not weaken the
+previously approved evidence meaning. All three exact-source checkers match the
+current `trace.rs` SHA-256
+`f3bb71a971916d244963bd78d87fc4f4f00ca98c65f37b5f7d7c48fc986057e4`.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`33241ac85327a7abac3e20f2561f0c8aa27065c6..7d90b0c702162cf48dc874202db00bfa69793662`.
+The following approval-only commit changes only this review record. Any later
+subject change requires a new exact-head review.
+
 ## RT-8 diagnostic lifecycle restacked re-review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
