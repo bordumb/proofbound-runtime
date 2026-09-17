@@ -108,7 +108,8 @@ passed every PR 34 lane in Verify run `35276015624`, merged as exact main
 now freezes the next candidate: one identified connector executable, retained
 artifact identities, a closed inherited-descriptor bootstrap, private data and
 control channels, authenticated readiness binding, fixed protocol and reap
-deadlines, and nonblocking late cleanup. `PT_INTERP` validation currently
+deadlines with post-operation checks, and a pre-established late-reaper
+handoff that aborts fail-closed if unavailable. `PT_INTERP` validation currently
 registers a loader pathname; actual kernel loader-object binding remains an
 explicit production obligation. Production CLI and child execution remain
 disabled.

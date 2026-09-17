@@ -47,6 +47,45 @@ def require_causal_guards(body: str, guards: tuple[str, ...]) -> None:
             require_guards(body.replace(guard, "", 1), guards)
 
 
+def ordered_positions(body: str, guards: tuple[str, ...]) -> tuple[int, ...]:
+    positions = []
+    cursor = 0
+    for guard in guards:
+        position = body.find(guard, cursor)
+        if position == -1:
+            raise AssertionError(f"required production order absent: {guards!r}")
+        positions.append(position)
+        cursor = position + len(guard)
+    return tuple(positions)
+
+
+def require_order(body: str, guards: tuple[str, ...]) -> None:
+    ordered_positions(body, guards)
+
+
+def require_causal_order(body: str, guards: tuple[str, ...]) -> None:
+    positions = ordered_positions(body, guards)
+    for position, guard in zip(positions, guards, strict=True):
+        mutated = body[:position] + body[position + len(guard) :]
+        with unittest.TestCase().assertRaises(AssertionError):
+            require_order(mutated, guards)
+    for index in range(len(guards) - 1):
+        left = guards[index]
+        right = guards[index + 1]
+        left_start = positions[index]
+        right_start = positions[index + 1]
+        middle = body[left_start + len(left) : right_start]
+        mutated = (
+            body[:left_start]
+            + right
+            + middle
+            + left
+            + body[right_start + len(right) :]
+        )
+        with unittest.TestCase().assertRaises(AssertionError):
+            require_order(mutated, guards)
+
+
 class ConnectorProcessSourceContractTests(unittest.TestCase):
     def test_artifact_preparation_revalidates_every_declared_identity_and_path(self) -> None:
         body = function_body(PROCESS_SOURCE, "pub fn prepare_connector_process")
@@ -65,6 +104,20 @@ class ConnectorProcessSourceContractTests(unittest.TestCase):
             "digest_runtime_closure(runtime_closure)",
         )
         require_causal_guards(body, guards)
+        require_causal_order(
+            body,
+            (
+                "let plan = parse_service_execution_plan(&plan_bytes)",
+                "let setup_deadline = Instant::now()",
+                "connector.revalidate_identity()?;",
+                "let connector_bytes = connector.read_bytes(MAX_CONNECTOR_EXECUTABLE_BYTES)?;",
+                "validate_declared_artifacts(",
+                "let runtime_closure_digest = digest_runtime_closure(runtime_closure);",
+                "Ok(PreparedConnectorProcess {",
+            ),
+        )
+        self.assertGreaterEqual(body.count("require_before_deadline(setup_deadline)?;"), 8)
+        self.assertIn("setup_deadline,", body)
 
         binding = function_body(PROCESS_SOURCE, "fn validate_declared_artifacts")
         require_causal_guards(
@@ -105,7 +158,8 @@ class ConnectorProcessSourceContractTests(unittest.TestCase):
     def test_spawn_creates_private_channels_and_waits_for_bound_ready(self) -> None:
         body = implementation_body(PROCESS_SOURCE, "pub fn spawn(self)")
         guards = (
-            "let setup_deadline = Instant::now()",
+            "let setup_deadline = self.setup_deadline;",
+            "let reaper = connector_reaper_sender()?;",
             "crate::sys::private_socket_pair()",
             "crate::sys::private_stream_pair()",
             "crate::sys::inherit_only_descriptors_for_exec(",
@@ -120,14 +174,20 @@ class ConnectorProcessSourceContractTests(unittest.TestCase):
         )
         require_causal_guards(body, guards)
         self.assertGreaterEqual(body.count("require_before_deadline(setup_deadline)?;"), 6)
-        self.assertLess(
-            body.index("let setup_deadline = Instant::now()"),
-            body.index("self.connector.revalidate_identity()?;"),
+        require_causal_order(
+            body,
+            (
+                "let setup_deadline = self.setup_deadline;",
+                "let reaper = connector_reaper_sender()?;",
+                "self.connector.revalidate_identity()?;",
+                "command.spawn()",
+                "let packet = process.receive_before(setup_deadline)?;",
+                "require_ready_binding(",
+                "require_before_deadline(setup_deadline)?;",
+                "let channel = UnixStream::from(child_channel);",
+            ),
         )
-        self.assertLess(
-            body.index("let setup_deadline = Instant::now()"),
-            body.index("command.spawn()"),
-        )
+        self.assertIn("reaper,", body)
 
         stream_pair = function_body(SYS_SOURCE, "pub(crate) fn private_stream_pair")
         require_causal_guards(
@@ -203,10 +263,30 @@ class ConnectorProcessSourceContractTests(unittest.TestCase):
         require_causal_guards(
             finish,
             (
-                "require_before_deadline(self.terminal_deadline)?;",
                 "self.process.receive_before(self.terminal_deadline)?",
                 "self.process.reap_before(true, self.terminal_deadline)?;",
                 "self.process.reap_before(false, self.terminal_deadline)?;",
+            ),
+        )
+        require_causal_order(
+            finish,
+            (
+                "self.process.receive_before(self.terminal_deadline)?",
+                "self.process.reap_before(true, self.terminal_deadline)?;",
+                "validate_terminal(",
+                "require_before_deadline(self.terminal_deadline)?;",
+                "Ok(terminal)",
+            ),
+        )
+
+        receive = function_body(PROCESS_SOURCE, "fn receive_before")
+        require_causal_order(
+            receive,
+            (
+                "crate::sys::wait_readable(descriptor, timeout)",
+                "crate::sys::receive_packet(descriptor, &mut buffer)",
+                "require_before_deadline(deadline)?;",
+                "Ok(buffer[..length].to_vec())",
             ),
         )
         reap = function_body(PROCESS_SOURCE, "fn reap_before")
@@ -214,12 +294,21 @@ class ConnectorProcessSourceContractTests(unittest.TestCase):
             reap,
             (
                 ".try_wait()",
-                "Instant::now() >= deadline",
-                "std::thread::sleep(Duration::from_millis(1))",
+                "remaining.min(Duration::from_millis(1))",
                 "status.success() == expected_success",
             ),
         )
         self.assertNotIn("checked_add", reap)
+        self.assertGreaterEqual(reap.count("require_before_deadline(deadline)?;"), 2)
+        require_causal_order(
+            reap,
+            (
+                "require_before_deadline(deadline)?;",
+                ".try_wait()",
+                "require_before_deadline(deadline)?;",
+                "if let Some(status) = status",
+            ),
+        )
 
         cleanup = function_body(PROCESS_SOURCE, "fn terminate_without_blocking")
         require_causal_guards(
@@ -228,9 +317,22 @@ class ConnectorProcessSourceContractTests(unittest.TestCase):
                 "self.control.take();",
                 "self.child.take()",
                 "child.kill()",
+                "self.reaper.send(child).is_err()",
+                "std::process::abort()",
+            ),
+        )
+        reaper = function_body(PROCESS_SOURCE, "fn connector_reaper_sender")
+        require_causal_guards(
+            reaper,
+            (
+                "OnceLock<Option<mpsc::Sender<std::process::Child>>>",
+                "mpsc::channel::<std::process::Child>()",
                 'std::thread::Builder::new()',
                 '.name("pbr-connector-reaper".to_owned())',
+                "while let Ok(mut child) = receiver.recv()",
                 "child.wait()",
+                ".ok()",
+                ".ok_or(ConnectorProcessError::ReaperUnavailable)",
             ),
         )
         drop_body = implementation_body(PROCESS_SOURCE, "impl Drop for ConnectorProcessGuard")

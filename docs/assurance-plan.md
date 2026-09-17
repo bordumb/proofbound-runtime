@@ -47,7 +47,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-NETWORK-036` | Tier 1 current launcher contract admitted on exact Runtime main `da52925` | PR 34 and its exact-main replay admitted the complete current launcher source contract. Production launcher behavior remains disabled. |
 | `PBR-NETWORK-037` | Tier 1 current receipt contract admitted on exact Runtime main `da52925` | PR 34 and its exact-main replay admitted the current success and failure source contract. Production receipt integration remains open. |
 | `PBR-NETWORK-038` | Tier 1 connector engine admitted on exact Runtime main `da52925` | Independently approved source `b9ad56a` plus approval envelope `2d6cf97` passed exact-head run `35276015624`; exact-main run `35280257983` admitted the isolated engine. Process supervision, launcher binding, native evidence, receipts, and release artifacts remain open. |
-| `PBR-NETWORK-039` | Tier 1 supervised connector-process candidate pending first exact admission | The candidate identifies declared artifacts, creates private channels, executes the connector through its retained descriptor, validates complete readiness binding, keeps synchronous report and reap waits within fixed phase deadlines, and transfers late reaping off the caller path. Connector confinement, actual loader-object binding, child release, credentials, native evidence, receipts, and release artifacts remain open. |
+| `PBR-NETWORK-039` | Tier 1 supervised connector-process candidate pending first exact admission | After bounded plan parsing, the candidate establishes one fixed setup deadline, identifies declared artifacts, creates private channels, executes the connector through its retained descriptor, validates complete readiness binding before acceptance, keeps synchronous report and reap waits within fixed phase deadlines, and transfers late reaping to a pre-established worker or aborts fail-closed. Connector confinement, actual loader-object binding, child release, credentials, native evidence, receipts, and release artifacts remain open. |
 
 ### Current changed subjects pending exact admission
 
@@ -1171,20 +1171,27 @@ loader. Host and filesystem stability therefore remain explicit assumptions.
 Binding the actual loader object and discovering every transitive dynamic
 library remain later native preflight and confinement obligations.
 
-The child parses a closed bootstrap, rejects duplicate inherited descriptors,
+After the supervisor parses the bounded plan, it establishes the fixed setup
+deadline before reading or parsing the connector image and before validating
+the remaining artifacts. It checks that same deadline after each load-bearing
+operation and immediately before it exposes a ready channel. The child parses
+a closed bootstrap, rejects duplicate inherited descriptors,
 recomputes plan and trust-root identities before parsing or network effects,
 resolves and authenticates through the admitted connector engine, and reports
 authenticated readiness before starting the opaque proxy. The fixed control
 report binds execution, policy, process generation, channel, plan, trust-root,
 connector, runtime-closure, and resolver-configuration identities. Terminal
 traffic and closed typed failures use separate fixed forms. The supervisor
-creates the setup deadline before artifact revalidation, retains one terminal
-deadline after readiness, and never gives report handling or synchronous
-reaping a fresh budget. It rejects out-of-order or malformed reports. On an
-error or expired deadline it requests termination and transfers any late wait
-to a dedicated reaper thread instead of blocking the caller without a bound.
-Kernel-call completion, scheduler progress, detached-reaper completion, and
-the standard-library process behavior remain registered premises.
+retains one terminal deadline after readiness, checks it after each report and
+process-state operation and before terminal success, and never gives report
+handling or synchronous reaping a fresh budget. It rejects out-of-order or
+malformed reports. It establishes the reaper thread before creating a child.
+On an error or expired deadline it requests termination and transfers any late
+wait to that reaper instead of blocking the caller without a bound. If the
+established handoff is unavailable, the supervisor aborts fail-closed. Kernel
+call completion, scheduler progress, detached-reaper completion, process-abort
+behavior, and the standard-library process behavior remain registered
+premises.
 
 This is Tier 1 bounded source evidence. It does not establish connector
 filesystem or network confinement, the child launcher boundary, credential

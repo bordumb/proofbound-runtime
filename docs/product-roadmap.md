@@ -1125,10 +1125,13 @@ next Tier 1 candidate. It resolves and revalidates the declared connector,
 plan, trust-root, resolver-configuration, and ordered runtime-closure
 identities; creates private Unix stream and control pairs; starts the retained
 connector descriptor with a closed bootstrap; and requires a complete setup
-binding before exposing the child-side endpoint. It also bounds report waits
-and synchronous reaping to the original phase deadline. After expiry it
-requests termination and transfers late reaping to a dedicated thread instead
-of blocking the caller. Dynamic `PT_INTERP` handling currently proves only
+binding before exposing the child-side endpoint. After bounded plan parsing it
+establishes the setup deadline before the remaining preparation, checks each
+fixed phase deadline after load-bearing operations and before success, and
+never gives synchronous reaping a new budget. It pre-establishes the reaper
+before child creation. After expiry it requests termination and transfers late
+reaping to that worker, or aborts the supervisor if the handoff is unavailable.
+Dynamic `PT_INTERP` handling currently proves only
 that the loader pathname is registered; actual kernel loader-object binding
 remains a host and filesystem premise. This remains source and bounded-test
 evidence. Connector confinement, child launch, credential release, native

@@ -3011,6 +3011,30 @@ channels, descriptor closure, readiness-before-proxy order, fail-closed report
 forms, directional terminal limits, and absence of credential or application
 content retention. Corrections require a new exact-head independent review.
 
+## RT-5 connector-process first correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da5292536ea56f40005b297c21625add195e580e`
+- **Reviewed head:** `9a2cd2319fd5206dbc71505ee2c905f74857c63d`
+- **Branch:** `codex/rt5-connector-process`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests. The exact range passed `git diff --check`.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The first correction closed the complete assumption inventory, qualified
+`PT_INTERP` as pathname registration rather than loader-object binding, and
+refreshed every intersecting diagnostic source identity. Two cleanup blockers
+remained. Preparation still performed its largest reads and parsing before the
+fixed setup deadline, report reads and process waits could accept a result
+after that deadline, and readiness had no final pre-exposure clock check. The
+drop fallback also created its reaper only after taking the sole child owner
+and ignored thread-creation failure, so a failed spawn could leave the child
+unreaped. The next correction must establish the deadline and reaper before
+their load-bearing operations, reject post-deadline success, and make reaper
+handoff failure explicitly fail closed.
+
 ## RT-5 connector engine hosted-ledger correction approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

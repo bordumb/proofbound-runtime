@@ -532,6 +532,7 @@ pub struct PreparedConnectorProcess<'a> {
     process_generation: ConnectorProcessGeneration,
     channel_id: ServiceChannelId,
     runtime_closure_digest: Sha256Digest,
+    setup_deadline: Instant,
 }
 
 /// Validates all connector artifacts and prepares one exact process launch.
@@ -566,16 +567,33 @@ pub fn prepare_connector_process<'a>(
     if trust_root.identity().size() > MAX_TRUST_ROOT_BYTES {
         return Err(ConnectorProcessError::ArtifactTooLarge);
     }
-    connector.revalidate_identity()?;
     plan_source.revalidate_identity().map_err(map_resolution)?;
+    if plan_source.identity().size() > MAX_PLAN_BYTES {
+        return Err(ConnectorProcessError::ArtifactTooLarge);
+    }
+    let plan_bytes = plan_source.read_bytes().map_err(map_resolution)?;
+    let plan = parse_service_execution_plan(&plan_bytes)
+        .map_err(|_| ConnectorProcessError::PlanInvalid)?;
+    let setup_deadline = Instant::now()
+        .checked_add(Duration::from_millis(
+            plan.service_session().limits().setup_time_ms(),
+        ))
+        .ok_or(ConnectorProcessError::Timeout)?;
+    connector.revalidate_identity()?;
+    require_before_deadline(setup_deadline)?;
     trust_root.revalidate_identity()?;
+    require_before_deadline(setup_deadline)?;
     resolver_configuration.revalidate_identity()?;
+    require_before_deadline(setup_deadline)?;
     for artifact in runtime_closure {
         artifact.revalidate_identity()?;
+        require_before_deadline(setup_deadline)?;
     }
     let connector_bytes = connector.read_bytes(MAX_CONNECTOR_EXECUTABLE_BYTES)?;
+    require_before_deadline(setup_deadline)?;
     let interpreter = parse_elf_interpreter(&connector_bytes, architecture)
         .map_err(|_| ConnectorProcessError::ConnectorExecutableInvalid)?;
+    require_before_deadline(setup_deadline)?;
     if let Some(interpreter) = interpreter {
         let loader = runtime_closure
             .iter()
@@ -585,12 +603,6 @@ pub fn prepare_connector_process<'a>(
             return Err(ConnectorProcessError::ConnectorNotExecutable);
         }
     }
-    if plan_source.identity().size() > MAX_PLAN_BYTES {
-        return Err(ConnectorProcessError::ArtifactTooLarge);
-    }
-    let plan_bytes = plan_source.read_bytes().map_err(map_resolution)?;
-    let plan = parse_service_execution_plan(&plan_bytes)
-        .map_err(|_| ConnectorProcessError::PlanInvalid)?;
     validate_declared_artifacts(
         &plan,
         connector,
@@ -598,7 +610,9 @@ pub fn prepare_connector_process<'a>(
         resolver_configuration,
         runtime_closure,
     )?;
+    require_before_deadline(setup_deadline)?;
     let runtime_closure_digest = digest_runtime_closure(runtime_closure);
+    require_before_deadline(setup_deadline)?;
     Ok(PreparedConnectorProcess {
         connector,
         plan_source,
@@ -611,6 +625,7 @@ pub fn prepare_connector_process<'a>(
         process_generation,
         channel_id,
         runtime_closure_digest,
+        setup_deadline,
     })
 }
 
@@ -623,11 +638,9 @@ impl PreparedConnectorProcess<'_> {
             use std::os::unix::net::UnixStream;
             use std::process::{Command, Stdio};
 
-            let setup_deadline = Instant::now()
-                .checked_add(Duration::from_millis(
-                    self.plan.service_session().limits().setup_time_ms(),
-                ))
-                .ok_or(ConnectorProcessError::Timeout)?;
+            let setup_deadline = self.setup_deadline;
+            let reaper = connector_reaper_sender()?;
+            require_before_deadline(setup_deadline)?;
             self.connector.revalidate_identity()?;
             require_before_deadline(setup_deadline)?;
             self.plan_source
@@ -685,6 +698,7 @@ impl PreparedConnectorProcess<'_> {
             let mut process = ConnectorProcessGuard {
                 child: Some(child),
                 control: Some(supervisor_control),
+                reaper,
             };
             let packet = process.receive_before(setup_deadline)?;
             match decode_report(&packet)? {
@@ -707,6 +721,7 @@ impl PreparedConnectorProcess<'_> {
                             self.resolver_configuration.identity().digest(),
                         ),
                     )?;
+                    require_before_deadline(setup_deadline)?;
                     // SAFETY: the descriptor is uniquely owned by `child_channel`
                     // and UnixStream takes that ownership exactly once.
                     let channel = UnixStream::from(child_channel);
@@ -795,6 +810,7 @@ impl ReadyConnectorProcess {
                         self.child_to_service_limit,
                         self.service_to_child_limit,
                     )?;
+                    require_before_deadline(self.terminal_deadline)?;
                     Ok(terminal)
                 }
                 ConnectorReport::Failure(failure) => {
@@ -818,6 +834,7 @@ impl ReadyConnectorProcess {
 struct ConnectorProcessGuard {
     child: Option<std::process::Child>,
     control: Option<std::os::fd::OwnedFd>,
+    reaper: std::sync::mpsc::Sender<std::process::Child>,
 }
 
 #[cfg(target_os = "linux")]
@@ -839,6 +856,7 @@ impl ConnectorProcessGuard {
         let mut buffer = [0_u8; MAX_CONNECTOR_REPORT_BYTES + 1];
         let length = crate::sys::receive_packet(descriptor, &mut buffer)
             .map_err(|_| ConnectorProcessError::Protocol)?;
+        require_before_deadline(deadline)?;
         if length == 0 || length > MAX_CONNECTOR_REPORT_BYTES {
             return Err(ConnectorProcessError::Protocol);
         }
@@ -851,12 +869,14 @@ impl ConnectorProcessGuard {
         deadline: Instant,
     ) -> Result<(), ConnectorProcessError> {
         loop {
+            require_before_deadline(deadline)?;
             let status = self
                 .child
                 .as_mut()
                 .ok_or(ConnectorProcessError::Wait)?
                 .try_wait()
                 .map_err(|_| ConnectorProcessError::Wait)?;
+            require_before_deadline(deadline)?;
             if let Some(status) = status {
                 self.child.take();
                 self.control.take();
@@ -866,10 +886,8 @@ impl ConnectorProcessGuard {
                     Err(ConnectorProcessError::Exit)
                 };
             }
-            if Instant::now() >= deadline {
-                return Err(ConnectorProcessError::Timeout);
-            }
-            std::thread::sleep(Duration::from_millis(1));
+            let remaining = remaining_before(deadline)?;
+            std::thread::sleep(remaining.min(Duration::from_millis(1)));
         }
     }
 
@@ -877,11 +895,9 @@ impl ConnectorProcessGuard {
         self.control.take();
         if let Some(mut child) = self.child.take() {
             let _ = child.kill();
-            let _ = std::thread::Builder::new()
-                .name("pbr-connector-reaper".to_owned())
-                .spawn(move || {
-                    let _ = child.wait();
-                });
+            if self.reaper.send(child).is_err() {
+                std::process::abort();
+            }
         }
     }
 }
@@ -902,6 +918,29 @@ fn remaining_before(deadline: Instant) -> Result<Duration, ConnectorProcessError
 
 fn require_before_deadline(deadline: Instant) -> Result<(), ConnectorProcessError> {
     remaining_before(deadline).map(|_| ())
+}
+
+#[cfg(target_os = "linux")]
+fn connector_reaper_sender()
+-> Result<std::sync::mpsc::Sender<std::process::Child>, ConnectorProcessError> {
+    use std::sync::{OnceLock, mpsc};
+
+    static REAPER: OnceLock<Option<mpsc::Sender<std::process::Child>>> = OnceLock::new();
+    REAPER
+        .get_or_init(|| {
+            let (sender, receiver) = mpsc::channel::<std::process::Child>();
+            std::thread::Builder::new()
+                .name("pbr-connector-reaper".to_owned())
+                .spawn(move || {
+                    while let Ok(mut child) = receiver.recv() {
+                        let _ = child.wait();
+                    }
+                })
+                .ok()
+                .map(|_| sender)
+        })
+        .clone()
+        .ok_or(ConnectorProcessError::ReaperUnavailable)
 }
 
 /// Runs the connector engine from inherited descriptors.
@@ -1042,7 +1081,7 @@ pub enum ConnectorProcessError {
     ConnectorNotExecutable,
     /// The connector executable was not a supported ELF image.
     ConnectorExecutableInvalid,
-    /// A dynamic connector's exact ELF interpreter was not registered.
+    /// A dynamic connector's `PT_INTERP` pathname was not registered.
     ConnectorLoaderMissing,
     /// The service execution plan was invalid.
     PlanInvalid,
@@ -1052,7 +1091,9 @@ pub enum ConnectorProcessError {
     BootstrapInvalid,
     /// A private connector channel could not be created.
     Channel,
-    /// The exact connector process could not be spawned.
+    /// The connector reaper could not be established before process creation.
+    ReaperUnavailable,
+    /// The retained connector process could not be spawned.
     Spawn,
     /// The connector did not report before its declared deadline.
     Timeout,
@@ -1089,6 +1130,7 @@ impl ConnectorProcessError {
             Self::BindingInvalid => "network.connector.binding.invalid",
             Self::BootstrapInvalid => "network.connector.bootstrap.invalid",
             Self::Channel => "network.connector.channel.failed",
+            Self::ReaperUnavailable => "network.connector.reaper.unavailable",
             Self::Spawn => "network.connector.spawn.failed",
             Self::Timeout => "network.connector.timeout",
             Self::Protocol => "network.connector.protocol.invalid",
