@@ -896,7 +896,7 @@ mod tests {
         invalid.service = "API.anthropic.com".to_owned();
         assert_eq!(
             PlanV2::new_with_network(
-                input,
+                input.clone(),
                 NetworkAuthorityV2Input::AuthenticatedServiceSession(invalid)
             ),
             Err(SdkError::PlanNetwork)
@@ -967,15 +967,14 @@ mod tests {
 
     #[test]
     fn resolver_address_width_is_fixed_by_the_public_type() {
-        let addresses = [
-            ResolverAddressV2Input::Ipv4([1, 1, 1, 1]),
-            ResolverAddressV2Input::Ipv6([0; 16]),
-        ];
-        assert!(matches!(addresses[0], ResolverAddressV2Input::Ipv4([_; 4])));
-        assert!(matches!(
-            addresses[1],
-            ResolverAddressV2Input::Ipv6([_; 16])
-        ));
+        let ResolverAddressV2Input::Ipv4(ipv4) = ResolverAddressV2Input::Ipv4([1, 1, 1, 1]) else {
+            unreachable!()
+        };
+        let ResolverAddressV2Input::Ipv6(ipv6) = ResolverAddressV2Input::Ipv6([0; 16]) else {
+            unreachable!()
+        };
+        assert_eq!(ipv4.len(), 4);
+        assert_eq!(ipv6.len(), 16);
     }
 
     #[test]
