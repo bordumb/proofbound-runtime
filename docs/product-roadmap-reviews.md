@@ -2983,6 +2983,34 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-5 connector-process initial review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da5292536ea56f40005b297c21625add195e580e`
+- **Reviewed head:** `0ca71363c0b6503e4e081b95c80bb8ab62cd6a7c`
+- **Branch:** `codex/rt5-connector-process`
+- **Method:** Complete exact-range static review. The reviewer changed no files
+  and ran no builds or tests. The worktree and `git diff --check` were clean.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review found four blocking defects. First, setup established its timeout
+after process creation, terminal reaping received a fresh budget, and guard
+destruction called an unbounded blocking wait. Second, the claim cited DNS,
+TLS, Linux, host, toolchain, process, clock, filesystem, and checker premises
+whose scopes either excluded `PBR-NETWORK-039` or were not registered. Third,
+the assurance text treated a registered `PT_INTERP` pathname and retained
+loader descriptor as actual kernel loader-object binding even though Linux
+resolves the pathname again during exec. Fourth, five mandatory diagnostic
+source suites retained the pre-change Cargo and Linux source identities.
+
+The reviewer otherwise confirmed the empty connector environment, closed
+bootstrap vocabulary, nonzero generation and channel identities, private
+channels, descriptor closure, readiness-before-proxy order, fail-closed report
+forms, directional terminal limits, and absence of credential or application
+content retention. Corrections require a new exact-head independent review.
+
 ## RT-5 connector engine hosted-ledger correction approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

@@ -13,6 +13,13 @@ expected_inventory = [
 inputs = [
   "Cargo.lock",
   "Cargo.toml",
+  "assumptions/PBR-CONNECTOR-PROCESS-AX-031.toml",
+  "assumptions/PBR-CONNECTOR-PROCESS-CHECK-AX-030.toml",
+  "assumptions/PBR-DNS-AX-004.toml",
+  "assumptions/PBR-HOST-AX-002.toml",
+  "assumptions/PBR-LINUX-AX-001.toml",
+  "assumptions/PBR-TLS-AX-005.toml",
+  "assumptions/PBR-TOOLCHAIN-AX-003.toml",
   "claims/PBR-NETWORK-039.toml",
   "crates/proofbound-runtime-connector/Cargo.toml",
   "crates/proofbound-runtime-connector/src/dns.rs",

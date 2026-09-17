@@ -1,8 +1,8 @@
 schema = "proofbound-claim/1"
 id = "PBR-NETWORK-039"
 title = "Supervisor starts one identified authenticated-service connector before child release"
-statement = "The proposed Linux connector-process path resolves and revalidates one declared connector executable, execution plan, trust-root set, resolver configuration, and ordered connector runtime closure; rejects a connector that is not a supported ELF image for the selected architecture and requires a dynamic connector's exact interpreter in that closure; creates one private Unix stream endpoint pair and one private packet control pair; starts the exact retained connector descriptor with an empty environment and a closed inherited-descriptor bootstrap; validates a complete execution, policy, generation, channel, plan, trust-root, connector, runtime-closure, and resolver-configuration binding before exposing the child-side endpoint; and terminates and reaps the connector on protocol, deadline, failure, and drop paths."
-public_language = "Runtime contains a proposed separately supervised connector process for one authenticated service session. Registered Rust tests and an independent source-mutation checker cover exact artifact and plan-path binding, architecture-specific ELF and dynamic-interpreter validation, the closed inherited-descriptor bootstrap, private channel creation, complete setup-binding validation, readiness before proxy activation, bounded terminal waits, and kill-and-reap cleanup. This is Tier 1 bounded source evidence. It does not yet establish the child launcher boundary, credential release, native bypass resistance, production CLI reachability, receipt production, or release-artifact behavior."
+statement = "The proposed Linux connector-process path resolves and revalidates one declared connector executable, execution plan, trust-root set, resolver configuration, and ordered connector runtime closure; rejects a connector that is not a supported ELF image for the selected architecture and requires its PT_INTERP pathname to equal one registered executable closure entry; creates one private Unix stream endpoint pair and one private packet control pair; starts the retained connector descriptor with an empty environment and a closed inherited-descriptor bootstrap; validates a complete execution, policy, generation, channel, plan, trust-root, connector, runtime-closure, and resolver-configuration binding before exposing the child-side endpoint; uses one fixed deadline for setup and one fixed deadline for the authenticated session; and requests termination without synchronously waiting past either deadline, transferring late reaping to a dedicated thread."
+public_language = "Runtime contains a proposed separately supervised connector process for one authenticated service session. Registered Rust tests and an independent source-mutation checker cover artifact and plan-path binding, architecture-specific ELF validation, PT_INTERP path registration, the closed inherited-descriptor bootstrap, private channel creation, complete setup-binding validation, readiness before proxy activation, fixed protocol and reap deadlines, and nonblocking late cleanup. The retained loader descriptor is not the object supplied to the kernel loader, so filesystem stability and kernel loader resolution remain explicit premises. This is Tier 1 bounded source evidence. It does not yet establish the child launcher boundary, credential release, native bypass resistance, production CLI reachability, receipt production, or release-artifact behavior."
 subject = "rust:proofbound_runtime_linux::connector_process::{ResolvedServiceArtifact,prepare_connector_process,PreparedConnectorProcess::spawn,ReadyConnectorProcess,run_connector_process}"
 profile = "ledger"
 tier = 1
@@ -15,24 +15,32 @@ assumptions = [
   "PBR-TLS-AX-005",
   "PBR-LINUX-AX-001",
   "PBR-TOOLCHAIN-AX-003",
+  "PBR-HOST-AX-002",
+  "PBR-CONNECTOR-PROCESS-CHECK-AX-030",
+  "PBR-CONNECTOR-PROCESS-AX-031",
 ]
 open_obligations = [
   "Confine the connector to its exact runtime-read closure, trust roots, resolver configuration, declared resolver endpoint, and authenticated service endpoints with native Linux enforcement evidence.",
   "Bind the ready connector endpoint into the service launcher acknowledgement and prevent child exec until the complete boundary is installed and independently validated.",
   "Release an optional credential only after authenticated connector readiness and installed child boundary acknowledgement, without retaining its value or a value-derived digest.",
   "Bind complete DNS, endpoint, TLS, channel, traffic, failure, and cleanup observations into the production receipt and independent verifier.",
+  "Replace PT_INTERP pathname registration with actual loader-object binding or preserve the trusted-filesystem premise in every stronger native and release claim.",
   "Run the complete process, descriptor, substitution, crash, deadline, and cleanup corpus on x86_64 and aarch64 release artifacts.",
 ]
 out_of_scope = [
   "Any claim that the production CLI accepts service-session plans, starts a child, releases a credential, or emits a reusable service-session receipt.",
   "Any native containment claim for the connector or child, including resistance to kernel compromise, descriptor attacks, direct network bypass, namespaces, io_uring, or descendants.",
   "Correctness of the kernel, filesystem, process loader, resolver, DNS transport, rustls, ring, x509-cert, trust roots, remote service, clock, hardware, or host operator.",
+  "Bounded completion of process creation, kernel calls, scheduling, or the detached reaper after the caller-facing deadline expires.",
   "HTTP, LLM, request, response, redirect, proxy, multiple-session, reconnect, QUIC, or application-operation semantics.",
 ]
 source_roots = [
   "Cargo.lock",
   "Cargo.toml",
   "assumptions/PBR-DNS-AX-004.toml",
+  "assumptions/PBR-CONNECTOR-PROCESS-AX-031.toml",
+  "assumptions/PBR-CONNECTOR-PROCESS-CHECK-AX-030.toml",
+  "assumptions/PBR-HOST-AX-002.toml",
   "assumptions/PBR-LINUX-AX-001.toml",
   "assumptions/PBR-TLS-AX-005.toml",
   "assumptions/PBR-TOOLCHAIN-AX-003.toml",

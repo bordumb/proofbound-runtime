@@ -107,8 +107,11 @@ passed every PR 34 lane in Verify run `35276015624`, merged as exact main
 `da52925`, and passed exact-main Verify run `35280257983`. `PBR-NETWORK-039`
 now freezes the next candidate: one identified connector executable, retained
 artifact identities, a closed inherited-descriptor bootstrap, private data and
-control channels, authenticated readiness binding, and bounded termination and
-reaping. Production CLI and child execution remain disabled.
+control channels, authenticated readiness binding, fixed protocol and reap
+deadlines, and nonblocking late cleanup. `PT_INTERP` validation currently
+registers a loader pathname; actual kernel loader-object binding remains an
+explicit production obligation. Production CLI and child execution remain
+disabled.
 Keep every checkbox below open until the engine runs as the exact
 identified production process and the relevant behavior passes hosted and
 native admission.

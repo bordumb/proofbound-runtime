@@ -615,7 +615,7 @@ pub fn prepare_connector_process<'a>(
 }
 
 impl PreparedConnectorProcess<'_> {
-    /// Spawns the exact retained connector and waits for authenticated readiness.
+    /// Spawns the retained connector and waits for authenticated readiness.
     pub fn spawn(self) -> Result<ReadyConnectorProcess, ConnectorProcessError> {
         #[cfg(target_os = "linux")]
         {
@@ -623,14 +623,24 @@ impl PreparedConnectorProcess<'_> {
             use std::os::unix::net::UnixStream;
             use std::process::{Command, Stdio};
 
+            let setup_deadline = Instant::now()
+                .checked_add(Duration::from_millis(
+                    self.plan.service_session().limits().setup_time_ms(),
+                ))
+                .ok_or(ConnectorProcessError::Timeout)?;
             self.connector.revalidate_identity()?;
+            require_before_deadline(setup_deadline)?;
             self.plan_source
                 .revalidate_identity()
                 .map_err(map_resolution)?;
+            require_before_deadline(setup_deadline)?;
             self.trust_root.revalidate_identity()?;
+            require_before_deadline(setup_deadline)?;
             self.resolver_configuration.revalidate_identity()?;
+            require_before_deadline(setup_deadline)?;
             for artifact in self.runtime_closure {
                 artifact.revalidate_identity()?;
+                require_before_deadline(setup_deadline)?;
             }
             let (supervisor_control, connector_control) =
                 crate::sys::private_socket_pair().map_err(|_| ConnectorProcessError::Channel)?;
@@ -668,6 +678,7 @@ impl PreparedConnectorProcess<'_> {
                 vec![connector_fd],
             )
             .map_err(|_| ConnectorProcessError::BootstrapInvalid)?;
+            require_before_deadline(setup_deadline)?;
             let child = command.spawn().map_err(|_| ConnectorProcessError::Spawn)?;
             drop(connector_control);
             drop(connector_channel);
@@ -675,9 +686,7 @@ impl PreparedConnectorProcess<'_> {
                 child: Some(child),
                 control: Some(supervisor_control),
             };
-            let setup_timeout =
-                Duration::from_millis(self.plan.service_session().limits().setup_time_ms());
-            let packet = process.receive(setup_timeout)?;
+            let packet = process.receive_before(setup_deadline)?;
             match decode_report(&packet)? {
                 ConnectorReport::Ready(ready) => {
                     require_ready_binding(
@@ -727,7 +736,7 @@ impl PreparedConnectorProcess<'_> {
                     if failure.stage() == ConnectorFailureStage::Channel {
                         return Err(ConnectorProcessError::Protocol);
                     }
-                    process.reap_after_report(false, Duration::from_secs(1))?;
+                    process.reap_before(false, setup_deadline)?;
                     Err(ConnectorProcessError::ConnectorFailed(failure))
                 }
                 ConnectorReport::Terminal(_) => Err(ConnectorProcessError::Protocol),
@@ -775,16 +784,11 @@ impl ReadyConnectorProcess {
         #[cfg(target_os = "linux")]
         {
             self.channel.take();
-            let terminal_timeout = self
-                .terminal_deadline
-                .checked_duration_since(Instant::now())
-                .filter(|remaining| !remaining.is_zero())
-                .ok_or(ConnectorProcessError::Timeout)?;
-            let packet = self.process.receive(terminal_timeout)?;
+            require_before_deadline(self.terminal_deadline)?;
+            let packet = self.process.receive_before(self.terminal_deadline)?;
             match decode_report(&packet)? {
                 ConnectorReport::Terminal(terminal) => {
-                    self.process
-                        .reap_after_report(true, Duration::from_secs(1))?;
+                    self.process.reap_before(true, self.terminal_deadline)?;
                     validate_terminal(
                         terminal,
                         self.ready,
@@ -797,8 +801,7 @@ impl ReadyConnectorProcess {
                     if failure.stage() != ConnectorFailureStage::Channel {
                         return Err(ConnectorProcessError::Protocol);
                     }
-                    self.process
-                        .reap_after_report(false, Duration::from_secs(1))?;
+                    self.process.reap_before(false, self.terminal_deadline)?;
                     Err(ConnectorProcessError::ConnectorFailed(failure))
                 }
                 ConnectorReport::Ready(_) => Err(ConnectorProcessError::Protocol),
@@ -819,9 +822,10 @@ struct ConnectorProcessGuard {
 
 #[cfg(target_os = "linux")]
 impl ConnectorProcessGuard {
-    fn receive(&self, timeout: Duration) -> Result<Vec<u8>, ConnectorProcessError> {
+    fn receive_before(&self, deadline: Instant) -> Result<Vec<u8>, ConnectorProcessError> {
         use std::os::fd::AsRawFd as _;
 
+        let timeout = remaining_before(deadline)?;
         let descriptor = self
             .control
             .as_ref()
@@ -841,14 +845,11 @@ impl ConnectorProcessGuard {
         Ok(buffer[..length].to_vec())
     }
 
-    fn reap_after_report(
+    fn reap_before(
         &mut self,
         expected_success: bool,
-        timeout: Duration,
+        deadline: Instant,
     ) -> Result<(), ConnectorProcessError> {
-        let deadline = std::time::Instant::now()
-            .checked_add(timeout)
-            .ok_or(ConnectorProcessError::Wait)?;
         loop {
             let status = self
                 .child
@@ -865,10 +866,22 @@ impl ConnectorProcessGuard {
                     Err(ConnectorProcessError::Exit)
                 };
             }
-            if std::time::Instant::now() >= deadline {
+            if Instant::now() >= deadline {
                 return Err(ConnectorProcessError::Timeout);
             }
             std::thread::sleep(Duration::from_millis(1));
+        }
+    }
+
+    fn terminate_without_blocking(&mut self) {
+        self.control.take();
+        if let Some(mut child) = self.child.take() {
+            let _ = child.kill();
+            let _ = std::thread::Builder::new()
+                .name("pbr-connector-reaper".to_owned())
+                .spawn(move || {
+                    let _ = child.wait();
+                });
         }
     }
 }
@@ -876,13 +889,19 @@ impl ConnectorProcessGuard {
 #[cfg(target_os = "linux")]
 impl Drop for ConnectorProcessGuard {
     fn drop(&mut self) {
-        if let Some(child) = &mut self.child {
-            let _ = child.kill();
-            let _ = child.wait();
-        }
-        self.child.take();
-        self.control.take();
+        self.terminate_without_blocking();
     }
+}
+
+fn remaining_before(deadline: Instant) -> Result<Duration, ConnectorProcessError> {
+    deadline
+        .checked_duration_since(Instant::now())
+        .filter(|remaining| !remaining.is_zero())
+        .ok_or(ConnectorProcessError::Timeout)
+}
+
+fn require_before_deadline(deadline: Instant) -> Result<(), ConnectorProcessError> {
+    remaining_before(deadline).map(|_| ())
 }
 
 /// Runs the connector engine from inherited descriptors.

@@ -16,7 +16,7 @@ INVENTORY = [
     "connector-process-source-private-channels",
     "connector-process-source-ready-before-proxy",
     "connector-process-source-terminal-binding",
-    "connector-process-source-bounded-reaping",
+    "connector-process-source-fixed-deadline-cleanup",
 ]
 
 

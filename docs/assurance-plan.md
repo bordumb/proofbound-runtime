@@ -1163,10 +1163,13 @@ crosses this boundary.
 
 Preparation also parses the complete bounded connector image as a supported
 64-bit little-endian ELF for the selected architecture. A dynamic image is
-rejected unless its exact absolute interpreter path names one identified,
-executable artifact in the registered connector runtime closure. This closes
-script and undeclared-interpreter substitution; discovery of every transitive
-dynamic library remains a later native preflight and confinement obligation.
+rejected unless its absolute `PT_INTERP` pathname equals one identified,
+executable artifact in the registered connector runtime closure. This is path
+registration, not kernel loader-object binding: Linux resolves that pathname
+again during exec, and the retained loader descriptor is not supplied to the
+loader. Host and filesystem stability therefore remain explicit assumptions.
+Binding the actual loader object and discovering every transitive dynamic
+library remain later native preflight and confinement obligations.
 
 The child parses a closed bootstrap, rejects duplicate inherited descriptors,
 recomputes plan and trust-root identities before parsing or network effects,
@@ -1175,15 +1178,21 @@ authenticated readiness before starting the opaque proxy. The fixed control
 report binds execution, policy, process generation, channel, plan, trust-root,
 connector, runtime-closure, and resolver-configuration identities. Terminal
 traffic and closed typed failures use separate fixed forms. The supervisor
-bounds setup and terminal waits, rejects out-of-order or malformed reports, and
-kills and reaps an unfinished connector when ownership ends.
+creates the setup deadline before artifact revalidation, retains one terminal
+deadline after readiness, and never gives report handling or synchronous
+reaping a fresh budget. It rejects out-of-order or malformed reports. On an
+error or expired deadline it requests termination and transfers any late wait
+to a dedicated reaper thread instead of blocking the caller without a bound.
+Kernel-call completion, scheduler progress, detached-reaper completion, and
+the standard-library process behavior remain registered premises.
 
 This is Tier 1 bounded source evidence. It does not establish connector
 filesystem or network confinement, the child launcher boundary, credential
 release, native bypass resistance, production CLI reachability, production
 receipts, independent receipt verification, or release-artifact behavior. The
 runtime-closure paths are identified inputs in this wave; native enforcement
-of that closure remains an explicit obligation before production release.
+of that closure and actual loader-object binding remain explicit obligations
+before production release.
 
 ## Bounded-domain declaration guard
 

@@ -9,8 +9,9 @@
   `35280257983`.
 - **Active implementation wave:** RT-5 one authenticated service.
 - **Current batch:** implement and admit the identified supervised connector
-  process, closed bootstrap, private channels, readiness binding, and bounded
-  reaping before integrating the child launcher.
+  process, closed bootstrap, private channels, readiness binding, fixed phase
+  deadlines, and nonblocking late cleanup before integrating the child
+  launcher.
 - **Parallel external gates:** RT-7 protected routes and current-integration
   source are merged; registry configuration, actual public package publication,
   anonymous observations, consumer dogfood, and a retained current-integration

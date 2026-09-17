@@ -105,11 +105,13 @@ class ConnectorProcessSourceContractTests(unittest.TestCase):
     def test_spawn_creates_private_channels_and_waits_for_bound_ready(self) -> None:
         body = implementation_body(PROCESS_SOURCE, "pub fn spawn(self)")
         guards = (
+            "let setup_deadline = Instant::now()",
             "crate::sys::private_socket_pair()",
             "crate::sys::private_stream_pair()",
             "crate::sys::inherit_only_descriptors_for_exec(",
             ".env_clear()",
-            "let packet = process.receive(setup_timeout)?;",
+            "let packet = process.receive_before(setup_deadline)?;",
+            "process.reap_before(false, setup_deadline)?;",
             "let terminal_deadline = Instant::now()",
             "ConnectorReport::Ready(ready)",
             "require_ready_binding(",
@@ -117,6 +119,15 @@ class ConnectorProcessSourceContractTests(unittest.TestCase):
             "ConnectorReport::Failure(failure)",
         )
         require_causal_guards(body, guards)
+        self.assertGreaterEqual(body.count("require_before_deadline(setup_deadline)?;"), 6)
+        self.assertLess(
+            body.index("let setup_deadline = Instant::now()"),
+            body.index("self.connector.revalidate_identity()?;"),
+        )
+        self.assertLess(
+            body.index("let setup_deadline = Instant::now()"),
+            body.index("command.spawn()"),
+        )
 
         stream_pair = function_body(SYS_SOURCE, "pub(crate) fn private_stream_pair")
         require_causal_guards(
@@ -192,23 +203,49 @@ class ConnectorProcessSourceContractTests(unittest.TestCase):
         require_causal_guards(
             finish,
             (
-                ".checked_duration_since(Instant::now())",
-                ".filter(|remaining| !remaining.is_zero())",
-                "self.process.receive(terminal_timeout)?",
+                "require_before_deadline(self.terminal_deadline)?;",
+                "self.process.receive_before(self.terminal_deadline)?",
+                "self.process.reap_before(true, self.terminal_deadline)?;",
+                "self.process.reap_before(false, self.terminal_deadline)?;",
             ),
         )
-        reap = function_body(PROCESS_SOURCE, "fn reap_after_report")
+        reap = function_body(PROCESS_SOURCE, "fn reap_before")
         require_causal_guards(
             reap,
             (
                 ".try_wait()",
-                "std::time::Instant::now() >= deadline",
+                "Instant::now() >= deadline",
                 "std::thread::sleep(Duration::from_millis(1))",
                 "status.success() == expected_success",
             ),
         )
+        self.assertNotIn("checked_add", reap)
+
+        cleanup = function_body(PROCESS_SOURCE, "fn terminate_without_blocking")
+        require_causal_guards(
+            cleanup,
+            (
+                "self.control.take();",
+                "self.child.take()",
+                "child.kill()",
+                'std::thread::Builder::new()',
+                '.name("pbr-connector-reaper".to_owned())',
+                "child.wait()",
+            ),
+        )
         drop_body = implementation_body(PROCESS_SOURCE, "impl Drop for ConnectorProcessGuard")
-        require_causal_guards(drop_body, ("child.kill()", "child.wait()"))
+        require_causal_guards(drop_body, ("self.terminate_without_blocking();",))
+        self.assertNotIn(".wait()", drop_body)
+
+        remaining = function_body(PROCESS_SOURCE, "fn remaining_before")
+        require_causal_guards(
+            remaining,
+            (
+                ".checked_duration_since(Instant::now())",
+                ".filter(|remaining| !remaining.is_zero())",
+                ".ok_or(ConnectorProcessError::Timeout)",
+            ),
+        )
 
 
 if __name__ == "__main__":
