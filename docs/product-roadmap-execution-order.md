@@ -4,11 +4,11 @@
 - **Date:** 2026-09-17
 - **Applies to:** Roadmap 1 release closure, Roadmap 2, and Roadmap 3 candidate
   promotion
-- **Current Runtime main:** `a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca`;
-  the RT-5 pure-policy wave passed PR 30 exact-head Verify run `35226379485`;
-  exact-main Verify run `35231003515` passed
-- **Current reviewed Roadmap 1 source head:** `38d00d2`; approval-only record
-  `da6b2da`
+- **Current Runtime main:** `1da65a5c53f27b97a15f95ed1a9fb01170121444`;
+  the RT-5 lifecycle wave passed PR 31 exact-head Verify run `35236845497`;
+  exact-main Verify run `35241672716` passed
+- **Current reviewed Roadmap 1 source head:** `4aba43e`; approval-only record
+  `3e32b87`
 - **Lifecycle:** prelaunch; zero external users; package labels are tooling
   metadata rather than compatibility promises
 
@@ -20,13 +20,14 @@ review updates it.
 
 ## 1. Current boundary
 
-Runtime main `a94c21a` contains the complete reviewed RT-8 diagnostic workflow,
+Runtime main `1da65a5` contains the complete reviewed RT-8 diagnostic workflow,
 native adversarial corpus, RT-5 non-executable authenticated-service contract,
-SDK construction, and pure policy compiler. PR 30 exact-head run `35226379485`
-passed; exact-main run `35231003515` also passed. Roadmap 1 RT-5 remains
-open beyond the non-executable policy. Roadmap 2 delivery is active; RT-8 is
-complete, RT-7 retains external publication gates, and later epics remain
-open. Roadmap 3 contains candidates, not scheduled implementation.
+SDK construction, pure policy compiler, and pure lifecycle model. PR 31
+exact-head run `35236845497` and exact-main run `35241672716` passed. Roadmap 1
+RT-5 remains open beyond the non-effectful contracts.
+Roadmap 2 delivery is active; RT-8 is complete, RT-7 retains external
+publication gates, and later epics remain open. Roadmap 3 contains candidates,
+not scheduled implementation.
 
 The immediate internal objective is to remove the useful-network barrier with
 RT-5 while RT-7's registry publication and unrelated-consumer observations
@@ -193,10 +194,11 @@ Merge one authenticated service before extending the authority to a set:
 1. Build from the accepted non-executable
    [Specification 0016](specs/0016_authenticated_service_session.md) contract
    and merged pure policy, admit the forward-only lifecycle and its formal
-   evidence, then admit the closed successful-session observation fragment
-   before freezing the remaining launcher, failed-session receipt, shipping
-   verifier, composer, and acceptance schemas. No effect ships in a contract
-   wave.
+   evidence, then admit the closed successful-session observation and launcher
+   source contracts as one fail-closed batch. The claims and mutation corpora
+   remain separate; a blocker in either blocks the batch. Freeze the remaining
+   failed-session receipt, shipping verifier, composer, and acceptance schemas
+   before enabling effects. No effect ships in a contract wave.
 2. Implement the connector-owned authenticated service session.
 3. Deny direct, inherited, resolver, proxy, Unix-socket, and `io_uring`
    bypasses.

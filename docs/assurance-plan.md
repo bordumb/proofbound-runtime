@@ -12,7 +12,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-POLICY-002` | Tier 3, source-refined with contextual artifact binding | The pure policy compiler is source-refined and its theorem-derived closed set selects the exact native `pbr` members. |
 | `PBR-SEQUENCE-003` | Tested/model-only with exact native artifact observation | Launcher sequencing is effectful Linux behavior. Exact execution observations do not prove kernel effects generally. |
 | `PBR-RECEIPT-004` | Tier 3, source-refined with contextual artifact binding | The receipt decision is source-refined and its theorem-derived closed set selects the exact native `pbr` members. |
-| `PBR-BINDING-005` | Prior Tier 3 subject admitted; current lifecycle closure pending | The production constructor and wire projection remain source-refined. The lifecycle branch changes the shared core export identity, so the current exact closure requires fresh admission. |
+| `PBR-BINDING-005` | Tier 3 current lifecycle closure admitted on exact Runtime main `1da65a5` | The production constructor and wire projection remain source-refined. PR 31 run `35236845497` and exact-main run `35241672716` admitted the changed shared-core closure without changing receipt behavior. |
 | `PBR-VERIFY-006` | Tested/model-only with exact native artifact observation | The evidence remains bounded to the registered mutations and exact rejection reasons exercised by each native `pbr-verify`. |
 | `PBR-RUN-007` | Tested/model-only admitted on exact Runtime main `d48122b` | The current contract closure passed PR 29 run `35216056050` and exact-main run `35220098639` without turning native observation into a theorem. |
 | `PBR-COMPOSE-008` | Tested/model-only with exact native artifact observation | Each exact native composer joins verified receipts without upgrading any inherited facet. |
@@ -21,28 +21,28 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-DIAGNOSTIC-011` | Tested/model-only on the development branch | The closed run phase and rule mapping is tested without inferring a kernel denial or changing receipt meaning. |
 | `PBR-ACCEPT-012` | Tested/model-only on the development branch | Adopter policy decisions bind independently verified inputs; exact released acceptor observation and external Action dogfood remain open. |
 | `PBR-SCAFFOLD-013` | Tested/model-only on the development branch | Static ELF scaffolding is bounded diagnostic evidence, not a safe policy or a complete dynamic-load inventory. |
-| `PBR-SDK-014` | Prior service-session source admitted; current lifecycle-spec closure pending | PR 30 run `35226379485` and exact-main run `35231003515` passed at `a94c21a`. The lifecycle branch clarifies terminal transitions in Specification 0016 and requires fresh admission. Registry publication and consumer dogfood remain open. |
+| `PBR-SDK-014` | Current lifecycle-spec closure admitted on exact Runtime main `1da65a5` | PR 31 run `35236845497` and exact-main run `35241672716` admitted the Specification 0016 lifecycle clarification. Registry publication and consumer dogfood remain open. |
 | `PBR-DISTRIBUTION-015` | Tier 1 current contract closure admitted on exact Runtime main `d48122b` | The changed deterministic-CBOR helper closure passed PR 29 run `35216056050` and exact-main run `35220098639`; registry publication remains external. |
 | `PBR-DISTRIBUTION-016` | Tier 1 credential-scoped consumer admitted on exact Runtime main `a8df83d` | Runtime pins one immutable public Proofbound release, confines its read-only workflow credential to canonical GitHub API metadata, keeps release assets anonymous, and rejects identity, inventory, manifest, checksum, archive, installer, and installed-byte substitution. Exact-head PR 23 run `35034962830` and exact-main run `35038304369` passed. |
 | `PBR-DISTRIBUTION-018` | Tier 1 protected publication routes admitted on exact Runtime main `47c5ad2` | Publication is explicit, exact-source, protected, ordered, and credential-isolated. The one-time npm bootstrap route and its fail-closed cutover are admitted; external registry configuration, publication, and observations remain open. |
 | `PBR-DISTRIBUTION-025` | Tier 1 current-integration source admitted on exact Runtime main `d48122b` | PR 29 run `35216056050` and exact-main run `35220098639` admitted the changed SDK and integration closure. The tuple remains unpublished until an exact protected publication retains it. |
-| `PBR-DRAFT-017` | Prior Tier 1 subject admitted; current lifecycle closure pending | Closed diagnostic vocabulary and non-reuse remain intact. The lifecycle branch changes the shared core export identity and requires fresh exact admission. |
-| `PBR-DRAFT-019` | Prior Tier 1 subject admitted; current lifecycle closure pending | The producer still preserves non-reuse and mandatory human authority choices. The shared core export identity changed and requires fresh exact admission. |
-| `PBR-OBSERVER-020` | Prior Tier 1 subject admitted; current lifecycle closure pending | The shared core export identity changes again in the lifecycle branch and requires fresh exact admission. |
+| `PBR-DRAFT-017` | Tier 1 current lifecycle closure admitted on exact Runtime main `1da65a5` | Closed diagnostic vocabulary and non-reuse remain intact; PR 31 and exact-main run `35241672716` admitted the changed shared-core closure. |
+| `PBR-DRAFT-019` | Tier 1 current lifecycle closure admitted on exact Runtime main `1da65a5` | The producer still preserves non-reuse and mandatory human authority choices; PR 31 and its exact-main replay admitted the changed closure. |
+| `PBR-OBSERVER-020` | Tier 1 current lifecycle closure admitted on exact Runtime main `1da65a5` | PR 31 run `35236845497` and exact-main run `35241672716` admitted the changed shared-core closure. |
 | `PBR-OBSERVER-021` | Tier 1 current contract closure admitted on exact Runtime main `d48122b` | The current shared trace closure passed PR 29 run `35216056050` and exact-main run `35220098639`. |
 | `PBR-OBSERVER-022` | Tier 1 current contract closure admitted on exact Runtime main `d48122b` | The current adapter closure passed PR 29 run `35216056050` and exact-main run `35220098639`. |
 | `PBR-OBSERVER-023` | Tier 1 current contract closure admitted on exact Runtime main `d48122b` | The current entry-time operand closure passed PR 29 run `35216056050` and exact-main run `35220098639`. |
 | `PBR-OBSERVER-024` | Tier 1 current contract closure admitted on exact Runtime main `d48122b` | The current shared trace, adapter, and observer closure passed PR 29 run `35216056050` and exact-main run `35220098639`. |
 | `PBR-OBSERVER-025` | Tier 1 current contract closure admitted on exact Runtime main `d48122b` | The current syscall-decoder closure passed PR 29 run `35216056050` and exact-main run `35220098639`; kernel ABI truth and memory stability remain open. |
-| `PBR-OBSERVER-026` | Prior Tier 1 subject admitted; current lifecycle closure pending | Event mapping remains closed, but the lifecycle branch changes the shared core export identity and requires fresh exact admission. |
-| `PBR-OBSERVER-027` | Prior Tier 1 subject admitted; current lifecycle closure pending | Bounded stream handling remains intact, but the lifecycle branch changes the shared core export identity and requires fresh exact admission. |
-| `PBR-OBSERVER-028` | Prior Tier 1 subject admitted; current lifecycle closure pending | Diagnostic lifecycle gating remains intact, but the service lifecycle branch changes the shared core export identity and requires fresh exact admission. |
+| `PBR-OBSERVER-026` | Tier 1 current lifecycle closure admitted on exact Runtime main `1da65a5` | Event mapping remains closed; PR 31 and exact-main run `35241672716` admitted the changed shared-core closure. |
+| `PBR-OBSERVER-027` | Tier 1 current lifecycle closure admitted on exact Runtime main `1da65a5` | Bounded stream handling remains intact; PR 31 and its exact-main replay admitted the changed closure. |
+| `PBR-OBSERVER-028` | Tier 1 current lifecycle closure admitted on exact Runtime main `1da65a5` | Diagnostic lifecycle gating remains intact; PR 31 and its exact-main replay admitted the changed closure. |
 | `PBR-OBSERVER-029` | Tier 1 current contract closure admitted on exact Runtime main `d48122b` | The current object-resolution closure passed PR 29 run `35216056050` and exact-main run `35220098639`; Linux pathname completeness remains open. |
 | `PBR-OBSERVER-030` | Tier 1 candidate-resolution source admitted on exact Runtime main `d60d1f3` | Failed path operations produce only advisory stable candidates after two bounded root-confined observations agree; drift and hop exhaustion remain explicit gaps. Independently approved PR 26 head `2fc82ff` passed run `35172227506`, including both native architectures. Exact-main run `35175269953` passed. Linux pathname completeness remains pending. |
-| `PBR-OBSERVER-031` | Prior Tier 1 RT-8 subject admitted; current lifecycle closure pending | The lifecycle branch changes the shared core export identity and requires fresh exact admission without reopening RT-8 product behavior. |
-| `PBR-NETWORK-032` | Tier 0 contract admitted on exact Runtime main `a94c21a`; current lifecycle closure pending | PR 30 and exact-main run `35231003515` passed. The lifecycle branch changes the shared core export identity again. |
-| `PBR-NETWORK-033` | Tier 0 pure policy admitted on exact Runtime main `a94c21a`; current lifecycle closure pending | The compiler separately binds child denial, the channel-only profile, and complete connector authority. Run `35226379485` and exact-main run `35231003515` passed. The lifecycle branch changes its shared export closure. |
-| `PBR-NETWORK-034` | Tier 0 proposed pure lifecycle pending first exact admission | Exhaustive source tests cover the closed forward path and typed terminal failure. A candidate Lean theorem characterizes the same transitions but is not yet registered as admitted evidence. Every effectful wave remains open. |
+| `PBR-OBSERVER-031` | Tier 1 current lifecycle closure admitted on exact Runtime main `1da65a5` | PR 31 and exact-main run `35241672716` admitted the changed shared-core closure without reopening RT-8 product behavior. |
+| `PBR-NETWORK-032` | Tier 0 current lifecycle closure admitted on exact Runtime main `1da65a5` | PR 31 run `35236845497` and exact-main run `35241672716` admitted the changed service-session contract closure. |
+| `PBR-NETWORK-033` | Tier 0 current lifecycle closure admitted on exact Runtime main `1da65a5` | The compiler still separately binds child denial, the channel-only profile, and complete connector authority; PR 31 and its exact-main replay admitted the changed shared-core closure. |
+| `PBR-NETWORK-034` | Tier 0 pure lifecycle admitted on exact Runtime main `1da65a5` | Exhaustive source tests cover the closed forward path and typed terminal failure. PR 31 run `35236845497` and exact-main run `35241672716` passed. The candidate Lean theorem is not registered as admitted evidence. Every effectful wave remains open. |
 | `PBR-NETWORK-035` | Tier 0 proposed observation contract pending first exact admission | A closed successful-session fragment and independent mutation checker bind receipt inputs without claiming production integration or network effects. Failed-session, shipping-verifier, composition, and acceptance work remain open. |
 | `PBR-NETWORK-036` | Tier 0 proposed launcher contract pending first exact admission | A closed three-message handshake binds the prepared service session and child filter before release without changing the production launcher or claiming an installed effect. |
 
@@ -59,17 +59,16 @@ Runtime main `a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca`. Exact-main run
 `35231003515` passed. That exact subject admits `PBR-NETWORK-033` and the
 intersecting pure-policy closure without transferring status to later source.
 
-The current lifecycle wave changes the shared core export again. The pending
-existing claims are `PBR-BINDING-005`, `PBR-DRAFT-017`, `PBR-DRAFT-019`,
-`PBR-SDK-014`, `PBR-OBSERVER-020`, `PBR-OBSERVER-026`, `PBR-OBSERVER-027`,
-`PBR-OBSERVER-028`, `PBR-OBSERVER-031`, `PBR-NETWORK-032`, and
-`PBR-NETWORK-033`. `PBR-NETWORK-034` is a new proposed Tier 0 subject and is
-pending its first exact admission. Its Lean theorem is a compiled candidate,
-not registered theorem evidence.
+The lifecycle wave passed PR 31 run `35236845497`, merged as exact main
+`1da65a5c53f27b97a15f95ed1a9fb01170121444`, and passed exact-main run
+`35241672716`. That exact source admits the intersecting existing claims and
+the new Tier 0 `PBR-NETWORK-034` subject. The Lean theorem remains a compiled
+candidate, not registered theorem evidence.
 
-The stacked observation-contract wave adds `PBR-NETWORK-035`. It is not part
-of the lifecycle review subject and requires its own exact-head review and
-hosted admission after the lifecycle wave merges.
+The stacked non-production contract batch adds `PBR-NETWORK-035` and
+`PBR-NETWORK-036`. Each keeps its own closure and mutation corpus. They share
+one final exact-source review and hosted admission only after the lifecycle
+exact-main replay passes; a blocker in either blocks the complete batch.
 
 This pending ledger does not weaken or retract an admission for an older exact
 source. It prevents a source-identity change from silently inheriting that
@@ -1001,9 +1000,8 @@ release waves are admitted.
 
 The pure-policy subject passed PR 30 exact-head run `35226379485` and merged as
 exact Runtime main `a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca`. Exact-main run
-`35231003515` passed. The current lifecycle branch changes the shared
-core export identity and therefore requires its own admission without changing
-the compiler's behavior.
+`35231003515` passed. The later lifecycle closure passed PR 31 and exact-main
+run `35241672716` at `1da65a5` without changing the compiler's behavior.
 
 ## PBR-NETWORK-034
 
@@ -1020,7 +1018,9 @@ failures, and transition relation. Its candidate theorem states that the model
 transition succeeds exactly for the registered relation. The theorem is not
 yet registered or admitted as Proofbound evidence and does not establish a
 Rust refinement. Neither subject runs DNS, a connector, TLS, a launcher, a
-child, or cleanup. Effectful linkage and receipt verification remain open.
+child, or cleanup. Effectful linkage and receipt verification remain open. The
+pure lifecycle subject passed PR 31 run `35236845497` and exact-main run
+`35241672716` at exact main `1da65a5`.
 
 ## PBR-NETWORK-035
 
