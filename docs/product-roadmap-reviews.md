@@ -3111,6 +3111,38 @@ acceptance, effectful, native-attack, and release-artifact obligations remain
 open. The corrected exact head requires a new independent review and hosted
 admission.
 
+## RT-5 consolidated contract evidence-tier correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `1da65a5c53f27b97a15f95ed1a9fb01170121444`
+- **Reviewed head:** `d764c57f0735d052ec50703ef59ed46ce9103065`
+- **Branch:** `codex/rt5-launcher-contract`
+- **Method:** Complete exact-range static evidence-tier, claim-language,
+  admission-status, and prior-blocker re-review. The reviewer changed no files
+  and ran no builds or tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed hosted run `35247248205` at exact head `0b0bff9` and
+ledger job `105290805421`. Preflight, Rust, both native architectures, and
+binding passed; the ledger correctly rejected both claims because an
+`independent-check` requires Tier 1. The remaining in-progress evidence lanes
+were cancelled after that decisive failure, and current assurance did not
+admit the source.
+
+Raising each proposed claim and its matching evidence unit to Tier 1 is exact
+and semantically appropriate for bounded independent conformance and mutation
+evidence. Public language, open obligations, exclusions, production rejection,
+and non-effect claims remain unchanged. Roadmap and assurance language now
+agree and remain pending first admission. Since approved head `0a45e32`, no
+schema, vector, generator, checker, or production bytes changed. Every prior
+contract blocker remains closed and no new blocker was introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`1da65a5c53f27b97a15f95ed1a9fb01170121444..d764c57f0735d052ec50703ef59ed46ce9103065`.
+The following approval-only commit changes only this review record. Any later
+subject change requires a new exact-head review.
+
 ## RT-5 service launcher preliminary review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
