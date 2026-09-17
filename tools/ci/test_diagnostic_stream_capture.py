@@ -241,7 +241,7 @@ def assert_stream_contract(trace: str, adapter: str, sys: str) -> None:
 
 
 EXPECTED_BODIES = {
-    "adapter-active-step": "98e8b121729094ec65ba7fedb38da6c11e3dc6c3666e9c529cfc2d01a1647825",
+    "adapter-active-step": "71c6851507caba717ceba9b3b963ca5a0f1653d9514871e9a7fa6530fd31d4b5",
     "adapter-drain-finish": "abd829e86e881f9c28981c43d3832c6b707dd90aad22500109f3d25b384a7ab0",
     "capture": "a6783ae914ce32557ca90f72c44b56efc617958bfb6587514ba6de9a3542299c",
     "child-drop": "4b0736ae93ba2cc1524cce0bd88b7750ed536ff7fc5c6f2066c5ea7d8e01e786",
@@ -254,12 +254,12 @@ EXPECTED_BODIES = {
     "reader-cancel": "f8d1f73f2d46e508fe3a6dcb6ae5a3bb2749082808f368f9c21ba871c3e1ecdb",
     "reader-start": "8d00f7968b3498b8c59e4cac187a38908673edb446ad20b600aacab971e21f5c",
     "record-terminal": "1b039cd8a628df661083e7f65b8aeb4b691b7a476b851d06ab531826ca7365fa",
-    "release": "4ca785fc73104cd6bfa3f6941ad4ae3f748d62d1b48cf77c4424b7f1881e3df7",
+    "release": "fe39e74a5099afbadc76336faf02db3ba7a9bbbb57076b7271356d6e79a45a5f",
     "spawn": "1faca0106ae138c1f98807b3d21371eace9a69d41892a8a13c6d94a72b30f681",
 }
 
 EXPECTED_FILES = {
-    "adapter": "b2d4b7b8461e40d55d3016334d73dece92240c86a4d2fe6ff9db262d8f203d63",
+    "adapter": "551c0c743d9c99184dddc09c276081e63c834e3be559e891221e1214dc454a2b",
     "adapter-lib": "8859f99339377b7034d43dd9d4fd20713824b5ad2708cd52d76412272a3858e2",
     "adapter-manifest": "ef7c613a66781c4b64d75435524166329b5239b8172f97b28cff2d6d609c8d78",
     "authority": "9d1945b590a3a9f44f6af95d3090ad0a8d1bc0cfa601c35273cd0a72c86cbddc",
@@ -282,7 +282,7 @@ EXPECTED_FILES = {
     "stream-runtime-assumption": "ce57e1cab085cbd7b4f60ab03a607166a2dc77bdb924228b1f7c949a72bfeb19",
     "sys": "8b7dfd2fee307d937f71dcbab8098d026715dc2e4f7d03c72fa9ee7bd4734168",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "2470990206dc60b301ebef11fe0e85fec3c7be91cba72e093f691f9e4080d963",
+    "trace": "1d4db7bdf8a05c05ea83bf3cac8ff832d947fbe559b4027cb2fd08f74cbadda5",
     "unit-evidence": "c3265aa232ccf65fda04efd5706f3b85ca5d2fd006bf632dde4815090d076ccb",
 }
 

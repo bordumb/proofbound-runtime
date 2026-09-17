@@ -326,7 +326,7 @@ impl ActiveObserver {
             });
         }
         Ok(ActiveObserverStep::Continue {
-            observer: self,
+            observer: Box::new(self),
             event,
         })
     }
@@ -347,7 +347,7 @@ pub enum ActiveObserverStep {
     /// Observation can continue with the returned stopped event already recorded.
     Continue {
         /// The coupled observer for the next consuming step.
-        observer: ActiveObserver,
+        observer: Box<ActiveObserver>,
         /// The complete event recorded by the pure protocol.
         event: ActiveTraceEvent,
     },

@@ -43,7 +43,7 @@ def assert_candidate_resolution_contract(trace, mapping, command):
     candidate_position = exit_branch.index(connection)
     event_position = exit_branch.index("ActiveTraceEvent::SyscallCompleted")
     assert candidate_position < event_position
-    assert "resume_before_deadline" not in exit_branch[:event_position]
+    assert "resume_before_deadline" not in exit_branch[candidate_position:event_position]
 
 
 class DiagnosticCandidateResolutionContractTests(unittest.TestCase):
@@ -115,9 +115,9 @@ class DiagnosticCandidateResolutionContractTests(unittest.TestCase):
                 self.trace.replace(
                     """let candidate =
                             self.observe_failed_candidate(process, &invocation, is_error);""",
-                    """self.resume_before_deadline(process)?;
-                        let candidate =
-                            self.observe_failed_candidate(process, &invocation, is_error);""",
+                    """let candidate =
+                            self.observe_failed_candidate(process, &invocation, is_error);
+                        self.resume_before_deadline(process)?;""",
                     1,
                 ),
                 self.mapping,

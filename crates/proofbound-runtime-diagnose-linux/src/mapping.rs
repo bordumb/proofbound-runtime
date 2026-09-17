@@ -123,6 +123,10 @@ fn map_invocation(
     )
 }
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "the pure mapping keeps each captured syscall field explicit"
+)]
 fn map_parts(
     sequence: u64,
     process: TraceProcessId,

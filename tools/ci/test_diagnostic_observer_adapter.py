@@ -66,7 +66,7 @@ def body_sha256(source: str, signature: str) -> str:
 
 
 EXPECTED_LOAD_BEARING_BODIES = {
-    "active-next-event": "98e8b121729094ec65ba7fedb38da6c11e3dc6c3666e9c529cfc2d01a1647825",
+    "active-next-event": "71c6851507caba717ceba9b3b963ca5a0f1653d9514871e9a7fa6530fd31d4b5",
     "draining-finish": "abd829e86e881f9c28981c43d3832c6b707dd90aad22500109f3d25b384a7ab0",
 }
 

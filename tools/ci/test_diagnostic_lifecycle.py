@@ -200,8 +200,8 @@ def assert_lifecycle_contract(
         "if self.session.deadline.expired()",
         "trace_syscall(root.get())",
     )
-    if "TraceeState::released_mid_syscall(root)" not in release:
-        raise AssertionError("release does not account for its in-flight launcher syscall")
+    if "TraceeState::released_at_unknown_syscall_phase(root)" not in release:
+        raise AssertionError("release does not synchronize its initial syscall phase")
     if "self.session.deadline" not in next_event:
         raise AssertionError(
             "active observation does not use the stored execution deadline"
@@ -411,7 +411,7 @@ EXPECTED_BODIES = {
     "active-finish": "dc2f63886b0d9bb418062462f69f3b4c9073cb079be36b7a883f37599fb8f64c",
     "active-next": "d338650ed48b9e795519e78b67f2b23052c42f5d09de1c2fe76f019688d98efb",
     "adapter-drain": "abd829e86e881f9c28981c43d3832c6b707dd90aad22500109f3d25b384a7ab0",
-    "adapter-next": "98e8b121729094ec65ba7fedb38da6c11e3dc6c3666e9c529cfc2d01a1647825",
+    "adapter-next": "71c6851507caba717ceba9b3b963ca5a0f1653d9514871e9a7fa6530fd31d4b5",
     "cgroup-drain-before": "caa3f99baee132f20cfb3ca42fda7d8b93c046f83e6d3fa35d2fcea3d4deeda5",
     "cgroup-drop": "951e530b5cac51993c7bd73ea9d2c534b234d8e4131fef2f04c0bbd90f77b1f3",
     "cgroup-finish-before": "65d19b3c9ebec391228d2068d88fb4857e437bc5cb0c02d8e7ddaa736c3b6037",
@@ -426,7 +426,7 @@ EXPECTED_BODIES = {
     "wait-for-exact-stop": "d7d42625b210d8aeed50f75176c09c728887bcd085d9311789a73a0a0ff7a831",
 }
 EXPECTED_FILES = {
-    "adapter": "b2d4b7b8461e40d55d3016334d73dece92240c86a4d2fe6ff9db262d8f203d63",
+    "adapter": "551c0c743d9c99184dddc09c276081e63c834e3be559e891221e1214dc454a2b",
     "adapter-evidence": "87bc8da1a2cab8f6e3b380d38e2017852abe4cee0039854a4ea0dd3b8571d8b4",
     "adapter-lib": "8859f99339377b7034d43dd9d4fd20713824b5ad2708cd52d76412272a3858e2",
     "adapter-manifest": "ef7c613a66781c4b64d75435524166329b5239b8172f97b28cff2d6d609c8d78",
@@ -456,7 +456,7 @@ EXPECTED_FILES = {
     "supervisor": "5f1b80181b01c3ea189643995617aeab60f390c1f5fc6930cf0acd577b88cdd8",
     "sys": "8b7dfd2fee307d937f71dcbab8098d026715dc2e4f7d03c72fa9ee7bd4734168",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "2470990206dc60b301ebef11fe0e85fec3c7be91cba72e093f691f9e4080d963",
+    "trace": "1d4db7bdf8a05c05ea83bf3cac8ff832d947fbe559b4027cb2fd08f74cbadda5",
     "unit-evidence": "47394cbf7d03c115c3140f6a593c7ab76a031e34594a235b87fd0d7de555b51c",
 }
 
@@ -567,9 +567,9 @@ class DiagnosticLifecycleContractTests(unittest.TestCase):
                 self.adapter_lib,
             ),
             (
-                "release loses its in-flight launcher syscall",
+                "release loses its unknown initial syscall phase",
                 self.trace.replace(
-                    "TraceeState::released_mid_syscall(root)",
+                    "TraceeState::released_at_unknown_syscall_phase(root)",
                     "TraceeState::observing(root)",
                     1,
                 ),

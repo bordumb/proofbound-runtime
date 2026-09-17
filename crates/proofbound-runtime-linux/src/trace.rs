@@ -850,7 +850,10 @@ impl TraceReady {
             self.session.record_root_identity_stable_handle();
             Ok(ActiveTrace {
                 session: self.session,
-                processes: BTreeMap::from([(root, TraceeState::released_mid_syscall(root))]),
+                processes: BTreeMap::from([(
+                    root,
+                    TraceeState::released_at_unknown_syscall_phase(root),
+                )]),
                 process_handles: BTreeMap::from([(root, process_handle)]),
                 held_process: None,
                 must_drain: false,
@@ -1157,13 +1160,6 @@ impl ActiveTrace {
                 number,
                 arguments,
             } => {
-                let state = self
-                    .processes
-                    .get(&process)
-                    .ok_or(TraceObservationError::ProcessUnknown)?;
-                if state.pending.is_some() {
-                    return Err(TraceObservationError::SyscallOrderInvalid);
-                }
                 let registers = TraceSyscallRegisters {
                     architecture,
                     instruction_pointer,
@@ -1176,7 +1172,7 @@ impl ActiveTrace {
                 self.processes
                     .get_mut(&process)
                     .ok_or(TraceObservationError::ProcessUnknown)?
-                    .pending = Some(pending);
+                    .begin_syscall(pending)?;
                 self.resume_before_deadline(process)?;
                 Ok(None)
             }
@@ -1185,9 +1181,11 @@ impl ActiveTrace {
                     .processes
                     .get_mut(&process)
                     .ok_or(TraceObservationError::ProcessUnknown)?
-                    .pending
-                    .take()
-                    .ok_or(TraceObservationError::SyscallOrderInvalid)?;
+                    .finish_syscall()?;
+                let Some(pending) = pending else {
+                    self.resume_before_deadline(process)?;
+                    return Ok(None);
+                };
                 match pending {
                     PendingTraceSyscall::Captured(invocation) => {
                         let selected_object = self.observe_successful_descriptor(
@@ -2342,6 +2340,7 @@ fn read_little_endian_u64(bytes: &[u8], start: usize) -> Result<u64, TraceObserv
 struct TraceeState {
     thread_group: TraceProcessId,
     awaiting_initial_stop: bool,
+    allow_initial_exit: bool,
     pending: Option<PendingTraceSyscall>,
 }
 
@@ -2360,13 +2359,14 @@ struct ExecIdentityChange {
 }
 
 impl TraceeState {
-    const fn released_mid_syscall(thread_group: TraceProcessId) -> Self {
+    const fn released_at_unknown_syscall_phase(thread_group: TraceProcessId) -> Self {
         Self {
             thread_group,
             awaiting_initial_stop: false,
-            // The trusted launcher was stopped inside its release receive. The
-            // first observed stop is that pre-observation syscall's exit.
-            pending: Some(PendingTraceSyscall::Ignored),
+            // The acknowledgement stop can race with entry into the trusted
+            // launcher's release receive. The first stop can be entry or exit.
+            allow_initial_exit: true,
+            pending: None,
         }
     }
 
@@ -2375,6 +2375,7 @@ impl TraceeState {
         Self {
             thread_group,
             awaiting_initial_stop: false,
+            allow_initial_exit: false,
             pending: None,
         }
     }
@@ -2383,8 +2384,29 @@ impl TraceeState {
         Self {
             thread_group,
             awaiting_initial_stop: true,
+            allow_initial_exit: false,
             pending: None,
         }
+    }
+
+    fn begin_syscall(&mut self, pending: PendingTraceSyscall) -> Result<(), TraceObservationError> {
+        if self.pending.is_some() {
+            return Err(TraceObservationError::SyscallOrderInvalid);
+        }
+        self.allow_initial_exit = false;
+        self.pending = Some(pending);
+        Ok(())
+    }
+
+    fn finish_syscall(&mut self) -> Result<Option<PendingTraceSyscall>, TraceObservationError> {
+        if let Some(pending) = self.pending.take() {
+            return Ok(Some(pending));
+        }
+        if self.allow_initial_exit {
+            self.allow_initial_exit = false;
+            return Ok(None);
+        }
+        Err(TraceObservationError::SyscallOrderInvalid)
     }
 }
 
@@ -3427,14 +3449,31 @@ mod tests {
     }
 
     #[test]
-    fn released_trace_state_ignores_only_the_inflight_launcher_syscall() {
+    fn released_trace_state_synchronizes_either_initial_syscall_phase_once() {
         let root = TraceProcessId::new(41).expect("positive process identity");
-        let mut state = TraceeState::released_mid_syscall(root);
+        let mut exit_first = TraceeState::released_at_unknown_syscall_phase(root);
 
-        assert_eq!(state.thread_group, root);
-        assert!(!state.awaiting_initial_stop);
-        assert_eq!(state.pending.take(), Some(PendingTraceSyscall::Ignored));
-        assert_eq!(state.pending, None);
+        assert_eq!(exit_first.thread_group, root);
+        assert!(!exit_first.awaiting_initial_stop);
+        assert_eq!(exit_first.finish_syscall(), Ok(None));
+        assert_eq!(
+            exit_first.finish_syscall(),
+            Err(TraceObservationError::SyscallOrderInvalid)
+        );
+
+        let mut entry_first = TraceeState::released_at_unknown_syscall_phase(root);
+        assert_eq!(
+            entry_first.begin_syscall(PendingTraceSyscall::Ignored),
+            Ok(())
+        );
+        assert_eq!(
+            entry_first.finish_syscall(),
+            Ok(Some(PendingTraceSyscall::Ignored))
+        );
+        assert_eq!(
+            entry_first.finish_syscall(),
+            Err(TraceObservationError::SyscallOrderInvalid)
+        );
     }
 
     #[test]
@@ -3646,6 +3685,7 @@ mod tests {
                 TraceeState {
                     thread_group: leader,
                     awaiting_initial_stop: false,
+                    allow_initial_exit: false,
                     pending: Some(pending.clone()),
                 },
             ),

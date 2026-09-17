@@ -404,7 +404,7 @@ fn execute(input: CommandInput) -> Result<serde_json::Value, DiagnoseError> {
                 {
                     events.push(event);
                 }
-                observer = next;
+                observer = *next;
             }
             ActiveObserverStep::Drain {
                 observer: draining,
