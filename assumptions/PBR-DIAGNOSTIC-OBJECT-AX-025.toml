@@ -1,0 +1,18 @@
+schema = "proofbound-assumption/1"
+id = "PBR-DIAGNOSTIC-OBJECT-AX-025"
+statement = "On an identified supported Linux host, an exact ptrace stop prevents the stopped tracee from replacing its descriptor table or executable before resume; when it is the sole retained tracee no unobserved process shares that table; procfs descriptor and executable links name the selected object; O_PATH retains that object; and statx with AT_EMPTY_PATH reports its device, inode, mode, and mount identity consistently."
+category = "runtime-environment"
+owner = "Proofbound Runtime platform maintainer"
+rationale = "The source contract can require a stopped tracee, exclude every other retained tracee before descriptor resolution, retain a procfs object handle, and reject missing or inconsistent fields, but this repository does not prove ptrace stop ownership, absence of unobserved descriptor-table sharing, procfs link meaning, handle identity, statx fields, mount identifiers, or pathname rendering."
+scope = "Only the native interpretation of PBR-OBSERVER-029. It does not establish denied-path resolution, command integration, production execution, or released-artifact behavior."
+affected_claims = ["PBR-OBSERVER-029"]
+review_evidence = [
+  "docs/adr/0008-separate-ptrace-diagnostic-observer.md",
+  "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/mapping.rs",
+]
+discharge_plan = "Retain the kernel and procfs premises. Narrow them with native descriptor reuse, thread and process sharing, exec, deletion, mount, non-UTF-8, bound, and failure fixtures on each supported architecture and exact released-host observations."
+source_citation = "docs/specs/0015_diagnostic_execution_and_plan_drafting.md#9-evidence-meaning"
+status = "active"

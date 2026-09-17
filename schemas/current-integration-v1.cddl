@@ -60,7 +60,7 @@ runtime-executable = {
   "operating_system": "linux",
   "architecture": "aarch64" / "x86_64",
   "target": "aarch64-unknown-linux-gnu" / "x86_64-unknown-linux-gnu",
-  "name": "pbr" / "pbr-native-launcher" / "pbr-verify" / "pbr-compose",
+  "name": "pbr" / "pbr-native-launcher" / "pbr-verify" / "pbr-compose" / "pbr-diagnose",
   "sha256": bytes .size 32,
   "size_bytes": positive-u64,
 }

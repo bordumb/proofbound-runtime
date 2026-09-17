@@ -1,0 +1,61 @@
+schema = "proofbound-claim/1"
+id = "PBR-OBSERVER-029"
+title = "Successful diagnostic filesystem events retain kernel-selected identity"
+statement = "For the aggregate separate Linux diagnostic trace, raw-operation, event-mapping, and artifact source path, a successful open, openat, openat2, or creat event can use the kernel-selected resolution state only while the exact calling tracee remains stopped, its nonnegative result fits the Linux descriptor range, and it is the sole retained tracee; a successful execve or execveat event can use that state only after exact exec identity reconciliation while the surviving post-exec tracee remains stopped; the resolver retains the exact procfs descriptor or executable object before reading its link and obtains device major, device minor, inode, mode, and mount identity from that retained object; the mapper accepts kernel-selected resolution only with a valid UTF-8 normalized absolute retained path within the declared path bound and a complete retained object identity; deleted, special, over-bound, unsupported, missing, identity-incomplete, multi-tracee descriptor, failed-operation, or inconsistent results remain explicitly unresolved; and neither the resolver nor mapper invents a symlink-hop count, stable candidate, authority, or production evidence."
+public_language = "The separate Linux diagnostic observer has a conservative source-level resolver for successful filesystem opens and image replacement. It inspects only an exact stopped tracee, requires a sole retained tracee before resolving a returned descriptor, retains the selected procfs object while it reads its path and identity, and resolves a post-exec image only after exact exec reconciliation. Ambiguous or unsupported cases remain unresolved. Registered Rust tests and an independent exact-source checker cover this bounded behavior. They do not prove procfs, statx, ptrace, mount, pathname, or kernel correctness, denied-path resolution, command integration, or released-artifact behavior."
+subject = "rust:proofbound_runtime_linux::trace+proofbound_runtime_linux::sys+proofbound_runtime_diagnose_linux::mapping+proofbound_runtime_diagnose::artifact"
+profile = "ledger"
+tier = 1
+evidence = [
+  "example-test:diagnostic-object-resolution",
+  "example-test:diagnostic-object-mapping",
+  "independent-check:diagnostic-object-resolution-contract",
+]
+assumptions = [
+  "PBR-DIAGNOSTIC-OBJECT-CHECK-AX-024",
+  "PBR-DIAGNOSTIC-OBJECT-AX-025",
+]
+open_obligations = [
+  "Run the complete source, compilation, unit, independent-check, and native evidence in hosted exact-head verification before merge.",
+  "Exercise successful open and exec identity, descriptor reuse, shared-table ambiguity, deleted targets, non-UTF-8 paths, mount identity, path bounds, and procfs failures on both supported native architectures.",
+  "Implement the separate bounded denied-path stable-candidate and identity-drift claim without broadening kernel-selected meaning.",
+  "Connect resolved and unresolved events to the separate pbr-diagnose command without treating diagnostic observations as reusable production evidence.",
+  "Bind the exact released diagnostic executable and observer mechanism identity before describing object resolution as released.",
+]
+out_of_scope = [
+  "Correctness or completeness of Linux ptrace stops, procfs descriptor and executable links, O_PATH, statx, mount identifiers, path rendering, or filesystem identity fields.",
+  "Descriptor resolution when more than one tracee is retained, including possible CLONE_FILES sharing across process or thread identities.",
+  "Denied-path candidate resolution, symlink walking, capability inference, automatic authority generation, or production execution meaning.",
+  "Command orchestration, durable artifact publication, native attack evidence, or released-artifact behavior.",
+]
+source_roots = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "rust-toolchain.toml",
+  "assumptions/PBR-DIAGNOSTIC-OBJECT-CHECK-AX-024.toml",
+  "assumptions/PBR-DIAGNOSTIC-OBJECT-AX-025.toml",
+  "claims/PBR-OBSERVER-029.toml",
+  "crates/proofbound-runtime-core/src/diagnostic.rs",
+  "crates/proofbound-runtime-diagnose/Cargo.toml",
+  "crates/proofbound-runtime-diagnose/src/artifact.rs",
+  "crates/proofbound-runtime-diagnose-linux/Cargo.toml",
+  "crates/proofbound-runtime-diagnose-linux/src/lib.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/mapping.rs",
+  "crates/proofbound-runtime-linux/Cargo.toml",
+  "crates/proofbound-runtime-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+  "docs/adr/0008-separate-ptrace-diagnostic-observer.md",
+  "docs/assurance-plan.md",
+  "docs/product-development-checklist.md",
+  "docs/product-roadmap-2.md",
+  "docs/roadmap-2/rt-08-capability-informed-drafting.md",
+  "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",
+  "proofbound/evidence/diagnostic-object-mapping.toml",
+  "proofbound/evidence/diagnostic-object-resolution-contract.toml",
+  "proofbound/evidence/diagnostic-object-resolution.toml",
+  "tools/ci/check_diagnostic_object_resolution.py",
+  "tools/ci/ci.sh",
+  "tools/ci/pre-commit.sh",
+  "tools/ci/test_diagnostic_object_resolution.py",
+]

@@ -5,10 +5,11 @@ use core::fmt;
 use proofbound_runtime_core::{Architecture, ObservationResolution};
 use proofbound_runtime_diagnose::artifact::{
     DiagnosticArtifactError, DiagnosticEvent, DiagnosticEventClass, ObservationOperands,
-    ObservationOutcome, ObservedSocketAddress, SocketAddressFamily,
+    ObservationOutcome, ObservedObjectIdentity, ObservedSocketAddress, SocketAddressFamily,
 };
 use proofbound_runtime_linux::{
-    ActiveTraceEvent, TraceCapturedOperands, TraceProcessId, TraceSyscallClass,
+    ActiveTraceEvent, TraceCandidateObject, TraceCandidateObservation, TraceCapturedOperands,
+    TraceObjectIdentity, TraceProcessId, TraceSelectedObject, TraceSyscallClass,
     TraceSyscallInvocation,
 };
 
@@ -44,16 +45,21 @@ impl DiagnosticEventMapper {
                 invocation,
                 result,
                 is_error,
+                selected_object,
+                candidate,
             } => Some(map_invocation(
                 self.next_sequence,
                 *process,
                 invocation,
                 *result,
                 *is_error,
+                selected_object.as_ref(),
+                candidate.as_ref(),
             )?),
             ActiveTraceEvent::ImageReplaced {
                 process,
                 invocation: Some(invocation),
+                selected_object,
                 ..
             } => {
                 if !matches!(
@@ -68,6 +74,8 @@ impl DiagnosticEventMapper {
                     invocation,
                     0,
                     false,
+                    selected_object.as_ref(),
+                    None,
                 )?)
             }
             ActiveTraceEvent::ProcessCreated { .. }
@@ -99,6 +107,8 @@ fn map_invocation(
     invocation: &TraceSyscallInvocation,
     result: i64,
     is_error: bool,
+    selected_object: Option<&TraceSelectedObject>,
+    candidate: Option<&TraceCandidateObservation>,
 ) -> Result<DiagnosticEvent, DiagnosticEventMapError> {
     map_parts(
         sequence,
@@ -108,6 +118,8 @@ fn map_invocation(
         invocation.operands(),
         result,
         is_error,
+        selected_object,
+        candidate,
     )
 }
 
@@ -119,20 +131,217 @@ fn map_parts(
     operands: &TraceCapturedOperands,
     result: i64,
     is_error: bool,
+    selected_object: Option<&TraceSelectedObject>,
+    candidate: Option<&TraceCandidateObservation>,
 ) -> Result<DiagnosticEvent, DiagnosticEventMapError> {
+    let (resolution, resolved_path, object_before, object_after, symlink_hops) =
+        map_object_resolution(selected_object, candidate);
     DiagnosticEvent::new(
         sequence,
         process.get(),
         map_architecture(audit_architecture)?,
         map_class(class),
-        map_operands(operands)?,
+        map_operands(operands, symlink_hops)?,
         map_outcome(result, is_error)?,
-        ObservationResolution::Unresolved,
-        None,
-        None,
-        None,
+        resolution,
+        resolved_path,
+        object_before,
+        object_after,
     )
     .map_err(DiagnosticEventMapError::Artifact)
+}
+
+fn map_object_resolution(
+    selected: Option<&TraceSelectedObject>,
+    candidate: Option<&TraceCandidateObservation>,
+) -> (
+    ObservationResolution,
+    Option<String>,
+    Option<ObservedObjectIdentity>,
+    Option<ObservedObjectIdentity>,
+    Option<u64>,
+) {
+    match (selected, candidate) {
+        (Some(selected), None) => {
+            let (resolution, path, after) = map_selected_object(Some(selected));
+            (resolution, path, None, after, None)
+        }
+        (None, Some(TraceCandidateObservation::Stable(candidate))) => {
+            map_candidate_object(candidate)
+        }
+        (
+            None,
+            Some(
+                TraceCandidateObservation::IdentityDrift | TraceCandidateObservation::SymlinkLimit,
+            ),
+        ) => (ObservationResolution::Unresolved, None, None, None, None),
+        (None, None) | (Some(_), Some(_)) => {
+            (ObservationResolution::Unresolved, None, None, None, None)
+        }
+    }
+}
+
+fn map_candidate_object(
+    candidate: &TraceCandidateObject,
+) -> (
+    ObservationResolution,
+    Option<String>,
+    Option<ObservedObjectIdentity>,
+    Option<ObservedObjectIdentity>,
+    Option<u64>,
+) {
+    map_candidate_parts(
+        candidate.path(),
+        candidate.symlink_hops(),
+        ObjectIdentityParts::from(candidate.object_before()),
+        ObjectIdentityParts::from(candidate.object_after()),
+    )
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct ObjectIdentityParts {
+    device_major: u32,
+    device_minor: u32,
+    inode: u64,
+    mode: u32,
+    mount_id: u64,
+}
+
+impl From<TraceObjectIdentity> for ObjectIdentityParts {
+    fn from(identity: TraceObjectIdentity) -> Self {
+        Self {
+            device_major: identity.device_major(),
+            device_minor: identity.device_minor(),
+            inode: identity.inode(),
+            mode: identity.mode(),
+            mount_id: identity.mount_id(),
+        }
+    }
+}
+
+fn map_candidate_parts(
+    path: &[u8],
+    symlink_hops: u32,
+    before: ObjectIdentityParts,
+    after: ObjectIdentityParts,
+) -> (
+    ObservationResolution,
+    Option<String>,
+    Option<ObservedObjectIdentity>,
+    Option<ObservedObjectIdentity>,
+    Option<u64>,
+) {
+    let Ok(path) = String::from_utf8(path.to_vec()) else {
+        return (ObservationResolution::Unresolved, None, None, None, None);
+    };
+    if !is_normalized_absolute_path(&path) || path.ends_with(" (deleted)") {
+        return (ObservationResolution::Unresolved, None, None, None, None);
+    }
+    if before != after {
+        return (ObservationResolution::Unresolved, None, None, None, None);
+    }
+    let (Ok(before), Ok(after)) = (map_identity_parts(before), map_identity_parts(after)) else {
+        return (ObservationResolution::Unresolved, None, None, None, None);
+    };
+    (
+        ObservationResolution::StableCandidate,
+        Some(path),
+        Some(before),
+        Some(after),
+        Some(u64::from(symlink_hops)),
+    )
+}
+
+fn map_identity_parts(
+    identity: ObjectIdentityParts,
+) -> Result<ObservedObjectIdentity, DiagnosticArtifactError> {
+    ObservedObjectIdentity::new(
+        identity.device_major,
+        identity.device_minor,
+        identity.inode,
+        identity.mode,
+        identity.mount_id,
+    )
+}
+
+fn map_identity(
+    identity: TraceObjectIdentity,
+) -> Result<ObservedObjectIdentity, DiagnosticArtifactError> {
+    ObservedObjectIdentity::new(
+        identity.device_major(),
+        identity.device_minor(),
+        identity.inode(),
+        identity.mode(),
+        identity.mount_id(),
+    )
+}
+
+fn map_selected_object(
+    selected: Option<&TraceSelectedObject>,
+) -> (
+    ObservationResolution,
+    Option<String>,
+    Option<ObservedObjectIdentity>,
+) {
+    let Some(selected) = selected else {
+        return (ObservationResolution::Unresolved, None, None);
+    };
+    let identity = selected.identity();
+    map_selected_parts(
+        selected.path(),
+        identity.device_major(),
+        identity.device_minor(),
+        identity.inode(),
+        identity.mode(),
+        identity.mount_id(),
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn map_selected_parts(
+    path: &[u8],
+    device_major: u32,
+    device_minor: u32,
+    inode: u64,
+    mode: u32,
+    mount_id: u64,
+) -> (
+    ObservationResolution,
+    Option<String>,
+    Option<ObservedObjectIdentity>,
+) {
+    let Ok(path) = String::from_utf8(path.to_vec()) else {
+        return (ObservationResolution::Unresolved, None, None);
+    };
+    if !is_normalized_absolute_path(&path) || path.ends_with(" (deleted)") {
+        return (ObservationResolution::Unresolved, None, None);
+    }
+    let Ok(identity) =
+        ObservedObjectIdentity::new(device_major, device_minor, inode, mode, mount_id)
+    else {
+        return (ObservationResolution::Unresolved, None, None);
+    };
+    (
+        ObservationResolution::KernelSelected,
+        Some(path),
+        Some(identity),
+    )
+}
+
+fn is_normalized_absolute_path(path: &str) -> bool {
+    let bytes = path.as_bytes();
+    if bytes.first() != Some(&b'/')
+        || bytes.contains(&0)
+        || (bytes.len() > 1 && bytes.last() == Some(&b'/'))
+        || path.contains("//")
+    {
+        return false;
+    }
+    path == "/"
+        || path
+            .split('/')
+            .skip(1)
+            .all(|component| !component.is_empty() && component != "." && component != "..")
 }
 
 const fn map_architecture(value: u32) -> Result<Architecture, DiagnosticEventMapError> {
@@ -167,6 +376,7 @@ const fn map_class(value: TraceSyscallClass) -> DiagnosticEventClass {
 
 fn map_operands(
     value: &TraceCapturedOperands,
+    symlink_hops: Option<u64>,
 ) -> Result<ObservationOperands, DiagnosticEventMapError> {
     match value {
         TraceCapturedOperands::Path {
@@ -188,7 +398,7 @@ fn map_operands(
                     .map_err(|_| DiagnosticEventMapError::PathEncodingInvalid)?,
             ),
             resolve: *resolve,
-            symlink_hops: None,
+            symlink_hops,
         }),
         TraceCapturedOperands::ProcessCreate { flags } => {
             Ok(ObservationOperands::ProcessCreate { flags: *flags })
@@ -294,9 +504,10 @@ impl std::error::Error for DiagnosticEventMapError {}
 mod tests {
     use super::{
         AUDIT_ARCH_AARCH64, AUDIT_ARCH_X86_64, DiagnosticEventMapError, MAX_LINUX_ERRNO,
-        map_architecture, map_class, map_outcome, map_parts, socket_address_family,
+        ObjectIdentityParts, map_architecture, map_candidate_parts, map_class, map_outcome,
+        map_parts, map_selected_parts, socket_address_family,
     };
-    use proofbound_runtime_core::Architecture;
+    use proofbound_runtime_core::{Architecture, ObservationResolution};
     use proofbound_runtime_diagnose::artifact::{
         DiagnosticEventClass, ObservationOperands, ObservationOutcome, SocketAddressFamily,
     };
@@ -386,6 +597,8 @@ mod tests {
             },
             -13,
             true,
+            None,
+            None,
         )
         .expect("valid unresolved event");
         assert_eq!(event.sequence(), 4);
@@ -425,9 +638,64 @@ mod tests {
             },
             -2,
             true,
+            None,
+            None,
         )
         .expect_err("non-UTF-8 cannot enter the JSON artifact");
         assert_eq!(error, DiagnosticEventMapError::PathEncodingInvalid);
+    }
+
+    #[test]
+    fn selected_object_mapping_accepts_only_normalized_live_filesystem_paths() {
+        let (resolution, path, identity) =
+            map_selected_parts(b"/workspace/bin/tool", 8, 1, 42, 0o100755, 7);
+        assert_eq!(resolution, ObservationResolution::KernelSelected);
+        assert_eq!(path.as_deref(), Some("/workspace/bin/tool"));
+        assert!(identity.is_some());
+
+        for rejected in [
+            b"relative/tool".as_slice(),
+            b"/workspace//tool".as_slice(),
+            b"/workspace/../tool".as_slice(),
+            b"/workspace/tool/".as_slice(),
+            b"/workspace/tool (deleted)".as_slice(),
+            b"socket:[123]".as_slice(),
+            &[0xff],
+        ] {
+            assert_eq!(
+                map_selected_parts(rejected, 8, 1, 42, 0o100755, 7),
+                (ObservationResolution::Unresolved, None, None)
+            );
+        }
+    }
+
+    #[test]
+    fn candidate_mapping_requires_stable_normalized_identity() {
+        let identity = ObjectIdentityParts {
+            device_major: 8,
+            device_minor: 1,
+            inode: 42,
+            mode: 0o100644,
+            mount_id: 7,
+        };
+        let mapped = map_candidate_parts(b"/workspace/input", 1, identity, identity);
+        assert_eq!(mapped.0, ObservationResolution::StableCandidate);
+        assert_eq!(mapped.1.as_deref(), Some("/workspace/input"));
+        assert_eq!(mapped.2, mapped.3);
+        assert_eq!(mapped.4, Some(1));
+
+        let drift = ObjectIdentityParts {
+            inode: 43,
+            ..identity
+        };
+        assert_eq!(
+            map_candidate_parts(b"/workspace/input", 1, identity, drift),
+            (ObservationResolution::Unresolved, None, None, None, None)
+        );
+        assert_eq!(
+            map_candidate_parts(b"relative/input", 0, identity, identity),
+            (ObservationResolution::Unresolved, None, None, None, None)
+        );
     }
 
     #[test]
@@ -445,6 +713,7 @@ mod tests {
                 process: parent,
                 superseded_processes: vec![child],
                 invocation: None,
+                selected_object: None,
             },
             ActiveTraceEvent::ProcessExited {
                 process: parent,

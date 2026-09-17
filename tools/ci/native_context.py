@@ -18,6 +18,7 @@ RUNTIME_BINARIES = (
     ("runtime", "pbr"),
     ("launcher", "pbr-native-launcher"),
     ("verifier", "pbr-verify"),
+    ("diagnostic-observer", "pbr-diagnose"),
 )
 
 

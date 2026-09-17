@@ -1,0 +1,44 @@
+schema = "proofbound-evidence-unit/1"
+id = "diagnostic-candidate-resolution-contract"
+adapter = "independent-check"
+kind = "independent-check"
+claims = ["PBR-OBSERVER-030"]
+tier = 1
+expected_inventory = [
+  "diagnostic-candidate-advisory-only",
+  "diagnostic-candidate-double-observation",
+  "diagnostic-candidate-drift-gap",
+  "diagnostic-candidate-mutation-witnesses",
+  "diagnostic-candidate-root-confinement",
+  "diagnostic-candidate-symlink-bound",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "rust-toolchain.toml",
+  "assumptions/PBR-DIAGNOSTIC-CANDIDATE-CHECK-AX-026.toml",
+  "assumptions/PBR-DIAGNOSTIC-CANDIDATE-AX-027.toml",
+  "claims/PBR-OBSERVER-030.toml",
+  "crates/proofbound-runtime-diagnose-cli/src/main.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/mapping.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+  "tools/ci/check_diagnostic_candidate_resolution.py",
+  "tools/ci/test_diagnostic_candidate_resolution.py",
+]
+outputs = []
+environment_allowlist = ["PATH"]
+
+[operation]
+type = "independent-check"
+checker = "tools/ci/check_diagnostic_candidate_resolution.py"
+arguments = []
+paths = [
+  "crates/proofbound-runtime-diagnose-cli/src/main.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/mapping.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+]
+
+[resource_budget]
+time_seconds = 30
+disk_bytes = 134217728
+memory_bytes = 536870912

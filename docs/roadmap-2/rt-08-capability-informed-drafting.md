@@ -55,12 +55,17 @@ full, and gate publication on fixed-deadline terminal collection that cancels
 and fails closed when either reader withholds completion. Independently
 approved source `5d296fb` and approval-only head `17458ad` passed PR 22 Verify
 run `35039326242`; the unsigned merge `17458ad` passed exact-main Verify run
-`35042895100`. The restacked `PBR-OBSERVER-028` lifecycle source owns the same
+`35042895100`. The `PBR-OBSERVER-028` lifecycle source owns the same
 exact cgroup and one private absolute wall-time deadline across trace setup and
 observation, begins bounded termination before exposing a drain-only state, and
-requires complete terminal resources and streams before publication. It awaits
-independent exact-source review and hosted admission. Object resolution, command
-integration, the native attack corpus, and release binding remain open.
+requires complete terminal resources and streams before publication. It merged
+as `cddd8dd` after independent exact-source review and complete PR verification.
+The following consolidated RT-8 subject implements conservative stopped-tracee
+object resolution, bounded denied-path candidates, the separate `pbr-diagnose`
+executable, native diagnostic coverage, and release-inventory binding under
+`PBR-OBSERVER-029` through `PBR-OBSERVER-031`. These additions remain
+unadmitted until final exact-head review and hosted verification pass. The
+maintained all-provenance dynamic workload remains the product-exit item.
 
 **Primary owner:** Proofbound Runtime
 
@@ -187,7 +192,9 @@ unresolved diagnostic artifact events. `PBR-OBSERVER-027` is admitted on
 `17458ad`. It gives the trace session independent bounded, cancellable,
 nonblocking stdout and stderr drains before command integration.
 
-Complete the remaining RT-8 work in these claim-sized waves:
+Complete the remaining RT-8 work in this dependency order. The implementation
+can be developed as one consolidated subject, but every numbered claim retains
+its own evidence units, assumptions, falsifiers, and review findings:
 
 1. Admit `PBR-OBSERVER-028`. Retain the same child in the exact prepared cgroup
    before the spawned state becomes available; revalidate its zero resource
@@ -199,11 +206,16 @@ Complete the remaining RT-8 work in these claim-sized waves:
    deadline through exact-tree completion, cgroup cleanup, complete version 2
    resource observations, stream cancellation, and joins before any publication
    decision. The source and independent contract are implemented on the stacked
-   lifecycle branch; independent review, hosted verification, and native attack
-   evidence remain open.
+   lifecycle source. Independent review and complete PR verification passed.
+   Exact-main replay encountered only a Kani time-budget timeout after the
+   identical PR head passed; it did not expose a lifecycle source defect.
 2. Resolve a successful descriptor or executable only from the still-stopped
    tracee. Resolve a denied path only as a bounded stable candidate with before
    and after identities. Preserve races and unsupported forms as explicit gaps.
+   Deliver this as two independently admitted claims: first conservative
+   kernel-selected descriptor and post-exec identities, then bounded denied-path
+   candidates and drift detection. The successful-descriptor claim accepts
+   only a sole retained tracee; shared-table ambiguity remains unresolved.
 3. Add the separate `pbr-diagnose` command. Reuse the seed plan's exact
    production authority, publish neither output before release, and publish the
    diagnostic receipt and draft with the existing no-replace durability model.
@@ -215,9 +227,12 @@ Complete the remaining RT-8 work in these claim-sized waves:
    available provenance class, requires human completion, and produces no
    reusable production evidence.
 
-Do not merge waves 1 through 5 into one review subject. Each wave changes a
-different security boundary and must retain its own exact-head review and
-hosted admission before the next dependent wave is called complete.
+For the current prelaunch consolidation, review the complete dependent subject
+once after production code, tests, evidence, native corpus, release inventory,
+and documentation are internally consistent. Approval must enumerate
+`PBR-OBSERVER-029`, `PBR-OBSERVER-030`, and `PBR-OBSERVER-031` separately and
+confirm that evidence does not transfer between kernel-selected objects,
+advisory candidates, command orchestration, and released artifacts.
 
 ## Integration exit
 

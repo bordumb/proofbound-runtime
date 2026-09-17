@@ -1,0 +1,45 @@
+schema = "proofbound-claim/1"
+id = "PBR-OBSERVER-031"
+title = "The separate diagnostic command publishes only non-reusable artifacts"
+statement = "The separate pbr-diagnose executable strictly parses one seed execution plan, normalizes and installs only that plan's production Landlock, seccomp, cgroup, descriptor, environment-name, executable, and resource authority, requires an explicit delegated cgroup root and absent receipt and draft targets outside child write authority, drives the coupled bounded observer through terminal cleanup, converts complete stopped-tracee events into one diagnostic receipt and derived plan draft, and publishes both artifacts with create-new staging, durable file writes, no-replace links, cleanup, and parent-directory sync only after terminal publication eligibility. The receipt identifies the diagnostic profile and is non-reusable; the draft is not a policy; production pbr and pbr-native-launcher do not depend on the diagnostic crates; and the exact pbr-diagnose executable is included in the closed release inventory and native observation inputs."
+public_language = "The source contains a separate pbr-diagnose command. It reuses a validated seed plan without adding authority, runs the bounded diagnostic observer, and publishes a non-reusable receipt plus a human-review draft only after terminal cleanup. The production executables remain free of the observer dependency. Registered tests and an independent source check cover the command and release-inventory construction. Native exact-head and released-artifact behavior remain open obligations."
+subject = "rust:proofbound_runtime_diagnose_cli+release:pbr-diagnose"
+profile = "ledger"
+tier = 1
+evidence = [
+  "example-test:diagnostic-command",
+  "independent-check:diagnostic-command-contract",
+]
+assumptions = [
+  "PBR-DIAGNOSTIC-COMMAND-CHECK-AX-028",
+  "PBR-DIAGNOSTIC-COMMAND-AX-029",
+]
+open_obligations = [
+  "Run the complete source, unit, native, release, and independent evidence on both supported architectures at the exact release head.",
+  "Complete the maintained dynamic workload that displays every available provenance class and remains human-incomplete.",
+]
+out_of_scope = [
+  "A claim that one observed path is complete, safe, or representative of an unobserved run.",
+  "Atomic publication of two paths across distinct filesystems after process or host failure.",
+  "Production receipt eligibility, automatic authority generation, or proof of kernel behavior.",
+]
+source_roots = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "rust-toolchain.toml",
+  "assumptions/PBR-DIAGNOSTIC-COMMAND-CHECK-AX-028.toml",
+  "assumptions/PBR-DIAGNOSTIC-COMMAND-AX-029.toml",
+  "claims/PBR-OBSERVER-031.toml",
+  "crates/proofbound-runtime-diagnose-cli/Cargo.toml",
+  "crates/proofbound-runtime-diagnose-cli/src/main.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/adapter.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/mapping.rs",
+  "docs/adr/0008-separate-ptrace-diagnostic-observer.md",
+  "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",
+  "proofbound/evidence/diagnostic-command.toml",
+  "proofbound/evidence/diagnostic-command-contract.toml",
+  "tools/ci/check_diagnostic_command.py",
+  "tools/ci/native-linux.sh",
+  "tools/ci/test_diagnostic_command.py",
+  "tools/release/build-linux.sh",
+]

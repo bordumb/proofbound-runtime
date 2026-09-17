@@ -5,8 +5,10 @@
   RT-7 publication routes and the RT-8 diagnostic
   contract, artifact producer, observer protocol, trace startup, active event
   source, event-and-drain coupling, architecture-qualified decoder, exact event
-  mapping, and bounded stream collector are merged. The diagnostic lifecycle
-  source is restacked on current main and awaits exact review and admission. The current-integration
+  mapping, bounded stream collector, and diagnostic lifecycle are merged. The
+  consolidated RT-8 object-resolution, denied-candidate, separate-command,
+  native-corpus, and release-inventory subject is implemented locally and
+  awaits final exact-head review plus hosted admission. The current-integration
   source closes npm's missing first-publication route. External
   registry publication and every complete Roadmap 2 epic exit remain open.
 - **Date:** 2026-09-16
@@ -37,15 +39,16 @@ threat-model, ADR, claim, and evidence changes before production code.
 
 ### Execution checkpoint
 
-As of 2026-09-16, Runtime main commit `e8473bd` contains the version 2 memory
+As of 2026-09-17, Runtime main commit `cddd8dd` contains the version 2 memory
 and deterministic CBOR wave, receipt composition and acceptance, a bounded
 static plan scaffold,
 typed prelaunch diagnostics, reproducible Rust, Python, and TypeScript SDK
 packages, the network-mechanism decision, the performance baseline, and the
 pure RT-8 observer protocol. These are prerequisites or partial foundations
 for RT-7, RT-8, RT-9, and RT-13. They do not close a Roadmap 2 exit condition.
-It also contains the exact diagnostic event mapper and bounded concurrent
-stdout and stderr collector. Registry publication, consumer dogfood, the
+It also contains the exact diagnostic event mapper, bounded concurrent stdout
+and stderr collector, and bounded diagnostic lifecycle. Registry publication,
+consumer dogfood, the
 complete diagnostic planner,
 production authenticated networking, the guest profile, signing implementation, the
 receipt log, and the execution service remain open. RT-7.1 is governed by
@@ -141,8 +144,10 @@ before exposing a drain-only state, treats process-group signal failure as
 terminal, and carries one cleanup deadline through complete terminal resources
 and stream joins before publication. It awaits independent review and hosted
 verification.
-Object resolution, command integration, the native attack corpus, and release
-binding remain open.
+The dependent object-resolution, denied-candidate, command-integration, native
+diagnostic, and release-binding source is implemented on the consolidated RT-8
+branch. Admission and the maintained all-provenance dynamic workload remain
+open.
 The RT-7 current-integration source merged as `47c5ad2` and passed exact-main
 Verify run `35006872460`. RT-11's accepted signing decision merged as
 `08b8dbe` and passed exact-main Verify run `35012954812`; signing

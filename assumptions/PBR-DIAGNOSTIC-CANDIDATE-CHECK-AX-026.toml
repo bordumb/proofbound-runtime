@@ -1,0 +1,17 @@
+schema = "proofbound-assumption/1"
+id = "PBR-DIAGNOSTIC-CANDIDATE-CHECK-AX-026"
+statement = "The identified Rust compiler and standard library preserve the registered candidate-resolution types and value tests, and the identified Python interpreter and filesystem preserve the independent exact-source checker."
+category = "compiler-tcb"
+owner = "Proofbound Runtime release maintainer"
+rationale = "Typed Rust tests and an independent checker can reject registered mutations, but this repository does not prove their toolchains or execution host."
+scope = "Only the source, value-test, and independent-check interpretation of PBR-OBSERVER-030."
+affected_claims = ["PBR-OBSERVER-030"]
+review_evidence = [
+  "crates/proofbound-runtime-linux/src/trace.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/mapping.rs",
+  "tools/ci/check_diagnostic_candidate_resolution.py",
+  "tools/ci/test_diagnostic_candidate_resolution.py",
+]
+discharge_plan = "Retain the toolchain premise and narrow it through exact identities, independent review, native race fixtures, and released-artifact observations."
+source_citation = "docs/specs/0015_diagnostic_execution_and_plan_drafting.md#9-evidence-meaning"
+status = "active"

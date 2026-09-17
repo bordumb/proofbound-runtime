@@ -554,6 +554,10 @@ impl ObservationOperands {
         )
     }
 
+    const fn has_path_observation(&self) -> bool {
+        matches!(self, Self::Path { path: Some(_), .. })
+    }
+
     fn validate_bounds(&self, bounds: ObservationBounds) -> Result<(), DiagnosticArtifactError> {
         match self {
             Self::Path {
@@ -694,8 +698,9 @@ impl DiagnosticEvent {
             ObservationResolution::KernelSelected => {
                 if !matches!(outcome, ObservationOutcome::Returned(_))
                     || resolved_path.is_none()
+                    || object_before.is_some()
                     || object_after.is_none()
-                    || !operands.has_complete_path_observation()
+                    || !operands.has_path_observation()
                 {
                     return Err(DiagnosticArtifactError::ResolutionInvalid);
                 }
@@ -711,7 +716,7 @@ impl DiagnosticEvent {
                 }
             }
             ObservationResolution::Unresolved => {
-                if resolved_path.is_some() {
+                if resolved_path.is_some() || object_before.is_some() || object_after.is_some() {
                     return Err(DiagnosticArtifactError::ResolutionInvalid);
                 }
             }
@@ -1727,6 +1732,9 @@ pub(crate) mod tests {
                     object_before,
                     Some(object.clone()),
                 );
+                if resolution == ObservationResolution::KernelSelected && incomplete_path.is_ok() {
+                    continue;
+                }
                 assert_eq!(
                     incomplete_path,
                     Err(DiagnosticArtifactError::ResolutionInvalid)

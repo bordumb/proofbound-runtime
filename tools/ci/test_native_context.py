@@ -25,7 +25,7 @@ class NativeContextTests(unittest.TestCase):
             fixture.chmod(0o755)
             binaries = root / "bin"
             binaries.mkdir()
-            for name in ("pbr", "pbr-native-launcher", "pbr-verify"):
+            for name in ("pbr", "pbr-native-launcher", "pbr-verify", "pbr-diagnose"):
                 path = binaries / name
                 path.write_bytes(name.encode())
                 path.chmod(0o755)
@@ -48,6 +48,7 @@ class NativeContextTests(unittest.TestCase):
                     ("runtime", "pbr"),
                     ("launcher", "pbr-native-launcher"),
                     ("verifier", "pbr-verify"),
+                    ("diagnostic-observer", "pbr-diagnose"),
                 ],
             )
             self.assertEqual(

@@ -166,9 +166,9 @@ pub use adapter::{
 };
 pub use mapping::{DiagnosticEventMapError, DiagnosticEventMapper};
 pub use proofbound_runtime_linux::{
-    ActiveTraceEvent, TraceCapturedOperands, TraceCapturedStream, TraceObservationError,
-    TraceOutputCapture, TraceOutputLimits, TraceProcessId, TraceSyscallClass,
-    TraceSyscallInvocation, TraceTerminalCapture,
+    ActiveTraceEvent, TraceCandidateObservation, TraceCapturedOperands, TraceCapturedStream,
+    TraceObservationError, TraceOutputCapture, TraceOutputLimits, TraceProcessId,
+    TraceSyscallClass, TraceSyscallInvocation, TraceTerminalCapture,
 };
 
 #[cfg(test)]
@@ -247,7 +247,7 @@ EXPECTED_DIAGNOSE_LIB_SHA256 = (
     "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de"
 )
 EXPECTED_LINUX_LIB_SHA256 = (
-    "47ef2cdd61b7c0854f0ee9fcfb5d32ffcebfec5b5820477636a3d513a7ccf33d"
+    "10dddcf330422289b7ab1f5ac5ee9574ce63ea9c29ac86fa1ba1f1909eff6c2a"
 )
 
 
@@ -627,9 +627,10 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
                 "ObserverObservation,PreparedObserver,ReadyObserver,SpawnedObserver,"
                 "prepare_observer,};",
                 "pubusemapping::{DiagnosticEventMapError,DiagnosticEventMapper};",
-                "pubuseproofbound_runtime_linux::{ActiveTraceEvent,TraceCapturedOperands,"
-                "TraceCapturedStream,TraceObservationError,TraceOutputCapture,TraceOutputLimits,"
-                "TraceProcessId,TraceSyscallClass,TraceSyscallInvocation,TraceTerminalCapture,};",
+                "pubuseproofbound_runtime_linux::{ActiveTraceEvent,TraceCandidateObservation,"
+                "TraceCapturedOperands,TraceCapturedStream,TraceObservationError,"
+                "TraceOutputCapture,TraceOutputLimits,TraceProcessId,TraceSyscallClass,"
+                "TraceSyscallInvocation,TraceTerminalCapture,};",
             ],
         )
         self.assertNotIn("*", "".join(public_uses))

@@ -36,7 +36,10 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-OBSERVER-025` | Tier 1 syscall-decoder source admitted on exact Runtime main `4783896` | Approval-only head `db95947` passed complete exact-head run `34992273744`; exact-main run `34997195939` also passed. Kernel ABI truth, memory stability, and native attacks remain open. |
 | `PBR-OBSERVER-026` | Tier 1 event-mapping source admitted on exact Runtime main `a89b92d` | The mapper preserves the closed trace identity, operands, and outcome fields, assigns contiguous sequence values, and keeps object resolution unresolved. Exact-head Verify run `35018691928` and exact-main run `35025687602` passed. Linux truth, object resolution, command integration, native attacks, and release binding remain open. |
 | `PBR-OBSERVER-027` | Tier 1 bounded-stream source admitted on exact Runtime main `17458ad` | The trace starts independent stdout and stderr drains after spawn, retains bounded prefixes while reading to EOF, and exposes captures only after terminal tree handling. Exact-head PR 22 run `35039326242` and exact-main run `35042895100` passed. Linux pipe progress, cgroup placement, wall time, command integration, native attacks, and release binding remain open. |
-| `PBR-OBSERVER-028` | Tier 1 lifecycle source pending independent review and hosted verification | The trace source binds one exact cgroup version 2 owner and one private absolute execution deadline, begins bounded termination before it exposes a drain-only state, and gates publication on complete terminal resources and streams. Native kernel, clock, cgroup, scheduler, pipe, command, and release behavior remain open. |
+| `PBR-OBSERVER-028` | Tier 1 lifecycle source admitted on exact Runtime main `cddd8dd` | The trace source binds one exact cgroup version 2 owner and one private absolute execution deadline, begins bounded termination before it exposes a drain-only state, and gates publication on complete terminal resources and streams. The identical PR head passed all lanes; exact-main replay later hit only the bounded authority proof's time budget. Native kernel, clock, cgroup, scheduler, pipe, command, and release behavior remain open. |
+| `PBR-OBSERVER-029` | Tier 1 object-resolution source pending exact-head review and hosted verification | Successful descriptor and post-exec observations become kernel-selected only from one exact stopped tracee with a retained object, normalized live path, and complete identity. Linux truth, native attacks, command integration, and release behavior remain open. |
+| `PBR-OBSERVER-030` | Tier 1 candidate-resolution source pending exact-head review and hosted verification | Failed path operations produce only advisory stable candidates after two bounded root-confined observations agree; drift and hop exhaustion remain explicit gaps. Linux pathname and race completeness remain open. |
+| `PBR-OBSERVER-031` | Tier 1 separate-command source pending exact-head review and hosted verification | `pbr-diagnose` reuses the exact seed authority, retains terminal gating, and uses durable no-replace publication for non-reusable artifacts. Native and exact released-artifact behavior remain open. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -837,6 +840,63 @@ integration, and release binding remain open.
 `PBR-DIAGNOSTIC-LIFECYCLE-AX-023` retains those native runtime premises.
 `PBR-DIAGNOSTIC-LIFECYCLE-CHECK-AX-021` separately retains only compiler,
 standard-library, and independent-checker premises.
+
+## PBR-OBSERVER-029
+
+The current subject is the successful-filesystem-object resolver shared by the
+separate Linux trace and diagnostic mapper. It operates while the exact tracee
+is stopped. Returned descriptors are eligible only for a successful registered
+open operation, a Linux-width nonnegative descriptor, and one retained tracee.
+Post-exec identity is eligible only after exact exec reconciliation. The
+resolver retains an `O_PATH` object before it reads the procfs link and complete
+`statx` identity. Deleted, non-UTF-8, over-bound, special, incomplete, or
+ambiguous results remain unresolved.
+
+Rust tests exercise the closed eligibility and mapping decisions. The
+independent checker requires the retained-handle, stopped-tracee, sole-tracee,
+complete-identity, normalized-path, and artifact-consistency guards. Its
+mutations remove the sole-tracee guard, normalized-path check, or retained
+`O_PATH` open. This is source evidence. Linux ptrace, procfs, `statx`, mount,
+descriptor-table, pathname, scheduler, command, native, and released-artifact
+behavior remain assumptions or open obligations.
+
+## PBR-OBSERVER-030
+
+The current subject is the advisory denied-path candidate resolver. A failed
+registered path operation is eligible only for one stopped retained tracee. A
+manual walk anchors absolute paths at the tracee root and relative paths at the
+tracee cwd or exact directory descriptor, confines parent traversal to that
+root, and stops at the declared symlink-hop limit. Two complete observations
+must agree on path, symlink count, and complete object identity. Drift and
+symlink exhaustion remain typed gaps and unresolved artifact events.
+
+Rust tests cover root confinement, hop exhaustion, stable mapping, and identity
+requirements. The independent checker requires two resolution passes, equality,
+root confinement, a closed hop bound, advisory-only mapping, and propagation of
+the two typed gaps. Its mutations bypass equality, root confinement, or the
+advisory resolution class. This evidence does not prove Linux pathname or
+filesystem behavior and does not identify the object selected by a failed
+syscall.
+
+## PBR-OBSERVER-031
+
+The current subject is the separate `pbr-diagnose` command plus its release
+inventory construction. The command strictly parses one seed plan, reuses its
+normalized production authority, installs the same Landlock, seccomp, cgroup,
+descriptor, environment-name, executable, and resource boundary, and adds only
+the separate observer. It requires an explicit delegated cgroup root and absent
+receipt and draft targets outside child write authority. Terminal protocol
+eligibility precedes bounded artifact construction and create-new, durable,
+no-replace publication. The production command and launcher do not depend on
+diagnostic crates.
+
+Rust tests cover the closed command arguments and observation bounds. The
+independent checker requires seed-authority reuse, boundary constructors,
+terminal gating, absent targets, durable no-replace publication, production
+dependency separation, and release inventory inclusion. Its mutations weaken
+create-new publication, terminal eligibility, or child-write exclusion. Native
+exact-head and released-artifact observations are still required before public
+language can describe the command as released.
 
 ## Bounded-domain declaration guard
 

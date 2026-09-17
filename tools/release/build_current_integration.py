@@ -38,6 +38,7 @@ RUNTIME_MEMBERS = (
     "pbr-native-launcher",
     "pbr-verify",
     "pbr-compose",
+    "pbr-diagnose",
 )
 RUNTIME_EXECUTABLES = RUNTIME_MEMBERS[1:]
 RUNTIME_ORDER = tuple(
@@ -412,7 +413,7 @@ def inspect_runtime_bundle(
             raise IntegrationError(f"Runtime release manifest {field} mismatch")
     text(manifest["toolchain"], "Runtime release toolchain")
     raw_artifacts = manifest["artifacts"]
-    if not isinstance(raw_artifacts, list) or len(raw_artifacts) != 4:
+    if not isinstance(raw_artifacts, list) or len(raw_artifacts) != len(RUNTIME_EXECUTABLES):
         raise IntegrationError("Runtime release executable inventory mismatch")
     executables = []
     for index, raw in enumerate(raw_artifacts):

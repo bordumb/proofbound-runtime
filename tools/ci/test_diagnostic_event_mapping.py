@@ -47,6 +47,11 @@ def implementation(source: str, signature: str) -> str:
 def assert_mapping_contract(mapping: str, trace: str, artifact: str) -> None:
     map_event = implementation(mapping, "pub fn map(")
     map_parts = implementation(mapping, "fn map_parts(")
+    map_resolution = implementation(mapping, "fn map_object_resolution(")
+    map_selected = implementation(mapping, "fn map_selected_object(")
+    map_selected_parts = implementation(mapping, "fn map_selected_parts(")
+    map_candidate = implementation(mapping, "fn map_candidate_object(")
+    map_candidate_parts = implementation(mapping, "fn map_candidate_parts(")
     map_operands = implementation(mapping, "fn map_operands(")
     map_outcome = implementation(mapping, "fn map_outcome(")
     map_architecture = implementation(mapping, "const fn map_architecture(")
@@ -71,15 +76,51 @@ def assert_mapping_contract(mapping: str, trace: str, artifact: str) -> None:
     ]:
         if required not in mapping:
             raise AssertionError(f"missing event mapping term: {required}")
-    if "ObservationResolution::Unresolved" not in map_parts:
-        raise AssertionError("mapped trace events must not invent object resolution")
-    for forbidden in [
-        "ObservationResolution::KernelSelected",
-        "ObservationResolution::StableCandidate",
-        "unsafe",
-        "from_utf8_lossy",
-        "payload.clone()",
+    for required in [
+        "selected_object.as_ref()",
+        "candidate.as_ref()",
+        "map_object_resolution(selected_object, candidate)",
     ]:
+        if required not in mapping:
+            raise AssertionError(f"missing selected-object mapping term: {required}")
+    for required in [
+        "ObservationResolution::Unresolved",
+        "ObservationResolution::KernelSelected",
+        "String::from_utf8(path.to_vec())",
+        "!is_normalized_absolute_path(&path)",
+        'path.ends_with(" (deleted)")',
+        "ObservedObjectIdentity::new(",
+    ]:
+        if required not in map_selected_parts:
+            raise AssertionError(f"missing conservative resolution term: {required}")
+    for required in [
+        "String::from_utf8(path.to_vec())",
+        "!is_normalized_absolute_path(&path)",
+        'path.ends_with(" (deleted)")',
+        "before != after",
+        "ObservationResolution::StableCandidate",
+    ]:
+        if required not in map_candidate_parts:
+            raise AssertionError(f"missing conservative candidate term: {required}")
+    for required in [
+        "TraceCandidateObservation::Stable",
+        "TraceCandidateObservation::IdentityDrift",
+        "TraceCandidateObservation::SymlinkLimit",
+        "ObservationResolution::Unresolved",
+    ]:
+        if required not in map_resolution:
+            raise AssertionError(f"missing candidate-resolution term: {required}")
+    for required in [
+        "ObservationResolution::StableCandidate",
+        "candidate.object_before()",
+        "candidate.object_after()",
+        "candidate.symlink_hops()",
+    ]:
+        if required not in mapping:
+            raise AssertionError(f"missing candidate mapping term: {required}")
+    if "map_candidate_parts(" not in map_candidate:
+        raise AssertionError("candidate mapping must use the conservative parts mapper")
+    for forbidden in ["unsafe", "from_utf8_lossy", "payload.clone()"]:
         if forbidden in mapping:
             raise AssertionError(f"forbidden mapping term: {forbidden}")
     if "String::from_utf8(path.clone())" not in map_operands:
@@ -141,17 +182,23 @@ def assert_mapping_contract(mapping: str, trace: str, artifact: str) -> None:
 
 
 EXPECTED_BODIES = {
-    "map": "adf5d35f39347534fc2901469a569dd13e5086735111e8af7f74996e108b8055",
+    "map": "9292cc83fd66379a9aef0aa0b7dc16c307749dc4b1194f14ec9dcc08e3335661",
     "map-architecture": "ba1f1c66f0198f7609d47576f86b6b6ddc764eb26a5220249db9de184dcf0fd0",
     "map-class": "e150fb281d68b0250f2c6fff2d5900da2055ee47276dd72e890d01d16307a35b",
-    "map-operands": "e3210d830927931fcde6ba91e39bc14d32b0c14530d4a479ed4e2745049dad4f",
+    "map-operands": "fefb34a5dc82081c8068ddb3aeece12c65342c745a689ff11f8428b2438ab4bd",
     "map-outcome": "645dda6c1e900ad8c4235e13ec0cde9b22dd8f164210cf9f46bd0915554a26eb",
-    "map-parts": "5d517272ea0c187fa28d48d26a03d089367833b5c07253d1a3af5d10a83cf8ec",
+    "map-parts": "a67d40aa0b66342ef7978c342f303dcfa593c89956845f5c74cae117eea08205",
+    "map-object-resolution": "7fa99b1fc4a1e3ce52cc788020305c2513814a0e7a8c22a0d47901758717fb5c",
+    "map-candidate-object": "e14fdd1d36d7af318d886f742c769df2bc5ffb530448cf9a5980c48006243f61",
+    "map-candidate-parts": "a54d5f175dda6ecc269a62c73a1fc96b3a4c4e29069153b10dd48f4c97fa8948",
+    "map-selected-object": "4ed6700c2c0e7dda1b86344c8559201147109b09d374412d28490ff5fcf29a11",
+    "map-selected-parts": "5c34446ad2bce89317af19098521ce48ea49e11b9cb0b3f0326f3260b9552352",
+    "normalized-path": "8dd9fc40ce325d6210ab52dc5129403c99541f94b38ef3f85226bad548723ebd",
     "socket-family": "bffe838f3e4eb69b1a34aa55f705f5da8719e1b527d19411093be8de6c074e9d",
 }
 EXPECTED_FILES = {
-    "artifact": "ad7cce45d286623dcfd55c21189cb7d58e29f1943960d0a061d6f85c2640baa3",
-    "claim": "ad703e8f87b620838974f7a1f8530b2ca1d37b18a22423b7d2820a2a702a0205",
+    "artifact": "bb353a2c06312a034bfba7ed687430e102284f05495fee58df3ee88acc056bee",
+    "claim": "b98715b1db470d5a5f1651b90a67c77f33a1e93ca3a002ec096f6d3f6b36bb1e",
     "contract-evidence": "84852872175ba02a3c936e52f4513f2ff04a0229b4b83f57b90870f5a0d26097",
     "core-diagnostic": "e0a3f1e3204c5dc5b3b152e6432737e90bf5af93f5024a4e6f1d1c25a4f42918",
     "core-lib": "2039d8c789844cddaaabbf432a0a6ef465f77300577f3b57922d7bcbcc930450",
@@ -160,16 +207,16 @@ EXPECTED_FILES = {
     "decode-assumption": "0a71deec98c2cb281170fe85d911eb6dba5947161e8130554b5b922f47457847",
     "diagnose-lib": "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de",
     "diagnose-manifest": "097ec2b4cef98a43bee09c64c289251ab2060808d4fb8e050de3077f541ff2f1",
-    "lib": "ccad4545cfd41802c32d66a692d65aca9a69d0e59b0a3cb7c5c34da42830a198",
-    "linux-lib": "47ef2cdd61b7c0854f0ee9fcfb5d32ffcebfec5b5820477636a3d513a7ccf33d",
+    "lib": "8859f99339377b7034d43dd9d4fd20713824b5ad2708cd52d76412272a3858e2",
+    "linux-lib": "10dddcf330422289b7ab1f5ac5ee9574ce63ea9c29ac86fa1ba1f1909eff6c2a",
     "linux-manifest": "e7311e3cada91690da87f42910c96e133538439956a0db78de79dea9294d6c9b",
-    "lock": "376572c5d111f5ea72e38667b5813a7c051e9fa128d5af355468e5294889a0c6",
+    "lock": "5fb7c8b16c4b865630a8e7e80f16919d443c3c276970959cd80ab26581229640",
     "map-assumption": "e787e8a57b35b174462b2a960a7a91be63e2f2d83da569ecdb1beb26d94b28bd",
     "manifest": "ef7c613a66781c4b64d75435524166329b5239b8172f97b28cff2d6d609c8d78",
-    "mapping": "ea3c2765a503708ad4a695224027099db1b9e1cb3ca2a2b3f80e4fcd0c9e87c4",
-    "root-manifest": "1ea75287f62129c6b15038b0c45df42e616fc4c92e59e61bc03358746fd5d7d6",
+    "mapping": "b81e3a54814335fbc3e65c24ad906eb66f5d03c75c18c288416d2bbb51dc9148",
+    "root-manifest": "8cd67ea78720c5637340140ac6ea94a9d76ddeaf4fb0df40881c4e8dab371466",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "12c7751a62c9fb4f5b3c70f6668b3b9baf2ad0dce25453d0e7eb82c9226fd9e0",
+    "trace": "e5df3c91a1838a62dc2d55575c005bd68dceec965d0a82199eebfc5c8e3b9cfd",
     "unit-evidence": "c1628a6afa1a191c17c71debd3a8e4f224e31e406f6c280b5ccb1e03371bfa92",
 }
 
@@ -186,8 +233,14 @@ class DiagnosticEventMappingContractTests(unittest.TestCase):
     def test_mapping_mutations_are_rejected(self) -> None:
         mutations = [
             self.mapping.replace(
-                "ObservationResolution::Unresolved",
+                "!is_normalized_absolute_path(&path)",
+                "false",
+                1,
+            ),
+            self.mapping.replace(' || path.ends_with(" (deleted)")', "", 1),
+            self.mapping.replace(
                 "ObservationResolution::KernelSelected",
+                "ObservationResolution::StableCandidate",
                 1,
             ),
             self.mapping.replace("checked_add(1)", "wrapping_add(1)", 1),
@@ -222,6 +275,24 @@ class DiagnosticEventMappingContractTests(unittest.TestCase):
             "map-operands": implementation(self.mapping, "fn map_operands("),
             "map-outcome": implementation(self.mapping, "fn map_outcome("),
             "map-parts": implementation(self.mapping, "fn map_parts("),
+            "map-object-resolution": implementation(
+                self.mapping, "fn map_object_resolution("
+            ),
+            "map-candidate-object": implementation(
+                self.mapping, "fn map_candidate_object("
+            ),
+            "map-candidate-parts": implementation(
+                self.mapping, "fn map_candidate_parts("
+            ),
+            "map-selected-object": implementation(
+                self.mapping, "fn map_selected_object("
+            ),
+            "map-selected-parts": implementation(
+                self.mapping, "fn map_selected_parts("
+            ),
+            "normalized-path": implementation(
+                self.mapping, "fn is_normalized_absolute_path("
+            ),
             "socket-family": implementation(self.mapping, "fn socket_address_family("),
         }
         actual_bodies = {

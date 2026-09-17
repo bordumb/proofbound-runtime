@@ -30,7 +30,8 @@ production receipt schema. `pbr run` always selects `production`.
 The first command is:
 
 ```text
-pbr-diagnose --plan SEED_PLAN --receipt ABSENT_RECEIPT --draft ABSENT_DRAFT
+pbr-diagnose --plan SEED_PLAN --receipt ABSENT_RECEIPT --draft ABSENT_DRAFT \
+  --cgroup-root DELEGATED_CGROUP_ROOT
 ```
 
 The seed plan must already pass the normal strict plan parser and `plan check`.
@@ -38,6 +39,14 @@ It supplies the only authority available during the observed execution. The
 diagnostic supervisor does not add a path, environment name, descriptor,
 process allowance, resource allowance, or network authority when the target
 encounters a denial.
+
+The delegated cgroup root is explicit invocation input. The command does not
+discover one from ambient environment or user configuration. The first command
+uses fixed declared observation bounds of 100,000 total events, 10,000 events
+per process, 256 lifetime processes, 4,096 path bytes, 4,096 tracee-string
+bytes, 256 socket-address bytes, 40 symlink hops, and 16 MiB for each canonical
+diagnostic artifact. A later interface may expose stricter values but must not
+silently increase these bounds.
 
 Both output paths must be absent regular-file candidates outside the child
 write authority. Publication uses the existing no-replace durability pattern.
@@ -300,6 +309,29 @@ Only `kernel-selected` describes the target actually selected by the traced
 syscall. A `stable-candidate` remains advisory. Secret environment values,
 request bodies, response bodies, file contents, and credential material are
 never read or recorded.
+
+The initial `kernel-selected` resolver is conservative. It runs before the
+active trace can resume the event's exact stopped tracee. A successful
+`open`, `openat`, `openat2`, or `creat` result is eligible only when it is a
+nonnegative Linux descriptor value and that tracee is the only retained member
+of the observed process tree. The single-tracee condition excludes another
+retained process or thread that could share and replace the descriptor table
+during observation. The resolver opens the exact `/proc/<pid>/fd/<fd>` object,
+retains that handle while it reads the procfs link, and reads the device,
+inode, mode, and mount identity from the retained handle. A successful
+`execve` or `execveat` event is eligible only after exec identity
+reconciliation removes superseded threads; the resolver retains the exact
+`/proc/<pid>/exe` object before the stopped post-exec tracee can resume.
+
+The retained link must name a valid UTF-8 normalized absolute path within the
+declared path bound. Deleted targets, non-filesystem procfs link forms, missing
+mount identity, identity-read failure, descriptor-width mismatch, multiple
+retained tracees for a descriptor result, or any other ambiguity produces
+`unresolved`. It does not guess an object and does not fail the production
+boundary. `kernel-selected` requires the supplied operand and retained object
+path, but it does not invent a followed-symlink count. A symlink-hop count is
+present only when the separate denied-path candidate resolver actually walks
+the supplied path.
 
 The implementation fixes bounds for total processes, total events, events per
 process, tracee string bytes, path bytes, symlink hops, socket-address bytes,

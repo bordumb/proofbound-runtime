@@ -67,7 +67,7 @@ if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
   if [[ "$runtime_bins_prebuilt" != "1" ]]; then
     cargo build --locked --workspace
   fi
-  for binary in pbr pbr-native-launcher pbr-verify; do
+  for binary in pbr pbr-native-launcher pbr-verify pbr-diagnose; do
     test -x "$runtime_bin_directory/$binary"
   done
   e2e_root="$(mktemp -d "$PWD/target/native-cli-e2e.XXXXXX")"
@@ -345,6 +345,69 @@ with os.fdopen(descriptor, "w", encoding="utf-8") as destination:
 ' "$native_diagnostics" "$expected_architecture" "$(git rev-parse HEAD)" \
     "${diagnostic_cases[@]}"
 
+  diagnostic_plan="$e2e_root/diagnostic-plan.cbor"
+  diagnostic_receipt="$e2e_root/diagnostic-receipt.json"
+  diagnostic_draft="$e2e_root/diagnostic-draft.json"
+  diagnostic_result="$e2e_root/diagnostic-result.json"
+  python3 tools/ci/encode_plan_v2.py \
+    --output "$diagnostic_plan" \
+    --id ci.native-diagnostic-e2e \
+    --executable "$PROOFBOUND_NATIVE_FIXTURE" \
+    --argument read-denied \
+    --argument /etc/passwd \
+    --working-directory . \
+    --write diagnostic-output \
+    --execute "$PROOFBOUND_NATIVE_FIXTURE" \
+    --processes 1 \
+    --wall-time-ms 5000 \
+    --stdout-bytes 4096 \
+    --stderr-bytes 4096 \
+    --memory-bytes 268435456 \
+    --swap-bytes 0
+  "$runtime_bin_directory/pbr-diagnose" \
+    --plan "$diagnostic_plan" \
+    --receipt "$diagnostic_receipt" \
+    --draft "$diagnostic_draft" \
+    --cgroup-root "$PROOFBOUND_CGROUP_ROOT" >"$diagnostic_result"
+  python3 -c '
+import json
+import sys
+
+result_path, receipt_path, draft_path = sys.argv[1:]
+with open(result_path, encoding="utf-8") as source:
+    result = json.load(source)
+with open(receipt_path, encoding="utf-8") as source:
+    receipt = json.load(source)
+with open(draft_path, encoding="utf-8") as source:
+    draft = json.load(source)
+assert result["schema"] == "proofbound-runtime-diagnose-result/1"
+assert result["completion"] == "complete"
+assert receipt["schema"] == "proofbound-runtime-diagnostic-receipt/1"
+assert receipt["execution_profile"] == "diagnostic"
+assert receipt["safe_policy"] is False
+assert receipt["reusable"] is False
+assert receipt["completion"] == "complete"
+resolutions = {event["resolution"] for event in receipt["events"]}
+assert "kernel-selected" in resolutions
+assert "stable-candidate" in resolutions
+assert any(event["resolved_path"] == "/etc/passwd" for event in receipt["events"])
+assert draft["schema"] == "proofbound-runtime-plan-draft/1"
+assert draft["safe_policy"] is False
+' "$diagnostic_result" "$diagnostic_receipt" "$diagnostic_draft"
+  diagnostic_commitment="sha256:$(sha256sum "$diagnostic_receipt" | cut -d' ' -f1)"
+  set +e
+  "$runtime_bin_directory/pbr-verify" \
+    --expected-commitment "$diagnostic_commitment" \
+    "$diagnostic_receipt" \
+    >"$e2e_root/diagnostic-verification.stdout" \
+    2>"$e2e_root/diagnostic-verification.stderr"
+  diagnostic_verification_status=$?
+  set -e
+  test "$diagnostic_verification_status" -eq 7
+  test ! -s "$e2e_root/diagnostic-verification.stdout"
+  test "$(<"$e2e_root/diagnostic-verification.stderr")" = \
+    'pbr-verify: profile.diagnostic.not-reusable'
+
   "$runtime_bin_directory/pbr" run \
     --plan "$plan" \
     --receipt "$receipt" \
@@ -417,6 +480,13 @@ assert result["commitment"].startswith("sha256:")
     install -m 0644 "$verification" "$evidence_directory/verification.json"
     install -m 0644 "$native_diagnostics" \
       "$evidence_directory/native-run-diagnostics.json"
+    install -m 0644 "$diagnostic_plan" "$evidence_directory/diagnostic-plan.cbor"
+    install -m 0644 "$diagnostic_receipt" \
+      "$evidence_directory/diagnostic-receipt.json"
+    install -m 0644 "$diagnostic_draft" \
+      "$evidence_directory/diagnostic-draft.json"
+    install -m 0644 "$diagnostic_result" \
+      "$evidence_directory/diagnostic-result.json"
     printf '%s\n' "$commitment" >"$evidence_directory/receipt-commitment.txt"
     python3 -c '
 import json

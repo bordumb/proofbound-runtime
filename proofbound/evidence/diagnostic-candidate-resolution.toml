@@ -1,0 +1,35 @@
+schema = "proofbound-evidence-unit/1"
+id = "diagnostic-candidate-resolution"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-OBSERVER-030"]
+tier = 0
+expected_inventory = [
+  "proofbound_runtime_linux::trace::tests::candidate_walk_is_root_confined_and_symlink_bounded",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "rust-toolchain.toml",
+  "claims/PBR-OBSERVER-030.toml",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-linux"
+manifest = "Cargo.toml"
+targets = ["--lib"]
+paths = []
+arguments = [
+  "--features=diagnostic-observer",
+  "trace::tests::candidate_walk_is_root_confined_and_symlink_bounded",
+]
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

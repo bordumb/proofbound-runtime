@@ -1,0 +1,32 @@
+schema = "proofbound-evidence-unit/1"
+id = "diagnostic-object-mapping"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-OBSERVER-029"]
+tier = 0
+expected_inventory = [
+  "proofbound_runtime_diagnose_linux::mapping::tests::selected_object_mapping_accepts_only_normalized_live_filesystem_paths",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "rust-toolchain.toml",
+  "claims/PBR-OBSERVER-029.toml",
+  "crates/proofbound-runtime-diagnose/src/artifact.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/mapping.rs",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-diagnose-linux"
+manifest = "Cargo.toml"
+targets = ["--lib"]
+paths = []
+arguments = ["mapping::tests::selected_object_mapping_accepts_only_normalized_live_filesystem_paths"]
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

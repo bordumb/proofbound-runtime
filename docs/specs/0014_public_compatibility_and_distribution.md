@@ -264,7 +264,7 @@ The current Runtime-only record contains exactly:
 
 - the exact Runtime source revision and product label;
 - the release bundle and separate acceptor artifact identity for both
-  `linux/aarch64` and `linux/x86_64`, plus the exact four executable identities
+  `linux/aarch64` and `linux/x86_64`, plus the exact five executable identities
   read and checked from each bundle's closed release manifest;
 - the exact four selected registry package observations;
 - separate emitted and accepted schema inventories for plans, execution
@@ -286,7 +286,7 @@ inventory in a separately reviewed schema wave.
 
 The release workflow builds the current-integration record only after all four
 selected packages pass anonymous registry retrieval and exact-byte comparison.
-The producer consumes the closed registry observation, the four Runtime
+The producer consumes the closed registry observation, the five Runtime
 artifact files, and the canonical Runtime-owned Proofbound pin. A separately
 owned decoder and semantic validator then compares the record with every input
 before either projection is retained.

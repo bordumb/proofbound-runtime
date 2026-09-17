@@ -26,7 +26,13 @@ TARGETS = {
     "aarch64": "aarch64-unknown-linux-gnu",
     "x86_64": "x86_64-unknown-linux-gnu",
 }
-RUNTIME_EXECUTABLES = ("pbr", "pbr-native-launcher", "pbr-verify", "pbr-compose")
+RUNTIME_EXECUTABLES = (
+    "pbr",
+    "pbr-native-launcher",
+    "pbr-verify",
+    "pbr-compose",
+    "pbr-diagnose",
+)
 
 
 def write_tar(path: Path, members: dict[str, bytes]) -> None:
@@ -241,7 +247,9 @@ class CurrentIntegrationTests(unittest.TestCase):
                 value["runtime"]["source_revision"], bytes.fromhex(REVISION)
             )
             self.assertEqual(len(value["runtime"]["artifacts"]), 4)
-            self.assertEqual(len(value["runtime"]["executables"]), 8)
+            self.assertEqual(
+                len(value["runtime"]["executables"]), 2 * len(RUNTIME_EXECUTABLES)
+            )
             self.assertEqual(
                 [item["name"] for item in value["runtime"]["executables"]],
                 [*RUNTIME_EXECUTABLES, *RUNTIME_EXECUTABLES],

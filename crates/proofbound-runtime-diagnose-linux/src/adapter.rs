@@ -186,6 +186,7 @@ impl ReadyObserver {
         let capture_limits = TraceCaptureLimits::new(
             self.protocol.path_byte_limit(),
             self.protocol.socket_address_byte_limit(),
+            self.protocol.symlink_hop_limit(),
             self.protocol.tracee_string_byte_limit(),
         )?;
         let mut protocol = self.protocol;

@@ -59,9 +59,10 @@ pub use supervisor::{
 pub use trace::{
     AcknowledgedTraceStop, ActiveTrace, ActiveTraceEvent, BoundaryRunning, CompletedTrace,
     DrainingTrace, InitialExecStop, LauncherPause, PreparedTraceCommand, SpawnedTrace,
-    TraceCaptureLimits, TraceCapturedOperands, TraceCapturedStream, TraceDrainObservation,
-    TraceDrainReport, TraceObservationError, TraceOutputCapture, TraceOutputLimits,
-    TraceProcessCreationKind, TraceProcessId, TraceProcessLimit, TraceReady, TraceStartupError,
+    TraceCandidateObject, TraceCandidateObservation, TraceCaptureLimits, TraceCapturedOperands,
+    TraceCapturedStream, TraceDrainObservation, TraceDrainReport, TraceObjectIdentity,
+    TraceObservationError, TraceOutputCapture, TraceOutputLimits, TraceProcessCreationKind,
+    TraceProcessId, TraceProcessLimit, TraceReady, TraceSelectedObject, TraceStartupError,
     TraceSyscallClass, TraceSyscallInvocation, TraceTerminalCapture, TraceTermination,
     prepare_traced_launcher,
 };

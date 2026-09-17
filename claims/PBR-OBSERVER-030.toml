@@ -1,0 +1,46 @@
+schema = "proofbound-claim/1"
+id = "PBR-OBSERVER-030"
+title = "Denied diagnostic paths retain only bounded stable candidates"
+statement = "For the separate Linux diagnostic observer and event mapper, a failed path operation can use stable-candidate only when the exact stopped tracee is the sole retained tracee, its absolute or descriptor-relative operand resolves below the tracee root through no more than the declared symlink-hop bound, and two complete resolution passes retain the same normalized tracee-root-relative path, followed-symlink count, device, inode, mode, and mount identity. Identity drift remains unresolved and adds the identity-drift gap; symlink exhaustion remains unresolved and adds the symlink-limit gap; inaccessible, missing, non-UTF-8, deleted, escaped, unsupported, or ambiguous candidates remain unresolved. A candidate is advisory and never becomes kernel-selected identity, Runtime authority, or production evidence."
+public_language = "The diagnostic observer can report an advisory candidate for a denied filesystem operation only after two bounded stopped-tracee resolution passes agree. Drift and symlink-limit exhaustion remain explicit gaps. Unsupported cases stay unresolved. Registered tests and independent source checks cover this bounded implementation; they do not prove Linux pathname, procfs, mount, filesystem, scheduler, or race behavior."
+subject = "rust:proofbound_runtime_linux::trace+proofbound_runtime_linux::sys+proofbound_runtime_diagnose_linux::mapping+proofbound_runtime_diagnose::artifact"
+profile = "ledger"
+tier = 1
+evidence = [
+  "example-test:diagnostic-candidate-resolution",
+  "example-test:diagnostic-candidate-mapping",
+  "independent-check:diagnostic-candidate-resolution-contract",
+]
+assumptions = [
+  "PBR-DIAGNOSTIC-CANDIDATE-CHECK-AX-026",
+  "PBR-DIAGNOSTIC-CANDIDATE-AX-027",
+]
+open_obligations = [
+  "Run the complete source, compilation, unit, independent-check, and native evidence in hosted exact-head verification before merge.",
+  "Exercise stable and racing symlinks, relative cwd and directory-descriptor paths, root confinement, inaccessible components, deletion, rename, inode replacement, and hop exhaustion on both supported architectures.",
+  "Bind candidate gaps and events through the separate diagnostic command and released artifact.",
+]
+out_of_scope = [
+  "Proof that Linux pathname resolution, procfs anchors, O_PATH, statx, mount identifiers, filesystem identity, scheduling, or two-pass race detection are complete or correct.",
+  "A claim that stable-candidate is the object selected by the failed syscall.",
+  "Authority inference, production receipt meaning, or unbounded race freedom.",
+]
+source_roots = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "rust-toolchain.toml",
+  "assumptions/PBR-DIAGNOSTIC-CANDIDATE-CHECK-AX-026.toml",
+  "assumptions/PBR-DIAGNOSTIC-CANDIDATE-AX-027.toml",
+  "claims/PBR-OBSERVER-030.toml",
+  "crates/proofbound-runtime-diagnose/src/artifact.rs",
+  "crates/proofbound-runtime-diagnose-linux/src/mapping.rs",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+  "docs/adr/0008-separate-ptrace-diagnostic-observer.md",
+  "docs/specs/0015_diagnostic_execution_and_plan_drafting.md",
+  "proofbound/evidence/diagnostic-candidate-mapping.toml",
+  "proofbound/evidence/diagnostic-candidate-resolution.toml",
+  "proofbound/evidence/diagnostic-candidate-resolution-contract.toml",
+  "tools/ci/check_diagnostic_candidate_resolution.py",
+  "tools/ci/test_diagnostic_candidate_resolution.py",
+]

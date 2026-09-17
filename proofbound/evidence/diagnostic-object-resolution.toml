@@ -1,0 +1,35 @@
+schema = "proofbound-evidence-unit/1"
+id = "diagnostic-object-resolution"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-OBSERVER-029"]
+tier = 0
+expected_inventory = [
+  "proofbound_runtime_linux::trace::tests::selected_descriptor_requires_one_tracee_supported_success_and_linux_width",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "rust-toolchain.toml",
+  "claims/PBR-OBSERVER-029.toml",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-linux"
+manifest = "Cargo.toml"
+targets = ["--lib"]
+paths = []
+arguments = [
+  "--features=diagnostic-observer",
+  "trace::tests::selected_descriptor_requires_one_tracee_supported_success_and_linux_width",
+]
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

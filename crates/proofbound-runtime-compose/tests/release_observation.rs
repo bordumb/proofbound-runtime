@@ -310,3 +310,20 @@ fn observes_composer_release() {
     assert_manifest_artifact(&bundle, "pbr-compose");
     assert_version(&bundle.join("pbr-compose"), "pbr-compose");
 }
+
+#[test]
+fn observes_diagnostic_release() {
+    let (_architecture, bundle, evidence) = release_paths();
+    assert_manifest_artifact(&bundle, "pbr-diagnose");
+    assert_version(&bundle.join("pbr-diagnose"), "pbr-diagnose");
+    let receipt = read_json(&evidence.join("diagnostic-receipt.json"));
+    let draft = read_json(&evidence.join("diagnostic-draft.json"));
+    let result = read_json(&evidence.join("diagnostic-result.json"));
+    assert_eq!(receipt["schema"], "proofbound-runtime-diagnostic-receipt/1");
+    assert_eq!(receipt["execution_profile"], "diagnostic");
+    assert_eq!(receipt["safe_policy"], false);
+    assert_eq!(receipt["reusable"], false);
+    assert_eq!(draft["schema"], "proofbound-runtime-plan-draft/1");
+    assert_eq!(draft["safe_policy"], false);
+    assert_eq!(result["schema"], "proofbound-runtime-diagnose-result/1");
+}

@@ -33,6 +33,9 @@ same path.
 ## Decision
 
 RT-8 uses a separate `pbr-diagnose` executable with a ptrace-based observer.
+It accepts the seed plan, absent receipt and draft targets, and one explicit
+delegated cgroup root. It does not read a cgroup location from ambient
+configuration.
 The production `pbr` and `pbr-native-launcher` executables contain no observer
 entry point and do not depend on the diagnostic crate. A source-closure check
 enforces this separation.
@@ -176,6 +179,18 @@ resolution state. A best-effort supervisor resolution is advisory and carries
 the before and after object identities used to detect drift. It is not called
 the kernel-selected target. A stable symlink fixture may produce a resolved
 candidate; a race or inaccessible component remains unresolved.
+
+The first successful-object resolver deliberately accepts fewer cases than
+Linux can express. A returned descriptor is resolved only when the stopped
+tracee is the sole retained tracee, so no observed peer can share and replace
+its descriptor table during inspection. The resolver retains the procfs object
+handle before it reads the link and obtains device, inode, mode, and mount
+identity from that retained handle. A successful exec is resolved from the
+stopped post-exec image only after trace identity reconciliation removes
+superseded threads. A non-UTF-8, non-absolute, deleted, special, over-bound, or
+otherwise ambiguous procfs target remains unresolved. This wave does not infer
+a symlink-hop count from a kernel-selected descriptor or executable. The later
+denied-path candidate resolver owns bounded symlink walking and drift checks.
 
 The observer emits two separate closed JSON artifacts:
 

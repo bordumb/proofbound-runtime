@@ -137,6 +137,7 @@ tar --extract --gzip --file "$archive" --directory "$install_root"
 "$install_root/pbr" --version
 "$install_root/pbr-verify" --version
 "$install_root/pbr-compose" --version
+"$install_root/pbr-diagnose" --version
 ```
 
 The maintained installer performs the same archive check, rejects any changed
@@ -155,6 +156,7 @@ cargo build --locked --release --bins
 target/release/pbr --version
 target/release/pbr-verify --version
 target/release/pbr-compose --version
+target/release/pbr-diagnose --version
 target/release/pbr-accept --version
 ```
 

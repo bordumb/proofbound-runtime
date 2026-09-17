@@ -1,0 +1,33 @@
+schema = "proofbound-evidence-unit/1"
+id = "diagnostic-command"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-OBSERVER-031"]
+tier = 0
+expected_inventory = [
+  "pbr-diagnose::tests::command_requires_each_exact_output_and_cgroup_argument_once",
+  "pbr-diagnose::tests::diagnostic_bounds_are_closed_and_nonzero",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "rust-toolchain.toml",
+  "claims/PBR-OBSERVER-031.toml",
+  "crates/proofbound-runtime-diagnose-cli/Cargo.toml",
+  "crates/proofbound-runtime-diagnose-cli/src/main.rs",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-diagnose-cli"
+manifest = "Cargo.toml"
+targets = ["--bin", "pbr-diagnose"]
+paths = []
+arguments = ["tests::"]
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824
