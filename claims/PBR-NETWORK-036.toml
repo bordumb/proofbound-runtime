@@ -5,7 +5,7 @@ statement = "The proposed service-session launcher protocol admits only the orde
 public_language = "Runtime has a proposed closed deterministic-CBOR service-session launcher transcript. The frozen vectors and independent checker bind the complete prepared request and connector session to one installed boundary before optional transient credential release and child release. This is source contract evidence only. The production launcher does not accept these messages, no connector or child is started, and no network authority is enabled."
 subject = "schema:proofbound-runtime-service-launcher/1+python:service_launcher_contract.validate_transcript"
 profile = "ledger"
-tier = 0
+tier = 1
 evidence = [
   "independent-check:authenticated-service-launcher-contract",
 ]

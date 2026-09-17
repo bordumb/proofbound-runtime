@@ -3,7 +3,7 @@ id = "authenticated-service-launcher-contract"
 adapter = "independent-check"
 kind = "independent-check"
 claims = ["PBR-NETWORK-036"]
-tier = 0
+tier = 1
 expected_inventory = [
   "service-launcher-canonical-handshake",
   "service-launcher-ordered-transcript",

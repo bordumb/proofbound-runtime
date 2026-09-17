@@ -43,8 +43,8 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-NETWORK-032` | Tier 0 current lifecycle closure admitted on exact Runtime main `1da65a5` | PR 31 run `35236845497` and exact-main run `35241672716` admitted the changed service-session contract closure. |
 | `PBR-NETWORK-033` | Tier 0 current lifecycle closure admitted on exact Runtime main `1da65a5` | The compiler still separately binds child denial, the channel-only profile, and complete connector authority; PR 31 and its exact-main replay admitted the changed shared-core closure. |
 | `PBR-NETWORK-034` | Tier 0 pure lifecycle admitted on exact Runtime main `1da65a5` | Exhaustive source tests cover the closed forward path and typed terminal failure. PR 31 run `35236845497` and exact-main run `35241672716` passed. The candidate Lean theorem is not registered as admitted evidence. Every effectful wave remains open. |
-| `PBR-NETWORK-035` | Tier 0 proposed observation contract pending first exact admission | A closed successful-session fragment and independent mutation checker bind receipt inputs without claiming production integration or network effects. Failed-session, shipping-verifier, composition, and acceptance work remain open. |
-| `PBR-NETWORK-036` | Tier 0 proposed launcher contract pending first exact admission | A closed three-message handshake binds the prepared service session and child filter before release without changing the production launcher or claiming an installed effect. |
+| `PBR-NETWORK-035` | Tier 1 proposed observation contract pending first exact admission | A closed successful-session fragment and independent mutation checker bind receipt inputs without claiming production integration or network effects. Failed-session, shipping-verifier, composition, and acceptance work remain open. |
+| `PBR-NETWORK-036` | Tier 1 proposed launcher contract pending first exact admission | A closed three-message handshake and independent mutation checker bind the prepared service session and child filter before release without changing the production launcher or claiming an installed effect. |
 
 ### Current changed subjects pending exact admission
 
@@ -65,7 +65,7 @@ The lifecycle wave passed PR 31 run `35236845497`, merged as exact main
 the new Tier 0 `PBR-NETWORK-034` subject. The Lean theorem remains a compiled
 candidate, not registered theorem evidence.
 
-The stacked non-production contract batch adds `PBR-NETWORK-035` and
+The stacked non-production contract batch adds Tier 1 `PBR-NETWORK-035` and
 `PBR-NETWORK-036`. Each keeps its own closure and mutation corpus. They share
 one final exact-source review and hosted admission only after the lifecycle
 exact-main replay passes; a blocker in either blocks the complete batch.

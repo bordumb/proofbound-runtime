@@ -3088,6 +3088,29 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes only this review record. Any later
 subject change requires a new exact-head review.
 
+## RT-5 consolidated contract evidence-tier correction
+
+- **Pull request:** Runtime PR 32
+- **Failed exact head:** `0b0bff99d7bed87a837bda10256b04ee438e4d1e`
+- **Hosted run:** `35247248205`
+- **Failed job:** Ledger evidence `105290805421`
+- **Admission result:** **NOT ADMITTED**. The remaining in-progress evidence
+  jobs were cancelled after the decisive ledger failure.
+
+The ledger correctly rejected both proposed claims with
+`PB_CORE_TIER_EXCEEDED`. `PBR-NETWORK-035` and `PBR-NETWORK-036` each cited an
+`independent-check` adapter, whose minimum evidence strength is Tier 1, while
+the claim and evidence records declared Tier 0. Preflight, Rust, both native
+architectures, and binding passed before the failure.
+
+The correction raises only these two proposed source-contract claims and their
+matching evidence units to Tier 1 and synchronizes current roadmap language.
+It does not strengthen the public product claim: production service execution
+and launcher decoding remain rejected, and receipt, verifier, composition,
+acceptance, effectful, native-attack, and release-artifact obligations remain
+open. The corrected exact head requires a new independent review and hosted
+admission.
+
 ## RT-5 service launcher preliminary review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

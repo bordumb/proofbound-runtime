@@ -1068,8 +1068,9 @@ successful session's policy, connector, bounded DNS and endpoint attempts,
 authenticated TLS result, registered channel, traffic counters, forward
 lifecycle, terminal cleanup, and credential-source identity. Its independent
 checker rejects 23 causal omission, substitution, expiry, bound, lifecycle, cleanup,
-cross-service, and retained-content mutations. `PBR-NETWORK-035` remains a
-Tier 0 proposed source contract: the fragment is not a production receipt,
+cross-service, and retained-content mutations. `PBR-NETWORK-035` is a Tier 1
+proposed source contract because its registered independent checker and causal
+mutation corpus exceed Tier 0. The fragment is not a production receipt,
 shipping verifier input, or claim that any network effect occurred.
 
 **2026-09-17 launcher-contract checkpoint:** the staged
@@ -1077,8 +1078,9 @@ shipping verifier input, or claim that any network effect occurred.
 cgroup, executable, connector generation and closure, DNS and TLS observations,
 selected endpoint, private channel, limits, retained descriptor set, and exact
 child filter through an ordered, whole-frame-bounded transcript whose later
-messages bind the complete install request. `PBR-NETWORK-036` remains a Tier 0 proposed source
-contract. Production launcher messages remain unchanged and reject this form;
+messages bind the complete install request. `PBR-NETWORK-036` is a Tier 1
+proposed source contract because its registered independent checker and causal
+mutation corpus exceed Tier 0. Production launcher messages remain unchanged and reject this form;
 no connector, launcher, or child effect is enabled.
 
 ### RT-5.2 Keep the security boundary explicit
