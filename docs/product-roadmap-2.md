@@ -14,9 +14,10 @@
   External RT-7 registry publication and later Roadmap 2 epic exits remain
   open.
 - **Date:** 2026-09-17
-- **Runtime baseline:** exact unsigned main
-  `da8c96b843a692bff8a0ac0bc782a108b3168dbc`; final RT-8 exact-head Verify
-  run `35203053015` and exact-main Verify run `35207382756` passed
+- **Runtime baseline:** exact main
+  `2ddb4a9543988b41848fd41fc723331b2d3538af`; the RT-5 observation and launcher
+  source-contract batch passed PR 32 run `35248987742` and exact-main Verify
+  run `35254613508`
 - **Proofbound baseline consumed by Runtime evidence:** public immutable bundle
   for source `9512469`; protected-path cutover merged as Runtime `4a0cfdb` and
   passed exact-main Verify run `34918706960`

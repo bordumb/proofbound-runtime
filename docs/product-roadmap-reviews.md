@@ -3143,6 +3143,27 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes only this review record. Any later
 subject change requires a new exact-head review.
 
+## RT-5 observation and launcher hosted admission closure
+
+This is an admission record, not a new independent review.
+
+- **Pull request:** Runtime PR 32
+- **Exact reviewed and pushed head:**
+  `3c3bcd3634d96cee367deafd1620197d5ac0f5ee`
+- **Exact-head Verify:** run `35248987742`, all required lanes and the current
+  assurance gate passed
+- **Merge:** `2ddb4a9543988b41848fd41fc723331b2d3538af`
+- **Exact-main Verify:** run `35254613508`, all required lanes and the current
+  assurance gate passed
+- **Admission result:** the first exact `PBR-NETWORK-035` observation and
+  `PBR-NETWORK-036` launcher source-contract baseline is admitted
+
+Production connector, launcher decoding, child release, receipt production,
+shipping verification, composition, acceptance, native attacks, and artifact
+binding remain open. The following receipt wave changes both admitted source
+closures. Those changed identities do not inherit this admission and must pass
+their own final exact review, hosted gate, merge, and exact-main replay.
+
 ## RT-5 service-session receipt preliminary review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

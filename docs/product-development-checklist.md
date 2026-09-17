@@ -1,14 +1,16 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-17T17:22:00+01:00 (Europe/London, BST)
-- **Runtime baseline:** RT-8 and the RT-5 non-executable contract are admitted.
-  The RT-5 lifecycle wave passed PR 31 Verify run `35236845497` and merged as
-  exact admitted main `1da65a5c53f27b97a15f95ed1a9fb01170121444`.
-  Exact-main Verify run `35241672716` passed.
+- **Last updated:** 2026-09-17T19:31:00+01:00 (Europe/London, BST)
+- **Runtime baseline:** RT-8 and the RT-5 observation and launcher source
+  contracts are admitted. PR 32 head `3c3bcd3` passed Verify run
+  `35248987742`, merged as exact admitted main
+  `2ddb4a9543988b41848fd41fc723331b2d3538af`, and passed exact-main Verify run
+  `35254613508`.
 - **Active implementation wave:** RT-5 one authenticated service.
-- **Current batch:** admit the observation and launcher source contracts as one
-  non-production batch before any connector or launcher effect is enabled.
+- **Current batch:** admit the receipt contract and its strengthened
+  observation and retained-launcher integration closure before any connector
+  or launcher effect is enabled.
 - **Parallel external gates:** RT-7 protected routes and current-integration
   source are merged; registry configuration, actual public package publication,
   anonymous observations, consumer dogfood, and a retained current-integration
@@ -19,6 +21,11 @@ This checklist is the current operational view of the development path in the
 [roadmap execution order](product-roadmap-execution-order.md). Specifications,
 ADRs, threat-model records, and claim manifests remain authoritative for
 meaning. This file records only execution state and the next dependency.
+
+The dated
+[single-service product proof checklist](product-proof-checklist-2026-09-17.md)
+is the controlling implementation checklist for RT-5 through the first real
+LLM workload and external-review readiness.
 
 Update the timestamp, exact source identity, review subject, hosted run, and
 merge identity whenever an item changes state. Check an item only after its
@@ -416,15 +423,19 @@ draft, while no diagnostic output can become reusable production evidence.
   TLS, channel, counters, lifecycle, cleanup, and credential-source identity.
   It is intentionally not yet a production receipt or shipping-verifier
   contract, and failed-session forms remain open. It will share one final
-  exact-source review and hosted admission with `PBR-NETWORK-036`; either
-  claim's failure blocks the complete batch.
+  first source baseline passed PR 32 run `35248987742` and exact-main run
+  `35254613508` at `2ddb4a9`. The current receipt-integration source closure is
+  intentionally restaged with `PBR-NETWORK-037`; a failure in any changed
+  claim blocks that complete batch.
 - [ ] Admit the service-specific launcher handshake. `PBR-NETWORK-036` freezes
   the proposed install, complete boundary acknowledgement, and release binding
   with 29 causal mutation classes, including service substitution,
   early credential release, and descriptor substitution. The production
   launcher remains unchanged; the failure handshake and native implementation
-  remain open. This non-production contract shares the consolidated admission
-  batch described for `PBR-NETWORK-035`.
+  remain open. Its first source baseline passed PR 32 run `35248987742` and
+  exact-main run `35254613508` at `2ddb4a9`. The current retained-prefix helper
+  and receipt integration share the restaged batch described for
+  `PBR-NETWORK-035`.
 - [ ] Admit the closed service-session receipt and failure contract.
   `PBR-NETWORK-037` freezes deterministic-CBOR reusable-success and
   non-reusable-failure fragments. The independent checker binds the expected
