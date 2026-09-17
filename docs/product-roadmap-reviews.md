@@ -3010,6 +3010,36 @@ production execution still rejected the service-session profile, the fragment
 remained honestly non-reusable and pending, and its closed shape excluded
 credential values and application bytes.
 
+## RT-5 service observation correction preliminary approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da6b2da4223f7d466b24fce96d88c56bf619b997`
+- **Reviewed head:** `f98eb8f0108bbf68dfe2aba84644bf0d157f53aa`
+- **Branch:** `codex/rt5-effect-contracts`
+- **Method:** Complete exact-range static schema, vector, checker, mutation,
+  claim, evidence, and roadmap review. The reviewer changed no files and ran no
+  builds or tests.
+- **Verdict:** **APPROVE**
+- **Maintainer endorsement:** **ENDORSED FOR RESTACKING ONLY**. This approval
+  confirms the stacked subject, but it is not a merge authorization. A fresh
+  exact-head review is required after the preceding lifecycle wave merges and
+  this subject is restacked on admitted `main`.
+
+The reviewer confirmed that the closed count domain and the attempt-to-answer
+and resolution-to-setup cross-bounds agree across the schema and checker. DNS
+messages, non-overlapping ordered attempts, the selected terminal connection,
+the lifecycle endpoint event, TLS, and traffic timings are coherently bound.
+Each answer expiry is exactly its recorded message time plus its TTL in
+nanoseconds with overflow rejection, and neither an attempt nor TLS can use an
+expired answer. Credential-source identifiers use the same closed ASCII
+grammar in the schema and checker with negative coverage.
+
+The reviewer found no new blocker. The closed shape retains only identities,
+counters, and timing; it excludes credential and application content. The
+claim and documentation keep the fragment at Tier 0, pending, non-reusable,
+and outside production receipt, verifier, and effect claims. Production crates
+remain unchanged, so production service execution remains rejected.
+
 ## RT-5 authenticated-service contract approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
