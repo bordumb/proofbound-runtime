@@ -3095,6 +3095,38 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes only this review record. Any later
 subject change requires another exact-head review.
 
+## RT-8 live adversarial corpus approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `61bd0bbca729ba4ed2d30387a40b5dfa63a90051`
+- **Rejected head:** `d84caeffdeaf11a419868f6c51276306d2ad8700`
+- **Approved head:** `2157f9482d599208edc24540cc1dcc62aabd51c9`
+- **Method:** Exact-range security, native-corpus, evidence, and documentation
+  review. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The initial review requested changes because the assurance plan claimed a
+`CLONE_UNTRACED` mutation witness while the checker provided only exact source
+fingerprints and assertions. The corrected subject adds distinct causal
+mutations for flag-constant corruption, predicate bypass, legacy `clone`
+guard-call removal, and `clone3` guard-call removal. The independent contract
+rejects every mutation.
+
+The approved subject rejects `CLONE_UNTRACED` while the tracee remains stopped
+at syscall entry, preserves ordinary clone, fork, and vfork behavior, and
+routes the typed failure through termination and drain to incomplete,
+non-reusable publication. Native cases also cover stale target identity,
+symlink-redirection rejection before child execution, and a deliberate
+observation-sensitive stop. The subject adds no authority and does not weaken
+the production path.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`61bd0bbca729ba4ed2d30387a40b5dfa63a90051..2157f9482d599208edc24540cc1dcc62aabd51c9`.
+The following approval-only commit changes only this review record. Hosted
+evidence is still required before merge, and any later subject change requires
+another exact-head review.
+
 ## RT-8 consolidated object, candidate, and command approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
