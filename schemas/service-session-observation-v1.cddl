@@ -65,6 +65,7 @@ dns-message = {
 dns-answer = {
   "name": dns-name,
   "endpoint": endpoint,
+  "message_sha256": bstr .size 32,
   "ttl_seconds": uint32-nonzero,
   "expires_ns": uint64
 }
@@ -72,7 +73,7 @@ dns-answer = {
 endpoint-attempt = {
   "ordinal": uint32-nonzero,
   "endpoint": endpoint,
-  "result": "refused" / "timed-out" / "failed" / "authenticated",
+  "result": "refused" / "timed-out" / "failed" / "connected",
   "started_ns": uint64,
   "finished_ns": uint64
 }
@@ -136,7 +137,7 @@ cleanup-observation = {
 }
 
 credential-source = {
-  "id": text .size (1..128),
+  "id": credential-source-id,
   "service": dns-name,
   "environment": environment-name
 }
@@ -152,6 +153,8 @@ artifact-role = "connector-executable" / "connector-runtime-library" /
   "resolver-configuration" / "trust-root-set"
 
 dns-name = text .size (1..253)
+credential-source-id = text .regexp "^[a-z]$" /
+  text .regexp "^[a-z][a-z0-9.-]{0,126}[a-z0-9]$"
 environment-name = text .size (1..255)
 uint32-nonzero = 1..4294967295
 uint64 = 0..18446744073709551615

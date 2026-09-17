@@ -54,11 +54,11 @@ def observation() -> dict:
             "messages": [{"sha256": bytes([0x41]) * 32, "size": 96, "observed_ns": 1_500}],
             "cname_chain": ["api.anthropic.com"],
             "answers": [
-                {"name": "api.anthropic.com", "endpoint": endpoint_1, "ttl_seconds": 60, "expires_ns": 61_500},
-                {"name": "api.anthropic.com", "endpoint": endpoint_2, "ttl_seconds": 60, "expires_ns": 61_500},
+                {"name": "api.anthropic.com", "endpoint": endpoint_1, "message_sha256": bytes([0x41]) * 32, "ttl_seconds": 60, "expires_ns": 60_000_001_500},
+                {"name": "api.anthropic.com", "endpoint": endpoint_2, "message_sha256": bytes([0x41]) * 32, "ttl_seconds": 60, "expires_ns": 60_000_001_500},
             ],
             "attempts": [
-                {"ordinal": 1, "endpoint": endpoint_1, "result": "authenticated", "started_ns": 2_100, "finished_ns": 4_000}
+                {"ordinal": 1, "endpoint": endpoint_1, "result": "connected", "started_ns": 2_100, "finished_ns": 3_000}
             ],
             "selected_endpoint": endpoint_1,
         },

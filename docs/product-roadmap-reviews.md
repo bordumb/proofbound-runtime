@@ -2983,6 +2983,33 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-5 service observation preliminary review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da6b2da4223f7d466b24fce96d88c56bf619b997`
+- **Reviewed head:** `78bc5b0da4d9e5d5250c7a6b448b90ba86ba7a8c`
+- **Branch:** `codex/rt5-effect-contracts`
+- **Method:** Complete exact-range static review. The reviewer changed no files
+  and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review found four blocking defects. First, the semantic checker admitted
+service-session count limits outside the CDDL and Rust domain and omitted the
+attempt-to-answer and resolution-to-setup cross-field bounds. Second, DNS
+messages and endpoint attempts were not fully ordered inside the lifecycle,
+attempts could overlap, and the endpoint-connected transition was not bound to
+the selected attempt. Third, answer expiry was not derived from its exact DNS
+message observation and TTL; the vector also used incorrect time units. Fourth,
+credential-source identifiers admitted values rejected by the existing closed
+domain grammar. The correction requires a new exact-head independent review.
+
+The reviewer found no additional blocker. Production crates were unchanged,
+production execution still rejected the service-session profile, the fragment
+remained honestly non-reusable and pending, and its closed shape excluded
+credential values and application bytes.
+
 ## RT-5 authenticated-service contract approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

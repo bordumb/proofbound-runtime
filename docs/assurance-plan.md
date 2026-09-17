@@ -1031,11 +1031,11 @@ registered local channel, bounded traffic counters, complete forward
 lifecycle, terminal cleanup, and optional credential-source name. The type and
 checker exclude credential values and application request or response bytes.
 
-The mutation corpus rejects an unknown field, an endpoint outside the answer
-set, an out-of-order attempt, an expired selected answer, TLS name mismatch,
-TLS resumption, excess traffic,
-a skipped lifecycle transition, incomplete cleanup, cross-service credential
-binding, and retained secret content. This source contract does not establish
+The mutation corpus rejects unknown fields; invalid authority limits; invalid
+resolution, attempt, endpoint, TTL, and expiry timing; an endpoint outside the
+answer set; invalid TLS identity or resumption; excess traffic; a skipped
+lifecycle transition; incomplete cleanup; cross-service or malformed
+credential identity; and retained secret content. This source contract does not establish
 that a producer observed those facts, that the shipping verifier checks them,
 or that a connector or Linux boundary enforced them. Production receipt,
 failure, verifier, composition, acceptance, native, and artifact-binding waves

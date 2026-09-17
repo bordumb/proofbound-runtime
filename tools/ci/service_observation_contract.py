@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ipaddress
+import re
 
 
 class ContractError(ValueError):
@@ -18,6 +19,7 @@ PHASES = [
     ("active", "begin-close", "closing"),
     ("closing", "close-complete", "closed"),
 ]
+CREDENTIAL_SOURCE_ID = re.compile(r"(?:[a-z]|[a-z][a-z0-9.-]{0,126}[a-z0-9])\Z")
 
 
 def exact_keys(value: object, keys: set[str], context: str) -> dict:
@@ -104,7 +106,20 @@ def validate_observation(value: object) -> None:
         "limits",
     )
     for name in limits:
-        bounded_integer(limits[name], 1, 2**64 - 1, f"limits.{name}")
+        maximum = 65_535 if name in {"dns_messages", "endpoint_attempts"} else 2**64 - 1
+        bounded_integer(limits[name], 1, maximum, f"limits.{name}")
+
+    lifecycle = root["lifecycle"]
+    if not isinstance(lifecycle, list) or len(lifecycle) != len(PHASES):
+        raise ContractError("lifecycle is not the complete success path")
+    lifecycle_times = []
+    for index, (transition_value, expected) in enumerate(zip(lifecycle, PHASES, strict=True)):
+        transition = exact_keys(transition_value, {"from", "event", "to", "observed_ns"}, f"lifecycle[{index}]")
+        if (transition["from"], transition["event"], transition["to"]) != expected:
+            raise ContractError("lifecycle contains a skipped or substituted transition")
+        lifecycle_times.append(bounded_integer(transition["observed_ns"], 0, 2**64 - 1, f"lifecycle[{index}].observed_ns"))
+    if lifecycle_times != sorted(lifecycle_times):
+        raise ContractError("lifecycle times are not monotonic")
 
     connector = exact_keys(root["connector"], {"executable", "runtime_closure", "process_generation"}, "connector")
     artifact(connector["executable"], "connector-executable", "connector.executable")
@@ -137,18 +152,29 @@ def validate_observation(value: object) -> None:
     attempt_deadline_ms = bounded_integer(dns["attempt_deadline_ms"], 1, 2**64 - 1, "dns.attempt_deadline_ms")
     if attempt_deadline_ms > resolution_deadline_ms or dns["address_order"] != "ipv4-then-ipv6-lexicographic":
         raise ContractError("DNS timing or address-order policy is not admitted")
+    if limits["endpoint_attempts"] > maximum_answer_count:
+        raise ContractError("endpoint-attempt bound exceeds the answer-count bound")
+    if resolution_deadline_ms > limits["setup_time_ms"]:
+        raise ContractError("resolution deadline exceeds the setup deadline")
     if not isinstance(dns["messages"], list) or not 1 <= len(dns["messages"]) <= limits["dns_messages"]:
         raise ContractError("dns message inventory is empty or exceeds its bound")
     message_times = []
+    message_observed_ns = {}
     for index, message_value in enumerate(dns["messages"]):
         message = exact_keys(message_value, {"sha256", "size", "observed_ns"}, f"dns.messages[{index}]")
         fixed_bytes(message["sha256"], 32, f"dns.messages[{index}].sha256")
         message_size = bounded_integer(message["size"], 1, 2**64 - 1, f"dns.messages[{index}].size")
         if message_size > maximum_response_bytes:
             raise ContractError("DNS response exceeds its byte bound")
-        message_times.append(bounded_integer(message["observed_ns"], 0, 2**64 - 1, f"dns.messages[{index}].observed_ns"))
+        observed_ns = bounded_integer(message["observed_ns"], 0, 2**64 - 1, f"dns.messages[{index}].observed_ns")
+        if message["sha256"] in message_observed_ns:
+            raise ContractError("DNS message identities are not unique")
+        message_observed_ns[message["sha256"]] = observed_ns
+        message_times.append(observed_ns)
     if message_times != sorted(message_times):
         raise ContractError("dns message times are not monotonic")
+    if any(time < lifecycle_times[0] or time > lifecycle_times[1] for time in message_times):
+        raise ContractError("DNS message is outside the resolution interval")
     if not isinstance(dns["cname_chain"], list) or not dns["cname_chain"]:
         raise ContractError("dns CNAME chain is empty")
     chain = [dns_name(name, "dns.cname_chain") for name in dns["cname_chain"]]
@@ -159,16 +185,21 @@ def validate_observation(value: object) -> None:
     answers = []
     answer_expirations = []
     for index, answer_value in enumerate(dns["answers"]):
-        answer = exact_keys(answer_value, {"name", "endpoint", "ttl_seconds", "expires_ns"}, f"dns.answers[{index}]")
+        answer = exact_keys(answer_value, {"name", "endpoint", "message_sha256", "ttl_seconds", "expires_ns"}, f"dns.answers[{index}]")
         if dns_name(answer["name"], f"dns.answers[{index}].name") != chain[-1]:
             raise ContractError("dns answer is not bound to the terminal name")
         answer_endpoint = endpoint(answer["endpoint"], f"dns.answers[{index}].endpoint")
         if answer_endpoint[2] != service_port:
             raise ContractError("dns answer uses an undeclared service port")
-        bounded_integer(answer["ttl_seconds"], 1, 2**32 - 1, f"dns.answers[{index}].ttl_seconds")
-        answer_expirations.append(
-            bounded_integer(answer["expires_ns"], 1, 2**64 - 1, f"dns.answers[{index}].expires_ns")
-        )
+        message_identity = fixed_bytes(answer["message_sha256"], 32, f"dns.answers[{index}].message_sha256")
+        if message_identity not in message_observed_ns:
+            raise ContractError("DNS answer is not bound to a recorded message")
+        ttl_seconds = bounded_integer(answer["ttl_seconds"], 1, 2**32 - 1, f"dns.answers[{index}].ttl_seconds")
+        expires_ns = bounded_integer(answer["expires_ns"], 1, 2**64 - 1, f"dns.answers[{index}].expires_ns")
+        expected_expiry = message_observed_ns[message_identity] + ttl_seconds * 1_000_000_000
+        if expected_expiry > 2**64 - 1 or expires_ns != expected_expiry:
+            raise ContractError("DNS answer expiry is not derived from its message and TTL")
+        answer_expirations.append(expires_ns)
         answers.append(answer_endpoint)
     if answers != sorted(set(answers)):
         raise ContractError("dns answers are not canonical and unique")
@@ -180,24 +211,31 @@ def validate_observation(value: object) -> None:
         raise ContractError("endpoint attempt inventory is empty or exceeds its bound")
     attempted = []
     attempt_times = []
+    previous_finish = lifecycle_times[1]
     for index, attempt_value in enumerate(attempts):
         attempt = exact_keys(attempt_value, {"ordinal", "endpoint", "result", "started_ns", "finished_ns"}, f"dns.attempts[{index}]")
         if attempt["ordinal"] != index + 1:
             raise ContractError("endpoint attempt ordinals are not contiguous")
         attempted.append(endpoint(attempt["endpoint"], f"dns.attempts[{index}].endpoint"))
-        if attempt["result"] not in {"refused", "timed-out", "failed", "authenticated"}:
+        if attempt["result"] not in {"refused", "timed-out", "failed", "connected"}:
             raise ContractError("endpoint attempt has an unknown result")
-        if (attempt["result"] == "authenticated") != (index == len(attempts) - 1):
-            raise ContractError("only the terminal endpoint attempt can authenticate")
+        if (attempt["result"] == "connected") != (index == len(attempts) - 1):
+            raise ContractError("only the terminal endpoint attempt can connect")
         started_ns = bounded_integer(attempt["started_ns"], 0, 2**64 - 1, f"dns.attempts[{index}].started_ns")
         finished_ns = bounded_integer(attempt["finished_ns"], 0, 2**64 - 1, f"dns.attempts[{index}].finished_ns")
-        if finished_ns < started_ns or finished_ns - started_ns > attempt_deadline_ms * 1_000_000:
+        if started_ns < previous_finish or finished_ns < started_ns or finished_ns - started_ns > attempt_deadline_ms * 1_000_000:
             raise ContractError("endpoint attempt exceeds its deadline")
+        attempted_answer = answers.index(attempted[-1])
+        if finished_ns >= answer_expirations[attempted_answer]:
+            raise ContractError("endpoint attempt used an expired DNS answer")
+        previous_finish = finished_ns
         attempt_times.append(finished_ns)
     if attempted != answers[: len(attempted)] or attempted[-1] != selected:
         raise ContractError("endpoint attempts do not follow the canonical answer prefix")
     if attempt_times != sorted(attempt_times):
         raise ContractError("endpoint attempt times are not monotonic")
+    if attempt_times[-1] != lifecycle_times[2]:
+        raise ContractError("endpoint-connected is not bound to the selected attempt")
 
     tls = exact_keys(
         root["tls"],
@@ -218,8 +256,8 @@ def validate_observation(value: object) -> None:
     if handshake_bytes > limits["tls_handshake_bytes"]:
         raise ContractError("TLS handshake exceeds its bound")
     authenticated_ns = bounded_integer(tls["authenticated_ns"], 0, 2**64 - 1, "tls.authenticated_ns")
-    if authenticated_ns != attempt_times[-1]:
-        raise ContractError("TLS authentication is not bound to the selected attempt")
+    if authenticated_ns < attempt_times[-1]:
+        raise ContractError("TLS authentication precedes the selected connection")
     if authenticated_ns >= answer_expirations[answers.index(selected)]:
         raise ContractError("TLS completed after the selected DNS answer expired")
 
@@ -239,15 +277,6 @@ def validate_observation(value: object) -> None:
     if closed_ns < active_ns:
         raise ContractError("traffic closes before it becomes active")
 
-    lifecycle = root["lifecycle"]
-    if not isinstance(lifecycle, list) or len(lifecycle) != len(PHASES):
-        raise ContractError("lifecycle is not the complete success path")
-    lifecycle_times = []
-    for index, (transition_value, expected) in enumerate(zip(lifecycle, PHASES, strict=True)):
-        transition = exact_keys(transition_value, {"from", "event", "to", "observed_ns"}, f"lifecycle[{index}]")
-        if (transition["from"], transition["event"], transition["to"]) != expected:
-            raise ContractError("lifecycle contains a skipped or substituted transition")
-        lifecycle_times.append(bounded_integer(transition["observed_ns"], 0, 2**64 - 1, f"lifecycle[{index}].observed_ns"))
     if lifecycle_times != sorted(lifecycle_times) or lifecycle_times[3] != authenticated_ns or lifecycle_times[4] != active_ns or lifecycle_times[-1] != closed_ns:
         raise ContractError("lifecycle times are inconsistent with TLS or traffic observations")
     if lifecycle_times[1] - lifecycle_times[0] > resolution_deadline_ms * 1_000_000:
@@ -264,7 +293,12 @@ def validate_observation(value: object) -> None:
     credential = root["credential_source"]
     if credential is not None:
         credential = exact_keys(credential, {"id", "service", "environment"}, "credential_source")
-        if not isinstance(credential["id"], str) or not 1 <= len(credential["id"]) <= 128:
+        credential_id = credential["id"]
+        if (
+            not isinstance(credential_id, str)
+            or not 1 <= len(credential_id.encode("utf-8")) <= 128
+            or CREDENTIAL_SOURCE_ID.fullmatch(credential_id) is None
+        ):
             raise ContractError("credential source id is invalid")
         if dns_name(credential["service"], "credential_source.service") != service_name:
             raise ContractError("credential source is bound to another service")
