@@ -599,6 +599,7 @@ assert not any(
     "symlink-redirection" "$redirected_plan" redirected-plan-scaffold.json 2 \
     "resolve.path.symlink-invalid"
   test ! -e "$e2e_root/redirected-output/child-ran"
+  rm -f "$redirected_scaffold"
 
   unexpected_stop_plan="$e2e_root/unexpected-stop-plan.cbor"
   unexpected_stop_receipt="$e2e_root/unexpected-stop-receipt.json"
