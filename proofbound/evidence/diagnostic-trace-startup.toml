@@ -12,6 +12,7 @@ expected_inventory = [
   "proofbound_runtime_linux::trace::tests::thread_group_parser_requires_one_exact_positive_field",
   "proofbound_runtime_linux::trace::tests::syscall_decoder_qualifies_numbers_by_architecture",
   "proofbound_runtime_linux::trace::tests::syscall_decoder_rejects_unknown_architecture_and_x32_form",
+  "proofbound_runtime_linux::trace::tests::clone_untraced_is_rejected_before_resume",
 ]
 inputs = [
   "Cargo.lock",

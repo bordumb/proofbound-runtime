@@ -100,7 +100,8 @@ The diagnostic launch protocol performs these transitions:
 8. stop the acknowledged launcher and enable the closed process-tree trace
    options;
 9. send the identity-bound exec release and release target code;
-10. observe bounded events without changing target behavior;
+10. observe bounded events, while rejecting an attempted `CLONE_UNTRACED`
+    process creation before that system call resumes;
 11. drain the child tree, remove the cgroup, and collect complete resource and
     stream observations through the existing cleanup contract; and
 12. construct and publish the diagnostic receipt and draft.
@@ -555,6 +556,17 @@ independent-check premise `PBR-DIAGNOSTIC-COMMAND-CHECK-AX-028`. Its receipt
 also preserves the active trace, decode, stream, lifecycle, object, and
 candidate runtime premises. Native and released-artifact behavior remain
 separate obligations.
+
+The native command corpus must reject a stale scaffold-to-target identity and
+a symlink-redirected declared scaffold before target code starts. A deliberate
+unexpected trace stop must publish only an incomplete, non-reusable diagnostic
+receipt with an explicit gap. A `clone` or `clone3` entry that supplies
+`CLONE_UNTRACED` must be rejected while the tracee remains stopped at system
+call entry. The observer then terminates the tree and can publish only an
+incomplete, non-reusable diagnostic receipt with an observer-failure gap. These
+cases test identified behavior on the two supported architectures. They do not
+prove that Linux always reports every trace event or that a workload behaves
+the same without observation.
 
 RT-8 closes only after one maintained dynamic workload displays all available
 provenance classes, requires human completion, passes the independent

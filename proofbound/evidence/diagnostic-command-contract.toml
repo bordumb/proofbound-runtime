@@ -11,6 +11,7 @@ expected_inventory = [
   "diagnostic-command-production-separation",
   "diagnostic-command-release-inventory",
   "diagnostic-command-terminal-gating",
+  "diagnostic-command-native-adversarial-corpus",
 ]
 inputs = [
   ".github/actions/proofbound-runtime/action.yml",
@@ -72,6 +73,7 @@ inputs = [
   "crates/proofbound-runtime-linux/src/supervisor.rs",
   "crates/proofbound-runtime-linux/src/sys.rs",
   "crates/proofbound-runtime-linux/src/trace.rs",
+  "crates/proofbound-runtime-linux/tests/fixtures/native-boundary-probe.c",
   "schemas/current-integration-v1.cddl",
   "tools/ci/check_diagnostic_command.py",
   "tools/ci/native-linux.sh",
@@ -98,6 +100,7 @@ paths = [
   "crates/proofbound-runtime-diagnose-cli/Cargo.toml",
   "crates/proofbound-runtime-diagnose-cli/src/main.rs",
   "crates/proofbound-runtime-linux/Cargo.toml",
+  "crates/proofbound-runtime-linux/tests/fixtures/native-boundary-probe.c",
   "crates/proofbound-runtime-compose/tests/release_observation.rs",
   "tools/ci/native-linux.sh",
   "tools/ci/native_context.py",

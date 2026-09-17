@@ -83,6 +83,7 @@ source_roots = [
   "crates/proofbound-runtime-linux/src/supervisor.rs",
   "crates/proofbound-runtime-linux/src/sys.rs",
   "crates/proofbound-runtime-linux/src/trace.rs",
+  "crates/proofbound-runtime-linux/tests/fixtures/native-boundary-probe.c",
   "docs/adr/0008-separate-ptrace-diagnostic-observer.md",
   "docs/assurance-plan.md",
   "docs/product-development-checklist.md",

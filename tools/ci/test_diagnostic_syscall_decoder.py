@@ -53,7 +53,7 @@ EXPECTED_LOAD_BEARING_BODIES = {
     "adapter-release": "183231f22a22fa4e71f9c7cea064811e5dec2f10b409c3a26b9ce5f1b0124066",
     "adapter-next-event": "71c6851507caba717ceba9b3b963ca5a0f1653d9514871e9a7fa6530fd31d4b5",
     "aarch64-table": "45fe041bd934a083c660e316a30c289c5d2ce3d1b3dcf1d2ce430cd30b0b9c11",
-    "capture": "e03c8d8f690304b9865ea829f026da17babea4c3175f8aff81b0a8c472a1dd48",
+    "capture": "969bd07f4c2214692a4bcdbe2dcb5785537a9f07a99d389337c13871e272f7da",
     "capture-path-limit-accessor": "e21f1d9a95771bd5e2a3c7d36ed6bfe6879d2d2c9ab17433a40cf5e15e94ce5a",
     "capture-socket-limit-accessor": "6d26b9a042b9d673d7d97730366d4930038c522e7cc625b8aab3292015421dc6",
     "capture-string-limit-accessor": "163cf7392109e73f6f014975fadce6ade1ba70c8e62b11163bb7f0bc0170da68",
@@ -62,6 +62,7 @@ EXPECTED_LOAD_BEARING_BODIES = {
     "exact-read": "4e4099b351e973ff312431159f64eac771b748820e5ec2d06daaaf6816efa452",
     "i32-argument": "48640c1efe3c88ce6281053cbc2385160faa326f92713f81c2874fe6210a243c",
     "little-endian-reader": "8669e2dac5832ba4dd7eb1708f3992af050868ab67fd791661c005957203cadd",
+    "process-creation-flags": "6b46c0b1238ffb638a02f72e40a24028d149f15fae1814955b5f54a0a7f6ee96",
     "limits": "9d66b90c935331d4d530c9b8be79318f18c2439be6e7ee61e96dbf41801b26fb",
     "observation-bounds-validate": "2d67ca521bfc51fc0c9bd674d8f2e0ffcb4abdd272136c487fd161bb9cc3bc17",
     "observer-protocol-new": "dd85162d9b12bbbe1f0a17b5a08a8ecb083f5b3ace9e2cde59805d9e3dbeb685",
@@ -93,8 +94,8 @@ EXPECTED_LOAD_BEARING_BODIES = {
 EXPECTED_CLOSURE_FILES = {
     "adapter-compile-evidence": "1d9a1de8e312278a92a62a142e0e5da1662bc7529f2eff8029578386a61d7847",
     "adapter-evidence": "bf94a7ab9b7975a533620f92db4a09a73bbf13b1ff17cf2eec4c2fa2f386b56e",
-    "claim": "e64e5c04d488cc353e78eb33ff4f96507d6bc4606616f97ab516c9e92b67ec92",
-    "decoder-evidence": "5a0bc0b9ee07ecdd1a67e287f938355cab905b808da75e3b39578a0cb003fa91",
+    "claim": "895abd2b43b48a43f9f92fb64d97e8eeefcd919639e1292c15c95b95c0f6fd60",
+    "decoder-evidence": "a7dadb10cd883ca295cf76a036a76fcae3b1c396fc3e49e384aa670e3c2055b8",
     "diagnose-lib": "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de",
     "diagnose-linux-lib": "8859f99339377b7034d43dd9d4fd20713824b5ad2708cd52d76412272a3858e2",
     "diagnose-manifest": "097ec2b4cef98a43bee09c64c289251ab2060808d4fb8e050de3077f541ff2f1",
@@ -110,6 +111,7 @@ EXPECTED_CLOSURE_FILES = {
 EXPECTED_LOAD_BEARING_CONSTANTS = {
     "audit-aarch64": "const AUDIT_ARCH_AARCH64: u32 = 0xc000_00b7;",
     "audit-x86-64": "const AUDIT_ARCH_X86_64: u32 = 0xc000_003e;",
+    "clone-untraced": "const CLONE_UNTRACED_FLAG: u64 = 0x0080_0000;",
     "path-maximum": "const MAX_TRACE_PATH_BYTES: u32 = 1_048_576;",
     "ptrace-get-syscall-info": "const PTRACE_GET_SYSCALL_INFO: libc::c_uint = 0x420e;",
     "socket-address-maximum": "const MAX_TRACE_SOCKET_ADDRESS_BYTES: u32 = 4096;",
@@ -120,6 +122,7 @@ def assert_load_bearing_constants(trace: str, sys: str) -> None:
     sources = {
         "audit-aarch64": trace,
         "audit-x86-64": trace,
+        "clone-untraced": trace,
         "path-maximum": trace,
         "ptrace-get-syscall-info": sys,
         "socket-address-maximum": trace,
@@ -151,6 +154,9 @@ def assert_load_bearing_bodies(
         "exact-read": body_sha256(trace, "fn read_exact_tracee_memory"),
         "i32-argument": body_sha256(trace, "fn trace_i32_argument"),
         "little-endian-reader": body_sha256(trace, "fn read_little_endian_u64"),
+        "process-creation-flags": body_sha256(
+            trace, "fn validate_process_creation_flags"
+        ),
         "limits": body_sha256(trace, "pub const fn new(\n        path_bytes"),
         "observation-bounds-validate": body_sha256(artifact, "pub fn validate"),
         "observer-protocol-new": body_sha256(observer, "pub fn new(\n        root"),
@@ -400,6 +406,14 @@ class DiagnosticSyscallDecoderContractTests(unittest.TestCase):
         assert_load_bearing_bodies(
             self.trace, self.sys, self.adapter, self.observer, self.artifact
         )
+
+    def test_clone_evasion_is_rejected_before_resume(self):
+        capture = implementation(self.trace, "fn capture_syscall_invocation")
+        guard = implementation(self.trace, "fn validate_process_creation_flags")
+        self.assertIn("validate_process_creation_flags(class, flags)?", capture)
+        self.assertEqual(capture.count("validate_process_creation_flags"), 2)
+        self.assertIn("value & CLONE_UNTRACED_FLAG != 0", guard)
+        self.assertIn("TraceObservationError::SyscallFormUnsupported", guard)
 
     def test_compiler_and_crate_selection_closure_is_exact(self):
         assert_source_closure()

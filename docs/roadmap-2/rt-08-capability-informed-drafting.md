@@ -237,8 +237,11 @@ its own evidence units, assumptions, falsifiers, and review findings:
 4. Complete the registered native attack corpus on x86_64 and aarch64. PR 26
    passed both native lanes for the merged object-resolution, candidate, and
    command subject. The active exit wave adds the maintained dynamic workload,
-   provenance-relabel protection, and the remaining observation-sensitive,
-   stale-source, symlink-redirection, missing-event, and publication cases.
+   provenance-relabel protection, and stale-input protection. Its dependent
+   adversarial wave adds native stale-target and symlink-input rejection,
+   deliberate unexpected-stop incompleteness, and pre-resume rejection of a
+   `CLONE_UNTRACED` missing-event attempt. Hosted evidence on both architectures
+   remains required.
 5. The exact diagnostic executable is now in release provenance and artifact
    inspection. Finish the active exit wave with one maintained dynamic workload
    that displays every currently available provenance class, requires human
