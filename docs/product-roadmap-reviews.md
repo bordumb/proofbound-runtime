@@ -3383,6 +3383,38 @@ admission. Those passages must identify the admitted `a94c21a` pure-policy
 subject separately from the later pending lifecycle closure. The corrected
 exact head requires a new independent review.
 
+## RT-5 authenticated-service lifecycle final approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca`
+- **Reviewed head:** `4aba43e6d1f2a5841da13a47ec5b384347f94588`
+- **Branch:** `codex/rt5-formal-wave`
+- **Method:** Complete exact-range static lifecycle, formal, claim, evidence,
+  review-record, hosted-status, assurance-ledger, and roadmap re-review. The
+  reviewer changed no files and ran no builds or tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the three status-ledger findings at `b233545` are
+closed. The detailed assurance and checklist entries now bind the current
+`PBR-NETWORK-032` and `PBR-NETWORK-033` closures to admitted exact main
+`a94c21a`, PR 30 run `35226379485`, and exact-main run `35231003515`, while
+identifying only the later lifecycle closure as pending. The intervening
+request-changes record preserves its exact identities and non-endorsement.
+
+The production, formal, specification, claim, evidence, and checker subjects
+remain identical to the approved lifecycle correction head `38d00d2`. The
+Lean valid-state model, terminal-state specification, and diagnostic source
+fingerprint fixes remain closed. Production service execution remains denied,
+and no connector or effectful network authority was enabled. No new blocker
+was introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca..4aba43e6d1f2a5841da13a47ec5b384347f94588`.
+The following approval-only commit changes only this review record. Any later
+production, formal, specification, claim, evidence, checker, or status-subject
+change requires a new exact-head review.
+
 ## RT-8 product-exit extension approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
