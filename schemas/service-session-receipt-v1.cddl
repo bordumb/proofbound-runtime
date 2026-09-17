@@ -9,7 +9,7 @@ service-session-receipt-v1 = {
   "execution_id": bstr .size 16,
   "plan_sha256": bstr .size 32,
   "policy_sha256": bstr .size 32,
-  "install_request_sha256": bstr .size 32,
+  "install_request_sha256": bstr .size 32 / null,
   "assumptions": [+ text .size (1..128)],
   "trusted_computing_base": [+ tcb-entry]
 }

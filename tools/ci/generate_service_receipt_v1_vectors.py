@@ -42,7 +42,7 @@ def trusted_computing_base() -> list[dict]:
     ]
 
 
-def common(directory: Path) -> dict:
+def common(directory: Path, *, retain_install_request: bool) -> dict:
     request = install_request(directory)
     return {
         "schema": "proofbound-runtime-service-session-receipt/1",
@@ -50,14 +50,18 @@ def common(directory: Path) -> dict:
         "execution_id": request["execution_id"],
         "plan_sha256": bytes([0x81]) * 32,
         "policy_sha256": request["policy_sha256"],
-        "install_request_sha256": digest_vector(directory, "service-launcher-install"),
+        "install_request_sha256": (
+            digest_vector(directory, "service-launcher-install")
+            if retain_install_request
+            else None
+        ),
         "assumptions": ASSUMPTIONS,
         "trusted_computing_base": trusted_computing_base(),
     }
 
 
 def success(directory: Path) -> dict:
-    value = common(directory)
+    value = common(directory, retain_install_request=True)
     request = install_request(directory)
     session = observation()
     session["execution_id"] = request["execution_id"]
@@ -88,7 +92,7 @@ def success(directory: Path) -> dict:
 
 
 def failure(directory: Path) -> dict:
-    value = common(directory)
+    value = common(directory, retain_install_request=False)
     value.update(
         {
             "eligibility": {

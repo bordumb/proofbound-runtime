@@ -391,7 +391,8 @@ bindings.
 
 The proposed outer fragment is
 `proofbound-runtime-service-session-receipt/1`. It binds one expected
-execution, plan, compiled policy, service, and exact launcher install request.
+execution, plan, compiled policy, and service. It binds an exact launcher
+install request only when launcher start was attempted.
 A reusable success also binds the installed acknowledgement, child release,
 canonical successful observation, and zero child exit. A failed form is always
 non-reusable. It retains a closed phase and reason, a reported Linux monotonic
@@ -399,11 +400,13 @@ failure timestamp without claiming producer-side ordering at this contract wave,
 boundary-install state, child-release identity when release occurred, and
 terminal cleanup result. Post-release failures MUST bind the exact installed
 acknowledgement and release; pre-release failures MUST NOT claim a release.
-The contract checker validates the exact retained launcher prefix: the install
-request is always present, the installed acknowledgement is present only when
-the boundary reached `installed`, and the release is present only after child
-release. It rejects absent required frames and premature later frames. It does
-not fabricate a successful suffix for an early failure. A retained
+The contract checker validates the exact retained launcher prefix. A failure
+before launcher start has a null install-request identity and no launcher
+frames. From `launcher-install-failed` onward, the attempted install request is
+present. The installed acknowledgement is present only when the boundary
+reached `installed`, and the release is present only after child release. The
+checker rejects absent required frames and premature later frames. It does not
+fabricate a launcher request or successful suffix for an early failure. A retained
 credentialed release contains only the source identifier and environment in
 the release state. The transient credential-release frame and its secret value
 are not receipt inputs.

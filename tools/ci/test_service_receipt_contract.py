@@ -56,7 +56,11 @@ class ServiceReceiptContractTests(unittest.TestCase):
     def validate(self, value: dict) -> None:
         bindings = dict(self.bindings)
         if value["result"]["kind"] == "failed":
-            if value["result"]["boundary_state"] == "not-installed":
+            if value["install_request_sha256"] is None:
+                bindings["install_request_cbor"] = None
+                bindings["installed_cbor"] = None
+                bindings["release_cbor"] = None
+            elif value["result"]["boundary_state"] == "not-installed":
                 bindings["installed_cbor"] = None
             if value["result"]["release_sha256"] is None:
                 bindings["release_cbor"] = None
@@ -198,6 +202,7 @@ class ServiceReceiptContractTests(unittest.TestCase):
                 "release_sha256": None,
             }
         )
+        installed["install_request_sha256"] = self.install_request_sha256
         installed["eligibility"]["reasons"] = ["network.launcher-release-failed"]
         self.validate(installed)
         premature = dict(self.bindings)
@@ -368,6 +373,7 @@ class ServiceReceiptContractTests(unittest.TestCase):
         add("false-cleanup-reason", lambda value: value["result"].__setitem__("reason", "cleanup-failed"))
 
         def post_release_substitution(value):
+            value["install_request_sha256"] = self.install_request_sha256
             value["result"].update(
                 {
                     "phase": "active",
@@ -382,6 +388,7 @@ class ServiceReceiptContractTests(unittest.TestCase):
         add("post-release-substitution", post_release_substitution)
 
         def post_release_child_not_started(value):
+            value["install_request_sha256"] = self.install_request_sha256
             value["result"].update(
                 {
                     "phase": "active",
@@ -420,7 +427,10 @@ class ServiceReceiptContractTests(unittest.TestCase):
                 cleanup["channel"] = "closed"
                 if reason == "cleanup-failed":
                     cleanup["channel"] = "cleanup-failed"
+                if reason == "launcher-install-failed":
+                    value["install_request_sha256"] = self.install_request_sha256
                 if reason == "launcher-release-failed":
+                    value["install_request_sha256"] = self.install_request_sha256
                     value["result"].update(
                         {
                             "boundary_state": "installed",
@@ -428,6 +438,7 @@ class ServiceReceiptContractTests(unittest.TestCase):
                         }
                     )
                 if phase in {"active", "closing"}:
+                    value["install_request_sha256"] = self.install_request_sha256
                     value["result"].update(
                         {
                             "boundary_state": "installed",
@@ -454,12 +465,14 @@ class ServiceReceiptContractTests(unittest.TestCase):
                 "release_sha256": None,
             }
         )
+        value["install_request_sha256"] = self.install_request_sha256
         value["eligibility"]["reasons"] = ["network.launcher-release-failed"]
         self.validate(value)
 
     def test_schema_is_closed_and_content_free(self) -> None:
         schema = (ROOT / "schemas/service-session-receipt-v1.cddl").read_text(encoding="utf-8")
         self.assertIn('"observation_cbor": bstr .size (1..1048576)', schema)
+        self.assertIn('"install_request_sha256": bstr .size 32 / null', schema)
         self.assertIn('"status": "reusable" / "non-reusable"', schema)
         self.assertIn('"observation_sha256": null', schema)
         self.assertIn('"release_sha256": bstr .size 32 / null', schema)

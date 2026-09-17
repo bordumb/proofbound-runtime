@@ -96,32 +96,11 @@ def validate_receipt(
     expected_service_name: str,
     expected_service_port: int,
     expected_tcb_identities: dict[str, bytes],
-    install_request_cbor: bytes,
+    install_request_cbor: bytes | None,
     installed_cbor: bytes | None,
     release_cbor: bytes | None,
 ) -> None:
     try:
-        launcher_messages = []
-        launcher_payloads = [
-            ("install request", install_request_cbor),
-        ]
-        if installed_cbor is not None:
-            launcher_payloads.append(("installed acknowledgement", installed_cbor))
-        if release_cbor is not None:
-            launcher_payloads.append(("release", release_cbor))
-        for context, payload in launcher_payloads:
-            if not isinstance(payload, bytes) or not 1 <= len(payload) <= 1_048_576:
-                raise ContractError(f"{context} bytes are outside the frame bound")
-            message = decode_strict(payload)
-            if encode(message) != payload:
-                raise ContractError(f"{context} bytes do not round trip canonically")
-            launcher_messages.append(message)
-        validate_retained_transcript(launcher_messages)
-        install_request = launcher_messages[0]
-        install_request_sha256 = hashlib.sha256(install_request_cbor).digest()
-        installed_sha256 = hashlib.sha256(installed_cbor).digest() if installed_cbor is not None else None
-        release_sha256 = hashlib.sha256(release_cbor).digest() if release_cbor is not None else None
-
         root = exact_keys(
             value,
             {
@@ -143,10 +122,6 @@ def validate_receipt(
         policy_sha256 = fixed_bytes(root["policy_sha256"], 32, "policy_sha256")
         if policy_sha256 != fixed_bytes(expected_policy_sha256, 32, "expected_policy_sha256"):
             raise ContractError("receipt does not bind the expected compiled policy")
-        if fixed_bytes(root["install_request_sha256"], 32, "install_request_sha256") != fixed_bytes(
-            install_request_sha256, 32, "expected_install_request_sha256"
-        ):
-            raise ContractError("receipt does not bind the exact launcher install request")
 
         service = exact_keys(root["service"], {"name", "port"}, "service")
         service_name = dns_name(service["name"], "service.name")
@@ -155,13 +130,6 @@ def validate_receipt(
             expected_service_port, 1, 65_535, "expected_service_port"
         ):
             raise ContractError("receipt does not bind the expected service")
-        launcher_service = install_request["service"]["service"]
-        if (
-            install_request["execution_id"] != execution_id
-            or install_request["policy_sha256"] != policy_sha256
-            or launcher_service != {"name": service_name, "port": service_port}
-        ):
-            raise ContractError("receipt context is inconsistent with the launcher request")
         if strict_strings(root["assumptions"], "assumptions") != REQUIRED_ASSUMPTIONS:
             raise ContractError("required assumptions are incomplete")
         tcb_identities = validate_tcb(
@@ -172,7 +140,52 @@ def validate_receipt(
         result = root["result"]
         if not isinstance(result, dict):
             raise ContractError("result is not a map")
+
+        launcher_messages = []
+        if install_request_cbor is None:
+            if installed_cbor is not None or release_cbor is not None:
+                raise ContractError("launcher suffix exists without an install request")
+            install_request = None
+            install_request_sha256 = None
+            installed_sha256 = None
+            release_sha256 = None
+        else:
+            launcher_payloads = [("install request", install_request_cbor)]
+            if installed_cbor is not None:
+                launcher_payloads.append(("installed acknowledgement", installed_cbor))
+            if release_cbor is not None:
+                launcher_payloads.append(("release", release_cbor))
+            for context, payload in launcher_payloads:
+                if not isinstance(payload, bytes) or not 1 <= len(payload) <= 1_048_576:
+                    raise ContractError(f"{context} bytes are outside the frame bound")
+                message = decode_strict(payload)
+                if encode(message) != payload:
+                    raise ContractError(f"{context} bytes do not round trip canonically")
+                launcher_messages.append(message)
+            validate_retained_transcript(launcher_messages)
+            install_request = launcher_messages[0]
+            install_request_sha256 = hashlib.sha256(install_request_cbor).digest()
+            installed_sha256 = hashlib.sha256(installed_cbor).digest() if installed_cbor is not None else None
+            release_sha256 = hashlib.sha256(release_cbor).digest() if release_cbor is not None else None
+
+        recorded_install = root["install_request_sha256"]
+        if install_request_sha256 is None:
+            if recorded_install is not None:
+                raise ContractError("receipt claims an absent launcher install request")
+        elif fixed_bytes(recorded_install, 32, "install_request_sha256") != install_request_sha256:
+            raise ContractError("receipt does not bind the exact launcher install request")
+        if install_request is not None:
+            launcher_service = install_request["service"]["service"]
+            if (
+                install_request["execution_id"] != execution_id
+                or install_request["policy_sha256"] != policy_sha256
+                or launcher_service != {"name": service_name, "port": service_port}
+            ):
+                raise ContractError("receipt context is inconsistent with the launcher request")
+
         if result.get("kind") == "success":
+            if install_request is None:
+                raise ContractError("success omits the retained launcher install request")
             validate_success(
                 result,
                 eligibility,
@@ -186,7 +199,13 @@ def validate_receipt(
                 release_sha256,
             )
         elif result.get("kind") == "failed":
-            validate_failure(result, eligibility, installed_sha256, release_sha256)
+            validate_failure(
+                result,
+                eligibility,
+                install_request_sha256,
+                installed_sha256,
+                release_sha256,
+            )
         else:
             raise ContractError("result kind is unknown")
     except (CborError, LauncherError, ObservationError) as error:
@@ -281,6 +300,7 @@ def validate_success(
 def validate_failure(
     result: dict,
     eligibility: dict,
+    expected_install_request_sha256: bytes | None,
     expected_installed_sha256: bytes | None,
     expected_release_sha256: bytes | None,
 ) -> None:
@@ -302,6 +322,13 @@ def validate_failure(
     if result["observation_sha256"] is not None:
         raise ContractError("failed receipt cannot retain a success observation identity")
     boundary_state = result["boundary_state"]
+    before_launcher = phase in {"created", "resolving", "connecting", "authenticating"}
+    if before_launcher and expected_install_request_sha256 is not None:
+        raise ContractError("pre-launch failure retains a premature install request")
+    if reason == "launcher-install-failed" and expected_install_request_sha256 is None:
+        raise ContractError("launcher installation failure omits its install request")
+    if (boundary_state == "installed" or phase in {"active", "closing"}) and expected_install_request_sha256 is None:
+        raise ContractError("launcher-progress failure omits its install request")
     if boundary_state == "installed":
         if expected_installed_sha256 is None:
             raise ContractError("installed failure omits the retained acknowledgement")

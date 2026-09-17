@@ -3206,6 +3206,33 @@ exclude the transient credential value while binding its retained descriptor,
 close the direct evidence input, and add dependent-digest-refresh mutations.
 The corrected exact head requires a new independent review.
 
+## RT-5 service-session receipt retained-prefix re-review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `3c3bcd3634d96cee367deafd1620197d5ac0f5ee`
+- **Reviewed head:** `f13295dcd7d22d879da1f4c24e701309b00d70e4`
+- **Branch:** `codex/rt5-receipt-contract`
+- **Method:** Complete preliminary static review of the corrected retained
+  launcher prefix, early failures, causal mutations, evidence closure, and all
+  preceding findings. The reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+Two blockers remained. First, every receipt still required an install request,
+but connector start, DNS resolution, endpoint attempts, and TLS authentication
+occur before a complete launcher request can truthfully exist. The canonical
+TLS failure therefore retained a request derived from a successful session.
+Second, the mutation suite did not causally reach the nested observation
+execution and policy checks or the direct connector-closure comparison between
+the observation and launcher.
+
+The credential-safe retained release, installed and release prefix semantics,
+direct evidence closure, cleanup, assumptions, trusted-computing-base scope,
+and failure-clock language were correct. Production remained unchanged and
+network execution remained disabled. The corrected exact head requires a new
+independent review after restacking on admitted PR 32.
+
 ## RT-5 service launcher preliminary review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

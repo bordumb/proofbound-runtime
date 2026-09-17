@@ -428,7 +428,7 @@ draft, while no diagnostic output can become reusable production evidence.
 - [ ] Admit the closed service-session receipt and failure contract.
   `PBR-NETWORK-037` freezes deterministic-CBOR reusable-success and
   non-reusable-failure fragments. The independent checker binds the expected
-  execution, plan, policy, service, launcher transcript, observation,
+  execution, plan, policy, service, phase-appropriate retained launcher prefix, observation,
   assumption, trusted-computing-base, outcome, boundary, release, failure, and
   cleanup identities and rejects causal downgrade and substitution mutations.
   The production producer, separate Rust verifier, composer, acceptance

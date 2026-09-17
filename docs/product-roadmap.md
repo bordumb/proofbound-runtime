@@ -1087,7 +1087,8 @@ no connector, launcher, or child effect is enabled.
 `proofbound-runtime-service-session-receipt/1` fragment freezes closed success
 and failure forms. `PBR-NETWORK-037` is a Tier 1 proposed source contract. Its
 independent checker requires exact expected execution, plan, policy, service,
-launcher install, assumption, and trusted-computing-base bindings. Reusable
+assumption, trusted-computing-base, and phase-appropriate retained launcher
+prefix bindings. Reusable
 success additionally binds the installed acknowledgement, release, canonical
 observation, and zero child exit. Every failure is non-reusable and preserves
 a phase-consistent reason, boundary and release state, and cleanup result.
