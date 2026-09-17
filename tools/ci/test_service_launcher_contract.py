@@ -20,6 +20,18 @@ def vector(name: str) -> dict:
     return decode_strict(bytes.fromhex((VECTOR_ROOT / f"service-launcher-{name}.cbor.hex").read_text(encoding="ascii")))
 
 
+def refresh_bindings(request: dict, installed: dict, release: dict, credential: dict | None = None) -> None:
+    installed["service"] = copy.deepcopy(request["service"])
+    service_identity = hashlib.sha256(encode(request["service"])).digest()
+    install_identity = hashlib.sha256(encode(request)).digest()
+    installed["install_request_sha256"] = install_identity
+    release["install_request_sha256"] = install_identity
+    release["service_binding_sha256"] = service_identity
+    if credential is not None:
+        credential["install_request_sha256"] = install_identity
+        credential["service_binding_sha256"] = service_identity
+
+
 class ServiceLauncherContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.request = vector("install")
@@ -57,6 +69,14 @@ class ServiceLauncherContractTests(unittest.TestCase):
             mutate(request, installed, release)
             cases.append((name, request, installed, release))
 
+        def overlap_descriptor(request, installed, release):
+            request["service"]["channel"]["child_descriptor"] = request["executable_fd"]
+            refresh_bindings(request, installed, release)
+
+        def move_descriptor_into_close_range(request, installed, release):
+            request["close_file_descriptors_from"] = 9
+            refresh_bindings(request, installed, release)
+
         add("unknown-request-field", lambda request, _installed, _release: request.update({"network": "ambient"}))
         add("execution-substitution", lambda _request, installed, _release: installed.__setitem__("execution_id", bytes(16)))
         add("policy-substitution", lambda _request, _installed, release: release.__setitem__("policy_sha256", bytes(32)))
@@ -68,8 +88,8 @@ class ServiceLauncherContractTests(unittest.TestCase):
         add("selected-endpoint-substitution", lambda _request, installed, _release: installed["service"]["selected_endpoint"].__setitem__("address", bytes([203, 0, 113, 9])))
         add("service-substitution", lambda _request, installed, _release: installed["service"]["service"].__setitem__("name", "example.com"))
         add("channel-endpoint-alias", lambda request, _installed, _release: request["service"]["channel"].__setitem__("child_endpoint_id", request["service"]["channel"]["connector_endpoint_id"]))
-        add("descriptor-overlap", lambda request, _installed, _release: request["service"]["channel"].__setitem__("child_descriptor", request["executable_fd"]))
-        add("descriptor-in-close-range", lambda request, _installed, _release: request.__setitem__("close_file_descriptors_from", 9))
+        add("descriptor-overlap", overlap_descriptor)
+        add("descriptor-in-close-range", move_descriptor_into_close_range)
         add("executable-rule-omission", lambda request, _installed, _release: request["filesystem"].pop(0))
         add("filesystem-order-substitution", lambda request, _installed, _release: request["filesystem"].reverse())
         add("limit-substitution", lambda _request, installed, _release: installed["service"]["limits"].__setitem__("session_time_ms", 30_001))
@@ -99,9 +119,7 @@ class ServiceLauncherContractTests(unittest.TestCase):
             "environment": "API_KEY",
         }
         request["service"]["credential_source"] = descriptor
-        installed["service"] = copy.deepcopy(request["service"])
         binding_identity = hashlib.sha256(encode(request["service"])).digest()
-        release["service_binding_sha256"] = binding_identity
         release["credential_state"] = {
             "state": "released",
             "source_id": descriptor["id"],
@@ -118,16 +136,17 @@ class ServiceLauncherContractTests(unittest.TestCase):
             "environment": descriptor["environment"],
             "value": bytes(range(1, 33)),
         }
-        install_identity = hashlib.sha256(encode(request)).digest()
-        installed["install_request_sha256"] = install_identity
-        release["install_request_sha256"] = install_identity
-        transient["install_request_sha256"] = install_identity
+        refresh_bindings(request, installed, release, transient)
         validate_transcript([request, installed, transient, release])
 
         early = copy.deepcopy(request)
+        early_installed = copy.deepcopy(installed)
+        early_release = copy.deepcopy(release)
+        early_transient = copy.deepcopy(transient)
         early["environment"][descriptor["environment"]] = "x"
+        refresh_bindings(early, early_installed, early_release, early_transient)
         with self.assertRaises(ContractError):
-            validate_transcript([early, installed, transient, release])
+            validate_transcript([early, early_installed, early_transient, early_release])
 
         substituted = copy.deepcopy(transient)
         substituted["source_id"] = "other-source"
@@ -162,6 +181,15 @@ class ServiceLauncherContractTests(unittest.TestCase):
         oversized_text["arguments"].append("x" * 1_048_576)
         with self.assertRaises(ContractError):
             validate_transcript([oversized_text, self.installed, self.release])
+
+    def test_empty_argument_and_non_shell_environment_name_match_current_domain(self) -> None:
+        request = copy.deepcopy(self.request)
+        installed = copy.deepcopy(self.installed)
+        release = copy.deepcopy(self.release)
+        request["arguments"].append("")
+        request["environment"]["X-NAME"] = ""
+        refresh_bindings(request, installed, release)
+        validate_transcript([request, installed, release])
 
 
 if __name__ == "__main__":

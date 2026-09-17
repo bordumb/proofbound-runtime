@@ -3012,6 +3012,34 @@ channel, limit, filter, or descriptor bindings. Credential values and derived
 digests stayed out of retained artifacts. Production crates were unchanged,
 so production service execution and launcher decoding remained rejected.
 
+## RT-5 service launcher correction preliminary review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `f98eb8f0108bbf68dfe2aba84644bf0d157f53aa`
+- **Reviewed head:** `3d3c01036ac3796d5bc8354a9f927990292a4b37`
+- **Branch:** `codex/rt5-launcher-contract`
+- **Method:** Complete exact-range static protocol, schema, vector, checker,
+  mutation, claim, evidence, and roadmap review. The reviewer changed no files
+  and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The reviewer confirmed that the four prior semantic blockers were closed: the
+checker now represents transcript order, enforces the whole-frame bound, binds
+every later message to the complete install request, and agrees with the
+current argument and environment domains. One evidence blocker remained.
+Several mutations retained stale dependent install digests, so validation
+rejected those cases at an earlier binding check instead of the intended
+credential-order or descriptor invariant. The mutations must refresh dependent
+service and install identities when they target a local invariant, while a
+separate stale-digest mutation must continue to falsify complete-install
+binding.
+
+The reviewer found no other blocker. Credential values remained outside
+retained vectors and digests. Production crates were unchanged, so production
+service execution and launcher decoding remained rejected.
+
 ## RT-5 service observation preliminary review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
