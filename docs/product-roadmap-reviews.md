@@ -2983,6 +2983,28 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-5 connector engine third correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `c361cb11eefec4b03b55385caf2977552a34e97a`
+- **Reviewed head:** `60ca678ffc434e3bb6bb1e9d019c81f78093f966`
+- **Branch:** `codex/rt5-production-connector`
+- **Method:** Complete exact-range static security and assurance re-review. The
+  reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval record, hosted
+  admission, or merge can use this subject.
+
+The review confirmed that all specifically requested second-correction
+blockers were closed and that every earlier connector invariant remained
+intact. One new exact-source blocker remained: the four mandatory diagnostic
+syscall-decoder, event-mapping, stream-capture, and lifecycle suites still
+pinned the root `Cargo.toml` and `Cargo.lock` identities from before this
+branch. Because hosted preflight runs all four suites, the candidate could not
+pass or truthfully carry the intersecting diagnostic closures. All four
+identity pairs require one atomic refresh while retaining their existing
+mutation and rejection behavior, followed by a new exact-head review.
+
 ## RT-5 connector engine second correction review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

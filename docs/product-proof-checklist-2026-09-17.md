@@ -2,7 +2,7 @@
 
 - **Status:** active implementation
 - **Created:** 2026-09-17T19:31:00+01:00 (Europe/London, BST)
-- **Last updated:** 2026-09-17T21:35:28+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-17T21:46:00+01:00 (Europe/London, BST)
 - **Current Runtime main:**
   `8513ca7e096bc762b8e7d6c3977130a1da8f31f1`; exact-main Verify run
   `35267321804` passed
@@ -111,6 +111,10 @@ local-dependency closure. The second correction head `ed7445c` was rejected
 for final success-path deadline placement, non-causal per-arm and directional-
 limit guards, an omitted pending `PBR-OBSERVER-030` source identity, and a
 strict-lint candidate. The consolidated third correction batch is in progress.
+The third correction head `60ca678` closed those findings but was rejected
+because four mandatory RT-8 diagnostic suites still pinned the pre-connector
+root manifest and lock identities. The exact-source closure refresh is in
+progress.
 Keep every checkbox below open until the engine runs as the exact
 identified production process and the relevant behavior passes hosted and
 native admission.
