@@ -1,7 +1,7 @@
 schema = "proofbound-assumption/1"
 id = "PBR-TLS-AX-005"
 statement = "The identified TLS implementation, cryptographic primitives, trust-root set, and authenticated peer implement the recorded TLS version, exact DNS-name authentication, and channel security semantics correctly."
-category = "network-tcb"
+category = "cryptographic-library"
 owner = "Proofbound Runtime deployment operator"
 rationale = "Runtime can constrain configuration and retain implementation, trust-root, certificate-chain, and handshake identities, but bounded source and native checks do not prove the cryptographic implementation, public-key infrastructure, or remote peer."
 scope = "Only the TLS interpretation of the proposed PBR-NETWORK-037 service-session receipt contract. Revocation is explicitly not checked, session resumption and early data are denied, and remote application behavior is outside scope."

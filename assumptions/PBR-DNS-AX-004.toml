@@ -1,7 +1,7 @@
 schema = "proofbound-assumption/1"
 id = "PBR-DNS-AX-004"
 statement = "The identified resolver path supplies the DNS response bytes and timing observations attributed to it; DNS data is not trusted for service identity, which remains gated by exact TLS name authentication."
-category = "network-tcb"
+category = "external-provider"
 owner = "Proofbound Runtime deployment operator"
 rationale = "The connector can bound and record resolver interaction, answer selection, and expiry, but it cannot prove the behavior of a remote resolver or the network carrying its responses. Exact TLS service-name authentication prevents DNS data alone from expanding service authority."
 scope = "Only the interpretation of resolver observations retained by the proposed PBR-NETWORK-037 service-session receipt contract. It does not establish DNS availability, correctness, confidentiality, DNSSEC validation, or remote-resolver integrity."
