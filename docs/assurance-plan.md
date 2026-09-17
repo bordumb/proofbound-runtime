@@ -37,9 +37,9 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-OBSERVER-026` | Tier 1 event-mapping source admitted on exact Runtime main `a89b92d` | The mapper preserves the closed trace identity, operands, and outcome fields, assigns contiguous sequence values, and keeps object resolution unresolved. Exact-head Verify run `35018691928` and exact-main run `35025687602` passed. Linux truth, object resolution, command integration, native attacks, and release binding remain open. |
 | `PBR-OBSERVER-027` | Tier 1 bounded-stream source admitted on exact Runtime main `17458ad` | The trace starts independent stdout and stderr drains after spawn, retains bounded prefixes while reading to EOF, and exposes captures only after terminal tree handling. Exact-head PR 22 run `35039326242` and exact-main run `35042895100` passed. Linux pipe progress, cgroup placement, wall time, command integration, native attacks, and release binding remain open. |
 | `PBR-OBSERVER-028` | Tier 1 lifecycle source admitted on exact Runtime main `cddd8dd` | The trace source binds one exact cgroup version 2 owner and one private absolute execution deadline, begins bounded termination before it exposes a drain-only state, and gates publication on complete terminal resources and streams. The identical PR head passed all lanes; exact-main replay later hit only the bounded authority proof's time budget. Native kernel, clock, cgroup, scheduler, pipe, command, and release behavior remain open. |
-| `PBR-OBSERVER-029` | Tier 1 object-resolution source pending exact-head review and hosted verification | Successful descriptor and post-exec observations become kernel-selected only from one exact stopped tracee with a retained object, normalized live path, and complete identity. Linux truth, native attacks, command integration, and release behavior remain open. |
-| `PBR-OBSERVER-030` | Tier 1 candidate-resolution source pending exact-head review and hosted verification | Failed path operations produce only advisory stable candidates after two bounded root-confined observations agree; drift and hop exhaustion remain explicit gaps. Linux pathname and race completeness remain open. |
-| `PBR-OBSERVER-031` | Tier 1 separate-command source pending exact-head review and hosted verification | `pbr-diagnose` reuses the exact seed authority, retains terminal gating, and uses durable no-replace publication for non-reusable artifacts. Native and exact released-artifact behavior remain open. |
+| `PBR-OBSERVER-029` | Tier 1 object-resolution source admitted on exact Runtime main `d60d1f3` | Successful descriptor and post-exec observations become kernel-selected only from one exact stopped tracee with a retained object, normalized live path, and complete identity. Independently approved PR 26 head `2fc82ff` passed run `35172227506`, including both native architectures. Exact-main run `35175269953` passed. The wider exit corpus remains pending. |
+| `PBR-OBSERVER-030` | Tier 1 candidate-resolution source admitted on exact Runtime main `d60d1f3` | Failed path operations produce only advisory stable candidates after two bounded root-confined observations agree; drift and hop exhaustion remain explicit gaps. Independently approved PR 26 head `2fc82ff` passed run `35172227506`, including both native architectures. Exact-main run `35175269953` passed. Linux pathname completeness remains pending. |
+| `PBR-OBSERVER-031` | Tier 1 separate-command source admitted on exact Runtime main `d60d1f3` | `pbr-diagnose` reuses the exact seed authority, retains terminal gating, and uses durable no-replace publication for non-reusable artifacts. Independently approved PR 26 head `2fc82ff` passed run `35172227506`, including both native architectures. Exact-main run `35175269953` passed. The active exit wave adds an exact declared static-scaffold input and a maintained dynamic workload without adding authority; its evidence and exact released-artifact observation remain pending. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -450,7 +450,10 @@ network attempts and unresolved observations open, restricts candidates to
 explicit normalized project or runtime roots, excludes system, home, and
 temporary roots, and requires a person to choose write roots, environment
 names, resource limits, and network mode. Capsec comparison requires the exact
-schema, source, analyzer, and report identities.
+schema, source, analyzer, and report identities. Exact static and
+platform-required closure entries remain non-authoritative, retain content and
+role identity, and stay separate from scoped authority candidates. The public
+constructor rejects diagnostic, human, or Capsec provenance for closure entries.
 
 The initial evidence path must falsify event and per-process bounds, sequence
 ordering, result and error exclusivity, resolution and identity consistency,
@@ -889,13 +892,20 @@ the separate observer. It requires an explicit delegated cgroup root and absent
 receipt and draft targets outside child write authority. Terminal protocol
 eligibility precedes bounded artifact construction and create-new, durable,
 no-replace publication. The production command and launcher do not depend on
-diagnostic crates.
+diagnostic crates. The active exit extension may read one static scaffold only
+through a retained regular-file descriptor that the seed plan already declares
+as a project input. It requires an exact target, loader, dependency, platform,
+and content-identity match before it adds non-authoritative static or
+platform-required identified-closure entries. It does not add filesystem
+authority.
 
 Rust tests cover the closed command arguments and observation bounds. The
 independent checker requires seed-authority reuse, boundary constructors,
 terminal gating, absent targets, durable no-replace publication, production
-dependency separation, and release inventory inclusion. Its mutations weaken
-create-new publication, terminal eligibility, or child-write exclusion. Native
+dependency separation, release inventory inclusion, declared scaffold access,
+strict scaffold parsing, exact closure identity checks, and provenance
+separation. Its mutations weaken create-new publication, terminal eligibility,
+child-write exclusion, identity matching, or provenance integrity. Native
 exact-head and released-artifact observations are still required before public
 language can describe the command as released.
 

@@ -1,16 +1,19 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-16T20:20:00+01:00 (Europe/London, BST)
-- **Runtime baseline:** roadmap admission synchronization passed exact-head PR
-  24 Verify run `35131985759`, merged unsigned as `e8473bd`, and passed
-  exact-main Verify run `35135938137`.
-- **Active implementation wave:** `PBR-OBSERVER-028` diagnostic execution
-  lifecycle: stopped-child cgroup placement, one absolute deadline, resource
-  observation, and fail-closed cleanup before command integration.
-- **Current batch:** the lifecycle source is restacked on exact admitted main.
-  Reconcile exact-source guards, then repeat independent review and hosted
-  admission.
+- **Last updated:** 2026-09-17T04:00:00+01:00 (Europe/London, BST)
+- **Runtime baseline:** the independently approved `PBR-OBSERVER-029` through
+  `PBR-OBSERVER-031` subject passed PR 26 Verify run `35172227506` at exact head
+  `2fc82ff` and merged unsigned as `d60d1f3`. Exact-main run `35175269953`
+  passed every required lane.
+- **Active implementation wave:** RT-8 product exit: maintained dynamic
+  drafting, explicit static and platform-closure provenance, and the remaining
+  adversarial corpus.
+- **Current batch:** consume one exact, declared static scaffold without adding
+  authority; retain its exact executable, interpreter, and library identities
+  separately from scoped runtime suggestions; and run the complete workflow on
+  a dynamically linked maintained native workload on both supported
+  architectures.
 - **Parallel external gates:** RT-7 protected routes and current-integration
   source are merged; registry configuration, actual public package publication,
   anonymous observations, consumer dogfood, and a retained current-integration
@@ -359,9 +362,13 @@ manifest describes the supported tuple.
   visibly.
 - [ ] Run and admit the adversarial corpus for stale source, symlink redirection,
   observation-sensitive behavior, missing events, and attempted provenance
-  relabeling.
+  relabeling. The active exit wave adds stale-input and provenance-relabel
+  checks. The remaining live observer attacks and hosted exact-head evidence
+  are still required.
 - [ ] Demonstrate one maintained dynamic workload using every available
-  provenance class.
+  provenance class. The active exit wave contains the x86_64 and aarch64
+  workload; hosted exact-head evidence remains required. Capsec stays visibly
+  unavailable until its owner publishes an accepted identified report contract.
 - [ ] Complete one consolidated independent review, exact-head hosted evidence,
   unsigned merge,
   and exact-main verification.

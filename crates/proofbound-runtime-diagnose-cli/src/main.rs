@@ -13,14 +13,16 @@ use std::process::ExitCode;
 
 use proofbound_runtime_core::{
     Architecture as ReceiptArchitecture, ArtifactIdentity, ArtifactRole, DiagnosticCompletion,
-    EnvironmentName, FileAccess, FileMode, NetworkMode, PathRole, ResourceLimits, Sha256Digest,
-    compile_policy, normalize_authority, parse_execution_plan_for_execution,
+    DraftProvenance, EnvironmentName, FileAccess, FileMode, NetworkMode, PathRole, ResourceLimits,
+    Sha256Digest, compile_policy, normalize_authority, parse_execution_plan_for_execution,
 };
 use proofbound_runtime_diagnose::artifact::{
     DiagnosticArtifactIdentity, DiagnosticArtifactRole, DiagnosticGap, DiagnosticPlatform,
     DiagnosticReceiptParts, DiagnosticTcbEntry, DiagnosticTcbRole, ObservationBounds,
 };
-use proofbound_runtime_diagnose::draft::{ContentIdentity, DraftInput, PlanDraftInputs};
+use proofbound_runtime_diagnose::draft::{
+    ContentIdentity, DraftInput, IdentifiedClosureEntry, IdentifiedClosureRole, PlanDraftInputs,
+};
 use proofbound_runtime_diagnose::observer::ObserverDirective;
 use proofbound_runtime_diagnose::producer::build_diagnostic_artifacts;
 use proofbound_runtime_diagnose_linux::{
@@ -33,6 +35,7 @@ use proofbound_runtime_linux::{
     compile_deny_network_program, fresh_execution_id, identify_external_artifact,
     probe_capabilities,
 };
+use serde::Deserialize;
 use serde_json::json;
 use sha2::{Digest as _, Sha256};
 
@@ -63,7 +66,7 @@ fn main() -> ExitCode {
         && (arguments[1] == OsStr::new("--help") || arguments[1] == OsStr::new("-h"))
     {
         println!(
-            "usage: pbr-diagnose --plan SEED_PLAN --receipt ABSENT_RECEIPT --draft ABSENT_DRAFT --cgroup-root DELEGATED_CGROUP_ROOT"
+            "usage: pbr-diagnose --plan SEED_PLAN --receipt ABSENT_RECEIPT --draft ABSENT_DRAFT --cgroup-root DELEGATED_CGROUP_ROOT [--static-scaffold DECLARED_PROJECT_INPUT]"
         );
         return ExitCode::SUCCESS;
     }
@@ -95,6 +98,7 @@ struct CommandInput {
     receipt: PathBuf,
     draft: PathBuf,
     cgroup_root: PathBuf,
+    static_scaffold: Option<PathBuf>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -140,6 +144,7 @@ fn parse_args(args: impl IntoIterator<Item = OsString>) -> Result<CommandInput, 
     let mut receipt = None;
     let mut draft = None;
     let mut cgroup_root = None;
+    let mut static_scaffold = None;
     while let Some(option) = args.next() {
         let argument = args
             .next()
@@ -152,6 +157,8 @@ fn parse_args(args: impl IntoIterator<Item = OsString>) -> Result<CommandInput, 
             draft = Some(argument);
         } else if option == OsStr::new("--cgroup-root") && cgroup_root.is_none() {
             cgroup_root = Some(argument);
+        } else if option == OsStr::new("--static-scaffold") && static_scaffold.is_none() {
+            static_scaffold = Some(argument);
         } else {
             return Err(DiagnoseError::invalid("diagnostic.cli.usage-invalid"));
         }
@@ -169,6 +176,7 @@ fn parse_args(args: impl IntoIterator<Item = OsString>) -> Result<CommandInput, 
         cgroup_root: cgroup_root
             .ok_or_else(|| DiagnoseError::invalid("diagnostic.cli.usage-invalid"))?
             .into(),
+        static_scaffold: static_scaffold.map(PathBuf::from),
     })
 }
 
@@ -228,6 +236,12 @@ fn execute(input: CommandInput) -> Result<serde_json::Value, DiagnoseError> {
         .discover_executable(plan.command().executable(), supported.architecture())
         .map_err(|error| DiagnoseError::invalid(error.code()))?;
     let readable = resolve_read_authority(&resolver, &compiled)?;
+    let static_scaffold = load_static_scaffold(
+        input.static_scaffold.as_deref(),
+        &readable,
+        &executable,
+        supported.architecture(),
+    )?;
 
     let observer_path = fs::canonicalize(
         env::current_exe()
@@ -517,7 +531,11 @@ fn execute(input: CommandInput) -> Result<serde_json::Value, DiagnoseError> {
     let artifacts = build_diagnostic_artifacts(
         receipt_parts,
         PlanDraftInputs {
+            static_scaffold: static_scaffold.as_ref().map(|value| value.digest),
             inputs: draft_inputs(&readable)?,
+            identified_closure: static_scaffold
+                .map(|value| value.identified_closure)
+                .unwrap_or_default(),
             ..PlanDraftInputs::default()
         },
     )
@@ -762,6 +780,386 @@ fn diagnostic_identity(
         .map_err(|error| DiagnoseError::output(error.code()))
 }
 
+const MAX_STATIC_SCAFFOLD_BYTES: u64 = 16 * 1024 * 1024;
+
+#[derive(Debug)]
+struct StaticScaffoldInput {
+    digest: Sha256Digest,
+    identified_closure: Vec<IdentifiedClosureEntry>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct StaticScaffoldReport {
+    schema: String,
+    safe_policy: bool,
+    host_profile: StaticHostProfile,
+    executable: StaticArtifact,
+    interpreter: Option<StaticArtifact>,
+    resolution_inputs: Vec<StaticArtifact>,
+    dependencies: Vec<StaticDependency>,
+    suggested_runtime_roots: Vec<StaticRuntimeRoot>,
+    open_items: Vec<StaticOpenItem>,
+}
+
+#[derive(Deserialize)]
+enum StaticHostProfile {
+    #[serde(rename = "linux-glibc-x86-64-v1")]
+    LinuxGlibcX86_64V1,
+    #[serde(rename = "linux-glibc-aarch64-v1")]
+    LinuxGlibcAarch64V1,
+    #[serde(rename = "linux-musl-x86-64-v1")]
+    LinuxMuslX86_64V1,
+    #[serde(rename = "linux-musl-aarch64-v1")]
+    LinuxMuslAarch64V1,
+}
+
+impl StaticHostProfile {
+    const fn supports(&self, architecture: Architecture) -> bool {
+        matches!(
+            (self, architecture),
+            (
+                Self::LinuxGlibcX86_64V1 | Self::LinuxMuslX86_64V1,
+                Architecture::X86_64
+            ) | (
+                Self::LinuxGlibcAarch64V1 | Self::LinuxMuslAarch64V1,
+                Architecture::Aarch64
+            )
+        )
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct StaticArtifact {
+    mode: String,
+    requested: String,
+    resolved: String,
+    sha256: String,
+    size_bytes: u64,
+    symlink_chain: Vec<StaticSymlinkHop>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct StaticSymlinkHop {
+    path: String,
+    target: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct StaticDependency {
+    candidates: Vec<StaticSearchCandidate>,
+    declared_by: String,
+    search_rule: StaticSearchRule,
+    selected: StaticArtifact,
+    soname: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct StaticSearchCandidate {
+    path: String,
+    search_rule: StaticSearchRule,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "kebab-case")]
+enum StaticSearchRule {
+    ElfRpath,
+    ElfRunpath,
+    GlibcLoaderCacheExact,
+    InheritedRpath,
+    MuslPathFile,
+    ProfileDefault,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct StaticRuntimeRoot {
+    path: String,
+    provenance: Vec<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct StaticOpenItem {
+    code: StaticOpenItemCode,
+    detail: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "kebab-case")]
+enum StaticOpenItemCode {
+    ChooseEnvironment,
+    ChooseLimits,
+    ChooseNetworkMode,
+    ChooseWriteRoots,
+    ConfigurationUnresolved,
+    DynamicLoadsUnresolved,
+    LoaderDataUnavailable,
+    RelativeSearchPath,
+    SearchPathConflict,
+    UnsupportedDynamicToken,
+}
+
+fn load_static_scaffold(
+    requested: Option<&Path>,
+    readable: &[ResolvedReadPath],
+    target: &proofbound_runtime_linux::ExecutableClosure,
+    architecture: Architecture,
+) -> Result<Option<StaticScaffoldInput>, DiagnoseError> {
+    let Some(requested) = requested else {
+        return Ok(None);
+    };
+    if requested.as_os_str().is_empty() || requested.is_absolute() {
+        return Err(DiagnoseError::invalid(
+            "diagnostic.static-scaffold.path-invalid",
+        ));
+    }
+    let mut matches = readable
+        .iter()
+        .filter(|candidate| candidate.requested_path() == requested);
+    let selected = matches
+        .next()
+        .ok_or_else(|| DiagnoseError::invalid("diagnostic.static-scaffold.not-declared"))?;
+    if matches.next().is_some() || selected.identity().role() != ArtifactRole::ProjectInput {
+        return Err(DiagnoseError::invalid(
+            "diagnostic.static-scaffold.not-declared",
+        ));
+    }
+    let ResolvedReadPath::File(file) = selected else {
+        return Err(DiagnoseError::invalid(
+            "diagnostic.static-scaffold.file-required",
+        ));
+    };
+    if file.identity().size() > MAX_STATIC_SCAFFOLD_BYTES {
+        return Err(DiagnoseError::invalid(
+            "diagnostic.static-scaffold.size-invalid",
+        ));
+    }
+    let bytes = file
+        .read_bytes()
+        .map_err(|_| DiagnoseError::invalid("diagnostic.static-scaffold.identity-drift"))?;
+    let report: StaticScaffoldReport = serde_json::from_slice(&bytes)
+        .map_err(|_| DiagnoseError::invalid("diagnostic.static-scaffold.schema-invalid"))?;
+    validate_static_scaffold(&report, target, readable, architecture)?;
+
+    let mut identified_closure = Vec::with_capacity(2 + report.dependencies.len());
+    identified_closure.push(closure_entry(
+        IdentifiedClosureRole::Executable,
+        &report.executable,
+        DraftProvenance::StaticExecutableClosure,
+    )?);
+    if let Some(interpreter) = &report.interpreter {
+        identified_closure.push(closure_entry(
+            IdentifiedClosureRole::Interpreter,
+            interpreter,
+            DraftProvenance::PlatformRequiredClosure,
+        )?);
+    }
+    for dependency in &report.dependencies {
+        identified_closure.push(closure_entry(
+            IdentifiedClosureRole::RuntimeLibrary,
+            &dependency.selected,
+            DraftProvenance::PlatformRequiredClosure,
+        )?);
+    }
+    Ok(Some(StaticScaffoldInput {
+        digest: file.identity().digest(),
+        identified_closure,
+    }))
+}
+
+fn closure_entry(
+    role: IdentifiedClosureRole,
+    artifact: &StaticArtifact,
+    provenance: DraftProvenance,
+) -> Result<IdentifiedClosureEntry, DiagnoseError> {
+    IdentifiedClosureEntry::new(
+        role,
+        artifact.resolved.clone(),
+        ContentIdentity::new(
+            parse_static_digest(&artifact.sha256).ok_or_else(|| {
+                DiagnoseError::invalid("diagnostic.static-scaffold.schema-invalid")
+            })?,
+            artifact.size_bytes,
+        ),
+        parse_static_mode(&artifact.mode)
+            .ok_or_else(|| DiagnoseError::invalid("diagnostic.static-scaffold.schema-invalid"))?,
+        provenance,
+    )
+    .map_err(|_| DiagnoseError::invalid("diagnostic.static-scaffold.schema-invalid"))
+}
+
+fn validate_static_scaffold(
+    report: &StaticScaffoldReport,
+    target: &proofbound_runtime_linux::ExecutableClosure,
+    readable: &[ResolvedReadPath],
+    architecture: Architecture,
+) -> Result<(), DiagnoseError> {
+    if report.schema != "proofbound-runtime-plan-scaffold/1" || report.safe_policy {
+        return Err(DiagnoseError::invalid(
+            "diagnostic.static-scaffold.schema-invalid",
+        ));
+    }
+    if !report.host_profile.supports(architecture) {
+        return Err(DiagnoseError::invalid(
+            "diagnostic.static-scaffold.profile-mismatch",
+        ));
+    }
+    validate_static_artifact(&report.executable)?;
+    if !static_artifact_matches_file(&report.executable, target.executable()) {
+        return Err(DiagnoseError::invalid(
+            "diagnostic.static-scaffold.target-mismatch",
+        ));
+    }
+    if report.resolution_inputs.len() > 257
+        || report.dependencies.len() > 256
+        || report.suggested_runtime_roots.len() > 257
+        || report.open_items.len() > 65_536
+    {
+        return Err(DiagnoseError::invalid(
+            "diagnostic.static-scaffold.schema-invalid",
+        ));
+    }
+    for artifact in report.resolution_inputs.iter() {
+        validate_static_artifact(artifact)?;
+    }
+    match (&report.interpreter, target.loader()) {
+        (Some(interpreter), Some(loader)) => {
+            validate_static_artifact(interpreter)?;
+            if !static_artifact_matches_file(interpreter, loader) {
+                return Err(DiagnoseError::invalid(
+                    "diagnostic.static-scaffold.target-mismatch",
+                ));
+            }
+        }
+        (None, None) => {}
+        _ => {
+            return Err(DiagnoseError::invalid(
+                "diagnostic.static-scaffold.target-mismatch",
+            ));
+        }
+    }
+    for dependency in &report.dependencies {
+        validate_static_dependency(dependency)?;
+        if !readable.iter().any(|path| {
+            matches!(path, ResolvedReadPath::File(_))
+                && path.identity().role() == ArtifactRole::RuntimeLibrary
+                && static_artifact_matches_resolved(&dependency.selected, path)
+        }) {
+            return Err(DiagnoseError::invalid(
+                "diagnostic.static-scaffold.dependency-not-declared",
+            ));
+        }
+    }
+    for root in &report.suggested_runtime_roots {
+        if !Path::new(&root.path).is_absolute()
+            || root.path.len() > 1_048_576
+            || root.provenance.is_empty()
+            || root.provenance.len() > 257
+            || root
+                .provenance
+                .iter()
+                .any(|value| value.is_empty() || value.len() > 1_048_576)
+        {
+            return Err(DiagnoseError::invalid(
+                "diagnostic.static-scaffold.schema-invalid",
+            ));
+        }
+    }
+    for item in &report.open_items {
+        let _ = &item.code;
+        if item.detail.is_empty() || item.detail.len() > 1_048_576 {
+            return Err(DiagnoseError::invalid(
+                "diagnostic.static-scaffold.schema-invalid",
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn validate_static_dependency(dependency: &StaticDependency) -> Result<(), DiagnoseError> {
+    if dependency.candidates.is_empty()
+        || dependency.candidates.len() > 256
+        || dependency.soname.is_empty()
+        || dependency.soname.contains('/')
+        || !Path::new(&dependency.declared_by).is_absolute()
+    {
+        return Err(DiagnoseError::invalid(
+            "diagnostic.static-scaffold.schema-invalid",
+        ));
+    }
+    let _ = &dependency.search_rule;
+    validate_static_artifact(&dependency.selected)?;
+    for candidate in &dependency.candidates {
+        let _ = &candidate.search_rule;
+        if !Path::new(&candidate.path).is_absolute() || candidate.path.len() > 1_048_576 {
+            return Err(DiagnoseError::invalid(
+                "diagnostic.static-scaffold.schema-invalid",
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn validate_static_artifact(artifact: &StaticArtifact) -> Result<(), DiagnoseError> {
+    if artifact.requested.is_empty()
+        || artifact.requested.len() > 1_048_576
+        || !Path::new(&artifact.resolved).is_absolute()
+        || artifact.resolved.len() > 1_048_576
+        || artifact.size_bytes > 64 * 1024 * 1024
+        || parse_static_mode(&artifact.mode).is_none()
+        || parse_static_digest(&artifact.sha256).is_none()
+        || artifact.symlink_chain.len() > 40
+        || artifact.symlink_chain.iter().any(|hop| {
+            hop.path.is_empty()
+                || hop.target.is_empty()
+                || hop.path.len() > 1_048_576
+                || hop.target.len() > 1_048_576
+        })
+    {
+        return Err(DiagnoseError::invalid(
+            "diagnostic.static-scaffold.schema-invalid",
+        ));
+    }
+    Ok(())
+}
+
+fn static_artifact_matches(artifact: &StaticArtifact, identity: &ArtifactIdentity) -> bool {
+    parse_static_digest(&artifact.sha256) == Some(identity.digest())
+        && artifact.size_bytes == identity.size()
+        && parse_static_mode(&artifact.mode) == Some(identity.mode().get())
+}
+
+fn static_artifact_matches_file(
+    artifact: &StaticArtifact,
+    file: &proofbound_runtime_linux::ResolvedFile,
+) -> bool {
+    static_artifact_matches(artifact, file.identity())
+        && Path::new(&artifact.resolved) == file.resolved_target()
+}
+
+fn static_artifact_matches_resolved(artifact: &StaticArtifact, file: &ResolvedReadPath) -> bool {
+    static_artifact_matches(artifact, file.identity())
+        && Path::new(&artifact.resolved) == file.resolved_target()
+}
+
+fn parse_static_digest(value: &str) -> Option<Sha256Digest> {
+    value
+        .strip_prefix("sha256:")
+        .and_then(|hex| Sha256Digest::parse_hex(hex).ok())
+}
+
+fn parse_static_mode(value: &str) -> Option<u16> {
+    if value.len() != 4 || !value.bytes().all(|byte| matches!(byte, b'0'..=b'7')) {
+        return None;
+    }
+    u16::from_str_radix(value, 8).ok()
+}
+
 fn draft_inputs(readable: &[ResolvedReadPath]) -> Result<Vec<DraftInput>, DiagnoseError> {
     readable
         .iter()
@@ -958,11 +1356,17 @@ mod tests {
             OsString::from("draft.json"),
             OsString::from("--cgroup-root"),
             OsString::from("/sys/fs/cgroup/delegated"),
+            OsString::from("--static-scaffold"),
+            OsString::from("plan-scaffold.json"),
         ])
         .expect("complete diagnostic command");
         assert_eq!(parsed.plan, PathBuf::from("seed.cbor"));
         assert_eq!(parsed.receipt, PathBuf::from("receipt.json"));
         assert_eq!(parsed.draft, PathBuf::from("draft.json"));
+        assert_eq!(
+            parsed.static_scaffold,
+            Some(PathBuf::from("plan-scaffold.json"))
+        );
 
         for invalid in [
             vec!["pbr-diagnose", "--plan", "seed.cbor"],

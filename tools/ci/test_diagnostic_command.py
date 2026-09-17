@@ -34,6 +34,17 @@ def assert_command_contract(sources):
         "ObserverDirective::PublishIncomplete",
         "observer_error_codes.insert(error.code())",
         '"observer_error_codes": observer_error_codes',
+        'OsStr::new("--static-scaffold")',
+        "load_static_scaffold(",
+        "diagnostic.static-scaffold.not-declared",
+        "selected.identity().role() != ArtifactRole::ProjectInput",
+        "ResolvedReadPath::File(file)",
+        ".read_bytes()",
+        "static_artifact_matches_file(&report.executable, target.executable())",
+        "diagnostic.static-scaffold.dependency-not-declared",
+        "DraftProvenance::StaticExecutableClosure",
+        "DraftProvenance::PlatformRequiredClosure",
+        "IdentifiedClosureEntry::new",
         "create_new(true)",
         "hard_link",
         "sync_all",
@@ -70,6 +81,7 @@ def assert_command_contract(sources):
         "parse_execution_plan_for_execution",
         "normalize_authority",
         "compile_policy",
+        "load_static_scaffold",
         "compile_deny_network_program",
         "InstallRequest::new",
         "prepare_observer",
@@ -130,6 +142,18 @@ def assert_command_contract(sources):
         "for binary in pbr pbr-native-launcher pbr-verify pbr-diagnose"
         in sources["native_script"]
     )
+    assert "--static-scaffold plan-scaffold.json" in sources["native_script"]
+    assert 'assert draft["static_scaffold"] == "sha256:"' in sources["native_script"]
+    for marker in [
+        'dynamic_executable="$e2e_root/dynamic-diagnostic-probe"',
+        "experiments/performance/discover_runtime_libraries.py",
+        "--id ci.native-diagnostic-dynamic-workload",
+        '"platform-required-closure", "static-executable-closure"',
+        'entry["provenance"] for entry in draft["identified_closure"]',
+        'assert receipt["reusable"] is False',
+        '"capsec-missing", "choose-environment", "choose-limits"',
+    ]:
+        assert marker in sources["native_script"]
     assert (
         'assert_manifest_artifact(&bundle, "pbr-diagnose")'
         in sources["release_observation"]
@@ -183,6 +207,19 @@ class DiagnosticCommandContractTests(unittest.TestCase):
                 "observer_error_codes.insert(error.code());", "", 1
             ),
             self.sources["command"].replace(
+                "selected.identity().role() != ArtifactRole::ProjectInput", "false", 1
+            ),
+            self.sources["command"].replace(
+                "static_artifact_matches_file(&report.executable, target.executable())",
+                "true",
+                1,
+            ),
+            self.sources["command"].replace(
+                "diagnostic.static-scaffold.dependency-not-declared",
+                "diagnostic.static-scaffold.allowed",
+                1,
+            ),
+            self.sources["command"].replace(
                 "sync_parent(draft_target)?;", "sync_parent(receipt_target)?;", 1
             ),
             self.sources["command"].replace(
@@ -227,6 +264,14 @@ class DiagnosticCommandContractTests(unittest.TestCase):
                 "current_verifier",
                 self.sources["current_verifier"].replace(
                     '    "pbr-diagnose",\n', "", 1
+                ),
+            ),
+            (
+                "native_script",
+                self.sources["native_script"].replace(
+                    'dynamic_executable="$e2e_root/dynamic-diagnostic-probe"\n',
+                    "",
+                    1,
                 ),
             ),
         ]

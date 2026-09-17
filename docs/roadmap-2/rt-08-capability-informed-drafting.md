@@ -63,9 +63,15 @@ as `cddd8dd` after independent exact-source review and complete PR verification.
 The following consolidated RT-8 subject implements conservative stopped-tracee
 object resolution, bounded denied-path candidates, the separate `pbr-diagnose`
 executable, native diagnostic coverage, and release-inventory binding under
-`PBR-OBSERVER-029` through `PBR-OBSERVER-031`. These additions remain
-unadmitted until final exact-head review and hosted verification pass. The
-maintained all-provenance dynamic workload remains the product-exit item.
+`PBR-OBSERVER-029` through `PBR-OBSERVER-031`. Independently approved PR 26
+head `2fc82ff` passed complete Verify run `35172227506`, including both native
+architectures, and merged unsigned as `d60d1f3`. Exact-main replay remains in
+progress. The active product-exit wave consumes an exact declared static
+scaffold, keeps static and platform-required closure context
+non-authoritative, and
+runs one maintained dynamically linked workload. Capsec provenance remains an
+optional unavailable class until Capsec publishes an accepted identified
+report tuple; its absence stays visible as an open item.
 
 **Primary owner:** Proofbound Runtime
 
@@ -191,6 +197,12 @@ values without making a draft an authority object.
 unresolved diagnostic artifact events. `PBR-OBSERVER-027` is admitted on
 `17458ad`. It gives the trace session independent bounded, cancellable,
 nonblocking stdout and stderr drains before command integration.
+`PBR-OBSERVER-028` is admitted on `cddd8dd`. The independently approved
+`PBR-OBSERVER-029` through `PBR-OBSERVER-031` subject passed every PR lane in
+run `35172227506` and merged as exact Runtime main `d60d1f3`. Exact-main replay
+run `35172227506` and merged as exact Runtime main `d60d1f3`. Exact-main Verify
+run `35175269953` passed every required lane. The wider RT-8 exit corpus remains
+required.
 
 Complete the remaining RT-8 work in this dependency order. The implementation
 can be developed as one consolidated subject, but every numbered claim retains
@@ -205,34 +217,43 @@ its own evidence units, assumptions, falsifiers, and review findings:
    retained process-group signal to succeed, then carry one absolute cleanup
    deadline through exact-tree completion, cgroup cleanup, complete version 2
    resource observations, stream cancellation, and joins before any publication
-   decision. The source and independent contract are implemented on the stacked
-   lifecycle source. Independent review and complete PR verification passed.
-   Exact-main replay encountered only a Kani time-budget timeout after the
+   decision. The source and independent contract are admitted on exact Runtime
+   main `cddd8dd`. Independent review and complete PR verification passed. The
+   first exact-main replay encountered only a Kani time-budget timeout after the
    identical PR head passed; it did not expose a lifecycle source defect.
 2. Resolve a successful descriptor or executable only from the still-stopped
    tracee. Resolve a denied path only as a bounded stable candidate with before
    and after identities. Preserve races and unsupported forms as explicit gaps.
    Deliver this as two independently admitted claims: first conservative
    kernel-selected descriptor and post-exec identities, then bounded denied-path
-   candidates and drift detection. The successful-descriptor claim accepts
-   only a sole retained tracee; shared-table ambiguity remains unresolved.
+   candidates and drift detection. Both claims passed independent review and
+   complete PR verification and merged in exact Runtime main `d60d1f3`. The
+   successful-descriptor claim accepts only a sole retained tracee;
+   shared-table ambiguity remains unresolved.
 3. Add the separate `pbr-diagnose` command. Reuse the seed plan's exact
    production authority, publish neither output before release, and publish the
    diagnostic receipt and draft with the existing no-replace durability model.
-4. Run the registered native attack corpus on x86_64 and aarch64, including
-   pipe saturation, wall-time expiry, process-tree races, observation-sensitive
-   behavior, path drift, malformed operands, and publication interruption.
-5. Add the exact diagnostic executable to release provenance and artifact
-   inspection. Finish with one maintained dynamic workload that displays every
-   available provenance class, requires human completion, and produces no
-   reusable production evidence.
+   This command passed independent review and complete PR verification and
+   merged in exact Runtime main `d60d1f3`.
+4. Complete the registered native attack corpus on x86_64 and aarch64. PR 26
+   passed both native lanes for the merged object-resolution, candidate, and
+   command subject. The active exit wave adds the maintained dynamic workload,
+   provenance-relabel protection, and the remaining observation-sensitive,
+   stale-source, symlink-redirection, missing-event, and publication cases.
+5. The exact diagnostic executable is now in release provenance and artifact
+   inspection. Finish the active exit wave with one maintained dynamic workload
+   that displays every currently available provenance class, requires human
+   completion, and produces no reusable production evidence. Capsec remains an
+   explicit unavailable class until Capsec publishes an accepted identified
+   report contract.
 
-For the current prelaunch consolidation, review the complete dependent subject
-once after production code, tests, evidence, native corpus, release inventory,
-and documentation are internally consistent. Approval must enumerate
-`PBR-OBSERVER-029`, `PBR-OBSERVER-030`, and `PBR-OBSERVER-031` separately and
-confirm that evidence does not transfer between kernel-selected objects,
-advisory candidates, command orchestration, and released artifacts.
+PR 26 received the required consolidated review for `PBR-OBSERVER-029` through
+`PBR-OBSERVER-031`. Review the active exit-wave extension once after production
+code, tests, evidence, native corpus, and documentation are internally
+consistent. Approval must cover the changed `PBR-DRAFT-019` and
+`PBR-OBSERVER-031` surfaces and confirm that declared static closure,
+platform-required closure, diagnostic observation, and unavailable Capsec
+provenance cannot grant authority or be relabeled.
 
 ## Integration exit
 

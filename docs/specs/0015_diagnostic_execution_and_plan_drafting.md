@@ -31,7 +31,8 @@ The first command is:
 
 ```text
 pbr-diagnose --plan SEED_PLAN --receipt ABSENT_RECEIPT --draft ABSENT_DRAFT \
-  --cgroup-root DELEGATED_CGROUP_ROOT
+  --cgroup-root DELEGATED_CGROUP_ROOT \
+  [--static-scaffold DECLARED_PROJECT_INPUT]
 ```
 
 The seed plan must already pass the normal strict plan parser and `plan check`.
@@ -39,6 +40,21 @@ It supplies the only authority available during the observed execution. The
 diagnostic supervisor does not add a path, environment name, descriptor,
 process allowance, resource allowance, or network authority when the target
 encounters a denial.
+
+The optional static scaffold must name one relative regular-file project input
+that the seed plan already grants read authority. The command reads through the
+retained identified descriptor, rejects a directory, oversized input, identity
+drift, duplicate or unknown JSON members, an unsupported closed value, and a
+scaffold whose executable identity or resolved target differs from the
+diagnostic target. The selected host profile must match the probed architecture,
+the interpreter must match the retained executable closure, and each dependency
+must match one exact regular-file runtime library already declared by the seed
+plan. A valid scaffold contributes only its exact report commitment and an
+`identified_closure` review section that is separate from authority candidates.
+Each closure entry retains its exact path, digest, size, mode, and role. The
+scaffold executable has `static-executable-closure` provenance. Its interpreter
+and dependency files have `platform-required-closure` provenance. No closure
+entry is a plan suggestion, and no scaffold item changes the installed policy.
 
 The delegated cgroup root is explicit invocation input. The command does not
 discover one from ambient environment or user configuration. The first command

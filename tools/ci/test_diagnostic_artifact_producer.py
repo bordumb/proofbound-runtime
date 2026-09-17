@@ -174,6 +174,13 @@ class DiagnosticArtifactProducerContractTests(unittest.TestCase):
             "observation.report != profile.report",
             "DraftPathScope",
             "is_system_path",
+            "inputs.candidates.sort()",
+            "merge_candidate(&mut candidates, candidate)",
+            "pub struct IdentifiedClosureEntry",
+            "inputs.identified_closure.sort()",
+            "DraftProvenance::StaticExecutableClosure",
+            "return Err(DraftError::ClosureInvalid);",
+            "inputs.candidates.iter().any(|candidate|",
             "receipt.output_bound()",
             "OutputBoundExceeded",
         ]:

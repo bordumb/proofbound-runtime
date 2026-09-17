@@ -157,6 +157,7 @@ class DiagnosticDraftingContractTests(unittest.TestCase):
         self.assertEqual(draft["arguments"], receipt["arguments"])
         self.assertEqual(draft["environment_names"], receipt["environment_names"])
         self.assertEqual(draft["inputs"], [])
+        self.assertEqual(draft["identified_closure"], [])
         self.assertIsNone(draft["static_scaffold"])
         self.assertIsNone(draft["capsec"])
         self.assertEqual(draft["differences"], [])
@@ -243,10 +244,21 @@ class DiagnosticDraftingContractTests(unittest.TestCase):
                 "capsec",
                 "differences",
                 "environment_names",
+                "identified_closure",
                 "inputs",
                 "static_scaffold",
             }
             <= set(draft["required"])
+        )
+        closure = draft["$defs"]["identifiedClosureEntry"]
+        self.assertEqual(closure["properties"]["role"]["enum"], [
+            "executable",
+            "interpreter",
+            "runtime-library",
+        ])
+        self.assertEqual(
+            set(closure["properties"]["provenance"]["enum"]),
+            {"platform-required-closure", "static-executable-closure"},
         )
         mandatory = {
             item["$ref"] for item in draft["properties"]["open_items"]["allOf"]
