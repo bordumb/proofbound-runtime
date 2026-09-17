@@ -2983,6 +2983,31 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-5 connector engine hosted-compile correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `c361cb11eefec4b03b55385caf2977552a34e97a`
+- **Reviewed head:** `b210d49956f42bdbc7d0d155f71b7004ed179191`
+- **Branch:** `codex/rt5-production-connector`
+- **Method:** Complete exact-range static re-review after hosted run
+  `35272695025`. The reviewer changed no files and ran no builds, Rust tests,
+  Lean, Kani, or native checks.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+Hosted Rust compilation found two ambiguous test-only IP address parses. The
+correction explicitly selects `IpAddr` for all 13 DNS test address parses, and
+no untyped parse remains in the connector crate. Parsed values and assertions
+are unchanged. No production, schema, claim, assumption, evidence, vector, or
+source-checker behavior changed. Every earlier connector finding remains
+closed, and production service-session execution remains fail closed.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`c361cb11eefec4b03b55385caf2977552a34e97a..b210d49956f42bdbc7d0d155f71b7004ed179191`.
+The following approval-only commit changes no reviewed production, test,
+schema, claim, assumption, evidence, vector, or source-checker bytes. Any later
+subject change requires a new exact-head review.
+
 ## RT-5 connector engine approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
