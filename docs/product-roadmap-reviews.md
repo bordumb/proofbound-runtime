@@ -3066,6 +3066,54 @@ The following approval-only commit changes only this review record. Any later
 production, schema, claim, evidence, checker, SDK, or status-subject change
 requires a new exact-head review.
 
+## RT-5 authenticated-service hosted-lint correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da8c96b843a692bff8a0ac0bc782a108b3168dbc`
+- **Reviewed head:** `0894c4cf515b5c01626af51cbc0d9fb07ae7d7d2`
+- **Hosted run:** `35213192876`
+- **Branch:** `codex/rt5-contract-wave`
+- **Method:** Exact hosted Rust, preflight, and native-boundary results followed
+  by a complete static correction review. The reviewer changed no files and
+  ran no local builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+Preflight and both native architecture lanes passed. The Rust lane rejected
+three large enum variants under the repository's deny-warnings Clippy policy:
+the public SDK network input, the internal parsed execution plan, and the
+internal parsed network authority. It also rejected a manual implementation of
+`Option::map`. The remaining hosted lanes were cancelled after this decisive
+failure. These lint blockers required a new exact-head review.
+
+## RT-5 authenticated-service hosted-lint correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da8c96b843a692bff8a0ac0bc782a108b3168dbc`
+- **Reviewed head:** `a7545c3ae48fd2c79703d1a400a964843ea4c91e`
+- **Branch:** `codex/rt5-contract-wave`
+- **Method:** Complete exact-range static security, public-API, parser,
+  canonical-encoding, and correction re-review. The reviewer changed no files
+  and ran no builds or tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the three boxed payloads correspond exactly to the
+hosted large-variant diagnostics. The Rust SDK retains the same closed domain
+and canonical bytes. Its box-backed constructor is an accepted prelaunch
+source-API change. Core parsing validates before boxing, moves the same
+validated session into `ServiceExecutionPlan`, and unboxes only at the existing
+contract parser boundary. Production execution still rejects the service
+profile. The `Option::map` rewrite is behavior-equivalent. All prior fixes
+remain closed, and no new blocker was introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`da8c96b843a692bff8a0ac0bc782a108b3168dbc..a7545c3ae48fd2c79703d1a400a964843ea4c91e`.
+The following approval-only commit changes only this review record. Any later
+production, schema, claim, evidence, checker, SDK, or status-subject change
+requires a new exact-head review.
+
 ## RT-8 product-exit extension approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
