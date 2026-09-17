@@ -380,6 +380,24 @@ add non-reusable failure forms, and retain the outer receipt's exact plan,
 policy, boundary, outcome, resource, assumption, and trusted-computing-base
 bindings.
 
+The proposed outer fragment is
+`proofbound-runtime-service-session-receipt/1`. It binds one expected
+execution, plan, compiled policy, service, and exact launcher install request.
+A reusable success also binds the installed acknowledgement, child release,
+canonical successful observation, and zero child exit. A failed form is always
+non-reusable. It retains a closed phase and reason, monotonic failure time,
+boundary-install state, child-release identity when release occurred, and
+terminal cleanup result. Post-release failures MUST bind the exact installed
+acknowledgement and release; pre-release failures MUST NOT claim a release.
+Assumption identifiers and trusted-computing-base roles are complete closed
+inventories. Trusted-computing-base identities are SHA-256 values so the
+fragment does not admit arbitrary retained identity text.
+
+This fragment remains a proposed source contract. The production producer and
+independent Rust verifier reject it. The independent Python checker is a
+contract falsifier, not the shipping verifier, and its implementation MUST NOT
+be shared with the later production verifier.
+
 Composition retains the complete service authority, service observations,
 limits, assumptions, and trusted-computing-base roles. Consumer acceptance uses
 an explicit service-session policy. A policy for network denial does not accept

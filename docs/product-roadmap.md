@@ -1083,6 +1083,17 @@ proposed source contract because its registered independent checker and causal
 mutation corpus exceed Tier 0. Production launcher messages remain unchanged and reject this form;
 no connector, launcher, or child effect is enabled.
 
+**2026-09-17 receipt-contract checkpoint:** the staged
+`proofbound-runtime-service-session-receipt/1` fragment freezes closed success
+and failure forms. `PBR-NETWORK-037` is a Tier 1 proposed source contract. Its
+independent checker requires exact expected execution, plan, policy, service,
+launcher install, assumption, and trusted-computing-base bindings. Reusable
+success additionally binds the installed acknowledgement, release, canonical
+observation, and zero child exit. Every failure is non-reusable and preserves
+a phase-consistent reason, boundary and release state, and cleanup result.
+Production receipt, separate Rust verifier, composition, acceptance, effects,
+native attacks, and release-artifact linkage remain open.
+
 ### RT-5.2 Keep the security boundary explicit
 
 - Put raw syscalls only in `sys.rs`.

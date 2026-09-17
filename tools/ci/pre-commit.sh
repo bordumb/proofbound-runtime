@@ -46,6 +46,7 @@ python3 -m unittest tools.ci.test_wire_transition
 python3 -m unittest tools.ci.test_wire_v2_vectors
 python3 -m unittest tools.ci.test_service_observation_contract
 python3 -m unittest tools.ci.test_service_launcher_contract
+python3 -m unittest tools.ci.test_service_receipt_contract
 python3 -m unittest experiments.network_authority.test_record_common
 python3 -m unittest experiments.network_authority.test_record_port_control
 python3 -m unittest experiments.network_authority.test_record_endpoint_control

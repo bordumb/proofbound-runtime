@@ -53,3 +53,13 @@ messages until the effectful launcher wave is admitted. The optional
 credential-release message is transient and intentionally has no retained
 golden vector; its descriptor and ordering are checked with a runtime-generated
 synthetic value.
+
+The `service-session-receipt-*` vectors freeze the proposed outer success and
+failure forms. Success is reusable only when it binds the exact execution
+context, launcher installation and release, canonical successful observation,
+complete assumption and trusted-computing-base inventories, and zero child
+exit. Failure is always non-reusable and retains one typed phase, reason,
+boundary and release state, and cleanup result. Trusted-computing-base
+identities are fixed-size digests. Neither vector retains credential values or
+application content. The production producer and shipping verifier do not yet
+accept this fragment.

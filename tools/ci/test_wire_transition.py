@@ -26,6 +26,8 @@ ADDITIONAL_CBOR_VECTORS = {
     "service-launcher-installed",
     "service-launcher-release",
     "service-session-observation",
+    "service-session-receipt-failure",
+    "service-session-receipt-success",
 }
 
 

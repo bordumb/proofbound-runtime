@@ -196,8 +196,9 @@ Merge one authenticated service before extending the authority to a set:
    and merged pure policy, admit the forward-only lifecycle and its formal
    evidence, then admit the closed successful-session observation and launcher
    source contracts as one fail-closed batch. The claims and mutation corpora
-   remain separate; a blocker in either blocks the batch. Freeze the remaining
-   failed-session receipt, shipping verifier, composer, and acceptance schemas
+   remain separate; a blocker in either blocks the batch. Next freeze the
+   closed reusable-success and non-reusable-failure receipt contract, then the
+   separately implemented shipping verifier, composer, and acceptance schemas
    before enabling effects. No effect ships in a contract wave.
 2. Implement the connector-owned authenticated service session.
 3. Deny direct, inherited, resolver, proxy, Unix-socket, and `io_uring`

@@ -425,6 +425,15 @@ draft, while no diagnostic output can become reusable production evidence.
   launcher remains unchanged; the failure handshake and native implementation
   remain open. This non-production contract shares the consolidated admission
   batch described for `PBR-NETWORK-035`.
+- [ ] Admit the closed service-session receipt and failure contract.
+  `PBR-NETWORK-037` freezes deterministic-CBOR reusable-success and
+  non-reusable-failure fragments. The independent checker binds the expected
+  execution, plan, policy, service, launcher transcript, observation,
+  assumption, trusted-computing-base, outcome, boundary, release, failure, and
+  cleanup identities and rejects causal downgrade and substitution mutations.
+  The production producer, separate Rust verifier, composer, acceptance
+  policy, effectful execution, native attacks, and artifact binding remain
+  open.
 - [ ] Model and prove the selected pure non-amplification, identity, and state
   transition properties in Lean where the subject is tractable.
 - [ ] Link selected pure Rust decisions to their formal models without

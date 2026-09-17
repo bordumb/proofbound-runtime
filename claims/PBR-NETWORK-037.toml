@@ -1,0 +1,45 @@
+schema = "proofbound-claim/1"
+id = "PBR-NETWORK-037"
+title = "Service-session receipts close reusable success and typed failure"
+statement = "The proposed service-session receipt contract binds one expected execution, plan, compiled policy, service, launcher install request, assumptions, and trusted-computing-base inventory; reusable success additionally binds the exact installed acknowledgement, release, canonical successful observation, and zero child exit, while every typed failed session is non-reusable and preserves a phase-consistent reason, boundary and release state, and cleanup result; an independent checker rejects registered omission, substitution, downgrade, cross-service, premature-release, cleanup, secret-retention, and nested-observation mutations."
+public_language = "Runtime has a proposed deterministic-CBOR service-session receipt fragment with independently checked reusable-success and non-reusable-failure forms. The frozen vectors bind exact execution context, launcher identities, assumptions, trusted-computing-base identities, observation, outcome, failure, and cleanup fields without retaining secrets or application content. This is source contract evidence only. The production receipt producer and shipping verifier do not accept this fragment, and it does not establish network enforcement."
+subject = "schema:proofbound-runtime-service-session-receipt/1+python:service_receipt_contract.validate_receipt"
+profile = "ledger"
+tier = 1
+evidence = [
+  "independent-check:authenticated-service-receipt-contract",
+]
+assumptions = []
+open_obligations = [
+  "Integrate the fragment into the production receipt producer and a separately implemented Rust verifier without sharing semantic implementation code.",
+  "Define and admit generic composition and explicit consumer acceptance for service-session receipts without losing authority, failure, assumption, or trusted-computing-base fields.",
+  "Bind effectful connector, launcher, child-boundary, cleanup, and receipt observations to exact release artifacts on both supported architectures.",
+]
+out_of_scope = [
+  "Any claim that the proposed receipt was produced by an execution, accepted by the shipping verifier, composed, or accepted by a consumer policy.",
+  "Correctness of DNS, TLS, the connector, Linux, the launcher, a remote service, a credential source, or recorded observations.",
+  "Ambient networking, arbitrary protocols, multiple services, reconnect, redirects, proxies, or QUIC.",
+]
+source_roots = [
+  "claims/PBR-NETWORK-037.toml",
+  "docs/specs/0016_authenticated_service_session.md",
+  "proofbound/evidence/authenticated-service-receipt-contract.toml",
+  "schemas/service-session-observation-v1.cddl",
+  "schemas/service-session-receipt-v1.cddl",
+  "schemas/vectors/v2/README.md",
+  "schemas/vectors/v2/service-launcher-install.cbor.hex",
+  "schemas/vectors/v2/service-launcher-installed.cbor.hex",
+  "schemas/vectors/v2/service-launcher-release.cbor.hex",
+  "schemas/vectors/v2/service-session-receipt-failure.cbor.hex",
+  "schemas/vectors/v2/service-session-receipt-failure.projection.json",
+  "schemas/vectors/v2/service-session-receipt-success.cbor.hex",
+  "schemas/vectors/v2/service-session-receipt-success.projection.json",
+  "tools/ci/check_service_receipt_contract.py",
+  "tools/ci/deterministic_cbor.py",
+  "tools/ci/encode_plan_v2.py",
+  "tools/ci/generate_service_observation_v1_vector.py",
+  "tools/ci/generate_service_receipt_v1_vectors.py",
+  "tools/ci/service_observation_contract.py",
+  "tools/ci/service_receipt_contract.py",
+  "tools/ci/test_service_receipt_contract.py",
+]

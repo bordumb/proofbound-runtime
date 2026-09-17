@@ -45,6 +45,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-NETWORK-034` | Tier 0 pure lifecycle admitted on exact Runtime main `1da65a5` | Exhaustive source tests cover the closed forward path and typed terminal failure. PR 31 run `35236845497` and exact-main run `35241672716` passed. The candidate Lean theorem is not registered as admitted evidence. Every effectful wave remains open. |
 | `PBR-NETWORK-035` | Tier 1 proposed observation contract pending first exact admission | A closed successful-session fragment and independent mutation checker bind receipt inputs without claiming production integration or network effects. Failed-session, shipping-verifier, composition, and acceptance work remain open. |
 | `PBR-NETWORK-036` | Tier 1 proposed launcher contract pending first exact admission | A closed three-message handshake and independent mutation checker bind the prepared service session and child filter before release without changing the production launcher or claiming an installed effect. |
+| `PBR-NETWORK-037` | Tier 1 proposed receipt contract pending first exact admission | Closed success and failure fragments bind expected execution context, launcher identities, observation or typed failure, reuse eligibility, assumptions, trusted-computing-base digests, and cleanup without claiming production integration or network effects. |
 
 ### Current changed subjects pending exact admission
 
@@ -69,6 +70,11 @@ The stacked non-production contract batch adds Tier 1 `PBR-NETWORK-035` and
 `PBR-NETWORK-036`. Each keeps its own closure and mutation corpus. They share
 one final exact-source review and hosted admission only after the lifecycle
 exact-main replay passes; a blocker in either blocks the complete batch.
+
+The next stacked non-production wave adds Tier 1 `PBR-NETWORK-037` after that
+batch. It closes the proposed outer success and failure form but does not
+implement the production producer, separate Rust verifier, composition,
+acceptance, network effects, native attacks, or release-artifact linkage.
 
 This pending ledger does not weaken or retract an admission for an older exact
 source. It prevents a source-identity change from silently inheriting that
@@ -1064,6 +1070,32 @@ handshake. This source contract does not establish that any boundary was
 installed or that a child was released. The failure handshake, effectful
 supervisor and launcher implementation, native attacks, receipt integration,
 shipping verifier, composition, acceptance, and artifact binding remain open.
+
+## PBR-NETWORK-037
+
+The current subject is a proposed deterministic-CBOR service-session receipt
+fragment and an independent Python semantic checker. Both success and failure
+bind the expected execution, plan, compiled policy, service, exact launcher
+install request, complete assumption identifiers, and the closed set of
+trusted-computing-base roles with fixed-size identity digests. Reusable success
+also binds the exact installed acknowledgement, release message, canonical
+successful observation, and zero child exit.
+
+Every failed form is non-reusable and retains exactly one phase-consistent
+reason. It records whether the boundary was installed, requires the exact
+installed acknowledgement when present, requires the exact release only after
+child release, prohibits a release before that transition, and retains the
+terminal child, channel, cgroup, connector, and namespace cleanup states. The
+mutation corpus rejects execution, plan, policy, service, launcher,
+observation, eligibility, assumption, trusted-computing-base, boundary,
+release, failure, and cleanup substitutions, including nested observation
+changes with a refreshed digest.
+
+The production receipt producer and independent Rust verifier remain
+unchanged and reject this fragment. The Python checker is contract evidence,
+not the shipping verifier. Production integration, separate decoding and
+verification, composition, acceptance, network effects, native attacks, and
+release-artifact binding remain open.
 
 ## Bounded-domain declaration guard
 
