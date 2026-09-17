@@ -31,7 +31,7 @@ publication or an unrelated adopter.
 | RT-2 receipt acceptance | Policy, CLI, standalone acceptor, and Action source are merged. | Observe the exact release artifact and dogfood the Action from an unrelated adopter. |
 | RT-3 first-run and SDK workflow | Preflight, scaffold, typed diagnostics, and reproducible Rust, Python, and TypeScript packages are merged. | Publish the selected current packages and dogfood them from an unrelated consumer. |
 | RT-4 network decision | The complete experiment and measurement series selected the connector-owned authenticated service session. | The decision authorizes RT-5; it does not provide production networking. |
-| RT-5 one authenticated service | Not implemented. | Implement the production bridge, bypass corpus, receipts, verifiers, composition, acceptance, and one maintained real API client. |
+| RT-5 one authenticated service | Specification 0016, closed service-session domain types, a non-executing parser, and SDK construction are proposed. Production execution remains denied. | Independently admit the contract, then implement the policy, connector, launcher, bypass corpus, receipts, verifiers, composition, acceptance, and one maintained real API client. |
 | RT-6 evidence-based expansion | CPU and output-quota decisions are recorded; the performance baseline is complete. | Implement a deferred control only when observed demand satisfies its decision gate. |
 
 Milestone B, bounded local execution, is achieved. Milestone A is operationally
@@ -1034,7 +1034,12 @@ This epic exists only if RT-4 accepts a mechanism.
 
 ### RT-5.1 Version the domain and wire contracts
 
-- Add a closed `NetworkAuthority` enum with only implemented modes.
+- Accept [Specification 0016](specs/0016_authenticated_service_session.md).
+- Add the proposed service-session domain and parser separately from the
+  production execution parser. Keep production execution rejected until every
+  required enforcement and receipt subject is admitted.
+- Integrate a closed production `NetworkAuthority` only with the complete
+  policy, launcher, receipt, verifier, composition, and acceptance wave.
 - Preserve `Deny` without semantic change.
 - Use typed non-empty destination collections, ports, protocols, and service or
   endpoint identities as the ADR requires.

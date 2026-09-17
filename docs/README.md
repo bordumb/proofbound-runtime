@@ -85,6 +85,10 @@ The document type determines its authority.
 - [Specification 0015](specs/0015_diagnostic_execution_and_plan_drafting.md)
   defines RT-8's separate ptrace diagnostic profile, bounded observation,
   provenance-preserving plan draft, and mandatory production non-reuse.
+- [Specification 0016](specs/0016_authenticated_service_session.md) proposes
+  RT-5's single connector-owned authenticated TLS service session, closed
+  authority and wire contracts, child boundary, receipt meaning, and required
+  native falsifiers.
 
 Normative product or wire behavior belongs in `docs/specs/`. A specification
 revision requires explicit review because it can change claim meaning.

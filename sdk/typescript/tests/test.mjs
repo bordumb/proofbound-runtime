@@ -35,6 +35,49 @@ function goldenPlan() {
   };
 }
 
+function serviceNetwork() {
+  return {
+    mode: "authenticated-service-session",
+    service: { name: "api.anthropic.com", port: 443 },
+    resolver: {
+      address: { family: "ipv4", bytes: Buffer.from([1, 1, 1, 1]) },
+      port: 53,
+      configuration: "/etc/proofbound/resolver.conf",
+      maximum_cname_depth: 8,
+      maximum_answer_count: 16,
+      maximum_response_bytes: 65_536,
+      resolution_deadline_ms: 5_000,
+      attempt_deadline_ms: 1_000,
+      address_order: "ipv4-then-ipv6-lexicographic",
+    },
+    tls: {
+      trust_root_set: "/etc/ssl/certs/ca-certificates.crt",
+      minimum_version: "tls-1.3",
+      service_name_verification: "dns-san-exact",
+      revocation: "not-checked-recorded-assumption",
+      session_resumption: "deny",
+      early_data: "deny",
+    },
+    limits: {
+      setup_time_ms: 10_000,
+      session_time_ms: 30_000,
+      child_to_service_bytes: 1_048_576,
+      service_to_child_bytes: 1_048_576,
+      dns_messages: 4,
+      endpoint_attempts: 4,
+      tls_handshake_bytes: 262_144,
+    },
+    connector_executable: "/usr/libexec/proofbound-connector",
+    connector_runtime_read: ["/usr/lib"],
+    local_channel: { protocol: "unix-stream-v1", child_descriptor: 9 },
+    credential_source: {
+      id: "anthropic-test",
+      service: "api.anthropic.com",
+      environment: "API_KEY",
+    },
+  };
+}
+
 test("TypeScript plan matches the frozen v2 golden", async () => {
   const expectedHex = (
     await readFile(
@@ -47,12 +90,37 @@ test("TypeScript plan matches the frozen v2 golden", async () => {
 
 test("unknown and invalid plan fields fail before encoding", () => {
   assert.throws(
-    () => buildPlan({ ...goldenPlan(), network: "deny" }),
+    () => buildPlan({ ...goldenPlan(), unknown: "deny" }),
     (error) => error instanceof SdkError && error.code === "sdk.plan.unknown-field",
   );
   assert.throws(
     () => buildPlan({ ...goldenPlan(), memory_bytes: 65_537 }),
     (error) => error instanceof SdkError && error.code === "sdk.plan.limit-not-quantized",
+  );
+});
+
+test("service session is closed and validated", async () => {
+  const plan = {
+    ...goldenPlan(),
+    environment: ["API_KEY"],
+    network: serviceNetwork(),
+  };
+  const expectedHex = (
+    await readFile(
+      path.join(repositoryRoot, "schemas/vectors/v2/execution-plan-service-session.cbor.hex"),
+      "utf8",
+    )
+  ).replace(/\s/g, "");
+  assert.equal(buildPlan(plan).toString("hex"), expectedHex);
+  assert.throws(
+    () => buildPlan({
+      ...plan,
+      network: {
+        ...serviceNetwork(),
+        service: { name: "API.anthropic.com", port: 443 },
+      },
+    }),
+    (error) => error instanceof SdkError && error.code === "sdk.plan.network-invalid",
   );
 });
 

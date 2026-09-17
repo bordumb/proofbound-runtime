@@ -36,6 +36,78 @@ pub struct PlanV2Input {
     pub swap_bytes: u64,
 }
 
+/// Closed network-authority inputs for one version 2 execution plan.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum NetworkAuthorityV2Input {
+    /// Denies network access.
+    Deny,
+    /// Permits one bounded connector-owned authenticated service session.
+    AuthenticatedServiceSession(ServiceSessionV2Input),
+}
+
+/// Selects one numeric resolver address.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ResolverAddressV2Input {
+    /// Contains four IPv4 network-order bytes.
+    Ipv4([u8; 4]),
+    /// Contains sixteen IPv6 network-order bytes.
+    Ipv6([u8; 16]),
+}
+
+/// Contains the bounded DNS inputs for one service session.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ResolutionV2Input {
+    pub address: ResolverAddressV2Input,
+    pub port: u16,
+    pub configuration: String,
+    pub maximum_cname_depth: u16,
+    pub maximum_answer_count: u16,
+    pub maximum_response_bytes: u64,
+    pub resolution_deadline_ms: u64,
+    pub attempt_deadline_ms: u64,
+}
+
+/// Contains the closed TLS inputs for one service session.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TlsV2Input {
+    pub trust_root_set: String,
+    pub minimum_version: String,
+}
+
+/// Contains the bounded session inputs for one service session.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ServiceSessionLimitsV2Input {
+    pub setup_time_ms: u64,
+    pub session_time_ms: u64,
+    pub child_to_service_bytes: u64,
+    pub service_to_child_bytes: u64,
+    pub dns_messages: u16,
+    pub endpoint_attempts: u16,
+    pub tls_handshake_bytes: u64,
+}
+
+/// Identifies an optional service-bound credential source without its value.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CredentialSourceV2Input {
+    pub id: String,
+    pub service: String,
+    pub environment: String,
+}
+
+/// Contains one complete authenticated-service-session plan input.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ServiceSessionV2Input {
+    pub service: String,
+    pub port: u16,
+    pub resolution: ResolutionV2Input,
+    pub tls: TlsV2Input,
+    pub limits: ServiceSessionLimitsV2Input,
+    pub connector_executable: String,
+    pub connector_runtime_read: Vec<String>,
+    pub child_descriptor: u16,
+    pub credential_source: Option<CredentialSourceV2Input>,
+}
+
 /// One semantically validated deterministic-CBOR version 2 plan.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PlanV2 {
@@ -45,7 +117,17 @@ pub struct PlanV2 {
 impl PlanV2 {
     /// Validates the closed public input and encodes deterministic-CBOR bytes.
     pub fn new(input: PlanV2Input) -> Result<Self, SdkError> {
+        Self::new_with_network(input, NetworkAuthorityV2Input::Deny)
+    }
+
+    /// Validates a plan and its explicit closed network authority.
+    pub fn new_with_network(
+        input: PlanV2Input,
+        network: NetworkAuthorityV2Input,
+    ) -> Result<Self, SdkError> {
         validate_plan_input(&input)?;
+        validate_network_input(&input, &network)?;
+        let network = encode_network_input(network);
         let value = Cbor::Map(vec![
             ("id", Cbor::Text(input.id)),
             ("schema", Cbor::Text(PLAN_SCHEMA.to_owned())),
@@ -74,7 +156,7 @@ impl PlanV2 {
                     ("read", text_array(input.read)),
                     ("write", text_array(input.write)),
                     ("execute", text_array(input.execute)),
-                    ("network", Cbor::Text("deny".to_owned())),
+                    ("network", network),
                     ("environment", text_array(input.environment)),
                     ("runtime_read", text_array(input.runtime_read)),
                 ]),
@@ -180,6 +262,7 @@ pub enum SdkError {
     PlanRuntimeRead,
     PlanLimit,
     PlanLimitQuantum,
+    PlanNetwork,
     CborBound,
     ResultMalformed,
     ResultSchema,
@@ -198,6 +281,7 @@ impl SdkError {
             Self::PlanRuntimeRead => "sdk.plan.runtime-read-not-absolute",
             Self::PlanLimit => "sdk.plan.limit-invalid",
             Self::PlanLimitQuantum => "sdk.plan.limit-not-quantized",
+            Self::PlanNetwork => "sdk.plan.network-invalid",
             Self::CborBound => "sdk.plan.cbor-bound",
             Self::ResultMalformed => "sdk.result.malformed-json",
             Self::ResultSchema => "sdk.result.schema-unsupported",
@@ -218,6 +302,7 @@ impl std::error::Error for SdkError {}
 #[derive(Clone, Debug)]
 enum Cbor {
     Unsigned(u64),
+    Bytes(Vec<u8>),
     Text(String),
     Array(Vec<Cbor>),
     Map(Vec<(&'static str, Cbor)>),
@@ -230,6 +315,11 @@ fn text_array(values: Vec<String>) -> Cbor {
 fn encode(value: &Cbor, output: &mut Vec<u8>) -> Result<(), SdkError> {
     match value {
         Cbor::Unsigned(value) => encode_argument(0, *value, output),
+        Cbor::Bytes(value) => {
+            encode_argument(2, value.len() as u64, output)?;
+            output.extend_from_slice(value);
+            Ok(())
+        }
         Cbor::Text(value) => {
             encode_argument(3, value.len() as u64, output)?;
             output.extend_from_slice(value.as_bytes());
@@ -347,6 +437,246 @@ fn validate_plan_input(input: &PlanV2Input) -> Result<(), SdkError> {
         return Err(SdkError::PlanLimitQuantum);
     }
     Ok(())
+}
+
+fn validate_network_input(
+    plan: &PlanV2Input,
+    network: &NetworkAuthorityV2Input,
+) -> Result<(), SdkError> {
+    let NetworkAuthorityV2Input::AuthenticatedServiceSession(session) = network else {
+        return Ok(());
+    };
+    if !valid_service_name(&session.service)
+        || session.port == 0
+        || session.resolution.port == 0
+        || !canonical_absolute_path(&session.resolution.configuration)
+        || session.resolution.maximum_cname_depth == 0
+        || session.resolution.maximum_answer_count == 0
+        || session.resolution.maximum_response_bytes == 0
+        || session.resolution.resolution_deadline_ms == 0
+        || session.resolution.attempt_deadline_ms == 0
+        || session.resolution.attempt_deadline_ms > session.resolution.resolution_deadline_ms
+        || !canonical_absolute_path(&session.tls.trust_root_set)
+        || !matches!(session.tls.minimum_version.as_str(), "tls-1.2" | "tls-1.3")
+        || !canonical_absolute_path(&session.connector_executable)
+        || session
+            .connector_runtime_read
+            .iter()
+            .any(|path| !canonical_absolute_path(path))
+        || session.child_descriptor < 3
+    {
+        return Err(SdkError::PlanNetwork);
+    }
+    require_unique(&session.connector_runtime_read)?;
+    let limits = &session.limits;
+    if limits.setup_time_ms == 0
+        || limits.session_time_ms == 0
+        || limits.child_to_service_bytes == 0
+        || limits.service_to_child_bytes == 0
+        || limits.dns_messages == 0
+        || limits.endpoint_attempts == 0
+        || limits.tls_handshake_bytes == 0
+        || limits.endpoint_attempts > session.resolution.maximum_answer_count
+    {
+        return Err(SdkError::PlanNetwork);
+    }
+    if let Some(source) = &session.credential_source
+        && (!valid_credential_source_id(&source.id)
+            || source.service != session.service
+            || !plan.environment.contains(&source.environment))
+    {
+        return Err(SdkError::PlanNetwork);
+    }
+    Ok(())
+}
+
+fn encode_network_input(network: NetworkAuthorityV2Input) -> Cbor {
+    match network {
+        NetworkAuthorityV2Input::Deny => Cbor::Text("deny".to_owned()),
+        NetworkAuthorityV2Input::AuthenticatedServiceSession(session) => {
+            let (family, bytes) = match session.resolution.address {
+                ResolverAddressV2Input::Ipv4(bytes) => ("ipv4", bytes.to_vec()),
+                ResolverAddressV2Input::Ipv6(bytes) => ("ipv6", bytes.to_vec()),
+            };
+            let mut entries = vec![
+                (
+                    "mode",
+                    Cbor::Text("authenticated-service-session".to_owned()),
+                ),
+                (
+                    "service",
+                    Cbor::Map(vec![
+                        ("name", Cbor::Text(session.service.clone())),
+                        ("port", Cbor::Unsigned(u64::from(session.port))),
+                    ]),
+                ),
+                (
+                    "resolver",
+                    Cbor::Map(vec![
+                        (
+                            "address",
+                            Cbor::Map(vec![
+                                ("family", Cbor::Text(family.to_owned())),
+                                ("bytes", Cbor::Bytes(bytes)),
+                            ]),
+                        ),
+                        ("port", Cbor::Unsigned(u64::from(session.resolution.port))),
+                        (
+                            "configuration",
+                            Cbor::Text(session.resolution.configuration),
+                        ),
+                        (
+                            "maximum_cname_depth",
+                            Cbor::Unsigned(u64::from(session.resolution.maximum_cname_depth)),
+                        ),
+                        (
+                            "maximum_answer_count",
+                            Cbor::Unsigned(u64::from(session.resolution.maximum_answer_count)),
+                        ),
+                        (
+                            "maximum_response_bytes",
+                            Cbor::Unsigned(session.resolution.maximum_response_bytes),
+                        ),
+                        (
+                            "resolution_deadline_ms",
+                            Cbor::Unsigned(session.resolution.resolution_deadline_ms),
+                        ),
+                        (
+                            "attempt_deadline_ms",
+                            Cbor::Unsigned(session.resolution.attempt_deadline_ms),
+                        ),
+                        (
+                            "address_order",
+                            Cbor::Text("ipv4-then-ipv6-lexicographic".to_owned()),
+                        ),
+                    ]),
+                ),
+                (
+                    "tls",
+                    Cbor::Map(vec![
+                        ("trust_root_set", Cbor::Text(session.tls.trust_root_set)),
+                        ("minimum_version", Cbor::Text(session.tls.minimum_version)),
+                        (
+                            "service_name_verification",
+                            Cbor::Text("dns-san-exact".to_owned()),
+                        ),
+                        (
+                            "revocation",
+                            Cbor::Text("not-checked-recorded-assumption".to_owned()),
+                        ),
+                        ("session_resumption", Cbor::Text("deny".to_owned())),
+                        ("early_data", Cbor::Text("deny".to_owned())),
+                    ]),
+                ),
+                (
+                    "limits",
+                    Cbor::Map(vec![
+                        (
+                            "setup_time_ms",
+                            Cbor::Unsigned(session.limits.setup_time_ms),
+                        ),
+                        (
+                            "session_time_ms",
+                            Cbor::Unsigned(session.limits.session_time_ms),
+                        ),
+                        (
+                            "child_to_service_bytes",
+                            Cbor::Unsigned(session.limits.child_to_service_bytes),
+                        ),
+                        (
+                            "service_to_child_bytes",
+                            Cbor::Unsigned(session.limits.service_to_child_bytes),
+                        ),
+                        (
+                            "dns_messages",
+                            Cbor::Unsigned(u64::from(session.limits.dns_messages)),
+                        ),
+                        (
+                            "endpoint_attempts",
+                            Cbor::Unsigned(u64::from(session.limits.endpoint_attempts)),
+                        ),
+                        (
+                            "tls_handshake_bytes",
+                            Cbor::Unsigned(session.limits.tls_handshake_bytes),
+                        ),
+                    ]),
+                ),
+                (
+                    "connector_executable",
+                    Cbor::Text(session.connector_executable),
+                ),
+                (
+                    "connector_runtime_read",
+                    text_array(session.connector_runtime_read),
+                ),
+                (
+                    "local_channel",
+                    Cbor::Map(vec![
+                        ("protocol", Cbor::Text("unix-stream-v1".to_owned())),
+                        (
+                            "child_descriptor",
+                            Cbor::Unsigned(u64::from(session.child_descriptor)),
+                        ),
+                    ]),
+                ),
+            ];
+            if let Some(source) = session.credential_source {
+                entries.push((
+                    "credential_source",
+                    Cbor::Map(vec![
+                        ("id", Cbor::Text(source.id)),
+                        ("service", Cbor::Text(source.service)),
+                        ("environment", Cbor::Text(source.environment)),
+                    ]),
+                ));
+            }
+            Cbor::Map(entries)
+        }
+    }
+}
+
+fn canonical_absolute_path(value: &str) -> bool {
+    let path = Path::new(value);
+    path.is_absolute()
+        && !path.components().any(|component| {
+            matches!(
+                component,
+                std::path::Component::CurDir | std::path::Component::ParentDir
+            )
+        })
+}
+
+fn valid_service_name(value: &str) -> bool {
+    if value.is_empty()
+        || value.len() > 253
+        || value.ends_with('.')
+        || value.parse::<std::net::IpAddr>().is_ok()
+    {
+        return false;
+    }
+    value.split('.').all(|label| {
+        let bytes = label.as_bytes();
+        !bytes.is_empty()
+            && bytes.len() <= 63
+            && bytes.first() != Some(&b'-')
+            && bytes.last() != Some(&b'-')
+            && bytes
+                .iter()
+                .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || *byte == b'-')
+    })
+}
+
+fn valid_credential_source_id(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    !bytes.is_empty()
+        && bytes.len() <= 128
+        && bytes.first().is_some_and(|byte| byte.is_ascii_lowercase())
+        && bytes
+            .last()
+            .is_some_and(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit())
+        && bytes.iter().all(|byte| {
+            byte.is_ascii_lowercase() || byte.is_ascii_digit() || matches!(byte, b'.' | b'-')
+        })
 }
 
 fn valid_required_text(value: &str) -> bool {
@@ -478,6 +808,44 @@ mod tests {
         }
     }
 
+    fn service_session() -> NetworkAuthorityV2Input {
+        NetworkAuthorityV2Input::AuthenticatedServiceSession(ServiceSessionV2Input {
+            service: "api.anthropic.com".to_owned(),
+            port: 443,
+            resolution: ResolutionV2Input {
+                address: ResolverAddressV2Input::Ipv4([1, 1, 1, 1]),
+                port: 53,
+                configuration: "/etc/proofbound/resolver.conf".to_owned(),
+                maximum_cname_depth: 8,
+                maximum_answer_count: 16,
+                maximum_response_bytes: 65_536,
+                resolution_deadline_ms: 5_000,
+                attempt_deadline_ms: 1_000,
+            },
+            tls: TlsV2Input {
+                trust_root_set: "/etc/ssl/certs/ca-certificates.crt".to_owned(),
+                minimum_version: "tls-1.3".to_owned(),
+            },
+            limits: ServiceSessionLimitsV2Input {
+                setup_time_ms: 10_000,
+                session_time_ms: 30_000,
+                child_to_service_bytes: 1_048_576,
+                service_to_child_bytes: 1_048_576,
+                dns_messages: 4,
+                endpoint_attempts: 4,
+                tls_handshake_bytes: 262_144,
+            },
+            connector_executable: "/usr/libexec/proofbound-connector".to_owned(),
+            connector_runtime_read: vec!["/usr/lib".to_owned()],
+            child_descriptor: 9,
+            credential_source: Some(CredentialSourceV2Input {
+                id: "anthropic-test".to_owned(),
+                service: "api.anthropic.com".to_owned(),
+                environment: "API_KEY".to_owned(),
+            }),
+        })
+    }
+
     #[test]
     fn rust_plan_matches_the_frozen_v2_golden() {
         let plan = PlanV2::new(golden_input()).expect("golden plan validates");
@@ -498,6 +866,34 @@ mod tests {
         let mut mismatch = golden_input();
         mismatch.execute = vec!["bin/other".to_owned()];
         assert_eq!(PlanV2::new(mismatch), Err(SdkError::PlanShape));
+    }
+
+    #[test]
+    fn service_session_encoding_is_closed_and_validated() {
+        let mut input = golden_input();
+        input.environment.push("API_KEY".to_owned());
+        let plan = PlanV2::new_with_network(input.clone(), service_session())
+            .expect("service session validates");
+        let expected = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../schemas/vectors/v2/execution-plan-service-session.cbor.hex"
+        ))
+        .split_whitespace()
+        .collect::<String>();
+        assert_eq!(hex(plan.as_bytes()), expected);
+
+        let NetworkAuthorityV2Input::AuthenticatedServiceSession(mut invalid) = service_session()
+        else {
+            unreachable!()
+        };
+        invalid.service = "API.anthropic.com".to_owned();
+        assert_eq!(
+            PlanV2::new_with_network(
+                input,
+                NetworkAuthorityV2Input::AuthenticatedServiceSession(invalid)
+            ),
+            Err(SdkError::PlanNetwork)
+        );
     }
 
     #[test]

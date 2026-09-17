@@ -21,11 +21,18 @@ WIRE_OBJECTS = {
     "acceptance-decision": ("proofbound-runtime-acceptance-decision/2", 2),
     "release-provenance": ("proofbound-runtime-release-provenance/2", 2),
 }
+ADDITIONAL_VECTORS = {
+    "execution-plan-service-session": "proofbound-runtime-plan/2",
+}
 
 
 class WireV2GoldenVectorTests(unittest.TestCase):
     def test_vectors_are_strict_deterministic_cbor_with_expected_projection(self) -> None:
-        for name, (identity, _version) in WIRE_OBJECTS.items():
+        vectors = {
+            name: identity for name, (identity, _version) in WIRE_OBJECTS.items()
+        }
+        vectors.update(ADDITIONAL_VECTORS)
+        for name, identity in vectors.items():
             with self.subTest(name=name):
                 encoded = bytes.fromhex(
                     (VECTOR_ROOT / f"{name}.cbor.hex").read_text(encoding="ascii")
@@ -86,6 +93,80 @@ class WireV2GoldenVectorTests(unittest.TestCase):
             )
             expected = bytes.fromhex(
                 (VECTOR_ROOT / "execution-plan.cbor.hex").read_text(encoding="ascii")
+            )
+            self.assertEqual(output.read_bytes(), expected)
+
+    def test_maintained_plan_encoder_reproduces_the_service_session_vector(self) -> None:
+        network = {
+            "mode": "authenticated-service-session",
+            "service": {"name": "api.anthropic.com", "port": 443},
+            "resolver": {
+                "address": {"family": "ipv4", "bytes": [1, 1, 1, 1]},
+                "port": 53,
+                "configuration": "/etc/proofbound/resolver.conf",
+                "maximum_cname_depth": 8,
+                "maximum_answer_count": 16,
+                "maximum_response_bytes": 65_536,
+                "resolution_deadline_ms": 5_000,
+                "attempt_deadline_ms": 1_000,
+                "address_order": "ipv4-then-ipv6-lexicographic",
+            },
+            "tls": {
+                "trust_root_set": "/etc/ssl/certs/ca-certificates.crt",
+                "minimum_version": "tls-1.3",
+                "service_name_verification": "dns-san-exact",
+                "revocation": "not-checked-recorded-assumption",
+                "session_resumption": "deny",
+                "early_data": "deny",
+            },
+            "limits": {
+                "setup_time_ms": 10_000,
+                "session_time_ms": 30_000,
+                "child_to_service_bytes": 1_048_576,
+                "service_to_child_bytes": 1_048_576,
+                "dns_messages": 4,
+                "endpoint_attempts": 4,
+                "tls_handshake_bytes": 262_144,
+            },
+            "connector_executable": "/usr/libexec/proofbound-connector",
+            "connector_runtime_read": ["/usr/lib"],
+            "local_channel": {
+                "protocol": "unix-stream-v1",
+                "child_descriptor": 9,
+            },
+            "credential_source": {
+                "id": "anthropic-test",
+                "service": "api.anthropic.com",
+                "environment": "API_KEY",
+            },
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "plan.cbor"
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPOSITORY_ROOT / "tools/ci/encode_plan_v2.py"),
+                    "--output", str(output),
+                    "--id", "golden-v2",
+                    "--executable", "bin/hello",
+                    "--working-directory", ".",
+                    "--write", "out",
+                    "--execute", "bin/hello",
+                    "--environment", "API_KEY",
+                    "--network-json", json.dumps(network, separators=(",", ":")),
+                    "--processes", "2",
+                    "--wall-time-ms", "1000",
+                    "--stdout-bytes", "1024",
+                    "--stderr-bytes", "1024",
+                    "--memory-bytes", "65536",
+                    "--swap-bytes", "0",
+                ],
+                check=True,
+            )
+            expected = bytes.fromhex(
+                (
+                    VECTOR_ROOT / "execution-plan-service-session.cbor.hex"
+                ).read_text(encoding="ascii")
             )
             self.assertEqual(output.read_bytes(), expected)
 

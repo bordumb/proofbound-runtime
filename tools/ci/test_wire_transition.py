@@ -57,20 +57,16 @@ class WireTransitionTests(unittest.TestCase):
         all_objects = set(VERSION_TWO_OBJECTS) | set(NEW_CBOR_OBJECTS)
         for name, version in NEW_CBOR_OBJECTS.items():
             self.assertTrue((SCHEMA_ROOT / f"{name}-v{version}.cddl").is_file())
-        self.assertEqual(
-            {
-                path.name.removesuffix(".cbor.hex")
-                for path in VECTOR_ROOT.glob("*.cbor.hex")
-            },
-            all_objects,
-        )
-        self.assertEqual(
-            {
-                path.name.removesuffix(".projection.json")
-                for path in VECTOR_ROOT.glob("*.projection.json")
-            },
-            all_objects,
-        )
+        encoded_vectors = {
+            path.name.removesuffix(".cbor.hex")
+            for path in VECTOR_ROOT.glob("*.cbor.hex")
+        }
+        projected_vectors = {
+            path.name.removesuffix(".projection.json")
+            for path in VECTOR_ROOT.glob("*.projection.json")
+        }
+        self.assertTrue(all_objects <= encoded_vectors)
+        self.assertEqual(encoded_vectors, projected_vectors)
 
     def test_every_execution_entry_point_uses_the_v2_plan_decoder(self) -> None:
         for relative in (

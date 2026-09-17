@@ -389,6 +389,11 @@ draft, while no diagnostic output can become reusable production evidence.
 
 ### Wave A: closed contracts and pure decisions
 
+- [ ] Accept Specification 0016 as the normative authenticated-service-session
+  contract. The proposed text closes resolver transport, deterministic address
+  order, terminal reconnect behavior, child descriptor rules, receipt meaning,
+  and the required falsifier inventory. Independent exact-head review, hosted
+  evidence, merge, and exact-main verification remain required.
 - [ ] Specify one authenticated-service plan, authority, policy, receipt,
   verifier, composition, acceptance, and error contract.
 - [ ] Identify resolver, address-attempt order, TLS policy, service, connector,

@@ -40,6 +40,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-OBSERVER-029` | Tier 1 object-resolution source admitted on exact Runtime main `d60d1f3` | Successful descriptor and post-exec observations become kernel-selected only from one exact stopped tracee with a retained object, normalized live path, and complete identity. Independently approved PR 26 head `2fc82ff` passed run `35172227506`, including both native architectures. Exact-main run `35175269953` passed. The wider exit corpus remains pending. |
 | `PBR-OBSERVER-030` | Tier 1 candidate-resolution source admitted on exact Runtime main `d60d1f3` | Failed path operations produce only advisory stable candidates after two bounded root-confined observations agree; drift and hop exhaustion remain explicit gaps. Independently approved PR 26 head `2fc82ff` passed run `35172227506`, including both native architectures. Exact-main run `35175269953` passed. Linux pathname completeness remains pending. |
 | `PBR-OBSERVER-031` | Tier 1 separate-command source admitted on exact Runtime main `d60d1f3` | `pbr-diagnose` reuses the exact seed authority, retains terminal gating, and uses durable no-replace publication for non-reusable artifacts. Independently approved PR 26 head `2fc82ff` passed run `35172227506`, including both native architectures. Exact-main run `35175269953` passed. The active exit wave adds an exact declared static-scaffold input and a maintained dynamic workload without adding authority; its evidence and exact released-artifact observation remain pending. |
+| `PBR-NETWORK-032` | Tier 0 proposed contract, not executable | The closed single-service authority parser retains direct child network denial and production execution rejection. `PBR-SDK-014` owns construction. Connector, launcher, receipt, verifier, native corpus, and release admission remain open. |
 
 The contextual theorem bindings do not change the four Tier 3 claims' selected
 `REFINED` primary linkage or remove their toolchain assumptions. Exact artifact
@@ -919,6 +920,24 @@ stale-target, symlink-input, unexpected-stop, and `CLONE_UNTRACED` evasion
 cases are registered without making diagnostic output reusable. Exact-head
 hosted and released-artifact observations are still required before public
 language can describe the command as released.
+
+## PBR-NETWORK-032
+
+The current subject is the separate parser for the proposed
+authenticated-service-session plan. It validates one canonical DNS service,
+one numeric DNS-over-TCP resolver endpoint, closed TLS rules, bounded resolver
+and session limits, canonical connector support paths, one inherited local
+channel descriptor, and an optional service-bound credential-source descriptor.
+The parsed base child authority still contains `NetworkMode::Deny`.
+
+The production execution parser explicitly rejects the same plan until the
+connector, native launcher profile, receipt, independent verifier, composition,
+acceptance, attack corpus, and release waves are admitted. Rust tests cover the
+positive closed contract, service-name substitution, credential-environment
+omission, credential-service substitution, resolver address-width
+substitution, limit ordering, and production-parser rejection. The tests do not
+establish DNS, TLS, connector, kernel, credential, or remote-service behavior.
+`PBR-SDK-014` separately owns cross-language construction of these bytes.
 
 ## Bounded-domain declaration guard
 
