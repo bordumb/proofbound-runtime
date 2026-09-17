@@ -3059,6 +3059,35 @@ inventory. Because the correction changes a required test subject after the
 approval-only commit, it requires a new exact-head independent review before
 push. The failed run completed; there is no active superseded run to cancel.
 
+## RT-5 consolidated contract hosted-preflight correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `1da65a5c53f27b97a15f95ed1a9fb01170121444`
+- **Reviewed head:** `0a45e3239e8baafd05a71cb281f6f82009d2ec50`
+- **Branch:** `codex/rt5-launcher-contract`
+- **Method:** Complete exact-range static correction and consolidated-subject
+  re-review. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The global inventory still requires exact set equality for both encoded and
+projection vectors. It preserves every existing entry and adds exactly the
+launcher install, installed, release, and service-session observation vector
+pairs. An omitted or unexpected future vector still fails closed. The hosted
+failure record correctly identifies final approval-only head `3977d30`, run
+`35246840055`, job `105289092377`, the inventory mismatch, and the skipped
+downstream admission jobs.
+
+Since approved subject head `1ae00ce`, only the failure review record and the
+global inventory test changed. Contract, schema, vector, generator, checker,
+claim, evidence, and production bytes remain unchanged. The consolidated
+contract approval therefore remains valid.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`1da65a5c53f27b97a15f95ed1a9fb01170121444..0a45e3239e8baafd05a71cb281f6f82009d2ec50`.
+The following approval-only commit changes only this review record. Any later
+subject change requires a new exact-head review.
+
 ## RT-5 service launcher preliminary review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
