@@ -1,8 +1,8 @@
 schema = "proofbound-claim/1"
 id = "PBR-NETWORK-033"
 title = "Service-session policy compilation preserves declared authority"
-statement = "The proposed pure service-session policy compiler preserves the complete validated connector authority, retains the direct child deny-network base, selects the closed channel-only child profile, and produces deterministic policy bytes without authorizing execution."
-public_language = "Runtime has a proposed pure compiler and frozen deterministic-CBOR vector for the single-service policy. The compiled child base still denies direct network access and the connector authority is preserved without amplification. This is source test evidence only. It does not install a connector, transfer a channel, execute a networked child, or establish a shipping network claim."
+statement = "The proposed pure service-session policy compiler preserves the complete validated connector authority, retains the direct child deny-network base, selects the closed channel-only child profile, and produces deterministic policy bytes that bind all three roles without authorizing execution."
+public_language = "Runtime has a proposed pure compiler and frozen deterministic-CBOR vector that separately identifies direct child network denial, the channel-only child profile, and the complete single-service connector authority. This is source test evidence only. It does not install a connector, transfer a channel, execute a networked child, or establish a shipping network claim."
 subject = "rust:proofbound_runtime_core::compile_service_policy"
 profile = "ledger"
 tier = 0
@@ -32,6 +32,7 @@ source_roots = [
   "docs/specs/0016_authenticated_service_session.md",
   "proofbound/evidence/authenticated-service-policy-contract.toml",
   "schemas/compiled-policy-v2.cddl",
+  "schemas/vectors/v2/README.md",
   "schemas/vectors/v2/compiled-policy-service-session.cbor.hex",
   "schemas/vectors/v2/compiled-policy-service-session.projection.json",
   "schemas/vectors/v2/execution-plan-service-session.cbor.hex",

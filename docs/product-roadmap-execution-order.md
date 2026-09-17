@@ -188,10 +188,10 @@ network ADR is design evidence, not production implementation.
 
 Merge one authenticated service before extending the authority to a set:
 
-1. Accept
-   [Specification 0016](specs/0016_authenticated_service_session.md), then
-   freeze its single-service plan, policy, launcher, receipt, verifier,
-   composer, and acceptance schemas.
+1. Build from the accepted non-executable
+   [Specification 0016](specs/0016_authenticated_service_session.md) contract,
+   then admit the pure policy and freeze the remaining launcher, receipt,
+   verifier, composer, and acceptance schemas before their effects ship.
 2. Implement the connector-owned authenticated service session.
 3. Deny direct, inherited, resolver, proxy, Unix-socket, and `io_uring`
    bypasses.

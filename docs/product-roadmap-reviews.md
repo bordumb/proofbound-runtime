@@ -3208,6 +3208,34 @@ The following approval-only commit changes only this review record. Any later
 production, schema, claim, evidence, checker, SDK, or status-subject change
 requires a new exact-head review.
 
+## RT-5 authenticated-service pure-policy initial review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `d48122b06c4880aeba45291a107c51ad381067a4`
+- **Reviewed head:** `2c59dff3070878f88d33dc7e5d251bd49b683d1a`
+- **Branch:** `codex/rt5-pure-policy`
+- **Method:** Complete exact-range static security, canonical-policy,
+  evidence-inventory, assurance-status, and roadmap review. The reviewer
+  changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review found three blockers. First, the evidence inventory omitted the
+`proofbound_runtime_core::` crate prefix required by collected Rust library
+test identities. Second, the canonical compiled-policy bytes encoded only the
+connector service map and did not separately bind the load-bearing direct
+child deny-network base and `ChannelOnlyV1` child profile. Third, the assurance
+and roadmap records still described the already admitted RT-5 contract as
+pending and omitted `PBR-NETWORK-033` from the pending-subject ledger.
+
+The production execution parser remained fail closed, and the pure compiler's
+non-amplification structure introduced no other blocker. The correction must
+qualify the exact test identity, bind all three network roles independently in
+the schema, Rust projection, generator, frozen vector, and falsifier, and
+synchronize the admission ledger. The corrected exact head requires a new
+independent review.
+
 ## RT-8 product-exit extension approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

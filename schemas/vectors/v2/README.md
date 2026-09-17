@@ -32,5 +32,6 @@ The `execution-plan-service-session` vector is a second execution-plan fixture.
 It fixes the proposed authenticated-service-session authority shape before that
 authority is executable. The current execution entry point rejects this plan.
 The `compiled-policy-service-session` vector fixes the matching proposed pure
-policy projection. It is not evidence that the connector or child boundary is
-installed.
+policy projection. It separately binds the direct child deny-network base, the
+channel-only child filter, and the complete connector service session. It is
+not evidence that the connector or child boundary is installed.
