@@ -2983,6 +2983,44 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-5 authenticated-service contract approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da8c96b843a692bff8a0ac0bc782a108b3168dbc`
+- **Reviewed head:** `c80578d5e0e56f095c6c3c0d232491695a7a0598`
+- **Branch:** `codex/rt5-contract-wave`
+- **Method:** Complete exact-range static security, domain, wire, SDK,
+  evidence-closure, assurance-status, and roadmap review. The reviewer changed
+  no files and ran no builds or tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the proposed service-session parser and SDKs close
+the service, resolver, TLS, support-path, channel, credential-source, and limit
+domains without authorizing execution. Public constructors cannot bypass
+canonical support-path validation. Aggregate construction rechecks relations
+that cross independently validated objects. The Rust SDK makes resolver address
+width unrepresentable, and the Python and TypeScript SDKs reject width,
+credential-binding, missing-environment, path-alias, null-byte, and malformed
+container substitutions with typed errors. Production execution still rejects
+the service profile, and the child authority remains `NetworkMode::Deny`.
+
+The reviewed closures bind the changed source, schema, vector, attack,
+current-integration, and diagnostic source-pin inputs. The pending-subject
+ledger exactly names every pre-existing claim whose declared closure changed,
+preserves old exact admissions only as historical facts, and requires fresh
+exact-head and exact-main evidence before status transfers. No premise update
+is required. The reviewer also independently confirmed that RT-8 exact-main
+Verify run `35207382756` passed at exact main
+`da8c96b843a692bff8a0ac0bc782a108b3168dbc` and that the recorded PR 27 and PR
+28 identities match GitHub and local history.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`da8c96b843a692bff8a0ac0bc782a108b3168dbc..c80578d5e0e56f095c6c3c0d232491695a7a0598`.
+The following approval-only commit changes only this review record. Any later
+production, schema, claim, evidence, checker, SDK, or status-subject change
+requires a new exact-head review.
+
 ## RT-8 product-exit extension approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
