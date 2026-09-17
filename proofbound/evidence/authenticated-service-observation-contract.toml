@@ -1,0 +1,48 @@
+schema = "proofbound-evidence-unit/1"
+id = "authenticated-service-observation-contract"
+adapter = "independent-check"
+kind = "independent-check"
+claims = ["PBR-NETWORK-035"]
+tier = 0
+expected_inventory = [
+  "service-observation-canonical-vector",
+  "service-observation-closed-schema",
+  "service-observation-complete-success-lifecycle",
+  "service-observation-endpoint-and-tls-binding",
+  "service-observation-bounded-counters",
+  "service-observation-complete-cleanup",
+  "service-observation-secret-and-payload-exclusion",
+  "service-observation-causal-mutation-rejection",
+]
+inputs = [
+  "claims/PBR-NETWORK-035.toml",
+  "docs/specs/0016_authenticated_service_session.md",
+  "schemas/service-session-observation-v1.cddl",
+  "schemas/vectors/v2/README.md",
+  "schemas/vectors/v2/service-session-observation.cbor.hex",
+  "schemas/vectors/v2/service-session-observation.projection.json",
+  "tools/ci/check_service_observation_contract.py",
+  "tools/ci/deterministic_cbor.py",
+  "tools/ci/encode_plan_v2.py",
+  "tools/ci/generate_service_observation_v1_vector.py",
+  "tools/ci/service_observation_contract.py",
+  "tools/ci/test_service_observation_contract.py",
+]
+outputs = []
+environment_allowlist = ["PATH"]
+
+[operation]
+type = "independent-check"
+checker = "tools/ci/check_service_observation_contract.py"
+arguments = []
+paths = [
+  "schemas/service-session-observation-v1.cddl",
+  "schemas/vectors/v2/service-session-observation.cbor.hex",
+  "schemas/vectors/v2/service-session-observation.projection.json",
+  "tools/ci/service_observation_contract.py",
+]
+
+[resource_budget]
+time_seconds = 30
+disk_bytes = 134217728
+memory_bytes = 536870912

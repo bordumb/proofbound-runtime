@@ -35,3 +35,11 @@ The `compiled-policy-service-session` vector fixes the matching proposed pure
 policy projection. It separately binds the direct child deny-network base, the
 channel-only child filter, and the complete connector service session. It is
 not evidence that the connector or child boundary is installed.
+
+The `service-session-observation` vector fixes a proposed receipt fragment for
+one successful authenticated session. It binds the policy, connector closure,
+bounded DNS answers and attempts, authenticated TLS result, local channel,
+traffic counters, complete forward lifecycle, terminal cleanup, and optional
+credential-source name. It contains no credential value or application
+content. The fragment is not yet integrated into a production receipt,
+shipping verifier, composition result, or acceptance policy.

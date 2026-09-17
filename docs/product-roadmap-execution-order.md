@@ -193,8 +193,10 @@ Merge one authenticated service before extending the authority to a set:
 1. Build from the accepted non-executable
    [Specification 0016](specs/0016_authenticated_service_session.md) contract
    and merged pure policy, admit the forward-only lifecycle and its formal
-   evidence, then freeze the remaining launcher, receipt, verifier, composer,
-   and acceptance schemas before their effects ship.
+   evidence, then admit the closed successful-session observation fragment
+   before freezing the remaining launcher, failed-session receipt, shipping
+   verifier, composer, and acceptance schemas. No effect ships in a contract
+   wave.
 2. Implement the connector-owned authenticated service session.
 3. Deny direct, inherited, resolver, proxy, Unix-socket, and `io_uring`
    bypasses.

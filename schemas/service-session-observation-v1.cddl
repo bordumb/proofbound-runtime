@@ -1,0 +1,158 @@
+; Proposed authenticated-service-session receipt observation version 1.
+; This is a closed deterministic-CBOR fragment. It is not part of a reusable
+; execution receipt until the connector, launcher, verifier, composition, and
+; acceptance waves admit the complete production contract.
+
+service-session-observation-v1 = {
+  "schema": "proofbound-runtime-service-session-observation/1",
+  "service": service-identity,
+  "limits": service-session-limits,
+  "dns": dns-observation,
+  "tls": tls-observation,
+  "channel": channel-observation,
+  "traffic": traffic-observation,
+  "cleanup": cleanup-observation,
+  "lifecycle": [+ lifecycle-transition],
+  "execution_id": bstr .size 16,
+  "policy_sha256": bstr .size 32,
+  "connector": connector-observation,
+  "credential_source": null / credential-source
+}
+
+service-identity = {
+  "name": text .size (1..253),
+  "port": 1..65535
+}
+
+service-session-limits = {
+  "setup_time_ms": uint64-nonzero,
+  "session_time_ms": uint64-nonzero,
+  "child_to_service_bytes": uint64-nonzero,
+  "service_to_child_bytes": uint64-nonzero,
+  "dns_messages": 1..65535,
+  "endpoint_attempts": 1..65535,
+  "tls_handshake_bytes": uint64-nonzero
+}
+
+connector-observation = {
+  "executable": artifact-identity,
+  "runtime_closure": [* artifact-identity],
+  "process_generation": uint64-nonzero
+}
+
+dns-observation = {
+  "resolver": endpoint,
+  "configuration": artifact-identity,
+  "maximum_cname_depth": 1..65535,
+  "maximum_answer_count": 1..65535,
+  "maximum_response_bytes": uint64-nonzero,
+  "resolution_deadline_ms": uint64-nonzero,
+  "attempt_deadline_ms": uint64-nonzero,
+  "address_order": "ipv4-then-ipv6-lexicographic",
+  "messages": [+ dns-message],
+  "cname_chain": [* dns-name],
+  "answers": [+ dns-answer],
+  "attempts": [+ endpoint-attempt],
+  "selected_endpoint": endpoint
+}
+
+dns-message = {
+  "sha256": bstr .size 32,
+  "size": uint64-nonzero,
+  "observed_ns": uint64
+}
+
+dns-answer = {
+  "name": dns-name,
+  "endpoint": endpoint,
+  "ttl_seconds": uint32-nonzero,
+  "expires_ns": uint64
+}
+
+endpoint-attempt = {
+  "ordinal": uint32-nonzero,
+  "endpoint": endpoint,
+  "result": "refused" / "timed-out" / "failed" / "authenticated",
+  "started_ns": uint64,
+  "finished_ns": uint64
+}
+
+endpoint = {
+  "family": "ipv4",
+  "address": bstr .size 4,
+  "port": 1..65535
+} / {
+  "family": "ipv6",
+  "address": bstr .size 16,
+  "port": 1..65535
+}
+
+tls-observation = {
+  "version": "tls-1.2" / "tls-1.3",
+  "service_name_verification": "dns-san-exact-match",
+  "certificate_chain_sha256": bstr .size 32,
+  "trust_root_set": artifact-identity,
+  "revocation": "not-checked-recorded-assumption",
+  "session_resumption": "not-used",
+  "early_data": "not-used",
+  "handshake_bytes": uint64-nonzero,
+  "authenticated_ns": uint64
+}
+
+channel-observation = {
+  "protocol": "unix-stream-v1",
+  "child_descriptor": 3..65535,
+  "channel_id": bstr .size 16,
+  "descriptor_state": "registered-only"
+}
+
+traffic-observation = {
+  "child_to_service_bytes": uint64,
+  "service_to_child_bytes": uint64,
+  "active_ns": uint64,
+  "closed_ns": uint64
+}
+
+lifecycle-transition = {
+  "from": lifecycle-phase,
+  "event": lifecycle-event,
+  "to": lifecycle-phase,
+  "observed_ns": uint64
+}
+
+lifecycle-phase = "created" / "resolving" / "connecting" /
+  "authenticating" / "ready" / "active" / "closing" / "closed"
+
+lifecycle-event = "begin-resolution" / "resolution-complete" /
+  "endpoint-connected" / "tls-authenticated" / "child-released" /
+  "begin-close" / "close-complete"
+
+cleanup-observation = {
+  "connector": "reaped",
+  "channel": "closed",
+  "child": "reaped",
+  "cgroup": "empty-removed",
+  "namespace": "destroyed"
+}
+
+credential-source = {
+  "id": text .size (1..128),
+  "service": dns-name,
+  "environment": environment-name
+}
+
+artifact-identity = {
+  "role": artifact-role,
+  "size": uint64,
+  "mode": 0..4095,
+  "sha256": bstr .size 32
+}
+
+artifact-role = "connector-executable" / "connector-runtime-library" /
+  "resolver-configuration" / "trust-root-set"
+
+dns-name = text .size (1..253)
+environment-name = text .size (1..255)
+uint32-nonzero = 1..4294967295
+uint64 = 0..18446744073709551615
+uint64-nonzero = 1..18446744073709551615

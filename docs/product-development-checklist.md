@@ -409,6 +409,12 @@ draft, while no diagnostic output can become reusable production evidence.
   source executes a resolver, connector, TLS session, launcher, or child. The
   branch also clarifies that only nonterminal states can enter typed failure;
   the intersecting `PBR-SDK-014` closure therefore requires fresh admission.
+- [ ] Admit the closed successful-session observation fragment.
+  `PBR-NETWORK-035` freezes one deterministic-CBOR projection and an
+  independently checked mutation corpus for service, connector, DNS, endpoint,
+  TLS, channel, counters, lifecycle, cleanup, and credential-source identity.
+  It is intentionally not yet a production receipt or shipping-verifier
+  contract, and failed-session forms remain open.
 - [ ] Model and prove the selected pure non-amplification, identity, and state
   transition properties in Lean where the subject is tractable.
 - [ ] Link selected pure Rust decisions to their formal models without

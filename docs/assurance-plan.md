@@ -43,6 +43,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-NETWORK-032` | Tier 0 contract admitted on exact Runtime main `a94c21a`; current lifecycle closure pending | PR 30 and exact-main run `35231003515` passed. The lifecycle branch changes the shared core export identity again. |
 | `PBR-NETWORK-033` | Tier 0 pure policy admitted on exact Runtime main `a94c21a`; current lifecycle closure pending | The compiler separately binds child denial, the channel-only profile, and complete connector authority. Run `35226379485` and exact-main run `35231003515` passed. The lifecycle branch changes its shared export closure. |
 | `PBR-NETWORK-034` | Tier 0 proposed pure lifecycle pending first exact admission | Exhaustive source tests cover the closed forward path and typed terminal failure. A candidate Lean theorem characterizes the same transitions but is not yet registered as admitted evidence. Every effectful wave remains open. |
+| `PBR-NETWORK-035` | Tier 0 proposed observation contract pending first exact admission | A closed successful-session fragment and independent mutation checker bind receipt inputs without claiming production integration or network effects. Failed-session, shipping-verifier, composition, and acceptance work remain open. |
 
 ### Current changed subjects pending exact admission
 
@@ -64,6 +65,10 @@ existing claims are `PBR-BINDING-005`, `PBR-DRAFT-017`, `PBR-DRAFT-019`,
 `PBR-NETWORK-033`. `PBR-NETWORK-034` is a new proposed Tier 0 subject and is
 pending its first exact admission. Its Lean theorem is a compiled candidate,
 not registered theorem evidence.
+
+The stacked observation-contract wave adds `PBR-NETWORK-035`. It is not part
+of the lifecycle review subject and requires its own exact-head review and
+hosted admission after the lifecycle wave merges.
 
 This pending ledger does not weaken or retract an admission for an older exact
 source. It prevents a source-identity change from silently inheriting that
@@ -1015,6 +1020,26 @@ transition succeeds exactly for the registered relation. The theorem is not
 yet registered or admitted as Proofbound evidence and does not establish a
 Rust refinement. Neither subject runs DNS, a connector, TLS, a launcher, a
 child, or cleanup. Effectful linkage and receipt verification remain open.
+
+## PBR-NETWORK-035
+
+The current subject is a proposed deterministic-CBOR service-session
+observation fragment plus an independent Python semantic checker. The closed
+success vector binds one declared service and policy to the exact connector
+closure, canonical DNS answer and attempt prefix, authenticated TLS result,
+registered local channel, bounded traffic counters, complete forward
+lifecycle, terminal cleanup, and optional credential-source name. The type and
+checker exclude credential values and application request or response bytes.
+
+The mutation corpus rejects an unknown field, an endpoint outside the answer
+set, an out-of-order attempt, an expired selected answer, TLS name mismatch,
+TLS resumption, excess traffic,
+a skipped lifecycle transition, incomplete cleanup, cross-service credential
+binding, and retained secret content. This source contract does not establish
+that a producer observed those facts, that the shipping verifier checks them,
+or that a connector or Linux boundary enforced them. Production receipt,
+failure, verifier, composition, acceptance, native, and artifact-binding waves
+remain open.
 
 ## Bounded-domain declaration guard
 

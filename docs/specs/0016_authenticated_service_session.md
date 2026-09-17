@@ -355,6 +355,15 @@ It rejects a service-session receipt when any identity, bound, transition,
 observation, acknowledgement binding, cleanup result, or premise is absent or
 inconsistent. It MUST NOT depend on a Runtime producer crate.
 
+The proposed closed observation fragment is
+`proofbound-runtime-service-session-observation/1`. It freezes the successful
+session projection before production receipt integration. The fragment is not
+a reusable receipt and cannot be accepted by the production verifier,
+composer, or acceptance engine. A later integration MUST embed the same facts,
+add non-reusable failure forms, and retain the outer receipt's exact plan,
+policy, boundary, outcome, resource, assumption, and trusted-computing-base
+bindings.
+
 Composition retains the complete service authority, service observations,
 limits, assumptions, and trusted-computing-base roles. Consumer acceptance uses
 an explicit service-session policy. A policy for network denial does not accept

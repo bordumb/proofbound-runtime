@@ -1062,6 +1062,16 @@ This epic exists only if RT-4 accepts a mechanism.
 - Reject unknown modes and incomplete destination records. Never fall back to
   `Deny` or broad egress after an unsupported allow mode is requested.
 
+**2026-09-17 observation-contract checkpoint:** the staged
+`proofbound-runtime-service-session-observation/1` fragment freezes one
+successful session's policy, connector, bounded DNS and endpoint attempts,
+authenticated TLS result, registered channel, traffic counters, forward
+lifecycle, terminal cleanup, and credential-source identity. Its independent
+checker rejects eleven causal omission, substitution, expiry, bound, lifecycle, cleanup,
+cross-service, and retained-content mutations. `PBR-NETWORK-035` remains a
+Tier 0 proposed source contract: the fragment is not a production receipt,
+shipping verifier input, or claim that any network effect occurred.
+
 ### RT-5.2 Keep the security boundary explicit
 
 - Put raw syscalls only in `sys.rs`.
