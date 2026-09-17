@@ -2983,6 +2983,34 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-5 consolidated observation and launcher final review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `1da65a5c53f27b97a15f95ed1a9fb01170121444`
+- **Reviewed head:** `9fe30096eaaf5ec7bf6f1b881d5d6c588cb034d4`
+- **Branch:** `codex/rt5-launcher-contract`
+- **Method:** Complete exact-range static schema, vector, generator, checker,
+  mutation, claim, evidence, admission-ledger, and roadmap review. The reviewer
+  changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The contract code had no blocking finding. Both contract subjects were
+byte-identical to their previously approved corrected heads. Their claims,
+evidence units, schemas, vectors, generators, checkers, and mutation corpora
+remained distinct and fail closed as one batch. Every earlier semantic and
+causal-mutation blocker remained closed. Credential values and application
+content remained excluded. Production crates were unchanged, so service
+execution and production launcher decoding remained rejected.
+
+One status-truthfulness blocker remained. The detailed `PBR-NETWORK-032`
+section in the assurance plan still said the lifecycle closure required fresh
+admission. That contradicted the current summary and ledger, PR 31 run
+`35236845497`, merge `1da65a5c53f27b97a15f95ed1a9fb01170121444`, and passed
+exact-main run `35241672716`. The stale statement required correction and a new
+exact-head review.
+
 ## RT-5 service launcher preliminary review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

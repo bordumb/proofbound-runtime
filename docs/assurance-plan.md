@@ -978,8 +978,10 @@ The contract subject passed PR 29 exact-head run `35216056050`, merged as exact
 Runtime main `d48122b06c4880aeba45291a107c51ad381067a4`, and passed exact-main
 run `35220098639`. The pure-policy schema and Specification 0016 clarification
 passed PR 30 run `35226379485` and exact-main run `35231003515` at
-`a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca`. The current lifecycle change is
-the later exact source closure that requires fresh admission.
+`a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca`. The later lifecycle closure
+passed PR 31 run `35236845497`, merged as exact main
+`1da65a5c53f27b97a15f95ed1a9fb01170121444`, and passed exact-main run
+`35241672716`.
 
 ## PBR-NETWORK-033
 
