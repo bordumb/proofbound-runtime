@@ -1102,7 +1102,7 @@ Production receipt, separate Rust verifier, composition, acceptance, effects,
 native attacks, and release-artifact linkage remain open.
 
 **2026-09-17 connector-engine checkpoint:** `PBR-NETWORK-038` registers the
-first isolated Rust connector engine at Tier 0. The candidate carries one
+first isolated Rust connector engine at Tier 1. The candidate carries one
 complete validated authority through resolution and authentication, sends DNS
 only to its declared numeric TCP resolver under absolute deadlines, rejects
 contradictory or expired CNAME paths, applies the shortest reconciled alias
@@ -1111,7 +1111,9 @@ answer prefix with earliest-expiry duplicate handling.
 It selects the ring provider explicitly, requires an exact non-wildcard DNS SAN
 with caller-supplied trust-root bytes and the declared minimum TLS version,
 disables TLS resumption and early data, and proxies only opaque directionally
-bounded bytes without reconnect. The production CLI still rejects the authority. A separately
+bounded bytes without reconnect. Tier 1 here means bounded independent source-
+mutation evidence; it does not establish effectful or artifact behavior. The
+production CLI still rejects the authority. A separately
 identified connector process, resolver and trust-root artifact binding,
 supervisor and launcher binding, credential
 release, native attacks, receipt integration, and release-artifact evidence

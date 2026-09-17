@@ -101,7 +101,8 @@ execution and production receipt acceptance remain disabled.
 ### 1.2 Implement the connector
 
 Wave status: `PBR-NETWORK-038` now registers the isolated connector-engine
-candidate and its Tier 0 source tests. The initial exact-head review at
+candidate, its Tier 0 Rust tests, and its Tier 1 bounded independent source-
+mutation check. The initial exact-head review at
 `450453d` requested changes for authority binding, exact SAN matching, absolute
 deadlines, explicit TLS-provider selection, CNAME validity, source closure, and
 causal falsifiers. The first correction head `cd8b16e` was rejected for one

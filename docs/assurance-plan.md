@@ -46,7 +46,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-NETWORK-035` | Tier 1 receipt contract admitted on exact Runtime main `8513ca7`; connector observation closure pending exact admission | PR 33 exact head `c361cb1` passed run `35262967214`; exact-main run `35267321804` admitted the merge. The connector candidate changes the exact CNAME and effective-expiry observation source, so it cannot inherit that admission. |
 | `PBR-NETWORK-036` | Tier 1 receipt contract admitted on exact Runtime main `8513ca7`; connector dependency closure pending exact admission | Exact-main run `35267321804` admitted the launcher contract. Its meaning is unchanged, but the connector candidate changes its registered root dependency closure and must replay. |
 | `PBR-NETWORK-037` | Tier 1 receipt contract admitted on exact Runtime main `8513ca7`; connector dependency closure pending exact admission | Exact-head run `35262967214` and exact-main run `35267321804` admitted the prior success and failure contract. Changed root and observation inputs require fresh exact-source admission. |
-| `PBR-NETWORK-038` | Tier 0 proposed connector engine pending first exact admission | The isolated connector crate implements bounded TCP DNS parsing, canonical answer selection, exact-name TLS setup without resumption or early data, endpoint attempts, opaque directional byte limits, and one no-reconnect channel loop. Process supervision, launcher binding, native evidence, receipts, and release artifacts remain open. |
+| `PBR-NETWORK-038` | Tier 1 proposed connector engine pending first exact admission | The isolated connector crate implements bounded TCP DNS parsing, canonical answer selection, exact-name TLS setup without resumption or early data, endpoint attempts, opaque directional byte limits, and one no-reconnect channel loop. The independent evidence is a bounded source-mutation check. Process supervision, launcher binding, native evidence, receipts, and release artifacts remain open. |
 
 ### Current changed subjects pending exact admission
 
@@ -1135,7 +1135,8 @@ channel path treats application bytes as opaque, applies independent
 directional plaintext limits and one session deadline, uses no reconnect, and
 does not interpret requests or responses.
 
-This is Tier 0 source evidence. Registered falsifiers cover complete-authority
+This is Tier 1 bounded source evidence. Registered tests and the independent
+source-mutation check cover complete-authority
 retention, DNS transaction and TTL substitution, CNAME conflict and lifetime,
 wildcard-name rejection, explicit provider selection, deadline error typing,
 trust-root failure, address ordering, and closed error classes. They do not
