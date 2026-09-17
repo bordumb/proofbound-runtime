@@ -59,13 +59,19 @@ def assert_object_resolution_contract(sys_source, trace, mapping, artifact):
     exit_branch = trace.split(
         "crate::sys::TraceSyscallStop::Exit { result, is_error } =>", 1
     )[1].split("crate::sys::TraceSyscallStop::Seccomp", 1)[0]
+    captured_branch = exit_branch.split(
+        "PendingTraceSyscall::Captured(invocation) => {", 1
+    )[1].split("PendingTraceSyscall::Ignored =>", 1)[0]
     exit_order = [
-        exit_branch.index(".pending\n                    .take()"),
+        exit_branch.index(".finish_syscall()?"),
         exit_branch.index(descriptor_connection),
         exit_branch.index("ActiveTraceEvent::SyscallCompleted"),
     ]
     assert exit_order == sorted(exit_order)
-    assert "resume_before_deadline" not in exit_branch[: exit_order[2]]
+    selected_position = captured_branch.index(descriptor_connection)
+    event_position = captured_branch.index("ActiveTraceEvent::SyscallCompleted")
+    assert selected_position < event_position
+    assert "resume_before_deadline" not in captured_branch[:event_position]
 
 
 class DiagnosticObjectResolutionContractTests(unittest.TestCase):
