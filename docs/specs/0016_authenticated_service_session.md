@@ -279,6 +279,19 @@ Child code MUST NOT execute before step 16. A failure in any earlier step closes
 the channel, terminates the connector and launcher, drains bounded observations,
 and produces no reusable success receipt.
 
+The proposed service-specific handshake is
+`proofbound-runtime-service-launcher/1`. Its install request and installed
+acknowledgement carry the complete service binding. Its release message carries
+the SHA-256 identity of the deterministic-CBOR service-binding map. The binding
+contains the execution policy, cgroup, connector generation and closure, DNS
+and TLS observation identities, selected endpoint, private-channel endpoints
+and child descriptor, session limits, and exact child-filter identity. The
+optional credential-release message is sensitive transient input after the
+installed acknowledgement. No credential value or value-derived digest can
+enter a retained vector, receipt, diagnostic, or log. The production launcher
+protocol does not accept these messages until the native implementation and
+failure handshake are admitted.
+
 ## 7. Child boundary
 
 The service-session seccomp profile denies at least:

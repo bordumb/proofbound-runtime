@@ -43,3 +43,13 @@ traffic counters, complete forward lifecycle, terminal cleanup, and optional
 credential-source name. It contains no credential value or application
 content. The fragment is not yet integrated into a production receipt,
 shipping verifier, composition result, or acceptance policy.
+
+The three `service-launcher-*` vectors freeze the proposed install,
+boundary-installed, and exec-release handshake. The installed acknowledgement
+echoes the complete connector, DNS, endpoint, TLS, channel, limit, and child-
+filter binding. The release message carries the deterministic-CBOR binding
+digest. The production launcher protocol remains unchanged and rejects these
+messages until the effectful launcher wave is admitted. The optional
+credential-release message is transient and intentionally has no retained
+golden vector; its descriptor and ordering are checked with a runtime-generated
+synthetic value.

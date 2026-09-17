@@ -44,6 +44,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-NETWORK-033` | Tier 0 pure policy admitted on exact Runtime main `a94c21a`; current lifecycle closure pending | The compiler separately binds child denial, the channel-only profile, and complete connector authority. Run `35226379485` and exact-main run `35231003515` passed. The lifecycle branch changes its shared export closure. |
 | `PBR-NETWORK-034` | Tier 0 proposed pure lifecycle pending first exact admission | Exhaustive source tests cover the closed forward path and typed terminal failure. A candidate Lean theorem characterizes the same transitions but is not yet registered as admitted evidence. Every effectful wave remains open. |
 | `PBR-NETWORK-035` | Tier 0 proposed observation contract pending first exact admission | A closed successful-session fragment and independent mutation checker bind receipt inputs without claiming production integration or network effects. Failed-session, shipping-verifier, composition, and acceptance work remain open. |
+| `PBR-NETWORK-036` | Tier 0 proposed launcher contract pending first exact admission | A closed three-message handshake binds the prepared service session and child filter before release without changing the production launcher or claiming an installed effect. |
 
 ### Current changed subjects pending exact admission
 
@@ -1035,11 +1036,30 @@ The mutation corpus rejects unknown fields; invalid authority limits; invalid
 resolution, attempt, endpoint, TTL, and expiry timing; an endpoint outside the
 answer set; invalid TLS identity or resumption; excess traffic; a skipped
 lifecycle transition; incomplete cleanup; cross-service or malformed
-credential identity; and retained secret content. This source contract does not establish
+credential identity; and retained secret content. This source contract does
+not establish
 that a producer observed those facts, that the shipping verifier checks them,
 or that a connector or Linux boundary enforced them. Production receipt,
 failure, verifier, composition, acceptance, native, and artifact-binding waves
 remain open.
+
+## PBR-NETWORK-036
+
+The current subject is a proposed deterministic-CBOR service-session launcher
+handshake and an independent semantic checker. The install and installed
+messages bind the execution, policy, cgroup, child executable, connector
+identity and generation, DNS and TLS observation identities, selected endpoint,
+channel endpoint identities and descriptor, limits, child-filter bytes, and
+retained descriptor inventory. The release message binds the canonical service
+map by SHA-256. The mutation corpus rejects identity, cgroup, connector,
+endpoint, channel, descriptor, filter, release-binding, and retained-secret
+substitutions.
+
+The production launcher message union is unchanged and does not accept this
+handshake. This source contract does not establish that any boundary was
+installed or that a child was released. The failure handshake, effectful
+supervisor and launcher implementation, native attacks, receipt integration,
+shipping verifier, composition, acceptance, and artifact binding remain open.
 
 ## Bounded-domain declaration guard
 

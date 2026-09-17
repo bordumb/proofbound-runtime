@@ -415,6 +415,12 @@ draft, while no diagnostic output can become reusable production evidence.
   TLS, channel, counters, lifecycle, cleanup, and credential-source identity.
   It is intentionally not yet a production receipt or shipping-verifier
   contract, and failed-session forms remain open.
+- [ ] Admit the service-specific launcher handshake. `PBR-NETWORK-036` freezes
+  the proposed install, complete boundary acknowledgement, and release binding
+  with 22 causal mutation classes, including service substitution,
+  early credential release, and descriptor substitution. The production
+  launcher remains
+  unchanged; the failure handshake and native implementation remain open.
 - [ ] Model and prove the selected pure non-amplification, identity, and state
   transition properties in Lean where the subject is tractable.
 - [ ] Link selected pure Rust decisions to their formal models without

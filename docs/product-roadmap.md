@@ -1072,6 +1072,14 @@ cross-service, and retained-content mutations. `PBR-NETWORK-035` remains a
 Tier 0 proposed source contract: the fragment is not a production receipt,
 shipping verifier input, or claim that any network effect occurred.
 
+**2026-09-17 launcher-contract checkpoint:** the staged
+`proofbound-runtime-service-launcher/1` handshake binds one execution, policy,
+cgroup, executable, connector generation and closure, DNS and TLS observations,
+selected endpoint, private channel, limits, retained descriptor set, and exact
+child filter before release. `PBR-NETWORK-036` remains a Tier 0 proposed source
+contract. Production launcher messages remain unchanged and reject this form;
+no connector, launcher, or child effect is enabled.
+
 ### RT-5.2 Keep the security boundary explicit
 
 - Put raw syscalls only in `sys.rs`.
