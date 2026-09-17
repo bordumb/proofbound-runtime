@@ -4,10 +4,77 @@
 compiled-policy-v2 = {
   "schema": "proofbound-runtime-linux-policy/2",
   "cgroup": cgroup-policy,
-  "network": "deny-network-v1",
+  "network": compiled-network-policy,
   "filesystem": [* filesystem-rule],
   "environment": [* text],
   "no_new_privileges": true
+}
+
+compiled-network-policy = "deny-network-v1" / {
+  "mode": "authenticated-service-session-v1",
+  "service": service-identity,
+  "resolver": resolution-policy,
+  "tls": tls-policy,
+  "limits": service-session-limits,
+  "connector_executable": absolute-path,
+  "connector_runtime_read": [* absolute-path],
+  "local_channel": local-channel-policy,
+  "credential_source": null / credential-source
+}
+
+service-identity = {
+  "name": text .size (1..253),
+  "port": 1..65535
+}
+
+resolution-policy = {
+  "address": resolver-address,
+  "port": 1..65535,
+  "configuration": absolute-path,
+  "maximum_cname_depth": 1..65535,
+  "maximum_answer_count": 1..65535,
+  "maximum_response_bytes": uint64-nonzero,
+  "resolution_deadline_ms": uint64-nonzero,
+  "attempt_deadline_ms": uint64-nonzero,
+  "address_order": "ipv4-then-ipv6-lexicographic"
+}
+
+resolver-address = {
+  "family": "ipv4",
+  "bytes": bytes .size 4
+} / {
+  "family": "ipv6",
+  "bytes": bytes .size 16
+}
+
+tls-policy = {
+  "trust_root_set": absolute-path,
+  "minimum_version": "tls-1.2" / "tls-1.3",
+  "service_name_verification": "dns-san-exact",
+  "revocation": "not-checked-recorded-assumption",
+  "session_resumption": "deny",
+  "early_data": "deny"
+}
+
+service-session-limits = {
+  "setup_time_ms": uint64-nonzero,
+  "session_time_ms": uint64-nonzero,
+  "child_to_service_bytes": uint64-nonzero,
+  "service_to_child_bytes": uint64-nonzero,
+  "dns_messages": 1..65535,
+  "endpoint_attempts": 1..65535,
+  "tls_handshake_bytes": uint64-nonzero
+}
+
+local-channel-policy = {
+  "protocol": "unix-stream-v1",
+  "child_descriptor": 3..65535
+}
+
+credential-source = {
+  "id": text .size (1..128),
+  "service": text .size (1..253),
+  "environment": environment-name
 }
 
 filesystem-rule = {
@@ -32,3 +99,5 @@ uint64 = 0..18446744073709551615
 uint64-nonzero = 1..18446744073709551615
 memory-byte-limit = 65536..1099511627776
 swap-byte-limit = 0..1099511627776
+absolute-path = text .size (1..18446744073709551615)
+environment-name = text .size (1..18446744073709551615)

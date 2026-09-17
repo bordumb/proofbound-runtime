@@ -6,6 +6,7 @@ mod authority;
 mod diagnostic;
 mod error;
 mod identity;
+mod network;
 mod normalize;
 mod outcome;
 mod plan;
@@ -25,11 +26,17 @@ pub use diagnostic::{
 };
 pub use error::{CoreError, ErrorClass, MachineError};
 pub use identity::{ArtifactIdentity, ArtifactRole, FileMode, IdentityError, Sha256Digest};
+pub use network::{
+    AddressOrder, AuthenticatedServiceSession, ChildChannelDescriptor, CredentialSource,
+    CredentialSourceId, LocalChannelProtocol, MinimumTlsVersion, NetworkAuthorityError,
+    NetworkSupportPath, ResolutionPolicy, ResolverAddress, ResolverEndpoint, RevocationPolicy,
+    ServiceName, ServiceNameVerification, ServiceSessionLimits, TcpPort, TlsPolicy,
+};
 pub use normalize::{NormalizedAuthority, normalize_authority};
 pub use outcome::{ExecutionOutcome, ExecutionOutcomeKind, SignalNumber, execution_outcome_kind};
 pub use plan::{
-    CommandArgument, ExecutionCommand, ExecutionPlan, PlanError, PlanId, parse_execution_plan,
-    parse_execution_plan_for_execution,
+    CommandArgument, ExecutionCommand, ExecutionPlan, PlanError, PlanId, ServiceExecutionPlan,
+    parse_execution_plan, parse_execution_plan_for_execution, parse_service_execution_plan,
 };
 pub use policy::{
     CgroupPolicy, CompiledPolicy, FilesystemPolicy, NoNewPrivileges, PolicyEncodingError,

@@ -32,6 +32,49 @@ def golden_plan() -> dict:
     }
 
 
+def service_network() -> dict:
+    return {
+        "mode": "authenticated-service-session",
+        "service": {"name": "api.anthropic.com", "port": 443},
+        "resolver": {
+            "address": {"family": "ipv4", "bytes": bytes([1, 1, 1, 1])},
+            "port": 53,
+            "configuration": "/etc/proofbound/resolver.conf",
+            "maximum_cname_depth": 8,
+            "maximum_answer_count": 16,
+            "maximum_response_bytes": 65_536,
+            "resolution_deadline_ms": 5_000,
+            "attempt_deadline_ms": 1_000,
+            "address_order": "ipv4-then-ipv6-lexicographic",
+        },
+        "tls": {
+            "trust_root_set": "/etc/ssl/certs/ca-certificates.crt",
+            "minimum_version": "tls-1.3",
+            "service_name_verification": "dns-san-exact",
+            "revocation": "not-checked-recorded-assumption",
+            "session_resumption": "deny",
+            "early_data": "deny",
+        },
+        "limits": {
+            "setup_time_ms": 10_000,
+            "session_time_ms": 30_000,
+            "child_to_service_bytes": 1_048_576,
+            "service_to_child_bytes": 1_048_576,
+            "dns_messages": 4,
+            "endpoint_attempts": 4,
+            "tls_handshake_bytes": 262_144,
+        },
+        "connector_executable": "/usr/libexec/proofbound-connector",
+        "connector_runtime_read": ["/usr/lib"],
+        "local_channel": {"protocol": "unix-stream-v1", "child_descriptor": 9},
+        "credential_source": {
+            "id": "anthropic-test",
+            "service": "api.anthropic.com",
+            "environment": "API_KEY",
+        },
+    }
+
+
 RESULT = b'{"schema":"proofbound-runtime-run-result/2","outcome":{"kind":"exited","code":0},"receipt":"receipt.cbor","commitment":"hex:0909090909090909090909090909090909090909090909090909090909090909","execution_id":"hex:00000000000040008000000000000000"}'
 
 
@@ -52,6 +95,90 @@ class PythonSdkTests(unittest.TestCase):
         with self.assertRaisesRegex(SdkError, "sdk.plan.limit-not-quantized"):
             build_plan(**unquantized)
 
+    def test_service_session_is_closed_and_validated(self) -> None:
+        plan = golden_plan()
+        plan["environment"] = ["API_KEY"]
+        plan["network"] = service_network()
+        expected = bytes.fromhex(
+            (
+                REPOSITORY_ROOT
+                / "schemas/vectors/v2/execution-plan-service-session.cbor.hex"
+            ).read_text()
+        )
+        self.assertEqual(build_plan(**plan), expected)
+
+        invalid = service_network()
+        invalid["service"] = {"name": "API.anthropic.com", "port": 443}
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
+        invalid = service_network()
+        invalid["connector_runtime_read"] = ["/usr/./lib"]
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
+        invalid = service_network()
+        invalid["connector_runtime_read"] = ["/usr//lib"]
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
+        invalid = service_network()
+        invalid["service"] = {"name": "001.002.003.004", "port": 443}
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
+        invalid = service_network()
+        invalid["limits"]["setup_time_ms"] = 4_999
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
+        invalid = service_network()
+        invalid["credential_source"]["service"] = "other.example.com"
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
+        invalid = service_network()
+        invalid["credential_source"]["environment"] = "MISSING_KEY"
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
+        invalid = service_network()
+        invalid["resolver"]["address"]["bytes"] = bytes([1, 1, 1])
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
+        invalid = service_network()
+        invalid["connector_runtime_read"] = ["/usr/\0lib"]
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
+        invalid = service_network()
+        invalid["connector_runtime_read"] = [["/usr/lib"]]
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
+        invalid = service_network()
+        invalid["resolver"]["address"]["family"] = []
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
+        invalid = service_network()
+        invalid["tls"]["minimum_version"] = []
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
     def test_result_projection_is_closed(self) -> None:
         result = parse_run_result(RESULT)
         self.assertEqual(result.receipt, "receipt.cbor")
@@ -59,7 +186,9 @@ class PythonSdkTests(unittest.TestCase):
         with self.assertRaisesRegex(SdkError, "sdk.result.unknown-field"):
             parse_run_result(RESULT[:-1] + b',"verified":true}')
 
-    def test_run_uses_exact_arguments_without_shell_or_ambient_environment(self) -> None:
+    def test_run_uses_exact_arguments_without_shell_or_ambient_environment(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             fake = root / "pbr"

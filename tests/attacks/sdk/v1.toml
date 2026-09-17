@@ -44,3 +44,33 @@ expected = "closed package inventory failure"
 id = "cross-codec-drift"
 mutation = "change one language encoder away from the frozen v2 plan bytes"
 expected = "byte-for-byte golden mismatch"
+
+[[case]]
+id = "service-name-substitution"
+mutation = "replace the canonical lower-case DNS service name with another spelling or an address"
+expected = "sdk.plan.network-invalid"
+
+[[case]]
+id = "credential-service-substitution"
+mutation = "bind the credential-source descriptor to another service"
+expected = "sdk.plan.network-invalid"
+
+[[case]]
+id = "credential-environment-omission"
+mutation = "name a credential environment variable outside the plan environment authority"
+expected = "sdk.plan.network-invalid"
+
+[[case]]
+id = "resolver-address-width-substitution"
+mutation = "supply resolver address bytes with a width that disagrees with the declared family"
+expected = "sdk.plan.network-invalid"
+
+[[case]]
+id = "service-setup-deadline-inversion"
+mutation = "make the DNS resolution deadline exceed the total service setup deadline"
+expected = "sdk.plan.network-invalid"
+
+[[case]]
+id = "service-support-path-alias"
+mutation = "supply a service support path with an empty, dot, parent, trailing, or null-byte component"
+expected = "sdk.plan.network-invalid"

@@ -1,0 +1,33 @@
+schema = "proofbound-claim/1"
+id = "PBR-NETWORK-032"
+title = "Authenticated service-session authority is closed and non-executable"
+statement = "The proposed single-service plan parser validates one closed connector-owned authenticated service-session authority, retains direct child network denial, and the production execution parser rejects that service profile until the native connector, launcher, receipt, and verifier waves are admitted."
+public_language = "Runtime has a proposed closed single-service authority contract and separate non-executing parser. Registered tests cover canonical service names, resolver and TLS policy, bounds, credential binding, child direct-network denial, and production-parser rejection. The separate SDK claim owns plan construction. This is source test evidence only. It does not provide a native connector, network execution, receipt verification, or a shipping network claim."
+subject = "rust:proofbound_runtime_core::parse_service_execution_plan"
+profile = "ledger"
+tier = 0
+evidence = [
+  "example-test:authenticated-service-session-contract",
+]
+assumptions = []
+open_obligations = [
+  "Implement and independently verify the complete compiled-policy, launcher, connector, receipt, composition, and acceptance contracts.",
+  "Run the registered positive and bypass corpus on x86_64 and aarch64 Linux.",
+  "Bind the admitted implementation to exact release artifacts and one maintained real API workload.",
+]
+out_of_scope = [
+  "Any claim that the proposed service-session plan can execute.",
+  "Correctness of DNS, TLS, the Linux kernel, a remote service, a connector, or a credential source.",
+  "Multiple services, reconnect, redirects, proxies, QUIC, or application-operation semantics.",
+]
+source_roots = [
+  "crates/proofbound-runtime-core/src/lib.rs",
+  "crates/proofbound-runtime-core/src/network.rs",
+  "crates/proofbound-runtime-core/src/plan.rs",
+  "docs/adr/0004-authenticated-service-session.md",
+  "docs/specs/0016_authenticated_service_session.md",
+  "proofbound/evidence/authenticated-service-session-contract.toml",
+  "schemas/compiled-policy-v2.cddl",
+  "schemas/execution-plan-v2.cddl",
+  "schemas/vectors/v2/execution-plan-service-session.cbor.hex",
+]

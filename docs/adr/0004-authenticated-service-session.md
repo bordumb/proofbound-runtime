@@ -1,7 +1,8 @@
 # ADR 0004: Use one connector-owned authenticated service session
 
-- **Status:** accepted; acceptance rests on Claude's independent model review
-  endorsed by the maintainer; production implementation remains gated
+- **Status:** accepted; the implementation contract is proposed in
+  [Specification 0016](../specs/0016_authenticated_service_session.md) and
+  production implementation remains gated
 - **Date:** 2026-09-10
 - **Decision owners:** Proofbound Runtime maintainers
 - **Applies to:** first version 2 network-enabled execution profile
@@ -106,13 +107,15 @@ The connector may choose one address from the bounded A/AAAA answer set only by
 a deterministic, versioned rule. An address that was not present in the
 recorded answer set is never attempted.
 
-### Open obligations before implementation
+### Contract decisions before implementation
 
-- Specify the deterministic address-selection rule for the bounded A/AAAA
-  answer set.
-- Specify the exact IPv4/IPv6 connection-attempt order and terminal behavior.
-- Add registered native cases for descendant inheritance of the child channel
-  and `SCM_RIGHTS` transfer or escape of that descriptor.
+Specification 0016 resolves the two design obligations in this decision. The
+first profile uses connector-owned DNS over TCP, then attempts canonical IPv4
+answers followed by canonical IPv6 answers. It permits one active attempt at a
+time, stops after the first authenticated session, and has no reconnect
+transition. The specification also makes descendant channel inheritance and
+`SCM_RIGHTS` transfer or escape required native falsifiers. These decisions do
+not count as implementation evidence.
 
 ### Child boundary and launch acknowledgement
 

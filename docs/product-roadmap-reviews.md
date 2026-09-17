@@ -2983,6 +2983,231 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-5 authenticated-service contract approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da8c96b843a692bff8a0ac0bc782a108b3168dbc`
+- **Reviewed head:** `c80578d5e0e56f095c6c3c0d232491695a7a0598`
+- **Branch:** `codex/rt5-contract-wave`
+- **Method:** Complete exact-range static security, domain, wire, SDK,
+  evidence-closure, assurance-status, and roadmap review. The reviewer changed
+  no files and ran no builds or tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the proposed service-session parser and SDKs close
+the service, resolver, TLS, support-path, channel, credential-source, and limit
+domains without authorizing execution. Public constructors cannot bypass
+canonical support-path validation. Aggregate construction rechecks relations
+that cross independently validated objects. The Rust SDK makes resolver address
+width unrepresentable, and the Python and TypeScript SDKs reject width,
+credential-binding, missing-environment, path-alias, null-byte, and malformed
+container substitutions with typed errors. Production execution still rejects
+the service profile, and the child authority remains `NetworkMode::Deny`.
+
+The reviewed closures bind the changed source, schema, vector, attack,
+current-integration, and diagnostic source-pin inputs. The pending-subject
+ledger exactly names every pre-existing claim whose declared closure changed,
+preserves old exact admissions only as historical facts, and requires fresh
+exact-head and exact-main evidence before status transfers. No premise update
+is required. The reviewer also independently confirmed that RT-8 exact-main
+Verify run `35207382756` passed at exact main
+`da8c96b843a692bff8a0ac0bc782a108b3168dbc` and that the recorded PR 27 and PR
+28 identities match GitHub and local history.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`da8c96b843a692bff8a0ac0bc782a108b3168dbc..c80578d5e0e56f095c6c3c0d232491695a7a0598`.
+The following approval-only commit changes only this review record. Any later
+production, schema, claim, evidence, checker, SDK, or status-subject change
+requires a new exact-head review.
+
+## RT-5 authenticated-service hosted-compile correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da8c96b843a692bff8a0ac0bc782a108b3168dbc`
+- **Reviewed head:** `dd79218aab980d767f9ca7bcc7f1597c60ca08a2`
+- **Branch:** `codex/rt5-contract-wave`
+- **Method:** Complete exact-range static correction review. The reviewer
+  changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The hosted Rust and native lanes found three compilation blockers after the
+initial approval. The reviewed correction restored the required
+`WallTimeLimit` import, but one SDK negative case still consumed a plan input
+before the next case reused it, and the resolver-width test still used invalid
+Rust array-pattern syntax. The production contract remained unchanged. A new
+exact-head review was required after correcting both SDK-test defects.
+
+## RT-5 authenticated-service hosted-compile correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da8c96b843a692bff8a0ac0bc782a108b3168dbc`
+- **Reviewed head:** `297fbb07a987fa6eadb7075ec7ff1b9cc1f17935`
+- **Branch:** `codex/rt5-contract-wave`
+- **Method:** Complete exact-range static security, contract, evidence, and
+  correction re-review. The reviewer changed no files and ran no builds or
+  tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the restored import resolves both unchanged plan
+parser uses, the first SDK negative case now consumes a clone so the next case
+can consume the original input, and the resolver-width test uses valid enum
+payload destructuring whose fixed-array types enforce four and sixteen bytes.
+The post-approval delta contains only the prior approval record and these
+hosted-compile corrections. It changes no production contract, schema, claim,
+evidence closure, or authority. No new blocker was introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`da8c96b843a692bff8a0ac0bc782a108b3168dbc..297fbb07a987fa6eadb7075ec7ff1b9cc1f17935`.
+The following approval-only commit changes only this review record. Any later
+production, schema, claim, evidence, checker, SDK, or status-subject change
+requires a new exact-head review.
+
+## RT-5 authenticated-service hosted-lint correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da8c96b843a692bff8a0ac0bc782a108b3168dbc`
+- **Reviewed head:** `0894c4cf515b5c01626af51cbc0d9fb07ae7d7d2`
+- **Hosted run:** `35213192876`
+- **Branch:** `codex/rt5-contract-wave`
+- **Method:** Exact hosted Rust, preflight, and native-boundary results followed
+  by a complete static correction review. The reviewer changed no files and
+  ran no local builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+Preflight and both native architecture lanes passed. The Rust lane rejected
+three large enum variants under the repository's deny-warnings Clippy policy:
+the public SDK network input, the internal parsed execution plan, and the
+internal parsed network authority. It also rejected a manual implementation of
+`Option::map`. The remaining hosted lanes were cancelled after this decisive
+failure. These lint blockers required a new exact-head review.
+
+## RT-5 authenticated-service hosted-lint correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da8c96b843a692bff8a0ac0bc782a108b3168dbc`
+- **Reviewed head:** `a7545c3ae48fd2c79703d1a400a964843ea4c91e`
+- **Branch:** `codex/rt5-contract-wave`
+- **Method:** Complete exact-range static security, public-API, parser,
+  canonical-encoding, and correction re-review. The reviewer changed no files
+  and ran no builds or tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the three boxed payloads correspond exactly to the
+hosted large-variant diagnostics. The Rust SDK retains the same closed domain
+and canonical bytes. Its box-backed constructor is an accepted prelaunch
+source-API change. Core parsing validates before boxing, moves the same
+validated session into `ServiceExecutionPlan`, and unboxes only at the existing
+contract parser boundary. Production execution still rejects the service
+profile. The `Option::map` rewrite is behavior-equivalent. All prior fixes
+remain closed, and no new blocker was introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`da8c96b843a692bff8a0ac0bc782a108b3168dbc..a7545c3ae48fd2c79703d1a400a964843ea4c91e`.
+The following approval-only commit changes only this review record. Any later
+production, schema, claim, evidence, checker, SDK, or status-subject change
+requires a new exact-head review.
+
+## RT-5 authenticated-service balanced-parser correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da8c96b843a692bff8a0ac0bc782a108b3168dbc`
+- **Reviewed head:** `14d0ae513cf332219a2620de4394f673283b885e`
+- **Hosted run:** `35214084776`
+- **Branch:** `codex/rt5-contract-wave`
+- **Method:** Exact hosted Rust, preflight, and native-boundary results followed
+  by a complete static correction review. The reviewer changed no files and
+  ran no local builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+Preflight and both native architecture lanes passed. The Rust lane reported one
+remaining `large_enum_variant` error: after the service arm was boxed, the
+internal deny arm still held a 256-byte `ExecutionPlan`. The formal and fresh
+evidence lanes were cancelled after the decisive Rust failure; their reported
+failures were cancellation and missing-summary artifacts, not independent
+evidence findings. The deny-arm representation required a new exact-head
+review.
+
+## RT-5 authenticated-service balanced-parser correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da8c96b843a692bff8a0ac0bc782a108b3168dbc`
+- **Reviewed head:** `f1a778dba4daad7f251d2b2fa40231d754f815fd`
+- **Branch:** `codex/rt5-contract-wave`
+- **Method:** Complete exact-range static security, parser, rejection, and
+  canonical-encoding re-review. The reviewer changed no files and ran no
+  builds or tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that only the internal parsed deny payload is newly
+boxed. Construction still occurs after complete plan and network validation,
+and the production parser moves the identical `ExecutionPlan` out at its
+existing return boundary. The correction changes no public type, authority,
+rejection behavior, schema, or wire bytes. It balances both parser variants and
+removes the sole causal hosted failure. All earlier corrections remain intact.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`da8c96b843a692bff8a0ac0bc782a108b3168dbc..f1a778dba4daad7f251d2b2fa40231d754f815fd`.
+The following approval-only commit changes only this review record. Any later
+production, schema, claim, evidence, checker, SDK, or status-subject change
+requires a new exact-head review.
+
+## RT-5 authenticated-service evidence-inventory correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da8c96b843a692bff8a0ac0bc782a108b3168dbc`
+- **Reviewed head:** `77b90156f618202c8eebf03808d520a4d5c57191`
+- **Hosted run:** `35214786562`
+- **Branch:** `codex/rt5-contract-wave`
+- **Method:** Exact hosted preflight, Rust, native, and fresh-evidence results
+  followed by a complete static correction review. The reviewer changed no
+  files and ran no local builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+Preflight, Rust, and both native architecture lanes passed. The fresh ledger
+partition rejected `authenticated-service-session-contract` with
+`PB-TEST-1006` because its six expected Rust library-test identities omitted
+the crate-name prefix required by the Proofbound adapter's collected metadata.
+The green Rust log showed all six module-relative test suffixes passing. The
+remaining formal and evidence lanes were cancelled after the decisive failure.
+The inventory identity correction required a new exact-head review.
+
+## RT-5 authenticated-service evidence-inventory correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da8c96b843a692bff8a0ac0bc782a108b3168dbc`
+- **Reviewed head:** `b50d88b8c255f9e73ae266620152bb08e8cca317`
+- **Branch:** `codex/rt5-contract-wave`
+- **Method:** Complete exact-range static evidence-inventory, claim, and
+  regression re-review. The reviewer changed no files and ran no builds or
+  tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the correction changes only the six
+`expected_inventory` identities. Each suffix names an existing passing core
+library test, and the `proofbound_runtime_core::` prefix matches established
+library-inventory evidence units. Test selection, operation target, inputs,
+claim, tier, resource budget, production source, and evidence meaning are
+unchanged. No prior correction regressed and no new blocker was introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`da8c96b843a692bff8a0ac0bc782a108b3168dbc..b50d88b8c255f9e73ae266620152bb08e8cca317`.
+The following approval-only commit changes only this review record. Any later
+production, schema, claim, evidence, checker, SDK, or status-subject change
+requires a new exact-head review.
+
 ## RT-8 product-exit extension approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

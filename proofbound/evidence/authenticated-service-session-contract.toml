@@ -1,0 +1,42 @@
+schema = "proofbound-evidence-unit/1"
+id = "authenticated-service-session-contract"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-NETWORK-032"]
+tier = 0
+expected_inventory = [
+  "proofbound_runtime_core::network::tests::limits_only_get_smaller",
+  "proofbound_runtime_core::network::tests::service_names_are_canonical_dns_names",
+  "proofbound_runtime_core::network::tests::session_rechecks_cross_object_attempt_bound",
+  "proofbound_runtime_core::network::tests::support_paths_are_canonical_and_absolute_at_construction",
+  "proofbound_runtime_core::plan::tests::parses_the_closed_service_session_without_authorizing_execution",
+  "proofbound_runtime_core::plan::tests::rejects_service_name_and_credential_environment_substitution",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/lib.rs",
+  "crates/proofbound-runtime-core/src/network.rs",
+  "crates/proofbound-runtime-core/src/plan.rs",
+  "docs/adr/0004-authenticated-service-session.md",
+  "docs/specs/0016_authenticated_service_session.md",
+  "schemas/compiled-policy-v2.cddl",
+  "schemas/execution-plan-v2.cddl",
+  "schemas/vectors/v2/execution-plan-service-session.cbor.hex",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-core"
+manifest = "Cargo.toml"
+targets = ["--lib"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

@@ -27,3 +27,7 @@ predecessors.
 The release-provenance vector fixes the aggregate release-asset contract. Its
 artifact names are sorted bytewise before encoding; the source revision and
 SHA-256 identities are CBOR byte strings rather than display text.
+
+The `execution-plan-service-session` vector is a second execution-plan fixture.
+It fixes the proposed authenticated-service-session authority shape before that
+authority is executable. The current execution entry point rejects this plan.

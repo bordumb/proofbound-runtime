@@ -55,6 +55,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--write", action="append", required=True)
     result.add_argument("--execute", action="append", required=True)
     result.add_argument("--environment", action="append", default=[])
+    result.add_argument("--network-json")
     result.add_argument("--processes", required=True, type=int)
     result.add_argument("--wall-time-ms", required=True, type=int)
     result.add_argument("--stdout-bytes", required=True, type=int)
@@ -82,9 +83,29 @@ def main() -> int:
     runtime_read = args.runtime_read
     if args.runtime_read_json is not None:
         decoded = json.loads(args.runtime_read_json)
-        if not isinstance(decoded, list) or not all(isinstance(item, str) for item in decoded):
+        if not isinstance(decoded, list) or not all(
+            isinstance(item, str) for item in decoded
+        ):
             raise SystemExit("runtime-read JSON must be an array of strings")
         runtime_read.extend(decoded)
+    network: str | dict[str, Any] = "deny"
+    if args.network_json is not None:
+        decoded_network = json.loads(args.network_json)
+        if not isinstance(decoded_network, dict):
+            raise SystemExit("network JSON must be an object")
+        try:
+            address_bytes = decoded_network["resolver"]["address"]["bytes"]
+        except (KeyError, TypeError) as error:
+            raise SystemExit(
+                "network JSON must contain resolver address bytes"
+            ) from error
+        if not isinstance(address_bytes, list) or not all(
+            isinstance(item, int) and not isinstance(item, bool) and 0 <= item <= 255
+            for item in address_bytes
+        ):
+            raise SystemExit("resolver address bytes must be a byte array")
+        decoded_network["resolver"]["address"]["bytes"] = bytes(address_bytes)
+        network = decoded_network
     plan = {
         "id": args.id,
         "schema": "proofbound-runtime-plan/2",
@@ -105,7 +126,7 @@ def main() -> int:
             "read": args.read,
             "write": args.write,
             "execute": args.execute,
-            "network": "deny",
+            "network": network,
             "environment": args.environment,
             "runtime_read": runtime_read,
         },

@@ -69,6 +69,12 @@ class SdkContractTests(unittest.TestCase):
                 "output-flood",
                 "package-file-injection",
                 "cross-codec-drift",
+                "service-name-substitution",
+                "credential-service-substitution",
+                "credential-environment-omission",
+                "resolver-address-width-substitution",
+                "service-setup-deadline-inversion",
+                "service-support-path-alias",
             ],
         )
 

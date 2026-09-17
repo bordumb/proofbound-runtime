@@ -2,9 +2,10 @@
 
 - **Status:** foundation merged and admitted; production networking,
   publication, and external adopter gates remain
-- **Date:** 2026-09-16
-- **Runtime baseline:** current admitted `main` at `17458ad`; exact-head Verify
-  run `35039326242` and exact-main Verify run `35042895100` passed
+- **Date:** 2026-09-17
+- **Runtime baseline:** current admitted `main` at
+  `da8c96b843a692bff8a0ac0bc782a108b3168dbc`; final RT-8 exact-head Verify
+  run `35203053015` and exact-main Verify run `35207382756` passed
 - **Proofbound distribution baseline:** immutable public bundle for source
   `9512469`
 - **Planning horizon:** prelaunch product and assurance waves
@@ -29,9 +30,9 @@ publication or an unrelated adopter.
 | RT-0 delivery mechanics | Required lanes, exact-head gating, timing, and exact tool-cache controls are merged and admitted. | Complete the retained two-week latency and cache-retention decision when its observation window closes. |
 | RT-1 memory and swap | Merged and admitted on both supported native architectures. | None for the selected claim wave. |
 | RT-2 receipt acceptance | Policy, CLI, standalone acceptor, and Action source are merged. | Observe the exact release artifact and dogfood the Action from an unrelated adopter. |
-| RT-3 first-run and SDK workflow | Preflight, scaffold, typed diagnostics, and reproducible Rust, Python, and TypeScript packages are merged. | Publish the selected current packages and dogfood them from an unrelated consumer. |
+| RT-3 first-run and SDK workflow | The deny-network SDK subject is merged and admitted. The proposed service-session SDK extension is implemented on the RT-5 contract branch but remains pending exact-head evidence and admission. | Admit the changed SDK subject, then publish the selected current packages and dogfood them from an unrelated consumer. |
 | RT-4 network decision | The complete experiment and measurement series selected the connector-owned authenticated service session. | The decision authorizes RT-5; it does not provide production networking. |
-| RT-5 one authenticated service | Not implemented. | Implement the production bridge, bypass corpus, receipts, verifiers, composition, acceptance, and one maintained real API client. |
+| RT-5 one authenticated service | Specification 0016, closed service-session domain types, a non-executing parser, and SDK construction are proposed. Production execution remains denied. | Independently admit the contract, then implement the policy, connector, launcher, bypass corpus, receipts, verifiers, composition, acceptance, and one maintained real API client. |
 | RT-6 evidence-based expansion | CPU and output-quota decisions are recorded; the performance baseline is complete. | Implement a deferred control only when observed demand satisfies its decision gate. |
 
 Milestone B, bounded local execution, is achieved. Milestone A is operationally
@@ -64,7 +65,9 @@ external adopter is complete. The branch contains the version 2 memory/swap
 and deterministic-CBOR claim wave, independently verified receipt composition
 and adopter acceptance, the reproducible standalone `pbr-accept` artifact, the
 first-party GitHub Action, the plan scaffold, typed pre-launch diagnostics,
-and closed Rust, Python, and TypeScript SDKs. The scaffold, preflight, and
+and closed deny-network Rust, Python, and TypeScript SDKs. The proposed
+service-session constructors extend that exact subject and remain pending
+fresh evidence and admission. The scaffold, preflight, and
 five-case diagnostic corpus now execute on both native architectures and are
 bound into the exact-binary release-observation procedure. All three SDK
 packages are built twice, byte-compared, checksummed, and retained by an exact-
@@ -931,10 +934,11 @@ contexts pass.
   code in an SDK.
 - Keep the independently implemented verifier independently distributable.
 
-**2026-09-11 branch checkpoint:** complete. The Rust, Python, and TypeScript
-packages independently match the frozen deterministic-CBOR Version 2 plan
-vector, strictly decode the non-verifying JSON result projection, and contain
-no producer/verifier or Linux-boundary implementation. Python and TypeScript
+**2026-09-11 deny-network checkpoint:** complete for that exact subject. The
+Rust, Python, and TypeScript packages independently match the frozen
+deterministic-CBOR Version 2 deny-network plan vector, strictly decode the
+non-verifying JSON result projection, and contain no producer/verifier or
+Linux-boundary implementation. Python and TypeScript
 exercise an exact separate-process invocation with no shell, no ambient
 environment inheritance, and bounded output capture. Required CI closes the
 source, attack, and package inventories. The standalone Rust crate, Python
@@ -943,7 +947,9 @@ rebuilds them twice, verifies their checksums, and retains a closed SDK
 manifest. `PBR-SDK-014` records the language-runtime premise and the remaining
 external obligations: exact registry publication at an approved tag and
 consumer-repository dogfood for all three packages. Branch completion is not
-registry publication.
+registry publication. The later RT-5 service-session construction surface is a
+changed SDK subject. It does not inherit this admission and remains pending
+fresh exact-head evidence and review.
 
 ## 10. Epic RT-4: network authority research and ADR
 
@@ -1034,7 +1040,12 @@ This epic exists only if RT-4 accepts a mechanism.
 
 ### RT-5.1 Version the domain and wire contracts
 
-- Add a closed `NetworkAuthority` enum with only implemented modes.
+- Accept [Specification 0016](specs/0016_authenticated_service_session.md).
+- Add the proposed service-session domain and parser separately from the
+  production execution parser. Keep production execution rejected until every
+  required enforcement and receipt subject is admitted.
+- Integrate a closed production `NetworkAuthority` only with the complete
+  policy, launcher, receipt, verifier, composition, and acceptance wave.
 - Preserve `Deny` without semantic change.
 - Use typed non-empty destination collections, ports, protocols, and service or
   endpoint identities as the ADR requires.

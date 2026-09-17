@@ -21,8 +21,13 @@ separate and are never reimplemented by an SDK.
 
 ## Plan construction
 
-All three SDKs fix network authority to deny and accept the same remaining
-closed logical fields:
+All three SDKs construct the unchanged network-denial form and the proposed
+single authenticated-service-session form from Specification 0016. The
+service-session form is construction-only until the Runtime admits its native
+connector, launcher, receipt, and verifier waves. `pbr run` rejects it during
+that interval. SDK construction never authorizes execution.
+
+Both forms accept the same base closed logical fields:
 
 - plan identifier;
 - executable, arguments, and working directory;
@@ -44,6 +49,13 @@ crate dependency, so its registry package is independently consumable. The
 production parser remains the execution authority; cross-language attacks
 detect drift between these convenience producers and that contract. The SDKs
 do not accept or emit the JSON projection as plan input.
+
+The service-session input additionally validates the canonical service name,
+numeric resolver address, resolver and TLS policies, all nonzero bounds,
+connector paths, local-channel descriptor, and optional credential source. A
+credential source must name an environment entry already declared in the base
+plan and must bind to the same service. The descriptor never contains the
+credential value.
 
 ## Run-result projection
 

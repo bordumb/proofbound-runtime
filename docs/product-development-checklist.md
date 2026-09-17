@@ -1,19 +1,17 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-17T04:00:00+01:00 (Europe/London, BST)
-- **Runtime baseline:** the independently approved `PBR-OBSERVER-029` through
-  `PBR-OBSERVER-031` subject passed PR 26 Verify run `35172227506` at exact head
-  `2fc82ff` and merged unsigned as `d60d1f3`. Exact-main run `35175269953`
-  passed every required lane.
-- **Active implementation wave:** RT-8 product exit: maintained dynamic
-  drafting, explicit static and platform-closure provenance, and the remaining
-  adversarial corpus.
-- **Current batch:** consume one exact, declared static scaffold without adding
-  authority; retain its exact executable, interpreter, and library identities
-  separately from scoped runtime suggestions; and run the complete workflow on
-  a dynamically linked maintained native workload on both supported
-  architectures.
+- **Last updated:** 2026-09-17T11:37:00+01:00 (Europe/London, BST)
+- **Runtime baseline:** RT-8 is complete on exact unsigned main
+  `da8c96b843a692bff8a0ac0bc782a108b3168dbc`. The product-exit extension
+  passed PR 27 Verify run `35194713490`, merged as `275e6e7`, and passed
+  exact-main run `35198698472`. The final adversarial corpus passed PR 28
+  Verify run `35203053015`, merged as `da8c96b`, and passed exact-main run
+  `35207382756`.
+- **Active implementation wave:** RT-5 one authenticated service.
+- **Current batch:** admit the closed non-executable service-session plan and
+  SDK contract, then admit its pure non-executable policy compiler before any
+  connector or launcher effect is added.
 - **Parallel external gates:** RT-7 protected routes and current-integration
   source are merged; registry configuration, actual public package publication,
   anonymous observations, consumer dogfood, and a retained current-integration
@@ -360,20 +358,21 @@ manifest describes the supported tuple.
 - [x] Accept optional Capsec observations only when their schema, source,
   analyzer, and report identities match; retain missing or incomplete coverage
   visibly.
-- [ ] Run and admit the adversarial corpus for stale source, symlink redirection,
+- [x] Run and admit the adversarial corpus for stale source, symlink redirection,
   observation-sensitive behavior, missing events, and attempted provenance
   relabeling. The active exit wave adds stale-input and provenance-relabel
   source checks. Its dependent adversarial wave adds native stale-target and
   symlink-input rejection, an incomplete deliberate unexpected-stop result,
-  and pre-resume rejection of `CLONE_UNTRACED` on both architectures. Hosted
-  exact-head evidence is still required.
-- [ ] Demonstrate one maintained dynamic workload using every available
-  provenance class. The active exit wave contains the x86_64 and aarch64
-  workload; hosted exact-head evidence remains required. Capsec stays visibly
+  and pre-resume rejection of `CLONE_UNTRACED` on both architectures. PR 28
+  exact-head run `35203053015` and exact-main run `35207382756` passed.
+- [x] Demonstrate one maintained dynamic workload using every available
+  provenance class. PR 27 admitted the x86_64 and aarch64 workload and passed
+  exact-main run `35198698472`. Capsec stays visibly
   unavailable until its owner publishes an accepted identified report contract.
-- [ ] Complete one consolidated independent review, exact-head hosted evidence,
-  unsigned merge,
-  and exact-main verification.
+- [x] Complete consolidated independent review, exact-head hosted evidence,
+  unsigned merges, and exact-main verification. The final exact Runtime
+  identity is `da8c96b843a692bff8a0ac0bc782a108b3168dbc`; run `35207382756`
+  passed every required lane.
 
 **Phase 1 exit:** a developer can produce and complete a useful dynamic plan
 draft, while no diagnostic output can become reusable production evidence.
@@ -389,6 +388,11 @@ draft, while no diagnostic output can become reusable production evidence.
 
 ### Wave A: closed contracts and pure decisions
 
+- [ ] Accept Specification 0016 as the normative authenticated-service-session
+  contract. The proposed text closes resolver transport, deterministic address
+  order, terminal reconnect behavior, child descriptor rules, receipt meaning,
+  and the required falsifier inventory. Independent exact-head review, hosted
+  evidence, merge, and exact-main verification remain required.
 - [ ] Specify one authenticated-service plan, authority, policy, receipt,
   verifier, composition, acceptance, and error contract.
 - [ ] Identify resolver, address-attempt order, TLS policy, service, connector,

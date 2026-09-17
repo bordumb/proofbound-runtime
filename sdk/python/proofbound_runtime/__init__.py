@@ -14,6 +14,7 @@ from typing import Any, Mapping, Sequence
 
 __version__ = "0.2.0"
 _PLAN_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._-]{0,126}[a-z0-9])?$")
+_CREDENTIAL_ID = re.compile(r"^[a-z](?:[a-z0-9.-]{0,126}[a-z0-9])?$")
 _LOWER_HEX = re.compile(r"^[0-9a-f]+$")
 _QUANTUM = 65_536
 _MAX_RESOURCE = 1_099_511_627_776
@@ -59,6 +60,7 @@ def build_plan(
     stderr_bytes: int,
     memory_bytes: int,
     swap_bytes: int,
+    network: str | Mapping[str, Any] = "deny",
 ) -> bytes:
     """Return one strictly validated deterministic-CBOR v2 plan."""
     if not isinstance(id, str) or _PLAN_ID.fullmatch(id) is None:
@@ -126,12 +128,222 @@ def build_plan(
             "read": list(read),
             "write": list(write),
             "execute": list(execute),
-            "network": "deny",
+            "network": _validate_network(network, environment),
             "environment": list(environment),
             "runtime_read": list(runtime_read),
         },
     }
     return _encode(plan)
+
+
+def _validate_network(
+    value: str | Mapping[str, Any], environment: Sequence[str]
+) -> str | dict[str, Any]:
+    if value == "deny":
+        return "deny"
+    network = _exact_mapping(
+        value,
+        {
+            "mode",
+            "service",
+            "resolver",
+            "tls",
+            "limits",
+            "connector_executable",
+            "connector_runtime_read",
+            "local_channel",
+        },
+        {"credential_source"},
+    )
+    if network["mode"] != "authenticated-service-session":
+        raise SdkError("sdk.plan.network-invalid", "mode")
+    service = _exact_mapping(network["service"], {"name", "port"})
+    name = service["name"]
+    if not isinstance(name, str) or not _valid_service_name(name):
+        raise SdkError("sdk.plan.network-invalid", "service.name")
+    _network_int(service["port"], 1, 65_535, "service.port")
+
+    resolver = _exact_mapping(
+        network["resolver"],
+        {
+            "address",
+            "port",
+            "configuration",
+            "maximum_cname_depth",
+            "maximum_answer_count",
+            "maximum_response_bytes",
+            "resolution_deadline_ms",
+            "attempt_deadline_ms",
+            "address_order",
+        },
+    )
+    address = _exact_mapping(resolver["address"], {"family", "bytes"})
+    address_family = address["family"]
+    address_size = (
+        {"ipv4": 4, "ipv6": 16}.get(address_family)
+        if isinstance(address_family, str)
+        else None
+    )
+    if (
+        address_size is None
+        or not isinstance(address["bytes"], bytes)
+        or len(address["bytes"]) != address_size
+    ):
+        raise SdkError("sdk.plan.network-invalid", "resolver.address")
+    _network_int(resolver["port"], 1, 65_535, "resolver.port")
+    if not _canonical_absolute(resolver["configuration"]):
+        raise SdkError("sdk.plan.network-invalid", "resolver.configuration")
+    for field, maximum in (
+        ("maximum_cname_depth", 65_535),
+        ("maximum_answer_count", 65_535),
+        ("maximum_response_bytes", _MAX_U64),
+        ("resolution_deadline_ms", _MAX_U64),
+        ("attempt_deadline_ms", _MAX_U64),
+    ):
+        _network_int(resolver[field], 1, maximum, f"resolver.{field}")
+    if resolver["attempt_deadline_ms"] > resolver["resolution_deadline_ms"]:
+        raise SdkError("sdk.plan.network-invalid", "resolver.attempt_deadline_ms")
+    if resolver["address_order"] != "ipv4-then-ipv6-lexicographic":
+        raise SdkError("sdk.plan.network-invalid", "resolver.address_order")
+
+    tls = _exact_mapping(
+        network["tls"],
+        {
+            "trust_root_set",
+            "minimum_version",
+            "service_name_verification",
+            "revocation",
+            "session_resumption",
+            "early_data",
+        },
+    )
+    if (
+        not _canonical_absolute(tls["trust_root_set"])
+        or not isinstance(tls["minimum_version"], str)
+        or tls["minimum_version"] not in {"tls-1.2", "tls-1.3"}
+        or tls["service_name_verification"] != "dns-san-exact"
+        or tls["revocation"] != "not-checked-recorded-assumption"
+        or tls["session_resumption"] != "deny"
+        or tls["early_data"] != "deny"
+    ):
+        raise SdkError("sdk.plan.network-invalid", "tls")
+
+    limits = _exact_mapping(
+        network["limits"],
+        {
+            "setup_time_ms",
+            "session_time_ms",
+            "child_to_service_bytes",
+            "service_to_child_bytes",
+            "dns_messages",
+            "endpoint_attempts",
+            "tls_handshake_bytes",
+        },
+    )
+    for field, maximum in (
+        ("setup_time_ms", _MAX_U64),
+        ("session_time_ms", _MAX_U64),
+        ("child_to_service_bytes", _MAX_U64),
+        ("service_to_child_bytes", _MAX_U64),
+        ("dns_messages", 65_535),
+        ("endpoint_attempts", 65_535),
+        ("tls_handshake_bytes", _MAX_U64),
+    ):
+        _network_int(limits[field], 1, maximum, f"limits.{field}")
+    if limits["endpoint_attempts"] > resolver["maximum_answer_count"]:
+        raise SdkError("sdk.plan.network-invalid", "limits.endpoint_attempts")
+    if resolver["resolution_deadline_ms"] > limits["setup_time_ms"]:
+        raise SdkError("sdk.plan.network-invalid", "limits.setup_time_ms")
+
+    if not _canonical_absolute(network["connector_executable"]):
+        raise SdkError("sdk.plan.network-invalid", "connector_executable")
+    runtime_read = network["connector_runtime_read"]
+    if (
+        isinstance(runtime_read, (str, bytes))
+        or not isinstance(runtime_read, Sequence)
+        or any(not _canonical_absolute(path) for path in runtime_read)
+        or len(set(runtime_read)) != len(runtime_read)
+    ):
+        raise SdkError("sdk.plan.network-invalid", "connector_runtime_read")
+    channel = _exact_mapping(network["local_channel"], {"protocol", "child_descriptor"})
+    if channel["protocol"] != "unix-stream-v1":
+        raise SdkError("sdk.plan.network-invalid", "local_channel.protocol")
+    _network_int(
+        channel["child_descriptor"], 3, 65_535, "local_channel.child_descriptor"
+    )
+
+    if "credential_source" in network:
+        source = _exact_mapping(
+            network["credential_source"], {"id", "service", "environment"}
+        )
+        if (
+            not isinstance(source["id"], str)
+            or _CREDENTIAL_ID.fullmatch(source["id"]) is None
+            or source["service"] != name
+            or source["environment"] not in environment
+        ):
+            raise SdkError("sdk.plan.network-invalid", "credential_source")
+    normalized = {
+        "mode": network["mode"],
+        "service": dict(service),
+        "resolver": {**dict(resolver), "address": dict(address)},
+        "tls": dict(tls),
+        "limits": dict(limits),
+        "connector_executable": network["connector_executable"],
+        "connector_runtime_read": list(runtime_read),
+        "local_channel": dict(channel),
+    }
+    if "credential_source" in network:
+        normalized["credential_source"] = dict(source)
+    return normalized
+
+
+def _exact_mapping(
+    value: Any,
+    required: set[str],
+    optional: set[str] | frozenset[str] = frozenset(),
+) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise SdkError("sdk.plan.network-invalid")
+    keys = set(value)
+    if not required <= keys or not keys <= required | set(optional):
+        raise SdkError("sdk.plan.network-invalid", "unknown-field")
+    return dict(value)
+
+
+def _network_int(value: Any, minimum: int, maximum: int, field: str) -> None:
+    if not _bounded_int(value, minimum, maximum):
+        raise SdkError("sdk.plan.network-invalid", field)
+
+
+def _canonical_absolute(value: Any) -> bool:
+    return (
+        isinstance(value, str)
+        and "\0" not in value
+        and Path(value).is_absolute()
+        and value.startswith("/")
+        and (
+            value == "/"
+            or all(part and part not in {".", ".."} for part in value[1:].split("/"))
+        )
+    )
+
+
+def _valid_service_name(value: str) -> bool:
+    if not 1 <= len(value) <= 253 or value.endswith("."):
+        return False
+    labels = value.split(".")
+    return all(
+        1 <= len(label) <= 63
+        and not label.startswith("-")
+        and not label.endswith("-")
+        and all(
+            character.isascii()
+            and (character.islower() or character.isdigit() or character == "-")
+            for character in label
+        )
+        for label in labels
+    ) and not all(character.isdigit() or character == "." for character in value)
 
 
 def parse_run_result(value: bytes | str) -> RunResult:
@@ -210,7 +422,9 @@ def run(
     stdout, stderr = _bounded_communicate(process, max_output_bytes)
     if process.returncode != 0:
         detail = stderr.decode("utf-8", errors="replace").rstrip("\n")
-        raise SdkError("sdk.process.failed", f"exit={process.returncode} stderr={detail}")
+        raise SdkError(
+            "sdk.process.failed", f"exit={process.returncode} stderr={detail}"
+        )
     if not stdout.endswith(b"\n") or b"\n" in stdout[:-1]:
         raise SdkError("sdk.result.not-one-line")
     return parse_run_result(stdout[:-1])
@@ -295,6 +509,8 @@ def _encode_argument(major: int, value: int) -> bytes:
 
 
 def _encode(value: Any) -> bytes:
+    if isinstance(value, bytes):
+        return _encode_argument(2, len(value)) + value
     if isinstance(value, str):
         payload = value.encode("utf-8")
         return _encode_argument(3, len(payload)) + payload
