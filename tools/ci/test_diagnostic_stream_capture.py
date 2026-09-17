@@ -282,7 +282,7 @@ EXPECTED_FILES = {
     "stream-runtime-assumption": "ce57e1cab085cbd7b4f60ab03a607166a2dc77bdb924228b1f7c949a72bfeb19",
     "sys": "8b7dfd2fee307d937f71dcbab8098d026715dc2e4f7d03c72fa9ee7bd4734168",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "e5df3c91a1838a62dc2d55575c005bd68dceec965d0a82199eebfc5c8e3b9cfd",
+    "trace": "f3bb71a971916d244963bd78d87fc4f4f00ca98c65f37b5f7d7c48fc986057e4",
     "unit-evidence": "c3265aa232ccf65fda04efd5706f3b85ca5d2fd006bf632dde4815090d076ccb",
 }
 
