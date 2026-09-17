@@ -189,8 +189,22 @@ class ServiceReceiptContractTests(unittest.TestCase):
     def test_failure_requires_exact_observed_launcher_prefix(self) -> None:
         early = copy.deepcopy(self.failure)
         self.validate(early)
-        with self.assertRaises(ContractError):
-            validate_receipt(early, **self.bindings)
+        early["install_request_sha256"] = self.install_request_sha256
+        premature = dict(self.bindings)
+        premature["installed_cbor"] = None
+        premature["release_cbor"] = None
+        with self.assertRaisesRegex(ContractError, "pre-launch failure retains a premature install request"):
+            validate_receipt(early, **premature)
+
+        omitted = copy.deepcopy(self.failure)
+        omitted["result"].update({"phase": "ready", "reason": "launcher-install-failed"})
+        omitted["eligibility"]["reasons"] = ["network.launcher-install-failed"]
+        absent = dict(self.bindings)
+        absent["install_request_cbor"] = None
+        absent["installed_cbor"] = None
+        absent["release_cbor"] = None
+        with self.assertRaisesRegex(ContractError, "launcher installation failure omits its install request"):
+            validate_receipt(omitted, **absent)
 
         installed = copy.deepcopy(self.failure)
         installed["result"].update(
@@ -205,10 +219,10 @@ class ServiceReceiptContractTests(unittest.TestCase):
         installed["install_request_sha256"] = self.install_request_sha256
         installed["eligibility"]["reasons"] = ["network.launcher-release-failed"]
         self.validate(installed)
-        premature = dict(self.bindings)
-        premature["release_cbor"] = self.bindings["release_cbor"]
+        premature_release = dict(self.bindings)
+        premature_release["release_cbor"] = self.bindings["release_cbor"]
         with self.assertRaises(ContractError):
-            validate_receipt(installed, **premature)
+            validate_receipt(installed, **premature_release)
 
     def test_success_mutations_are_rejected_causally(self) -> None:
         cases = []

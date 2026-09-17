@@ -3233,6 +3233,29 @@ and failure-clock language were correct. Production remained unchanged and
 network execution remained disabled. The corrected exact head requires a new
 independent review after restacking on admitted PR 32.
 
+## RT-5 service-session receipt early-failure re-review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `3c3bcd3634d96cee367deafd1620197d5ac0f5ee`
+- **Reviewed head:** `95bcf038a3252b92da5a1108ec2c663058d3547b`
+- **Branch:** `codex/rt5-receipt-contract`
+- **Method:** Complete preliminary static review of truthful pre-launch
+  failure identity, phase-aware retained prefixes, causal cross-bindings, and
+  all preceding findings. The reviewer changed no files and ran no builds or
+  tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The substantive receipt semantics were correct. Two assurance blockers
+remained. The tests did not causally reach the matching-but-premature
+pre-launch install guard or the missing install request for
+`launcher-install-failed`. The assurance summary also described all failures
+as binding launcher identities even though pre-launch failures correctly bind
+none. The correction requires exact guard-targeted mutations and
+phase-qualified summary language, followed by a new exact-head review after
+restacking on admitted PR 32.
+
 ## RT-5 service launcher preliminary review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
