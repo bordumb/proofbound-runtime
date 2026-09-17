@@ -2983,6 +2983,35 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-5 connector engine approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `c361cb11eefec4b03b55385caf2977552a34e97a`
+- **Reviewed head:** `fdad3fdc7afd9c6638c6dd2514d342808e90104e`
+- **Branch:** `codex/rt5-production-connector`
+- **Method:** Complete exact-range static security and assurance re-review. The
+  reviewer changed no files and ran no builds, Rust tests, Lean, Kani, or
+  native checks.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that all four mandatory diagnostic suites bind the
+exact current root manifest and lock identities while retaining their causal
+equality and production-mutation rejection behavior. Every prior connector
+blocker remains closed: complete authority binding, exact SAN validation,
+explicit TLS-provider selection, absolute DNS and TLS deadlines, bounded and
+deterministic CNAME/address handling, terminal connection classification,
+exact directional accounting, schema/vector agreement, pending changed-source
+status, and the complete transitive source closure. No new blocker was found.
+Production still cannot invoke the connector, so service-session execution
+continues to fail closed until the later process and launcher wave.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`c361cb11eefec4b03b55385caf2977552a34e97a..fdad3fdc7afd9c6638c6dd2514d342808e90104e`.
+The following approval-only commit changes no reviewed production, schema,
+claim, assumption, evidence, vector, or source-checker bytes. Any later subject
+change requires a new exact-head review.
+
 ## RT-5 connector engine third correction review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
