@@ -1,6 +1,12 @@
 ; Proposed service-session launcher binding protocol version 1.
 ; Production launcher-message-v1 remains unchanged and does not accept these
 ; messages until the connector and child-boundary wave is admitted.
+; Each encoded message is one frame no larger than 1,048,576 bytes.
+
+service-session-launcher-transcript-v1 =
+  [service-install-request, service-boundary-installed, service-exec-release] /
+  [service-install-request, service-boundary-installed,
+   service-credential-release, service-exec-release]
 
 service-session-launcher-message-v1 =
   service-install-request /
@@ -30,6 +36,7 @@ service-boundary-installed = {
   "execution_id": execution-id,
   "policy_sha256": sha256,
   "cgroup": cgroup-identity,
+  "install_request_sha256": sha256,
   "service": service-binding
 }
 
@@ -39,6 +46,7 @@ service-exec-release = {
   "execution_id": execution-id,
   "policy_sha256": sha256,
   "cgroup": cgroup-identity,
+  "install_request_sha256": sha256,
   "service_binding_sha256": sha256,
   "credential_state": "not-declared" / credential-release-state
 }
@@ -50,6 +58,7 @@ service-credential-release = {
   "execution_id": execution-id,
   "policy_sha256": sha256,
   "cgroup": cgroup-identity,
+  "install_request_sha256": sha256,
   "service_binding_sha256": sha256,
   "source_id": credential-source-id,
   "environment": environment-name,

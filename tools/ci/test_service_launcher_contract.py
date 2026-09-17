@@ -9,7 +9,7 @@ from pathlib import Path
 
 from tools.ci.deterministic_cbor import decode_strict, json_projection
 from tools.ci.encode_plan_v2 import encode
-from tools.ci.service_launcher_contract import ContractError, validate_handshake
+from tools.ci.service_launcher_contract import ContractError, validate_transcript
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -27,7 +27,7 @@ class ServiceLauncherContractTests(unittest.TestCase):
         self.release = vector("release")
 
     def test_canonical_handshake_is_complete_and_valid(self) -> None:
-        validate_handshake(self.request, self.installed, self.release)
+        validate_transcript([self.request, self.installed, self.release])
         for name, value in (("install", self.request), ("installed", self.installed), ("release", self.release)):
             expected = json.loads((VECTOR_ROOT / f"service-launcher-{name}.projection.json").read_text(encoding="utf-8"))
             self.assertEqual(json_projection(value), expected)
@@ -81,7 +81,7 @@ class ServiceLauncherContractTests(unittest.TestCase):
         for name, request, installed, release in cases:
             with self.subTest(name=name):
                 with self.assertRaises(ContractError):
-                    validate_handshake(request, installed, release)
+                    validate_transcript([request, installed, release])
 
     def test_release_identity_is_canonical_service_binding_digest(self) -> None:
         self.assertEqual(
@@ -112,22 +112,56 @@ class ServiceLauncherContractTests(unittest.TestCase):
             "execution_id": request["execution_id"],
             "policy_sha256": request["policy_sha256"],
             "cgroup": copy.deepcopy(request["cgroup"]),
+            "install_request_sha256": hashlib.sha256(encode(request)).digest(),
             "service_binding_sha256": binding_identity,
             "source_id": descriptor["id"],
             "environment": descriptor["environment"],
             "value": bytes(range(1, 33)),
         }
-        validate_handshake(request, installed, release, transient)
+        install_identity = hashlib.sha256(encode(request)).digest()
+        installed["install_request_sha256"] = install_identity
+        release["install_request_sha256"] = install_identity
+        transient["install_request_sha256"] = install_identity
+        validate_transcript([request, installed, transient, release])
 
         early = copy.deepcopy(request)
         early["environment"][descriptor["environment"]] = "x"
         with self.assertRaises(ContractError):
-            validate_handshake(early, installed, release, transient)
+            validate_transcript([early, installed, transient, release])
 
         substituted = copy.deepcopy(transient)
         substituted["source_id"] = "other-source"
         with self.assertRaises(ContractError):
-            validate_handshake(request, installed, release, substituted)
+            validate_transcript([request, installed, substituted, release])
+
+        order_mutations = {
+            "credential-before-installed": [request, transient, installed, release],
+            "release-before-credential": [request, installed, release, transient],
+            "installed-duplicated": [request, installed, installed, transient, release],
+            "installed-skipped": [request, transient, release],
+        }
+        for name, transcript in order_mutations.items():
+            with self.subTest(name=name):
+                with self.assertRaises(ContractError):
+                    validate_transcript(transcript)
+
+    def test_complete_install_request_and_whole_frame_are_bound(self) -> None:
+        installed = copy.deepcopy(self.installed)
+        release = copy.deepcopy(self.release)
+        request = copy.deepcopy(self.request)
+        request["arguments"].append("")
+        with self.assertRaises(ContractError):
+            validate_transcript([request, installed, release])
+
+        oversized = copy.deepcopy(self.request)
+        oversized["seccomp_program"] = bytes(1_048_576)
+        with self.assertRaises(ContractError):
+            validate_transcript([oversized, self.installed, self.release])
+
+        oversized_text = copy.deepcopy(self.request)
+        oversized_text["arguments"].append("x" * 1_048_576)
+        with self.assertRaises(ContractError):
+            validate_transcript([oversized_text, self.installed, self.release])
 
 
 if __name__ == "__main__":

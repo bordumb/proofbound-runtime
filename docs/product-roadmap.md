@@ -1076,7 +1076,8 @@ shipping verifier input, or claim that any network effect occurred.
 `proofbound-runtime-service-launcher/1` handshake binds one execution, policy,
 cgroup, executable, connector generation and closure, DNS and TLS observations,
 selected endpoint, private channel, limits, retained descriptor set, and exact
-child filter before release. `PBR-NETWORK-036` remains a Tier 0 proposed source
+child filter through an ordered, whole-frame-bounded transcript whose later
+messages bind the complete install request. `PBR-NETWORK-036` remains a Tier 0 proposed source
 contract. Production launcher messages remain unchanged and reject this form;
 no connector, launcher, or child effect is enabled.
 

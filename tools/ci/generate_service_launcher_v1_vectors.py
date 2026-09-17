@@ -67,12 +67,14 @@ def messages() -> dict[str, dict]:
         "close_file_descriptors_from": 12,
         "service": service,
     }
+    install_request_sha256 = hashlib.sha256(encode(request)).digest()
     installed = {
         "schema": "proofbound-runtime-service-launcher-boundary-installed/1",
         "state": "installed",
         "execution_id": execution_id,
         "policy_sha256": policy,
         "cgroup": cgroup,
+        "install_request_sha256": install_request_sha256,
         "service": service,
     }
     released = {
@@ -81,6 +83,7 @@ def messages() -> dict[str, dict]:
         "execution_id": execution_id,
         "policy_sha256": policy,
         "cgroup": cgroup,
+        "install_request_sha256": install_request_sha256,
         "service_binding_sha256": hashlib.sha256(encode(service)).digest(),
         "credential_state": "not-declared",
     }

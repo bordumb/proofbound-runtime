@@ -1047,7 +1047,9 @@ remain open.
 
 The current subject is a proposed deterministic-CBOR service-session launcher
 handshake and an independent semantic checker. The install and installed
-messages bind the execution, policy, cgroup, child executable, connector
+messages start one closed ordered transcript within the existing one-mebibyte
+whole-frame bound. Each later message binds the complete canonical install
+request. The transcript binds the execution, policy, cgroup, child executable, connector
 identity and generation, DNS and TLS observation identities, selected endpoint,
 channel endpoint identities and descriptor, limits, child-filter bytes, and
 retained descriptor inventory. The release message binds the canonical service

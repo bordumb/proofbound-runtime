@@ -13,8 +13,8 @@ class ContractError(ValueError):
     """The launcher handshake is incomplete or internally inconsistent."""
 
 
-ENVIRONMENT_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
 CREDENTIAL_SOURCE_ID = re.compile(r"(?:[a-z]|[a-z][a-z0-9.-]{0,126}[a-z0-9])\Z")
+MAX_LAUNCHER_FRAME_BYTES = 1_048_576
 
 
 def exact_map(value: object, keys: set[str], context: str) -> dict:
@@ -32,6 +32,17 @@ def integer(value: object, minimum: int, maximum: int, context: str) -> int:
 def bytes_exact(value: object, length: int, context: str) -> bytes:
     if not isinstance(value, bytes) or len(value) != length:
         raise ContractError(f"{context} is not the required byte identity")
+    return value
+
+
+def environment_name(value: object, context: str) -> str:
+    if (
+        not isinstance(value, str)
+        or not 1 <= len(value.encode("utf-8")) <= 255
+        or "\0" in value
+        or "=" in value
+    ):
+        raise ContractError(f"{context} is not an admitted environment name")
     return value
 
 
@@ -123,16 +134,37 @@ def service_binding(value: object) -> None:
         if dns_name(credential["service"], "service.credential_source.service") != declared_name:
             raise ContractError("credential source is bound to another service")
         environment = credential["environment"]
-        if not isinstance(environment, str) or len(environment) > 255 or ENVIRONMENT_NAME.fullmatch(environment) is None:
-            raise ContractError("credential source environment is invalid")
+        environment_name(environment, "service.credential_source.environment")
 
 
-def validate_handshake(
-    request_value: object,
-    installed_value: object,
-    release_value: object,
-    credential_value: object | None = None,
-) -> None:
+def validate_transcript(messages: object) -> None:
+    if not isinstance(messages, list) or len(messages) not in {3, 4}:
+        raise ContractError("launcher transcript does not have an admitted length")
+    if any(not isinstance(message, dict) for message in messages):
+        raise ContractError("launcher transcript contains a non-map message")
+    schemas = [message.get("schema") for message in messages]
+    without_credential = [
+        "proofbound-runtime-service-launcher-install/1",
+        "proofbound-runtime-service-launcher-boundary-installed/1",
+        "proofbound-runtime-service-launcher-exec-release/1",
+    ]
+    with_credential = [
+        "proofbound-runtime-service-launcher-install/1",
+        "proofbound-runtime-service-launcher-boundary-installed/1",
+        "proofbound-runtime-service-launcher-credential-release/1",
+        "proofbound-runtime-service-launcher-exec-release/1",
+    ]
+    if schemas == without_credential:
+        request_value, installed_value, release_value = messages
+        credential_value = None
+    elif schemas == with_credential:
+        request_value, installed_value, credential_value, release_value = messages
+    else:
+        raise ContractError("launcher transcript messages are missing, duplicated, or out of order")
+    for index, message in enumerate(messages):
+        if len(encode(message)) > MAX_LAUNCHER_FRAME_BYTES:
+            raise ContractError(f"launcher transcript frame {index} exceeds the transport bound")
+
     request = exact_map(
         request_value,
         {
@@ -144,12 +176,12 @@ def validate_handshake(
     )
     installed = exact_map(
         installed_value,
-        {"schema", "state", "execution_id", "policy_sha256", "cgroup", "service"},
+        {"schema", "state", "execution_id", "policy_sha256", "cgroup", "install_request_sha256", "service"},
         "installed acknowledgement",
     )
     release = exact_map(
         release_value,
-        {"schema", "state", "execution_id", "policy_sha256", "cgroup", "service_binding_sha256", "credential_state"},
+        {"schema", "state", "execution_id", "policy_sha256", "cgroup", "install_request_sha256", "service_binding_sha256", "credential_state"},
         "exec release",
     )
     if request["schema"] != "proofbound-runtime-service-launcher-install/1":
@@ -176,20 +208,15 @@ def validate_handshake(
     if (
         not isinstance(request["arguments"], list)
         or not 1 <= len(request["arguments"]) <= 4096
-        or not all(isinstance(item, str) and item and "\0" not in item for item in request["arguments"])
+        or not all(isinstance(item, str) and "\0" not in item for item in request["arguments"])
     ):
         raise ContractError("request arguments are empty or invalid")
     if not isinstance(request["environment"], dict) or len(request["environment"]) > 4096:
         raise ContractError("request environment is not a map")
     for name, value in request["environment"].items():
-        if (
-            not isinstance(name, str)
-            or not 1 <= len(name) <= 255
-            or ENVIRONMENT_NAME.fullmatch(name) is None
-            or not isinstance(value, str)
-            or "\0" in value
-        ):
+        if not isinstance(value, str) or "\0" in value:
             raise ContractError("request environment entry is invalid")
+        environment_name(name, "request.environment name")
     if not isinstance(request["filesystem"], list) or not 1 <= len(request["filesystem"]) <= 4096:
         raise ContractError("request filesystem is not an array")
     filesystem_fds = []
@@ -226,6 +253,11 @@ def validate_handshake(
         raise ContractError("installed acknowledgement changed the service binding")
     if hashlib.sha256(seccomp_program).digest() != request["service"]["child_filter_sha256"]:
         raise ContractError("child filter identity does not match the requested program")
+    install_identity = hashlib.sha256(encode(request)).digest()
+    if bytes_exact(installed["install_request_sha256"], 32, "installed.install_request_sha256") != install_identity:
+        raise ContractError("installed acknowledgement changed the install request")
+    if bytes_exact(release["install_request_sha256"], 32, "release.install_request_sha256") != install_identity:
+        raise ContractError("exec release changed the install request")
     if bytes_exact(release["service_binding_sha256"], 32, "release.service_binding_sha256") != hashlib.sha256(encode(request["service"])).digest():
         raise ContractError("exec release changed the service-binding identity")
 
@@ -239,7 +271,8 @@ def validate_handshake(
             credential_value,
             {
                 "schema", "execution_id", "policy_sha256", "cgroup",
-                "service_binding_sha256", "source_id", "environment", "value",
+                "install_request_sha256", "service_binding_sha256",
+                "source_id", "environment", "value",
             },
             "credential release",
         )
@@ -251,6 +284,8 @@ def validate_handshake(
             raise ContractError("credential release changed policy identity")
         if cgroup(message["cgroup"], "credential.cgroup") != cgroup_id:
             raise ContractError("credential release changed cgroup identity")
+        if bytes_exact(message["install_request_sha256"], 32, "credential.install_request_sha256") != install_identity:
+            raise ContractError("credential release changed the install request")
         if bytes_exact(message["service_binding_sha256"], 32, "credential.service_binding_sha256") != binding_identity:
             raise ContractError("credential release changed service binding")
         if message["source_id"] != credential["id"] or message["environment"] != credential["environment"]:

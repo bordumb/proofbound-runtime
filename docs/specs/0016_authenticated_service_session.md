@@ -281,11 +281,14 @@ and produces no reusable success receipt.
 
 The proposed service-specific handshake is
 `proofbound-runtime-service-launcher/1`. Its install request and installed
-acknowledgement carry the complete service binding. Its release message carries
-the SHA-256 identity of the deterministic-CBOR service-binding map. The binding
-contains the execution policy, cgroup, connector generation and closure, DNS
-and TLS observation identities, selected endpoint, private-channel endpoints
-and child descriptor, session limits, and exact child-filter identity. The
+acknowledgement carry the complete service binding. Every later message carries
+the SHA-256 identity of the complete deterministic-CBOR install request. The
+credential and release messages also carry the SHA-256 identity of the service-
+binding map. Together, the outer message identities and service map bind the
+execution, policy, cgroup, connector generation and closure, DNS and TLS
+observation identities, selected endpoint, private-channel endpoints and child
+descriptor, session limits, and exact child-filter identity. Each private
+launcher frame is at most 1,048,576 bytes. The
 optional credential-release message is sensitive transient input after the
 installed acknowledgement. No credential value or value-derived digest can
 enter a retained vector, receipt, diagnostic, or log. The production launcher

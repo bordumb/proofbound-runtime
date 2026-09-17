@@ -1,9 +1,9 @@
 schema = "proofbound-claim/1"
 id = "PBR-NETWORK-036"
 title = "Service launcher release binds the complete prepared session"
-statement = "The proposed service-session launcher protocol binds one execution, policy, cgroup, executable, declared service, connector generation and closure, DNS and TLS observations, selected endpoint, local-channel endpoints and child descriptor, service limits, child filter, retained descriptor inventory, installed acknowledgement, and exec release; an independent checker rejects registered omission, substitution, descriptor, filter, binding, and retained-content mutations."
-public_language = "Runtime has a proposed closed deterministic-CBOR service-session launcher handshake. The frozen vectors bind the prepared connector session and installed child filter to one execution before release. This is source contract evidence only. The production launcher does not accept these messages, no connector or child is started, and no network authority is enabled."
-subject = "schema:proofbound-runtime-service-launcher/1+python:service_launcher_contract.validate_handshake"
+statement = "The proposed service-session launcher protocol admits only the ordered install, installed, optional transient credential, and release transcript within the existing whole-frame bound; every later message binds the complete install request, and the transcript binds one execution, policy, cgroup, executable, declared service, connector generation and closure, DNS and TLS observations, selected endpoint, local-channel endpoints and child descriptor, service limits, child filter, and retained descriptor inventory; an independent checker rejects registered order, omission, frame, substitution, descriptor, filter, binding, and retained-content mutations."
+public_language = "Runtime has a proposed closed deterministic-CBOR service-session launcher transcript. The frozen vectors and independent checker bind the complete prepared request and connector session to one installed boundary before optional transient credential release and child release. This is source contract evidence only. The production launcher does not accept these messages, no connector or child is started, and no network authority is enabled."
+subject = "schema:proofbound-runtime-service-launcher/1+python:service_launcher_contract.validate_transcript"
 profile = "ledger"
 tier = 0
 evidence = [

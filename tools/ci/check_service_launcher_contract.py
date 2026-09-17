@@ -10,6 +10,9 @@ import sys
 
 INVENTORY = [
     "service-launcher-canonical-handshake",
+    "service-launcher-ordered-transcript",
+    "service-launcher-whole-frame-bound",
+    "service-launcher-complete-install-binding",
     "service-launcher-execution-policy-cgroup-binding",
     "service-launcher-connector-observation-binding",
     "service-launcher-channel-descriptor-binding",

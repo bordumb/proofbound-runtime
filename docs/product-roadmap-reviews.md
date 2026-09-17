@@ -2983,6 +2983,35 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-5 service launcher preliminary review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `f98eb8f0108bbf68dfe2aba84644bf0d157f53aa`
+- **Reviewed head:** `6e435329818f5ecf8fa0ae6dee4524f4d21e8fc0`
+- **Branch:** `codex/rt5-launcher-contract`
+- **Method:** Complete exact-range static protocol, schema, vector, checker,
+  mutation, claim, evidence, and roadmap review. The reviewer changed no files
+  and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review found four blocking defects. First, the aggregate checker did not
+represent message order and could not reject credential or release messages
+before the installed acknowledgement. Second, the proposed messages did not
+enforce the existing 1,048,576-byte whole-frame limit. Third, later messages
+bound only the service map, not the complete install request, so executable,
+argument, environment, filesystem, and descriptor changes could retain the
+same acknowledgement and release. Fourth, argument and environment validation
+was stricter than the accepted plan and launcher domains while the CDDL itself
+did not impose those restrictions. The corrected exact head requires a new
+independent review.
+
+The reviewer found no additional blocker in the service, connector, DNS, TLS,
+channel, limit, filter, or descriptor bindings. Credential values and derived
+digests stayed out of retained artifacts. Production crates were unchanged,
+so production service execution and launcher decoding remained rejected.
+
 ## RT-5 service observation preliminary review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
