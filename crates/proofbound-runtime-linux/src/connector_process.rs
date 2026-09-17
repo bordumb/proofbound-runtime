@@ -11,11 +11,12 @@ use proofbound_runtime_core::{
 };
 use sha2::{Digest as _, Sha256};
 
-use crate::{ResolutionError, ResolvedFile};
+use crate::{Architecture, ResolutionError, ResolvedFile, parse_elf_interpreter};
 
 const CONNECTOR_PROTOCOL: &str = "1";
 const CONNECTOR_BOOTSTRAP_ARGUMENTS: usize = 28;
 const MAX_CONNECTOR_REPORT_BYTES: usize = 256;
+const MAX_CONNECTOR_EXECUTABLE_BYTES: u64 = 268_435_456;
 const MAX_PLAN_BYTES: u64 = 1_048_576;
 const MAX_TRUST_ROOT_BYTES: u64 = 16_777_216;
 const REPORT_MAGIC: &[u8; 8] = b"PBRCP001";
@@ -501,6 +502,7 @@ pub fn prepare_connector_process<'a>(
     policy_digest: Sha256Digest,
     process_generation: u64,
     channel_id: [u8; 16],
+    architecture: Architecture,
 ) -> Result<PreparedConnectorProcess<'a>, ConnectorProcessError> {
     if process_generation == 0 || channel_id == [0; 16] {
         return Err(ConnectorProcessError::BindingInvalid);
@@ -529,6 +531,18 @@ pub fn prepare_connector_process<'a>(
     resolver_configuration.revalidate_identity()?;
     for artifact in runtime_closure {
         artifact.revalidate_identity()?;
+    }
+    let connector_bytes = connector.read_bytes(MAX_CONNECTOR_EXECUTABLE_BYTES)?;
+    let interpreter = parse_elf_interpreter(&connector_bytes, architecture)
+        .map_err(|_| ConnectorProcessError::ConnectorExecutableInvalid)?;
+    if let Some(interpreter) = interpreter {
+        let loader = runtime_closure
+            .iter()
+            .find(|artifact| artifact.requested_path() == interpreter.as_path())
+            .ok_or(ConnectorProcessError::ConnectorLoaderMissing)?;
+        if loader.identity().mode().get() & 0o111 == 0 {
+            return Err(ConnectorProcessError::ConnectorNotExecutable);
+        }
     }
     if plan_source.identity().size() > MAX_PLAN_BYTES {
         return Err(ConnectorProcessError::ArtifactTooLarge);
@@ -965,6 +979,10 @@ pub enum ConnectorProcessError {
     ArtifactTooLarge,
     /// The connector executable had no execute permission bit.
     ConnectorNotExecutable,
+    /// The connector executable was not a supported ELF image.
+    ConnectorExecutableInvalid,
+    /// A dynamic connector's exact ELF interpreter was not registered.
+    ConnectorLoaderMissing,
     /// The service execution plan was invalid.
     PlanInvalid,
     /// A declared path or identity binding did not match.
@@ -1004,6 +1022,8 @@ impl ConnectorProcessError {
             Self::ArtifactIdentityDrift => "network.connector.artifact.identity-drift",
             Self::ArtifactTooLarge => "network.connector.artifact.too-large",
             Self::ConnectorNotExecutable => "network.connector.executable.mode-missing",
+            Self::ConnectorExecutableInvalid => "network.connector.executable.invalid",
+            Self::ConnectorLoaderMissing => "network.connector.loader.missing",
             Self::PlanInvalid => "network.connector.plan.invalid",
             Self::BindingInvalid => "network.connector.binding.invalid",
             Self::BootstrapInvalid => "network.connector.bootstrap.invalid",

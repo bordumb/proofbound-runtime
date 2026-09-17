@@ -1159,6 +1159,13 @@ connector-side control descriptors survive exec. The connector executable
 descriptor exists only until the kernel completes the exact descriptor-relative
 exec and remains close-on-exec.
 
+Preparation also parses the complete bounded connector image as a supported
+64-bit little-endian ELF for the selected architecture. A dynamic image is
+rejected unless its exact absolute interpreter path names one identified,
+executable artifact in the registered connector runtime closure. This closes
+script and undeclared-interpreter substitution; discovery of every transitive
+dynamic library remains a later native preflight and confinement obligation.
+
 The child parses a closed bootstrap, rejects duplicate inherited descriptors,
 recomputes plan and trust-root identities before parsing or network effects,
 resolves and authenticates through the admitted connector engine, and reports
