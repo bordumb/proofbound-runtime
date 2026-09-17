@@ -46,8 +46,26 @@ def assert_object_resolution_contract(sys_source, trace, mapping, artifact):
                         );"""
     assert exec_connection in trace
     assert descriptor_connection in trace
-    assert trace.index(exec_connection) < trace.index("ActiveTraceEvent::ImageReplaced")
-    assert trace.index(descriptor_connection) < trace.index("ActiveTraceEvent::SyscallCompleted")
+    exec_branch = trace.split(
+        "if signal == SIGNAL_TRAP && crate::sys::trace_event_is_exec(event) =>", 1
+    )[1].split("crate::sys::TraceWaitStatus::Stopped { signal, event }", 1)[0]
+    exec_order = [
+        exec_branch.index("self.reconcile_exec_identity(requested, reported)?"),
+        exec_branch.index(exec_connection),
+        exec_branch.index("ActiveTraceEvent::ImageReplaced"),
+    ]
+    assert exec_order == sorted(exec_order)
+    assert "resume_before_deadline" not in exec_branch[: exec_order[2]]
+    exit_branch = trace.split(
+        "crate::sys::TraceSyscallStop::Exit { result, is_error } =>", 1
+    )[1].split("crate::sys::TraceSyscallStop::Seccomp", 1)[0]
+    exit_order = [
+        exit_branch.index(".pending\n                    .take()"),
+        exit_branch.index(descriptor_connection),
+        exit_branch.index("ActiveTraceEvent::SyscallCompleted"),
+    ]
+    assert exit_order == sorted(exit_order)
+    assert "resume_before_deadline" not in exit_branch[: exit_order[2]]
 
 
 class DiagnosticObjectResolutionContractTests(unittest.TestCase):
@@ -98,6 +116,39 @@ class DiagnosticObjectResolutionContractTests(unittest.TestCase):
             (
                 self.sys,
                 self.trace.replace("retained_processes != 1", "false", 1),
+                self.mapping,
+                self.artifact,
+            ),
+            (
+                self.sys,
+                self.trace.replace(
+                    "let change = self.reconcile_exec_identity(requested, reported)?;",
+                    "__REORDER_EXEC_SELECTION__",
+                    1,
+                ).replace(
+                    """let selected_object =
+                    self.observe_selected_object(change.survivor, TraceObjectSource::Executable);""",
+                    "let change = self.reconcile_exec_identity(requested, reported)?;",
+                    1,
+                ).replace(
+                    "__REORDER_EXEC_SELECTION__",
+                    """let selected_object =
+                    self.observe_selected_object(change.survivor, TraceObjectSource::Executable);""",
+                    1,
+                ),
+                self.mapping,
+                self.artifact,
+            ),
+            (
+                self.sys,
+                self.trace.replace(
+                    """let selected_object = self.observe_successful_descriptor(
+                            process,""",
+                    """self.resume_before_deadline(process)?;
+                        let selected_object = self.observe_successful_descriptor(
+                            process,""",
+                    1,
+                ),
                 self.mapping,
                 self.artifact,
             ),
