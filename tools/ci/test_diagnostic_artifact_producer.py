@@ -181,6 +181,9 @@ class DiagnosticArtifactProducerContractTests(unittest.TestCase):
             "DraftProvenance::StaticExecutableClosure",
             "return Err(DraftError::ClosureInvalid);",
             "inputs.candidates.iter().any(|candidate|",
+            "candidate_provenance_is_bound(",
+            "entry.path == candidate.path",
+            "entry.role == IdentifiedClosureRole::Executable",
             "receipt.output_bound()",
             "OutputBoundExceeded",
         ]:

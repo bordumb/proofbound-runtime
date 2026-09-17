@@ -25,7 +25,7 @@ reconciliation precede pure tree-empty acknowledgement. The following decoder
 identity passed exact-head review and hosted verification and is merged on
 current main; exact-main admission run `34997195939` passed.
 The architecture-qualified syscall decoder and bounded entry-time operand
-capture are implemented locally under `PBR-OBSERVER-025`. The exact aggregate
+capture are admitted under `PBR-OBSERVER-025`. The exact aggregate
 subject, compiler and crate-selection closure, adapter build evidence, and all
 load-bearing decoder bodies are registered in response to independent review.
 The raw syscall-information parser also rejects nonzero reserved or flags
@@ -65,11 +65,11 @@ object resolution, bounded denied-path candidates, the separate `pbr-diagnose`
 executable, native diagnostic coverage, and release-inventory binding under
 `PBR-OBSERVER-029` through `PBR-OBSERVER-031`. Independently approved PR 26
 head `2fc82ff` passed complete Verify run `35172227506`, including both native
-architectures, and merged unsigned as `d60d1f3`. Exact-main replay remains in
-progress. The active product-exit wave consumes an exact declared static
-scaffold, keeps static and platform-required closure context
-non-authoritative, and
-runs one maintained dynamically linked workload. Capsec provenance remains an
+architectures, and merged unsigned as `d60d1f3`. Exact-main Verify run
+`35175269953` passed every required lane. The active product-exit wave consumes
+an exact declared static scaffold, keeps static and platform-required closure
+context non-authoritative, and runs one maintained dynamically linked workload.
+Capsec provenance remains an
 optional unavailable class until Capsec publishes an accepted identified
 report tuple; its absence stays visible as an open item.
 
@@ -199,7 +199,6 @@ unresolved diagnostic artifact events. `PBR-OBSERVER-027` is admitted on
 nonblocking stdout and stderr drains before command integration.
 `PBR-OBSERVER-028` is admitted on `cddd8dd`. The independently approved
 `PBR-OBSERVER-029` through `PBR-OBSERVER-031` subject passed every PR lane in
-run `35172227506` and merged as exact Runtime main `d60d1f3`. Exact-main replay
 run `35172227506` and merged as exact Runtime main `d60d1f3`. Exact-main Verify
 run `35175269953` passed every required lane. The wider RT-8 exit corpus remains
 required.

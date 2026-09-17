@@ -7,10 +7,11 @@
   source, event-and-drain coupling, architecture-qualified decoder, exact event
   mapping, bounded stream collector, and diagnostic lifecycle are merged. The
   consolidated RT-8 object-resolution, denied-candidate, separate-command,
-  native-corpus, and release-inventory subject is implemented locally and
-  awaits final exact-head review plus hosted admission. The current-integration
-  source closes npm's missing first-publication route. External
-  registry publication and every complete Roadmap 2 epic exit remain open.
+  native-corpus, and release-inventory subject is merged and admitted. The
+  current RT-8 exit extension awaits exact-head review and hosted admission.
+  The current-integration source closes npm's missing first-publication route.
+  External registry publication and every complete Roadmap 2 epic exit remain
+  open.
 - **Date:** 2026-09-16
 - **Runtime baseline:** roadmap admission synchronization merge `e8473bd` on
   `main`; exact-head Verify run `35131985759` and exact-main Verify run `35135938137`
@@ -142,7 +143,6 @@ and complete PR verification. The dependent object-resolution,
 denied-candidate, command-integration, native diagnostic, and release-binding
 subject under `PBR-OBSERVER-029` through `PBR-OBSERVER-031` passed independent
 review and complete PR 26 run `35172227506`, including both native
-architectures, then merged unsigned as `d60d1f3`. Exact-main replay is running.
 architectures, then merged unsigned as `d60d1f3`. Exact-main Verify run
 `35175269953` passed every required lane.
 The active exit wave adds an identity-matched declared static scaffold and one

@@ -454,6 +454,8 @@ schema, source, analyzer, and report identities. Exact static and
 platform-required closure entries remain non-authoritative, retain content and
 role identity, and stay separate from scoped authority candidates. The public
 constructor rejects diagnostic, human, or Capsec provenance for closure entries.
+A closure-tagged candidate must bind to an exact entry with a compatible role,
+kind, path, and provenance before the draft producer emits it.
 
 The initial evidence path must falsify event and per-process bounds, sequence
 ordering, result and error exclusivity, resolution and identity consistency,

@@ -54,7 +54,9 @@ plan. A valid scaffold contributes only its exact report commitment and an
 Each closure entry retains its exact path, digest, size, mode, and role. The
 scaffold executable has `static-executable-closure` provenance. Its interpreter
 and dependency files have `platform-required-closure` provenance. No closure
-entry is a plan suggestion, and no scaffold item changes the installed policy.
+entry is automatically a plan suggestion, and no scaffold item changes the
+installed policy. A library caller can add a closure-tagged candidate only when
+its scoped path, kind, and provenance match an exact identified closure entry.
 
 The delegated cgroup root is explicit invocation input. The command does not
 discover one from ambient environment or user configuration. The first command

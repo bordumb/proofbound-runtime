@@ -619,6 +619,11 @@ pub fn build_plan_draft(
             .path_scope
             .as_ref()
             .is_none_or(|scope| !scope.allows(&candidate.path))
+            || !candidate_provenance_is_bound(
+                candidate,
+                &inputs.identified_closure,
+                inputs.capsec.as_ref(),
+            )
     }) {
         return Err(DraftError::CandidateInvalid);
     }
@@ -826,6 +831,37 @@ fn merge_candidate(
     } else {
         candidates.insert(key, candidate);
     }
+}
+
+fn candidate_provenance_is_bound(
+    candidate: &DraftCandidate,
+    closure: &[IdentifiedClosureEntry],
+    capsec: Option<&CapsecInput>,
+) -> bool {
+    candidate
+        .provenance
+        .iter()
+        .all(|provenance| match provenance {
+            DraftProvenance::StaticExecutableClosure => closure.iter().any(|entry| {
+                entry.path == candidate.path
+                    && entry.role == IdentifiedClosureRole::Executable
+                    && entry.provenance == *provenance
+                    && candidate.kind == CandidateKind::Execute
+            }),
+            DraftProvenance::PlatformRequiredClosure => closure.iter().any(|entry| {
+                entry.path == candidate.path
+                    && entry.provenance == *provenance
+                    && matches!(
+                        (entry.role, candidate.kind),
+                        (IdentifiedClosureRole::Interpreter, CandidateKind::Execute)
+                            | (IdentifiedClosureRole::RuntimeLibrary, CandidateKind::Read)
+                    )
+            }),
+            DraftProvenance::CapsecSourceObservation => {
+                capsec.is_some_and(|value| value.usability == CapsecUsability::Usable)
+            }
+            DraftProvenance::DiagnosticRuntimeObservation | DraftProvenance::HumanAuthored => false,
+        })
 }
 
 /// Identifies invalid plan-draft construction.
@@ -1234,10 +1270,17 @@ mod tests {
             DraftProvenance::PlatformRequiredClosure,
         )
         .expect("identified library");
+        let executable_candidate = DraftCandidate::identified_closure(
+            CandidateKind::Execute,
+            "/workspace/tool",
+            DraftProvenance::StaticExecutableClosure,
+        )
+        .expect("bound executable candidate");
         let identified = build_plan_draft(
             &fixture_receipt(),
             PlanDraftInputs {
-                identified_closure: vec![library, executable],
+                candidates: vec![executable_candidate],
+                identified_closure: vec![library.clone(), executable.clone()],
                 path_scope: Some(fixture_scope()),
                 ..PlanDraftInputs::default()
             },
@@ -1266,6 +1309,24 @@ mod tests {
             ])
         );
         assert_eq!(identified["safe_policy"], false);
+        let counterfeit = DraftCandidate::identified_closure(
+            CandidateKind::Execute,
+            "/workspace/other",
+            DraftProvenance::StaticExecutableClosure,
+        )
+        .expect("candidate shape");
+        assert_eq!(
+            build_plan_draft(
+                &fixture_receipt(),
+                PlanDraftInputs {
+                    candidates: vec![counterfeit],
+                    identified_closure: vec![library, executable],
+                    path_scope: Some(fixture_scope()),
+                    ..PlanDraftInputs::default()
+                },
+            ),
+            Err(DraftError::CandidateInvalid)
+        );
     }
 
     #[test]

@@ -1166,7 +1166,7 @@ fn draft_inputs(readable: &[ResolvedReadPath]) -> Result<Vec<DraftInput>, Diagno
         .filter(|path| path.identity().role() == ArtifactRole::ProjectInput)
         .map(|path| {
             DraftInput::new(
-                path.requested_path()
+                path.resolved_target()
                     .to_str()
                     .ok_or_else(|| DiagnoseError::output("diagnostic.input.path-invalid"))?
                     .to_owned(),
