@@ -7,15 +7,16 @@
   source, event-and-drain coupling, architecture-qualified decoder, exact event
   mapping, bounded stream collector, and diagnostic lifecycle are merged. The
   consolidated RT-8 object-resolution, denied-candidate, separate-command,
-  native-corpus, and release-inventory subject is merged and admitted. The
-  current RT-8 exit extension awaits exact-head review and hosted admission.
+  native-corpus, and release-inventory subject is merged and admitted. RT-8 is
+  complete: its product-exit and final adversarial waves are independently
+  reviewed, merged, and exact-main admitted.
   The current-integration source closes npm's missing first-publication route.
-  External registry publication and every complete Roadmap 2 epic exit remain
+  External RT-7 registry publication and later Roadmap 2 epic exits remain
   open.
-- **Date:** 2026-09-16
-- **Runtime baseline:** roadmap admission synchronization merge `e8473bd` on
-  `main`; exact-head Verify run `35131985759` and exact-main Verify run `35135938137`
-  passed
+- **Date:** 2026-09-17
+- **Runtime baseline:** exact unsigned main
+  `da8c96b843a692bff8a0ac0bc782a108b3168dbc`; final RT-8 exact-head Verify
+  run `35203053015` and exact-main Verify run `35207382756` passed
 - **Proofbound baseline consumed by Runtime evidence:** public immutable bundle
   for source `9512469`; protected-path cutover merged as Runtime `4a0cfdb` and
   passed exact-main Verify run `34918706960`
@@ -40,7 +41,7 @@ threat-model, ADR, claim, and evidence changes before production code.
 
 ### Execution checkpoint
 
-As of 2026-09-17, Runtime main commit `cddd8dd` contains the version 2 memory
+As of 2026-09-17, Runtime main commit `da8c96b` contains the version 2 memory
 and deterministic CBOR wave, receipt composition and acceptance, a bounded
 static plan scaffold,
 typed prelaunch diagnostics, reproducible Rust, Python, and TypeScript SDK
@@ -145,11 +146,15 @@ subject under `PBR-OBSERVER-029` through `PBR-OBSERVER-031` passed independent
 review and complete PR 26 run `35172227506`, including both native
 architectures, then merged unsigned as `d60d1f3`. Exact-main Verify run
 `35175269953` passed every required lane.
-The active exit wave adds an identity-matched declared static scaffold and one
-maintained dynamically linked workload that displays static, platform,
-diagnostic, and human provenance without granting authority. An accepted
-Capsec integration tuple remains optional and unavailable until the Capsec
-owner publishes its native identified report contract.
+The product-exit extension passed PR 27 run `35194713490`, merged as
+`275e6e7`, and passed exact-main run `35198698472`. It adds an
+identity-matched declared static scaffold and one maintained dynamically linked
+workload that displays static, platform, diagnostic, and human provenance
+without granting authority. The final native adversarial corpus passed PR 28
+run `35203053015`, merged as `da8c96b`, and passed exact-main run
+`35207382756`. An accepted Capsec integration tuple remains optional and
+unavailable until the Capsec owner publishes its native identified report
+contract.
 The RT-7 current-integration source merged as `47c5ad2` and passed exact-main
 Verify run `35006872460`. RT-11's accepted signing decision merged as
 `08b8dbe` and passed exact-main Verify run `35012954812`; signing

@@ -1,11 +1,12 @@
 # Product roadmap execution order
 
 - **Status:** active delivery order
-- **Date:** 2026-09-16
+- **Date:** 2026-09-17
 - **Applies to:** Roadmap 1 release closure, Roadmap 2, and Roadmap 3 candidate
   promotion
-- **Current Runtime main:** `17458ad`; exact-head Verify run `35039326242` and
-  exact-main Verify run `35042895100` passed
+- **Current Runtime main:** `da8c96b843a692bff8a0ac0bc782a108b3168dbc`;
+  final RT-8 exact-head Verify run `35203053015` and exact-main Verify run
+  `35207382756` passed
 - **Current reviewed Roadmap 1 source head:** `d76f3b8`
 - **Lifecycle:** prelaunch; zero external users; package labels are tooling
   metadata rather than compatibility promises
@@ -18,15 +19,16 @@ review updates it.
 
 ## 1. Current boundary
 
-Roadmap 1 source work is merged. Runtime main `17458ad` also contains the
-reviewed and exact-main-admitted RT-8 decoder, event mapper, and bounded stream
-collector; run `35042895100` passed.
-Roadmap 2 delivery is active; no complete Roadmap 2 epic has closed. Roadmap 3
+Roadmap 1 source work is merged. Runtime main `da8c96b` contains the complete
+reviewed and exact-main-admitted RT-8 diagnostic drafting workflow, maintained
+dynamic workload, and native adversarial corpus. Final exact-main run
+`35207382756` passed. Roadmap 2 delivery is active; RT-8 is complete, RT-7
+retains external publication gates, and later epics remain open. Roadmap 3
 contains candidates, not scheduled implementation.
 
-The immediate internal objective is to finish RT-8 drafting while RT-7's
-registry publication and unrelated-consumer observations proceed as external
-gates, then remove the useful-network barrier with RT-5. No version cut,
+The immediate internal objective is to remove the useful-network barrier with
+RT-5 while RT-7's registry publication and unrelated-consumer observations
+proceed as external gates. No version cut,
 compatibility layer, or migration window is a prelaunch dependency.
 
 ## 2. Delivery graph
@@ -159,6 +161,12 @@ This work follows the admitted foundation as a separate exact-source wave. It
 does not require a version transition or preserve an older candidate surface.
 
 ## 5. Phase 2: RT-8 drafting
+
+**Complete.** The product-exit extension passed PR 27 run `35194713490`,
+merged as `275e6e7`, and passed exact-main run `35198698472`. The final native
+adversarial corpus passed PR 28 run `35203053015`, merged as `da8c96b`, and
+passed exact-main run `35207382756`. The resulting diagnostic output remains
+non-reusable production evidence.
 
 After RT-7 stabilizes the public schemas and SDK expectations:
 

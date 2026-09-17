@@ -2,9 +2,10 @@
 
 - **Status:** foundation merged and admitted; production networking,
   publication, and external adopter gates remain
-- **Date:** 2026-09-16
-- **Runtime baseline:** current admitted `main` at `17458ad`; exact-head Verify
-  run `35039326242` and exact-main Verify run `35042895100` passed
+- **Date:** 2026-09-17
+- **Runtime baseline:** current admitted `main` at
+  `da8c96b843a692bff8a0ac0bc782a108b3168dbc`; final RT-8 exact-head Verify
+  run `35203053015` and exact-main Verify run `35207382756` passed
 - **Proofbound distribution baseline:** immutable public bundle for source
   `9512469`
 - **Planning horizon:** prelaunch product and assurance waves

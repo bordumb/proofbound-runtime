@@ -39,7 +39,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-OBSERVER-028` | Tier 1 lifecycle source admitted on exact Runtime main `cddd8dd` | The trace source binds one exact cgroup version 2 owner and one private absolute execution deadline, begins bounded termination before it exposes a drain-only state, and gates publication on complete terminal resources and streams. The identical PR head passed all lanes; exact-main replay later hit only the bounded authority proof's time budget. Native kernel, clock, cgroup, scheduler, pipe, command, and release behavior remain open. |
 | `PBR-OBSERVER-029` | Tier 1 object-resolution source admitted on exact Runtime main `d60d1f3` | Successful descriptor and post-exec observations become kernel-selected only from one exact stopped tracee with a retained object, normalized live path, and complete identity. Independently approved PR 26 head `2fc82ff` passed run `35172227506`, including both native architectures. Exact-main run `35175269953` passed. The wider exit corpus remains pending. |
 | `PBR-OBSERVER-030` | Tier 1 candidate-resolution source admitted on exact Runtime main `d60d1f3` | Failed path operations produce only advisory stable candidates after two bounded root-confined observations agree; drift and hop exhaustion remain explicit gaps. Independently approved PR 26 head `2fc82ff` passed run `35172227506`, including both native architectures. Exact-main run `35175269953` passed. Linux pathname completeness remains pending. |
-| `PBR-OBSERVER-031` | Tier 1 separate-command source admitted on exact Runtime main `d60d1f3` | `pbr-diagnose` reuses the exact seed authority, retains terminal gating, and uses durable no-replace publication for non-reusable artifacts. Independently approved PR 26 head `2fc82ff` passed run `35172227506`, including both native architectures. Exact-main run `35175269953` passed. The active exit wave adds an exact declared static-scaffold input and a maintained dynamic workload without adding authority; its evidence and exact released-artifact observation remain pending. |
+| `PBR-OBSERVER-031` | Tier 1 complete RT-8 source admitted on exact Runtime main `da8c96b` | `pbr-diagnose` reuses the exact seed authority, retains terminal gating, consumes only an exact declared scaffold, and uses durable no-replace publication for non-reusable artifacts. PR 27 admitted the maintained dynamic workload in exact-head run `35194713490` and exact-main run `35198698472`; PR 28 admitted the final adversarial corpus in exact-head run `35203053015` and exact-main run `35207382756`. The later RT-5 contract changes this claim's declared closure, so that newer subject remains pending as listed below. |
 | `PBR-NETWORK-032` | Tier 0 proposed contract, not executable | The closed single-service authority parser retains direct child network denial and production execution rejection. `PBR-SDK-014` owns construction. Connector, launcher, receipt, verifier, native corpus, and release admission remain open. |
 
 ### Current changed subjects pending exact admission
@@ -938,9 +938,13 @@ strict scaffold parsing, exact closure identity checks, and provenance
 separation. Its mutations weaken create-new publication, terminal eligibility,
 child-write exclusion, identity matching, or provenance integrity. Native
 stale-target, symlink-input, unexpected-stop, and `CLONE_UNTRACED` evasion
-cases are registered without making diagnostic output reusable. Exact-head
-hosted and released-artifact observations are still required before public
-language can describe the command as released.
+cases run on both supported architectures without making diagnostic output
+reusable. The product-exit extension passed PR 27 exact-head run `35194713490`,
+merged as `275e6e7`, and passed exact-main run `35198698472`. The final
+adversarial wave passed PR 28 exact-head run `35203053015`, merged as
+`da8c96b`, and passed exact-main run `35207382756`. This closes RT-8 at that
+exact identity. A later source-closure change still requires its own fresh
+admission and does not inherit this status.
 
 ## PBR-NETWORK-032
 
