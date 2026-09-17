@@ -3158,6 +3158,32 @@ The following approval-only commit changes only this review record. Hosted
 evidence is still required before merge, and any later subject change requires
 another exact-head review.
 
+## RT-8 adversarial corpus current-base approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `275e6e75f6537fb0c1a61199eacaba13413bfa8a`
+- **Reviewed head:** `f2972ae2f2e21b7d77cd76bec3201e63e8300cea`
+- **Branch:** `codex/rt8-adversarial-corpus`
+- **Method:** Exact-range static re-review after merging current `main`. The
+  reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the current-base patch and the previously approved
+pre-merge patch have the same file list and the same binary-diff SHA-256,
+`7a50e00b162ff1325d6b359cbba9c64386032489a06adf1a2ebbd52f9c8d0ba6`.
+The merge introduced no PR content drift. The symlink cleanup remains after the
+exact rejection and no-child assertions, targets only the explicit temporary
+adversarial-root path, does not follow the symlink, and executes before the next
+case. Fail-fast shell behavior prevents the cleanup from hiding an earlier
+failure. No new blocker was introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`275e6e75f6537fb0c1a61199eacaba13413bfa8a..f2972ae2f2e21b7d77cd76bec3201e63e8300cea`.
+The following approval-only commit changes only this review record. Hosted
+evidence is still required before merge, and any later subject change requires
+another exact-head review.
+
 ## RT-8 consolidated object, candidate, and command approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
