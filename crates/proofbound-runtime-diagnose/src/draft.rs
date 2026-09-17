@@ -619,11 +619,7 @@ pub fn build_plan_draft(
             .path_scope
             .as_ref()
             .is_none_or(|scope| !scope.allows(&candidate.path))
-            || !candidate_provenance_is_bound(
-                candidate,
-                &inputs.identified_closure,
-                inputs.capsec.as_ref(),
-            )
+            || !candidate_provenance_is_bound(candidate, &inputs.identified_closure)
     }) {
         return Err(DraftError::CandidateInvalid);
     }
@@ -836,7 +832,6 @@ fn merge_candidate(
 fn candidate_provenance_is_bound(
     candidate: &DraftCandidate,
     closure: &[IdentifiedClosureEntry],
-    capsec: Option<&CapsecInput>,
 ) -> bool {
     candidate
         .provenance
@@ -857,9 +852,7 @@ fn candidate_provenance_is_bound(
                             | (IdentifiedClosureRole::RuntimeLibrary, CandidateKind::Read)
                     )
             }),
-            DraftProvenance::CapsecSourceObservation => {
-                capsec.is_some_and(|value| value.usability == CapsecUsability::Usable)
-            }
+            DraftProvenance::CapsecSourceObservation => true,
             DraftProvenance::DiagnosticRuntimeObservation | DraftProvenance::HumanAuthored => false,
         })
 }
@@ -1264,23 +1257,47 @@ mod tests {
         .expect("identified executable");
         let library = IdentifiedClosureEntry::new(
             IdentifiedClosureRole::RuntimeLibrary,
-            "/lib/libfixture.so",
+            "/workspace/libfixture.so",
             ContentIdentity::new(Sha256Digest::from_bytes([8; 32]), 8),
             0o644,
             DraftProvenance::PlatformRequiredClosure,
         )
         .expect("identified library");
+        let interpreter = IdentifiedClosureEntry::new(
+            IdentifiedClosureRole::Interpreter,
+            "/workspace/loader",
+            ContentIdentity::new(Sha256Digest::from_bytes([9; 32]), 9),
+            0o755,
+            DraftProvenance::PlatformRequiredClosure,
+        )
+        .expect("identified interpreter");
         let executable_candidate = DraftCandidate::identified_closure(
             CandidateKind::Execute,
             "/workspace/tool",
             DraftProvenance::StaticExecutableClosure,
         )
         .expect("bound executable candidate");
+        let interpreter_candidate = DraftCandidate::identified_closure(
+            CandidateKind::Execute,
+            "/workspace/loader",
+            DraftProvenance::PlatformRequiredClosure,
+        )
+        .expect("bound interpreter candidate");
+        let library_candidate = DraftCandidate::identified_closure(
+            CandidateKind::Read,
+            "/workspace/libfixture.so",
+            DraftProvenance::PlatformRequiredClosure,
+        )
+        .expect("bound library candidate");
         let identified = build_plan_draft(
             &fixture_receipt(),
             PlanDraftInputs {
-                candidates: vec![executable_candidate],
-                identified_closure: vec![library.clone(), executable.clone()],
+                candidates: vec![
+                    executable_candidate,
+                    interpreter_candidate,
+                    library_candidate,
+                ],
+                identified_closure: vec![library.clone(), executable.clone(), interpreter.clone()],
                 path_scope: Some(fixture_scope()),
                 ..PlanDraftInputs::default()
             },
@@ -1299,8 +1316,16 @@ mod tests {
                     "size_bytes": 7,
                 },
                 {
+                    "mode": "0755",
+                    "path": "/workspace/loader",
+                    "provenance": "platform-required-closure",
+                    "role": "interpreter",
+                    "sha256": format!("sha256:{}", "09".repeat(32)),
+                    "size_bytes": 9,
+                },
+                {
                     "mode": "0644",
-                    "path": "/lib/libfixture.so",
+                    "path": "/workspace/libfixture.so",
                     "provenance": "platform-required-closure",
                     "role": "runtime-library",
                     "sha256": format!("sha256:{}", "08".repeat(32)),
@@ -1309,24 +1334,49 @@ mod tests {
             ])
         );
         assert_eq!(identified["safe_policy"], false);
-        let counterfeit = DraftCandidate::identified_closure(
-            CandidateKind::Execute,
-            "/workspace/other",
-            DraftProvenance::StaticExecutableClosure,
-        )
-        .expect("candidate shape");
-        assert_eq!(
-            build_plan_draft(
-                &fixture_receipt(),
-                PlanDraftInputs {
-                    candidates: vec![counterfeit],
-                    identified_closure: vec![library, executable],
-                    path_scope: Some(fixture_scope()),
-                    ..PlanDraftInputs::default()
-                },
-            ),
-            Err(DraftError::CandidateInvalid)
-        );
+        for invalid in [
+            DraftCandidate::identified_closure(
+                CandidateKind::Execute,
+                "/workspace/other",
+                DraftProvenance::StaticExecutableClosure,
+            )
+            .expect("wrong-path candidate"),
+            DraftCandidate::identified_closure(
+                CandidateKind::Read,
+                "/workspace/tool",
+                DraftProvenance::StaticExecutableClosure,
+            )
+            .expect("static-read candidate"),
+            DraftCandidate::identified_closure(
+                CandidateKind::Read,
+                "/workspace/loader",
+                DraftProvenance::PlatformRequiredClosure,
+            )
+            .expect("interpreter-read candidate"),
+            DraftCandidate::identified_closure(
+                CandidateKind::Execute,
+                "/workspace/libfixture.so",
+                DraftProvenance::PlatformRequiredClosure,
+            )
+            .expect("library-execute candidate"),
+        ] {
+            assert_eq!(
+                build_plan_draft(
+                    &fixture_receipt(),
+                    PlanDraftInputs {
+                        candidates: vec![invalid],
+                        identified_closure: vec![
+                            library.clone(),
+                            executable.clone(),
+                            interpreter.clone(),
+                        ],
+                        path_scope: Some(fixture_scope()),
+                        ..PlanDraftInputs::default()
+                    },
+                ),
+                Err(DraftError::CandidateInvalid)
+            );
+        }
     }
 
     #[test]

@@ -20,8 +20,29 @@ RELEASE_OBSERVATION = (
 )
 
 
+def assert_static_scaffold_contract(command):
+    scaffold = command.split("fn load_static_scaffold", 1)[1].split(
+        "\nfn draft_inputs", 1
+    )[0]
+    for marker in [
+        "requested.as_os_str().is_empty() || requested.is_absolute()",
+        "selected.identity().role() != ArtifactRole::ProjectInput",
+        "let ResolvedReadPath::File(file) = selected else",
+        "file.identity().size() > MAX_STATIC_SCAFFOLD_BYTES",
+        ".read_bytes()",
+        "diagnostic.static-scaffold.identity-drift",
+        "serde_json::from_slice(&bytes)",
+        "report.host_profile.supports(architecture)",
+        "static_artifact_matches_file(&report.executable, target.executable())",
+        "static_artifact_matches_file(interpreter, loader)",
+        "static_artifact_matches_resolved(&dependency.selected, path)",
+    ]:
+        assert marker in scaffold
+
+
 def assert_command_contract(sources):
     command = sources["command"]
+    assert_static_scaffold_contract(command)
     for marker in [
         "parse_execution_plan_for_execution",
         "normalize_authority",
@@ -215,8 +236,39 @@ class DiagnosticCommandContractTests(unittest.TestCase):
                 1,
             ),
             self.sources["command"].replace(
-                "diagnostic.static-scaffold.dependency-not-declared",
-                "diagnostic.static-scaffold.allowed",
+                "requested.as_os_str().is_empty() || requested.is_absolute()",
+                "false",
+                1,
+            ),
+            self.sources["command"].replace(
+                "file.identity().size() > MAX_STATIC_SCAFFOLD_BYTES",
+                "false",
+                1,
+            ),
+            self.sources["command"].replace(
+                "let ResolvedReadPath::File(file) = selected else",
+                "let ResolvedReadPath::Directory(file) = selected else",
+                1,
+            ),
+            self.sources["command"].replace(
+                "let bytes = file\n        .read_bytes()",
+                "let bytes = file\n        .read_bytes_without_identity_check()",
+                1,
+            ),
+            self.sources["command"].replace(
+                "serde_json::from_slice(&bytes)",
+                "serde_json::from_value(serde_json::Value::Null)",
+                1,
+            ),
+            self.sources["command"].replace(
+                "report.host_profile.supports(architecture)", "true", 1
+            ),
+            self.sources["command"].replace(
+                "static_artifact_matches_file(interpreter, loader)", "true", 1
+            ),
+            self.sources["command"].replace(
+                "static_artifact_matches_resolved(&dependency.selected, path)",
+                "true",
                 1,
             ),
             self.sources["command"].replace(
