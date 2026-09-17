@@ -3040,6 +3040,33 @@ The reviewer found no other blocker. Credential values remained outside
 retained vectors and digests. Production crates were unchanged, so production
 service execution and launcher decoding remained rejected.
 
+## RT-5 service launcher correction preliminary approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `f98eb8f0108bbf68dfe2aba84644bf0d157f53aa`
+- **Reviewed head:** `f4a17fce48acd46618601edb7d757cf0ae528eca`
+- **Branch:** `codex/rt5-launcher-contract`
+- **Method:** Complete exact-range static protocol, schema, vector, checker,
+  mutation, claim, evidence, and roadmap review. The reviewer changed no files
+  and ran no builds or tests.
+- **Verdict:** **APPROVE**
+- **Maintainer endorsement:** **ENDORSED FOR RESTACKING ONLY**. This approval
+  confirms the stacked subject, but it is not a merge authorization. A fresh
+  exact-head review is required after the preceding lifecycle and observation
+  waves merge and this subject is restacked on admitted `main`.
+
+The reviewer confirmed that the descriptor-overlap and close-range mutations
+refresh the installed service and dependent install and service identities, so
+they reach the intended local descriptor guards. The early-credential mutation
+refreshes the installed, release, and transient identities and reaches the
+pre-acknowledgement environment guard. A separate stale complete-install
+digest mutation remains and specifically falsifies complete-request binding.
+
+The ordered transcript, whole-frame bound, schema, generated vectors, checker,
+transient credential-value exclusion, claim, evidence, and documentation agree.
+No production crate changed, so production service execution and launcher
+decoding remain rejected. The reviewer found no blocking finding.
+
 ## RT-5 service observation preliminary review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
