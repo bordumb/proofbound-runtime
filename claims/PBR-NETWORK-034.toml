@@ -11,7 +11,7 @@ evidence = [
 ]
 assumptions = []
 open_obligations = [
-  "Add formal state-transition and selected Rust refinement evidence for the admitted pure lifecycle subject.",
+  "Admit the formal state-transition theorem and add selected Rust refinement evidence for the pure lifecycle subject.",
   "Connect each effectful connector and supervisor operation to the matching transition without exposing an unobserved fallback.",
   "Independently verify the complete transition and terminal-observation record in each reusable receipt.",
 ]
@@ -25,5 +25,7 @@ source_roots = [
   "crates/proofbound-runtime-core/src/lib.rs",
   "crates/proofbound-runtime-core/src/service_lifecycle.rs",
   "docs/specs/0016_authenticated_service_session.md",
+  "formal/ProofboundRuntime/Claims/ServiceLifecycle.lean",
+  "formal/ProofboundRuntime/ServiceLifecycle.lean",
   "proofbound/evidence/authenticated-service-lifecycle-contract.toml",
 ]
