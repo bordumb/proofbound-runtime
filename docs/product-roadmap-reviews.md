@@ -2983,6 +2983,34 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-8 consolidated object, candidate, and command approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `cddd8dde189c6596b77be99fd84cbc49d1fc70a8`
+- **Reviewed head:** `f1ed2e0b9e159c2eb72a9c42ad04cf6910d232bd`
+- **Branch:** `codex/rt8-object-resolution-final`
+- **Method:** Read-only exact-range security, implementation, evidence, and
+  documentation review. The reviewer changed no files and ran no builds or
+  tests.
+- **Findings:** None remain after the reviewed correction commits.
+- **Verdict:** **APPROVE**
+
+The reviewer separately evaluated `PBR-OBSERVER-029` kernel-selected object
+resolution, `PBR-OBSERVER-030` advisory denied-path candidates, and
+`PBR-OBSERVER-031` command and release binding. The final review confirmed
+stopped-tracee and exec-reconciliation order, absence of resume before object
+or candidate observation, causal rejection of guard, disconnect, reorder, and
+release-closure mutants, preservation of all seven active runtime assumptions,
+complete command and release/native-observation source closure, production
+dependency isolation, and agreement among the claims, ADR, specification,
+assurance plan, and public source documentation.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`cddd8dde189c6596b77be99fd84cbc49d1fc70a8..f1ed2e0b9e159c2eb72a9c42ad04cf6910d232bd`.
+The following approval-only commit changes no reviewed production, checker,
+claim, assumption, specification, ADR, or evidence bytes. Any later subject
+change requires a new exact-head review.
+
 ## RT-8 diagnostic lifecycle restacked re-review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
