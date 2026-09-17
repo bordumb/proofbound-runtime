@@ -96,6 +96,8 @@ class ConnectorProcessSourceContractTests(unittest.TestCase):
             '"--connector-sha256"',
             '"--runtime-closure-sha256"',
             '"--resolver-configuration-sha256"',
+            "ConnectorProcessGeneration::new(",
+            "ServiceChannelId::new(parse_hex_array(&arguments[17])?)",
             "descriptors.windows(2).any(|pair| pair[0] == pair[1])",
         )
         require_causal_guards(body, guards)

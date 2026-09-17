@@ -1,6 +1,7 @@
 //! Runs one identified connector as a separately supervised process.
 
 use core::fmt;
+use core::num::NonZeroU64;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::path::{Component, Path, PathBuf};
 use std::time::{Duration, Instant};
@@ -35,6 +36,47 @@ pub enum ServiceArtifactRole {
     ResolverConfiguration,
     /// Contains the caller-selected TLS trust roots.
     TrustRootSet,
+}
+
+/// Contains one nonzero connector-process generation.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct ConnectorProcessGeneration(NonZeroU64);
+
+impl ConnectorProcessGeneration {
+    /// Validates one process generation.
+    pub const fn new(value: u64) -> Result<Self, ConnectorProcessError> {
+        match NonZeroU64::new(value) {
+            Some(value) => Ok(Self(value)),
+            None => Err(ConnectorProcessError::BindingInvalid),
+        }
+    }
+
+    /// Returns the nonzero generation value.
+    #[must_use]
+    pub const fn get(self) -> u64 {
+        self.0.get()
+    }
+}
+
+/// Contains one nonzero private service-channel identity.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct ServiceChannelId([u8; 16]);
+
+impl ServiceChannelId {
+    /// Rejects the reserved all-zero channel identity.
+    pub fn new(value: [u8; 16]) -> Result<Self, ConnectorProcessError> {
+        if value == [0; 16] {
+            Err(ConnectorProcessError::BindingInvalid)
+        } else {
+            Ok(Self(value))
+        }
+    }
+
+    /// Returns the exact channel-identity bytes.
+    #[must_use]
+    pub const fn as_bytes(&self) -> &[u8; 16] {
+        &self.0
+    }
 }
 
 impl ServiceArtifactRole {
@@ -206,8 +248,8 @@ pub struct ConnectorBootstrap {
     control_descriptor: u32,
     execution_id: ExecutionId,
     policy_digest: Sha256Digest,
-    process_generation: u64,
-    channel_id: [u8; 16],
+    process_generation: ConnectorProcessGeneration,
+    channel_id: ServiceChannelId,
     plan_digest: Sha256Digest,
     trust_root_digest: Sha256Digest,
     connector_digest: Sha256Digest,
@@ -282,11 +324,12 @@ pub fn parse_connector_bootstrap(
     let execution_bytes = parse_hex_array::<16>(&arguments[11])?;
     let execution_id = ExecutionId::from_bytes(execution_bytes)
         .map_err(|_| ConnectorProcessError::BootstrapInvalid)?;
-    let process_generation = arguments[15]
-        .parse::<u64>()
-        .ok()
-        .filter(|generation| *generation != 0)
-        .ok_or(ConnectorProcessError::BootstrapInvalid)?;
+    let process_generation = ConnectorProcessGeneration::new(
+        arguments[15]
+            .parse::<u64>()
+            .map_err(|_| ConnectorProcessError::BootstrapInvalid)?,
+    )
+    .map_err(|_| ConnectorProcessError::BootstrapInvalid)?;
     let bootstrap = ConnectorBootstrap {
         plan_descriptor: parse_descriptor(&arguments[3])?,
         trust_root_descriptor: parse_descriptor(&arguments[5])?,
@@ -295,7 +338,8 @@ pub fn parse_connector_bootstrap(
         execution_id,
         policy_digest: parse_digest(&arguments[13])?,
         process_generation,
-        channel_id: parse_hex_array(&arguments[17])?,
+        channel_id: ServiceChannelId::new(parse_hex_array(&arguments[17])?)
+            .map_err(|_| ConnectorProcessError::BootstrapInvalid)?,
         plan_digest: parse_digest(&arguments[19])?,
         trust_root_digest: parse_digest(&arguments[21])?,
         connector_digest: parse_digest(&arguments[23])?,
@@ -354,8 +398,8 @@ impl ConnectorFailure {
 pub struct ConnectorReady {
     execution_id: ExecutionId,
     policy_digest: Sha256Digest,
-    process_generation: u64,
-    channel_id: [u8; 16],
+    process_generation: ConnectorProcessGeneration,
+    channel_id: ServiceChannelId,
     setup_binding_digest: Sha256Digest,
     dns_observation_digest: Sha256Digest,
     selected_endpoint: SocketAddr,
@@ -381,13 +425,13 @@ impl ConnectorReady {
 
     /// Returns the nonzero supervisor generation.
     #[must_use]
-    pub const fn process_generation(self) -> u64 {
+    pub const fn process_generation(self) -> ConnectorProcessGeneration {
         self.process_generation
     }
 
     /// Returns the private channel identifier.
     #[must_use]
-    pub const fn channel_id(self) -> [u8; 16] {
+    pub const fn channel_id(self) -> ServiceChannelId {
         self.channel_id
     }
 
@@ -485,8 +529,8 @@ pub struct PreparedConnectorProcess<'a> {
     plan: ServiceExecutionPlan,
     execution_id: ExecutionId,
     policy_digest: Sha256Digest,
-    process_generation: u64,
-    channel_id: [u8; 16],
+    process_generation: ConnectorProcessGeneration,
+    channel_id: ServiceChannelId,
     runtime_closure_digest: Sha256Digest,
 }
 
@@ -500,13 +544,10 @@ pub fn prepare_connector_process<'a>(
     runtime_closure: &'a [ResolvedServiceArtifact],
     execution_id: ExecutionId,
     policy_digest: Sha256Digest,
-    process_generation: u64,
-    channel_id: [u8; 16],
+    process_generation: ConnectorProcessGeneration,
+    channel_id: ServiceChannelId,
     architecture: Architecture,
 ) -> Result<PreparedConnectorProcess<'a>, ConnectorProcessError> {
-    if process_generation == 0 || channel_id == [0; 16] {
-        return Err(ConnectorProcessError::BindingInvalid);
-    }
     require_service_role(connector, ServiceArtifactRole::ConnectorExecutable)?;
     require_service_role(trust_root, ServiceArtifactRole::TrustRootSet)?;
     require_service_role(
@@ -1137,8 +1178,8 @@ fn bootstrap_arguments(
     control_fd: i32,
     execution_id: ExecutionId,
     policy_digest: Sha256Digest,
-    process_generation: u64,
-    channel_id: [u8; 16],
+    process_generation: ConnectorProcessGeneration,
+    channel_id: ServiceChannelId,
     plan_digest: Sha256Digest,
     trust_root_digest: Sha256Digest,
     connector_digest: Sha256Digest,
@@ -1161,9 +1202,9 @@ fn bootstrap_arguments(
         "--policy-sha256".to_owned(),
         policy_digest.to_hex(),
         "--process-generation".to_owned(),
-        process_generation.to_string(),
+        process_generation.get().to_string(),
         "--channel-id".to_owned(),
-        hex(&channel_id),
+        hex(channel_id.as_bytes()),
         "--plan-sha256".to_owned(),
         plan_digest.to_hex(),
         "--trust-root-sha256".to_owned(),
@@ -1292,8 +1333,8 @@ fn encode_ready(ready: ConnectorReady) -> Vec<u8> {
     bytes.push(READY_REPORT);
     bytes.extend_from_slice(ready.execution_id.as_bytes());
     bytes.extend_from_slice(ready.policy_digest.as_bytes());
-    bytes.extend_from_slice(&ready.process_generation.to_be_bytes());
-    bytes.extend_from_slice(&ready.channel_id);
+    bytes.extend_from_slice(&ready.process_generation.get().to_be_bytes());
+    bytes.extend_from_slice(ready.channel_id.as_bytes());
     bytes.extend_from_slice(ready.setup_binding_digest.as_bytes());
     bytes.extend_from_slice(ready.dns_observation_digest.as_bytes());
     bytes.extend_from_slice(&encode_endpoint(ready.selected_endpoint));
@@ -1344,8 +1385,12 @@ fn decode_report(bytes: &[u8]) -> Result<ConnectorReport, ConnectorProcessError>
             Ok(ConnectorReport::Ready(ConnectorReady {
                 execution_id,
                 policy_digest: Sha256Digest::from_bytes(array_at(bytes, 25)?),
-                process_generation: u64::from_be_bytes(array_at(bytes, 57)?),
-                channel_id: array_at(bytes, 65)?,
+                process_generation: ConnectorProcessGeneration::new(u64::from_be_bytes(array_at(
+                    bytes, 57,
+                )?))
+                .map_err(|_| ConnectorProcessError::Protocol)?,
+                channel_id: ServiceChannelId::new(array_at(bytes, 65)?)
+                    .map_err(|_| ConnectorProcessError::Protocol)?,
                 setup_binding_digest: Sha256Digest::from_bytes(array_at(bytes, 81)?),
                 dns_observation_digest: Sha256Digest::from_bytes(array_at(bytes, 113)?),
                 selected_endpoint: decode_endpoint(array_at(bytes, 145)?)?,
@@ -1401,8 +1446,8 @@ fn require_ready_binding(
     ready: ConnectorReady,
     execution_id: ExecutionId,
     policy_digest: Sha256Digest,
-    process_generation: u64,
-    channel_id: [u8; 16],
+    process_generation: ConnectorProcessGeneration,
+    channel_id: ServiceChannelId,
     expected_setup_binding: Sha256Digest,
 ) -> Result<(), ConnectorProcessError> {
     if ready.execution_id != execution_id
@@ -1456,8 +1501,8 @@ fn validate_terminal(
 fn setup_binding_digest(
     execution_id: ExecutionId,
     policy_digest: Sha256Digest,
-    process_generation: u64,
-    channel_id: [u8; 16],
+    process_generation: ConnectorProcessGeneration,
+    channel_id: ServiceChannelId,
     plan_digest: Sha256Digest,
     trust_root_digest: Sha256Digest,
     connector_digest: Sha256Digest,
@@ -1468,8 +1513,8 @@ fn setup_binding_digest(
     hasher.update(b"proofbound-runtime-connector-setup/1\0");
     hasher.update(execution_id.as_bytes());
     hasher.update(policy_digest.as_bytes());
-    hasher.update(process_generation.to_be_bytes());
-    hasher.update(channel_id);
+    hasher.update(process_generation.get().to_be_bytes());
+    hasher.update(channel_id.as_bytes());
     hasher.update(plan_digest.as_bytes());
     hasher.update(trust_root_digest.as_bytes());
     hasher.update(connector_digest.as_bytes());
@@ -1616,6 +1661,14 @@ mod tests {
         .expect("fixture identifier is valid")
     }
 
+    fn generation(value: u64) -> ConnectorProcessGeneration {
+        ConnectorProcessGeneration::new(value).expect("fixture generation is nonzero")
+    }
+
+    fn channel_id(byte: u8) -> ServiceChannelId {
+        ServiceChannelId::new([byte; 16]).expect("fixture channel identity is nonzero")
+    }
+
     #[test]
     fn bootstrap_is_closed_and_descriptor_set_is_unique() {
         let arguments = bootstrap_arguments(
@@ -1625,8 +1678,8 @@ mod tests {
             6,
             execution_id(),
             Sha256Digest::from_bytes([1; 32]),
-            7,
-            [2; 16],
+            generation(7),
+            channel_id(2),
             Sha256Digest::from_bytes([3; 32]),
             Sha256Digest::from_bytes([4; 32]),
             Sha256Digest::from_bytes([5; 32]),
@@ -1653,8 +1706,8 @@ mod tests {
         let ready = ConnectorReady {
             execution_id: execution_id(),
             policy_digest: Sha256Digest::from_bytes([1; 32]),
-            process_generation: 1,
-            channel_id: [2; 16],
+            process_generation: generation(1),
+            channel_id: channel_id(2),
             setup_binding_digest: Sha256Digest::from_bytes([8; 32]),
             dns_observation_digest: Sha256Digest::from_bytes([3; 32]),
             selected_endpoint: "192.0.2.10:443".parse().expect("valid endpoint"),
@@ -1705,8 +1758,8 @@ mod tests {
         let ready = ConnectorReady {
             execution_id: execution_id(),
             policy_digest: Sha256Digest::from_bytes([1; 32]),
-            process_generation: 3,
-            channel_id: [2; 16],
+            process_generation: generation(3),
+            channel_id: channel_id(2),
             setup_binding_digest: Sha256Digest::from_bytes([8; 32]),
             dns_observation_digest: Sha256Digest::from_bytes([3; 32]),
             selected_endpoint: "[2001:db8::10]:443".parse().expect("valid endpoint"),
@@ -1721,8 +1774,8 @@ mod tests {
                 ready,
                 execution_id(),
                 Sha256Digest::from_bytes([1; 32]),
-                3,
-                [2; 16],
+                generation(3),
+                channel_id(2),
                 Sha256Digest::from_bytes([8; 32]),
             )
             .is_ok()
@@ -1732,8 +1785,8 @@ mod tests {
                 ready,
                 execution_id(),
                 Sha256Digest::from_bytes([9; 32]),
-                3,
-                [2; 16],
+                generation(3),
+                channel_id(2),
                 Sha256Digest::from_bytes([8; 32]),
             ),
             Err(ConnectorProcessError::BindingInvalid)
@@ -1743,8 +1796,8 @@ mod tests {
                 ready,
                 execution_id(),
                 Sha256Digest::from_bytes([1; 32]),
-                4,
-                [2; 16],
+                generation(4),
+                channel_id(2),
                 Sha256Digest::from_bytes([8; 32]),
             ),
             Err(ConnectorProcessError::BindingInvalid)
@@ -1754,8 +1807,8 @@ mod tests {
                 ready,
                 execution_id(),
                 Sha256Digest::from_bytes([1; 32]),
-                3,
-                [8; 16],
+                generation(3),
+                channel_id(8),
                 Sha256Digest::from_bytes([8; 32]),
             ),
             Err(ConnectorProcessError::BindingInvalid)
@@ -1765,8 +1818,8 @@ mod tests {
                 ready,
                 execution_id(),
                 Sha256Digest::from_bytes([1; 32]),
-                3,
-                [2; 16],
+                generation(3),
+                channel_id(2),
                 Sha256Digest::from_bytes([9; 32]),
             ),
             Err(ConnectorProcessError::BindingInvalid)
@@ -1778,8 +1831,8 @@ mod tests {
         let ready = ConnectorReady {
             execution_id: execution_id(),
             policy_digest: Sha256Digest::from_bytes([1; 32]),
-            process_generation: 3,
-            channel_id: [2; 16],
+            process_generation: generation(3),
+            channel_id: channel_id(2),
             setup_binding_digest: Sha256Digest::from_bytes([8; 32]),
             dns_observation_digest: Sha256Digest::from_bytes([3; 32]),
             selected_endpoint: "192.0.2.10:443".parse().expect("valid endpoint"),

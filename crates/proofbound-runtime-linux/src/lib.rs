@@ -27,9 +27,9 @@ pub use cgroup::{
 };
 pub use connector_process::{
     ConnectorBootstrap, ConnectorFailure, ConnectorFailureStage, ConnectorProcessError,
-    ConnectorReady, ConnectorTerminal, PreparedConnectorProcess, ReadyConnectorProcess,
-    ResolvedServiceArtifact, ServiceArtifactIdentity, ServiceArtifactRole,
-    parse_connector_bootstrap, prepare_connector_process, run_connector_process,
+    ConnectorProcessGeneration, ConnectorReady, ConnectorTerminal, PreparedConnectorProcess,
+    ReadyConnectorProcess, ResolvedServiceArtifact, ServiceArtifactIdentity, ServiceArtifactRole,
+    ServiceChannelId, parse_connector_bootstrap, prepare_connector_process, run_connector_process,
 };
 pub use execution::{ExecutionSetupError, fresh_execution_id};
 pub use inventory::{ResolvedDirectory, ResolvedReadPath};
