@@ -137,7 +137,7 @@ impl ServiceExecutionPlan {
 
 enum ParsedExecutionPlan {
     Deny(ExecutionPlan),
-    Service(ServiceExecutionPlan),
+    Service(Box<ServiceExecutionPlan>),
 }
 
 impl ExecutionPlan {
@@ -357,7 +357,7 @@ pub fn parse_execution_plan_for_execution(input: &[u8]) -> Result<ExecutionPlan,
 /// native connector, launcher, receipt, and verifier waves are admitted.
 pub fn parse_service_execution_plan(input: &[u8]) -> Result<ServiceExecutionPlan, PlanError> {
     match parse_execution_plan_contract_v2(input)? {
-        ParsedExecutionPlan::Service(plan) => Ok(plan),
+        ParsedExecutionPlan::Service(plan) => Ok(*plan),
         ParsedExecutionPlan::Deny(_) => Err(PlanError::UnsupportedNetwork),
     }
 }
@@ -439,10 +439,10 @@ fn parse_execution_plan_contract_v2(input: &[u8]) -> Result<ParsedExecutionPlan,
     Ok(match network {
         ParsedNetworkAuthority::Deny => ParsedExecutionPlan::Deny(base),
         ParsedNetworkAuthority::Service(service_session) => {
-            ParsedExecutionPlan::Service(ServiceExecutionPlan {
+            ParsedExecutionPlan::Service(Box::new(ServiceExecutionPlan {
                 base,
-                service_session,
-            })
+                service_session: *service_session,
+            }))
         }
     })
 }
@@ -634,7 +634,7 @@ fn parse_network_authority(
         .transpose()?;
     require_empty(network)?;
 
-    Ok(ParsedNetworkAuthority::Service(
+    Ok(ParsedNetworkAuthority::Service(Box::new(
         AuthenticatedServiceSession::new(
             service_name,
             service_port,
@@ -647,12 +647,12 @@ fn parse_network_authority(
             child_descriptor,
             credential_source,
         )?,
-    ))
+    )))
 }
 
 enum ParsedNetworkAuthority {
     Deny,
-    Service(AuthenticatedServiceSession),
+    Service(Box<AuthenticatedServiceSession>),
 }
 
 fn parse_credential_source(
@@ -672,11 +672,9 @@ fn parse_credential_source(
 }
 
 fn take_optional(map: &mut CborMap, key: &str) -> Option<CborValue> {
-    if let Some(index) = map.iter().position(|(candidate, _)| candidate == key) {
-        Some(map.remove(index).1)
-    } else {
-        None
-    }
+    map.iter()
+        .position(|(candidate, _)| candidate == key)
+        .map(|index| map.remove(index).1)
 }
 
 fn append_paths(

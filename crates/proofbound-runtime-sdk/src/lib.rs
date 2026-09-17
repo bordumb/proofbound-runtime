@@ -42,7 +42,7 @@ pub enum NetworkAuthorityV2Input {
     /// Denies network access.
     Deny,
     /// Permits one bounded connector-owned authenticated service session.
-    AuthenticatedServiceSession(ServiceSessionV2Input),
+    AuthenticatedServiceSession(Box<ServiceSessionV2Input>),
 }
 
 /// Selects one numeric resolver address.
@@ -816,7 +816,7 @@ mod tests {
     }
 
     fn service_session() -> NetworkAuthorityV2Input {
-        NetworkAuthorityV2Input::AuthenticatedServiceSession(ServiceSessionV2Input {
+        NetworkAuthorityV2Input::AuthenticatedServiceSession(Box::new(ServiceSessionV2Input {
             service: "api.anthropic.com".to_owned(),
             port: 443,
             resolution: ResolutionV2Input {
@@ -850,7 +850,7 @@ mod tests {
                 service: "api.anthropic.com".to_owned(),
                 environment: "API_KEY".to_owned(),
             }),
-        })
+        }))
     }
 
     #[test]
