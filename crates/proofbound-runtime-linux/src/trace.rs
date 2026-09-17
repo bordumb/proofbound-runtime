@@ -850,7 +850,7 @@ impl TraceReady {
             self.session.record_root_identity_stable_handle();
             Ok(ActiveTrace {
                 session: self.session,
-                processes: BTreeMap::from([(root, TraceeState::observing(root))]),
+                processes: BTreeMap::from([(root, TraceeState::released_mid_syscall(root))]),
                 process_handles: BTreeMap::from([(root, process_handle)]),
                 held_process: None,
                 must_drain: false,
@@ -2360,6 +2360,16 @@ struct ExecIdentityChange {
 }
 
 impl TraceeState {
+    const fn released_mid_syscall(thread_group: TraceProcessId) -> Self {
+        Self {
+            thread_group,
+            awaiting_initial_stop: false,
+            // The trusted launcher was stopped inside its release receive. The
+            // first observed stop is that pre-observation syscall's exit.
+            pending: Some(PendingTraceSyscall::Ignored),
+        }
+    }
+
     const fn observing(thread_group: TraceProcessId) -> Self {
         Self {
             thread_group,
@@ -3413,6 +3423,17 @@ mod tests {
         );
 
         std::fs::remove_dir_all(root).expect("remove candidate fixture");
+    }
+
+    #[test]
+    fn released_trace_state_ignores_only_the_inflight_launcher_syscall() {
+        let root = TraceProcessId::new(41).expect("positive process identity");
+        let mut state = TraceeState::released_mid_syscall(root);
+
+        assert_eq!(state.thread_group, root);
+        assert!(!state.awaiting_initial_stop);
+        assert_eq!(state.pending.take(), Some(PendingTraceSyscall::Ignored));
+        assert_eq!(state.pending, None);
     }
 
     #[test]

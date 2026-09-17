@@ -381,7 +381,10 @@ with open(receipt_path, encoding="utf-8") as source:
 with open(draft_path, encoding="utf-8") as source:
     draft = json.load(source)
 assert result["schema"] == "proofbound-runtime-diagnose-result/1"
-assert result["completion"] == "complete"
+assert result["completion"] == "complete", {
+    "result": result,
+    "gaps": receipt.get("gaps"),
+}
 assert receipt["schema"] == "proofbound-runtime-diagnostic-receipt/1"
 assert receipt["execution_profile"] == "diagnostic"
 assert receipt["safe_policy"] is False

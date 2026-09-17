@@ -200,6 +200,8 @@ def assert_lifecycle_contract(
         "if self.session.deadline.expired()",
         "trace_syscall(root.get())",
     )
+    if "TraceeState::released_mid_syscall(root)" not in release:
+        raise AssertionError("release does not account for its in-flight launcher syscall")
     if "self.session.deadline" not in next_event:
         raise AssertionError(
             "active observation does not use the stored execution deadline"
@@ -454,7 +456,7 @@ EXPECTED_FILES = {
     "supervisor": "5f1b80181b01c3ea189643995617aeab60f390c1f5fc6930cf0acd577b88cdd8",
     "sys": "8b7dfd2fee307d937f71dcbab8098d026715dc2e4f7d03c72fa9ee7bd4734168",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "f3bb71a971916d244963bd78d87fc4f4f00ca98c65f37b5f7d7c48fc986057e4",
+    "trace": "a0067dbfcaaa940db573e5f24db883e3b6c3d50e94f4a681533e9c2de240f076",
     "unit-evidence": "47394cbf7d03c115c3140f6a593c7ab76a031e34594a235b87fd0d7de555b51c",
 }
 
@@ -557,6 +559,18 @@ class DiagnosticLifecycleContractTests(unittest.TestCase):
                     "self.cgroup\n            .revalidate_fresh()\n"
                     "            .map_err(|_| TraceStartupError::CgroupNotFresh)?;",
                     "",
+                    1,
+                ),
+                self.adapter,
+                self.cgroup,
+                self.linux_lib,
+                self.adapter_lib,
+            ),
+            (
+                "release loses its in-flight launcher syscall",
+                self.trace.replace(
+                    "TraceeState::released_mid_syscall(root)",
+                    "TraceeState::observing(root)",
                     1,
                 ),
                 self.adapter,
