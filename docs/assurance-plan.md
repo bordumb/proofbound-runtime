@@ -46,6 +46,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-NETWORK-035` | Tier 1 baseline admitted on exact Runtime main `2ddb4a9`; current receipt-integration closure pending | PR 32 run `35248987742` and exact-main run `35254613508` admitted the first closed successful-session fragment. The current branch strengthens its receipt inputs without claiming production integration or network effects. |
 | `PBR-NETWORK-036` | Tier 1 baseline admitted on exact Runtime main `2ddb4a9`; current retained-prefix closure pending | PR 32 run `35248987742` and exact-main run `35254613508` admitted the first launcher transcript. The current branch adds receipt-safe retained-prefix validation without changing the production launcher or claiming an installed effect. |
 | `PBR-NETWORK-037` | Tier 1 proposed receipt contract pending first exact admission | Closed success and failure fragments bind expected execution context, phase-appropriate retained launcher identities, observation or typed failure, reuse eligibility, assumptions, trusted-computing-base digests, and cleanup without claiming production integration or network effects. |
+| `PBR-NETWORK-038` | Tier 0 proposed connector engine pending first exact admission | The isolated connector crate implements bounded TCP DNS parsing, canonical answer selection, exact-name TLS setup without resumption or early data, endpoint attempts, opaque directional byte limits, and one no-reconnect channel loop. Process supervision, launcher binding, native evidence, receipts, and release artifacts remain open. |
 
 ### Current changed subjects pending exact admission
 
@@ -1098,6 +1099,30 @@ unchanged and reject this fragment. The Python checker is contract evidence,
 not the shipping verifier. Production integration, separate decoding and
 verification, composition, acceptance, network effects, native attacks, and
 release-artifact binding remain open.
+
+## PBR-NETWORK-038
+
+The proposed connector engine is isolated in
+`crates/proofbound-runtime-connector`. Its resolver sends length-prefixed DNS
+queries only to the plan's numeric TCP resolver. The parser rejects transaction,
+question, truncation, status, compression-loop, name, address-length, zero-TTL,
+and trailing-data violations. It retains response identities instead of packet
+contents, builds one bounded loop-free CNAME chain, and sorts unique endpoints
+as canonical IPv4 followed by IPv6.
+
+The TLS path loads only caller-supplied PEM trust-root bytes, configures rustls
+with the declared minimum version, disables resumption and early data,
+authenticates the declared DNS service name, rejects expired answers and excess
+handshake bytes, and retains a length-delimited peer-chain identity. The
+channel path treats application bytes as opaque, applies independent
+directional plaintext limits and one session deadline, uses no reconnect, and
+does not interpret requests or responses.
+
+This is Tier 0 source evidence. The production CLI still rejects the
+service-session authority. The source tests do not establish behavior of a
+resolver, TLS peer, trust-root artifact binding, connector process, launcher, child filter, cleanup path,
+receipt producer, verifier, or release artifact. Those obligations remain
+explicit and block product availability.
 
 ## Bounded-domain declaration guard
 

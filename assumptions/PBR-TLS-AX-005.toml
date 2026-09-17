@@ -4,8 +4,8 @@ statement = "The identified TLS implementation, cryptographic primitives, trust-
 category = "cryptographic-library"
 owner = "Proofbound Runtime deployment operator"
 rationale = "Runtime can constrain configuration and retain implementation, trust-root, certificate-chain, and handshake identities, but bounded source and native checks do not prove the cryptographic implementation, public-key infrastructure, or remote peer."
-scope = "Only the TLS interpretation of the proposed PBR-NETWORK-037 service-session receipt contract. Revocation is explicitly not checked, session resumption and early data are denied, and remote application behavior is outside scope."
-affected_claims = ["PBR-NETWORK-037"]
+scope = "Only the TLS effects of the proposed PBR-NETWORK-038 connector engine and the TLS interpretation retained by the proposed PBR-NETWORK-037 receipt contract. Revocation is explicitly not checked, session resumption and early data are denied, and remote application behavior is outside scope."
+affected_claims = ["PBR-NETWORK-037", "PBR-NETWORK-038"]
 review_evidence = [
   "docs/specs/0016_authenticated_service_session.md#33-tls-policy",
   "docs/threat-model.md#trusted-computing-base",

@@ -94,6 +94,11 @@ execution and production receipt acceptance remain disabled.
 
 ### 1.2 Implement the connector
 
+Wave status: `PBR-NETWORK-038` now registers the isolated connector-engine
+candidate and its Tier 0 source tests. Keep every checkbox below open until the
+engine runs as the exact identified production process and the relevant
+behavior passes hosted and native admission.
+
 - [ ] Add a minimal connector executable with one purpose: establish one
   bounded authenticated TLS session for one normalized service identity.
 - [ ] Resolve only the declared service name through the registered resolver

@@ -1,0 +1,43 @@
+schema = "proofbound-claim/1"
+id = "PBR-NETWORK-038"
+title = "Single-service connector bounds DNS and authenticates the declared TLS name"
+statement = "The proposed connector engine sends DNS only to the declared numeric resolver over TCP, validates query-bound responses and a bounded loop-free CNAME and canonical address result, attempts only that ordered answer prefix, authenticates the exact declared DNS service name with only caller-supplied trust-root bytes and the declared minimum TLS version while disabling resumption and early data, and exposes only one duration-bounded and directionally byte-bounded opaque plaintext session without reconnect or application parsing."
+public_language = "Runtime contains a proposed production connector engine for one authenticated service session. Source tests cover its closed error vocabulary, DNS wire parser, identity and TTL rejection, canonical address order, trust-root fail-closed behavior, and endpoint-result classification. This is Tier 0 source evidence. It does not yet establish a supervised connector process, launcher binding, child syscall isolation, native enforcement, receipt production, or release-artifact behavior."
+subject = "rust:proofbound_runtime_connector::{resolve_service,authenticate_service,proxy_authenticated_channel}"
+profile = "ledger"
+tier = 0
+evidence = [
+  "example-test:authenticated-service-connector-engine",
+]
+assumptions = [
+  "PBR-DNS-AX-004",
+  "PBR-TLS-AX-005",
+]
+open_obligations = [
+  "Run the connector as one separately identified and supervised process with an exact executable and runtime-closure identity.",
+  "Resolve, revalidate, and bind the declared resolver-configuration and trust-root artifacts before supplying their bytes to the connector engine.",
+  "Bind successful and failed DNS, endpoint, TLS, channel, counter, and cleanup observations into the service launcher acknowledgement and production receipt.",
+  "Run the complete resolver, TLS, inherited-channel, direct-network, limit, crash, and cleanup attack corpus on x86_64 and aarch64 release artifacts.",
+  "Independently review the rustls version, crypto-provider configuration, trust-root parsing, DNS parser, proxy loop, and every effectful error path.",
+]
+out_of_scope = [
+  "Any claim that the production CLI accepts service-session plans or that a launcher or child uses this engine.",
+  "Correctness of the resolver, DNS transport, rustls, ring, certificate authorities, remote service, kernel, hardware, or host operator.",
+  "HTTP, LLM, request, response, credential, redirect, proxy, multiple-session, reconnect, QUIC, or application-operation semantics.",
+]
+source_roots = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "assumptions/PBR-DNS-AX-004.toml",
+  "assumptions/PBR-TLS-AX-005.toml",
+  "claims/PBR-NETWORK-038.toml",
+  "crates/proofbound-runtime-connector/Cargo.toml",
+  "crates/proofbound-runtime-connector/src/dns.rs",
+  "crates/proofbound-runtime-connector/src/lib.rs",
+  "crates/proofbound-runtime-connector/src/tls.rs",
+  "crates/proofbound-runtime-core/src/network.rs",
+  "deny.toml",
+  "docs/adr/0004-authenticated-service-session.md",
+  "docs/specs/0016_authenticated_service_session.md",
+  "proofbound/evidence/authenticated-service-connector-engine.toml",
+]

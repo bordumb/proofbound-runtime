@@ -1099,6 +1099,18 @@ a phase-consistent reason, boundary and release state, and cleanup result.
 Production receipt, separate Rust verifier, composition, acceptance, effects,
 native attacks, and release-artifact linkage remain open.
 
+**2026-09-17 connector-engine checkpoint:** `PBR-NETWORK-038` registers the
+first isolated Rust connector engine at Tier 0. The candidate sends bounded DNS
+only to the declared numeric TCP resolver, validates response and CNAME
+structure, selects the canonical answer prefix, authenticates the exact service
+name with caller-supplied trust-root bytes and the declared minimum TLS version, disables TLS
+resumption and early data, and proxies only opaque directionally bounded bytes
+without reconnect. The production CLI still rejects the authority. A separately
+identified connector process, resolver and trust-root artifact binding,
+supervisor and launcher binding, credential
+release, native attacks, receipt integration, and release-artifact evidence
+remain required before any product claim is available.
+
 ### RT-5.2 Keep the security boundary explicit
 
 - Put raw syscalls only in `sys.rs`.
