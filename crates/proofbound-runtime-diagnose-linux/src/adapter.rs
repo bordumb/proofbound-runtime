@@ -186,6 +186,7 @@ impl ReadyObserver {
         let capture_limits = TraceCaptureLimits::new(
             self.protocol.path_byte_limit(),
             self.protocol.socket_address_byte_limit(),
+            self.protocol.symlink_hop_limit(),
             self.protocol.tracee_string_byte_limit(),
         )?;
         let mut protocol = self.protocol;
@@ -325,7 +326,7 @@ impl ActiveObserver {
             });
         }
         Ok(ActiveObserverStep::Continue {
-            observer: self,
+            observer: Box::new(self),
             event,
         })
     }
@@ -346,7 +347,7 @@ pub enum ActiveObserverStep {
     /// Observation can continue with the returned stopped event already recorded.
     Continue {
         /// The coupled observer for the next consuming step.
-        observer: ActiveObserver,
+        observer: Box<ActiveObserver>,
         /// The complete event recorded by the pure protocol.
         event: ActiveTraceEvent,
     },

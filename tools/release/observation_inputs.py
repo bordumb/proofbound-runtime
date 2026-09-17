@@ -20,6 +20,7 @@ OBSERVATIONS = (
     ("PBR-RUN-007", "runtime-release", "pbr"),
     ("PBR-SCAFFOLD-013", "runtime-release", "pbr"),
     ("PBR-SEQUENCE-003", "launcher-release", "pbr-native-launcher"),
+    ("PBR-OBSERVER-031", "diagnostic-release", "pbr-diagnose"),
     ("PBR-VERIFY-006", "verifier-release", "pbr-verify"),
 )
 PROCEDURE = Path("crates/proofbound-runtime-compose/tests/release_observation.rs")

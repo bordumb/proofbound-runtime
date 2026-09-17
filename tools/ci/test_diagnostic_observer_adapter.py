@@ -66,7 +66,7 @@ def body_sha256(source: str, signature: str) -> str:
 
 
 EXPECTED_LOAD_BEARING_BODIES = {
-    "active-next-event": "98e8b121729094ec65ba7fedb38da6c11e3dc6c3666e9c529cfc2d01a1647825",
+    "active-next-event": "71c6851507caba717ceba9b3b963ca5a0f1653d9514871e9a7fa6530fd31d4b5",
     "draining-finish": "abd829e86e881f9c28981c43d3832c6b707dd90aad22500109f3d25b384a7ab0",
 }
 
@@ -166,9 +166,9 @@ pub use adapter::{
 };
 pub use mapping::{DiagnosticEventMapError, DiagnosticEventMapper};
 pub use proofbound_runtime_linux::{
-    ActiveTraceEvent, TraceCapturedOperands, TraceCapturedStream, TraceObservationError,
-    TraceOutputCapture, TraceOutputLimits, TraceProcessId, TraceSyscallClass,
-    TraceSyscallInvocation, TraceTerminalCapture,
+    ActiveTraceEvent, TraceCandidateObservation, TraceCapturedOperands, TraceCapturedStream,
+    TraceObservationError, TraceOutputCapture, TraceOutputLimits, TraceProcessId,
+    TraceSyscallClass, TraceSyscallInvocation, TraceTerminalCapture,
 };
 
 #[cfg(test)]
@@ -247,7 +247,7 @@ EXPECTED_DIAGNOSE_LIB_SHA256 = (
     "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de"
 )
 EXPECTED_LINUX_LIB_SHA256 = (
-    "47ef2cdd61b7c0854f0ee9fcfb5d32ffcebfec5b5820477636a3d513a7ccf33d"
+    "10dddcf330422289b7ab1f5ac5ee9574ce63ea9c29ac86fa1ba1f1909eff6c2a"
 )
 
 
@@ -627,9 +627,10 @@ class DiagnosticObserverAdapterContractTests(unittest.TestCase):
                 "ObserverObservation,PreparedObserver,ReadyObserver,SpawnedObserver,"
                 "prepare_observer,};",
                 "pubusemapping::{DiagnosticEventMapError,DiagnosticEventMapper};",
-                "pubuseproofbound_runtime_linux::{ActiveTraceEvent,TraceCapturedOperands,"
-                "TraceCapturedStream,TraceObservationError,TraceOutputCapture,TraceOutputLimits,"
-                "TraceProcessId,TraceSyscallClass,TraceSyscallInvocation,TraceTerminalCapture,};",
+                "pubuseproofbound_runtime_linux::{ActiveTraceEvent,TraceCandidateObservation,"
+                "TraceCapturedOperands,TraceCapturedStream,TraceObservationError,"
+                "TraceOutputCapture,TraceOutputLimits,TraceProcessId,TraceSyscallClass,"
+                "TraceSyscallInvocation,TraceTerminalCapture,};",
             ],
         )
         self.assertNotIn("*", "".join(public_uses))

@@ -1,0 +1,16 @@
+schema = "proofbound-assumption/1"
+id = "PBR-DIAGNOSTIC-CANDIDATE-AX-027"
+statement = "While the exact tracee is stopped, Linux procfs root, cwd, and descriptor anchors, pathname and symlink operations, O_PATH handles, statx identities, mount identifiers, and scheduler behavior preserve the relationships interpreted by the two-pass candidate resolver."
+category = "runtime-environment"
+owner = "Proofbound Runtime release maintainer"
+rationale = "Source checks cannot prove effectful Linux pathname behavior or that two equal observations exclude every adversarial intermediate change."
+scope = "Only the native interpretation of PBR-OBSERVER-030. It does not turn an advisory candidate into kernel-selected identity."
+affected_claims = ["PBR-OBSERVER-030"]
+review_evidence = [
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-linux/src/trace.rs",
+  "tools/ci/native-linux.sh",
+]
+discharge_plan = "Retain this Linux premise and narrow it with both-architecture stable, drift, deletion, escape, and symlink-bound attack fixtures."
+source_citation = "docs/specs/0015_diagnostic_execution_and_plan_drafting.md#9-evidence-meaning"
+status = "active"

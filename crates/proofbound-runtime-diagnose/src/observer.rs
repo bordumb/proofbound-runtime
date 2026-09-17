@@ -202,6 +202,12 @@ impl ObserverProtocol {
         self.bounds.socket_address_bytes
     }
 
+    /// Returns the maximum followed symlink count for one candidate path.
+    #[must_use]
+    pub const fn symlink_hop_limit(&self) -> u64 {
+        self.bounds.symlink_hops
+    }
+
     /// Returns the maximum bytes read for one tracee string.
     #[must_use]
     pub const fn tracee_string_byte_limit(&self) -> u64 {

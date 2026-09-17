@@ -2983,6 +2983,217 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-8 consolidated object, candidate, and command approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `cddd8dde189c6596b77be99fd84cbc49d1fc70a8`
+- **Reviewed head:** `f1ed2e0b9e159c2eb72a9c42ad04cf6910d232bd`
+- **Branch:** `codex/rt8-object-resolution-final`
+- **Method:** Read-only exact-range security, implementation, evidence, and
+  documentation review. The reviewer changed no files and ran no builds or
+  tests.
+- **Findings:** None remain after the reviewed correction commits.
+- **Verdict:** **APPROVE**
+
+The reviewer separately evaluated `PBR-OBSERVER-029` kernel-selected object
+resolution, `PBR-OBSERVER-030` advisory denied-path candidates, and
+`PBR-OBSERVER-031` command and release binding. The final review confirmed
+stopped-tracee and exec-reconciliation order, absence of resume before object
+or candidate observation, causal rejection of guard, disconnect, reorder, and
+release-closure mutants, preservation of all seven active runtime assumptions,
+complete command and release/native-observation source closure, production
+dependency isolation, and agreement among the claims, ADR, specification,
+assurance plan, and public source documentation.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`cddd8dde189c6596b77be99fd84cbc49d1fc70a8..f1ed2e0b9e159c2eb72a9c42ad04cf6910d232bd`.
+The following approval-only commit changes no reviewed production, checker,
+claim, assumption, specification, ADR, or evidence bytes. Any later subject
+change requires a new exact-head review.
+
+## RT-8 native-CI correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `33241ac85327a7abac3e20f2561f0c8aa27065c6`
+- **Reviewed head:** `7d90b0c702162cf48dc874202db00bfa69793662`
+- **Branch:** `codex/rt8-object-resolution-final`
+- **Method:** Read-only exact-range correction review against the previously
+  approved RT-8 implementation. The reviewer changed no files and ran no builds
+  or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the owned component queue fixes the Rust lifetime
+error without changing component classification, traversal order, root
+confinement, symlink-hop accounting, target-byte bounds, or final escape
+rejection. The reviewer also confirmed that both corrected assumptions use the
+admitted and semantically accurate `runtime-environment` category, remain bound
+through their relevant claims and evidence closures, and do not weaken the
+previously approved evidence meaning. All three exact-source checkers match the
+current `trace.rs` SHA-256
+`f3bb71a971916d244963bd78d87fc4f4f00ca98c65f37b5f7d7c48fc986057e4`.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`33241ac85327a7abac3e20f2561f0c8aa27065c6..7d90b0c702162cf48dc874202db00bfa69793662`.
+The following approval-only commit changes only this review record. Any later
+subject change requires a new exact-head review.
+
+## RT-8 launcher-release syscall correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `cca1a607d2789f22c48b749b21571efc71eba872`
+- **Reviewed head:** `7e7f19f1b3a80897188c33c9194165e197c1da20`
+- **Branch:** `codex/rt8-object-resolution-final`
+- **Method:** Read-only exact-range lifecycle, security, and evidence review
+  against the previously approved RT-8 implementation. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that `released_mid_syscall` accounts only for the
+trusted launcher's already-entered release receive syscall. Its first exit
+consumes one ignored pending state and restores strict syscall pairing; an
+entry before that exit fails closed, and child tracees retain their separate
+initial-stop state. The unit and causal static guards bind the one-shot state
+to the production release call. The reviewer also confirmed exact trace,
+mapping, and decoder fingerprints, strict-warning closure, behavior-neutral
+removal of the uncalled identity helper, and failure-diagnostic-only changes to
+the native assertion. Existing claims, exclusions, and ptrace assumptions
+remain accurate.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`cca1a607d2789f22c48b749b21571efc71eba872..7e7f19f1b3a80897188c33c9194165e197c1da20`.
+The following approval-only commit changes only this review record. Any later
+subject change requires a new exact-head review.
+
+## RT-8 initial syscall-phase synchronization approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `3dad474df42d13c3659605cd5b0fc5af5ef70b04`
+- **Reviewed head:** `63248f3221b5a0c30f0dbe48289e1102d6e76243`
+- **Branch:** `codex/rt8-object-resolution-final`
+- **Method:** Read-only exact-range lifecycle, security, causal-evidence, and
+  strict-warning review after hosted run `35169435001`. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The hosted run showed that the acknowledgement stop can race with the trusted
+launcher's entry into its release receive syscall. The reviewer confirmed that
+the corrected root state admits either one initial unmatched exit or one normal
+first entry, then permanently restores strict entry/exit pairing. Children do
+not receive that state. Candidate resolution remains in the stopped captured
+syscall arm before any resume, and the restored pre-candidate-resume mutant
+causally falsifies that guarantee. Boxing the active observer preserves singular
+ownership, the narrow explicit-field lint allowance is justified, and all
+changed body and file fingerprints are exact. Existing claims, specifications,
+and ptrace assumptions remain accurate.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`3dad474df42d13c3659605cd5b0fc5af5ef70b04..63248f3221b5a0c30f0dbe48289e1102d6e76243`.
+The following approval-only commit changes only this review record. Any later
+subject change requires a new exact-head review.
+
+## RT-8 syscall-pairing evidence correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `dc342a817e1936aac1932bf5c339767eceba4eeb`
+- **Reviewed head:** `2b5b6b07f11757377d524f32e28d4c2c690fcd2c`
+- **Branch:** `codex/rt8-object-resolution-final`
+- **Method:** Read-only exact-range causal-evidence review after hosted preflight
+  run `35170466124`. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the trace-event contract now binds the typed
+`begin_syscall` and `finish_syscall` transitions and exact-pins the complete
+tracee state implementation. Entry rejects an existing pending syscall. Exit
+first consumes a real pending syscall and can otherwise consume only the
+one-shot initial-exit allowance, which it clears before returning. Later
+unmatched exits fail closed. The causal mutant removes only that reset and is
+rejected, while prior event ownership, wait, registration, drain, exec, and
+held-tracee checks remain intact.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`dc342a817e1936aac1932bf5c339767eceba4eeb..2b5b6b07f11757377d524f32e28d4c2c690fcd2c`.
+The following approval-only commit changes only this review record. Any later
+subject change requires a new exact-head review.
+
+## RT-8 selected-object pairing evidence approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `ee80b0baf066620939ae752a520de3b183f20da4`
+- **Reviewed head:** `78c36c479b3100be838edab844f6a2a3f2ee1a98`
+- **Branch:** `codex/rt8-object-resolution-final`
+- **Method:** Read-only exact-range causal-evidence review after hosted preflight
+  run `35170794789`. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the object-resolution checker binds
+`finish_syscall` before selected-descriptor resolution and event construction.
+It isolates the captured-syscall arm so the legitimate initial synchronization
+resume cannot weaken the stopped-tracee guarantee, while any resume before
+selected-object resolution or `SyscallCompleted` in that arm remains forbidden.
+The existing causal pre-selection-resume mutant is rejected, and exec
+reconciliation-before-selection ordering remains intact.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`ee80b0baf066620939ae752a520de3b183f20da4..78c36c479b3100be838edab844f6a2a3f2ee1a98`.
+The following approval-only commit changes only this review record. Any later
+subject change requires a new exact-head review.
+
+## RT-8 observer failure diagnostic approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `e3fbc2c05ad95cd29f2de0ed919d46209be284f8`
+- **Reviewed head:** `c31b432b9f02c719c22168f05e51fdb89a75b7a0`
+- **Branch:** `codex/rt8-object-resolution-final`
+- **Method:** Read-only exact-range operational-output and assurance-boundary
+  review after persistent generic native `observer-failed` results. The
+  reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that only an effectful `ObserverObservation::Failure`
+contributes an error code, and each value comes from the closed static
+`TraceObservationError::code` mapping. The sorted, duplicate-free field cannot
+contain child-controlled text. Event handling, receipt gaps, completion,
+artifact construction, commitment, and publication order remain unchanged.
+The result field is operational output only; it is not receipt evidence or an
+assurance claim. Native success requires an empty array, and removing failure
+code retention is causally rejected.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`e3fbc2c05ad95cd29f2de0ed919d46209be284f8..c31b432b9f02c719c22168f05e51fdb89a75b7a0`.
+The following approval-only commit changes only this review record. Any later
+subject change requires a new exact-head review.
+
+## RT-8 partial tracee-string capture approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `efd6dbd752557e4bf4daef2f5bd7835032a4ead6`
+- **Reviewed head:** `0d9253a253165da7c1e504b6649961273731c864`
+- **Branch:** `codex/rt8-object-resolution-final`
+- **Method:** Read-only exact-range security and evidence review after native CI
+  exposed a short tracee-memory read at a pathname page boundary. The reviewer
+  changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that a terminated short `process_vm_readv` prefix is
+accepted only within the returned byte count. Unreturned bytes are neither
+scanned nor appended. An unterminated prefix advances the exact read address,
+and zero progress or a later read failure remains fail-closed. String and path
+bounds remain enforced without silent truncation. Fixed-size tracee reads
+remain exact. The causal mutation, source fingerprints, and specification text
+accurately cover the corrected behavior.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`efd6dbd752557e4bf4daef2f5bd7835032a4ead6..0d9253a253165da7c1e504b6649961273731c864`.
+The following approval-only commit changes only this review record. Any later
+subject change requires a new exact-head review.
+
 ## RT-8 diagnostic lifecycle restacked re-review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr4`

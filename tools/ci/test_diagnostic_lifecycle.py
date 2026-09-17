@@ -200,6 +200,8 @@ def assert_lifecycle_contract(
         "if self.session.deadline.expired()",
         "trace_syscall(root.get())",
     )
+    if "TraceeState::released_at_unknown_syscall_phase(root)" not in release:
+        raise AssertionError("release does not synchronize its initial syscall phase")
     if "self.session.deadline" not in next_event:
         raise AssertionError(
             "active observation does not use the stored execution deadline"
@@ -409,7 +411,7 @@ EXPECTED_BODIES = {
     "active-finish": "dc2f63886b0d9bb418062462f69f3b4c9073cb079be36b7a883f37599fb8f64c",
     "active-next": "d338650ed48b9e795519e78b67f2b23052c42f5d09de1c2fe76f019688d98efb",
     "adapter-drain": "abd829e86e881f9c28981c43d3832c6b707dd90aad22500109f3d25b384a7ab0",
-    "adapter-next": "98e8b121729094ec65ba7fedb38da6c11e3dc6c3666e9c529cfc2d01a1647825",
+    "adapter-next": "71c6851507caba717ceba9b3b963ca5a0f1653d9514871e9a7fa6530fd31d4b5",
     "cgroup-drain-before": "caa3f99baee132f20cfb3ca42fda7d8b93c046f83e6d3fa35d2fcea3d4deeda5",
     "cgroup-drop": "951e530b5cac51993c7bd73ea9d2c534b234d8e4131fef2f04c0bbd90f77b1f3",
     "cgroup-finish-before": "65d19b3c9ebec391228d2068d88fb4857e437bc5cb0c02d8e7ddaa736c3b6037",
@@ -424,9 +426,9 @@ EXPECTED_BODIES = {
     "wait-for-exact-stop": "d7d42625b210d8aeed50f75176c09c728887bcd085d9311789a73a0a0ff7a831",
 }
 EXPECTED_FILES = {
-    "adapter": "e020b20e97040ca553f28aea10a97d033ff0df04bfd5dab006b9763226d5f192",
+    "adapter": "551c0c743d9c99184dddc09c276081e63c834e3be559e891221e1214dc454a2b",
     "adapter-evidence": "87bc8da1a2cab8f6e3b380d38e2017852abe4cee0039854a4ea0dd3b8571d8b4",
-    "adapter-lib": "ccad4545cfd41802c32d66a692d65aca9a69d0e59b0a3cb7c5c34da42830a198",
+    "adapter-lib": "8859f99339377b7034d43dd9d4fd20713824b5ad2708cd52d76412272a3858e2",
     "adapter-manifest": "ef7c613a66781c4b64d75435524166329b5239b8172f97b28cff2d6d609c8d78",
     "authority": "9d1945b590a3a9f44f6af95d3090ad0a8d1bc0cfa601c35273cd0a72c86cbddc",
     "claim": "40e7e16c6231bebce538e759cdf5a8ad577cfd9f2b70a36e36372da2e2629d24",
@@ -434,27 +436,27 @@ EXPECTED_FILES = {
     "core-manifest": "0d22823a1d4f397fb58693c7d9fe7498969ce242b5da0f372d8cc8f55f960b9b",
     "core-lib": "2039d8c789844cddaaabbf432a0a6ef465f77300577f3b57922d7bcbcc930450",
     "cgroup": "8f708a93b08c18037345f5ecee58aa67e945397688b41c0f2fc3e15f614784b9",
-    "diagnose-artifact": "ad7cce45d286623dcfd55c21189cb7d58e29f1943960d0a061d6f85c2640baa3",
+    "diagnose-artifact": "bb353a2c06312a034bfba7ed687430e102284f05495fee58df3ee88acc056bee",
     "diagnose-lib": "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de",
     "diagnose-manifest": "097ec2b4cef98a43bee09c64c289251ab2060808d4fb8e050de3077f541ff2f1",
-    "diagnose-observer": "e6cfb0a92d7bf7e235c7fac8180f488b7b1d9474986791fac4adf2917dae7d12",
+    "diagnose-observer": "eb688d43f61b6d628341f73f2b43e887e3df4a81905406e2b89c1592d31c19a7",
     "launcher": "5b2f251091b01fe9fa9bfb4018fac4971f22c9a7d55a5a92f5fdc24ca2673b83",
     "lifecycle-assumption": "ee12854496d97ecce949d1ff85067003a2fc48880d02d2850cff6fe807090017",
     "lifecycle-runtime-assumption": "16ca1aa8d7e6c9b41eed370fd2e53e4ea4de181a51e8e176046369a744ea1cd6",
     "identity": "176bb4e1cc50e8b0efc285a80cf3091e81ee3f8502067a380ac5fa49ad863bc5",
-    "linux-lib": "47ef2cdd61b7c0854f0ee9fcfb5d32ffcebfec5b5820477636a3d513a7ccf33d",
+    "linux-lib": "10dddcf330422289b7ab1f5ac5ee9574ce63ea9c29ac86fa1ba1f1909eff6c2a",
     "linux-manifest": "e7311e3cada91690da87f42910c96e133538439956a0db78de79dea9294d6c9b",
-    "lock": "376572c5d111f5ea72e38667b5813a7c051e9fa128d5af355468e5294889a0c6",
-    "root-manifest": "1ea75287f62129c6b15038b0c45df42e616fc4c92e59e61bc03358746fd5d7d6",
+    "lock": "5fb7c8b16c4b865630a8e7e80f16919d443c3c276970959cd80ab26581229640",
+    "root-manifest": "8cd67ea78720c5637340140ac6ea94a9d76ddeaf4fb0df40881c4e8dab371466",
     "receipt": "fc27edf189014a49af8af380902fe90b12cbbd71a2b49301064b589c8a4c4024",
     "path-receipt-lib": "f2f103cbc2c928f9a69211963788c1472c62a936de63a8f53dca2cd9c5469b01",
     "path-receipt-manifest": "4cb9c84da77bd72e3a49e2be1cbf52f2e5841ab15d9ae8fb07c2022f788518d6",
     "probe": "2bf141cf9ee8b2943cd3e63305399030ae8829a040ed06c9cc65de8533e0a692",
     "resolve": "66ab088fbadbff3b71deb6edc76d3f7069932949f6cdde08f1fa3cf133892eca",
     "supervisor": "5f1b80181b01c3ea189643995617aeab60f390c1f5fc6930cf0acd577b88cdd8",
-    "sys": "256629304f9d132291986c558ef1d2224deb7125c0940d5db5734276853d12cb",
+    "sys": "8b7dfd2fee307d937f71dcbab8098d026715dc2e4f7d03c72fa9ee7bd4734168",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "12c7751a62c9fb4f5b3c70f6668b3b9baf2ad0dce25453d0e7eb82c9226fd9e0",
+    "trace": "0090c6b187659bde2431775f3c89008d837c324f9242bdb3cb0793c22072f197",
     "unit-evidence": "47394cbf7d03c115c3140f6a593c7ab76a031e34594a235b87fd0d7de555b51c",
 }
 
@@ -557,6 +559,18 @@ class DiagnosticLifecycleContractTests(unittest.TestCase):
                     "self.cgroup\n            .revalidate_fresh()\n"
                     "            .map_err(|_| TraceStartupError::CgroupNotFresh)?;",
                     "",
+                    1,
+                ),
+                self.adapter,
+                self.cgroup,
+                self.linux_lib,
+                self.adapter_lib,
+            ),
+            (
+                "release loses its unknown initial syscall phase",
+                self.trace.replace(
+                    "TraceeState::released_at_unknown_syscall_phase(root)",
+                    "TraceeState::observing(root)",
                     1,
                 ),
                 self.adapter,

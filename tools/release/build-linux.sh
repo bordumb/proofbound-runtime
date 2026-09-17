@@ -60,6 +60,7 @@ build_bundle() {
     "$stage/pbr-native-launcher"
   install -m 0755 "$target_directory/$target/release/pbr-verify" "$stage/pbr-verify"
   install -m 0755 "$target_directory/$target/release/pbr-compose" "$stage/pbr-compose"
+  install -m 0755 "$target_directory/$target/release/pbr-diagnose" "$stage/pbr-diagnose"
   install -m 0755 \
     "$target_directory/$target/release/pbr-accept" \
     "$work_root/$build_name-$acceptor_name"
@@ -72,7 +73,7 @@ import sys
 
 stage = pathlib.Path(sys.argv[1])
 artifacts = []
-for name in ("pbr", "pbr-native-launcher", "pbr-verify", "pbr-compose"):
+for name in ("pbr", "pbr-native-launcher", "pbr-verify", "pbr-compose", "pbr-diagnose"):
     data = (stage / name).read_bytes()
     artifacts.append(
         {
@@ -102,7 +103,7 @@ PY
     --numeric-owner \
     -C "$stage" \
     -cf - \
-    RELEASE-MANIFEST.json pbr pbr-native-launcher pbr-verify pbr-compose | gzip -n >"$bundle"
+    RELEASE-MANIFEST.json pbr pbr-native-launcher pbr-verify pbr-compose pbr-diagnose | gzip -n >"$bundle"
 }
 
 mkdir -p "$output_directory"

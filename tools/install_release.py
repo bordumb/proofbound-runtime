@@ -28,6 +28,7 @@ MEMBERS = (
     "pbr-native-launcher",
     "pbr-verify",
     "pbr-compose",
+    "pbr-diagnose",
 )
 BINARIES = MEMBERS[1:]
 

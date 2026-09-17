@@ -6,6 +6,7 @@ members = [
   "crates/proofbound-runtime-core",
   "crates/proofbound-runtime-diagnose",
   "crates/proofbound-runtime-diagnose-linux",
+  "crates/proofbound-runtime-diagnose-cli",
   "crates/proofbound-runtime-cli",
   "crates/proofbound-runtime-compose",
   "crates/proofbound-runtime-linux",

@@ -19,6 +19,7 @@ MEMBERS = (
     "pbr-native-launcher",
     "pbr-verify",
     "pbr-compose",
+    "pbr-diagnose",
 )
 BINARIES = MEMBERS[1:]
 MAX_ARCHIVE_BYTES = 32 * 1024 * 1024

@@ -13,9 +13,9 @@ pub use adapter::{
 };
 pub use mapping::{DiagnosticEventMapError, DiagnosticEventMapper};
 pub use proofbound_runtime_linux::{
-    ActiveTraceEvent, TraceCapturedOperands, TraceCapturedStream, TraceObservationError,
-    TraceOutputCapture, TraceOutputLimits, TraceProcessId, TraceSyscallClass,
-    TraceSyscallInvocation, TraceTerminalCapture,
+    ActiveTraceEvent, TraceCandidateObservation, TraceCapturedOperands, TraceCapturedStream,
+    TraceObservationError, TraceOutputCapture, TraceOutputLimits, TraceProcessId,
+    TraceSyscallClass, TraceSyscallInvocation, TraceTerminalCapture,
 };
 
 #[cfg(test)]

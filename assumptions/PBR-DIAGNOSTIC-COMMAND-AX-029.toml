@@ -1,0 +1,16 @@
+schema = "proofbound-assumption/1"
+id = "PBR-DIAGNOSTIC-COMMAND-AX-029"
+statement = "Linux ptrace, procfs, cgroup version 2, Landlock, seccomp, pidfds, filesystems, hard links, file and directory sync, clocks, scheduling, and the exact release host preserve the effectful command and publication behavior interpreted by native and release evidence."
+category = "runtime-environment"
+owner = "Proofbound Runtime release maintainer"
+rationale = "The repository cannot prove the operating system, storage durability, scheduler, or release host used by the command."
+scope = "Only native and released-artifact interpretation of PBR-OBSERVER-031."
+affected_claims = ["PBR-OBSERVER-031"]
+review_evidence = [
+  "tools/ci/native-linux.sh",
+  "tools/release/build-linux.sh",
+  "crates/proofbound-runtime-compose/tests/release_observation.rs",
+]
+discharge_plan = "Retain this platform premise and narrow it with both-architecture native attacks, interruption tests, reproducible bundles, and exact release observations."
+source_citation = "docs/specs/0015_diagnostic_execution_and_plan_drafting.md#9-evidence-meaning"
+status = "active"

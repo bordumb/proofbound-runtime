@@ -322,7 +322,7 @@ manifest describes the supported tuple.
   22 Verify run `35039326242`; the unsigned merge is `17458ad`, and exact-main
   Verify run `35042895100` passed. A command without this wave can deadlock when
   a target fills a pipe.
-- [ ] Keep the same stopped child, place it in the prepared cgroup before target
+- [x] Keep the same stopped child, place it in the prepared cgroup before target
   release, apply one absolute plan wall-time deadline through observation, and
   start a separate bounded cleanup deadline only after termination begins.
   `PBR-OBSERVER-028` implements exact cgroup identity and control-readback
@@ -332,12 +332,15 @@ manifest describes the supported tuple.
   signalling before a drain-only state is exposed, and terminal gating on
   exact-tree completion, cgroup removal, complete version 2 resource
   observations, and joined streams under one cleanup deadline. Independent
-  review, hosted admission, and native attack evidence remain open.
-- [ ] Add stopped-tracee filesystem object resolution. Successful descriptor or
+  review and complete exact-head hosted verification passed, and the source
+  merged unsigned as `cddd8dd`. Exact-main replay reached only the unrelated
+  bounded authority proof's time limit; native diagnostic attack evidence
+  remains in the consolidated RT-8 exit wave.
+- [x] Add stopped-tracee filesystem object resolution. Successful descriptor or
   executable results may become `kernel-selected`; denied paths may become
   `stable-candidate` only after bounded before-and-after identity checks. Races
   and unsupported forms remain explicit gaps.
-- [ ] Add the separate `pbr-diagnose` command with strict seed-plan reuse,
+- [x] Add the separate `pbr-diagnose` command with strict seed-plan reuse,
   fail-closed pre-release setup, and no-replace publication of the diagnostic
   receipt and plan draft.
 - [x] Keep natural exact-capacity completion distinct from overflow, terminate
@@ -354,12 +357,13 @@ manifest describes the supported tuple.
 - [x] Accept optional Capsec observations only when their schema, source,
   analyzer, and report identities match; retain missing or incomplete coverage
   visibly.
-- [ ] Run the adversarial corpus for stale source, symlink redirection,
+- [ ] Run and admit the adversarial corpus for stale source, symlink redirection,
   observation-sensitive behavior, missing events, and attempted provenance
   relabeling.
 - [ ] Demonstrate one maintained dynamic workload using every available
   provenance class.
-- [ ] Complete independent review, exact-head hosted evidence, unsigned merge,
+- [ ] Complete one consolidated independent review, exact-head hosted evidence,
+  unsigned merge,
   and exact-main verification.
 
 **Phase 1 exit:** a developer can produce and complete a useful dynamic plan

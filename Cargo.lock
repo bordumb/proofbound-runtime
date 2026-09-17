@@ -188,6 +188,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "proofbound-runtime-diagnose-cli"
+version = "0.2.0"
+dependencies = [
+ "proofbound-runtime-core",
+ "proofbound-runtime-diagnose",
+ "proofbound-runtime-diagnose-linux",
+ "proofbound-runtime-linux",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "proofbound-runtime-linux"
 version = "0.2.0"
 dependencies = [

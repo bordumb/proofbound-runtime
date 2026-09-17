@@ -50,18 +50,19 @@ def body_sha256(source: str, signature: str) -> str:
 
 
 EXPECTED_LOAD_BEARING_BODIES = {
-    "adapter-release": "d065697972422e21df3fe679539ec72bb4094c49e21577a24cc12230cb8f8a6e",
-    "adapter-next-event": "98e8b121729094ec65ba7fedb38da6c11e3dc6c3666e9c529cfc2d01a1647825",
+    "adapter-release": "183231f22a22fa4e71f9c7cea064811e5dec2f10b409c3a26b9ce5f1b0124066",
+    "adapter-next-event": "71c6851507caba717ceba9b3b963ca5a0f1653d9514871e9a7fa6530fd31d4b5",
     "aarch64-table": "45fe041bd934a083c660e316a30c289c5d2ce3d1b3dcf1d2ce430cd30b0b9c11",
     "capture": "e03c8d8f690304b9865ea829f026da17babea4c3175f8aff81b0a8c472a1dd48",
     "capture-path-limit-accessor": "e21f1d9a95771bd5e2a3c7d36ed6bfe6879d2d2c9ab17433a40cf5e15e94ce5a",
     "capture-socket-limit-accessor": "6d26b9a042b9d673d7d97730366d4930038c522e7cc625b8aab3292015421dc6",
     "capture-string-limit-accessor": "163cf7392109e73f6f014975fadce6ade1ba70c8e62b11163bb7f0bc0170da68",
-    "entry-order": "a869e92d7afad730635c0e960fd982d8adff5ce74709c05e34d3cd258fc11cc9",
+    "capture-symlink-limit-accessor": "328d8e75f0e0aff13b043e0fa3a0ffcf3d1d2b88c67c281d03d672423b8daeef",
+    "entry-order": "add1a3d7b4724d30a0fde7c57d9110711085306d8fadc31319a8a83d83540885",
     "exact-read": "4e4099b351e973ff312431159f64eac771b748820e5ec2d06daaaf6816efa452",
     "i32-argument": "48640c1efe3c88ce6281053cbc2385160faa326f92713f81c2874fe6210a243c",
     "little-endian-reader": "8669e2dac5832ba4dd7eb1708f3992af050868ab67fd791661c005957203cadd",
-    "limits": "d592eadabb61f02e70e3d65a5641ebcc1c5a369ac0a3485531dafc8f06714476",
+    "limits": "9d66b90c935331d4d530c9b8be79318f18c2439be6e7ee61e96dbf41801b26fb",
     "observation-bounds-validate": "2d67ca521bfc51fc0c9bd674d8f2e0ffcb4abdd272136c487fd161bb9cc3bc17",
     "observer-protocol-new": "dd85162d9b12bbbe1f0a17b5a08a8ecb083f5b3ace9e2cde59805d9e3dbeb685",
     "path-limit": "a1f57b2d41134fd23d07262bec9cb74cc859e9386675809369068105b04e7623",
@@ -73,16 +74,17 @@ EXPECTED_LOAD_BEARING_BODIES = {
     "socket-address-read": "8622490a7207ba8b4e29f75c66994d39f411b15b102986b4077c9be1acb52fb6",
     "socket-limit": "5abf245a10ffd0ce08305686d98acb204459c3a1a853a6dc854a578a26de6e65",
     "string-limit": "a839a837690914354efd25be3073c3ad8c1e21491d274004f54cb4464317eb3a",
+    "symlink-limit": "285ed72730f288991502539ef54872d3baa8755b4ca718462387db107c0ad1f7",
     "supported-families": "928ac43d5c23a7e3bcbd24edf3d895597a55aa7a855ca4e2fdb8cfea4fa94f88",
     "syscall-info-fetch": "0b5e52f129fc45db01bd022959e42237ae68f7c44aff9f0b483a278546bb8084",
     "syscall-info-parser": "796f463adb9db22ebf211f25ff7d0097f86ab49f9d240a62319161dc3f91af5e",
-    "tracee-string-read": "54fec5ee2c46ba8bd614c0da4e769b311ca6ff65637e7685be6e086369f7189c",
+    "tracee-string-read": "f03c3b1f208b3171e3b70e817852ccb5001bad9808adf39432cea3feea9054e4",
     "resume-before-deadline": "bff9c1e06b805663e587a4dd5a5313bb7e04a6aceeb68aa017e4c09a4953f502",
     "trace-next-event": "d338650ed48b9e795519e78b67f2b23052c42f5d09de1c2fe76f019688d98efb",
-    "trace-ready-release": "7fe1e9880ad31c0e2298358870886cedbd6d4bba43f3a29e90eaa2c765fb4937",
+    "trace-ready-release": "fe39e74a5099afbadc76336faf02db3ba7a9bbbb57076b7271356d6e79a45a5f",
     "uapi-i64-reader": "62197020cc4c5b8faac0c4f44c81291f12e7986681a3e7c08080ef7be4e0f938",
     "uapi-u64-reader": "aa2b02fd921a14e0fb178214da9ea0183bddde4b7d5d3b2305cffe9abe5ca63e",
-    "wait-observation-router": "43f872fced14df3e3c29b9ff335acc52500a45613cb54c7cb7b001594530cda7",
+    "wait-observation-router": "a185c9d1ffac7131bc194c6e1d6a70eb7bce5bb2235d16bce0538808f2d51050",
     "u32-argument": "9a611e944f835a154c65dc1745c111c20a12d97323954af68e80fee6e74d391e",
     "x86-64-table": "64ecbc45be34c91cbbd7e12bbfb1bab005186d0b4cbbd47554a8fd2a9af16dcc",
 }
@@ -94,13 +96,13 @@ EXPECTED_CLOSURE_FILES = {
     "claim": "e64e5c04d488cc353e78eb33ff4f96507d6bc4606616f97ab516c9e92b67ec92",
     "decoder-evidence": "5a0bc0b9ee07ecdd1a67e287f938355cab905b808da75e3b39578a0cb003fa91",
     "diagnose-lib": "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de",
-    "diagnose-linux-lib": "ccad4545cfd41802c32d66a692d65aca9a69d0e59b0a3cb7c5c34da42830a198",
+    "diagnose-linux-lib": "8859f99339377b7034d43dd9d4fd20713824b5ad2708cd52d76412272a3858e2",
     "diagnose-manifest": "097ec2b4cef98a43bee09c64c289251ab2060808d4fb8e050de3077f541ff2f1",
     "diagnose-linux-manifest": "ef7c613a66781c4b64d75435524166329b5239b8172f97b28cff2d6d609c8d78",
     "linux-manifest": "e7311e3cada91690da87f42910c96e133538439956a0db78de79dea9294d6c9b",
-    "linux-lib": "47ef2cdd61b7c0854f0ee9fcfb5d32ffcebfec5b5820477636a3d513a7ccf33d",
-    "lock": "376572c5d111f5ea72e38667b5813a7c051e9fa128d5af355468e5294889a0c6",
-    "root-manifest": "1ea75287f62129c6b15038b0c45df42e616fc4c92e59e61bc03358746fd5d7d6",
+    "linux-lib": "10dddcf330422289b7ab1f5ac5ee9574ce63ea9c29ac86fa1ba1f1909eff6c2a",
+    "lock": "5fb7c8b16c4b865630a8e7e80f16919d443c3c276970959cd80ab26581229640",
+    "root-manifest": "8cd67ea78720c5637340140ac6ea94a9d76ddeaf4fb0df40881c4e8dab371466",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
 }
 
@@ -142,6 +144,9 @@ def assert_load_bearing_bodies(
         "capture-string-limit-accessor": body_sha256(
             trace, "const fn tracee_string_bytes(self)"
         ),
+        "capture-symlink-limit-accessor": body_sha256(
+            trace, "const fn symlink_hops(self)"
+        ),
         "entry-order": body_sha256(trace, "fn handle_syscall_stop"),
         "exact-read": body_sha256(trace, "fn read_exact_tracee_memory"),
         "i32-argument": body_sha256(trace, "fn trace_i32_argument"),
@@ -162,6 +167,7 @@ def assert_load_bearing_bodies(
         "socket-address-read": body_sha256(trace, "fn capture_socket_address"),
         "socket-limit": body_sha256(observer, "pub const fn socket_address_byte_limit"),
         "string-limit": body_sha256(observer, "pub const fn tracee_string_byte_limit"),
+        "symlink-limit": body_sha256(observer, "pub const fn symlink_hop_limit"),
         "supported-families": body_sha256(trace, "fn decode_supported_syscall"),
         "syscall-info-fetch": body_sha256(sys, "pub(crate) fn trace_syscall_stop"),
         "syscall-info-parser": body_sha256(sys, "fn decode_trace_syscall_stop"),
@@ -283,6 +289,17 @@ def assert_decoder_contract(
         raise AssertionError("tracee string read bound is absent")
     if "limits.path_bytes()" not in path_read or "PathLimitExceeded" not in path_read:
         raise AssertionError("independent path bound is absent")
+    for required in [
+        "trace_read_process_memory",
+        "if count == 0",
+        "let observed = &chunk[..count]",
+        "observed.iter().position",
+        "bytes.extend_from_slice(observed)",
+    ]:
+        if required not in path_read:
+            raise AssertionError(f"partial tracee string read is not preserved: {required}")
+    if "read_exact_tracee_memory(process, chunk_address" in path_read:
+        raise AssertionError("tracee string read discards a valid short terminated prefix")
     if "limits.socket_address_bytes()" not in socket_read:
         raise AssertionError("socket-address bound is absent")
     if "SocketAddressLimitExceeded" not in socket_read:
@@ -366,6 +383,7 @@ class DiagnosticSyscallDecoderContractTests(unittest.TestCase):
             "TraceCaptureLimits::new",
             "self.protocol.path_byte_limit()",
             "self.protocol.socket_address_byte_limit()",
+            "self.protocol.symlink_hop_limit()",
             "self.protocol.tracee_string_byte_limit()",
         ]:
             self.assertIn(required, adapter)
@@ -373,6 +391,7 @@ class DiagnosticSyscallDecoderContractTests(unittest.TestCase):
         for required in [
             "self.bounds.path_bytes",
             "self.bounds.socket_address_bytes",
+            "self.bounds.symlink_hops",
             "self.bounds.tracee_string_bytes",
         ]:
             self.assertIn(required, observer)
@@ -464,6 +483,13 @@ class DiagnosticSyscallDecoderContractTests(unittest.TestCase):
             ),
             "tracee string bound removed": (
                 self.trace.replace("limits.tracee_string_bytes()", "usize::MAX", 1),
+                self.sys,
+                self.adapter,
+                self.observer,
+                self.artifact,
+            ),
+            "short tracee string prefix discarded": (
+                self.trace.replace("let observed = &chunk[..count];", "let observed = &chunk;", 1),
                 self.sys,
                 self.adapter,
                 self.observer,

@@ -1,12 +1,18 @@
 //! Starts one diagnostic trace without adding authority to the child.
 
 use core::fmt;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, VecDeque};
+#[cfg(target_os = "linux")]
+use std::ffi::CString;
 use std::io;
 use std::num::NonZeroU32;
 #[cfg(target_os = "linux")]
 use std::os::fd::AsRawFd as _;
 use std::os::fd::{BorrowedFd, OwnedFd};
+#[cfg(target_os = "linux")]
+use std::os::unix::ffi::{OsStrExt, OsStringExt};
+#[cfg(target_os = "linux")]
+use std::path::{Component, Path, PathBuf};
 use std::process::{Child, Command};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -26,6 +32,7 @@ const TRACE_DRAIN_TIMEOUT: Duration = Duration::from_secs(5);
 const SIGNAL_STOP: i32 = 19;
 const SIGNAL_TRAP: i32 = 5;
 const SIGNAL_SYSCALL: i32 = SIGNAL_TRAP | 0x80;
+const AT_FDCWD: i32 = -100;
 const MAX_TRACE_PROCESS_LIMIT: u32 = 4096;
 const MAX_TRACE_PATH_BYTES: u32 = 1_048_576;
 const MAX_TRACE_SOCKET_ADDRESS_BYTES: u32 = 4096;
@@ -86,6 +93,7 @@ impl TraceProcessLimit {
 pub struct TraceCaptureLimits {
     path_bytes: NonZeroU32,
     socket_address_bytes: NonZeroU32,
+    symlink_hops: NonZeroU32,
     tracee_string_bytes: NonZeroU32,
 }
 
@@ -117,16 +125,19 @@ impl TraceOutputLimits {
 }
 
 impl TraceCaptureLimits {
-    /// Creates nonzero path, socket-address, and tracee-string limits in bytes.
+    /// Creates nonzero path, socket-address, symlink, and tracee-string limits.
     pub const fn new(
         path_bytes: u64,
         socket_address_bytes: u64,
+        symlink_hops: u64,
         tracee_string_bytes: u64,
     ) -> Result<Self, TraceStartupError> {
         if path_bytes == 0
             || path_bytes > MAX_TRACE_PATH_BYTES as u64
             || socket_address_bytes == 0
             || socket_address_bytes > MAX_TRACE_SOCKET_ADDRESS_BYTES as u64
+            || symlink_hops == 0
+            || symlink_hops > 40
             || tracee_string_bytes == 0
             || tracee_string_bytes > MAX_TRACE_PATH_BYTES as u64
         {
@@ -138,12 +149,16 @@ impl TraceCaptureLimits {
         let Some(socket_address_bytes) = NonZeroU32::new(socket_address_bytes as u32) else {
             return Err(TraceStartupError::CaptureLimitInvalid);
         };
+        let Some(symlink_hops) = NonZeroU32::new(symlink_hops as u32) else {
+            return Err(TraceStartupError::CaptureLimitInvalid);
+        };
         let Some(tracee_string_bytes) = NonZeroU32::new(tracee_string_bytes as u32) else {
             return Err(TraceStartupError::CaptureLimitInvalid);
         };
         Ok(Self {
             path_bytes,
             socket_address_bytes,
+            symlink_hops,
             tracee_string_bytes,
         })
     }
@@ -154,6 +169,10 @@ impl TraceCaptureLimits {
 
     const fn socket_address_bytes(self) -> usize {
         self.socket_address_bytes.get() as usize
+    }
+
+    const fn symlink_hops(self) -> u32 {
+        self.symlink_hops.get()
     }
 
     const fn tracee_string_bytes(self) -> usize {
@@ -831,7 +850,10 @@ impl TraceReady {
             self.session.record_root_identity_stable_handle();
             Ok(ActiveTrace {
                 session: self.session,
-                processes: BTreeMap::from([(root, TraceeState::observing(root))]),
+                processes: BTreeMap::from([(
+                    root,
+                    TraceeState::released_at_unknown_syscall_phase(root),
+                )]),
                 process_handles: BTreeMap::from([(root, process_handle)]),
                 held_process: None,
                 must_drain: false,
@@ -1020,12 +1042,15 @@ impl ActiveTrace {
                             }
                             Some(PendingTraceSyscall::Ignored) | None => None,
                         });
+                let selected_object =
+                    self.observe_selected_object(change.survivor, TraceObjectSource::Executable);
                 self.held_process = Some(change.survivor);
                 Ok(Some(ActiveTraceEvent::ImageReplaced {
                     former_process: change.former,
                     process: change.survivor,
                     superseded_processes: change.superseded,
                     invocation,
+                    selected_object,
                 }))
             }
             crate::sys::TraceWaitStatus::Stopped { signal, event }
@@ -1135,13 +1160,6 @@ impl ActiveTrace {
                 number,
                 arguments,
             } => {
-                let state = self
-                    .processes
-                    .get(&process)
-                    .ok_or(TraceObservationError::ProcessUnknown)?;
-                if state.pending.is_some() {
-                    return Err(TraceObservationError::SyscallOrderInvalid);
-                }
                 let registers = TraceSyscallRegisters {
                     architecture,
                     instruction_pointer,
@@ -1154,7 +1172,7 @@ impl ActiveTrace {
                 self.processes
                     .get_mut(&process)
                     .ok_or(TraceObservationError::ProcessUnknown)?
-                    .pending = Some(pending);
+                    .begin_syscall(pending)?;
                 self.resume_before_deadline(process)?;
                 Ok(None)
             }
@@ -1163,17 +1181,29 @@ impl ActiveTrace {
                     .processes
                     .get_mut(&process)
                     .ok_or(TraceObservationError::ProcessUnknown)?
-                    .pending
-                    .take()
-                    .ok_or(TraceObservationError::SyscallOrderInvalid)?;
+                    .finish_syscall()?;
+                let Some(pending) = pending else {
+                    self.resume_before_deadline(process)?;
+                    return Ok(None);
+                };
                 match pending {
                     PendingTraceSyscall::Captured(invocation) => {
+                        let selected_object = self.observe_successful_descriptor(
+                            process,
+                            &invocation,
+                            result,
+                            is_error,
+                        );
+                        let candidate =
+                            self.observe_failed_candidate(process, &invocation, is_error);
                         self.held_process = Some(process);
                         Ok(Some(ActiveTraceEvent::SyscallCompleted {
                             process,
                             invocation,
                             result,
                             is_error,
+                            selected_object,
+                            candidate,
                         }))
                     }
                     PendingTraceSyscall::Ignored => {
@@ -1205,6 +1235,112 @@ impl ActiveTrace {
         self.processes
             .insert(child, TraceeState::awaiting_stop(thread_group));
         Ok(capacity_exceeded)
+    }
+
+    #[cfg(target_os = "linux")]
+    fn observe_successful_descriptor(
+        &self,
+        process: TraceProcessId,
+        invocation: &TraceSyscallInvocation,
+        result: i64,
+        is_error: bool,
+    ) -> Option<TraceSelectedObject> {
+        let descriptor = eligible_selected_descriptor(
+            invocation.class(),
+            result,
+            is_error,
+            self.processes.len(),
+        )?;
+        self.observe_selected_object(process, TraceObjectSource::Descriptor(descriptor))
+    }
+
+    #[cfg(target_os = "linux")]
+    fn observe_selected_object(
+        &self,
+        process: TraceProcessId,
+        source: TraceObjectSource,
+    ) -> Option<TraceSelectedObject> {
+        let tracee_path = match source {
+            TraceObjectSource::Descriptor(descriptor) => {
+                format!("/proc/{}/fd/{descriptor}", process.get())
+            }
+            TraceObjectSource::Executable => format!("/proc/{}/exe", process.get()),
+        };
+        let tracee_path = CString::new(tracee_path).ok()?;
+        let object = crate::sys::trace_open_object(&tracee_path).ok()?;
+        let retained_path = CString::new(format!("/proc/self/fd/{}", object.as_raw_fd())).ok()?;
+        let path =
+            crate::sys::trace_read_link(&retained_path, self.capture_limits.path_bytes()).ok()?;
+        let identity = crate::sys::trace_object_metadata(object.as_raw_fd()).ok()?;
+        Some(TraceSelectedObject {
+            path,
+            identity: TraceObjectIdentity {
+                device_major: identity.device_major,
+                device_minor: identity.device_minor,
+                inode: identity.inode,
+                mode: identity.mode,
+                mount_id: identity.mount_id,
+            },
+        })
+    }
+
+    #[cfg(target_os = "linux")]
+    fn observe_failed_candidate(
+        &self,
+        process: TraceProcessId,
+        invocation: &TraceSyscallInvocation,
+        is_error: bool,
+    ) -> Option<TraceCandidateObservation> {
+        if !is_error || self.processes.len() != 1 {
+            return None;
+        }
+        let TraceCapturedOperands::Path {
+            directory_fd, path, ..
+        } = invocation.operands()
+        else {
+            return None;
+        };
+        if path.is_empty() {
+            return None;
+        }
+        let before = match resolve_candidate_once(
+            process,
+            *directory_fd,
+            path,
+            self.capture_limits.path_bytes(),
+            self.capture_limits.symlink_hops(),
+        ) {
+            Ok(candidate) => candidate,
+            Err(CandidateResolutionError::SymlinkLimit) => {
+                return Some(TraceCandidateObservation::SymlinkLimit);
+            }
+            Err(CandidateResolutionError::Unresolved) => return None,
+        };
+        let after = match resolve_candidate_once(
+            process,
+            *directory_fd,
+            path,
+            self.capture_limits.path_bytes(),
+            self.capture_limits.symlink_hops(),
+        ) {
+            Ok(candidate) => candidate,
+            Err(CandidateResolutionError::SymlinkLimit) => {
+                return Some(TraceCandidateObservation::SymlinkLimit);
+            }
+            Err(CandidateResolutionError::Unresolved) => return None,
+        };
+        if before.path != after.path
+            || before.symlink_hops != after.symlink_hops
+            || before.identity != after.identity
+        {
+            return Some(TraceCandidateObservation::IdentityDrift);
+        }
+        Some(TraceCandidateObservation::Stable(TraceCandidateObject {
+            path: after.path,
+            symlink_hops: after.symlink_hops,
+            object_before: before.identity,
+            object_after: after.identity,
+        }))
     }
 
     #[cfg(target_os = "linux")]
@@ -1377,6 +1513,186 @@ impl ActiveTrace {
             Ok(())
         }
     }
+}
+
+#[cfg(target_os = "linux")]
+fn eligible_selected_descriptor(
+    class: TraceSyscallClass,
+    result: i64,
+    is_error: bool,
+    retained_processes: usize,
+) -> Option<i32> {
+    if is_error
+        || retained_processes != 1
+        || !matches!(
+            class,
+            TraceSyscallClass::Creat
+                | TraceSyscallClass::Open
+                | TraceSyscallClass::Openat
+                | TraceSyscallClass::Openat2
+        )
+    {
+        return None;
+    }
+    i32::try_from(result)
+        .ok()
+        .filter(|descriptor| *descriptor >= 0)
+}
+
+#[cfg(target_os = "linux")]
+#[derive(Debug, Eq, PartialEq)]
+struct CandidatePass {
+    path: Vec<u8>,
+    symlink_hops: u32,
+    identity: TraceObjectIdentity,
+}
+
+#[cfg(target_os = "linux")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum CandidateResolutionError {
+    SymlinkLimit,
+    Unresolved,
+}
+
+#[cfg(target_os = "linux")]
+fn resolve_candidate_once(
+    process: TraceProcessId,
+    directory_fd: Option<i32>,
+    operand: &[u8],
+    path_byte_limit: usize,
+    symlink_hop_limit: u32,
+) -> Result<CandidatePass, CandidateResolutionError> {
+    let operand_path = PathBuf::from(std::ffi::OsString::from_vec(operand.to_vec()));
+    let root = std::fs::canonicalize(format!("/proc/{}/root", process.get()))
+        .map_err(|_| CandidateResolutionError::Unresolved)?;
+    let base = if operand_path.is_absolute() {
+        root.clone()
+    } else {
+        let anchor = match directory_fd {
+            None | Some(AT_FDCWD) => format!("/proc/{}/cwd", process.get()),
+            Some(descriptor) if descriptor >= 0 => {
+                format!("/proc/{}/fd/{descriptor}", process.get())
+            }
+            Some(_) => return Err(CandidateResolutionError::Unresolved),
+        };
+        std::fs::canonicalize(anchor).map_err(|_| CandidateResolutionError::Unresolved)?
+    };
+    if !base.starts_with(&root) {
+        return Err(CandidateResolutionError::Unresolved);
+    }
+    let (resolved, symlink_hops) = walk_candidate_path(
+        &root,
+        &base,
+        &operand_path,
+        path_byte_limit,
+        symlink_hop_limit,
+    )?;
+    let relative = resolved
+        .strip_prefix(&root)
+        .map_err(|_| CandidateResolutionError::Unresolved)?;
+    let artifact_path = Path::new("/").join(relative);
+    let artifact_bytes = artifact_path.as_os_str().as_bytes();
+    if artifact_bytes.len() > path_byte_limit || artifact_bytes.contains(&0) {
+        return Err(CandidateResolutionError::Unresolved);
+    }
+
+    let resolved_c = CString::new(resolved.as_os_str().as_bytes())
+        .map_err(|_| CandidateResolutionError::Unresolved)?;
+    let object = crate::sys::trace_open_object(&resolved_c)
+        .map_err(|_| CandidateResolutionError::Unresolved)?;
+    let retained_path = CString::new(format!("/proc/self/fd/{}", object.as_raw_fd()))
+        .map_err(|_| CandidateResolutionError::Unresolved)?;
+    let retained = crate::sys::trace_read_link(&retained_path, path_byte_limit)
+        .map_err(|_| CandidateResolutionError::Unresolved)?;
+    if retained.ends_with(b" (deleted)")
+        || Path::new(std::ffi::OsStr::from_bytes(&retained)) != resolved
+    {
+        return Err(CandidateResolutionError::Unresolved);
+    }
+    let identity = crate::sys::trace_object_metadata(object.as_raw_fd())
+        .map_err(|_| CandidateResolutionError::Unresolved)?;
+    Ok(CandidatePass {
+        path: artifact_bytes.to_vec(),
+        symlink_hops,
+        identity: TraceObjectIdentity {
+            device_major: identity.device_major,
+            device_minor: identity.device_minor,
+            inode: identity.inode,
+            mode: identity.mode,
+            mount_id: identity.mount_id,
+        },
+    })
+}
+
+#[cfg(target_os = "linux")]
+fn walk_candidate_path(
+    root: &Path,
+    base: &Path,
+    operand: &Path,
+    path_byte_limit: usize,
+    symlink_hop_limit: u32,
+) -> Result<(PathBuf, u32), CandidateResolutionError> {
+    let mut current = if operand.is_absolute() {
+        root.to_path_buf()
+    } else {
+        base.to_path_buf()
+    };
+    let mut pending = operand
+        .components()
+        .map(|component| component.as_os_str().to_owned())
+        .collect::<VecDeque<_>>();
+    let mut symlink_hops = 0_u32;
+    let mut retained_target_bytes = 0_usize;
+    while let Some(component) = pending.pop_front() {
+        let component_path = Path::new(&component);
+        let Some(component) = component_path.components().next() else {
+            continue;
+        };
+        match component {
+            Component::RootDir | Component::CurDir => continue,
+            Component::ParentDir => {
+                if current != root {
+                    current.pop();
+                }
+            }
+            Component::Normal(component) => {
+                let candidate = current.join(component);
+                let metadata = std::fs::symlink_metadata(&candidate)
+                    .map_err(|_| CandidateResolutionError::Unresolved)?;
+                if metadata.file_type().is_symlink() {
+                    symlink_hops = symlink_hops
+                        .checked_add(1)
+                        .ok_or(CandidateResolutionError::SymlinkLimit)?;
+                    if symlink_hops > symlink_hop_limit {
+                        return Err(CandidateResolutionError::SymlinkLimit);
+                    }
+                    let target = std::fs::read_link(candidate)
+                        .map_err(|_| CandidateResolutionError::Unresolved)?;
+                    retained_target_bytes = retained_target_bytes
+                        .checked_add(target.as_os_str().as_bytes().len())
+                        .ok_or(CandidateResolutionError::Unresolved)?;
+                    if retained_target_bytes
+                        > path_byte_limit.saturating_mul(symlink_hop_limit as usize)
+                    {
+                        return Err(CandidateResolutionError::Unresolved);
+                    }
+                    if target.is_absolute() {
+                        current = root.to_path_buf();
+                    }
+                    for target_component in target.components().rev() {
+                        pending.push_front(target_component.as_os_str().to_owned());
+                    }
+                } else {
+                    current = candidate;
+                }
+            }
+            Component::Prefix(_) => return Err(CandidateResolutionError::Unresolved),
+        }
+        if !current.starts_with(root) {
+            return Err(CandidateResolutionError::Unresolved);
+        }
+    }
+    Ok((current, symlink_hops))
 }
 
 /// Owns an already-signalled trace tree during bounded terminal cleanup.
@@ -1943,15 +2259,20 @@ fn read_tracee_string(
         let chunk_address = address
             .checked_add(bytes.len() as u64)
             .ok_or(TraceObservationError::TraceeMemoryReadFailed)?;
-        read_exact_tracee_memory(process, chunk_address, &mut chunk)?;
-        if let Some(terminator) = chunk.iter().position(|byte| *byte == 0) {
-            bytes.extend_from_slice(&chunk[..terminator]);
+        let count = crate::sys::trace_read_process_memory(process.get(), chunk_address, &mut chunk)
+            .map_err(|_| TraceObservationError::TraceeMemoryReadFailed)?;
+        if count == 0 {
+            return Err(TraceObservationError::TraceeMemoryReadFailed);
+        }
+        let observed = &chunk[..count];
+        if let Some(terminator) = observed.iter().position(|byte| *byte == 0) {
+            bytes.extend_from_slice(&observed[..terminator]);
             if bytes.len() > limits.path_bytes() {
                 return Err(TraceObservationError::PathLimitExceeded);
             }
             return Ok(bytes);
         }
-        bytes.extend_from_slice(&chunk);
+        bytes.extend_from_slice(observed);
         if bytes.len() > limits.path_bytes() {
             return Err(TraceObservationError::PathLimitExceeded);
         }
@@ -2024,6 +2345,7 @@ fn read_little_endian_u64(bytes: &[u8], start: usize) -> Result<u64, TraceObserv
 struct TraceeState {
     thread_group: TraceProcessId,
     awaiting_initial_stop: bool,
+    allow_initial_exit: bool,
     pending: Option<PendingTraceSyscall>,
 }
 
@@ -2042,10 +2364,23 @@ struct ExecIdentityChange {
 }
 
 impl TraceeState {
+    const fn released_at_unknown_syscall_phase(thread_group: TraceProcessId) -> Self {
+        Self {
+            thread_group,
+            awaiting_initial_stop: false,
+            // The acknowledgement stop can race with entry into the trusted
+            // launcher's release receive. The first stop can be entry or exit.
+            allow_initial_exit: true,
+            pending: None,
+        }
+    }
+
+    #[cfg(test)]
     const fn observing(thread_group: TraceProcessId) -> Self {
         Self {
             thread_group,
             awaiting_initial_stop: false,
+            allow_initial_exit: false,
             pending: None,
         }
     }
@@ -2054,8 +2389,29 @@ impl TraceeState {
         Self {
             thread_group,
             awaiting_initial_stop: true,
+            allow_initial_exit: false,
             pending: None,
         }
+    }
+
+    fn begin_syscall(&mut self, pending: PendingTraceSyscall) -> Result<(), TraceObservationError> {
+        if self.pending.is_some() {
+            return Err(TraceObservationError::SyscallOrderInvalid);
+        }
+        self.allow_initial_exit = false;
+        self.pending = Some(pending);
+        Ok(())
+    }
+
+    fn finish_syscall(&mut self) -> Result<Option<PendingTraceSyscall>, TraceObservationError> {
+        if let Some(pending) = self.pending.take() {
+            return Ok(Some(pending));
+        }
+        if self.allow_initial_exit {
+            self.allow_initial_exit = false;
+            return Ok(None);
+        }
+        Err(TraceObservationError::SyscallOrderInvalid)
     }
 }
 
@@ -2330,6 +2686,122 @@ pub enum TraceCapturedOperands {
     },
 }
 
+#[cfg(target_os = "linux")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum TraceObjectSource {
+    Descriptor(i32),
+    Executable,
+}
+
+/// Contains the identity of one selected filesystem object.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TraceObjectIdentity {
+    device_major: u32,
+    device_minor: u32,
+    inode: u64,
+    mode: u32,
+    mount_id: u64,
+}
+
+impl TraceObjectIdentity {
+    /// Returns the device major number.
+    #[must_use]
+    pub const fn device_major(self) -> u32 {
+        self.device_major
+    }
+
+    /// Returns the device minor number.
+    #[must_use]
+    pub const fn device_minor(self) -> u32 {
+        self.device_minor
+    }
+
+    /// Returns the filesystem inode number.
+    #[must_use]
+    pub const fn inode(self) -> u64 {
+        self.inode
+    }
+
+    /// Returns the Linux file type and permission mode bits.
+    #[must_use]
+    pub const fn mode(self) -> u32 {
+        self.mode
+    }
+
+    /// Returns the Linux mount identifier.
+    #[must_use]
+    pub const fn mount_id(self) -> u64 {
+        self.mount_id
+    }
+}
+
+/// Contains one object retained from a successful stopped-tracee event.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TraceSelectedObject {
+    path: Vec<u8>,
+    identity: TraceObjectIdentity,
+}
+
+/// Contains one twice-observed advisory object for a failed path operation.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TraceCandidateObject {
+    path: Vec<u8>,
+    symlink_hops: u32,
+    object_before: TraceObjectIdentity,
+    object_after: TraceObjectIdentity,
+}
+
+/// Identifies the bounded result of one failed-path candidate check.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum TraceCandidateObservation {
+    /// Two bounded passes retained the same candidate path and object identity.
+    Stable(TraceCandidateObject),
+    /// The two bounded passes observed different path or object identity.
+    IdentityDrift,
+    /// Resolution required more than the declared symlink-hop limit.
+    SymlinkLimit,
+}
+
+impl TraceCandidateObject {
+    /// Returns the normalized tracee-root-relative candidate path.
+    #[must_use]
+    pub fn path(&self) -> &[u8] {
+        &self.path
+    }
+
+    /// Returns the followed symlink count.
+    #[must_use]
+    pub const fn symlink_hops(&self) -> u32 {
+        self.symlink_hops
+    }
+
+    /// Returns the first observed object identity.
+    #[must_use]
+    pub const fn object_before(&self) -> TraceObjectIdentity {
+        self.object_before
+    }
+
+    /// Returns the second observed object identity.
+    #[must_use]
+    pub const fn object_after(&self) -> TraceObjectIdentity {
+        self.object_after
+    }
+}
+
+impl TraceSelectedObject {
+    /// Returns the bounded procfs path bytes for the retained object.
+    #[must_use]
+    pub fn path(&self) -> &[u8] {
+        &self.path
+    }
+
+    /// Returns the identity read from the retained object handle.
+    #[must_use]
+    pub const fn identity(&self) -> TraceObjectIdentity {
+        self.identity
+    }
+}
+
 /// Contains the architecture-qualified input registers and bounded operands for one system call.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TraceSyscallInvocation {
@@ -2408,6 +2880,10 @@ pub enum ActiveTraceEvent {
         result: i64,
         /// Reports whether the result is a Linux error value.
         is_error: bool,
+        /// The conservatively retained selected object, when available.
+        selected_object: Option<TraceSelectedObject>,
+        /// The twice-observed advisory candidate for a failed path operation.
+        candidate: Option<TraceCandidateObservation>,
     },
     /// One ptrace process-creation event identified a new tracee.
     ProcessCreated {
@@ -2428,6 +2904,8 @@ pub enum ActiveTraceEvent {
         superseded_processes: Vec<TraceProcessId>,
         /// The pending system-call entry when it was available.
         invocation: Option<TraceSyscallInvocation>,
+        /// The conservatively retained post-exec object, when available.
+        selected_object: Option<TraceSelectedObject>,
     },
     /// One exact terminal wait result removed a tracee from the known tree.
     ProcessExited {
@@ -2782,11 +3260,11 @@ mod tests {
             Err(TraceStartupError::ProcessLimitInvalid)
         );
         assert_eq!(
-            TraceCaptureLimits::new(0, 1, 1),
+            TraceCaptureLimits::new(0, 1, 1, 1),
             Err(TraceStartupError::CaptureLimitInvalid)
         );
         assert_eq!(
-            TraceCaptureLimits::new(1, u64::from(MAX_TRACE_SOCKET_ADDRESS_BYTES) + 1, 1),
+            TraceCaptureLimits::new(1, u64::from(MAX_TRACE_SOCKET_ADDRESS_BYTES) + 1, 1, 1),
             Err(TraceStartupError::CaptureLimitInvalid)
         );
         assert!(matches!(
@@ -2894,6 +3372,113 @@ mod tests {
             DrainingTrace::finish;
         let _: fn(ActiveTrace) -> Result<TraceDrainReport, TraceObservationError> =
             ActiveTrace::terminate_and_drain;
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn selected_descriptor_requires_one_tracee_supported_success_and_linux_width() {
+        for class in [
+            TraceSyscallClass::Creat,
+            TraceSyscallClass::Open,
+            TraceSyscallClass::Openat,
+            TraceSyscallClass::Openat2,
+        ] {
+            assert_eq!(eligible_selected_descriptor(class, 7, false, 1), Some(7));
+        }
+        assert_eq!(
+            eligible_selected_descriptor(TraceSyscallClass::Statx, 7, false, 1),
+            None
+        );
+        assert_eq!(
+            eligible_selected_descriptor(TraceSyscallClass::Open, -1, true, 1),
+            None
+        );
+        assert_eq!(
+            eligible_selected_descriptor(TraceSyscallClass::Open, 7, false, 2),
+            None
+        );
+        assert_eq!(
+            eligible_selected_descriptor(
+                TraceSyscallClass::Open,
+                i64::from(i32::MAX) + 1,
+                false,
+                1,
+            ),
+            None
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn candidate_walk_is_root_confined_and_symlink_bounded() {
+        use std::os::unix::fs::symlink;
+
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("system time after epoch")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "proofbound-runtime-candidate-{}-{unique}",
+            std::process::id()
+        ));
+        let base = root.join("workspace");
+        std::fs::create_dir_all(base.join("real")).expect("candidate fixture directories");
+        std::fs::write(base.join("real/file"), b"fixture").expect("candidate fixture file");
+        symlink("real", base.join("link")).expect("candidate fixture symlink");
+        symlink("loop", base.join("loop")).expect("candidate fixture loop");
+
+        assert_eq!(
+            walk_candidate_path(&root, &base, Path::new("link/file"), 4096, 4),
+            Ok((base.join("real/file"), 1))
+        );
+        assert_eq!(
+            walk_candidate_path(
+                &root,
+                &base,
+                Path::new("../../workspace/real/file"),
+                4096,
+                4
+            ),
+            Ok((base.join("real/file"), 0))
+        );
+        assert_eq!(
+            walk_candidate_path(&root, &base, Path::new("link/file"), 4096, 0),
+            Err(CandidateResolutionError::SymlinkLimit)
+        );
+        assert_eq!(
+            walk_candidate_path(&root, &base, Path::new("loop"), 4096, 4),
+            Err(CandidateResolutionError::SymlinkLimit)
+        );
+
+        std::fs::remove_dir_all(root).expect("remove candidate fixture");
+    }
+
+    #[test]
+    fn released_trace_state_synchronizes_either_initial_syscall_phase_once() {
+        let root = TraceProcessId::new(41).expect("positive process identity");
+        let mut exit_first = TraceeState::released_at_unknown_syscall_phase(root);
+
+        assert_eq!(exit_first.thread_group, root);
+        assert!(!exit_first.awaiting_initial_stop);
+        assert_eq!(exit_first.finish_syscall(), Ok(None));
+        assert_eq!(
+            exit_first.finish_syscall(),
+            Err(TraceObservationError::SyscallOrderInvalid)
+        );
+
+        let mut entry_first = TraceeState::released_at_unknown_syscall_phase(root);
+        assert_eq!(
+            entry_first.begin_syscall(PendingTraceSyscall::Ignored),
+            Ok(())
+        );
+        assert_eq!(
+            entry_first.finish_syscall(),
+            Ok(Some(PendingTraceSyscall::Ignored))
+        );
+        assert_eq!(
+            entry_first.finish_syscall(),
+            Err(TraceObservationError::SyscallOrderInvalid)
+        );
     }
 
     #[test]
@@ -3105,6 +3690,7 @@ mod tests {
                 TraceeState {
                     thread_group: leader,
                     awaiting_initial_stop: false,
+                    allow_initial_exit: false,
                     pending: Some(pending.clone()),
                 },
             ),

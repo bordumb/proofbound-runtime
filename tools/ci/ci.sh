@@ -65,6 +65,9 @@ if selected "preflight"; then
   timed_unit diagnostic-stream-capture-tests python3 -m unittest tools.ci.test_diagnostic_stream_capture
   timed_unit diagnostic-lifecycle-tests python3 -m unittest tools.ci.test_diagnostic_lifecycle
   timed_unit diagnostic-observer-adapter-tests python3 -m unittest tools.ci.test_diagnostic_observer_adapter
+  timed_unit diagnostic-object-resolution-tests python3 -m unittest tools.ci.test_diagnostic_object_resolution
+  timed_unit diagnostic-candidate-resolution-tests python3 -m unittest tools.ci.test_diagnostic_candidate_resolution
+  timed_unit diagnostic-command-tests python3 -m unittest tools.ci.test_diagnostic_command
   timed_unit sdk-contract-tests python3 -m unittest tools.ci.test_sdk_contract tools.ci.test_sdk_packages
   timed_unit registry-package-tests python3 -m unittest tools.ci.test_registry_packages
   timed_unit current-integration-tests python3 -m unittest tools.ci.test_current_integration

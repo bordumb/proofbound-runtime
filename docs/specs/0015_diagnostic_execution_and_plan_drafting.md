@@ -30,7 +30,8 @@ production receipt schema. `pbr run` always selects `production`.
 The first command is:
 
 ```text
-pbr-diagnose --plan SEED_PLAN --receipt ABSENT_RECEIPT --draft ABSENT_DRAFT
+pbr-diagnose --plan SEED_PLAN --receipt ABSENT_RECEIPT --draft ABSENT_DRAFT \
+  --cgroup-root DELEGATED_CGROUP_ROOT
 ```
 
 The seed plan must already pass the normal strict plan parser and `plan check`.
@@ -39,11 +40,26 @@ diagnostic supervisor does not add a path, environment name, descriptor,
 process allowance, resource allowance, or network authority when the target
 encounters a denial.
 
+The delegated cgroup root is explicit invocation input. The command does not
+discover one from ambient environment or user configuration. The first command
+uses fixed declared observation bounds of 100,000 total events, 10,000 events
+per process, 256 lifetime processes, 4,096 path bytes, 4,096 tracee-string
+bytes, 256 socket-address bytes, 40 symlink hops, and 16 MiB for each canonical
+diagnostic artifact. A later interface may expose stricter values but must not
+silently increase these bounds.
+
 Both output paths must be absent regular-file candidates outside the child
 write authority. Publication uses the existing no-replace durability pattern.
 A partial observer result may be published only when it is structurally valid,
 states `completion: "incomplete"`, and lists the exact gaps. Setup failure
 before target release publishes neither output.
+
+The command writes a `proofbound-runtime-diagnose-result/1` object to standard
+output. Its sorted `observer_error_codes` array is empty when no effectful
+observer error selected termination. Otherwise, it contains the stable closed
+`TraceObservationError` code that selected drain. This field is operational
+diagnostic output. It is not part of the committed receipt and does not replace
+the receipt's closed gap set or assurance meaning.
 
 ## 3. Boundary order
 
@@ -301,6 +317,44 @@ syscall. A `stable-candidate` remains advisory. Secret environment values,
 request bodies, response bodies, file contents, and credential material are
 never read or recorded.
 
+The initial `kernel-selected` resolver is conservative. It runs before the
+active trace can resume the event's exact stopped tracee. A successful
+`open`, `openat`, `openat2`, or `creat` result is eligible only when it is a
+nonnegative Linux descriptor value and that tracee is the only retained member
+of the observed process tree. The single-tracee condition excludes another
+retained process or thread that could share and replace the descriptor table
+during observation. The resolver opens the exact `/proc/<pid>/fd/<fd>` object,
+retains that handle while it reads the procfs link, and reads the device,
+inode, mode, and mount identity from the retained handle. A successful
+`execve` or `execveat` event is eligible only after exec identity
+reconciliation removes superseded threads; the resolver retains the exact
+`/proc/<pid>/exe` object before the stopped post-exec tracee can resume.
+
+The retained link must name a valid UTF-8 normalized absolute path within the
+declared path bound. Deleted targets, non-filesystem procfs link forms, missing
+mount identity, identity-read failure, descriptor-width mismatch, multiple
+retained tracees for a descriptor result, or any other ambiguity produces
+`unresolved`. It does not guess an object and does not fail the production
+boundary. `kernel-selected` requires the supplied operand and retained object
+path, but it does not invent a followed-symlink count. A symlink-hop count is
+present only when the separate denied-path candidate resolver actually walks
+the supplied path.
+
+The denied-path candidate resolver runs only while the exact caller is stopped
+and is the sole retained tracee. It anchors an absolute operand below
+`/proc/<pid>/root`. It anchors a relative operand below that root and the
+stopped tracee's `/proc/<pid>/cwd`, or below the named nonnegative directory
+descriptor. Parent traversal clamps at the tracee root. The resolver walks no
+more than the declared symlink-hop bound, retains the final object, records its
+normalized tracee-root-relative path and complete identity, and repeats the
+complete pass. Equal paths, hop counts, and identities produce only
+`stable-candidate`. A difference produces `identity-drift`; hop exhaustion
+produces `symlink-limit`; and inaccessible, missing, deleted, escaped,
+unsupported, or ambiguous cases remain unresolved. Because version 1 JSON
+requires UTF-8 path text, a non-UTF-8 path causes the closed event-mapping error
+and produces no candidate artifact. No candidate claims which object the failed
+system call selected.
+
 The implementation fixes bounds for total processes, total events, events per
 process, tracee string bytes, path bytes, symlink hops, socket-address bytes,
 and output bytes. Exhausting a bound while another item remains emits its exact
@@ -324,6 +378,13 @@ duplicate-free canonical JSON object with these required top-level members:
 - ordered observation events;
 - a closed completion state and sorted gap set; and
 - the diagnostic trusted-computing-base roles and assumptions.
+
+The command-generated receipt carries the closed active runtime premise set:
+`PBR-DIAGNOSTIC-TRACE-AX-016`, `PBR-DIAGNOSTIC-DECODE-AX-017`,
+`PBR-DIAGNOSTIC-STREAM-AX-022`, `PBR-DIAGNOSTIC-LIFECYCLE-AX-023`,
+`PBR-DIAGNOSTIC-OBJECT-AX-025`, `PBR-DIAGNOSTIC-CANDIDATE-AX-027`, and
+`PBR-DIAGNOSTIC-COMMAND-AX-029`. Compiler and independent-check premises stay
+in the evidence ledger and are not represented as runtime platform premises.
 
 The receipt is a diagnostic accountability record. Its SHA-256 commitment can
 identify exact bytes, but neither the bytes nor the commitment are accepted by
@@ -442,13 +503,35 @@ the diagnostic executable a released artifact.
 through adapter derivation, irreversible failure-to-drain coupling, pre-resume
 entry capture, the closed x86_64 and aarch64 decoder tables, supported
 structure sizes, argument-width and byte-order helpers, independent operand
-bounds, exact-or-error tracee reads, raw read-only syscall confinement, and
-payload exclusion. The syscall-information form accepts zero reserved and
+bounds, exact fixed-size tracee reads, bounded terminated-string reads that
+inspect each short kernel-returned prefix before continuing, raw read-only
+syscall confinement, and payload exclusion. The syscall-information form
+accepts zero reserved and
 flags fields and the exact operation-specific returned size; extensions fail
 closed until registered. The evidence byte-pins the compiler and
 crate-selection closure and compiles the selected adapter release and drain
 paths. It does not establish the Linux ABI, tracee-memory stability,
 kernel-selected object identity, or native observation completeness.
+
+`PBR-OBSERVER-029` checks the source-level stopped-tracee retention and mapping
+rules for successful descriptor and post-exec objects. It inherits
+`PBR-DIAGNOSTIC-OBJECT-AX-025` and the independent-check premise
+`PBR-DIAGNOSTIC-OBJECT-CHECK-AX-024`. It does not establish Linux procfs,
+`O_PATH`, `statx`, mount, pathname, or stopped-tracee truth.
+
+`PBR-OBSERVER-030` checks the source-level root confinement, bounded symlink
+walk, repeated candidate observation, drift handling, and advisory-only
+mapping. It inherits `PBR-DIAGNOSTIC-CANDIDATE-AX-027` and the independent-check
+premise `PBR-DIAGNOSTIC-CANDIDATE-CHECK-AX-026`. Two equal passes do not prove
+race freedom or identify the object selected by a failed system call.
+
+`PBR-OBSERVER-031` checks the separate command's seed-authority reuse, terminal
+publication gate, absent-target publication, production dependency separation,
+and release inventory. It inherits `PBR-DIAGNOSTIC-COMMAND-AX-029` and the
+independent-check premise `PBR-DIAGNOSTIC-COMMAND-CHECK-AX-028`. Its receipt
+also preserves the active trace, decode, stream, lifecycle, object, and
+candidate runtime premises. Native and released-artifact behavior remain
+separate obligations.
 
 RT-8 closes only after one maintained dynamic workload displays all available
 provenance classes, requires human completion, passes the independent

@@ -1,5 +1,7 @@
 //! Contains the raw Linux calls needed by capability probes.
 
+#[cfg(feature = "diagnostic-observer")]
+use std::ffi::CStr;
 use std::ffi::CString;
 use std::io;
 #[cfg(feature = "diagnostic-observer")]
@@ -46,6 +48,16 @@ const REQUIRED_DIAGNOSTIC_TRACE_OPTIONS: u32 = PTRACE_O_TRACESYSGOOD
     | PTRACE_O_TRACECLONE
     | PTRACE_O_TRACEEXEC
     | PTRACE_O_EXITKILL;
+
+#[cfg(feature = "diagnostic-observer")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct TraceObjectMetadata {
+    pub(crate) device_major: u32,
+    pub(crate) device_minor: u32,
+    pub(crate) inode: u64,
+    pub(crate) mode: u32,
+    pub(crate) mount_id: u64,
+}
 pub(crate) const RESOLVE_NO_MAGICLINKS: u64 = 0x02;
 pub(crate) const RESOLVE_NO_SYMLINKS: u64 = 0x04;
 pub(crate) const RESOLVE_BENEATH: u64 = 0x08;
@@ -679,6 +691,80 @@ pub(crate) fn trace_read_process_memory(
         return Err(io::Error::from(io::ErrorKind::InvalidData));
     }
     Ok(count)
+}
+
+#[cfg(feature = "diagnostic-observer")]
+pub(crate) fn trace_open_object(path: &CStr) -> io::Result<OwnedFd> {
+    // SAFETY: `path` is NUL-terminated and remains live for the call. `open`
+    // does not retain the pointer. A successful result is one owned descriptor.
+    let descriptor = unsafe { libc::open(path.as_ptr(), libc::O_PATH | libc::O_CLOEXEC) };
+    if descriptor < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    // SAFETY: `open` returned this nonnegative descriptor and ownership has not
+    // been transferred or duplicated in Rust.
+    Ok(unsafe { OwnedFd::from_raw_fd(descriptor) })
+}
+
+#[cfg(feature = "diagnostic-observer")]
+pub(crate) fn trace_read_link(path: &CStr, byte_limit: usize) -> io::Result<Vec<u8>> {
+    let capacity = byte_limit
+        .checked_add(1)
+        .ok_or_else(|| io::Error::from_raw_os_error(libc::ENAMETOOLONG))?;
+    let mut bytes = vec![0_u8; capacity];
+    // SAFETY: `path` is NUL-terminated and remains live for the call. `bytes`
+    // owns `capacity` writable bytes. `readlink` does not retain either pointer.
+    let length = unsafe {
+        libc::readlink(
+            path.as_ptr(),
+            bytes.as_mut_ptr().cast::<libc::c_char>(),
+            capacity,
+        )
+    };
+    if length < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let length = usize::try_from(length).map_err(|_| io::Error::other("invalid link length"))?;
+    if length > byte_limit {
+        return Err(io::Error::from_raw_os_error(libc::ENAMETOOLONG));
+    }
+    bytes.truncate(length);
+    Ok(bytes)
+}
+
+#[cfg(feature = "diagnostic-observer")]
+pub(crate) fn trace_object_metadata(descriptor: RawFd) -> io::Result<TraceObjectMetadata> {
+    let mut metadata = std::mem::MaybeUninit::<libc::statx>::uninit();
+    let empty = c"";
+    let requested = libc::STATX_BASIC_STATS | libc::STATX_MNT_ID;
+    // SAFETY: `descriptor` is borrowed by the caller for the call. `empty` is
+    // NUL-terminated. `metadata` points to writable `statx` storage, and the
+    // kernel initializes that storage before a successful return.
+    let result = unsafe {
+        libc::syscall(
+            libc::SYS_statx,
+            descriptor,
+            empty.as_ptr(),
+            libc::AT_EMPTY_PATH | libc::AT_STATX_SYNC_AS_STAT,
+            requested,
+            metadata.as_mut_ptr(),
+        )
+    };
+    if result != 0 {
+        return Err(io::Error::last_os_error());
+    }
+    // SAFETY: a successful statx call initializes the complete output object.
+    let metadata = unsafe { metadata.assume_init() };
+    if metadata.stx_mask & requested != requested || metadata.stx_mnt_id == 0 {
+        return Err(io::Error::from_raw_os_error(libc::EOPNOTSUPP));
+    }
+    Ok(TraceObjectMetadata {
+        device_major: metadata.stx_dev_major,
+        device_minor: metadata.stx_dev_minor,
+        inode: metadata.stx_ino,
+        mode: u32::from(metadata.stx_mode),
+        mount_id: metadata.stx_mnt_id,
+    })
 }
 
 #[cfg(feature = "diagnostic-observer")]
