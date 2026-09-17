@@ -514,6 +514,178 @@ assert not any(
 )
 ' "$dynamic_result" "$dynamic_receipt" "$dynamic_draft" "$dynamic_scaffold"
 
+  assert_diagnostic_rejection() {
+    local case_id="$1"
+    local case_plan="$2"
+    local case_scaffold="$3"
+    local expected_status="$4"
+    local expected_error="$5"
+    local case_receipt="$e2e_root/$case_id-receipt.json"
+    local case_draft="$e2e_root/$case_id-draft.json"
+    local case_stdout="$e2e_root/$case_id.stdout"
+    local case_stderr="$e2e_root/$case_id.stderr"
+    local arguments=(
+      --plan "$case_plan"
+      --receipt "$case_receipt"
+      --draft "$case_draft"
+      --cgroup-root "$PROOFBOUND_CGROUP_ROOT"
+    )
+    if [[ "$case_scaffold" != "-" ]]; then
+      arguments+=(--static-scaffold "$case_scaffold")
+    fi
+    set +e
+    "$runtime_bin_directory/pbr-diagnose" "${arguments[@]}" \
+      >"$case_stdout" 2>"$case_stderr"
+    local actual_status=$?
+    set -e
+    test "$actual_status" -eq "$expected_status"
+    test ! -s "$case_stdout"
+    test "$(<"$case_stderr")" = "$expected_error"
+    test ! -e "$case_receipt"
+    test ! -e "$case_draft"
+  }
+
+  stale_executable="$e2e_root/stale-diagnostic-probe"
+  stale_scaffold="$e2e_root/stale-plan-scaffold.json"
+  stale_plan="$e2e_root/stale-diagnostic-plan.cbor"
+  cp -- "$dynamic_executable" "$stale_executable"
+  "$runtime_bin_directory/pbr" plan scaffold \
+    --executable "$stale_executable" \
+    --host-profile "$scaffold_profile" >"$stale_scaffold"
+  printf '\0' >>"$stale_executable"
+  python3 tools/ci/encode_plan_v2.py \
+    --output "$stale_plan" \
+    --id ci.native-diagnostic-stale-source \
+    --executable "$stale_executable" \
+    --argument mark \
+    --argument stale-output/child-ran \
+    --working-directory . \
+    --read stale-plan-scaffold.json \
+    --runtime-read-json "$dynamic_runtime_read" \
+    --write stale-output \
+    --execute "$stale_executable" \
+    --processes 1 \
+    --wall-time-ms 5000 \
+    --stdout-bytes 4096 \
+    --stderr-bytes 4096 \
+    --memory-bytes 268435456 \
+    --swap-bytes 0
+  assert_diagnostic_rejection \
+    "stale-source" "$stale_plan" stale-plan-scaffold.json 2 \
+    "diagnostic.static-scaffold.target-mismatch"
+  test ! -e "$e2e_root/stale-output/child-ran"
+
+  redirected_scaffold="$e2e_root/redirected-plan-scaffold.json"
+  redirected_plan="$e2e_root/redirected-diagnostic-plan.cbor"
+  ln -s dynamic-plan-scaffold.json "$redirected_scaffold"
+  python3 tools/ci/encode_plan_v2.py \
+    --output "$redirected_plan" \
+    --id ci.native-diagnostic-symlink-redirection \
+    --executable "$dynamic_executable" \
+    --argument mark \
+    --argument redirected-output/child-ran \
+    --working-directory . \
+    --read redirected-plan-scaffold.json \
+    --runtime-read-json "$dynamic_runtime_read" \
+    --write redirected-output \
+    --execute "$dynamic_executable" \
+    --processes 1 \
+    --wall-time-ms 5000 \
+    --stdout-bytes 4096 \
+    --stderr-bytes 4096 \
+    --memory-bytes 268435456 \
+    --swap-bytes 0
+  assert_diagnostic_rejection \
+    "symlink-redirection" "$redirected_plan" redirected-plan-scaffold.json 2 \
+    "resolve.path.symlink-invalid"
+  test ! -e "$e2e_root/redirected-output/child-ran"
+  rm -f "$redirected_scaffold"
+
+  unexpected_stop_plan="$e2e_root/unexpected-stop-plan.cbor"
+  unexpected_stop_receipt="$e2e_root/unexpected-stop-receipt.json"
+  unexpected_stop_draft="$e2e_root/unexpected-stop-draft.json"
+  unexpected_stop_result="$e2e_root/unexpected-stop-result.json"
+  python3 tools/ci/encode_plan_v2.py \
+    --output "$unexpected_stop_plan" \
+    --id ci.native-diagnostic-observation-sensitive \
+    --executable "$PROOFBOUND_NATIVE_FIXTURE" \
+    --argument diagnostic-unexpected-stop \
+    --working-directory . \
+    --write unexpected-stop-output \
+    --execute "$PROOFBOUND_NATIVE_FIXTURE" \
+    --processes 1 \
+    --wall-time-ms 5000 \
+    --stdout-bytes 4096 \
+    --stderr-bytes 4096 \
+    --memory-bytes 268435456 \
+    --swap-bytes 0
+  "$runtime_bin_directory/pbr-diagnose" \
+    --plan "$unexpected_stop_plan" \
+    --receipt "$unexpected_stop_receipt" \
+    --draft "$unexpected_stop_draft" \
+    --cgroup-root "$PROOFBOUND_CGROUP_ROOT" >"$unexpected_stop_result"
+  python3 -c '
+import json
+import sys
+
+result_path, receipt_path, draft_path = sys.argv[1:]
+with open(result_path, encoding="utf-8") as source:
+    result = json.load(source)
+with open(receipt_path, encoding="utf-8") as source:
+    receipt = json.load(source)
+with open(draft_path, encoding="utf-8") as source:
+    draft = json.load(source)
+assert result["completion"] == "incomplete"
+assert receipt["completion"] == "incomplete"
+assert receipt["reusable"] is False
+assert "unexpected-stop" in receipt["gaps"]
+assert "diagnostic-gap" in {item["code"] for item in draft["open_items"]}
+' "$unexpected_stop_result" "$unexpected_stop_receipt" "$unexpected_stop_draft"
+
+  untraced_child_plan="$e2e_root/untraced-child-plan.cbor"
+  untraced_child_receipt="$e2e_root/untraced-child-receipt.json"
+  untraced_child_draft="$e2e_root/untraced-child-draft.json"
+  untraced_child_result="$e2e_root/untraced-child-result.json"
+  python3 tools/ci/encode_plan_v2.py \
+    --output "$untraced_child_plan" \
+    --id ci.native-diagnostic-missing-event \
+    --executable "$PROOFBOUND_NATIVE_FIXTURE" \
+    --argument diagnostic-untraced-child \
+    --working-directory . \
+    --write untraced-child-output \
+    --execute "$PROOFBOUND_NATIVE_FIXTURE" \
+    --processes 2 \
+    --wall-time-ms 5000 \
+    --stdout-bytes 4096 \
+    --stderr-bytes 4096 \
+    --memory-bytes 268435456 \
+    --swap-bytes 0
+  "$runtime_bin_directory/pbr-diagnose" \
+    --plan "$untraced_child_plan" \
+    --receipt "$untraced_child_receipt" \
+    --draft "$untraced_child_draft" \
+    --cgroup-root "$PROOFBOUND_CGROUP_ROOT" >"$untraced_child_result"
+  python3 -c '
+import json
+import sys
+
+result_path, receipt_path, draft_path = sys.argv[1:]
+with open(result_path, encoding="utf-8") as source:
+    result = json.load(source)
+with open(receipt_path, encoding="utf-8") as source:
+    receipt = json.load(source)
+with open(draft_path, encoding="utf-8") as source:
+    draft = json.load(source)
+assert result["completion"] == "incomplete"
+assert result["observer_error_codes"] == [
+    "diagnostic.trace.syscall-form.unsupported"
+]
+assert receipt["completion"] == "incomplete"
+assert receipt["reusable"] is False
+assert "observer-failed" in receipt["gaps"]
+assert "diagnostic-gap" in {item["code"] for item in draft["open_items"]}
+' "$untraced_child_result" "$untraced_child_receipt" "$untraced_child_draft"
+
   "$runtime_bin_directory/pbr" run \
     --plan "$plan" \
     --receipt "$receipt" \

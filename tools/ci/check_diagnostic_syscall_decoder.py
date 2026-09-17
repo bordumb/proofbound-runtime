@@ -13,6 +13,7 @@ import sys
 INVENTORY = [
     "diagnostic-syscall-decoder-architecture-tables",
     "diagnostic-syscall-decoder-bounded-operands",
+    "diagnostic-syscall-decoder-clone-evasion",
     "diagnostic-syscall-decoder-entry-order",
     "diagnostic-syscall-decoder-exact-source-closure",
     "diagnostic-syscall-decoder-mutation-witnesses",

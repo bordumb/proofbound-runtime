@@ -363,8 +363,10 @@ manifest describes the supported tuple.
 - [ ] Run and admit the adversarial corpus for stale source, symlink redirection,
   observation-sensitive behavior, missing events, and attempted provenance
   relabeling. The active exit wave adds stale-input and provenance-relabel
-  checks. The remaining live observer attacks and hosted exact-head evidence
-  are still required.
+  source checks. Its dependent adversarial wave adds native stale-target and
+  symlink-input rejection, an incomplete deliberate unexpected-stop result,
+  and pre-resume rejection of `CLONE_UNTRACED` on both architectures. Hosted
+  exact-head evidence is still required.
 - [ ] Demonstrate one maintained dynamic workload using every available
   provenance class. The active exit wave contains the x86_64 and aarch64
   workload; hosted exact-head evidence remains required. Capsec stays visibly

@@ -17,6 +17,7 @@ INVENTORY = [
     "diagnostic-command-production-separation",
     "diagnostic-command-release-inventory",
     "diagnostic-command-terminal-gating",
+    "diagnostic-command-native-adversarial-corpus",
 ]
 
 

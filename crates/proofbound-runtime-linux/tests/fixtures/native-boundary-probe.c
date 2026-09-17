@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/landlock.h>
+#include <sched.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -340,6 +341,22 @@ int main(int argc, char **argv) {
             return 23;
         }
         return errno == EACCES ? emit(STDOUT_FILENO, "filesystem-denied\n") : 24;
+    }
+    if (strcmp(argv[1], "diagnostic-unexpected-stop") == 0) {
+        return raise(SIGTRAP) == 0 ? 120 : 121;
+    }
+    if (strcmp(argv[1], "diagnostic-untraced-child") == 0) {
+        long child = syscall(SYS_clone, (unsigned long)(CLONE_UNTRACED | SIGCHLD),
+                             NULL, NULL, NULL, 0);
+        if (child < 0) {
+            return 122;
+        }
+        if (child == 0) {
+            for (;;) {
+                pause();
+            }
+        }
+        return 0;
     }
     if (strcmp(argv[1], "network-denied") == 0) {
         int descriptor = socket(AF_INET, SOCK_STREAM, 0);

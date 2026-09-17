@@ -36,6 +36,7 @@ const AT_FDCWD: i32 = -100;
 const MAX_TRACE_PROCESS_LIMIT: u32 = 4096;
 const MAX_TRACE_PATH_BYTES: u32 = 1_048_576;
 const MAX_TRACE_SOCKET_ADDRESS_BYTES: u32 = 4096;
+const CLONE_UNTRACED_FLAG: u64 = 0x0080_0000;
 const TRACE_MEMORY_CHUNK_BYTES: usize = 256;
 const AUDIT_ARCH_AARCH64: u32 = 0xc000_00b7;
 const AUDIT_ARCH_X86_64: u32 = 0xc000_003e;
@@ -1905,6 +1906,7 @@ fn capture_syscall_invocation(
             )
         }
         TraceCaptureRequest::ProcessCreate { class, flags } => {
+            validate_process_creation_flags(class, flags)?;
             (class, TraceCapturedOperands::ProcessCreate { flags })
         }
         TraceCaptureRequest::Clone3 {
@@ -1920,11 +1922,11 @@ fn capture_syscall_invocation(
             }
             let mut flags = [0_u8; 8];
             read_exact_tracee_memory(process, arguments_address, &mut flags)?;
+            let flags = u64::from_le_bytes(flags);
+            validate_process_creation_flags(TraceSyscallClass::Clone, Some(flags))?;
             (
                 TraceSyscallClass::Clone,
-                TraceCapturedOperands::ProcessCreate {
-                    flags: Some(u64::from_le_bytes(flags)),
-                },
+                TraceCapturedOperands::ProcessCreate { flags: Some(flags) },
             )
         }
         TraceCaptureRequest::SocketAddress {
@@ -1968,6 +1970,19 @@ fn capture_syscall_invocation(
         class,
         operands,
     }))
+}
+
+#[cfg(target_os = "linux")]
+fn validate_process_creation_flags(
+    class: TraceSyscallClass,
+    flags: Option<u64>,
+) -> Result<(), TraceObservationError> {
+    if class == TraceSyscallClass::Clone
+        && flags.is_some_and(|value| value & CLONE_UNTRACED_FLAG != 0)
+    {
+        return Err(TraceObservationError::SyscallFormUnsupported);
+    }
+    Ok(())
 }
 
 #[cfg(target_os = "linux")]
@@ -3655,6 +3670,26 @@ mod tests {
         assert_eq!(
             decode_trace_syscall(x32),
             Err(TraceObservationError::SyscallFormUnsupported)
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn clone_untraced_is_rejected_before_resume() {
+        assert_eq!(
+            validate_process_creation_flags(
+                TraceSyscallClass::Clone,
+                Some(CLONE_UNTRACED_FLAG | 17),
+            ),
+            Err(TraceObservationError::SyscallFormUnsupported)
+        );
+        assert_eq!(
+            validate_process_creation_flags(TraceSyscallClass::Clone, Some(17)),
+            Ok(())
+        );
+        assert_eq!(
+            validate_process_creation_flags(TraceSyscallClass::Fork, None),
+            Ok(())
         );
     }
 

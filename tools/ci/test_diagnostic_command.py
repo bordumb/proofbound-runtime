@@ -13,6 +13,9 @@ ACTION_RUNNER = ROOT / ".github/actions/proofbound-runtime/run.py"
 OBSERVATION_INPUTS = ROOT / "tools/release/observation_inputs.py"
 NATIVE_CONTEXT = ROOT / "tools/ci/native_context.py"
 NATIVE_SCRIPT = ROOT / "tools/ci/native-linux.sh"
+NATIVE_FIXTURE = (
+    ROOT / "crates/proofbound-runtime-linux/tests/fixtures/native-boundary-probe.c"
+)
 CURRENT_BUILDER = ROOT / "tools/release/build_current_integration.py"
 CURRENT_VERIFIER = ROOT / "tools/release/verify_current_integration.py"
 RELEASE_OBSERVATION = (
@@ -175,8 +178,24 @@ def assert_command_contract(sources):
         'entry["provenance"] for entry in draft["identified_closure"]',
         'assert receipt["reusable"] is False',
         '"capsec-missing", "choose-environment", "choose-limits"',
+        "ci.native-diagnostic-stale-source",
+        '"diagnostic.static-scaffold.target-mismatch"',
+        "ci.native-diagnostic-symlink-redirection",
+        '"resolve.path.symlink-invalid"',
+        "ci.native-diagnostic-observation-sensitive",
+        '"unexpected-stop" in receipt["gaps"]',
+        "ci.native-diagnostic-missing-event",
+        '"diagnostic.trace.syscall-form.unsupported"',
+        '"observer-failed" in receipt["gaps"]',
     ]:
         assert marker in sources["native_script"]
+    for marker in [
+        'strcmp(argv[1], "diagnostic-unexpected-stop")',
+        "raise(SIGTRAP)",
+        'strcmp(argv[1], "diagnostic-untraced-child")',
+        "CLONE_UNTRACED | SIGCHLD",
+    ]:
+        assert marker in sources["native_fixture"]
     assert (
         'assert_manifest_artifact(&bundle, "pbr-diagnose")'
         in sources["release_observation"]
@@ -200,6 +219,7 @@ class DiagnosticCommandContractTests(unittest.TestCase):
             "observation_inputs": OBSERVATION_INPUTS.read_text(),
             "native_context": NATIVE_CONTEXT.read_text(),
             "native_script": NATIVE_SCRIPT.read_text(),
+            "native_fixture": NATIVE_FIXTURE.read_text(),
             "current_builder": CURRENT_BUILDER.read_text(),
             "current_verifier": CURRENT_VERIFIER.read_text(),
             "release_observation": RELEASE_OBSERVATION.read_text(),
@@ -213,6 +233,9 @@ class DiagnosticCommandContractTests(unittest.TestCase):
         self.assertNotIn("proofbound-runtime-diagnose", self.sources["linux"])
 
     def test_release_and_native_observation_closure_is_exact(self):
+        assert_command_contract(self.sources)
+
+    def test_native_adversarial_corpus_is_closed(self):
         assert_command_contract(self.sources)
 
     def test_command_mutations_are_rejected(self):
@@ -337,6 +360,16 @@ class DiagnosticCommandContractTests(unittest.TestCase):
                     "",
                     1,
                 ),
+            ),
+            (
+                "native_script",
+                self.sources["native_script"].replace(
+                    "ci.native-diagnostic-missing-event", "missing-case-removed", 1
+                ),
+            ),
+            (
+                "native_fixture",
+                self.sources["native_fixture"].replace("CLONE_UNTRACED", "0", 1),
             ),
         ]
         for name, mutation in mutations:

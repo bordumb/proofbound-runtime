@@ -153,7 +153,10 @@ number tables for those architectures and rejects x32. It reads a registered
 path or socket address at the syscall-entry stop under independent string,
 path, and socket-address bounds. It reads `open_how` only in its registered
 24-byte form and reads only the first flags word from a registered `clone3`
-form. It records the `sendto` payload length but never reads payload bytes.
+form. A `clone` or `clone3` request with `CLONE_UNTRACED` fails closed while
+the tracee remains stopped at entry, because resuming it could create a child
+outside the registered event tree. It records the `sendto` payload length but
+never reads payload bytes.
 All raw tracee-memory access stays in the Linux syscall module and is read-only.
 
 The traced thread is stopped during an operand read, but another thread in the
@@ -239,6 +242,8 @@ produce a normal plan before `pbr plan check` can succeed.
 - The diagnostic path has a larger trusted computing base and higher overhead
   than production execution.
 - A traced program can detect the observer or follow another path later.
+- A diagnostic execution that requests `CLONE_UNTRACED` is terminated and can
+  produce only an incomplete, non-reusable result.
 - Some denied paths cannot be resolved exactly. The draft must preserve that
   uncertainty instead of inventing a target.
 - Ptrace policy on a host can make the diagnostic profile unsupported while

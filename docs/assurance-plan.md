@@ -691,6 +691,12 @@ socket, process-creation, and execution families registered by Specification
 0015 for x86_64 and aarch64. It rejects x32, unknown architectures, and
 unsupported `openat2` or `clone3` structure forms.
 
+The process-creation decoder also treats `CLONE_UNTRACED` as an unsupported
+registered form. It detects the flag for both `clone` and `clone3` while the
+tracee is stopped at system-call entry. The trace does not resume that request;
+the coupled adapter terminates and drains instead of allowing an intentionally
+unreported child.
+
 The raw syscall-information parser names the current Linux reserved and flags
 fields. Both must be zero. It rejects a return larger than its supplied buffer
 and accepts only the exact operation-specific byte count for none, entry, exit,
@@ -714,7 +720,8 @@ release, event loop, wait-observation router, entry handler,
 bound constructor, router, both architecture tables, width and byte-order
 helpers, supported-family decoder, syscall-information fetch and exact parser,
 bounded readers, and raw read operation. Its mutation witnesses cover the
-router, architecture numbers, x32 rejection, argument width, byte order,
+router, architecture numbers, x32 rejection, `CLONE_UNTRACED` rejection,
+argument width, byte order,
 reserved and flags fields, truncated and extended operation sizes, each operand
 bound, adapter limit wiring, payload pointer selection, and raw read-only
 operation. These source checks do not prove the Linux ABI, `process_vm_readv`,
@@ -908,7 +915,9 @@ dependency separation, release inventory inclusion, declared scaffold access,
 strict scaffold parsing, exact closure identity checks, and provenance
 separation. Its mutations weaken create-new publication, terminal eligibility,
 child-write exclusion, identity matching, or provenance integrity. Native
-exact-head and released-artifact observations are still required before public
+stale-target, symlink-input, unexpected-stop, and `CLONE_UNTRACED` evasion
+cases are registered without making diagnostic output reusable. Exact-head
+hosted and released-artifact observations are still required before public
 language can describe the command as released.
 
 ## Bounded-domain declaration guard

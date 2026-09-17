@@ -3095,6 +3095,95 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes only this review record. Any later
 subject change requires another exact-head review.
 
+## RT-8 live adversarial corpus approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `61bd0bbca729ba4ed2d30387a40b5dfa63a90051`
+- **Rejected head:** `d84caeffdeaf11a419868f6c51276306d2ad8700`
+- **Approved head:** `2157f9482d599208edc24540cc1dcc62aabd51c9`
+- **Method:** Exact-range security, native-corpus, evidence, and documentation
+  review. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The initial review requested changes because the assurance plan claimed a
+`CLONE_UNTRACED` mutation witness while the checker provided only exact source
+fingerprints and assertions. The corrected subject adds distinct causal
+mutations for flag-constant corruption, predicate bypass, legacy `clone`
+guard-call removal, and `clone3` guard-call removal. The independent contract
+rejects every mutation.
+
+The approved subject rejects `CLONE_UNTRACED` while the tracee remains stopped
+at syscall entry, preserves ordinary clone, fork, and vfork behavior, and
+routes the typed failure through termination and drain to incomplete,
+non-reusable publication. Native cases also cover stale target identity,
+symlink-redirection rejection before child execution, and a deliberate
+observation-sensitive stop. The subject adds no authority and does not weaken
+the production path.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`61bd0bbca729ba4ed2d30387a40b5dfa63a90051..2157f9482d599208edc24540cc1dcc62aabd51c9`.
+The following approval-only commit changes only this review record. Hosted
+evidence is still required before merge, and any later subject change requires
+another exact-head review.
+
+## RT-8 adversarial case-isolation correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `e60beb8dfe1d168c282d9f2c9ca9a830c90442ac`
+- **Reviewed head:** `15d8177284653cebea0c8fc403fa0f3cef9178c7`
+- **Method:** Exact-range correction review after both hosted native lanes
+  exposed cross-case state. The reviewer changed no files and ran no builds or
+  tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+Both architectures passed the 11-case native unit corpus, then the newly added
+shell corpus stopped before its observation-sensitive case. The preceding
+symlink-redirection attack intentionally created
+`redirected-plan-scaffold.json`, but did not remove that symlink after its exact
+rejection and no-child-start assertions. The following case shared the same
+temporary root and therefore rejected during resolution.
+
+The approved correction unlinks only that explicit path below the temporary
+adversarial root after every symlink-case assertion. It does not follow the
+symlink. Shell fail-fast behavior exits before cleanup if any assertion fails,
+so the correction cannot hide a failed attack. It restores test isolation and
+changes no production behavior, authority, receipt meaning, claim, or evidence
+semantics.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`e60beb8dfe1d168c282d9f2c9ca9a830c90442ac..15d8177284653cebea0c8fc403fa0f3cef9178c7`.
+The following approval-only commit changes only this review record. Hosted
+evidence is still required before merge, and any later subject change requires
+another exact-head review.
+
+## RT-8 adversarial corpus current-base approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `275e6e75f6537fb0c1a61199eacaba13413bfa8a`
+- **Reviewed head:** `f2972ae2f2e21b7d77cd76bec3201e63e8300cea`
+- **Branch:** `codex/rt8-adversarial-corpus`
+- **Method:** Exact-range static re-review after merging current `main`. The
+  reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the current-base patch and the previously approved
+pre-merge patch have the same file list and the same binary-diff SHA-256,
+`7a50e00b162ff1325d6b359cbba9c64386032489a06adf1a2ebbd52f9c8d0ba6`.
+The merge introduced no PR content drift. The symlink cleanup remains after the
+exact rejection and no-child assertions, targets only the explicit temporary
+adversarial-root path, does not follow the symlink, and executes before the next
+case. Fail-fast shell behavior prevents the cleanup from hiding an earlier
+failure. No new blocker was introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`275e6e75f6537fb0c1a61199eacaba13413bfa8a..f2972ae2f2e21b7d77cd76bec3201e63e8300cea`.
+The following approval-only commit changes only this review record. Hosted
+evidence is still required before merge, and any later subject change requires
+another exact-head review.
+
 ## RT-8 consolidated object, candidate, and command approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

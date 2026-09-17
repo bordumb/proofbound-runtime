@@ -69,6 +69,7 @@ inputs = [
   "crates/proofbound-runtime-linux/src/supervisor.rs",
   "crates/proofbound-runtime-linux/src/sys.rs",
   "crates/proofbound-runtime-linux/src/trace.rs",
+  "crates/proofbound-runtime-linux/tests/fixtures/native-boundary-probe.c",
   "schemas/current-integration-v1.cddl",
   "tools/ci/native-linux.sh",
   "tools/ci/native_context.py",
