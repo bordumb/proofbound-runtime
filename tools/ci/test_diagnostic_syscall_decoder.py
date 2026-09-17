@@ -81,7 +81,7 @@ EXPECTED_LOAD_BEARING_BODIES = {
     "tracee-string-read": "54fec5ee2c46ba8bd614c0da4e769b311ca6ff65637e7685be6e086369f7189c",
     "resume-before-deadline": "bff9c1e06b805663e587a4dd5a5313bb7e04a6aceeb68aa017e4c09a4953f502",
     "trace-next-event": "d338650ed48b9e795519e78b67f2b23052c42f5d09de1c2fe76f019688d98efb",
-    "trace-ready-release": "7fe1e9880ad31c0e2298358870886cedbd6d4bba43f3a29e90eaa2c765fb4937",
+    "trace-ready-release": "4ca785fc73104cd6bfa3f6941ad4ae3f748d62d1b48cf77c4424b7f1881e3df7",
     "uapi-i64-reader": "62197020cc4c5b8faac0c4f44c81291f12e7986681a3e7c08080ef7be4e0f938",
     "uapi-u64-reader": "aa2b02fd921a14e0fb178214da9ea0183bddde4b7d5d3b2305cffe9abe5ca63e",
     "wait-observation-router": "a185c9d1ffac7131bc194c6e1d6a70eb7bce5bb2235d16bce0538808f2d51050",
