@@ -136,7 +136,7 @@ impl ServiceExecutionPlan {
 }
 
 enum ParsedExecutionPlan {
-    Deny(ExecutionPlan),
+    Deny(Box<ExecutionPlan>),
     Service(Box<ServiceExecutionPlan>),
 }
 
@@ -346,7 +346,7 @@ pub fn parse_execution_plan_for_execution(input: &[u8]) -> Result<ExecutionPlan,
         return Err(PlanError::ExecutionObsolete);
     }
     match parse_execution_plan_contract_v2(input)? {
-        ParsedExecutionPlan::Deny(plan) => Ok(plan),
+        ParsedExecutionPlan::Deny(plan) => Ok(*plan),
         ParsedExecutionPlan::Service(_) => Err(PlanError::UnsupportedNetwork),
     }
 }
@@ -437,7 +437,7 @@ fn parse_execution_plan_contract_v2(input: &[u8]) -> Result<ParsedExecutionPlan,
         authority: AuthorityPlan::new(paths, environment, resource_limits),
     };
     Ok(match network {
-        ParsedNetworkAuthority::Deny => ParsedExecutionPlan::Deny(base),
+        ParsedNetworkAuthority::Deny => ParsedExecutionPlan::Deny(Box::new(base)),
         ParsedNetworkAuthority::Service(service_session) => {
             ParsedExecutionPlan::Service(Box::new(ServiceExecutionPlan {
                 base,
