@@ -376,9 +376,7 @@ fn reconcile_chains(
 ) -> Result<Vec<DnsCnameObservation>, DnsError> {
     let chain = if ipv4.answers.is_empty() {
         &ipv6.chain
-    } else if ipv6.answers.is_empty() {
-        &ipv4.chain
-    } else if same_cname_path(&ipv4.chain, &ipv6.chain) {
+    } else if ipv6.answers.is_empty() || same_cname_path(&ipv4.chain, &ipv6.chain) {
         &ipv4.chain
     } else {
         return Err(DnsError::InvalidCnameChain);
