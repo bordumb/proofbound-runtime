@@ -116,6 +116,7 @@ The resolution policy contains:
 - the fixed address-order rule `ipv4-then-ipv6-lexicographic`.
 
 Every bound MUST be nonzero. The per-attempt deadline MUST NOT exceed the total
+resolution deadline. The resolution deadline MUST NOT exceed the total
 service-setup deadline. The first profile does not use UDP, DNS-over-HTTPS,
 search domains, local host files, multicast DNS, a system resolver fallback, or
 automatic resolver discovery.

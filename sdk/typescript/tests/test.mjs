@@ -122,6 +122,12 @@ test("service session is closed and validated", async () => {
     }),
     (error) => error instanceof SdkError && error.code === "sdk.plan.network-invalid",
   );
+  const shortSetup = serviceNetwork();
+  shortSetup.limits.setup_time_ms = 4_999;
+  assert.throws(
+    () => buildPlan({ ...plan, network: shortSetup }),
+    (error) => error instanceof SdkError && error.code === "sdk.plan.network-invalid",
+  );
 });
 
 test("run-result projection is closed", () => {

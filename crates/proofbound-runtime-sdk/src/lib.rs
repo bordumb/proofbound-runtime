@@ -477,6 +477,7 @@ fn validate_network_input(
         || limits.endpoint_attempts == 0
         || limits.tls_handshake_bytes == 0
         || limits.endpoint_attempts > session.resolution.maximum_answer_count
+        || session.resolution.resolution_deadline_ms > limits.setup_time_ms
     {
         return Err(SdkError::PlanNetwork);
     }
@@ -887,6 +888,19 @@ mod tests {
             unreachable!()
         };
         invalid.service = "API.anthropic.com".to_owned();
+        assert_eq!(
+            PlanV2::new_with_network(
+                input,
+                NetworkAuthorityV2Input::AuthenticatedServiceSession(invalid)
+            ),
+            Err(SdkError::PlanNetwork)
+        );
+
+        let NetworkAuthorityV2Input::AuthenticatedServiceSession(mut invalid) = service_session()
+        else {
+            unreachable!()
+        };
+        invalid.limits.setup_time_ms = invalid.resolution.resolution_deadline_ms - 1;
         assert_eq!(
             PlanV2::new_with_network(
                 input,

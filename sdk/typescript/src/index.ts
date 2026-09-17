@@ -227,6 +227,9 @@ function validateNetwork(value, environment) {
   if (limits.endpoint_attempts > maximumAnswerCount) {
     throw new SdkError("sdk.plan.network-invalid", "limits.endpoint_attempts");
   }
+  if (resolutionDeadline > limits.setup_time_ms) {
+    throw new SdkError("sdk.plan.network-invalid", "limits.setup_time_ms");
+  }
   if (!canonicalAbsolute(value.connector_executable)) {
     throw new SdkError("sdk.plan.network-invalid", "connector_executable");
   }

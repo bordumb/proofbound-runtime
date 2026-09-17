@@ -827,6 +827,8 @@ mod tests {
         credential_service: &str,
         include_environment: bool,
         address_bytes: Vec<u8>,
+        resolution_deadline_ms: u64,
+        setup_time_ms: u64,
     ) -> Vec<u8> {
         let environment = if include_environment {
             vec![CborValue::Text("API_KEY".to_owned())]
@@ -863,7 +865,10 @@ mod tests {
                     ("maximum_cname_depth", CborValue::Unsigned(8)),
                     ("maximum_answer_count", CborValue::Unsigned(16)),
                     ("maximum_response_bytes", CborValue::Unsigned(65_536)),
-                    ("resolution_deadline_ms", CborValue::Unsigned(5_000)),
+                    (
+                        "resolution_deadline_ms",
+                        CborValue::Unsigned(resolution_deadline_ms),
+                    ),
                     ("attempt_deadline_ms", CborValue::Unsigned(1_000)),
                     (
                         "address_order",
@@ -894,7 +899,7 @@ mod tests {
             (
                 "limits",
                 value_map([
-                    ("setup_time_ms", CborValue::Unsigned(10_000)),
+                    ("setup_time_ms", CborValue::Unsigned(setup_time_ms)),
                     ("session_time_ms", CborValue::Unsigned(30_000)),
                     ("child_to_service_bytes", CborValue::Unsigned(1_048_576)),
                     ("service_to_child_bytes", CborValue::Unsigned(1_048_576)),
@@ -1045,6 +1050,8 @@ processes = 1
                 "API.anthropic.com",
                 true,
                 vec![1, 1, 1, 1],
+                5_000,
+                10_000,
             )),
             Err(PlanError::NetworkAuthority(
                 NetworkAuthorityError::InvalidServiceName
@@ -1056,6 +1063,8 @@ processes = 1
                 "api.anthropic.com",
                 false,
                 vec![1, 1, 1, 1],
+                5_000,
+                10_000,
             )),
             Err(PlanError::CredentialEnvironmentMissing)
         );
@@ -1065,6 +1074,8 @@ processes = 1
                 "api.example.com",
                 true,
                 vec![1, 1, 1, 1],
+                5_000,
+                10_000,
             )),
             Err(PlanError::NetworkAuthority(
                 NetworkAuthorityError::CredentialServiceMismatch
@@ -1076,8 +1087,23 @@ processes = 1
                 "api.anthropic.com",
                 true,
                 vec![1, 1, 1],
+                5_000,
+                10_000,
             )),
             Err(PlanError::InvalidSchema)
+        );
+        assert_eq!(
+            parse_service_execution_plan(&service_plan(
+                "api.anthropic.com",
+                "api.anthropic.com",
+                true,
+                vec![1, 1, 1, 1],
+                5_000,
+                4_999,
+            )),
+            Err(PlanError::NetworkAuthority(
+                NetworkAuthorityError::ResolutionDeadlineExceedsSetup
+            ))
         );
     }
 

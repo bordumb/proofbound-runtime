@@ -83,7 +83,9 @@ def main() -> int:
     runtime_read = args.runtime_read
     if args.runtime_read_json is not None:
         decoded = json.loads(args.runtime_read_json)
-        if not isinstance(decoded, list) or not all(isinstance(item, str) for item in decoded):
+        if not isinstance(decoded, list) or not all(
+            isinstance(item, str) for item in decoded
+        ):
             raise SystemExit("runtime-read JSON must be an array of strings")
         runtime_read.extend(decoded)
     network: str | dict[str, Any] = "deny"
@@ -94,13 +96,12 @@ def main() -> int:
         try:
             address_bytes = decoded_network["resolver"]["address"]["bytes"]
         except (KeyError, TypeError) as error:
-            raise SystemExit("network JSON must contain resolver address bytes") from error
-        if (
-            not isinstance(address_bytes, list)
-            or not all(
-                isinstance(item, int) and not isinstance(item, bool) and 0 <= item <= 255
-                for item in address_bytes
-            )
+            raise SystemExit(
+                "network JSON must contain resolver address bytes"
+            ) from error
+        if not isinstance(address_bytes, list) or not all(
+            isinstance(item, int) and not isinstance(item, bool) and 0 <= item <= 255
+            for item in address_bytes
         ):
             raise SystemExit("resolver address bytes must be a byte array")
         decoded_network["resolver"]["address"]["bytes"] = bytes(address_bytes)

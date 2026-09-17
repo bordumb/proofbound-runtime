@@ -179,7 +179,11 @@ def _validate_network(
     )
     address = _exact_mapping(resolver["address"], {"family", "bytes"})
     address_size = {"ipv4": 4, "ipv6": 16}.get(address["family"])
-    if address_size is None or not isinstance(address["bytes"], bytes) or len(address["bytes"]) != address_size:
+    if (
+        address_size is None
+        or not isinstance(address["bytes"], bytes)
+        or len(address["bytes"]) != address_size
+    ):
         raise SdkError("sdk.plan.network-invalid", "resolver.address")
     _network_int(resolver["port"], 1, 65_535, "resolver.port")
     if not _canonical_absolute(resolver["configuration"]):
@@ -242,6 +246,8 @@ def _validate_network(
         _network_int(limits[field], 1, maximum, f"limits.{field}")
     if limits["endpoint_attempts"] > resolver["maximum_answer_count"]:
         raise SdkError("sdk.plan.network-invalid", "limits.endpoint_attempts")
+    if resolver["resolution_deadline_ms"] > limits["setup_time_ms"]:
+        raise SdkError("sdk.plan.network-invalid", "limits.setup_time_ms")
 
     if not _canonical_absolute(network["connector_executable"]):
         raise SdkError("sdk.plan.network-invalid", "connector_executable")
@@ -256,7 +262,9 @@ def _validate_network(
     channel = _exact_mapping(network["local_channel"], {"protocol", "child_descriptor"})
     if channel["protocol"] != "unix-stream-v1":
         raise SdkError("sdk.plan.network-invalid", "local_channel.protocol")
-    _network_int(channel["child_descriptor"], 3, 65_535, "local_channel.child_descriptor")
+    _network_int(
+        channel["child_descriptor"], 3, 65_535, "local_channel.child_descriptor"
+    )
 
     if "credential_source" in network:
         source = _exact_mapping(
@@ -319,7 +327,11 @@ def _valid_service_name(value: str) -> bool:
         1 <= len(label) <= 63
         and not label.startswith("-")
         and not label.endswith("-")
-        and all(character.isascii() and (character.islower() or character.isdigit() or character == "-") for character in label)
+        and all(
+            character.isascii()
+            and (character.islower() or character.isdigit() or character == "-")
+            for character in label
+        )
         for label in labels
     ) and not all(character.isdigit() or character == "." for character in value)
 
@@ -400,7 +412,9 @@ def run(
     stdout, stderr = _bounded_communicate(process, max_output_bytes)
     if process.returncode != 0:
         detail = stderr.decode("utf-8", errors="replace").rstrip("\n")
-        raise SdkError("sdk.process.failed", f"exit={process.returncode} stderr={detail}")
+        raise SdkError(
+            "sdk.process.failed", f"exit={process.returncode} stderr={detail}"
+        )
     if not stdout.endswith(b"\n") or b"\n" in stdout[:-1]:
         raise SdkError("sdk.result.not-one-line")
     return parse_run_result(stdout[:-1])

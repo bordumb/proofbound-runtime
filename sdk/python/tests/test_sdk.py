@@ -113,6 +113,12 @@ class PythonSdkTests(unittest.TestCase):
         with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
             build_plan(**plan)
 
+        invalid = service_network()
+        invalid["limits"]["setup_time_ms"] = 4_999
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
     def test_result_projection_is_closed(self) -> None:
         result = parse_run_result(RESULT)
         self.assertEqual(result.receipt, "receipt.cbor")
@@ -120,7 +126,9 @@ class PythonSdkTests(unittest.TestCase):
         with self.assertRaisesRegex(SdkError, "sdk.result.unknown-field"):
             parse_run_result(RESULT[:-1] + b',"verified":true}')
 
-    def test_run_uses_exact_arguments_without_shell_or_ambient_environment(self) -> None:
+    def test_run_uses_exact_arguments_without_shell_or_ambient_environment(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             fake = root / "pbr"

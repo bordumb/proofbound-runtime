@@ -523,6 +523,9 @@ impl AuthenticatedServiceSession {
         child_descriptor: ChildChannelDescriptor,
         credential_source: Option<CredentialSource>,
     ) -> Result<Self, NetworkAuthorityError> {
+        if resolution.resolution_deadline_ms() > limits.setup_time_ms() {
+            return Err(NetworkAuthorityError::ResolutionDeadlineExceedsSetup);
+        }
         if credential_source
             .as_ref()
             .is_some_and(|source| source.service() != &service)
@@ -639,6 +642,8 @@ pub enum NetworkAuthorityError {
     ZeroResolverBound,
     /// The per-attempt deadline exceeds the resolution deadline.
     AttemptDeadlineExceedsResolution,
+    /// The total resolution deadline exceeds the service setup deadline.
+    ResolutionDeadlineExceedsSetup,
     /// A service-session bound is zero.
     ZeroSessionBound,
     /// The endpoint-attempt limit exceeds the DNS answer limit.
@@ -662,6 +667,9 @@ impl NetworkAuthorityError {
             Self::ZeroResolverBound => "plan.authority.network.resolver.bound.zero",
             Self::AttemptDeadlineExceedsResolution => {
                 "plan.authority.network.resolver.attempt-deadline.exceeds-resolution"
+            }
+            Self::ResolutionDeadlineExceedsSetup => {
+                "plan.authority.network.resolver.deadline.exceeds-setup"
             }
             Self::ZeroSessionBound => "plan.authority.network.session.bound.zero",
             Self::AttemptCountExceedsAnswers => {
