@@ -3143,6 +3143,32 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes only this review record. Any later
 subject change requires a new exact-head review.
 
+## RT-8 observer failure diagnostic approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `e3fbc2c05ad95cd29f2de0ed919d46209be284f8`
+- **Reviewed head:** `c31b432b9f02c719c22168f05e51fdb89a75b7a0`
+- **Branch:** `codex/rt8-object-resolution-final`
+- **Method:** Read-only exact-range operational-output and assurance-boundary
+  review after persistent generic native `observer-failed` results. The
+  reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that only an effectful `ObserverObservation::Failure`
+contributes an error code, and each value comes from the closed static
+`TraceObservationError::code` mapping. The sorted, duplicate-free field cannot
+contain child-controlled text. Event handling, receipt gaps, completion,
+artifact construction, commitment, and publication order remain unchanged.
+The result field is operational output only; it is not receipt evidence or an
+assurance claim. Native success requires an empty array, and removing failure
+code retention is causally rejected.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`e3fbc2c05ad95cd29f2de0ed919d46209be284f8..c31b432b9f02c719c22168f05e51fdb89a75b7a0`.
+The following approval-only commit changes only this review record. Any later
+subject change requires a new exact-head review.
+
 ## RT-8 diagnostic lifecycle restacked re-review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
