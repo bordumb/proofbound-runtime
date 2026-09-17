@@ -1,0 +1,87 @@
+schema = "proofbound-claim/1"
+id = "PBR-NETWORK-039"
+title = "Supervisor starts one identified authenticated-service connector before child release"
+statement = "The proposed Linux connector-process path resolves and revalidates one declared connector executable, execution plan, trust-root set, resolver configuration, and ordered connector runtime closure; creates one private Unix stream endpoint pair and one private packet control pair; starts the exact retained connector descriptor with a closed inherited-descriptor bootstrap; validates a complete execution, policy, generation, channel, plan, trust-root, connector, runtime-closure, and resolver-configuration binding before exposing the child-side endpoint; and terminates and reaps the connector on protocol, deadline, failure, and drop paths."
+public_language = "Runtime contains a proposed separately supervised connector process for one authenticated service session. Registered Rust tests and an independent source-mutation checker cover exact artifact and plan-path binding, the closed inherited-descriptor bootstrap, private channel creation, complete setup-binding validation, readiness before proxy activation, bounded terminal waits, and kill-and-reap cleanup. This is Tier 1 bounded source evidence. It does not yet establish the child launcher boundary, credential release, native bypass resistance, production CLI reachability, receipt production, or release-artifact behavior."
+subject = "rust:proofbound_runtime_linux::connector_process::{ResolvedServiceArtifact,prepare_connector_process,PreparedConnectorProcess::spawn,ReadyConnectorProcess,run_connector_process}"
+profile = "ledger"
+tier = 1
+evidence = [
+  "example-test:authenticated-service-connector-process",
+  "independent-check:authenticated-service-connector-process-source-contract",
+]
+assumptions = [
+  "PBR-DNS-AX-004",
+  "PBR-TLS-AX-005",
+  "PBR-LINUX-AX-001",
+  "PBR-TOOLCHAIN-AX-003",
+]
+open_obligations = [
+  "Confine the connector to its exact runtime-read closure, trust roots, resolver configuration, declared resolver endpoint, and authenticated service endpoints with native Linux enforcement evidence.",
+  "Bind the ready connector endpoint into the service launcher acknowledgement and prevent child exec until the complete boundary is installed and independently validated.",
+  "Release an optional credential only after authenticated connector readiness and installed child boundary acknowledgement, without retaining its value or a value-derived digest.",
+  "Bind complete DNS, endpoint, TLS, channel, traffic, failure, and cleanup observations into the production receipt and independent verifier.",
+  "Run the complete process, descriptor, substitution, crash, deadline, and cleanup corpus on x86_64 and aarch64 release artifacts.",
+]
+out_of_scope = [
+  "Any claim that the production CLI accepts service-session plans, starts a child, releases a credential, or emits a reusable service-session receipt.",
+  "Any native containment claim for the connector or child, including resistance to kernel compromise, descriptor attacks, direct network bypass, namespaces, io_uring, or descendants.",
+  "Correctness of the kernel, filesystem, process loader, resolver, DNS transport, rustls, ring, x509-cert, trust roots, remote service, clock, hardware, or host operator.",
+  "HTTP, LLM, request, response, redirect, proxy, multiple-session, reconnect, QUIC, or application-operation semantics.",
+]
+source_roots = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "assumptions/PBR-DNS-AX-004.toml",
+  "assumptions/PBR-LINUX-AX-001.toml",
+  "assumptions/PBR-TLS-AX-005.toml",
+  "assumptions/PBR-TOOLCHAIN-AX-003.toml",
+  "claims/PBR-NETWORK-039.toml",
+  "crates/proofbound-runtime-connector/Cargo.toml",
+  "crates/proofbound-runtime-connector/src/dns.rs",
+  "crates/proofbound-runtime-connector/src/lib.rs",
+  "crates/proofbound-runtime-connector/src/tls.rs",
+  "crates/proofbound-runtime-binding/Cargo.toml",
+  "crates/proofbound-runtime-binding/src/lib.rs",
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/authority.rs",
+  "crates/proofbound-runtime-core/src/diagnostic.rs",
+  "crates/proofbound-runtime-core/src/error.rs",
+  "crates/proofbound-runtime-core/src/identity.rs",
+  "crates/proofbound-runtime-core/src/lib.rs",
+  "crates/proofbound-runtime-core/src/network.rs",
+  "crates/proofbound-runtime-core/src/normalize.rs",
+  "crates/proofbound-runtime-core/src/outcome.rs",
+  "crates/proofbound-runtime-core/src/plan.rs",
+  "crates/proofbound-runtime-core/src/policy.rs",
+  "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-core/src/run_result.rs",
+  "crates/proofbound-runtime-core/src/service_lifecycle.rs",
+  "crates/proofbound-runtime-core/src/service_policy.rs",
+  "crates/proofbound-runtime-core/src/wire_v2.rs",
+  "crates/proofbound-runtime-linux/Cargo.toml",
+  "crates/proofbound-runtime-linux/src/bin/pbr-service-connector.rs",
+  "crates/proofbound-runtime-linux/src/cgroup.rs",
+  "crates/proofbound-runtime-linux/src/connector_process.rs",
+  "crates/proofbound-runtime-linux/src/execution.rs",
+  "crates/proofbound-runtime-linux/src/inventory.rs",
+  "crates/proofbound-runtime-linux/src/landlock.rs",
+  "crates/proofbound-runtime-linux/src/launcher.rs",
+  "crates/proofbound-runtime-linux/src/lib.rs",
+  "crates/proofbound-runtime-linux/src/output.rs",
+  "crates/proofbound-runtime-linux/src/privilege.rs",
+  "crates/proofbound-runtime-linux/src/probe.rs",
+  "crates/proofbound-runtime-linux/src/resolve.rs",
+  "crates/proofbound-runtime-linux/src/seccomp.rs",
+  "crates/proofbound-runtime-linux/src/supervisor.rs",
+  "crates/proofbound-runtime-linux/src/sys.rs",
+  "crates/proofbound-runtime-receipt/Cargo.toml",
+  "crates/proofbound-runtime-receipt/src/lib.rs",
+  "deny.toml",
+  "docs/adr/0004-authenticated-service-session.md",
+  "docs/specs/0016_authenticated_service_session.md",
+  "proofbound/evidence/authenticated-service-connector-process.toml",
+  "proofbound/evidence/authenticated-service-connector-process-source-contract.toml",
+  "tools/ci/check_connector_process_source_contract.py",
+  "tools/ci/test_connector_process_source_contract.py",
+]

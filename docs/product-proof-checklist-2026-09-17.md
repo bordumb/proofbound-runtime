@@ -2,11 +2,11 @@
 
 - **Status:** active implementation
 - **Created:** 2026-09-17T19:31:00+01:00 (Europe/London, BST)
-- **Last updated:** 2026-09-17T21:46:00+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-18T00:18:00+01:00 (Europe/London, BST)
 - **Current Runtime main:**
-  `8513ca7e096bc762b8e7d6c3977130a1da8f31f1`; exact-main Verify run
-  `35267321804` passed
-- **Current implementation wave:** RT-5 authenticated connector engine
+  `da5292536ea56f40005b297c21625add195e580e`; exact-main Verify run
+  `35280257983` passed
+- **Current implementation wave:** RT-5 supervised connector process
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the focused path from the existing assurance foundation to
@@ -101,21 +101,14 @@ execution and production receipt acceptance remain disabled.
 ### 1.2 Implement the connector
 
 Wave status: `PBR-NETWORK-038` now registers the isolated connector-engine
-candidate, its Tier 0 Rust tests, and its Tier 1 bounded independent source-
-mutation check. The initial exact-head review at
-`450453d` requested changes for authority binding, exact SAN matching, absolute
-deadlines, explicit TLS-provider selection, CNAME validity, source closure, and
-causal falsifiers. The first correction head `cd8b16e` was rejected for one
-compile defect, incomplete DNS lifetime reconciliation, terminal deadline
-classification, non-causal gate tests, stale source status, and incomplete
-local-dependency closure. The second correction head `ed7445c` was rejected
-for final success-path deadline placement, non-causal per-arm and directional-
-limit guards, an omitted pending `PBR-OBSERVER-030` source identity, and a
-strict-lint candidate. The consolidated third correction batch is in progress.
-The third correction head `60ca678` closed those findings but was rejected
-because four mandatory RT-8 diagnostic suites still pinned the pre-connector
-root manifest and lock identities. The exact-source closure refresh is in
-progress.
+and its Tier 1 bounded independent source-mutation check. The final independently
+approved production subject ended at `b9ad56a`; approval-only commit `2d6cf97`
+passed every PR 34 lane in Verify run `35276015624`, merged as exact main
+`da52925`, and passed exact-main Verify run `35280257983`. `PBR-NETWORK-039`
+now freezes the next candidate: one identified connector executable, retained
+artifact identities, a closed inherited-descriptor bootstrap, private data and
+control channels, authenticated readiness binding, and bounded termination and
+reaping. Production CLI and child execution remain disabled.
 Keep every checkbox below open until the engine runs as the exact
 identified production process and the relevant behavior passes hosted and
 native admission.

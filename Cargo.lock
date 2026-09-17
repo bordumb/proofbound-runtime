@@ -289,6 +289,7 @@ name = "proofbound-runtime-linux"
 version = "0.2.0"
 dependencies = [
  "libc",
+ "proofbound-runtime-connector",
  "proofbound-runtime-core",
  "serde",
  "sha2",

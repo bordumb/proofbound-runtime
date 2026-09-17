@@ -14,52 +14,49 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-RECEIPT-004` | Tier 3, source-refined with contextual artifact binding | The receipt decision is source-refined and its theorem-derived closed set selects the exact native `pbr` members. |
 | `PBR-BINDING-005` | Tier 3 current lifecycle closure admitted on exact Runtime main `1da65a5` | The production constructor and wire projection remain source-refined. PR 31 run `35236845497` and exact-main run `35241672716` admitted the changed shared-core closure without changing receipt behavior. |
 | `PBR-VERIFY-006` | Tested/model-only with exact native artifact observation | The evidence remains bounded to the registered mutations and exact rejection reasons exercised by each native `pbr-verify`. |
-| `PBR-RUN-007` | Last tested/model-only closure admitted on exact Runtime main `d48122b`; connector dependency closure pending | The prior contract closure passed PR 29 run `35216056050` and exact-main run `35220098639` without turning native observation into a theorem. |
+| `PBR-RUN-007` | Current tested/model-only closure admitted on exact Runtime main `da52925` | PR 34 run `35276015624` and exact-main run `35280257983` replayed the complete closure without turning native observation into a theorem. |
 | `PBR-COMPOSE-008` | Tested/model-only with exact native artifact observation | Each exact native composer joins verified receipts without upgrading any inherited facet. |
-| `PBR-PREFLIGHT-009` | Last tested/model-only closure admitted on exact Runtime main `d48122b`; connector dependency closure pending | The prior point-in-time preflight closure passed PR 29 and its exact-main replay; exact released-artifact observation remains open. |
-| `PBR-RESOURCE-010` | Last tested/model-only closure admitted on exact Runtime main `d48122b`; connector dependency closure pending | The prior memory and swap closure passed PR 29 and its exact-main replay without claiming theorem-derived kernel or artifact soundness. |
-| `PBR-DIAGNOSTIC-011` | Last tested/model-only result retained; connector dependency closure pending | The closed run phase and rule mapping is tested without inferring a kernel denial or changing receipt meaning. |
-| `PBR-ACCEPT-012` | Last tested/model-only result retained; connector dependency closure pending | Adopter policy decisions bind independently verified inputs; exact released acceptor observation and external Action dogfood remain open. |
-| `PBR-SCAFFOLD-013` | Last tested/model-only result retained; connector dependency closure pending | Static ELF scaffolding is bounded diagnostic evidence, not a safe policy or a complete dynamic-load inventory. |
-| `PBR-SDK-014` | Last lifecycle-spec closure admitted on exact Runtime main `1da65a5`; connector closure pending | PR 31 and its exact-main replay admitted the prior Specification 0016 lifecycle clarification. Registry publication and consumer dogfood remain open. |
-| `PBR-DISTRIBUTION-015` | Tier 1 last contract closure admitted on exact Runtime main `d48122b`; connector dependency closure pending | The prior deterministic-CBOR helper closure passed PR 29 and its exact-main replay; registry publication remains external. |
+| `PBR-PREFLIGHT-009` | Current tested/model-only closure admitted on exact Runtime main `da52925` | The current point-in-time preflight closure passed PR 34 and its exact-main replay; exact released-artifact observation remains open. |
+| `PBR-RESOURCE-010` | Current tested/model-only closure admitted on exact Runtime main `da52925` | The current memory and swap closure passed PR 34 and its exact-main replay without claiming theorem-derived kernel or artifact soundness. |
+| `PBR-DIAGNOSTIC-011` | Current tested/model-only closure admitted on exact Runtime main `da52925` | The closed run phase and rule mapping remains tested without inferring a kernel denial or changing receipt meaning. |
+| `PBR-ACCEPT-012` | Current tested/model-only closure admitted on exact Runtime main `da52925` | Adopter policy decisions bind independently verified inputs; exact released acceptor observation and external Action dogfood remain open. |
+| `PBR-SCAFFOLD-013` | Current tested/model-only closure admitted on exact Runtime main `da52925` | Static ELF scaffolding remains bounded diagnostic evidence, not a safe policy or a complete dynamic-load inventory. |
+| `PBR-SDK-014` | Current source closure admitted on exact Runtime main `da52925` | The current SDK and Specification 0016 closure passed PR 34 and its exact-main replay. Registry publication and consumer dogfood remain open. |
+| `PBR-DISTRIBUTION-015` | Tier 1 current contract closure admitted on exact Runtime main `da52925` | The current deterministic-CBOR helper closure passed PR 34 and its exact-main replay; registry publication remains external. |
 | `PBR-DISTRIBUTION-016` | Tier 1 credential-scoped consumer admitted on exact Runtime main `a8df83d` | Runtime pins one immutable public Proofbound release, confines its read-only workflow credential to canonical GitHub API metadata, keeps release assets anonymous, and rejects identity, inventory, manifest, checksum, archive, installer, and installed-byte substitution. Exact-head PR 23 run `35034962830` and exact-main run `35038304369` passed. |
-| `PBR-DISTRIBUTION-018` | Tier 1 protected routes last admitted on exact Runtime main `47c5ad2`; connector dependency closure pending | The prior exact source admitted explicit, protected, ordered, credential-isolated publication. External registry configuration, publication, and observations remain open. |
-| `PBR-DISTRIBUTION-025` | Tier 1 last integration source admitted on exact Runtime main `d48122b`; connector closure pending | PR 29 and its exact-main replay admitted the prior SDK and integration closure. The tuple remains unpublished until an exact protected publication retains it. |
-| `PBR-DRAFT-017` | Tier 1 last lifecycle closure admitted on exact Runtime main `1da65a5`; connector dependency closure pending | Closed diagnostic vocabulary and non-reuse remained intact in the prior admitted source. |
-| `PBR-DRAFT-019` | Tier 1 last lifecycle closure admitted on exact Runtime main `1da65a5`; connector dependency closure pending | The prior admitted producer preserves non-reuse and mandatory human authority choices. |
-| `PBR-OBSERVER-020` | Tier 1 last lifecycle closure admitted on exact Runtime main `1da65a5`; connector dependency closure pending | PR 31 and its exact-main replay admitted the prior shared-core closure. |
-| `PBR-OBSERVER-021` | Tier 1 last contract closure admitted on exact Runtime main `d48122b`; connector dependency closure pending | The prior shared trace closure passed PR 29 and its exact-main replay. |
-| `PBR-OBSERVER-022` | Tier 1 last contract closure admitted on exact Runtime main `d48122b`; connector dependency closure pending | The prior adapter closure passed PR 29 and its exact-main replay. |
-| `PBR-OBSERVER-023` | Tier 1 last contract closure admitted on exact Runtime main `d48122b`; connector dependency closure pending | The prior entry-time operand closure passed PR 29 and its exact-main replay. |
-| `PBR-OBSERVER-024` | Tier 1 last contract closure admitted on exact Runtime main `d48122b`; connector dependency closure pending | The prior shared trace, adapter, and observer closure passed PR 29 and its exact-main replay. |
-| `PBR-OBSERVER-025` | Tier 1 last contract closure admitted on exact Runtime main `d48122b`; connector dependency closure pending | The prior syscall-decoder closure passed PR 29 and its exact-main replay; kernel ABI truth and memory stability remain open. |
-| `PBR-OBSERVER-026` | Tier 1 last lifecycle closure admitted on exact Runtime main `1da65a5`; connector dependency closure pending | Event mapping remained closed in the prior admitted source. |
-| `PBR-OBSERVER-027` | Tier 1 last lifecycle closure admitted on exact Runtime main `1da65a5`; connector dependency closure pending | Bounded stream handling remained intact in the prior admitted source. |
-| `PBR-OBSERVER-028` | Tier 1 last lifecycle closure admitted on exact Runtime main `1da65a5`; connector dependency closure pending | Diagnostic lifecycle gating remained intact in the prior admitted source. |
-| `PBR-OBSERVER-029` | Tier 1 last contract closure admitted on exact Runtime main `d48122b`; connector dependency closure pending | The prior object-resolution closure passed PR 29 and its exact-main replay; Linux pathname completeness remains open. |
+| `PBR-DISTRIBUTION-018` | Tier 1 current protected-route closure admitted on exact Runtime main `da52925` | The current source retains explicit, protected, ordered, credential-isolated publication. External registry configuration, publication, and observations remain open. |
+| `PBR-DISTRIBUTION-025` | Tier 1 current integration source admitted on exact Runtime main `da52925` | PR 34 and its exact-main replay admitted the current SDK and integration closure. The tuple remains unpublished until an exact protected publication retains it. |
+| `PBR-DRAFT-017` | Tier 1 current lifecycle closure admitted on exact Runtime main `da52925` | Closed diagnostic vocabulary and non-reuse remain intact. |
+| `PBR-DRAFT-019` | Tier 1 current lifecycle closure admitted on exact Runtime main `da52925` | The admitted producer preserves non-reuse and mandatory human authority choices. |
+| `PBR-OBSERVER-020` | Tier 1 current lifecycle closure admitted on exact Runtime main `da52925` | PR 34 and its exact-main replay admitted the current shared-core closure. |
+| `PBR-OBSERVER-021` | Tier 1 current contract closure admitted on exact Runtime main `da52925` | The current shared trace closure passed PR 34 and its exact-main replay. |
+| `PBR-OBSERVER-022` | Tier 1 current contract closure admitted on exact Runtime main `da52925` | The current adapter closure passed PR 34 and its exact-main replay. |
+| `PBR-OBSERVER-023` | Tier 1 current contract closure admitted on exact Runtime main `da52925` | The current entry-time operand closure passed PR 34 and its exact-main replay. |
+| `PBR-OBSERVER-024` | Tier 1 current contract closure admitted on exact Runtime main `da52925` | The current shared trace, adapter, and observer closure passed PR 34 and its exact-main replay. |
+| `PBR-OBSERVER-025` | Tier 1 current contract closure admitted on exact Runtime main `da52925` | The current syscall-decoder closure passed PR 34 and its exact-main replay; kernel ABI truth and memory stability remain open. |
+| `PBR-OBSERVER-026` | Tier 1 current lifecycle closure admitted on exact Runtime main `da52925` | Event mapping remains closed. |
+| `PBR-OBSERVER-027` | Tier 1 current lifecycle closure admitted on exact Runtime main `da52925` | Bounded stream handling remains intact. |
+| `PBR-OBSERVER-028` | Tier 1 current lifecycle closure admitted on exact Runtime main `da52925` | Diagnostic lifecycle gating remains intact. |
+| `PBR-OBSERVER-029` | Tier 1 current contract closure admitted on exact Runtime main `da52925` | The current object-resolution closure passed PR 34 and its exact-main replay; Linux pathname completeness remains open. |
 | `PBR-OBSERVER-030` | Tier 1 candidate-resolution source admitted on exact Runtime main `d60d1f3` | Failed path operations produce only advisory stable candidates after two bounded root-confined observations agree; drift and hop exhaustion remain explicit gaps. Independently approved PR 26 head `2fc82ff` passed run `35172227506`, including both native architectures. Exact-main run `35175269953` passed. Linux pathname completeness remains pending. |
-| `PBR-OBSERVER-031` | Tier 1 last lifecycle closure admitted on exact Runtime main `1da65a5`; connector dependency closure pending | PR 31 and its exact-main replay admitted the prior shared-core closure without reopening RT-8 product behavior. |
-| `PBR-NETWORK-032` | Tier 0 last lifecycle closure admitted on exact Runtime main `1da65a5`; connector contract closure pending | PR 31 and its exact-main replay admitted the prior service-session contract closure. |
-| `PBR-NETWORK-033` | Tier 0 last lifecycle closure admitted on exact Runtime main `1da65a5`; connector dependency closure pending | The prior compiler closure separately binds child denial, the channel-only profile, and complete connector authority. |
-| `PBR-NETWORK-034` | Tier 0 last pure lifecycle admitted on exact Runtime main `1da65a5`; connector specification closure pending | Source tests covered the prior closed forward path and typed terminal failure. The candidate Lean theorem is not registered as admitted evidence. Every effectful wave remains open. |
-| `PBR-NETWORK-035` | Tier 1 receipt contract admitted on exact Runtime main `8513ca7`; connector observation closure pending exact admission | PR 33 exact head `c361cb1` passed run `35262967214`; exact-main run `35267321804` admitted the merge. The connector candidate changes the exact CNAME and effective-expiry observation source, so it cannot inherit that admission. |
-| `PBR-NETWORK-036` | Tier 1 receipt contract admitted on exact Runtime main `8513ca7`; connector dependency closure pending exact admission | Exact-main run `35267321804` admitted the launcher contract. Its meaning is unchanged, but the connector candidate changes its registered root dependency closure and must replay. |
-| `PBR-NETWORK-037` | Tier 1 receipt contract admitted on exact Runtime main `8513ca7`; connector dependency closure pending exact admission | Exact-head run `35262967214` and exact-main run `35267321804` admitted the prior success and failure contract. Changed root and observation inputs require fresh exact-source admission. |
-| `PBR-NETWORK-038` | Tier 1 proposed connector engine pending first exact admission | The isolated connector crate implements bounded TCP DNS parsing, canonical answer selection, exact-name TLS setup without resumption or early data, endpoint attempts, opaque directional byte limits, and one no-reconnect channel loop. The independent evidence is a bounded source-mutation check. Process supervision, launcher binding, native evidence, receipts, and release artifacts remain open. |
+| `PBR-OBSERVER-031` | Tier 1 current lifecycle closure admitted on exact Runtime main `da52925` | PR 34 and its exact-main replay admitted the current shared-core closure without reopening RT-8 product behavior. |
+| `PBR-NETWORK-032` | Tier 0 current contract closure admitted on exact Runtime main `da52925` | PR 34 and its exact-main replay admitted the current service-session contract closure. |
+| `PBR-NETWORK-033` | Tier 0 current policy closure admitted on exact Runtime main `da52925` | The compiler closure separately binds child denial, the channel-only profile, and complete connector authority. |
+| `PBR-NETWORK-034` | Tier 0 current pure lifecycle admitted on exact Runtime main `da52925` | Source tests cover the closed forward path and typed terminal failure. The Lean theorem remains an unregistered candidate. Every effectful child wave remains open. |
+| `PBR-NETWORK-035` | Tier 1 current observation contract admitted on exact Runtime main `da52925` | PR 34 exact-head run `35276015624` and exact-main run `35280257983` admitted the exact CNAME and effective-expiry observation closure. |
+| `PBR-NETWORK-036` | Tier 1 current launcher contract admitted on exact Runtime main `da52925` | PR 34 and its exact-main replay admitted the complete current launcher source contract. Production launcher behavior remains disabled. |
+| `PBR-NETWORK-037` | Tier 1 current receipt contract admitted on exact Runtime main `da52925` | PR 34 and its exact-main replay admitted the current success and failure source contract. Production receipt integration remains open. |
+| `PBR-NETWORK-038` | Tier 1 connector engine admitted on exact Runtime main `da52925` | Independently approved source `b9ad56a` plus approval envelope `2d6cf97` passed exact-head run `35276015624`; exact-main run `35280257983` admitted the isolated engine. Process supervision, launcher binding, native evidence, receipts, and release artifacts remain open. |
+| `PBR-NETWORK-039` | Tier 1 supervised connector-process candidate pending first exact admission | The candidate identifies declared artifacts, creates private channels, starts one exact retained connector, validates complete readiness binding, and bounds terminal reaping. Connector confinement, child release, credentials, native evidence, receipts, and release artifacts remain open. |
 
 ### Current changed subjects pending exact admission
 
-The connector candidate changes root dependency identity, Specification 0016,
-the SDK and wire schemas, and the service-observation contract. Therefore these
-exact current subjects are pending even where the table retains an older exact
-admission: `PBR-ACCEPT-012`, `PBR-COMPOSE-008`, `PBR-DIAGNOSTIC-011`,
-`PBR-DISTRIBUTION-015`, `PBR-DISTRIBUTION-018`, `PBR-DISTRIBUTION-025`,
-`PBR-DRAFT-017`, `PBR-DRAFT-019`, `PBR-NETWORK-032` through
-`PBR-NETWORK-038`, `PBR-OBSERVER-020` through `PBR-OBSERVER-031`,
-`PBR-PREFLIGHT-009`, `PBR-RESOURCE-010`, `PBR-RUN-007`,
-`PBR-SCAFFOLD-013`, and `PBR-SDK-014`. A row's older admission is historical
-for its stated source identity. It is not status transferred to this candidate.
+The connector-process candidate changes the Linux crate manifest, public module
+surface, raw channel wrapper, and new process executable. `PBR-NETWORK-039` and
+every existing claim whose registered closure intersects those exact files are
+pending until an independent exact-head approval, complete hosted verification,
+merge, and exact-main replay. No status from `da52925` transfers to this
+candidate.
 
 The RT-5 contract wave passed exact-head run `35216056050`, merged as exact
 Runtime main `d48122b06c4880aeba45291a107c51ad381067a4`, and passed exact-main
@@ -81,12 +78,14 @@ candidate, not registered theorem evidence.
 The non-production receipt integration passed PR 33 exact-head run
 `35262967214` at `c361cb1`, merged as exact main `8513ca7`, and passed
 exact-main run `35267321804`. That exact receipt-contract source is admitted.
-The connector candidate changes the observation schema, checker, vector,
-Specification 0016, root dependencies, and connector source. Those current
-closures are pending together with new `PBR-NETWORK-038`; they require a new
-exact-source review and hosted admission. This wave still does not implement
-the production producer, separate Rust verifier, composition, acceptance,
-native attacks, or release-artifact linkage.
+The later isolated connector-engine wave was independently approved through
+source head `b9ad56a`; approval-only commit `2d6cf97` passed PR 34 exact-head
+run `35276015624`, merged as exact main `da52925`, and passed exact-main run
+`35280257983`. That exact source admits `PBR-NETWORK-038` and every replayed
+intersecting closure. It still does not implement the supervised connector,
+production producer, separate Rust verifier, composition, acceptance, native
+attacks, or release-artifact linkage. The new `PBR-NETWORK-039` candidate is a
+later exact source and starts with no inherited admission.
 
 This pending ledger does not weaken or retract an admission for an older exact
 source. It prevents a source-identity change from silently inheriting that
@@ -1145,6 +1144,37 @@ binding, a connector process, launcher, child filter, cleanup path, receipt
 producer, verifier, or release artifact. The production CLI still rejects the
 service-session authority. Those obligations remain explicit and block product
 availability.
+
+## PBR-NETWORK-039
+
+The proposed connector-process layer is isolated in
+`crates/proofbound-runtime-linux/src/connector_process.rs` and the
+`pbr-service-connector` binary. The supervisor side retains and revalidates the
+exact plan, connector executable, trust-root set, resolver configuration, and
+ordered connector runtime artifacts. It creates one unnamed Unix stream pair
+for application bytes and one unnamed packet pair for control reports before
+process creation. Apart from standard descriptors connected to null devices,
+only the exact retained plan, trust-root, connector-side stream, and
+connector-side control descriptors survive exec. The connector executable
+descriptor exists only until the kernel completes the exact descriptor-relative
+exec and remains close-on-exec.
+
+The child parses a closed bootstrap, rejects duplicate inherited descriptors,
+recomputes plan and trust-root identities before parsing or network effects,
+resolves and authenticates through the admitted connector engine, and reports
+authenticated readiness before starting the opaque proxy. The fixed control
+report binds execution, policy, process generation, channel, plan, trust-root,
+connector, runtime-closure, and resolver-configuration identities. Terminal
+traffic and closed typed failures use separate fixed forms. The supervisor
+bounds setup and terminal waits, rejects out-of-order or malformed reports, and
+kills and reaps an unfinished connector when ownership ends.
+
+This is Tier 1 bounded source evidence. It does not establish connector
+filesystem or network confinement, the child launcher boundary, credential
+release, native bypass resistance, production CLI reachability, production
+receipts, independent receipt verification, or release-artifact behavior. The
+runtime-closure paths are identified inputs in this wave; native enforcement
+of that closure remains an explicit obligation before production release.
 
 ## Bounded-domain declaration guard
 

@@ -1,16 +1,16 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-17T19:31:00+01:00 (Europe/London, BST)
-- **Runtime baseline:** RT-8 and the RT-5 observation and launcher source
-  contracts are admitted. PR 32 head `3c3bcd3` passed Verify run
-  `35248987742`, merged as exact admitted main
-  `2ddb4a9543988b41848fd41fc723331b2d3538af`, and passed exact-main Verify run
-  `35254613508`.
+- **Last updated:** 2026-09-18T00:18:00+01:00 (Europe/London, BST)
+- **Runtime baseline:** RT-8, the RT-5 contract layers, and the isolated
+  connector engine are admitted. PR 34 passed exact-head Verify run
+  `35276015624`, merged as exact main
+  `da5292536ea56f40005b297c21625add195e580e`, and passed exact-main Verify run
+  `35280257983`.
 - **Active implementation wave:** RT-5 one authenticated service.
-- **Current batch:** admit the receipt contract and its strengthened
-  observation and retained-launcher integration closure before any connector
-  or launcher effect is enabled.
+- **Current batch:** implement and admit the identified supervised connector
+  process, closed bootstrap, private channels, readiness binding, and bounded
+  reaping before integrating the child launcher.
 - **Parallel external gates:** RT-7 protected routes and current-integration
   source are merged; registry configuration, actual public package publication,
   anonymous observations, consumer dogfood, and a retained current-integration

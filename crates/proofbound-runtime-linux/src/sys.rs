@@ -395,6 +395,29 @@ pub(crate) fn private_socket_pair() -> io::Result<(OwnedFd, OwnedFd)> {
     Ok((first, second))
 }
 
+pub(crate) fn private_stream_pair() -> io::Result<(OwnedFd, OwnedFd)> {
+    let mut descriptors = [-1; 2];
+    // SAFETY: `descriptors` contains space for the two descriptors written by
+    // socketpair. Each successful descriptor becomes uniquely owned below.
+    let result = unsafe {
+        libc::socketpair(
+            libc::AF_UNIX,
+            libc::SOCK_STREAM | libc::SOCK_CLOEXEC,
+            0,
+            descriptors.as_mut_ptr(),
+        )
+    };
+    if result != 0 {
+        return Err(io::Error::last_os_error());
+    }
+    // SAFETY: socketpair returned two new descriptors and ownership transfers
+    // to these values exactly once.
+    let first = unsafe { OwnedFd::from_raw_fd(descriptors[0]) };
+    // SAFETY: see the ownership argument for `first` above.
+    let second = unsafe { OwnedFd::from_raw_fd(descriptors[1]) };
+    Ok((first, second))
+}
+
 pub(crate) fn send_packet(descriptor: RawFd, bytes: &[u8]) -> io::Result<()> {
     // SAFETY: `bytes` remains readable for the call and `descriptor` is
     // borrowed by the caller. SOCK_SEQPACKET preserves this write as one
@@ -468,6 +491,67 @@ pub(crate) fn inherit_descriptors_for_exec(command: &mut Command, descriptors: V
             Ok(())
         });
     }
+}
+
+pub(crate) fn inherit_only_descriptors_for_exec(
+    command: &mut Command,
+    mut inherited_descriptors: Vec<RawFd>,
+    transient_exec_descriptors: Vec<RawFd>,
+) -> io::Result<()> {
+    use std::os::unix::process::CommandExt as _;
+
+    inherited_descriptors.sort_unstable();
+    if inherited_descriptors
+        .windows(2)
+        .any(|pair| pair[0] == pair[1])
+    {
+        return Err(io::Error::from(io::ErrorKind::InvalidInput));
+    }
+    let mut retained_descriptors = inherited_descriptors.clone();
+    retained_descriptors.extend(transient_exec_descriptors.iter().copied());
+    retained_descriptors.sort_unstable();
+    if retained_descriptors
+        .windows(2)
+        .any(|pair| pair[0] == pair[1])
+        || retained_descriptors
+            .iter()
+            .any(|descriptor| *descriptor < 3 || u32::try_from(*descriptor).is_err())
+    {
+        return Err(io::Error::from(io::ErrorKind::InvalidInput));
+    }
+
+    // SAFETY: the closure runs after fork and before exec. It uses only raw
+    // close_range and fcntl calls, performs no allocation, and retains until
+    // exec exactly the sorted descriptor set plus standard descriptors 0, 1,
+    // and 2. It clears close-on-exec only for the declared inherited set.
+    unsafe {
+        command.pre_exec(move || {
+            let mut first = 3_u32;
+            for descriptor in &retained_descriptors {
+                let descriptor = u32::try_from(*descriptor)
+                    .map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+                if first < descriptor {
+                    close_descriptor_range(first, descriptor - 1)?;
+                }
+                first = descriptor
+                    .checked_add(1)
+                    .ok_or_else(|| io::Error::from(io::ErrorKind::InvalidInput))?;
+            }
+            close_descriptor_range(first, u32::MAX)?;
+            for descriptor in &inherited_descriptors {
+                if libc::fcntl(*descriptor, libc::F_SETFD, 0) < 0 {
+                    return Err(io::Error::last_os_error());
+                }
+            }
+            for descriptor in &transient_exec_descriptors {
+                if libc::fcntl(*descriptor, libc::F_SETFD, libc::FD_CLOEXEC) < 0 {
+                    return Err(io::Error::last_os_error());
+                }
+            }
+            Ok(())
+        });
+    }
+    Ok(())
 }
 
 #[cfg(feature = "diagnostic-observer")]
