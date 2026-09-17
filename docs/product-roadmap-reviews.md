@@ -3024,6 +3024,29 @@ The following approval-only commit changes no reviewed production, schema,
 vector, evidence, native-workflow, specification, roadmap, or assurance bytes.
 Any later subject change requires a new exact-head review.
 
+### RT-8 product-exit lockfile correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `d60d1f3485c6f050027a6cace9def943cbb958dc`
+- **Reviewed head:** `e473459a41866aadb67c42f04d18f34bc58bc020`
+- **Method:** Exact-range static re-review after the hosted packageability gate
+  exposed an omitted workspace lock dependency. The reviewer changed no files
+  and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The only subject change after approved code head `6b3c39c` adds the already
+reviewed `serde` manifest dependency to the `proofbound-runtime-diagnose-cli`
+lock entry. Offline lock regeneration also restores alphabetical ordering of
+the diagnostic CLI and Linux workspace entries. No version, registry source,
+checksum, or external dependency changed. All preceding source findings remain
+closed.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`d60d1f3485c6f050027a6cace9def943cbb958dc..e473459a41866aadb67c42f04d18f34bc58bc020`.
+The following approval-only commit changes only this review record. Any later
+subject change requires another exact-head review.
+
 ## RT-8 consolidated object, candidate, and command approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
