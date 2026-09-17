@@ -1,0 +1,71 @@
+; Proposed authenticated-service-session receipt fragment.
+; The production receipt and verifier do not accept this fragment yet.
+
+service-session-receipt-v1 = {
+  "schema": "proofbound-runtime-service-session-receipt/1",
+  "service": service,
+  "result": success / failure,
+  "eligibility": eligibility,
+  "execution_id": bstr .size 16,
+  "plan_sha256": bstr .size 32,
+  "policy_sha256": bstr .size 32,
+  "install_request_sha256": bstr .size 32 / null,
+  "assumptions": [+ text .size (1..128)],
+  "trusted_computing_base": [+ tcb-entry]
+}
+
+service = {
+  "name": text .size (1..253),
+  "port": 1..65535
+}
+
+success = {
+  "kind": "success",
+  "release_sha256": bstr .size 32,
+  "installed_sha256": bstr .size 32,
+  "observation_cbor": bstr .size (1..1048576),
+  "observation_sha256": bstr .size 32,
+  "child_outcome": { "kind": "exited", "code": 0 }
+}
+
+failure = {
+  "kind": "failed",
+  "phase": phase,
+  "reason": failure-reason,
+  "clock": "linux-monotonic",
+  "observed_ns": uint64,
+  "boundary_state": "not-installed" / "installed",
+  "installed_sha256": bstr .size 32 / null,
+  "release_sha256": bstr .size 32 / null,
+  "observation_sha256": null,
+  "cleanup": cleanup
+}
+
+phase = "created" / "resolving" / "connecting" / "authenticating" /
+  "ready" / "active" / "closing"
+
+failure-reason = "connector-start-failed" / "resolver-failed" /
+  "endpoints-exhausted" / "tls-authentication-failed" /
+  "launcher-install-failed" / "launcher-release-failed" /
+  "service-limit-exceeded" / "channel-lost" /
+  "child-failed" / "cleanup-failed" / "evidence-incomplete"
+
+cleanup = {
+  "child": "not-started" / "reaped" / "cleanup-failed",
+  "channel": "closed" / "cleanup-failed",
+  "cgroup": "empty-removed" / "cleanup-failed",
+  "connector": "not-started" / "reaped" / "cleanup-failed",
+  "namespace": "destroyed" / "cleanup-failed"
+}
+
+eligibility = {
+  "status": "reusable" / "non-reusable",
+  "reasons": [* text .size (1..128)]
+}
+
+tcb-entry = {
+  "role": text .size (1..128),
+  "identity_sha256": bstr .size 32
+}
+
+uint64 = 0..18446744073709551615

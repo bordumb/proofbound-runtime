@@ -8,6 +8,7 @@ from pathlib import Path
 
 from deterministic_cbor import json_projection
 from encode_plan_v2 import encode
+from generate_service_observation_v1_vector import observation
 
 
 def artifact(role: str, byte: int, size: int, mode: int) -> dict:
@@ -15,36 +16,29 @@ def artifact(role: str, byte: int, size: int, mode: int) -> dict:
 
 
 def messages() -> dict[str, dict]:
-    execution_id = bytes([0x11]) * 16
-    policy = bytes([0x21]) * 32
+    session = observation()
+    execution_id = session["execution_id"]
+    policy = session["policy_sha256"]
     cgroup = {"mount_id": 42, "inode": 73}
     seccomp_program = bytes([0x81]) * 64
     service = {
-        "service": {"name": "api.anthropic.com", "port": 443},
+        "service": session["service"],
         "connector": {
-            "executable": artifact("connector-executable", 0x31, 65_536, 0o555),
-            "runtime_closure_sha256": bytes([0x32]) * 32,
-            "process_generation": 1,
+            "executable": session["connector"]["executable"],
+            "runtime_closure_sha256": session["connector"]["runtime_closure_sha256"],
+            "process_generation": session["connector"]["process_generation"],
         },
-        "dns_observation_sha256": bytes([0x41]) * 32,
-        "selected_endpoint": {"family": "ipv4", "address": bytes([192, 0, 2, 10]), "port": 443},
-        "tls_observation_sha256": bytes([0x42]) * 32,
+        "dns_observation_sha256": hashlib.sha256(encode(session["dns"])).digest(),
+        "selected_endpoint": session["dns"]["selected_endpoint"],
+        "tls_observation_sha256": hashlib.sha256(encode(session["tls"])).digest(),
         "channel": {
             "protocol": "unix-stream-v1",
             "connector_endpoint_id": bytes([0x51]) * 16,
-            "child_endpoint_id": bytes([0x52]) * 16,
-            "child_descriptor": 9,
+            "child_endpoint_id": session["channel"]["channel_id"],
+            "child_descriptor": session["channel"]["child_descriptor"],
             "role": "service-session-channel",
         },
-        "limits": {
-            "setup_time_ms": 10_000,
-            "session_time_ms": 30_000,
-            "child_to_service_bytes": 1_048_576,
-            "service_to_child_bytes": 1_048_576,
-            "dns_messages": 4,
-            "endpoint_attempts": 4,
-            "tls_handshake_bytes": 262_144,
-        },
+        "limits": session["limits"],
         "child_filter_sha256": hashlib.sha256(seccomp_program).digest(),
         "credential_source": None,
     }

@@ -295,6 +295,15 @@ enter a retained vector, receipt, diagnostic, or log. The production launcher
 protocol does not accept these messages until the native implementation and
 failure handshake are admitted.
 
+For the proposed source contract, the connector runtime-closure identity is
+the SHA-256 digest of its deterministic-CBOR ordered artifact array. The DNS
+and TLS observation identities are the SHA-256 digests of their respective
+deterministic-CBOR observation maps. The launcher child-endpoint identity is
+the observation channel identity. Receipt validation recomputes these three
+digests and requires the execution, policy, service, connector executable and
+generation, endpoint, channel descriptor, limits, and credential-source fields
+to agree across the launcher transcript and successful observation.
+
 ## 7. Child boundary
 
 The service-session seccomp profile denies at least:
@@ -379,6 +388,41 @@ composer, or acceptance engine. A later integration MUST embed the same facts,
 add non-reusable failure forms, and retain the outer receipt's exact plan,
 policy, boundary, outcome, resource, assumption, and trusted-computing-base
 bindings.
+
+The proposed outer fragment is
+`proofbound-runtime-service-session-receipt/1`. It binds one expected
+execution, plan, compiled policy, and service. It binds an exact launcher
+install request only when launcher start was attempted.
+A reusable success also binds the installed acknowledgement, child release,
+canonical successful observation, and zero child exit. A failed form is always
+non-reusable. It retains a closed phase and reason, a reported Linux monotonic
+failure timestamp without claiming producer-side ordering at this contract wave,
+boundary-install state, child-release identity when release occurred, and
+terminal cleanup result. Post-release failures MUST bind the exact installed
+acknowledgement and release; pre-release failures MUST NOT claim a release.
+The contract checker validates the exact retained launcher prefix. A failure
+before launcher start has a null install-request identity and no launcher
+frames. From `launcher-install-failed` onward, the attempted install request is
+present. The installed acknowledgement is present only when the boundary
+reached `installed`, and the release is present only after child release. The
+checker rejects absent required frames and premature later frames. It does not
+fabricate a launcher request or successful suffix for an early failure. A retained
+credentialed release contains only the source identifier and environment in
+the release state. The transient credential-release frame and its secret value
+are not receipt inputs.
+Assumption identifiers and the service-specific trusted-computing-base
+projection are closed and complete for this fragment. They contain only the
+new DNS and TLS assumptions and the connector executable, connector runtime
+closure, TLS implementation, and TLS trust-root roles. The outer execution
+receipt still owns its existing host, kernel, toolchain, Runtime, launcher,
+filesystem, cgroup, and other base assumptions and roles. Service-specific identities are SHA-256 values so the
+fragment does not admit arbitrary retained identity text. The registered DNS
+and TLS assumptions are `PBR-DNS-AX-004` and `PBR-TLS-AX-005`.
+
+This fragment remains a proposed source contract. The production producer and
+independent Rust verifier reject it. The independent Python checker is a
+contract falsifier, not the shipping verifier, and its implementation MUST NOT
+be shared with the later production verifier.
 
 Composition retains the complete service authority, service observations,
 limits, assumptions, and trusted-computing-base roles. Consumer acceptance uses

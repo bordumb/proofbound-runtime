@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Replay the proposed service-session observation contract checks."""
+"""Replay the proposed service-session receipt and failure contract."""
 
 from __future__ import annotations
 
@@ -11,16 +11,18 @@ import sys
 
 
 INVENTORY = [
-    "service-observation-canonical-vector",
-    "service-observation-closed-schema",
-    "service-observation-complete-success-lifecycle",
-    "service-observation-connector-runtime-closure-binding",
-    "service-observation-endpoint-and-tls-binding",
-    "service-observation-tls-implementation-binding",
-    "service-observation-bounded-counters",
-    "service-observation-complete-cleanup",
-    "service-observation-secret-and-payload-exclusion",
-    "service-observation-causal-mutation-rejection",
+    "service-receipt-canonical-success-and-failure",
+    "service-receipt-closed-schema",
+    "service-receipt-exact-execution-plan-policy-and-service-binding",
+    "service-receipt-exact-retained-launcher-prefix-binding",
+    "service-receipt-success-observation-binding",
+    "service-receipt-success-reuse-gate",
+    "service-receipt-typed-failure-phase-and-reason",
+    "service-receipt-failure-non-reuse-gate",
+    "service-receipt-boundary-release-and-cleanup-consistency",
+    "service-receipt-assumption-and-tcb-closure",
+    "service-receipt-secret-and-content-exclusion",
+    "service-receipt-causal-mutation-rejection",
 ]
 
 
@@ -29,7 +31,7 @@ def main() -> int:
     environment = dict(os.environ)
     environment["PYTHONDONTWRITEBYTECODE"] = "1"
     completed = subprocess.run(
-        [sys.executable, "-m", "unittest", "tools.ci.test_service_observation_contract"],
+        [sys.executable, "-m", "unittest", "tools.ci.test_service_receipt_contract"],
         cwd=root,
         env=environment,
         stdin=subprocess.DEVNULL,

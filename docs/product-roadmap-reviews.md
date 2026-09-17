@@ -3143,6 +3143,225 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes only this review record. Any later
 subject change requires a new exact-head review.
 
+## RT-5 observation and launcher hosted admission closure
+
+This is an admission record, not a new independent review.
+
+- **Pull request:** Runtime PR 32
+- **Exact reviewed and pushed head:**
+  `3c3bcd3634d96cee367deafd1620197d5ac0f5ee`
+- **Exact-head Verify:** run `35248987742`, all required lanes and the current
+  assurance gate passed
+- **Merge:** `2ddb4a9543988b41848fd41fc723331b2d3538af`
+- **Exact-main Verify:** run `35254613508`, all required lanes and the current
+  assurance gate passed
+- **Admission result:** the first exact `PBR-NETWORK-035` observation and
+  `PBR-NETWORK-036` launcher source-contract baseline is admitted
+
+Production connector, launcher decoding, child release, receipt production,
+shipping verification, composition, acceptance, native attacks, and artifact
+binding remain open. The following receipt wave changes both admitted source
+closures. Those changed identities do not inherit this admission and must pass
+their own final exact review, hosted gate, merge, and exact-main replay.
+
+## RT-5 service-session receipt preliminary review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `3c3bcd3634d96cee367deafd1620197d5ac0f5ee`
+- **Reviewed head:** `425635b6757922ba22048c657a5514633d398f97`
+- **Branch:** `codex/rt5-receipt-contract`
+- **Method:** Complete exact-range static schema, vector, generator, checker,
+  mutation, claim, evidence-closure, CI-registration, specification, and
+  roadmap review. The reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review found six blockers. First, the canonical receipt and observation
+used different execution, policy, connector, and credential identities from
+the opaque launcher transcript digests, and the checker did not decode or
+cross-bind that transcript. Second, two required assumption identifiers did
+not exist and the claim closure registered no assumptions. Third,
+post-release failures could claim that the child never started. Fourth, the
+service-specific trusted-computing-base projection omitted the connector
+runtime closure, mislabeled the resolver configuration as the resolver, and
+did not bind the TLS implementation to a subject identity. Fifth, the false
+cleanup-reason mutation failed at an earlier boundary check instead of its
+intended guard. Sixth, the specification called an otherwise unbound `uint64`
+failure time monotonic.
+
+Production crates remained unchanged and rejected the proposed fragment. The
+pending non-production status, schema registration, CI registration, secret
+and content exclusion, canonical nested-observation validation, and basic
+reuse gates had no additional blocker. The corrected exact head requires a new
+independent review.
+
+## RT-5 service-session receipt correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `3c3bcd3634d96cee367deafd1620197d5ac0f5ee`
+- **Reviewed head:** `53c2ade77b0f4fd011d82dc34e819162edbef27d`
+- **Branch:** `codex/rt5-receipt-contract`
+- **Method:** Complete exact-range static schema, retained-launcher,
+  failure-prefix, cross-binding, evidence-closure, specification, and prior-
+  blocker re-review. The reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The six findings from the first review are substantively closed. Four blockers
+remain. First, the receipt checker always reconstructed a three-message
+launcher transcript, so a declared credential source could never reach the
+four-message launcher form. Second, early failure receipts still required
+hypothetical installed and release frames that could not exist after the
+reported failure. Third, the evidence closure omitted the directly read
+`service-session-observation.cbor.hex` vector. Fourth, the receipt-level
+mutation set did not causally reach the connector-generation, endpoint,
+channel, limits, credential-source, and nested trusted-computing-base
+cross-binding guards.
+
+Production crates remain unchanged. Service execution, production launcher
+decoding, receipt production, and shipping receipt verification remain
+rejected. The correction must validate only the exact retained launcher prefix,
+exclude the transient credential value while binding its retained descriptor,
+close the direct evidence input, and add dependent-digest-refresh mutations.
+The corrected exact head requires a new independent review.
+
+## RT-5 service-session receipt retained-prefix re-review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `3c3bcd3634d96cee367deafd1620197d5ac0f5ee`
+- **Reviewed head:** `f13295dcd7d22d879da1f4c24e701309b00d70e4`
+- **Branch:** `codex/rt5-receipt-contract`
+- **Method:** Complete preliminary static review of the corrected retained
+  launcher prefix, early failures, causal mutations, evidence closure, and all
+  preceding findings. The reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+Two blockers remained. First, every receipt still required an install request,
+but connector start, DNS resolution, endpoint attempts, and TLS authentication
+occur before a complete launcher request can truthfully exist. The canonical
+TLS failure therefore retained a request derived from a successful session.
+Second, the mutation suite did not causally reach the nested observation
+execution and policy checks or the direct connector-closure comparison between
+the observation and launcher.
+
+The credential-safe retained release, installed and release prefix semantics,
+direct evidence closure, cleanup, assumptions, trusted-computing-base scope,
+and failure-clock language were correct. Production remained unchanged and
+network execution remained disabled. The corrected exact head requires a new
+independent review after restacking on admitted PR 32.
+
+## RT-5 service-session receipt early-failure re-review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `3c3bcd3634d96cee367deafd1620197d5ac0f5ee`
+- **Reviewed head:** `95bcf038a3252b92da5a1108ec2c663058d3547b`
+- **Branch:** `codex/rt5-receipt-contract`
+- **Method:** Complete preliminary static review of truthful pre-launch
+  failure identity, phase-aware retained prefixes, causal cross-bindings, and
+  all preceding findings. The reviewer changed no files and ran no builds or
+  tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The substantive receipt semantics were correct. Two assurance blockers
+remained. The tests did not causally reach the matching-but-premature
+pre-launch install guard or the missing install request for
+`launcher-install-failed`. The assurance summary also described all failures
+as binding launcher identities even though pre-launch failures correctly bind
+none. The correction requires exact guard-targeted mutations and
+phase-qualified summary language, followed by a new exact-head review after
+restacking on admitted PR 32.
+
+## RT-5 service-session receipt preliminary approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `3c3bcd3634d96cee367deafd1620197d5ac0f5ee`
+- **Reviewed head:** `44de1b2e6b1b7f0d20f1407b5f894fe61db832d0`
+- **Branch:** `codex/rt5-receipt-contract`
+- **Method:** Complete preliminary static re-review of every preceding receipt
+  finding. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None remain in the reviewed subject.
+- **Verdict:** **APPROVE**
+- **Maintainer endorsement:** **NOT ENDORSED FOR MERGE**. This approval is
+  preliminary because the branch still requires restacking onto PR 32's exact
+  admitted merge and a final exact-head review.
+
+The matching premature-install mutation reaches the phase guard with a
+consistent root digest and install frame. The missing `launcher-install-failed`
+mutation reaches the required-prefix guard with both root and input absent.
+The assurance summary uses phase-appropriate retained-launcher language. Every
+earlier credential, prefix, failure, closure, cross-binding, assumption,
+trusted-computing-base, cleanup, clock, and evidence-closure finding remains
+closed. Production behavior remains unchanged and service execution remains
+rejected.
+
+## RT-5 service-session receipt final approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `2ddb4a9543988b41848fd41fc723331b2d3538af`
+- **Reviewed head:** `ad2a80eb224f19b1e7fbef188402862b7a7593fd`
+- **Branch:** `codex/rt5-receipt-contract`
+- **Method:** Complete read-only static exact-range review. The reviewer changed
+  no files and ran no builds or tests.
+- **Findings:** None blocking.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the eight receipt implementation commits are
+patch-equivalent after restacking to the preliminary-approved subject. Every
+prior blocker remains closed: canonical retained-launcher decoding and exact
+execution, plan, policy, and service closure; phase-truthful launcher prefixes;
+credentialed release without a retained credential value or value-derived
+digest; observation, launcher, and trusted-computing-base cross-bindings;
+registered DNS and TLS assumptions; closed failure, boundary, release, and
+cleanup semantics; an honestly labeled failure clock; and causal mutations for
+the exact guards. Production execution and production receipt and verifier
+acceptance remain disabled.
+
+The reviewer also confirmed that the restack is exact on admitted main
+`2ddb4a9`, the PR 32 admission identities are synchronized, and changed
+`PBR-NETWORK-035` and `PBR-NETWORK-036` closures plus new
+`PBR-NETWORK-037` remain pending this wave's hosted admission. The focused
+product checklist is subordinate to the normative contracts, preserves the
+fail-closed boundaries, and describes one authenticated session with opaque
+directionally bounded application bytes. It does not claim application request
+or response parsing.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`2ddb4a9543988b41848fd41fc723331b2d3538af..ad2a80eb224f19b1e7fbef188402862b7a7593fd`.
+This approval-only commit changes no reviewed schema, vector, generator,
+checker, claim, assumption, specification, roadmap status, or production code.
+Any later subject change requires a new exact-head review.
+
+### PR 33 assumption-category correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `13b3300a1f44dd63fd29aca4859c41c7fcc4a08c`
+- **Reviewed head:** `ffeabfe4911e1b6186a64f868b51c23cca71ef48`
+- **Method:** Focused read-only static exact-delta review. The reviewer changed
+  no files and ran no builds or tests.
+- **Findings:** None blocking.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that `external-provider` honestly categorizes the DNS
+resolver and network premise in `PBR-DNS-AX-004`. TLS, not DNS, retains service
+identity authority. The reviewer also confirmed that `cryptographic-library`
+honestly categorizes the primary TLS implementation and cryptographic premise
+in `PBR-TLS-AX-005`, while the unchanged statement, rationale, and scope keep
+the residual public-key-infrastructure, trust-root, and remote-peer premises
+visible. Both values belong to Proofbound's closed category vocabulary.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`13b3300a1f44dd63fd29aca4859c41c7fcc4a08c..ffeabfe4911e1b6186a64f868b51c23cca71ef48`.
+This approval-only commit changes no reviewed assumption, schema, vector,
+checker, claim, evidence closure, or production code. The earlier receipt
+approval remains valid. Hosted admission is still required for the corrected
+exact head.
+
 ## RT-5 service launcher preliminary review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

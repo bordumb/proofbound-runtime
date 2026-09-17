@@ -37,6 +37,7 @@ service-session-limits = {
 connector-observation = {
   "executable": artifact-identity,
   "runtime_closure": [* artifact-identity],
+  "runtime_closure_sha256": bstr .size 32,
   "process_generation": uint64-nonzero
 }
 
@@ -89,6 +90,7 @@ endpoint = {
 }
 
 tls-observation = {
+  "implementation_sha256": bstr .size 32,
   "version": "tls-1.2" / "tls-1.3",
   "service_name_verification": "dns-san-exact-match",
   "certificate_chain_sha256": bstr .size 32,

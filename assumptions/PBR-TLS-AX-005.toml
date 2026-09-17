@@ -1,0 +1,15 @@
+schema = "proofbound-assumption/1"
+id = "PBR-TLS-AX-005"
+statement = "The identified TLS implementation, cryptographic primitives, trust-root set, and authenticated peer implement the recorded TLS version, exact DNS-name authentication, and channel security semantics correctly."
+category = "cryptographic-library"
+owner = "Proofbound Runtime deployment operator"
+rationale = "Runtime can constrain configuration and retain implementation, trust-root, certificate-chain, and handshake identities, but bounded source and native checks do not prove the cryptographic implementation, public-key infrastructure, or remote peer."
+scope = "Only the TLS interpretation of the proposed PBR-NETWORK-037 service-session receipt contract. Revocation is explicitly not checked, session resumption and early data are denied, and remote application behavior is outside scope."
+affected_claims = ["PBR-NETWORK-037"]
+review_evidence = [
+  "docs/specs/0016_authenticated_service_session.md#33-tls-policy",
+  "docs/threat-model.md#trusted-computing-base",
+]
+discharge_plan = "Retain exact TLS implementation and trust-root identities, use an independently maintained TLS stack, run protocol and certificate adversarial tests, and keep the residual cryptographic and PKI premise explicit."
+source_citation = "docs/specs/0016_authenticated_service_session.md#9-receipt-and-independent-verification"
+status = "active"

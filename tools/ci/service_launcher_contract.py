@@ -138,7 +138,21 @@ def service_binding(value: object) -> None:
 
 
 def validate_transcript(messages: object) -> None:
-    if not isinstance(messages, list) or len(messages) not in {3, 4}:
+    _validate_transcript(messages, retained_only=False)
+
+
+def validate_retained_transcript(messages: object) -> None:
+    """Validate the retained install, installed, and release prefix.
+
+    The transient credential value is intentionally absent. The release frame
+    binds only its declared source and environment.
+    """
+    _validate_transcript(messages, retained_only=True)
+
+
+def _validate_transcript(messages: object, *, retained_only: bool) -> None:
+    admitted_lengths = {1, 2, 3} if retained_only else {3, 4}
+    if not isinstance(messages, list) or len(messages) not in admitted_lengths:
         raise ContractError("launcher transcript does not have an admitted length")
     if any(not isinstance(message, dict) for message in messages):
         raise ContractError("launcher transcript contains a non-map message")
@@ -154,7 +168,18 @@ def validate_transcript(messages: object) -> None:
         "proofbound-runtime-service-launcher-credential-release/1",
         "proofbound-runtime-service-launcher-exec-release/1",
     ]
-    if schemas == without_credential:
+    retained_install = without_credential[:1]
+    retained_installed = without_credential[:2]
+    if retained_only and schemas == retained_install:
+        request_value = messages[0]
+        installed_value = None
+        release_value = None
+        credential_value = None
+    elif retained_only and schemas == retained_installed:
+        request_value, installed_value = messages
+        release_value = None
+        credential_value = None
+    elif schemas == without_credential:
         request_value, installed_value, release_value = messages
         credential_value = None
     elif schemas == with_credential:
@@ -174,27 +199,36 @@ def validate_transcript(messages: object) -> None:
         },
         "install request",
     )
-    installed = exact_map(
-        installed_value,
-        {"schema", "state", "execution_id", "policy_sha256", "cgroup", "install_request_sha256", "service"},
-        "installed acknowledgement",
-    )
-    release = exact_map(
-        release_value,
-        {"schema", "state", "execution_id", "policy_sha256", "cgroup", "install_request_sha256", "service_binding_sha256", "credential_state"},
-        "exec release",
-    )
+    installed = None
+    if installed_value is not None:
+        installed = exact_map(
+            installed_value,
+            {"schema", "state", "execution_id", "policy_sha256", "cgroup", "install_request_sha256", "service"},
+            "installed acknowledgement",
+        )
+    release = None
+    if release_value is not None:
+        release = exact_map(
+            release_value,
+            {"schema", "state", "execution_id", "policy_sha256", "cgroup", "install_request_sha256", "service_binding_sha256", "credential_state"},
+            "exec release",
+        )
     if request["schema"] != "proofbound-runtime-service-launcher-install/1":
         raise ContractError("install request has an unknown schema")
-    if installed["schema"] != "proofbound-runtime-service-launcher-boundary-installed/1" or installed["state"] != "installed":
+    if installed is not None and (installed["schema"] != "proofbound-runtime-service-launcher-boundary-installed/1" or installed["state"] != "installed"):
         raise ContractError("installed acknowledgement has an unknown schema or state")
-    if release["schema"] != "proofbound-runtime-service-launcher-exec-release/1" or release["state"] != "released":
+    if release is not None and (release["schema"] != "proofbound-runtime-service-launcher-exec-release/1" or release["state"] != "released"):
         raise ContractError("exec release has an unknown schema or state")
 
     execution_id = bytes_exact(request["execution_id"], 16, "request.execution_id")
     policy = bytes_exact(request["policy_sha256"], 32, "request.policy_sha256")
     cgroup_id = cgroup(request["cgroup"], "request.cgroup")
-    for context, message in (("installed", installed), ("release", release)):
+    retained_messages = []
+    if installed is not None:
+        retained_messages.append(("installed", installed))
+    if release is not None:
+        retained_messages.append(("release", release))
+    for context, message in retained_messages:
         if bytes_exact(message["execution_id"], 16, f"{context}.execution_id") != execution_id:
             raise ContractError(f"{context} execution identity changed")
         if bytes_exact(message["policy_sha256"], 32, f"{context}.policy_sha256") != policy:
@@ -248,24 +282,39 @@ def validate_transcript(messages: object) -> None:
         raise ContractError("request seccomp program is empty")
 
     service_binding(request["service"])
-    service_binding(installed["service"])
-    if installed["service"] != request["service"]:
-        raise ContractError("installed acknowledgement changed the service binding")
+    if installed is not None:
+        service_binding(installed["service"])
+        if installed["service"] != request["service"]:
+            raise ContractError("installed acknowledgement changed the service binding")
     if hashlib.sha256(seccomp_program).digest() != request["service"]["child_filter_sha256"]:
         raise ContractError("child filter identity does not match the requested program")
     install_identity = hashlib.sha256(encode(request)).digest()
-    if bytes_exact(installed["install_request_sha256"], 32, "installed.install_request_sha256") != install_identity:
+    if installed is not None and bytes_exact(installed["install_request_sha256"], 32, "installed.install_request_sha256") != install_identity:
         raise ContractError("installed acknowledgement changed the install request")
-    if bytes_exact(release["install_request_sha256"], 32, "release.install_request_sha256") != install_identity:
-        raise ContractError("exec release changed the install request")
-    if bytes_exact(release["service_binding_sha256"], 32, "release.service_binding_sha256") != hashlib.sha256(encode(request["service"])).digest():
-        raise ContractError("exec release changed the service-binding identity")
+    if release is not None:
+        if installed is None:
+            raise ContractError("exec release has no installed acknowledgement")
+        if bytes_exact(release["install_request_sha256"], 32, "release.install_request_sha256") != install_identity:
+            raise ContractError("exec release changed the install request")
+        if bytes_exact(release["service_binding_sha256"], 32, "release.service_binding_sha256") != hashlib.sha256(encode(request["service"])).digest():
+            raise ContractError("exec release changed the service-binding identity")
 
     credential = request["service"]["credential_source"]
     binding_identity = hashlib.sha256(encode(request["service"])).digest()
-    if credential is None:
+    if credential is not None and credential["environment"] in request["environment"]:
+        raise ContractError("credential value was present before boundary acknowledgement")
+    if release is None:
+        if credential_value is not None:
+            raise ContractError("credential release has no exec release")
+    elif credential is None:
         if credential_value is not None or release["credential_state"] != "not-declared":
             raise ContractError("undeclared credential entered the release handshake")
+    elif retained_only:
+        if credential_value is not None:
+            raise ContractError("retained transcript contains a transient credential value")
+        state = exact_map(release["credential_state"], {"state", "source_id", "environment"}, "release.credential_state")
+        if state != {"state": "released", "source_id": credential["id"], "environment": credential["environment"]}:
+            raise ContractError("exec release does not acknowledge the declared credential")
     else:
         message = exact_map(
             credential_value,
@@ -290,8 +339,6 @@ def validate_transcript(messages: object) -> None:
             raise ContractError("credential release changed service binding")
         if message["source_id"] != credential["id"] or message["environment"] != credential["environment"]:
             raise ContractError("credential release changed its descriptor")
-        if credential["environment"] in request["environment"]:
-            raise ContractError("credential value was present before boundary acknowledgement")
         transient_value = message["value"]
         if not isinstance(transient_value, bytes) or not 1 <= len(transient_value) <= 65_536:
             raise ContractError("credential release value is empty or exceeds its transient bound")
@@ -308,7 +355,11 @@ def validate_transcript(messages: object) -> None:
         raise ContractError("a declared retained descriptor is inside the close range")
 
     forbidden = {"credential", "credential_value", "secret", "application_bytes", "request_bytes", "response_bytes"}
-    stack = [request, installed, release]
+    stack = [request]
+    if installed is not None:
+        stack.append(installed)
+    if release is not None:
+        stack.append(release)
     while stack:
         current = stack.pop()
         if isinstance(current, dict):

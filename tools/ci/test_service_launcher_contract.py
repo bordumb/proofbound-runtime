@@ -9,7 +9,11 @@ from pathlib import Path
 
 from tools.ci.deterministic_cbor import decode_strict, json_projection
 from tools.ci.encode_plan_v2 import encode
-from tools.ci.service_launcher_contract import ContractError, validate_transcript
+from tools.ci.service_launcher_contract import (
+    ContractError,
+    validate_retained_transcript,
+    validate_transcript,
+)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -43,6 +47,13 @@ class ServiceLauncherContractTests(unittest.TestCase):
         for name, value in (("install", self.request), ("installed", self.installed), ("release", self.release)):
             expected = json.loads((VECTOR_ROOT / f"service-launcher-{name}.projection.json").read_text(encoding="utf-8"))
             self.assertEqual(json_projection(value), expected)
+
+    def test_retained_prefix_accepts_only_observed_forward_progress(self) -> None:
+        validate_retained_transcript([self.request])
+        validate_retained_transcript([self.request, self.installed])
+        validate_retained_transcript([self.request, self.installed, self.release])
+        with self.assertRaises(ContractError):
+            validate_retained_transcript([self.request, self.release])
 
     def test_generator_reproduces_all_vectors(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -43,8 +43,9 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-NETWORK-032` | Tier 0 current lifecycle closure admitted on exact Runtime main `1da65a5` | PR 31 run `35236845497` and exact-main run `35241672716` admitted the changed service-session contract closure. |
 | `PBR-NETWORK-033` | Tier 0 current lifecycle closure admitted on exact Runtime main `1da65a5` | The compiler still separately binds child denial, the channel-only profile, and complete connector authority; PR 31 and its exact-main replay admitted the changed shared-core closure. |
 | `PBR-NETWORK-034` | Tier 0 pure lifecycle admitted on exact Runtime main `1da65a5` | Exhaustive source tests cover the closed forward path and typed terminal failure. PR 31 run `35236845497` and exact-main run `35241672716` passed. The candidate Lean theorem is not registered as admitted evidence. Every effectful wave remains open. |
-| `PBR-NETWORK-035` | Tier 1 proposed observation contract pending first exact admission | A closed successful-session fragment and independent mutation checker bind receipt inputs without claiming production integration or network effects. Failed-session, shipping-verifier, composition, and acceptance work remain open. |
-| `PBR-NETWORK-036` | Tier 1 proposed launcher contract pending first exact admission | A closed three-message handshake and independent mutation checker bind the prepared service session and child filter before release without changing the production launcher or claiming an installed effect. |
+| `PBR-NETWORK-035` | Tier 1 baseline admitted on exact Runtime main `2ddb4a9`; current receipt-integration closure pending | PR 32 run `35248987742` and exact-main run `35254613508` admitted the first closed successful-session fragment. The current branch strengthens its receipt inputs without claiming production integration or network effects. |
+| `PBR-NETWORK-036` | Tier 1 baseline admitted on exact Runtime main `2ddb4a9`; current retained-prefix closure pending | PR 32 run `35248987742` and exact-main run `35254613508` admitted the first launcher transcript. The current branch adds receipt-safe retained-prefix validation without changing the production launcher or claiming an installed effect. |
+| `PBR-NETWORK-037` | Tier 1 proposed receipt contract pending first exact admission | Closed success and failure fragments bind expected execution context, phase-appropriate retained launcher identities, observation or typed failure, reuse eligibility, assumptions, trusted-computing-base digests, and cleanup without claiming production integration or network effects. |
 
 ### Current changed subjects pending exact admission
 
@@ -65,10 +66,14 @@ The lifecycle wave passed PR 31 run `35236845497`, merged as exact main
 the new Tier 0 `PBR-NETWORK-034` subject. The Lean theorem remains a compiled
 candidate, not registered theorem evidence.
 
-The stacked non-production contract batch adds Tier 1 `PBR-NETWORK-035` and
-`PBR-NETWORK-036`. Each keeps its own closure and mutation corpus. They share
-one final exact-source review and hosted admission only after the lifecycle
-exact-main replay passes; a blocker in either blocks the complete batch.
+The first non-production `PBR-NETWORK-035` and `PBR-NETWORK-036` source
+baseline passed PR 32 run `35248987742`, merged as exact main `2ddb4a9`, and
+passed exact-main run `35254613508`. The current receipt-integration wave
+changes both exact source closures and adds Tier 1 `PBR-NETWORK-037`; all three
+therefore share the next exact-source review and hosted admission. It closes
+the proposed outer success and failure form but does not
+implement the production producer, separate Rust verifier, composition,
+acceptance, network effects, native attacks, or release-artifact linkage.
 
 This pending ledger does not weaken or retract an admission for an older exact
 source. It prevents a source-identity change from silently inheriting that
@@ -1064,6 +1069,35 @@ handshake. This source contract does not establish that any boundary was
 installed or that a child was released. The failure handshake, effectful
 supervisor and launcher implementation, native attacks, receipt integration,
 shipping verifier, composition, acceptance, and artifact binding remain open.
+
+## PBR-NETWORK-037
+
+The current subject is a proposed deterministic-CBOR service-session receipt
+fragment and an independent Python semantic checker. Both success and failure
+bind the expected execution, plan, compiled policy, service, complete
+registered assumption identifiers, and the closed
+service-specific trusted-computing-base projection with fixed-size identity
+digests. Failures before launcher start bind no fabricated install identity;
+later failures bind the exact retained launcher prefix appropriate to their
+reported boundary and release state. Reusable success
+also binds the exact installed acknowledgement, release message, canonical
+successful observation, and zero child exit.
+
+Every failed form is non-reusable and retains exactly one phase-consistent
+reason. It records whether the boundary was installed, requires the exact
+installed acknowledgement when present, requires the exact release only after
+child release, prohibits a release before that transition, and retains the
+terminal child, channel, cgroup, connector, and namespace cleanup states. The
+mutation corpus rejects execution, plan, policy, service, launcher,
+observation, eligibility, assumption, trusted-computing-base, boundary,
+release, failure, and cleanup substitutions, including nested observation
+changes with a refreshed digest.
+
+The production receipt producer and independent Rust verifier remain
+unchanged and reject this fragment. The Python checker is contract evidence,
+not the shipping verifier. Production integration, separate decoding and
+verification, composition, acceptance, network effects, native attacks, and
+release-artifact binding remain open.
 
 ## Bounded-domain declaration guard
 

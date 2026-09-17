@@ -4,9 +4,9 @@
   publication, and external adopter gates remain
 - **Date:** 2026-09-17
 - **Runtime baseline:** current admitted `main` at
-  `1da65a5c53f27b97a15f95ed1a9fb01170121444`; the RT-5 lifecycle wave
-  passed PR 31 Verify run `35236845497` and exact-main Verify run
-  `35241672716`
+  `2ddb4a9543988b41848fd41fc723331b2d3538af`; the RT-5 observation and
+  launcher source-contract batch passed PR 32 Verify run `35248987742` and
+  exact-main Verify run `35254613508`
 - **Proofbound distribution baseline:** immutable public bundle for source
   `9512469`
 - **Planning horizon:** prelaunch product and assurance waves
@@ -33,7 +33,7 @@ publication or an unrelated adopter.
 | RT-2 receipt acceptance | Policy, CLI, standalone acceptor, and Action source are merged. | Observe the exact release artifact and dogfood the Action from an unrelated adopter. |
 | RT-3 first-run and SDK workflow | The deny-network and non-executable service-session SDK subjects are admitted on exact main `d48122b`. The pure-policy clarification is admitted on `a94c21a`, and the lifecycle closure is admitted on `1da65a5`. | Publish the selected current packages and dogfood them from an unrelated consumer. |
 | RT-4 network decision | The complete experiment and measurement series selected the connector-owned authenticated service session. | The decision authorizes RT-5; it does not provide production networking. |
-| RT-5 one authenticated service | Specification 0016 and the closed non-executable plan/parser and SDK are admitted on `d48122b`; the pure policy is admitted on `a94c21a`, and the lifecycle is admitted on `1da65a5`. Observation and launcher contracts are staged as the next non-production batch. Production execution remains denied. | Admit the combined source-contract batch, then implement the connector, launcher, bypass corpus, receipts, verifiers, composition, acceptance, and one maintained real API client. |
+| RT-5 one authenticated service | Specification 0016 and the closed non-executable plan/parser and SDK are admitted on `d48122b`; the pure policy is admitted on `a94c21a`, the lifecycle on `1da65a5`, and the observation and launcher source-contract baseline on `2ddb4a9`. The current receipt-integration closure is staged next. Production execution remains denied. | Admit the receipt-integration contract batch, then implement the connector, launcher, bypass corpus, production receipts, verifiers, composition, acceptance, and one maintained real API client. |
 | RT-6 evidence-based expansion | CPU and output-quota decisions are recorded; the performance baseline is complete. | Implement a deferred control only when observed demand satisfies its decision gate. |
 
 Milestone B, bounded local execution, is achieved. Milestone A is operationally
@@ -72,7 +72,11 @@ as exact main `d48122b06c4880aeba45291a107c51ad381067a4`, and passed exact-main
 run `35220098639`. The pure-policy specification clarification passed PR 30
 run `35226379485` and exact-main run `35231003515`. The lifecycle closure
 passed PR 31 run `35236845497` and exact-main run `35241672716` at exact main
-`1da65a5`. The scaffold, preflight, and five-case diagnostic corpus now execute
+`1da65a5`. The observation and launcher source-contract baseline passed PR 32
+run `35248987742`, merged as exact main `2ddb4a9`, and passed exact-main run
+`35254613508`. The current receipt-integration wave changes those source
+closures again and therefore requires a new exact admission. The scaffold,
+preflight, and five-case diagnostic corpus now execute
 on both native architectures and are bound into the exact-binary
 release-observation procedure. All three SDK
 packages are built twice, byte-compared, checksummed, and retained by an exact-
@@ -1067,7 +1071,7 @@ This epic exists only if RT-4 accepts a mechanism.
 successful session's policy, connector, bounded DNS and endpoint attempts,
 authenticated TLS result, registered channel, traffic counters, forward
 lifecycle, terminal cleanup, and credential-source identity. Its independent
-checker rejects 23 causal omission, substitution, expiry, bound, lifecycle, cleanup,
+checker rejects 25 causal omission, substitution, expiry, bound, lifecycle, cleanup,
 cross-service, and retained-content mutations. `PBR-NETWORK-035` is a Tier 1
 proposed source contract because its registered independent checker and causal
 mutation corpus exceed Tier 0. The fragment is not a production receipt,
@@ -1082,6 +1086,18 @@ messages bind the complete install request. `PBR-NETWORK-036` is a Tier 1
 proposed source contract because its registered independent checker and causal
 mutation corpus exceed Tier 0. Production launcher messages remain unchanged and reject this form;
 no connector, launcher, or child effect is enabled.
+
+**2026-09-17 receipt-contract checkpoint:** the staged
+`proofbound-runtime-service-session-receipt/1` fragment freezes closed success
+and failure forms. `PBR-NETWORK-037` is a Tier 1 proposed source contract. Its
+independent checker requires exact expected execution, plan, policy, service,
+assumption, trusted-computing-base, and phase-appropriate retained launcher
+prefix bindings. Reusable
+success additionally binds the installed acknowledgement, release, canonical
+observation, and zero child exit. Every failure is non-reusable and preserves
+a phase-consistent reason, boundary and release state, and cleanup result.
+Production receipt, separate Rust verifier, composition, acceptance, effects,
+native attacks, and release-artifact linkage remain open.
 
 ### RT-5.2 Keep the security boundary explicit
 
