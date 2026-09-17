@@ -3011,6 +3011,37 @@ admission. That contradicted the current summary and ledger, PR 31 run
 exact-main run `35241672716`. The stale statement required correction and a new
 exact-head review.
 
+## RT-5 consolidated observation and launcher final approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `1da65a5c53f27b97a15f95ed1a9fb01170121444`
+- **Reviewed head:** `1ae00ce1fd499c4e846512c34a37734d4d924004`
+- **Branch:** `codex/rt5-launcher-contract`
+- **Method:** Complete exact-range static correction and consolidated subject
+  re-review. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the detailed `PBR-NETWORK-032` section now records
+PR 31 run `35236845497`, merge
+`1da65a5c53f27b97a15f95ed1a9fb01170121444`, and passed exact-main run
+`35241672716`. The preceding rejection accurately identifies and rejects head
+`9fe30096eaaf5ec7bf6f1b881d5d6c588cb034d4`. The correction changed only the
+assurance plan and review ledger.
+
+All contract, schema, vector, generator, checker, claim, evidence, and
+production-crate bytes remain unchanged from the corrected preliminary
+subjects. Every prior semantic and causal-mutation blocker remains closed. The
+two claims remain distinct and fail closed as one admission batch. Credential
+values and application content remain excluded, and production service
+execution and launcher decoding remain rejected.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`1da65a5c53f27b97a15f95ed1a9fb01170121444..1ae00ce1fd499c4e846512c34a37734d4d924004`.
+The following approval-only commit changes only this review record. Any later
+contract, schema, vector, generator, checker, claim, evidence, production, or
+admission-subject change requires a new exact-head review.
+
 ## RT-5 service launcher preliminary review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
