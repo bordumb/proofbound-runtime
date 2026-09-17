@@ -998,7 +998,10 @@ mod tests {
         let parsed = parse_response(&bytes, transaction, &service, DNS_TYPE_A, digest(&bytes), 5)
             .expect("response parses");
         assert_eq!(parsed.addresses.len(), 1);
-        assert_eq!(parsed.addresses[0].address(), "192.0.2.7".parse().unwrap());
+        assert_eq!(
+            parsed.addresses[0].address(),
+            "192.0.2.7".parse::<IpAddr>().unwrap()
+        );
         assert_eq!(parsed.addresses[0].record_expires_ns(), 60_000_000_005);
         assert_eq!(parsed.addresses[0].effective_expires_ns(), 60_000_000_005);
     }
@@ -1075,7 +1078,7 @@ mod tests {
             [cname_observation(owner, target.clone(), identity, 5, 10).expect("CNAME is valid")];
         let mut answers = [answer(
             target,
-            "192.0.2.7".parse().expect("valid address"),
+            "192.0.2.7".parse::<IpAddr>().expect("valid address"),
             identity,
             60,
             10,
@@ -1100,7 +1103,7 @@ mod tests {
             answers: vec![
                 answer(
                     target.clone(),
-                    "192.0.2.7".parse().expect("valid address"),
+                    "192.0.2.7".parse::<IpAddr>().expect("valid address"),
                     ipv4_identity,
                     120,
                     10,
@@ -1116,7 +1119,7 @@ mod tests {
             answers: vec![
                 answer(
                     target,
-                    "2001:db8::7".parse().expect("valid address"),
+                    "2001:db8::7".parse::<IpAddr>().expect("valid address"),
                     ipv6_identity,
                     120,
                     20,
@@ -1143,7 +1146,7 @@ mod tests {
     #[test]
     fn duplicate_address_uses_earliest_terminal_expiry() {
         let name = ServiceName::new("api.example.com").expect("valid name");
-        let address = "192.0.2.7".parse().expect("valid address");
+        let address = "192.0.2.7".parse::<IpAddr>().expect("valid address");
         let mut answers = vec![
             answer(name.clone(), address, digest(b"later"), 60, 10).expect("answer is valid"),
             answer(name, address, digest(b"earlier"), 5, 20).expect("answer is valid"),
@@ -1171,19 +1174,19 @@ mod tests {
     #[test]
     fn address_order_is_ipv4_then_ipv6() {
         let mut addresses = [
-            "2001:db8::2".parse().unwrap(),
-            "192.0.2.9".parse().unwrap(),
-            "2001:db8::1".parse().unwrap(),
-            "192.0.2.1".parse().unwrap(),
+            "2001:db8::2".parse::<IpAddr>().unwrap(),
+            "192.0.2.9".parse::<IpAddr>().unwrap(),
+            "2001:db8::1".parse::<IpAddr>().unwrap(),
+            "192.0.2.1".parse::<IpAddr>().unwrap(),
         ];
         addresses.sort_by_key(|address| address_key(*address));
         assert_eq!(
             addresses,
             [
-                "192.0.2.1".parse().unwrap(),
-                "192.0.2.9".parse().unwrap(),
-                "2001:db8::1".parse().unwrap(),
-                "2001:db8::2".parse().unwrap(),
+                "192.0.2.1".parse::<IpAddr>().unwrap(),
+                "192.0.2.9".parse::<IpAddr>().unwrap(),
+                "2001:db8::1".parse::<IpAddr>().unwrap(),
+                "2001:db8::2".parse::<IpAddr>().unwrap(),
             ]
         );
     }
