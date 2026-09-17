@@ -3066,6 +3066,34 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes only this review record. Any later
 subject change requires a new exact-head review.
 
+## RT-8 initial syscall-phase synchronization approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `3dad474df42d13c3659605cd5b0fc5af5ef70b04`
+- **Reviewed head:** `63248f3221b5a0c30f0dbe48289e1102d6e76243`
+- **Branch:** `codex/rt8-object-resolution-final`
+- **Method:** Read-only exact-range lifecycle, security, causal-evidence, and
+  strict-warning review after hosted run `35169435001`. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The hosted run showed that the acknowledgement stop can race with the trusted
+launcher's entry into its release receive syscall. The reviewer confirmed that
+the corrected root state admits either one initial unmatched exit or one normal
+first entry, then permanently restores strict entry/exit pairing. Children do
+not receive that state. Candidate resolution remains in the stopped captured
+syscall arm before any resume, and the restored pre-candidate-resume mutant
+causally falsifies that guarantee. Boxing the active observer preserves singular
+ownership, the narrow explicit-field lint allowance is justified, and all
+changed body and file fingerprints are exact. Existing claims, specifications,
+and ptrace assumptions remain accurate.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`3dad474df42d13c3659605cd5b0fc5af5ef70b04..63248f3221b5a0c30f0dbe48289e1102d6e76243`.
+The following approval-only commit changes only this review record. Any later
+subject change requires a new exact-head review.
+
 ## RT-8 diagnostic lifecycle restacked re-review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
