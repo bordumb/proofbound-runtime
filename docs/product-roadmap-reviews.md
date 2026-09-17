@@ -3114,6 +3114,53 @@ The following approval-only commit changes only this review record. Any later
 production, schema, claim, evidence, checker, SDK, or status-subject change
 requires a new exact-head review.
 
+## RT-5 authenticated-service balanced-parser correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da8c96b843a692bff8a0ac0bc782a108b3168dbc`
+- **Reviewed head:** `14d0ae513cf332219a2620de4394f673283b885e`
+- **Hosted run:** `35214084776`
+- **Branch:** `codex/rt5-contract-wave`
+- **Method:** Exact hosted Rust, preflight, and native-boundary results followed
+  by a complete static correction review. The reviewer changed no files and
+  ran no local builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+Preflight and both native architecture lanes passed. The Rust lane reported one
+remaining `large_enum_variant` error: after the service arm was boxed, the
+internal deny arm still held a 256-byte `ExecutionPlan`. The formal and fresh
+evidence lanes were cancelled after the decisive Rust failure; their reported
+failures were cancellation and missing-summary artifacts, not independent
+evidence findings. The deny-arm representation required a new exact-head
+review.
+
+## RT-5 authenticated-service balanced-parser correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da8c96b843a692bff8a0ac0bc782a108b3168dbc`
+- **Reviewed head:** `f1a778dba4daad7f251d2b2fa40231d754f815fd`
+- **Branch:** `codex/rt5-contract-wave`
+- **Method:** Complete exact-range static security, parser, rejection, and
+  canonical-encoding re-review. The reviewer changed no files and ran no
+  builds or tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that only the internal parsed deny payload is newly
+boxed. Construction still occurs after complete plan and network validation,
+and the production parser moves the identical `ExecutionPlan` out at its
+existing return boundary. The correction changes no public type, authority,
+rejection behavior, schema, or wire bytes. It balances both parser variants and
+removes the sole causal hosted failure. All earlier corrections remain intact.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`da8c96b843a692bff8a0ac0bc782a108b3168dbc..f1a778dba4daad7f251d2b2fa40231d754f815fd`.
+The following approval-only commit changes only this review record. Any later
+production, schema, claim, evidence, checker, SDK, or status-subject change
+requires a new exact-head review.
+
 ## RT-8 product-exit extension approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
