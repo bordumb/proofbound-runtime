@@ -1157,7 +1157,9 @@ process creation. Apart from standard descriptors connected to null devices,
 only the exact retained plan, trust-root, connector-side stream, and
 connector-side control descriptors survive exec. The connector executable
 descriptor exists only until the kernel completes the exact descriptor-relative
-exec and remains close-on-exec.
+exec and remains close-on-exec. The supervisor clears the connector environment
+before spawn, so no ambient proxy setting, credential, or unrelated host value
+crosses this boundary.
 
 Preparation also parses the complete bounded connector image as a supported
 64-bit little-endian ELF for the selected architecture. A dynamic image is

@@ -658,6 +658,7 @@ impl PreparedConnectorProcess<'_> {
                     self.runtime_closure_digest,
                     self.resolver_configuration.identity().digest(),
                 ))
+                .env_clear()
                 .stdin(Stdio::null())
                 .stdout(Stdio::null())
                 .stderr(Stdio::null());

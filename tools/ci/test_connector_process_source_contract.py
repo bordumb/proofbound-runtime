@@ -108,6 +108,7 @@ class ConnectorProcessSourceContractTests(unittest.TestCase):
             "crate::sys::private_socket_pair()",
             "crate::sys::private_stream_pair()",
             "crate::sys::inherit_only_descriptors_for_exec(",
+            ".env_clear()",
             "let packet = process.receive(setup_timeout)?;",
             "let terminal_deadline = Instant::now()",
             "ConnectorReport::Ready(ready)",
