@@ -1639,10 +1639,17 @@ fn walk_candidate_path(
     } else {
         base.to_path_buf()
     };
-    let mut pending = operand.components().collect::<VecDeque<_>>();
+    let mut pending = operand
+        .components()
+        .map(|component| component.as_os_str().to_owned())
+        .collect::<VecDeque<_>>();
     let mut symlink_hops = 0_u32;
     let mut retained_target_bytes = 0_usize;
     while let Some(component) = pending.pop_front() {
+        let component_path = Path::new(&component);
+        let Some(component) = component_path.components().next() else {
+            continue;
+        };
         match component {
             Component::RootDir | Component::CurDir => continue,
             Component::ParentDir => {
@@ -1675,7 +1682,7 @@ fn walk_candidate_path(
                         current = root.to_path_buf();
                     }
                     for target_component in target.components().rev() {
-                        pending.push_front(target_component);
+                        pending.push_front(target_component.as_os_str().to_owned());
                     }
                 } else {
                     current = candidate;

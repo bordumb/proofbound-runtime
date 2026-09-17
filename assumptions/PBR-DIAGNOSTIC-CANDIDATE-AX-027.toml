@@ -1,7 +1,7 @@
 schema = "proofbound-assumption/1"
 id = "PBR-DIAGNOSTIC-CANDIDATE-AX-027"
 statement = "While the exact tracee is stopped, Linux procfs root, cwd, and descriptor anchors, pathname and symlink operations, O_PATH handles, statx identities, mount identifiers, and scheduler behavior preserve the relationships interpreted by the two-pass candidate resolver."
-category = "platform-tcb"
+category = "runtime-environment"
 owner = "Proofbound Runtime release maintainer"
 rationale = "Source checks cannot prove effectful Linux pathname behavior or that two equal observations exclude every adversarial intermediate change."
 scope = "Only the native interpretation of PBR-OBSERVER-030. It does not turn an advisory candidate into kernel-selected identity."
