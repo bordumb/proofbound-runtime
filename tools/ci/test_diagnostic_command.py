@@ -9,51 +9,227 @@ PRODUCTION = ROOT / "crates/proofbound-runtime-cli/Cargo.toml"
 LINUX = ROOT / "crates/proofbound-runtime-linux/Cargo.toml"
 RELEASE = ROOT / "tools/release/build-linux.sh"
 INSTALLER = ROOT / "tools/install_release.py"
+ACTION_RUNNER = ROOT / ".github/actions/proofbound-runtime/run.py"
+OBSERVATION_INPUTS = ROOT / "tools/release/observation_inputs.py"
+NATIVE_CONTEXT = ROOT / "tools/ci/native_context.py"
+NATIVE_SCRIPT = ROOT / "tools/ci/native-linux.sh"
+CURRENT_BUILDER = ROOT / "tools/release/build_current_integration.py"
+CURRENT_VERIFIER = ROOT / "tools/release/verify_current_integration.py"
+RELEASE_OBSERVATION = (
+    ROOT / "crates/proofbound-runtime-compose/tests/release_observation.rs"
+)
+
+
+def assert_command_contract(sources):
+    command = sources["command"]
+    for marker in [
+        "parse_execution_plan_for_execution",
+        "normalize_authority",
+        "compile_policy",
+        "compile_deny_network_program",
+        "FreshCgroup::create_v2",
+        "InstallRequest::new",
+        "completed.publication()",
+        "ObserverDirective::PublishComplete",
+        "ObserverDirective::PublishIncomplete",
+        "create_new(true)",
+        "hard_link",
+        "sync_all",
+        "diagnostic.output.child-writable",
+        '"PBR-DIAGNOSTIC-CANDIDATE-AX-027"',
+        '"PBR-DIAGNOSTIC-COMMAND-AX-029"',
+        '"PBR-DIAGNOSTIC-DECODE-AX-017"',
+        '"PBR-DIAGNOSTIC-LIFECYCLE-AX-023"',
+        '"PBR-DIAGNOSTIC-OBJECT-AX-025"',
+        '"PBR-DIAGNOSTIC-STREAM-AX-022"',
+        '"PBR-DIAGNOSTIC-TRACE-AX-016"',
+    ]:
+        assert marker in command
+    assert "NetworkMode::Allow" not in command
+    assumption_block = command.split(
+        "const DIAGNOSTIC_ASSUMPTIONS: [&str; 7] = [", 1
+    )[1].split("];", 1)[0]
+    expected_assumptions = [
+        "PBR-DIAGNOSTIC-CANDIDATE-AX-027",
+        "PBR-DIAGNOSTIC-COMMAND-AX-029",
+        "PBR-DIAGNOSTIC-DECODE-AX-017",
+        "PBR-DIAGNOSTIC-LIFECYCLE-AX-023",
+        "PBR-DIAGNOSTIC-OBJECT-AX-025",
+        "PBR-DIAGNOSTIC-STREAM-AX-022",
+        "PBR-DIAGNOSTIC-TRACE-AX-016",
+    ]
+    assert all(assumption_block.count(value) == 1 for value in expected_assumptions)
+    assert assumption_block.count("PBR-DIAGNOSTIC-") == len(expected_assumptions)
+
+    execute = command.split("fn execute(input: CommandInput)", 1)[1].split(
+        "\nfn default_observation_bounds", 1
+    )[0]
+    ordered = [
+        "parse_execution_plan_for_execution",
+        "normalize_authority",
+        "compile_policy",
+        "compile_deny_network_program",
+        "InstallRequest::new",
+        "prepare_observer",
+        "completed.publication()",
+        "DiagnosticReceiptParts",
+        "build_diagnostic_artifacts",
+        "publish_pair",
+    ]
+    positions = [execute.index(marker) for marker in ordered]
+    assert positions == sorted(positions)
+    for marker in [
+        "let output_authority = compiled",
+        ".filesystem()",
+        "compiled.environment()",
+        "compiled.network()",
+        "compiled.cgroup().limits()",
+    ]:
+        assert marker in execute
+
+    publication = command.split("fn publish_pair", 1)[1].split(
+        "\nfn stage_output", 1
+    )[0]
+    for marker in [
+        "stage_output(receipt_target, receipt",
+        "stage_output(draft_target, draft",
+        "fs::hard_link(&draft_temp, draft_target)",
+        "fs::hard_link(&receipt_temp, receipt_target)",
+        "sync_parent(receipt_target)?",
+        "sync_parent(draft_target)?",
+    ]:
+        assert marker in publication
+    assert publication.index("stage_output(receipt_target") < publication.index(
+        "fs::hard_link(&draft_temp"
+    )
+    assert publication.index("fs::hard_link(&receipt_temp") < publication.index(
+        "sync_parent(receipt_target)?"
+    )
+
+    assert "proofbound-runtime-diagnose" not in sources["production"]
+    assert "proofbound-runtime-diagnose" not in sources["linux"]
+    assert "crates/proofbound-runtime-diagnose-cli" in sources["workspace"]
+    for name in [
+        "release",
+        "installer",
+        "action_runner",
+        "current_builder",
+        "current_verifier",
+    ]:
+        assert '"pbr-diagnose"' in sources[name]
+    assert (
+        '("PBR-OBSERVER-031", "diagnostic-release", "pbr-diagnose")'
+        in sources["observation_inputs"]
+    )
+    assert (
+        '("diagnostic-observer", "pbr-diagnose")' in sources["native_context"]
+    )
+    assert (
+        "for binary in pbr pbr-native-launcher pbr-verify pbr-diagnose"
+        in sources["native_script"]
+    )
+    assert (
+        'assert_manifest_artifact(&bundle, "pbr-diagnose")'
+        in sources["release_observation"]
+    )
+    assert (
+        'assert_version(&bundle.join("pbr-diagnose"), "pbr-diagnose")'
+        in sources["release_observation"]
+    )
 
 
 class DiagnosticCommandContractTests(unittest.TestCase):
     def setUp(self):
-        self.command = COMMAND.read_text()
+        self.sources = {
+            "command": COMMAND.read_text(),
+            "workspace": WORKSPACE.read_text(),
+            "production": PRODUCTION.read_text(),
+            "linux": LINUX.read_text(),
+            "release": RELEASE.read_text(),
+            "installer": INSTALLER.read_text(),
+            "action_runner": ACTION_RUNNER.read_text(),
+            "observation_inputs": OBSERVATION_INPUTS.read_text(),
+            "native_context": NATIVE_CONTEXT.read_text(),
+            "native_script": NATIVE_SCRIPT.read_text(),
+            "current_builder": CURRENT_BUILDER.read_text(),
+            "current_verifier": CURRENT_VERIFIER.read_text(),
+            "release_observation": RELEASE_OBSERVATION.read_text(),
+        }
 
-    def test_command_reuses_seed_authority_and_same_boundary_components(self):
-        for marker in [
-            "parse_execution_plan_for_execution",
-            "normalize_authority",
-            "compile_policy",
-            "compile_deny_network_program",
-            "FreshCgroup::create_v2",
-            "InstallRequest::new",
-        ]:
-            self.assertIn(marker, self.command)
-        self.assertNotIn("NetworkMode::Allow", self.command)
-
-    def test_publication_requires_terminal_eligibility_and_absent_targets(self):
-        self.assertIn("completed.publication()", self.command)
-        self.assertIn("ObserverDirective::PublishComplete", self.command)
-        self.assertIn("ObserverDirective::PublishIncomplete", self.command)
-        self.assertIn("create_new(true)", self.command)
-        self.assertIn("hard_link", self.command)
-        self.assertIn("sync_all", self.command)
-        self.assertIn("diagnostic.output.child-writable", self.command)
+    def test_command_reuses_one_seed_authority_in_effect_order(self):
+        assert_command_contract(self.sources)
 
     def test_production_crates_do_not_depend_on_diagnostics(self):
-        for manifest in [PRODUCTION, LINUX]:
-            self.assertNotIn("proofbound-runtime-diagnose", manifest.read_text(), manifest)
-        self.assertIn("crates/proofbound-runtime-diagnose-cli", WORKSPACE.read_text())
+        self.assertNotIn("proofbound-runtime-diagnose", self.sources["production"])
+        self.assertNotIn("proofbound-runtime-diagnose", self.sources["linux"])
 
-    def test_release_and_installer_include_exact_separate_executable(self):
-        self.assertIn("pbr-diagnose", RELEASE.read_text())
-        self.assertIn("pbr-diagnose", INSTALLER.read_text())
+    def test_release_and_native_observation_closure_is_exact(self):
+        assert_command_contract(self.sources)
 
-    def test_mutations_remove_required_guards(self):
+    def test_command_mutations_are_rejected(self):
         mutations = [
-            self.command.replace("create_new(true)", "create(true)", 1),
-            self.command.replace("completed.publication()", "ObserverDirective::PublishComplete", 1),
-            self.command.replace("diagnostic.output.child-writable", "diagnostic.output.allowed", 1),
+            self.sources["command"].replace("create_new(true)", "create(true)", 1),
+            self.sources["command"].replace(
+                "let publication = completed.publication();",
+                "let publication = ObserverDirective::PublishComplete;",
+                1,
+            ),
+            self.sources["command"].replace(
+                "diagnostic.output.child-writable", "diagnostic.output.allowed", 1
+            ),
+            self.sources["command"].replace(
+                "sync_parent(draft_target)?;", "sync_parent(receipt_target)?;", 1
+            ),
+            self.sources["command"].replace(
+                '    "PBR-DIAGNOSTIC-LIFECYCLE-AX-023",\n', "", 1
+            ),
         ]
-        self.assertNotIn("create_new(true)", mutations[0])
-        self.assertNotIn("completed.publication()", mutations[1])
-        self.assertNotIn("diagnostic.output.child-writable", mutations[2])
+        for mutation in mutations:
+            sources = dict(self.sources, command=mutation)
+            with self.subTest(mutation=hash(mutation)):
+                with self.assertRaises((AssertionError, ValueError)):
+                    assert_command_contract(sources)
+
+    def test_release_closure_mutations_are_rejected(self):
+        mutations = [
+            (
+                "action_runner",
+                self.sources["action_runner"].replace(
+                    '    "pbr-diagnose",\n', "", 1
+                ),
+            ),
+            (
+                "observation_inputs",
+                self.sources["observation_inputs"].replace(
+                    '    ("PBR-OBSERVER-031", "diagnostic-release", "pbr-diagnose"),\n',
+                    "",
+                    1,
+                ),
+            ),
+            (
+                "native_context",
+                self.sources["native_context"].replace(
+                    '    ("diagnostic-observer", "pbr-diagnose"),\n', "", 1
+                ),
+            ),
+            (
+                "current_builder",
+                self.sources["current_builder"].replace(
+                    '    "pbr-diagnose",\n', "", 1
+                ),
+            ),
+            (
+                "current_verifier",
+                self.sources["current_verifier"].replace(
+                    '    "pbr-diagnose",\n', "", 1
+                ),
+            ),
+        ]
+        for name, mutation in mutations:
+            sources = dict(self.sources, **{name: mutation})
+            with self.subTest(name=name):
+                with self.assertRaises(AssertionError):
+                    assert_command_contract(sources)
 
 
 if __name__ == "__main__":

@@ -43,6 +43,15 @@ const OUTPUT_FAILED: u8 = 6;
 const NORMALIZED_PLAN_MODE: u16 = 0;
 const POLICY_MODE: u16 = 0;
 const POLICY_DOMAIN: &[u8] = b"proofbound-runtime-installed-policy/1\n";
+const DIAGNOSTIC_ASSUMPTIONS: [&str; 7] = [
+    "PBR-DIAGNOSTIC-CANDIDATE-AX-027",
+    "PBR-DIAGNOSTIC-COMMAND-AX-029",
+    "PBR-DIAGNOSTIC-DECODE-AX-017",
+    "PBR-DIAGNOSTIC-LIFECYCLE-AX-023",
+    "PBR-DIAGNOSTIC-OBJECT-AX-025",
+    "PBR-DIAGNOSTIC-STREAM-AX-022",
+    "PBR-DIAGNOSTIC-TRACE-AX-016",
+];
 
 fn main() -> ExitCode {
     let arguments = env::args_os().collect::<Vec<_>>();
@@ -496,10 +505,10 @@ fn execute(input: CommandInput) -> Result<serde_json::Value, DiagnoseError> {
             launcher_artifact.identity(),
             observer_artifact.identity(),
         )?,
-        assumptions: vec![
-            "PBR-DIAGNOSTIC-TRACE-AX-016".to_owned(),
-            "PBR-DIAGNOSTIC-OBJECT-AX-025".to_owned(),
-        ],
+        assumptions: DIAGNOSTIC_ASSUMPTIONS
+            .iter()
+            .map(|assumption| (*assumption).to_owned())
+            .collect(),
     };
     let artifacts = build_diagnostic_artifacts(
         receipt_parts,
@@ -978,6 +987,22 @@ mod tests {
         assert_eq!(
             default_observation_bounds().validate(),
             Ok(default_observation_bounds())
+        );
+    }
+
+    #[test]
+    fn diagnostic_assumption_set_is_closed() {
+        assert_eq!(
+            DIAGNOSTIC_ASSUMPTIONS,
+            [
+                "PBR-DIAGNOSTIC-CANDIDATE-AX-027",
+                "PBR-DIAGNOSTIC-COMMAND-AX-029",
+                "PBR-DIAGNOSTIC-DECODE-AX-017",
+                "PBR-DIAGNOSTIC-LIFECYCLE-AX-023",
+                "PBR-DIAGNOSTIC-OBJECT-AX-025",
+                "PBR-DIAGNOSTIC-STREAM-AX-022",
+                "PBR-DIAGNOSTIC-TRACE-AX-016",
+            ]
         );
     }
 }

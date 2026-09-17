@@ -187,10 +187,23 @@ its descriptor table during inspection. The resolver retains the procfs object
 handle before it reads the link and obtains device, inode, mode, and mount
 identity from that retained handle. A successful exec is resolved from the
 stopped post-exec image only after trace identity reconciliation removes
-superseded threads. A non-UTF-8, non-absolute, deleted, special, over-bound, or
-otherwise ambiguous procfs target remains unresolved. This wave does not infer
-a symlink-hop count from a kernel-selected descriptor or executable. The later
-denied-path candidate resolver owns bounded symlink walking and drift checks.
+superseded threads. A non-UTF-8, non-absolute, deleted, non-filesystem procfs
+link form, over-bound, or otherwise ambiguous procfs target remains unresolved.
+This wave does not infer a symlink-hop count from a kernel-selected descriptor
+or executable. The separate denied-path candidate resolver owns bounded
+symlink walking and drift checks.
+
+The denied-path resolver runs only while the exact caller is stopped and is the
+sole retained tracee. It anchors absolute paths below `/proc/<pid>/root` and
+relative paths below the retained root plus either `/proc/<pid>/cwd` or the
+nonnegative directory descriptor. It clamps parent traversal at the tracee
+root, follows no more than the declared symlink-hop bound, retains the final
+object, and repeats the complete resolution pass. Only equal normalized paths,
+hop counts, and complete object identities become `stable-candidate`.
+Differences become `identity-drift`; hop exhaustion becomes `symlink-limit`;
+other unsupported cases remain unresolved. A non-UTF-8 version 1 path fails
+event mapping and produces no candidate artifact. None of these outcomes names
+the object selected by the failed system call.
 
 The observer emits two separate closed JSON artifacts:
 

@@ -333,6 +333,21 @@ path, but it does not invent a followed-symlink count. A symlink-hop count is
 present only when the separate denied-path candidate resolver actually walks
 the supplied path.
 
+The denied-path candidate resolver runs only while the exact caller is stopped
+and is the sole retained tracee. It anchors an absolute operand below
+`/proc/<pid>/root`. It anchors a relative operand below that root and the
+stopped tracee's `/proc/<pid>/cwd`, or below the named nonnegative directory
+descriptor. Parent traversal clamps at the tracee root. The resolver walks no
+more than the declared symlink-hop bound, retains the final object, records its
+normalized tracee-root-relative path and complete identity, and repeats the
+complete pass. Equal paths, hop counts, and identities produce only
+`stable-candidate`. A difference produces `identity-drift`; hop exhaustion
+produces `symlink-limit`; and inaccessible, missing, deleted, escaped,
+unsupported, or ambiguous cases remain unresolved. Because version 1 JSON
+requires UTF-8 path text, a non-UTF-8 path causes the closed event-mapping error
+and produces no candidate artifact. No candidate claims which object the failed
+system call selected.
+
 The implementation fixes bounds for total processes, total events, events per
 process, tracee string bytes, path bytes, symlink hops, socket-address bytes,
 and output bytes. Exhausting a bound while another item remains emits its exact
@@ -356,6 +371,13 @@ duplicate-free canonical JSON object with these required top-level members:
 - ordered observation events;
 - a closed completion state and sorted gap set; and
 - the diagnostic trusted-computing-base roles and assumptions.
+
+The command-generated receipt carries the closed active runtime premise set:
+`PBR-DIAGNOSTIC-TRACE-AX-016`, `PBR-DIAGNOSTIC-DECODE-AX-017`,
+`PBR-DIAGNOSTIC-STREAM-AX-022`, `PBR-DIAGNOSTIC-LIFECYCLE-AX-023`,
+`PBR-DIAGNOSTIC-OBJECT-AX-025`, `PBR-DIAGNOSTIC-CANDIDATE-AX-027`, and
+`PBR-DIAGNOSTIC-COMMAND-AX-029`. Compiler and independent-check premises stay
+in the evidence ledger and are not represented as runtime platform premises.
 
 The receipt is a diagnostic accountability record. Its SHA-256 commitment can
 identify exact bytes, but neither the bytes nor the commitment are accepted by
@@ -481,6 +503,26 @@ closed until registered. The evidence byte-pins the compiler and
 crate-selection closure and compiles the selected adapter release and drain
 paths. It does not establish the Linux ABI, tracee-memory stability,
 kernel-selected object identity, or native observation completeness.
+
+`PBR-OBSERVER-029` checks the source-level stopped-tracee retention and mapping
+rules for successful descriptor and post-exec objects. It inherits
+`PBR-DIAGNOSTIC-OBJECT-AX-025` and the independent-check premise
+`PBR-DIAGNOSTIC-OBJECT-CHECK-AX-024`. It does not establish Linux procfs,
+`O_PATH`, `statx`, mount, pathname, or stopped-tracee truth.
+
+`PBR-OBSERVER-030` checks the source-level root confinement, bounded symlink
+walk, repeated candidate observation, drift handling, and advisory-only
+mapping. It inherits `PBR-DIAGNOSTIC-CANDIDATE-AX-027` and the independent-check
+premise `PBR-DIAGNOSTIC-CANDIDATE-CHECK-AX-026`. Two equal passes do not prove
+race freedom or identify the object selected by a failed system call.
+
+`PBR-OBSERVER-031` checks the separate command's seed-authority reuse, terminal
+publication gate, absent-target publication, production dependency separation,
+and release inventory. It inherits `PBR-DIAGNOSTIC-COMMAND-AX-029` and the
+independent-check premise `PBR-DIAGNOSTIC-COMMAND-CHECK-AX-028`. Its receipt
+also preserves the active trace, decode, stream, lifecycle, object, and
+candidate runtime premises. Native and released-artifact behavior remain
+separate obligations.
 
 RT-8 closes only after one maintained dynamic workload displays all available
 provenance classes, requires human completion, passes the independent

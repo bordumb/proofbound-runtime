@@ -30,7 +30,7 @@ impl DiagnosticEventMapper {
         Self { next_sequence: 0 }
     }
 
-    /// Maps one complete trace event without claiming object resolution.
+    /// Maps one complete trace event and preserves validated resolution states.
     ///
     /// Process lifecycle events do not create diagnostic syscall records. A
     /// successful image replacement creates a record only when the trace

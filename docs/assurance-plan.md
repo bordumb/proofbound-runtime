@@ -849,7 +849,8 @@ is stopped. Returned descriptors are eligible only for a successful registered
 open operation, a Linux-width nonnegative descriptor, and one retained tracee.
 Post-exec identity is eligible only after exact exec reconciliation. The
 resolver retains an `O_PATH` object before it reads the procfs link and complete
-`statx` identity. Deleted, non-UTF-8, over-bound, special, incomplete, or
+`statx` identity. Deleted, non-UTF-8, over-bound, non-filesystem procfs-link,
+incomplete, or
 ambiguous results remain unresolved.
 
 Rust tests exercise the closed eligibility and mapping decisions. The
