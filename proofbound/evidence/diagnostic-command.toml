@@ -26,6 +26,7 @@ inputs = [
   "assumptions/PBR-DIAGNOSTIC-TRACE-AX-016.toml",
   "claims/PBR-OBSERVER-031.toml",
   "crates/proofbound-runtime-compose/tests/release_observation.rs",
+  "crates/proofbound-runtime-cli/Cargo.toml",
   "crates/proofbound-runtime-core/Cargo.toml",
   "crates/proofbound-runtime-core/src/authority.rs",
   "crates/proofbound-runtime-core/src/diagnostic.rs",
