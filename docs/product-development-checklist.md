@@ -1,17 +1,14 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-17T11:37:00+01:00 (Europe/London, BST)
-- **Runtime baseline:** RT-8 is complete on exact unsigned main
-  `da8c96b843a692bff8a0ac0bc782a108b3168dbc`. The product-exit extension
-  passed PR 27 Verify run `35194713490`, merged as `275e6e7`, and passed
-  exact-main run `35198698472`. The final adversarial corpus passed PR 28
-  Verify run `35203053015`, merged as `da8c96b`, and passed exact-main run
-  `35207382756`.
+- **Last updated:** 2026-09-17T14:15:00+01:00 (Europe/London, BST)
+- **Runtime baseline:** RT-8 is complete and the RT-5 non-executable contract
+  is admitted on exact unsigned main
+  `d48122b06c4880aeba45291a107c51ad381067a4`. The RT-5 contract passed PR 29
+  Verify run `35216056050` and exact-main Verify run `35220098639`.
 - **Active implementation wave:** RT-5 one authenticated service.
-- **Current batch:** admit the closed non-executable service-session plan and
-  SDK contract, then admit its pure non-executable policy compiler before any
-  connector or launcher effect is added.
+- **Current batch:** admit the pure non-executable service-session policy
+  compiler before any connector or launcher effect is added.
 - **Parallel external gates:** RT-7 protected routes and current-integration
   source are merged; registry configuration, actual public package publication,
   anonymous observations, consumer dogfood, and a retained current-integration
@@ -388,17 +385,22 @@ draft, while no diagnostic output can become reusable production evidence.
 
 ### Wave A: closed contracts and pure decisions
 
-- [ ] Accept Specification 0016 as the normative authenticated-service-session
-  contract. The proposed text closes resolver transport, deterministic address
-  order, terminal reconnect behavior, child descriptor rules, receipt meaning,
-  and the required falsifier inventory. Independent exact-head review, hosted
-  evidence, merge, and exact-main verification remain required.
+- [x] Accept Specification 0016 as the normative authenticated-service-session
+  contract. The non-executable contract passed PR 29 exact-head Verify run
+  `35216056050`, merged as exact main `d48122b`, and passed exact-main Verify
+  run `35220098639`. The pure-policy wave clarifies that the canonical compiled
+  bytes bind each security role separately and requires its own admission.
 - [ ] Specify one authenticated-service plan, authority, policy, receipt,
   verifier, composition, acceptance, and error contract.
-- [ ] Identify resolver, address-attempt order, TLS policy, service, connector,
-  local channel, credential source, byte limits, and lifecycle roles.
+- [x] Identify resolver, address-attempt order, TLS policy, service, connector,
+  local channel, credential source, byte limits, and lifecycle roles in the
+  accepted non-executable contract.
 - [ ] Add strict domain types, canonical encodings, negative vectors, and
-  downgrade and substitution attacks.
+  downgrade and substitution attacks. `PBR-NETWORK-032` and
+  `PBR-NETWORK-033` now stage the non-executing parser, strict domain, pure
+  compiler, and frozen plan and policy vectors. `PBR-NETWORK-032` is admitted
+  on exact main `d48122b`; the narrower `PBR-NETWORK-033` policy subject and
+  intersecting closures remain pending admission.
 - [ ] Model and prove the selected pure non-amplification, identity, and state
   transition properties in Lean where the subject is tractable.
 - [ ] Link selected pure Rust decisions to their formal models without

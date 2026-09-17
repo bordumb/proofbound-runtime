@@ -1,0 +1,47 @@
+schema = "proofbound-evidence-unit/1"
+id = "authenticated-service-policy-contract"
+adapter = "rust-test"
+kind = "example-test"
+claims = ["PBR-NETWORK-033"]
+tier = 0
+expected_inventory = [
+  "proofbound_runtime_core::service_policy::tests::compilation_preserves_service_authority_and_child_network_denial",
+]
+inputs = [
+  "Cargo.lock",
+  "Cargo.toml",
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/authority.rs",
+  "crates/proofbound-runtime-core/src/lib.rs",
+  "crates/proofbound-runtime-core/src/network.rs",
+  "crates/proofbound-runtime-core/src/normalize.rs",
+  "crates/proofbound-runtime-core/src/plan.rs",
+  "crates/proofbound-runtime-core/src/policy.rs",
+  "crates/proofbound-runtime-core/src/service_policy.rs",
+  "crates/proofbound-runtime-core/src/wire_v2.rs",
+  "docs/specs/0016_authenticated_service_session.md",
+  "schemas/compiled-policy-v2.cddl",
+  "schemas/vectors/v2/README.md",
+  "schemas/vectors/v2/compiled-policy-service-session.cbor.hex",
+  "schemas/vectors/v2/compiled-policy-service-session.projection.json",
+  "schemas/vectors/v2/execution-plan-service-session.cbor.hex",
+  "tools/ci/deterministic_cbor.py",
+  "tools/ci/encode_plan_v2.py",
+  "tools/ci/generate_service_policy_v2_vector.py",
+  "tools/ci/test_wire_v2_vectors.py",
+]
+outputs = []
+environment_allowlist = ["CARGO_HOME", "PATH", "RUSTUP_HOME"]
+
+[operation]
+type = "cargo-test"
+package = "proofbound-runtime-core"
+manifest = "Cargo.toml"
+targets = ["--lib"]
+paths = []
+arguments = []
+
+[resource_budget]
+time_seconds = 120
+disk_bytes = 1073741824
+memory_bytes = 1073741824

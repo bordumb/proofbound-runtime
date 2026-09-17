@@ -13,6 +13,7 @@ mod plan;
 mod policy;
 mod receipt;
 mod run_result;
+mod service_policy;
 mod wire_v2;
 
 pub use authority::{
@@ -53,3 +54,4 @@ pub use receipt::{
     TrustedComputingBaseRole, construct_execution_receipt, derive_receipt_eligibility,
 };
 pub use run_result::{RunResultError, RunResultV2};
+pub use service_policy::{CompiledServicePolicy, ServiceSeccompPolicy, compile_service_policy};

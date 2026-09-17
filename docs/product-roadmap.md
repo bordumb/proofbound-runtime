@@ -4,8 +4,8 @@
   publication, and external adopter gates remain
 - **Date:** 2026-09-17
 - **Runtime baseline:** current admitted `main` at
-  `da8c96b843a692bff8a0ac0bc782a108b3168dbc`; final RT-8 exact-head Verify
-  run `35203053015` and exact-main Verify run `35207382756` passed
+  `d48122b06c4880aeba45291a107c51ad381067a4`; the RT-5 contract passed PR 29
+  Verify run `35216056050` and exact-main Verify run `35220098639`
 - **Proofbound distribution baseline:** immutable public bundle for source
   `9512469`
 - **Planning horizon:** prelaunch product and assurance waves
@@ -30,9 +30,9 @@ publication or an unrelated adopter.
 | RT-0 delivery mechanics | Required lanes, exact-head gating, timing, and exact tool-cache controls are merged and admitted. | Complete the retained two-week latency and cache-retention decision when its observation window closes. |
 | RT-1 memory and swap | Merged and admitted on both supported native architectures. | None for the selected claim wave. |
 | RT-2 receipt acceptance | Policy, CLI, standalone acceptor, and Action source are merged. | Observe the exact release artifact and dogfood the Action from an unrelated adopter. |
-| RT-3 first-run and SDK workflow | The deny-network SDK subject is merged and admitted. The proposed service-session SDK extension is implemented on the RT-5 contract branch but remains pending exact-head evidence and admission. | Admit the changed SDK subject, then publish the selected current packages and dogfood them from an unrelated consumer. |
+| RT-3 first-run and SDK workflow | The deny-network and non-executable service-session SDK subjects are merged and admitted on exact main `d48122b`. The current pure-policy specification clarification reopens only its intersecting exact source closure. | Admit the current pure-policy closure, then publish the selected current packages and dogfood them from an unrelated consumer. |
 | RT-4 network decision | The complete experiment and measurement series selected the connector-owned authenticated service session. | The decision authorizes RT-5; it does not provide production networking. |
-| RT-5 one authenticated service | Specification 0016, closed service-session domain types, a non-executing parser, and SDK construction are proposed. Production execution remains denied. | Independently admit the contract, then implement the policy, connector, launcher, bypass corpus, receipts, verifiers, composition, acceptance, and one maintained real API client. |
+| RT-5 one authenticated service | Specification 0016, the closed non-executable plan/parser, and SDK construction are admitted on exact main `d48122b`. The separate pure-policy compiler is implemented and pending admission. Production execution remains denied. | Admit the pure policy, add formal evidence, then implement the connector, launcher, bypass corpus, receipts, verifiers, composition, acceptance, and one maintained real API client. |
 | RT-6 evidence-based expansion | CPU and output-quota decisions are recorded; the performance baseline is complete. | Implement a deferred control only when observed demand satisfies its decision gate. |
 
 Milestone B, bounded local execution, is achieved. Milestone A is operationally
@@ -65,9 +65,12 @@ external adopter is complete. The branch contains the version 2 memory/swap
 and deterministic-CBOR claim wave, independently verified receipt composition
 and adopter acceptance, the reproducible standalone `pbr-accept` artifact, the
 first-party GitHub Action, the plan scaffold, typed pre-launch diagnostics,
-and closed deny-network Rust, Python, and TypeScript SDKs. The proposed
-service-session constructors extend that exact subject and remain pending
-fresh evidence and admission. The scaffold, preflight, and
+and closed deny-network Rust, Python, and TypeScript SDKs. The non-executable
+service-session constructors passed PR 29 exact-head run `35216056050`, merged
+as exact main `d48122b06c4880aeba45291a107c51ad381067a4`, and passed exact-main
+run `35220098639`. The current pure-policy specification clarification changes
+the intersecting exact SDK closure and remains pending fresh evidence and
+admission. The scaffold, preflight, and
 five-case diagnostic corpus now execute on both native architectures and are
 bound into the exact-binary release-observation procedure. All three SDK
 packages are built twice, byte-compared, checksummed, and retained by an exact-
@@ -947,9 +950,11 @@ rebuilds them twice, verifies their checksums, and retains a closed SDK
 manifest. `PBR-SDK-014` records the language-runtime premise and the remaining
 external obligations: exact registry publication at an approved tag and
 consumer-repository dogfood for all three packages. Branch completion is not
-registry publication. The later RT-5 service-session construction surface is a
-changed SDK subject. It does not inherit this admission and remains pending
-fresh exact-head evidence and review.
+registry publication. The RT-5 service-session construction surface passed PR
+29 exact-head run `35216056050`, merged as exact main `d48122b`, and passed
+exact-main run `35220098639`. The current pure-policy specification
+clarification changes the intersecting source closure and requires fresh
+admission; it does not reopen the already admitted construction behavior.
 
 ## 10. Epic RT-4: network authority research and ADR
 

@@ -2,15 +2,24 @@
 ; The policy is a closed text-key map encoded under RFC 8949 section 4.2.1.
 
 compiled-policy-v2 = {
+  compiled-policy-common,
+  "network": "deny-network-v1"
+} / {
+  compiled-policy-common,
+  "network": "deny-network-v1",
+  "child_network": "channel-only-v1",
+  "service_session": authenticated-service-session-policy
+}
+
+compiled-policy-common = (
   "schema": "proofbound-runtime-linux-policy/2",
   "cgroup": cgroup-policy,
-  "network": compiled-network-policy,
   "filesystem": [* filesystem-rule],
   "environment": [* text],
   "no_new_privileges": true
-}
+)
 
-compiled-network-policy = "deny-network-v1" / {
+authenticated-service-session-policy = {
   "mode": "authenticated-service-session-v1",
   "service": service-identity,
   "resolver": resolution-policy,
