@@ -14,7 +14,7 @@ INVENTORY = [
     "service-receipt-canonical-success-and-failure",
     "service-receipt-closed-schema",
     "service-receipt-exact-execution-plan-policy-and-service-binding",
-    "service-receipt-exact-launcher-transcript-binding",
+    "service-receipt-exact-retained-launcher-prefix-binding",
     "service-receipt-success-observation-binding",
     "service-receipt-success-reuse-gate",
     "service-receipt-typed-failure-phase-and-reason",

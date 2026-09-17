@@ -3175,6 +3175,37 @@ and content exclusion, canonical nested-observation validation, and basic
 reuse gates had no additional blocker. The corrected exact head requires a new
 independent review.
 
+## RT-5 service-session receipt correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `3c3bcd3634d96cee367deafd1620197d5ac0f5ee`
+- **Reviewed head:** `53c2ade77b0f4fd011d82dc34e819162edbef27d`
+- **Branch:** `codex/rt5-receipt-contract`
+- **Method:** Complete exact-range static schema, retained-launcher,
+  failure-prefix, cross-binding, evidence-closure, specification, and prior-
+  blocker re-review. The reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The six findings from the first review are substantively closed. Four blockers
+remain. First, the receipt checker always reconstructed a three-message
+launcher transcript, so a declared credential source could never reach the
+four-message launcher form. Second, early failure receipts still required
+hypothetical installed and release frames that could not exist after the
+reported failure. Third, the evidence closure omitted the directly read
+`service-session-observation.cbor.hex` vector. Fourth, the receipt-level
+mutation set did not causally reach the connector-generation, endpoint,
+channel, limits, credential-source, and nested trusted-computing-base
+cross-binding guards.
+
+Production crates remain unchanged. Service execution, production launcher
+decoding, receipt production, and shipping receipt verification remain
+rejected. The correction must validate only the exact retained launcher prefix,
+exclude the transient credential value while binding its retained descriptor,
+close the direct evidence input, and add dependent-digest-refresh mutations.
+The corrected exact head requires a new independent review.
+
 ## RT-5 service launcher preliminary review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

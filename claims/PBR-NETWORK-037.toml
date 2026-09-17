@@ -39,6 +39,7 @@ source_roots = [
   "schemas/vectors/v2/service-launcher-installed.projection.json",
   "schemas/vectors/v2/service-launcher-release.cbor.hex",
   "schemas/vectors/v2/service-launcher-release.projection.json",
+  "schemas/vectors/v2/service-session-observation.cbor.hex",
   "schemas/vectors/v2/service-session-receipt-failure.cbor.hex",
   "schemas/vectors/v2/service-session-receipt-failure.projection.json",
   "schemas/vectors/v2/service-session-receipt-success.cbor.hex",

@@ -54,7 +54,42 @@ class ServiceReceiptContractTests(unittest.TestCase):
         self.release_sha256 = digest("service-launcher-release")
 
     def validate(self, value: dict) -> None:
-        validate_receipt(value, **self.bindings)
+        bindings = dict(self.bindings)
+        if value["result"]["kind"] == "failed":
+            if value["result"]["boundary_state"] == "not-installed":
+                bindings["installed_cbor"] = None
+            if value["result"]["release_sha256"] is None:
+                bindings["release_cbor"] = None
+        validate_receipt(value, **bindings)
+
+    def refreshed_success(
+        self,
+        receipt: dict,
+        install: dict,
+        installed: dict,
+        release: dict,
+    ) -> dict:
+        installed["service"] = copy.deepcopy(install["service"])
+        install_bytes = encode(install)
+        install_sha256 = hashlib.sha256(install_bytes).digest()
+        installed["install_request_sha256"] = install_sha256
+        release["install_request_sha256"] = install_sha256
+        release["service_binding_sha256"] = hashlib.sha256(encode(install["service"])).digest()
+        receipt["install_request_sha256"] = install_sha256
+        receipt["result"]["installed_sha256"] = hashlib.sha256(encode(installed)).digest()
+        receipt["result"]["release_sha256"] = hashlib.sha256(encode(release)).digest()
+        return {
+            **self.bindings,
+            "install_request_cbor": install_bytes,
+            "installed_cbor": encode(installed),
+            "release_cbor": encode(release),
+        }
+
+    @staticmethod
+    def replace_observation(receipt: dict, observation: dict) -> None:
+        observation_bytes = encode(observation)
+        receipt["result"]["observation_cbor"] = observation_bytes
+        receipt["result"]["observation_sha256"] = hashlib.sha256(observation_bytes).digest()
 
     def test_canonical_vectors_validate_and_match_projections(self) -> None:
         for name in ("service-session-receipt-success", "service-session-receipt-failure"):
@@ -98,6 +133,77 @@ class ServiceReceiptContractTests(unittest.TestCase):
         )
         with self.assertRaises(ContractError):
             validate_receipt(self.success, **substituted)
+
+    def test_credentialed_launcher_transcript_is_accepted_and_bound(self) -> None:
+        receipt = copy.deepcopy(self.success)
+        install = vector("service-launcher-install")
+        installed = vector("service-launcher-installed")
+        release = vector("service-launcher-release")
+        descriptor = {
+            "id": "anthropic-test",
+            "service": "api.anthropic.com",
+            "environment": "API_KEY",
+        }
+        install["service"]["credential_source"] = descriptor
+        install_bytes = encode(install)
+        install_sha256 = hashlib.sha256(install_bytes).digest()
+        service_sha256 = hashlib.sha256(encode(install["service"])).digest()
+        installed["install_request_sha256"] = install_sha256
+        installed["service"] = copy.deepcopy(install["service"])
+        release["install_request_sha256"] = install_sha256
+        release["service_binding_sha256"] = service_sha256
+        release["credential_state"] = {
+            "state": "released",
+            "source_id": descriptor["id"],
+            "environment": descriptor["environment"],
+        }
+        observation = decode_strict(receipt["result"]["observation_cbor"])
+        observation["credential_source"] = descriptor
+        observation_bytes = encode(observation)
+        receipt["install_request_sha256"] = install_sha256
+        receipt["result"]["installed_sha256"] = hashlib.sha256(encode(installed)).digest()
+        receipt["result"]["release_sha256"] = hashlib.sha256(encode(release)).digest()
+        receipt["result"]["observation_cbor"] = observation_bytes
+        receipt["result"]["observation_sha256"] = hashlib.sha256(observation_bytes).digest()
+        bindings = dict(self.bindings)
+        bindings.update(
+            {
+                "install_request_cbor": install_bytes,
+                "installed_cbor": encode(installed),
+                "release_cbor": encode(release),
+            }
+        )
+        validate_receipt(receipt, **bindings)
+
+        missing = dict(bindings)
+        changed_release = copy.deepcopy(release)
+        changed_release["credential_state"]["source_id"] = "other-source"
+        missing["release_cbor"] = encode(changed_release)
+        with self.assertRaises(ContractError):
+            validate_receipt(receipt, **missing)
+
+    def test_failure_requires_exact_observed_launcher_prefix(self) -> None:
+        early = copy.deepcopy(self.failure)
+        self.validate(early)
+        with self.assertRaises(ContractError):
+            validate_receipt(early, **self.bindings)
+
+        installed = copy.deepcopy(self.failure)
+        installed["result"].update(
+            {
+                "phase": "ready",
+                "reason": "launcher-release-failed",
+                "boundary_state": "installed",
+                "installed_sha256": self.installed_sha256,
+                "release_sha256": None,
+            }
+        )
+        installed["eligibility"]["reasons"] = ["network.launcher-release-failed"]
+        self.validate(installed)
+        premature = dict(self.bindings)
+        premature["release_cbor"] = self.bindings["release_cbor"]
+        with self.assertRaises(ContractError):
+            validate_receipt(installed, **premature)
 
     def test_success_mutations_are_rejected_causally(self) -> None:
         cases = []
@@ -143,6 +249,80 @@ class ServiceReceiptContractTests(unittest.TestCase):
         for name, value in cases:
             with self.subTest(name=name), self.assertRaises(ContractError):
                 self.validate(value)
+
+    def test_launcher_to_observation_cross_bindings_are_causal(self) -> None:
+        cases = {
+            "connector generation": lambda service: service["connector"].__setitem__("process_generation", 2),
+            "selected endpoint": lambda service: service.__setitem__(
+                "selected_endpoint",
+                {"family": "ipv6", "address": bytes.fromhex("20010db8000000000000000000000010"), "port": 443},
+            ),
+            "limits": lambda service: service["limits"].__setitem__("session_time_ms", 30_001),
+            "channel descriptor": lambda service: service["channel"].__setitem__("child_descriptor", 6),
+            "channel endpoint": lambda service: service["channel"].__setitem__("child_endpoint_id", bytes([0x62]) * 16),
+        }
+        for name, mutate in cases.items():
+            receipt = copy.deepcopy(self.success)
+            install = vector("service-launcher-install")
+            installed = vector("service-launcher-installed")
+            release = vector("service-launcher-release")
+            mutate(install["service"])
+            bindings = self.refreshed_success(receipt, install, installed, release)
+            with self.subTest(name=name), self.assertRaisesRegex(ContractError, "inconsistent with the launcher"):
+                validate_receipt(receipt, **bindings)
+
+        receipt = copy.deepcopy(self.success)
+        install = vector("service-launcher-install")
+        installed = vector("service-launcher-installed")
+        release = vector("service-launcher-release")
+        descriptor = {"id": "anthropic-test", "service": "api.anthropic.com", "environment": "API_KEY"}
+        install["service"]["credential_source"] = descriptor
+        release["credential_state"] = {
+            "state": "released",
+            "source_id": descriptor["id"],
+            "environment": descriptor["environment"],
+        }
+        bindings = self.refreshed_success(receipt, install, installed, release)
+        with self.assertRaisesRegex(ContractError, "credential source is inconsistent with the launcher"):
+            validate_receipt(receipt, **bindings)
+
+    def test_observation_to_tcb_cross_bindings_are_causal(self) -> None:
+        def executable(observation, service):
+            identity = bytes([0x24]) * 32
+            observation["connector"]["executable"]["sha256"] = identity
+            service["connector"]["executable"]["sha256"] = identity
+
+        def closure(observation, service):
+            observation["connector"]["runtime_closure"][0]["sha256"] = bytes([0x25]) * 32
+            identity = hashlib.sha256(encode(observation["connector"]["runtime_closure"])).digest()
+            observation["connector"]["runtime_closure_sha256"] = identity
+            service["connector"]["runtime_closure_sha256"] = identity
+
+        def tls_implementation(observation, service):
+            observation["tls"]["implementation_sha256"] = bytes([0x54]) * 32
+            service["tls_observation_sha256"] = hashlib.sha256(encode(observation["tls"])).digest()
+
+        def trust_roots(observation, service):
+            observation["tls"]["trust_root_set"]["sha256"] = bytes([0x55]) * 32
+            service["tls_observation_sha256"] = hashlib.sha256(encode(observation["tls"])).digest()
+
+        cases = {
+            "connector executable": executable,
+            "connector closure": closure,
+            "TLS implementation": tls_implementation,
+            "TLS trust roots": trust_roots,
+        }
+        for name, mutate in cases.items():
+            receipt = copy.deepcopy(self.success)
+            observation = decode_strict(receipt["result"]["observation_cbor"])
+            install = vector("service-launcher-install")
+            installed = vector("service-launcher-installed")
+            release = vector("service-launcher-release")
+            mutate(observation, install["service"])
+            self.replace_observation(receipt, observation)
+            bindings = self.refreshed_success(receipt, install, installed, release)
+            with self.subTest(name=name), self.assertRaisesRegex(ContractError, "trusted computing base identity is inconsistent"):
+                validate_receipt(receipt, **bindings)
 
     def test_failure_mutations_are_rejected_causally(self) -> None:
         cases = []

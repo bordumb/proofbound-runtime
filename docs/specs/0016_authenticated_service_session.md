@@ -399,6 +399,14 @@ failure timestamp without claiming producer-side ordering at this contract wave,
 boundary-install state, child-release identity when release occurred, and
 terminal cleanup result. Post-release failures MUST bind the exact installed
 acknowledgement and release; pre-release failures MUST NOT claim a release.
+The contract checker validates the exact retained launcher prefix: the install
+request is always present, the installed acknowledgement is present only when
+the boundary reached `installed`, and the release is present only after child
+release. It rejects absent required frames and premature later frames. It does
+not fabricate a successful suffix for an early failure. A retained
+credentialed release contains only the source identifier and environment in
+the release state. The transient credential-release frame and its secret value
+are not receipt inputs.
 Assumption identifiers and the service-specific trusted-computing-base
 projection are closed and complete for this fragment. They contain only the
 new DNS and TLS assumptions and the connector executable, connector runtime

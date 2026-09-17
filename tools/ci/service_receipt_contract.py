@@ -8,7 +8,7 @@ from tools.ci.deterministic_cbor import CborError, decode_strict
 from tools.ci.encode_plan_v2 import encode
 from tools.ci.service_launcher_contract import (
     ContractError as LauncherError,
-    validate_transcript,
+    validate_retained_transcript,
 )
 from tools.ci.service_observation_contract import (
     ContractError as ObservationError,
@@ -97,27 +97,30 @@ def validate_receipt(
     expected_service_port: int,
     expected_tcb_identities: dict[str, bytes],
     install_request_cbor: bytes,
-    installed_cbor: bytes,
-    release_cbor: bytes,
+    installed_cbor: bytes | None,
+    release_cbor: bytes | None,
 ) -> None:
     try:
         launcher_messages = []
-        for context, payload in (
+        launcher_payloads = [
             ("install request", install_request_cbor),
-            ("installed acknowledgement", installed_cbor),
-            ("release", release_cbor),
-        ):
+        ]
+        if installed_cbor is not None:
+            launcher_payloads.append(("installed acknowledgement", installed_cbor))
+        if release_cbor is not None:
+            launcher_payloads.append(("release", release_cbor))
+        for context, payload in launcher_payloads:
             if not isinstance(payload, bytes) or not 1 <= len(payload) <= 1_048_576:
                 raise ContractError(f"{context} bytes are outside the frame bound")
             message = decode_strict(payload)
             if encode(message) != payload:
                 raise ContractError(f"{context} bytes do not round trip canonically")
             launcher_messages.append(message)
-        validate_transcript(launcher_messages)
-        install_request, _, _ = launcher_messages
+        validate_retained_transcript(launcher_messages)
+        install_request = launcher_messages[0]
         install_request_sha256 = hashlib.sha256(install_request_cbor).digest()
-        installed_sha256 = hashlib.sha256(installed_cbor).digest()
-        release_sha256 = hashlib.sha256(release_cbor).digest()
+        installed_sha256 = hashlib.sha256(installed_cbor).digest() if installed_cbor is not None else None
+        release_sha256 = hashlib.sha256(release_cbor).digest() if release_cbor is not None else None
 
         root = exact_keys(
             value,
@@ -199,8 +202,8 @@ def validate_success(
     service_port: int,
     tcb_identities: dict[str, bytes],
     install_request: dict,
-    expected_installed_sha256: bytes,
-    expected_release_sha256: bytes,
+    expected_installed_sha256: bytes | None,
+    expected_release_sha256: bytes | None,
 ) -> None:
     result = exact_keys(
         result,
@@ -212,10 +215,14 @@ def validate_success(
     )
     if eligibility != {"status": "reusable", "reasons": []}:
         raise ContractError("successful receipt is not exactly reusable")
+    if expected_release_sha256 is None:
+        raise ContractError("success omits the retained launcher release")
     if fixed_bytes(result["release_sha256"], 32, "release_sha256") != fixed_bytes(
         expected_release_sha256, 32, "expected_release_sha256"
     ):
         raise ContractError("success does not bind the exact launcher release")
+    if expected_installed_sha256 is None:
+        raise ContractError("success omits the retained installed acknowledgement")
     if fixed_bytes(result["installed_sha256"], 32, "installed_sha256") != fixed_bytes(
         expected_installed_sha256, 32, "expected_installed_sha256"
     ):
@@ -274,8 +281,8 @@ def validate_success(
 def validate_failure(
     result: dict,
     eligibility: dict,
-    expected_installed_sha256: bytes,
-    expected_release_sha256: bytes,
+    expected_installed_sha256: bytes | None,
+    expected_release_sha256: bytes | None,
 ) -> None:
     result = exact_keys(
         result,
@@ -296,11 +303,15 @@ def validate_failure(
         raise ContractError("failed receipt cannot retain a success observation identity")
     boundary_state = result["boundary_state"]
     if boundary_state == "installed":
+        if expected_installed_sha256 is None:
+            raise ContractError("installed failure omits the retained acknowledgement")
         if fixed_bytes(result["installed_sha256"], 32, "installed_sha256") != fixed_bytes(
             expected_installed_sha256, 32, "expected_installed_sha256"
         ):
             raise ContractError("failure does not bind the exact installed acknowledgement")
     elif boundary_state == "not-installed":
+        if expected_installed_sha256 is not None:
+            raise ContractError("uninstalled failure retains a premature acknowledgement")
         if result["installed_sha256"] is not None:
             raise ContractError("uninstalled boundary has an installed identity")
     else:
@@ -314,12 +325,17 @@ def validate_failure(
     if phase in {"active", "closing"}:
         if boundary_state != "installed":
             raise ContractError("post-release failure omits the installed boundary")
+        if expected_release_sha256 is None:
+            raise ContractError("post-release failure omits the retained release")
         if fixed_bytes(result["release_sha256"], 32, "release_sha256") != fixed_bytes(
             expected_release_sha256, 32, "expected_release_sha256"
         ):
             raise ContractError("post-release failure does not bind the exact release")
-    elif result["release_sha256"] is not None:
-        raise ContractError("pre-release failure claims a release identity")
+    else:
+        if expected_release_sha256 is not None:
+            raise ContractError("pre-release failure retains a premature release")
+        if result["release_sha256"] is not None:
+            raise ContractError("pre-release failure claims a release identity")
 
     cleanup = exact_keys(result["cleanup"], {"child", "channel", "cgroup", "connector", "namespace"}, "cleanup")
     allowed = {
