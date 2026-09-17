@@ -5,7 +5,7 @@ kind = "example-test"
 claims = ["PBR-NETWORK-033"]
 tier = 0
 expected_inventory = [
-  "service_policy::tests::compilation_preserves_service_authority_and_child_network_denial",
+  "proofbound_runtime_core::service_policy::tests::compilation_preserves_service_authority_and_child_network_denial",
 ]
 inputs = [
   "Cargo.lock",

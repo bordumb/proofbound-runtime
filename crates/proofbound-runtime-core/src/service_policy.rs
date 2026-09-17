@@ -88,7 +88,22 @@ impl CompiledServicePolicy {
                     ),
                 ]),
             ),
-            ("network", service_session_value(&self.service_session)),
+            (
+                "network",
+                text(match self.child.network() {
+                    crate::SeccompPolicy::DenyNetworkV1 => "deny-network-v1",
+                }),
+            ),
+            (
+                "child_network",
+                text(match self.child_network {
+                    ServiceSeccompPolicy::ChannelOnlyV1 => "channel-only-v1",
+                }),
+            ),
+            (
+                "service_session",
+                service_session_value(&self.service_session),
+            ),
             (
                 "filesystem",
                 Value::Array(

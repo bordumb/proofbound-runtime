@@ -78,7 +78,9 @@ def main() -> int:
             "stdout_bytes": limits["stdout_bytes"],
             "wall_time_ms": limits["wall_time_ms"],
         },
-        "network": compiled_network,
+        "network": "deny-network-v1",
+        "child_network": "channel-only-v1",
+        "service_session": compiled_network,
         "filesystem": filesystem_rules(authority),
         "environment": sorted(
             set(authority["environment"]), key=lambda item: item.encode("utf-8")

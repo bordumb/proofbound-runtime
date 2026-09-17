@@ -217,6 +217,13 @@ authenticated-service-session = {
 The normative CDDL files define the complete field encodings. JSON remains an
 inspection projection and MUST NOT be accepted as execution wire data.
 
+The compiled service policy MUST bind each network role separately. Its
+`network` field is `deny-network-v1` for the direct child base. Its
+`child_network` field is `channel-only-v1` for the filter that retains only the
+declared local byte channel. Its `service_session` field contains the complete
+connector-owned authenticated-service authority. Omitting, merging, or
+substituting any of these fields changes the policy identity and is invalid.
+
 ## 5. Pure decisions
 
 Normalization sorts and deduplicates connector runtime-read paths. It MUST NOT

@@ -234,6 +234,13 @@ class WireV2GoldenVectorTests(unittest.TestCase):
                     VECTOR_ROOT / "compiled-policy-service-session.projection.json"
                 ).read_bytes(),
             )
+            decoded = decode_strict(bytes.fromhex(output.read_text(encoding="ascii")))
+            self.assertEqual(decoded["network"], "deny-network-v1")
+            self.assertEqual(decoded["child_network"], "channel-only-v1")
+            self.assertEqual(
+                decoded["service_session"]["mode"],
+                "authenticated-service-session-v1",
+            )
 
 
 if __name__ == "__main__":
