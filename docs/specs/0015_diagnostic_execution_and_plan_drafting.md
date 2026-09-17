@@ -54,6 +54,13 @@ A partial observer result may be published only when it is structurally valid,
 states `completion: "incomplete"`, and lists the exact gaps. Setup failure
 before target release publishes neither output.
 
+The command writes a `proofbound-runtime-diagnose-result/1` object to standard
+output. Its sorted `observer_error_codes` array is empty when no effectful
+observer error selected termination. Otherwise, it contains the stable closed
+`TraceObservationError` code that selected drain. This field is operational
+diagnostic output. It is not part of the committed receipt and does not replace
+the receipt's closed gap set or assurance meaning.
+
 ## 3. Boundary order
 
 The diagnostic launch protocol performs these transitions:

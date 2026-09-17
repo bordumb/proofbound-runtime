@@ -32,6 +32,8 @@ def assert_command_contract(sources):
         "completed.publication()",
         "ObserverDirective::PublishComplete",
         "ObserverDirective::PublishIncomplete",
+        "observer_error_codes.insert(error.code())",
+        '"observer_error_codes": observer_error_codes',
         "create_new(true)",
         "hard_link",
         "sync_all",
@@ -176,6 +178,9 @@ class DiagnosticCommandContractTests(unittest.TestCase):
             ),
             self.sources["command"].replace(
                 "diagnostic.output.child-writable", "diagnostic.output.allowed", 1
+            ),
+            self.sources["command"].replace(
+                "observer_error_codes.insert(error.code());", "", 1
             ),
             self.sources["command"].replace(
                 "sync_parent(draft_target)?;", "sync_parent(receipt_target)?;", 1

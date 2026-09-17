@@ -385,6 +385,7 @@ assert result["completion"] == "complete", {
     "result": result,
     "gaps": receipt.get("gaps"),
 }
+assert result["observer_error_codes"] == []
 assert receipt["schema"] == "proofbound-runtime-diagnostic-receipt/1"
 assert receipt["execution_profile"] == "diagnostic"
 assert receipt["safe_policy"] is False

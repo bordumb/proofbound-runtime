@@ -388,6 +388,7 @@ fn execute(input: CommandInput) -> Result<serde_json::Value, DiagnoseError> {
     let mut mapper = DiagnosticEventMapper::new();
     let mut events = Vec::new();
     let mut resolution_gaps = BTreeSet::new();
+    let mut observer_error_codes = BTreeSet::new();
     let completed = loop {
         match observer
             .next_event()
@@ -410,15 +411,18 @@ fn execute(input: CommandInput) -> Result<serde_json::Value, DiagnoseError> {
                 observer: draining,
                 observation,
             } => {
-                if let proofbound_runtime_diagnose_linux::ObserverObservation::Event(event) =
-                    observation
-                {
-                    retain_resolution_gap(&event, &mut resolution_gaps);
-                    if let Some(event) = mapper
-                        .map(&event)
-                        .map_err(|error| DiagnoseError::execution(error.code()))?
-                    {
-                        events.push(event);
+                match observation {
+                    proofbound_runtime_diagnose_linux::ObserverObservation::Event(event) => {
+                        retain_resolution_gap(&event, &mut resolution_gaps);
+                        if let Some(event) = mapper
+                            .map(&event)
+                            .map_err(|error| DiagnoseError::execution(error.code()))?
+                        {
+                            events.push(event);
+                        }
+                    }
+                    proofbound_runtime_diagnose_linux::ObserverObservation::Failure(error) => {
+                        observer_error_codes.insert(error.code());
                     }
                 }
                 break draining
@@ -529,6 +533,7 @@ fn execute(input: CommandInput) -> Result<serde_json::Value, DiagnoseError> {
     Ok(json!({
         "completion": completion.as_str(),
         "draft": draft_target,
+        "observer_error_codes": observer_error_codes,
         "receipt": receipt_target,
         "receipt_sha256": format!("sha256:{}", artifacts.receipt().commitment().to_hex()),
         "schema": "proofbound-runtime-diagnose-result/1",
