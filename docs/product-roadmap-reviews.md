@@ -3094,6 +3094,31 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes only this review record. Any later
 subject change requires a new exact-head review.
 
+## RT-8 syscall-pairing evidence correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `dc342a817e1936aac1932bf5c339767eceba4eeb`
+- **Reviewed head:** `2b5b6b07f11757377d524f32e28d4c2c690fcd2c`
+- **Branch:** `codex/rt8-object-resolution-final`
+- **Method:** Read-only exact-range causal-evidence review after hosted preflight
+  run `35170466124`. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the trace-event contract now binds the typed
+`begin_syscall` and `finish_syscall` transitions and exact-pins the complete
+tracee state implementation. Entry rejects an existing pending syscall. Exit
+first consumes a real pending syscall and can otherwise consume only the
+one-shot initial-exit allowance, which it clears before returning. Later
+unmatched exits fail closed. The causal mutant removes only that reset and is
+rejected, while prior event ownership, wait, registration, drain, exec, and
+held-tracee checks remain intact.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`dc342a817e1936aac1932bf5c339767eceba4eeb..2b5b6b07f11757377d524f32e28d4c2c690fcd2c`.
+The following approval-only commit changes only this review record. Any later
+subject change requires a new exact-head review.
+
 ## RT-8 diagnostic lifecycle restacked re-review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
