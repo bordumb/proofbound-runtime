@@ -2983,6 +2983,30 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-5 connector engine hosted-Clippy correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `c361cb11eefec4b03b55385caf2977552a34e97a`
+- **Reviewed head:** `f7424c52a6568cdd6eb6cdf74196f46bb33c515f`
+- **Branch:** `codex/rt5-production-connector`
+- **Method:** Complete exact-range static re-review after hosted run
+  `35273679587`. The reviewer changed no files and ran no builds, Rust tests,
+  Lean, Kani, or native checks.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The correction combines two identical CNAME-chain selection branches. The
+reviewer confirmed exact equivalence for IPv4-empty, IPv6-empty, matching-path,
+and conflicting-path cases, including the prior short-circuit behavior. No
+authority, DNS, CNAME lifetime, deadline, TLS, byte-limit, evidence, schema, or
+production-reachability semantic changed. Every earlier finding remains closed.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`c361cb11eefec4b03b55385caf2977552a34e97a..f7424c52a6568cdd6eb6cdf74196f46bb33c515f`.
+The following approval-only commit changes no reviewed production, test,
+schema, claim, assumption, evidence, vector, or source-checker bytes. Any later
+subject change requires a new exact-head review.
+
 ## RT-5 connector engine hosted-compile correction approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
