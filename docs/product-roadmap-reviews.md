@@ -3325,6 +3325,41 @@ otherwise introduced no blocker. Production service execution remained
 rejected and no connector or effectful network authority was enabled. The
 corrected exact head requires a new independent review.
 
+## RT-5 authenticated-service lifecycle correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca`
+- **Reviewed head:** `38d00d2b2856b002aff7129a24f704972fd39bac`
+- **Branch:** `codex/rt5-formal-wave`
+- **Method:** Complete exact-range static Rust, formal-model, claim,
+  evidence-inventory, specification, source-identity, and roadmap re-review.
+  The reviewer changed no files and ran no builds or tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that Lean `State` is an inductive valid-state type and
+can carry a failure reason only in `failed`. The exactness theorem ranges only
+over representable states. Specification 0016 permits failure only from
+nonterminal states, gives terminal states no outgoing transitions, and keeps
+the intersecting SDK closure pending. All three diagnostic checkers pin the
+actual core-library digest
+`01a5649729ecec79524aa3946bf33613d62fdea8dc17c265633188ea9a2a9b05`
+without changing their causal mutations or contract assertions.
+
+The Rust lifecycle preserves the exact forward order, typed terminal failure,
+and rejection of skipped, backward, reconnect, repeated-release, and
+post-terminal transitions. The Lean relation and model transition agree over
+the valid closed domain, while the theorem remains explicitly unadmitted
+candidate evidence. Production service execution still rejects the service
+profile, the compiled child remains deny-network, and no effectful network path
+was added. No new blocker was introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca..38d00d2b2856b002aff7129a24f704972fd39bac`.
+The following approval-only commit changes only this review record. Any later
+production, formal, specification, claim, evidence, checker, or status-subject
+change requires a new exact-head review.
+
 ## RT-8 product-exit extension approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
