@@ -477,6 +477,42 @@ class DiagnosticSyscallDecoderContractTests(unittest.TestCase):
                 self.observer,
                 self.artifact,
             ),
+            "clone-untraced flag changed": (
+                self.trace.replace("0x0080_0000", "0x0040_0000", 1),
+                self.sys,
+                self.adapter,
+                self.observer,
+                self.artifact,
+            ),
+            "clone-untraced predicate bypassed": (
+                self.trace.replace(
+                    "value & CLONE_UNTRACED_FLAG != 0", "false", 1
+                ),
+                self.sys,
+                self.adapter,
+                self.observer,
+                self.artifact,
+            ),
+            "clone guard call removed": (
+                self.trace.replace(
+                    "validate_process_creation_flags(class, flags)?;", "", 1
+                ),
+                self.sys,
+                self.adapter,
+                self.observer,
+                self.artifact,
+            ),
+            "clone3 guard call removed": (
+                self.trace.replace(
+                    "validate_process_creation_flags(TraceSyscallClass::Clone, Some(flags))?;",
+                    "",
+                    1,
+                ),
+                self.sys,
+                self.adapter,
+                self.observer,
+                self.artifact,
+            ),
             "signed width check removed": (
                 self.trace.replace(
                     "if upper != 0 && upper != u64::from(u32::MAX)", "if false", 1
