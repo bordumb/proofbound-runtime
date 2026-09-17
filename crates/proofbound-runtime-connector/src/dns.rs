@@ -294,20 +294,25 @@ pub fn resolve_service(authority: &AuthenticatedServiceSession) -> Result<DnsRes
     if answers.is_empty() || answers.len() > usize::from(policy.maximum_answer_count()) {
         return Err(DnsError::InvalidAnswerSet);
     }
-    if answers
-        .iter()
-        .any(|answer| answer.effective_expires_ns <= elapsed_ns(started))
-    {
-        return Err(DnsError::ExpiredAnswer);
-    }
-
-    Ok(DnsResolution {
+    let resolution = DnsResolution {
         started,
         authority: authority.clone(),
         messages: state.messages,
         cname_chain: chain,
         answers,
-    })
+    };
+    if resolution
+        .answers
+        .iter()
+        .any(|answer| answer.effective_expires_ns <= resolution.elapsed_ns())
+    {
+        return Err(DnsError::ExpiredAnswer);
+    }
+    if Instant::now() >= deadline {
+        return Err(DnsError::Deadline);
+    }
+
+    Ok(resolution)
 }
 
 struct ResolverState<'a> {
@@ -1066,19 +1071,16 @@ mod tests {
         let owner = ServiceName::new("api.example.com").expect("valid owner");
         let target = ServiceName::new("edge.example.com").expect("valid target");
         let identity = digest(b"dns-message");
-        let chain = vec![
-            cname_observation(owner, target.clone(), identity, 5, 10).expect("CNAME is valid"),
-        ];
-        let mut answers = vec![
-            answer(
-                target,
-                "192.0.2.7".parse().expect("valid address"),
-                identity,
-                60,
-                10,
-            )
-            .expect("answer is valid"),
-        ];
+        let chain =
+            [cname_observation(owner, target.clone(), identity, 5, 10).expect("CNAME is valid")];
+        let mut answers = [answer(
+            target,
+            "192.0.2.7".parse().expect("valid address"),
+            identity,
+            60,
+            10,
+        )
+        .expect("answer is valid")];
         apply_chain_expiry(&mut answers, &chain);
         assert_eq!(answers[0].record_expires_ns(), 60_000_000_010);
         assert_eq!(answers[0].effective_expires_ns(), 5_000_000_010);

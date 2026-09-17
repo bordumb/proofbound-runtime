@@ -2,9 +2,10 @@
 
 - **Status:** active implementation
 - **Created:** 2026-09-17T19:31:00+01:00 (Europe/London, BST)
-- **Last updated:** 2026-09-17T21:11:30+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-17T21:35:28+01:00 (Europe/London, BST)
 - **Current Runtime main:**
-  `8513ca7e096bc762b8e7d6c3977130a1da8f31f1`; exact-main replay pending
+  `8513ca7e096bc762b8e7d6c3977130a1da8f31f1`; exact-main Verify run
+  `35267321804` passed
 - **Current implementation wave:** RT-5 authenticated connector engine
 - **Lifecycle:** prelaunch with zero external users
 
@@ -75,7 +76,8 @@ or relabel an unavailable enforcement mechanism.
 - [x] Pass complete exact-head hosted verification. Verify run `35262967214`
   passed every required lane and the final gate at exact head `c361cb1`.
 - [x] Merge PR 33 as exact main `8513ca7`.
-- [ ] Pass complete exact-main verification for `8513ca7`.
+- [x] Pass complete exact-main verification for `8513ca7`. Verify run
+  `35267321804` passed every required lane and the final gate.
 
 Exit: the current `PBR-NETWORK-035`, `PBR-NETWORK-036`, and
 `PBR-NETWORK-037` source closures are admitted together. Production service
@@ -105,8 +107,11 @@ deadlines, explicit TLS-provider selection, CNAME validity, source closure, and
 causal falsifiers. The first correction head `cd8b16e` was rejected for one
 compile defect, incomplete DNS lifetime reconciliation, terminal deadline
 classification, non-causal gate tests, stale source status, and incomplete
-local-dependency closure. A consolidated second correction batch is in
-progress. Keep every checkbox below open until the engine runs as the exact
+local-dependency closure. The second correction head `ed7445c` was rejected
+for final success-path deadline placement, non-causal per-arm and directional-
+limit guards, an omitted pending `PBR-OBSERVER-030` source identity, and a
+strict-lint candidate. The consolidated third correction batch is in progress.
+Keep every checkbox below open until the engine runs as the exact
 identified production process and the relevant behavior passes hosted and
 native admission.
 

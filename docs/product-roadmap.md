@@ -6,7 +6,7 @@
 - **Runtime baseline:** current `main` at
   `8513ca7e096bc762b8e7d6c3977130a1da8f31f1`; PR 33 receipt-contract head
   `c361cb1` passed exact-head Verify run `35262967214`, merged as `8513ca7`,
-  and awaits its exact-main replay
+  and passed exact-main Verify run `35267321804`
 - **Proofbound distribution baseline:** immutable public bundle for source
   `9512469`
 - **Planning horizon:** prelaunch product and assurance waves
@@ -33,7 +33,7 @@ publication or an unrelated adopter.
 | RT-2 receipt acceptance | Policy, CLI, standalone acceptor, and Action source are merged. | Observe the exact release artifact and dogfood the Action from an unrelated adopter. |
 | RT-3 first-run and SDK workflow | The deny-network and non-executable service-session SDK subjects are admitted on exact main `d48122b`. The pure-policy clarification is admitted on `a94c21a`, and the lifecycle closure is admitted on `1da65a5`. | Publish the selected current packages and dogfood them from an unrelated consumer. |
 | RT-4 network decision | The complete experiment and measurement series selected the connector-owned authenticated service session. | The decision authorizes RT-5; it does not provide production networking. |
-| RT-5 one authenticated service | The non-executable contract, pure policy, lifecycle, observation, and launcher baselines are admitted. PR 33 receipt-contract head `c361cb1` passed exact-head verification and merged as `8513ca7`; its exact-main replay remains required. The connector candidate is pending exact review and admission. Production execution remains denied. | Admit the connector engine, then implement the identified connector process, launcher, bypass corpus, production receipts, verifiers, composition, acceptance, and one maintained real API client. |
+| RT-5 one authenticated service | The non-executable contract, pure policy, lifecycle, observation, launcher, and receipt-contract baselines are admitted. PR 33 receipt-contract head `c361cb1` passed exact-head verification, merged as `8513ca7`, and passed exact-main run `35267321804`. The connector candidate is pending exact review and admission. Production execution remains denied. | Admit the connector engine, then implement the identified connector process, launcher, bypass corpus, production receipts, verifiers, composition, acceptance, and one maintained real API client. |
 | RT-6 evidence-based expansion | CPU and output-quota decisions are recorded; the performance baseline is complete. | Implement a deferred control only when observed demand satisfies its decision gate. |
 
 Milestone B, bounded local execution, is achieved. Milestone A is operationally

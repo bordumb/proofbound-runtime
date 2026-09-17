@@ -2983,6 +2983,29 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-5 connector engine second correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `c361cb11eefec4b03b55385caf2977552a34e97a`
+- **Reviewed head:** `ed7445cf6d0ab9d58893ce4203ebe9dddf5df6bc`
+- **Branch:** `codex/rt5-production-connector`
+- **Method:** Complete exact-range static security and assurance re-review. The
+  reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval record, hosted
+  admission, or merge can use this subject.
+
+The review confirmed that the first correction's compilation, observation,
+cross-family lifetime, duplicate-answer, terminal connect-deadline, source-
+closure, and status defects were substantially corrected. Four blockers
+remained. Successful DNS and TLS setup lacked a final deadline check after all
+load-bearing parsing and hashing. The source checker did not independently
+falsify both connection-result arms or bind the exact directional byte-limit
+operations. The pending exact-source overlay omitted `PBR-OBSERVER-030`, whose
+registered closure includes changed root dependency files. Finally, a one-item
+`Vec` in a DNS unit test was a likely strict-Clippy failure. The consolidated
+correction requires a new exact-head independent review.
+
 ## RT-5 connector engine first correction review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

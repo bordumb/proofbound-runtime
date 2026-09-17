@@ -43,9 +43,9 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-NETWORK-032` | Tier 0 last lifecycle closure admitted on exact Runtime main `1da65a5`; connector contract closure pending | PR 31 and its exact-main replay admitted the prior service-session contract closure. |
 | `PBR-NETWORK-033` | Tier 0 last lifecycle closure admitted on exact Runtime main `1da65a5`; connector dependency closure pending | The prior compiler closure separately binds child denial, the channel-only profile, and complete connector authority. |
 | `PBR-NETWORK-034` | Tier 0 last pure lifecycle admitted on exact Runtime main `1da65a5`; connector specification closure pending | Source tests covered the prior closed forward path and typed terminal failure. The candidate Lean theorem is not registered as admitted evidence. Every effectful wave remains open. |
-| `PBR-NETWORK-035` | Tier 1 receipt contract merged as exact main `8513ca7`; connector observation closure pending exact admission | PR 33 exact head `c361cb1` passed run `35262967214` and merged as `8513ca7`. The connector candidate changes the exact CNAME and effective-expiry observation source, so it cannot inherit that admission. |
-| `PBR-NETWORK-036` | Tier 1 receipt contract merged as exact main `8513ca7`; connector dependency closure pending exact admission | The launcher meaning is unchanged, but its registered root dependency closure changed and must replay. |
-| `PBR-NETWORK-037` | Tier 1 receipt contract merged as exact main `8513ca7`; connector dependency closure pending exact admission | The prior success and failure contract passed exact-head verification. Changed root and observation inputs require fresh exact-source admission. |
+| `PBR-NETWORK-035` | Tier 1 receipt contract admitted on exact Runtime main `8513ca7`; connector observation closure pending exact admission | PR 33 exact head `c361cb1` passed run `35262967214`; exact-main run `35267321804` admitted the merge. The connector candidate changes the exact CNAME and effective-expiry observation source, so it cannot inherit that admission. |
+| `PBR-NETWORK-036` | Tier 1 receipt contract admitted on exact Runtime main `8513ca7`; connector dependency closure pending exact admission | Exact-main run `35267321804` admitted the launcher contract. Its meaning is unchanged, but the connector candidate changes its registered root dependency closure and must replay. |
+| `PBR-NETWORK-037` | Tier 1 receipt contract admitted on exact Runtime main `8513ca7`; connector dependency closure pending exact admission | Exact-head run `35262967214` and exact-main run `35267321804` admitted the prior success and failure contract. Changed root and observation inputs require fresh exact-source admission. |
 | `PBR-NETWORK-038` | Tier 0 proposed connector engine pending first exact admission | The isolated connector crate implements bounded TCP DNS parsing, canonical answer selection, exact-name TLS setup without resumption or early data, endpoint attempts, opaque directional byte limits, and one no-reconnect channel loop. Process supervision, launcher binding, native evidence, receipts, and release artifacts remain open. |
 
 ### Current changed subjects pending exact admission
@@ -56,8 +56,8 @@ exact current subjects are pending even where the table retains an older exact
 admission: `PBR-ACCEPT-012`, `PBR-COMPOSE-008`, `PBR-DIAGNOSTIC-011`,
 `PBR-DISTRIBUTION-015`, `PBR-DISTRIBUTION-018`, `PBR-DISTRIBUTION-025`,
 `PBR-DRAFT-017`, `PBR-DRAFT-019`, `PBR-NETWORK-032` through
-`PBR-NETWORK-038`, `PBR-OBSERVER-020` through `PBR-OBSERVER-029`,
-`PBR-OBSERVER-031`, `PBR-PREFLIGHT-009`, `PBR-RESOURCE-010`, `PBR-RUN-007`,
+`PBR-NETWORK-038`, `PBR-OBSERVER-020` through `PBR-OBSERVER-031`,
+`PBR-PREFLIGHT-009`, `PBR-RESOURCE-010`, `PBR-RUN-007`,
 `PBR-SCAFFOLD-013`, and `PBR-SDK-014`. A row's older admission is historical
 for its stated source identity. It is not status transferred to this candidate.
 
@@ -79,8 +79,8 @@ the new Tier 0 `PBR-NETWORK-034` subject. The Lean theorem remains a compiled
 candidate, not registered theorem evidence.
 
 The non-production receipt integration passed PR 33 exact-head run
-`35262967214` at `c361cb1` and merged as exact main `8513ca7`. Its exact-main
-replay remains required before that merged source is called admitted.
+`35262967214` at `c361cb1`, merged as exact main `8513ca7`, and passed
+exact-main run `35267321804`. That exact receipt-contract source is admitted.
 The connector candidate changes the observation schema, checker, vector,
 Specification 0016, root dependencies, and connector source. Those current
 closures are pending together with new `PBR-NETWORK-038`; they require a new

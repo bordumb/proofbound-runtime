@@ -779,18 +779,6 @@ pub fn authenticate_service(
         kind,
         attempts: attempts.clone(),
     })?;
-    if resolution.elapsed_ns() >= setup_deadline_ns {
-        return Err(AuthenticateError {
-            kind: TlsError::SetupDeadline,
-            attempts,
-        });
-    }
-    if resolution.elapsed_ns() >= selected_answer.effective_expires_ns() {
-        return Err(AuthenticateError {
-            kind: TlsError::AnswerExpired,
-            attempts,
-        });
-    }
     let handshake_bytes = socket.total_bytes().ok_or_else(|| AuthenticateError {
         kind: TlsError::HandshakeLimit,
         attempts: attempts.clone(),
@@ -800,6 +788,16 @@ pub fn authenticate_service(
             kind: TlsError::HandshakeLimit,
             attempts,
         });
+    }
+    let implementation_identity = digest(TLS_IMPLEMENTATION);
+    let certificate_chain_identity = certificate_chain_identity(certificates);
+    let authenticated_ns = resolution.elapsed_ns();
+    if let Some(kind) = terminal_absolute_deadline_kind(
+        authenticated_ns,
+        selected_answer.effective_expires_ns(),
+        setup_deadline_ns,
+    ) {
+        return Err(AuthenticateError { kind, attempts });
     }
     let active_at = Instant::now();
     let session_limit = Duration::from_millis(limits.session_time_ms());
@@ -811,11 +809,10 @@ pub fn authenticate_service(
                 attempts: attempts.clone(),
             })?;
     socket.enter_session(session_deadline);
-    let authenticated_ns = resolution.elapsed_ns();
     let observation = TlsObservation {
-        implementation_identity: digest(TLS_IMPLEMENTATION),
+        implementation_identity,
         version,
-        certificate_chain_identity: certificate_chain_identity(certificates),
+        certificate_chain_identity,
         handshake_bytes,
         authenticated_ns,
     };
