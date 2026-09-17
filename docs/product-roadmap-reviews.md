@@ -3169,6 +3169,31 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes only this review record. Any later
 subject change requires a new exact-head review.
 
+## RT-8 partial tracee-string capture approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `efd6dbd752557e4bf4daef2f5bd7835032a4ead6`
+- **Reviewed head:** `0d9253a253165da7c1e504b6649961273731c864`
+- **Branch:** `codex/rt8-object-resolution-final`
+- **Method:** Read-only exact-range security and evidence review after native CI
+  exposed a short tracee-memory read at a pathname page boundary. The reviewer
+  changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that a terminated short `process_vm_readv` prefix is
+accepted only within the returned byte count. Unreturned bytes are neither
+scanned nor appended. An unterminated prefix advances the exact read address,
+and zero progress or a later read failure remains fail-closed. String and path
+bounds remain enforced without silent truncation. Fixed-size tracee reads
+remain exact. The causal mutation, source fingerprints, and specification text
+accurately cover the corrected behavior.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`efd6dbd752557e4bf4daef2f5bd7835032a4ead6..0d9253a253165da7c1e504b6649961273731c864`.
+The following approval-only commit changes only this review record. Any later
+subject change requires a new exact-head review.
+
 ## RT-8 diagnostic lifecycle restacked re-review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
