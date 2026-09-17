@@ -3256,6 +3256,29 @@ none. The correction requires exact guard-targeted mutations and
 phase-qualified summary language, followed by a new exact-head review after
 restacking on admitted PR 32.
 
+## RT-5 service-session receipt preliminary approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `3c3bcd3634d96cee367deafd1620197d5ac0f5ee`
+- **Reviewed head:** `44de1b2e6b1b7f0d20f1407b5f894fe61db832d0`
+- **Branch:** `codex/rt5-receipt-contract`
+- **Method:** Complete preliminary static re-review of every preceding receipt
+  finding. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None remain in the reviewed subject.
+- **Verdict:** **APPROVE**
+- **Maintainer endorsement:** **NOT ENDORSED FOR MERGE**. This approval is
+  preliminary because the branch still requires restacking onto PR 32's exact
+  admitted merge and a final exact-head review.
+
+The matching premature-install mutation reaches the phase guard with a
+consistent root digest and install frame. The missing `launcher-install-failed`
+mutation reaches the required-prefix guard with both root and input absent.
+The assurance summary uses phase-appropriate retained-launcher language. Every
+earlier credential, prefix, failure, closure, cross-binding, assumption,
+trusted-computing-base, cleanup, clock, and evidence-closure finding remains
+closed. Production behavior remains unchanged and service execution remains
+rejected.
+
 ## RT-5 service launcher preliminary review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
