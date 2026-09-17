@@ -3161,6 +3161,53 @@ The following approval-only commit changes only this review record. Any later
 production, schema, claim, evidence, checker, SDK, or status-subject change
 requires a new exact-head review.
 
+## RT-5 authenticated-service evidence-inventory correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da8c96b843a692bff8a0ac0bc782a108b3168dbc`
+- **Reviewed head:** `77b90156f618202c8eebf03808d520a4d5c57191`
+- **Hosted run:** `35214786562`
+- **Branch:** `codex/rt5-contract-wave`
+- **Method:** Exact hosted preflight, Rust, native, and fresh-evidence results
+  followed by a complete static correction review. The reviewer changed no
+  files and ran no local builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+Preflight, Rust, and both native architecture lanes passed. The fresh ledger
+partition rejected `authenticated-service-session-contract` with
+`PB-TEST-1006` because its six expected Rust library-test identities omitted
+the crate-name prefix required by the Proofbound adapter's collected metadata.
+The green Rust log showed all six module-relative test suffixes passing. The
+remaining formal and evidence lanes were cancelled after the decisive failure.
+The inventory identity correction required a new exact-head review.
+
+## RT-5 authenticated-service evidence-inventory correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da8c96b843a692bff8a0ac0bc782a108b3168dbc`
+- **Reviewed head:** `b50d88b8c255f9e73ae266620152bb08e8cca317`
+- **Branch:** `codex/rt5-contract-wave`
+- **Method:** Complete exact-range static evidence-inventory, claim, and
+  regression re-review. The reviewer changed no files and ran no builds or
+  tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the correction changes only the six
+`expected_inventory` identities. Each suffix names an existing passing core
+library test, and the `proofbound_runtime_core::` prefix matches established
+library-inventory evidence units. Test selection, operation target, inputs,
+claim, tier, resource budget, production source, and evidence meaning are
+unchanged. No prior correction regressed and no new blocker was introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`da8c96b843a692bff8a0ac0bc782a108b3168dbc..b50d88b8c255f9e73ae266620152bb08e8cca317`.
+The following approval-only commit changes only this review record. Any later
+production, schema, claim, evidence, checker, SDK, or status-subject change
+requires a new exact-head review.
+
 ## RT-8 product-exit extension approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
