@@ -3021,6 +3021,51 @@ The following approval-only commit changes only this review record. Any later
 production, schema, claim, evidence, checker, SDK, or status-subject change
 requires a new exact-head review.
 
+## RT-5 authenticated-service hosted-compile correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da8c96b843a692bff8a0ac0bc782a108b3168dbc`
+- **Reviewed head:** `dd79218aab980d767f9ca7bcc7f1597c60ca08a2`
+- **Branch:** `codex/rt5-contract-wave`
+- **Method:** Complete exact-range static correction review. The reviewer
+  changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The hosted Rust and native lanes found three compilation blockers after the
+initial approval. The reviewed correction restored the required
+`WallTimeLimit` import, but one SDK negative case still consumed a plan input
+before the next case reused it, and the resolver-width test still used invalid
+Rust array-pattern syntax. The production contract remained unchanged. A new
+exact-head review was required after correcting both SDK-test defects.
+
+## RT-5 authenticated-service hosted-compile correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da8c96b843a692bff8a0ac0bc782a108b3168dbc`
+- **Reviewed head:** `297fbb07a987fa6eadb7075ec7ff1b9cc1f17935`
+- **Branch:** `codex/rt5-contract-wave`
+- **Method:** Complete exact-range static security, contract, evidence, and
+  correction re-review. The reviewer changed no files and ran no builds or
+  tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the restored import resolves both unchanged plan
+parser uses, the first SDK negative case now consumes a clone so the next case
+can consume the original input, and the resolver-width test uses valid enum
+payload destructuring whose fixed-array types enforce four and sixteen bytes.
+The post-approval delta contains only the prior approval record and these
+hosted-compile corrections. It changes no production contract, schema, claim,
+evidence closure, or authority. No new blocker was introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`da8c96b843a692bff8a0ac0bc782a108b3168dbc..297fbb07a987fa6eadb7075ec7ff1b9cc1f17935`.
+The following approval-only commit changes only this review record. Any later
+production, schema, claim, evidence, checker, SDK, or status-subject change
+requires a new exact-head review.
+
 ## RT-8 product-exit extension approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
