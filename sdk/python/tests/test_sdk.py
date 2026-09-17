@@ -114,6 +114,12 @@ class PythonSdkTests(unittest.TestCase):
             build_plan(**plan)
 
         invalid = service_network()
+        invalid["connector_runtime_read"] = ["/usr/./lib"]
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
+        invalid = service_network()
         invalid["connector_runtime_read"] = ["/usr//lib"]
         plan["network"] = invalid
         with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
@@ -127,6 +133,48 @@ class PythonSdkTests(unittest.TestCase):
 
         invalid = service_network()
         invalid["limits"]["setup_time_ms"] = 4_999
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
+        invalid = service_network()
+        invalid["credential_source"]["service"] = "other.example.com"
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
+        invalid = service_network()
+        invalid["credential_source"]["environment"] = "MISSING_KEY"
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
+        invalid = service_network()
+        invalid["resolver"]["address"]["bytes"] = bytes([1, 1, 1])
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
+        invalid = service_network()
+        invalid["connector_runtime_read"] = ["/usr/\0lib"]
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
+        invalid = service_network()
+        invalid["connector_runtime_read"] = [["/usr/lib"]]
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
+        invalid = service_network()
+        invalid["resolver"]["address"]["family"] = []
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
+        invalid = service_network()
+        invalid["tls"]["minimum_version"] = []
         plan["network"] = invalid
         with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
             build_plan(**plan)

@@ -6,6 +6,7 @@ claims = ["PBR-SDK-014"]
 tier = 0
 expected_inventory = [
   "proofbound_runtime_sdk::tests::duplicate_or_mismatched_authority_is_rejected_before_encoding",
+  "proofbound_runtime_sdk::tests::resolver_address_width_is_fixed_by_the_public_type",
   "proofbound_runtime_sdk::tests::run_result_projection_is_closed_and_validates_external_identities",
   "proofbound_runtime_sdk::tests::rust_plan_matches_the_frozen_v2_golden",
   "proofbound_runtime_sdk::tests::service_session_encoding_is_closed_and_validated",

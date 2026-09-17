@@ -3,6 +3,36 @@ use std::net::IpAddr;
 
 use crate::{AuthorityPath, EnvironmentName};
 
+/// Contains one canonical absolute path used by the service connector.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct NetworkSupportPath(AuthorityPath);
+
+impl NetworkSupportPath {
+    /// Validates one canonical absolute service-support path.
+    pub fn new(value: impl Into<String>) -> Result<Self, NetworkAuthorityError> {
+        let value = value.into();
+        if !value.starts_with('/')
+            || (value != "/"
+                && value.strip_prefix('/').is_none_or(|suffix| {
+                    suffix
+                        .split('/')
+                        .any(|component| component.is_empty() || matches!(component, "." | ".."))
+                }))
+        {
+            return Err(NetworkAuthorityError::InvalidSupportPath);
+        }
+        AuthorityPath::new(value)
+            .map(Self)
+            .map_err(|_| NetworkAuthorityError::InvalidSupportPath)
+    }
+
+    /// Returns the canonical absolute path text.
+    #[must_use]
+    pub fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
 /// Contains one validated lower-case ASCII DNS service name.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct ServiceName(String);
@@ -111,7 +141,7 @@ pub enum AddressOrder {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResolutionPolicy {
     endpoint: ResolverEndpoint,
-    configuration: AuthorityPath,
+    configuration: NetworkSupportPath,
     maximum_cname_depth: u16,
     maximum_answer_count: u16,
     maximum_response_bytes: u64,
@@ -125,7 +155,7 @@ impl ResolutionPolicy {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         endpoint: ResolverEndpoint,
-        configuration: AuthorityPath,
+        configuration: NetworkSupportPath,
         maximum_cname_depth: u16,
         maximum_answer_count: u16,
         maximum_response_bytes: u64,
@@ -164,7 +194,7 @@ impl ResolutionPolicy {
 
     /// Returns the resolver-configuration path.
     #[must_use]
-    pub const fn configuration(&self) -> &AuthorityPath {
+    pub const fn configuration(&self) -> &NetworkSupportPath {
         &self.configuration
     }
 
@@ -242,7 +272,7 @@ pub enum RevocationPolicy {
 /// Contains the complete TLS policy for one service session.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TlsPolicy {
-    trust_root_set: AuthorityPath,
+    trust_root_set: NetworkSupportPath,
     minimum_version: MinimumTlsVersion,
     service_name_verification: ServiceNameVerification,
     revocation: RevocationPolicy,
@@ -252,7 +282,7 @@ impl TlsPolicy {
     /// Creates the first profile's TLS policy.
     #[must_use]
     pub const fn new(
-        trust_root_set: AuthorityPath,
+        trust_root_set: NetworkSupportPath,
         minimum_version: MinimumTlsVersion,
         service_name_verification: ServiceNameVerification,
         revocation: RevocationPolicy,
@@ -267,7 +297,7 @@ impl TlsPolicy {
 
     /// Returns the trust-root-set path.
     #[must_use]
-    pub const fn trust_root_set(&self) -> &AuthorityPath {
+    pub const fn trust_root_set(&self) -> &NetworkSupportPath {
         &self.trust_root_set
     }
 
@@ -505,8 +535,8 @@ pub struct AuthenticatedServiceSession {
     resolution: ResolutionPolicy,
     tls: TlsPolicy,
     limits: ServiceSessionLimits,
-    connector_executable: AuthorityPath,
-    connector_runtime_read: Vec<AuthorityPath>,
+    connector_executable: NetworkSupportPath,
+    connector_runtime_read: Vec<NetworkSupportPath>,
     local_channel: LocalChannelProtocol,
     child_descriptor: ChildChannelDescriptor,
     credential_source: Option<CredentialSource>,
@@ -521,14 +551,17 @@ impl AuthenticatedServiceSession {
         resolution: ResolutionPolicy,
         tls: TlsPolicy,
         limits: ServiceSessionLimits,
-        connector_executable: AuthorityPath,
-        mut connector_runtime_read: Vec<AuthorityPath>,
+        connector_executable: NetworkSupportPath,
+        mut connector_runtime_read: Vec<NetworkSupportPath>,
         local_channel: LocalChannelProtocol,
         child_descriptor: ChildChannelDescriptor,
         credential_source: Option<CredentialSource>,
     ) -> Result<Self, NetworkAuthorityError> {
         if resolution.resolution_deadline_ms() > limits.setup_time_ms() {
             return Err(NetworkAuthorityError::ResolutionDeadlineExceedsSetup);
+        }
+        if limits.endpoint_attempts() > resolution.maximum_answer_count() {
+            return Err(NetworkAuthorityError::AttemptCountExceedsAnswers);
         }
         if credential_source
             .as_ref()
@@ -584,13 +617,13 @@ impl AuthenticatedServiceSession {
 
     /// Returns the connector executable path.
     #[must_use]
-    pub const fn connector_executable(&self) -> &AuthorityPath {
+    pub const fn connector_executable(&self) -> &NetworkSupportPath {
         &self.connector_executable
     }
 
     /// Returns the connector runtime-read closure.
     #[must_use]
-    pub fn connector_runtime_read(&self) -> &[AuthorityPath] {
+    pub fn connector_runtime_read(&self) -> &[NetworkSupportPath] {
         &self.connector_runtime_read
     }
 
@@ -636,6 +669,8 @@ impl AuthenticatedServiceSession {
 /// Identifies invalid network-authority input.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum NetworkAuthorityError {
+    /// A service-support path is not canonical and absolute.
+    InvalidSupportPath,
     /// The service name is not one canonical lower-case ASCII DNS name.
     InvalidServiceName,
     /// The service name is a numeric IP address.
@@ -665,6 +700,7 @@ impl NetworkAuthorityError {
     #[must_use]
     pub const fn code(self) -> &'static str {
         match self {
+            Self::InvalidSupportPath => "plan.authority.network.path.external-invalid",
             Self::InvalidServiceName => "plan.authority.network.service-name.invalid",
             Self::ServiceNameIsAddress => "plan.authority.network.service-name.address",
             Self::ZeroTcpPort => "plan.authority.network.service-port.zero",
@@ -703,6 +739,30 @@ mod tests {
     use super::*;
 
     #[test]
+    fn support_paths_are_canonical_and_absolute_at_construction() {
+        assert_eq!(
+            NetworkSupportPath::new("/usr/lib")
+                .expect("fixture is canonical")
+                .as_str(),
+            "/usr/lib"
+        );
+        for invalid in [
+            "relative",
+            "/usr//lib",
+            "/usr/./lib",
+            "/usr/../lib",
+            "/usr/lib/",
+            "/usr/\0lib",
+        ] {
+            assert_eq!(
+                NetworkSupportPath::new(invalid),
+                Err(NetworkAuthorityError::InvalidSupportPath),
+                "accepted {invalid:?}"
+            );
+        }
+    }
+
+    #[test]
     fn service_names_are_canonical_dns_names() {
         assert_eq!(
             ServiceName::new("api.example.com")
@@ -732,5 +792,46 @@ mod tests {
             ServiceSessionLimits::new(2, 2, 2, 2, 2, 2, 2, 2).expect("fixture limits are valid");
         assert!(narrow.is_no_more_permissive_than(broad));
         assert!(!broad.is_no_more_permissive_than(narrow));
+    }
+
+    #[test]
+    fn session_rechecks_cross_object_attempt_bound() {
+        let resolution = ResolutionPolicy::new(
+            ResolverEndpoint::new(
+                ResolverAddress::Ipv4([1, 1, 1, 1]),
+                TcpPort::new(53).expect("fixture port is valid"),
+            ),
+            NetworkSupportPath::new("/etc/resolver.conf").expect("fixture path is valid"),
+            1,
+            1,
+            512,
+            1,
+            1,
+            AddressOrder::Ipv4ThenIpv6Lexicographic,
+        )
+        .expect("fixture resolver is valid");
+        let tls = TlsPolicy::new(
+            NetworkSupportPath::new("/etc/ca.pem").expect("fixture path is valid"),
+            MinimumTlsVersion::Tls13,
+            ServiceNameVerification::DnsSanExact,
+            RevocationPolicy::NotCheckedRecordedAssumption,
+        );
+        let limits = ServiceSessionLimits::new(1, 1, 1, 1, 1, 2, 1, 2)
+            .expect("detached limits accept their declared answer count");
+        assert_eq!(
+            AuthenticatedServiceSession::new(
+                ServiceName::new("api.example.com").expect("fixture service is valid"),
+                TcpPort::new(443).expect("fixture port is valid"),
+                resolution,
+                tls,
+                limits,
+                NetworkSupportPath::new("/usr/libexec/connector").expect("fixture path is valid"),
+                vec![NetworkSupportPath::new("/usr/lib").expect("fixture path is valid")],
+                LocalChannelProtocol::UnixStreamV1,
+                ChildChannelDescriptor::new(9).expect("fixture descriptor is valid"),
+                None,
+            ),
+            Err(NetworkAuthorityError::AttemptCountExceedsAnswers)
+        );
     }
 }

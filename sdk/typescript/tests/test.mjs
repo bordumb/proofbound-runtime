@@ -140,6 +140,36 @@ test("service session is closed and validated", async () => {
     () => buildPlan({ ...plan, network: nonCanonicalPath }),
     (error) => error instanceof SdkError && error.code === "sdk.plan.network-invalid",
   );
+  const dotPath = serviceNetwork();
+  dotPath.connector_runtime_read = ["/usr/./lib"];
+  assert.throws(
+    () => buildPlan({ ...plan, network: dotPath }),
+    (error) => error instanceof SdkError && error.code === "sdk.plan.network-invalid",
+  );
+  const wrongCredentialService = serviceNetwork();
+  wrongCredentialService.credential_source.service = "other.example.com";
+  assert.throws(
+    () => buildPlan({ ...plan, network: wrongCredentialService }),
+    (error) => error instanceof SdkError && error.code === "sdk.plan.network-invalid",
+  );
+  const missingCredentialEnvironment = serviceNetwork();
+  missingCredentialEnvironment.credential_source.environment = "MISSING_KEY";
+  assert.throws(
+    () => buildPlan({ ...plan, network: missingCredentialEnvironment }),
+    (error) => error instanceof SdkError && error.code === "sdk.plan.network-invalid",
+  );
+  const wrongAddressWidth = serviceNetwork();
+  wrongAddressWidth.resolver.address.bytes = Buffer.from([1, 1, 1]);
+  assert.throws(
+    () => buildPlan({ ...plan, network: wrongAddressWidth }),
+    (error) => error instanceof SdkError && error.code === "sdk.plan.network-invalid",
+  );
+  const nulPath = serviceNetwork();
+  nulPath.connector_runtime_read = ["/usr/\0lib"];
+  assert.throws(
+    () => buildPlan({ ...plan, network: nulPath }),
+    (error) => error instanceof SdkError && error.code === "sdk.plan.network-invalid",
+  );
 });
 
 test("run-result projection is closed", () => {

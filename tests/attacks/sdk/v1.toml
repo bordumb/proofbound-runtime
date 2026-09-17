@@ -72,5 +72,5 @@ expected = "sdk.plan.network-invalid"
 
 [[case]]
 id = "service-support-path-alias"
-mutation = "supply a service support path with an empty, dot, parent, or trailing component"
+mutation = "supply a service support path with an empty, dot, parent, trailing, or null-byte component"
 expected = "sdk.plan.network-invalid"

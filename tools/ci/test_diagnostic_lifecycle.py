@@ -434,7 +434,7 @@ EXPECTED_FILES = {
     "claim": "40e7e16c6231bebce538e759cdf5a8ad577cfd9f2b70a36e36372da2e2629d24",
     "contract-evidence": "deda6ad938018d660fc4f8fd4bd83e2123936023ff73cca64ab12f13c69ea5b2",
     "core-manifest": "0d22823a1d4f397fb58693c7d9fe7498969ce242b5da0f372d8cc8f55f960b9b",
-    "core-lib": "2039d8c789844cddaaabbf432a0a6ef465f77300577f3b57922d7bcbcc930450",
+    "core-lib": "2432abdb057d1f05cea6a8a0bdd45fc49b7ee72246584b739c556dde898ea5e6",
     "cgroup": "8f708a93b08c18037345f5ecee58aa67e945397688b41c0f2fc3e15f614784b9",
     "diagnose-artifact": "bb353a2c06312a034bfba7ed687430e102284f05495fee58df3ee88acc056bee",
     "diagnose-lib": "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de",

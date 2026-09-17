@@ -9,9 +9,9 @@ use crate::{
     AddressOrder, AuthenticatedServiceSession, AuthorityError, AuthorityPath, AuthorityPlan,
     ChildChannelDescriptor, CredentialSource, CredentialSourceId, EnvironmentName, FileAccess,
     LocalChannelProtocol, MemoryByteLimit, MinimumTlsVersion, NetworkAuthorityError,
-    OutputByteLimit, PathAuthority, PathRole, ProcessLimit, ResolutionPolicy, ResolverAddress,
-    ResolverEndpoint, ResourceLimits, RevocationPolicy, ServiceName, ServiceNameVerification,
-    ServiceSessionLimits, SwapByteLimit, TcpPort, TlsPolicy, WallTimeLimit,
+    NetworkSupportPath, OutputByteLimit, PathAuthority, PathRole, ProcessLimit, ResolutionPolicy,
+    ResolverAddress, ResolverEndpoint, ResourceLimits, RevocationPolicy, ServiceName,
+    ServiceNameVerification, ServiceSessionLimits, SwapByteLimit, TcpPort, TlsPolicy,
 };
 
 const PLAN_SCHEMA: &str = "proofbound-runtime-plan/1";
@@ -246,7 +246,11 @@ impl From<AuthorityError> for PlanError {
 
 impl From<NetworkAuthorityError> for PlanError {
     fn from(error: NetworkAuthorityError) -> Self {
-        Self::NetworkAuthority(error)
+        if error == NetworkAuthorityError::InvalidSupportPath {
+            Self::NetworkSupportPathInvalid
+        } else {
+            Self::NetworkAuthority(error)
+        }
     }
 }
 
@@ -544,7 +548,7 @@ fn parse_network_authority(
     };
     let resolver_port = TcpPort::new(cbor_u16(take(&mut resolver, "port")?)?)?;
     let resolver_configuration =
-        canonical_absolute_network_path(cbor_text(take(&mut resolver, "configuration")?)?)?;
+        NetworkSupportPath::new(cbor_text(take(&mut resolver, "configuration")?)?)?;
     let maximum_cname_depth = cbor_u16(take(&mut resolver, "maximum_cname_depth")?)?;
     let maximum_answer_count = cbor_u16(take(&mut resolver, "maximum_answer_count")?)?;
     let maximum_response_bytes = cbor_u64(take(&mut resolver, "maximum_response_bytes")?)?;
@@ -567,8 +571,7 @@ fn parse_network_authority(
     )?;
 
     let mut tls = cbor_map(take(&mut network, "tls")?)?;
-    let trust_root_set =
-        canonical_absolute_network_path(cbor_text(take(&mut tls, "trust_root_set")?)?)?;
+    let trust_root_set = NetworkSupportPath::new(cbor_text(take(&mut tls, "trust_root_set")?)?)?;
     let minimum_version = match cbor_text(take(&mut tls, "minimum_version")?)?.as_str() {
         "tls-1.2" => MinimumTlsVersion::Tls12,
         "tls-1.3" => MinimumTlsVersion::Tls13,
@@ -610,10 +613,10 @@ fn parse_network_authority(
     require_empty(session_limits)?;
 
     let connector_executable =
-        canonical_absolute_network_path(cbor_text(take(&mut network, "connector_executable")?)?)?;
+        NetworkSupportPath::new(cbor_text(take(&mut network, "connector_executable")?)?)?;
     let connector_runtime_read = cbor_text_array(take(&mut network, "connector_runtime_read")?)?
         .into_iter()
-        .map(canonical_absolute_network_path)
+        .map(NetworkSupportPath::new)
         .collect::<Result<Vec<_>, _>>()?;
 
     let mut local_channel = cbor_map(take(&mut network, "local_channel")?)?;
@@ -673,25 +676,6 @@ fn take_optional(map: &mut CborMap, key: &str) -> Option<CborValue> {
     } else {
         None
     }
-}
-
-fn canonical_absolute_network_path(value: String) -> Result<AuthorityPath, PlanError> {
-    let path = AuthorityPath::new(value)?;
-    let filesystem_path = Path::new(path.as_str());
-    if !filesystem_path.is_absolute()
-        || (path.as_str() != "/"
-            && (path.as_str().ends_with('/')
-                || path
-                    .as_str()
-                    .strip_prefix('/')
-                    .is_none_or(|suffix| suffix.split('/').any(str::is_empty))))
-        || filesystem_path
-            .components()
-            .any(|component| matches!(component, Component::CurDir | Component::ParentDir))
-    {
-        return Err(PlanError::NetworkSupportPathInvalid);
-    }
-    Ok(path)
 }
 
 fn append_paths(
@@ -1126,6 +1110,18 @@ processes = 1
                 5_000,
                 10_000,
                 "/usr//lib",
+            )),
+            Err(PlanError::NetworkSupportPathInvalid)
+        );
+        assert_eq!(
+            parse_service_execution_plan(&service_plan(
+                "api.anthropic.com",
+                "api.anthropic.com",
+                true,
+                vec![1, 1, 1, 1],
+                5_000,
+                10_000,
+                "/usr/./lib",
             )),
             Err(PlanError::NetworkSupportPathInvalid)
         );

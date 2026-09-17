@@ -29,8 +29,8 @@ pub use identity::{ArtifactIdentity, ArtifactRole, FileMode, IdentityError, Sha2
 pub use network::{
     AddressOrder, AuthenticatedServiceSession, ChildChannelDescriptor, CredentialSource,
     CredentialSourceId, LocalChannelProtocol, MinimumTlsVersion, NetworkAuthorityError,
-    ResolutionPolicy, ResolverAddress, ResolverEndpoint, RevocationPolicy, ServiceName,
-    ServiceNameVerification, ServiceSessionLimits, TcpPort, TlsPolicy,
+    NetworkSupportPath, ResolutionPolicy, ResolverAddress, ResolverEndpoint, RevocationPolicy,
+    ServiceName, ServiceNameVerification, ServiceSessionLimits, TcpPort, TlsPolicy,
 };
 pub use normalize::{NormalizedAuthority, normalize_authority};
 pub use outcome::{ExecutionOutcome, ExecutionOutcomeKind, SignalNumber, execution_outcome_kind};

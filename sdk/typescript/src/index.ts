@@ -294,6 +294,7 @@ function networkUnsigned(value, minimum, maximum, name) {
 
 function canonicalAbsolute(value) {
   return typeof value === "string" &&
+    !value.includes("\0") &&
     path.posix.isAbsolute(value) &&
     (value === "/" || (
       !value.endsWith("/") &&

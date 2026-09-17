@@ -637,19 +637,17 @@ fn encode_network_input(network: NetworkAuthorityV2Input) -> Cbor {
 }
 
 fn canonical_absolute_path(value: &str) -> bool {
+    if value.contains('\0') {
+        return false;
+    }
     let path = Path::new(value);
     path.is_absolute()
         && (value == "/"
-            || (!value.ends_with('/')
-                && value
-                    .strip_prefix('/')
-                    .is_some_and(|suffix| !suffix.split('/').any(str::is_empty))))
-        && !path.components().any(|component| {
-            matches!(
-                component,
-                std::path::Component::CurDir | std::path::Component::ParentDir
-            )
-        })
+            || value.strip_prefix('/').is_some_and(|suffix| {
+                !suffix
+                    .split('/')
+                    .any(|component| component.is_empty() || matches!(component, "." | ".."))
+            }))
 }
 
 fn valid_service_name(value: &str) -> bool {
@@ -916,6 +914,68 @@ mod tests {
             ),
             Err(SdkError::PlanNetwork)
         );
+
+        let mut input = golden_input();
+        input.environment.push("API_KEY".to_owned());
+        let NetworkAuthorityV2Input::AuthenticatedServiceSession(mut invalid) = service_session()
+        else {
+            unreachable!()
+        };
+        invalid
+            .credential_source
+            .as_mut()
+            .expect("fixture source")
+            .service = "other.example.com".to_owned();
+        assert_eq!(
+            PlanV2::new_with_network(
+                input.clone(),
+                NetworkAuthorityV2Input::AuthenticatedServiceSession(invalid)
+            ),
+            Err(SdkError::PlanNetwork)
+        );
+
+        let NetworkAuthorityV2Input::AuthenticatedServiceSession(mut invalid) = service_session()
+        else {
+            unreachable!()
+        };
+        invalid
+            .credential_source
+            .as_mut()
+            .expect("fixture source")
+            .environment = "MISSING_KEY".to_owned();
+        assert_eq!(
+            PlanV2::new_with_network(
+                input.clone(),
+                NetworkAuthorityV2Input::AuthenticatedServiceSession(invalid)
+            ),
+            Err(SdkError::PlanNetwork)
+        );
+
+        let NetworkAuthorityV2Input::AuthenticatedServiceSession(mut invalid) = service_session()
+        else {
+            unreachable!()
+        };
+        invalid.connector_runtime_read = vec!["/usr/\0lib".to_owned()];
+        assert_eq!(
+            PlanV2::new_with_network(
+                input,
+                NetworkAuthorityV2Input::AuthenticatedServiceSession(invalid)
+            ),
+            Err(SdkError::PlanNetwork)
+        );
+    }
+
+    #[test]
+    fn resolver_address_width_is_fixed_by_the_public_type() {
+        let addresses = [
+            ResolverAddressV2Input::Ipv4([1, 1, 1, 1]),
+            ResolverAddressV2Input::Ipv6([0; 16]),
+        ];
+        assert!(matches!(addresses[0], ResolverAddressV2Input::Ipv4([_; 4])));
+        assert!(matches!(
+            addresses[1],
+            ResolverAddressV2Input::Ipv6([_; 16])
+        ));
     }
 
     #[test]

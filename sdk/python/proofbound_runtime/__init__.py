@@ -178,7 +178,12 @@ def _validate_network(
         },
     )
     address = _exact_mapping(resolver["address"], {"family", "bytes"})
-    address_size = {"ipv4": 4, "ipv6": 16}.get(address["family"])
+    address_family = address["family"]
+    address_size = (
+        {"ipv4": 4, "ipv6": 16}.get(address_family)
+        if isinstance(address_family, str)
+        else None
+    )
     if (
         address_size is None
         or not isinstance(address["bytes"], bytes)
@@ -214,6 +219,7 @@ def _validate_network(
     )
     if (
         not _canonical_absolute(tls["trust_root_set"])
+        or not isinstance(tls["minimum_version"], str)
         or tls["minimum_version"] not in {"tls-1.2", "tls-1.3"}
         or tls["service_name_verification"] != "dns-san-exact"
         or tls["revocation"] != "not-checked-recorded-assumption"
@@ -255,8 +261,8 @@ def _validate_network(
     if (
         isinstance(runtime_read, (str, bytes))
         or not isinstance(runtime_read, Sequence)
-        or len(set(runtime_read)) != len(runtime_read)
         or any(not _canonical_absolute(path) for path in runtime_read)
+        or len(set(runtime_read)) != len(runtime_read)
     ):
         raise SdkError("sdk.plan.network-invalid", "connector_runtime_read")
     channel = _exact_mapping(network["local_channel"], {"protocol", "child_descriptor"})
@@ -313,14 +319,13 @@ def _network_int(value: Any, minimum: int, maximum: int, field: str) -> None:
 def _canonical_absolute(value: Any) -> bool:
     return (
         isinstance(value, str)
+        and "\0" not in value
         and Path(value).is_absolute()
         and value.startswith("/")
         and (
             value == "/"
-            or (not value.endswith("/") and all(part for part in value[1:].split("/")))
+            or all(part and part not in {".", ".."} for part in value[1:].split("/"))
         )
-        and "." not in Path(value).parts
-        and ".." not in Path(value).parts
     )
 
 
