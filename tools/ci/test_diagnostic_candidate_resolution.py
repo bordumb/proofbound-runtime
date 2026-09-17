@@ -40,10 +40,13 @@ def assert_candidate_resolution_contract(trace, mapping, command):
     exit_branch = trace.split(
         "crate::sys::TraceSyscallStop::Exit { result, is_error } =>", 1
     )[1].split("crate::sys::TraceSyscallStop::Seccomp", 1)[0]
-    candidate_position = exit_branch.index(connection)
-    event_position = exit_branch.index("ActiveTraceEvent::SyscallCompleted")
+    captured_branch = exit_branch.split(
+        "PendingTraceSyscall::Captured(invocation) => {", 1
+    )[1].split("PendingTraceSyscall::Ignored =>", 1)[0]
+    candidate_position = captured_branch.index(connection)
+    event_position = captured_branch.index("ActiveTraceEvent::SyscallCompleted")
     assert candidate_position < event_position
-    assert "resume_before_deadline" not in exit_branch[candidate_position:event_position]
+    assert "resume_before_deadline" not in captured_branch[:event_position]
 
 
 class DiagnosticCandidateResolutionContractTests(unittest.TestCase):
@@ -115,9 +118,9 @@ class DiagnosticCandidateResolutionContractTests(unittest.TestCase):
                 self.trace.replace(
                     """let candidate =
                             self.observe_failed_candidate(process, &invocation, is_error);""",
-                    """let candidate =
-                            self.observe_failed_candidate(process, &invocation, is_error);
-                        self.resume_before_deadline(process)?;""",
+                    """self.resume_before_deadline(process)?;
+                        let candidate =
+                            self.observe_failed_candidate(process, &invocation, is_error);""",
                     1,
                 ),
                 self.mapping,
