@@ -41,6 +41,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-OBSERVER-030` | Tier 1 candidate-resolution source admitted on exact Runtime main `d60d1f3` | Failed path operations produce only advisory stable candidates after two bounded root-confined observations agree; drift and hop exhaustion remain explicit gaps. Independently approved PR 26 head `2fc82ff` passed run `35172227506`, including both native architectures. Exact-main run `35175269953` passed. Linux pathname completeness remains pending. |
 | `PBR-OBSERVER-031` | Tier 1 complete RT-8 source admitted on exact Runtime main `da8c96b` | `pbr-diagnose` reuses the exact seed authority, retains terminal gating, consumes only an exact declared scaffold, and uses durable no-replace publication for non-reusable artifacts. PR 27 admitted the maintained dynamic workload in exact-head run `35194713490` and exact-main run `35198698472`; PR 28 admitted the final adversarial corpus in exact-head run `35203053015` and exact-main run `35207382756`. The later RT-5 contract changes this claim's declared closure, so that newer subject remains pending as listed below. |
 | `PBR-NETWORK-032` | Tier 0 proposed contract, not executable | The closed single-service authority parser retains direct child network denial and production execution rejection. `PBR-SDK-014` owns construction. Connector, launcher, receipt, verifier, native corpus, and release admission remain open. |
+| `PBR-NETWORK-033` | Tier 0 proposed pure policy, not executable | The service-session compiler preserves the closed connector authority, direct child denial, channel-only profile, and deterministic policy vector. Formal refinement and every effectful wave remain open. |
 
 ### Current changed subjects pending exact admission
 
@@ -963,6 +964,22 @@ omission, credential-service substitution, resolver address-width
 substitution, limit ordering, and production-parser rejection. The tests do not
 establish DNS, TLS, connector, kernel, credential, or remote-service behavior.
 `PBR-SDK-014` separately owns cross-language construction of these bytes.
+
+## PBR-NETWORK-033
+
+The current subject is the pure compiler for the proposed single-service
+policy. It compiles the validated base authority through the existing
+deny-network policy, retains the complete connector-owned service authority,
+selects the closed channel-only child profile, and emits one frozen
+deterministic-CBOR policy vector. The maintained independent Python generator
+reproduces the same vector from the frozen service plan.
+
+The compiler does not install a connector, create or transfer a channel,
+change the production execution parser, or establish DNS, TLS, kernel, or
+credential behavior. Formal non-amplification and Rust-refinement evidence are
+still open. The shipping network claim remains unavailable until the complete
+effectful, receipt, verifier, composition, acceptance, native-corpus, and
+release waves are admitted.
 
 ## Bounded-domain declaration guard
 

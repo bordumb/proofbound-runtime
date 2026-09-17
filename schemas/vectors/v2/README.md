@@ -31,3 +31,6 @@ SHA-256 identities are CBOR byte strings rather than display text.
 The `execution-plan-service-session` vector is a second execution-plan fixture.
 It fixes the proposed authenticated-service-session authority shape before that
 authority is executable. The current execution entry point rejects this plan.
+The `compiled-policy-service-session` vector fixes the matching proposed pure
+policy projection. It is not evidence that the connector or child boundary is
+installed.

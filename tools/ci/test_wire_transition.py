@@ -20,6 +20,7 @@ NEW_CBOR_OBJECTS = {
     "acceptance-policy": 1,
 }
 ADDITIONAL_VERSION_TWO_VECTORS = {
+    "compiled-policy-service-session",
     "execution-plan-service-session",
 }
 

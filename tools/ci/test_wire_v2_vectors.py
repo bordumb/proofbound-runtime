@@ -23,6 +23,7 @@ WIRE_OBJECTS = {
 }
 ADDITIONAL_VECTORS = {
     "execution-plan-service-session": "proofbound-runtime-plan/2",
+    "compiled-policy-service-session": "proofbound-runtime-linux-policy/2",
 }
 
 
@@ -201,6 +202,38 @@ class WireV2GoldenVectorTests(unittest.TestCase):
                 )
             )
             self.assertEqual(output.read_bytes(), expected)
+
+    def test_service_policy_generator_reproduces_the_golden_vector(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "policy.hex"
+            projection = Path(directory) / "policy.json"
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(
+                        REPOSITORY_ROOT
+                        / "tools/ci/generate_service_policy_v2_vector.py"
+                    ),
+                    "--plan",
+                    str(VECTOR_ROOT / "execution-plan-service-session.cbor.hex"),
+                    "--output",
+                    str(output),
+                    "--projection",
+                    str(projection),
+                ],
+                cwd=REPOSITORY_ROOT,
+                check=True,
+            )
+            self.assertEqual(
+                output.read_bytes(),
+                (VECTOR_ROOT / "compiled-policy-service-session.cbor.hex").read_bytes(),
+            )
+            self.assertEqual(
+                projection.read_bytes(),
+                (
+                    VECTOR_ROOT / "compiled-policy-service-session.projection.json"
+                ).read_bytes(),
+            )
 
 
 if __name__ == "__main__":

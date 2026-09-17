@@ -398,7 +398,10 @@ draft, while no diagnostic output can become reusable production evidence.
 - [ ] Identify resolver, address-attempt order, TLS policy, service, connector,
   local channel, credential source, byte limits, and lifecycle roles.
 - [ ] Add strict domain types, canonical encodings, negative vectors, and
-  downgrade and substitution attacks.
+  downgrade and substitution attacks. `PBR-NETWORK-032` and
+  `PBR-NETWORK-033` now stage the non-executing parser, strict domain, pure
+  compiler, and frozen plan and policy vectors; independent admission remains
+  required.
 - [ ] Model and prove the selected pure non-amplification, identity, and state
   transition properties in Lean where the subject is tractable.
 - [ ] Link selected pure Rust decisions to their formal models without
