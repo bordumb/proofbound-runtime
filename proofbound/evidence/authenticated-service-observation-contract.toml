@@ -6,6 +6,7 @@ claims = ["PBR-NETWORK-035"]
 tier = 1
 expected_inventory = [
   "service-observation-canonical-vector",
+  "service-observation-cname-effective-expiry-binding",
   "service-observation-closed-schema",
   "service-observation-complete-success-lifecycle",
   "service-observation-connector-runtime-closure-binding",

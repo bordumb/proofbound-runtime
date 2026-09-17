@@ -2,12 +2,13 @@ schema = "proofbound-claim/1"
 id = "PBR-NETWORK-038"
 title = "Single-service connector bounds DNS and authenticates the declared TLS name"
 statement = "The proposed connector engine takes one complete validated service authority, sends DNS only to its declared numeric resolver over TCP under absolute deadlines, validates query-bound responses and a bounded loop-free CNAME and canonical address result whose effective lifetime includes every alias, attempts only that authority's ordered answer prefix, authenticates an exact non-wildcard DNS SAN with caller-supplied trust-root bytes, an explicit ring provider, and the declared minimum TLS version while disabling resumption and early data, and exposes only one duration-bounded and directionally byte-bounded opaque plaintext session without reconnect or application parsing."
-public_language = "Runtime contains a proposed production connector engine for one authenticated service session. Registered source tests cover its closed error vocabulary, complete-authority binding, DNS wire parser, transaction and TTL rejection, CNAME conflict and lifetime behavior, canonical address order, exact non-wildcard DNS-name rule, explicit provider selection, deadline error class, trust-root fail-closed behavior, and endpoint-result classification. This is Tier 0 source evidence. It does not yet establish a supervised connector process, launcher binding, child syscall isolation, native enforcement, receipt production, or release-artifact behavior."
+public_language = "Runtime contains a proposed production connector engine for one authenticated service session. Registered tests and an independent source-mutation checker cover its closed error vocabulary, complete-authority binding, DNS wire parser, transaction and TTL rejection, CNAME conflict and effective lifetime behavior, deterministic duplicate-address handling, canonical address order, exact non-wildcard DNS-name call, explicit provider selection, absolute deadline calls, trust-root fail-closed behavior, directional limits, and endpoint-result classification. This is Tier 0 source evidence. It does not yet establish a supervised connector process, launcher binding, child syscall isolation, native enforcement, receipt production, or release-artifact behavior."
 subject = "rust:proofbound_runtime_connector::{resolve_service,authenticate_service,proxy_authenticated_channel,DnsResolution}"
 profile = "ledger"
 tier = 0
 evidence = [
   "example-test:authenticated-service-connector-engine",
+  "independent-check:authenticated-service-connector-source-contract",
 ]
 assumptions = [
   "PBR-DNS-AX-004",
@@ -35,6 +36,8 @@ source_roots = [
   "crates/proofbound-runtime-connector/src/dns.rs",
   "crates/proofbound-runtime-connector/src/lib.rs",
   "crates/proofbound-runtime-connector/src/tls.rs",
+  "crates/proofbound-runtime-binding/Cargo.toml",
+  "crates/proofbound-runtime-binding/src/lib.rs",
   "crates/proofbound-runtime-core/Cargo.toml",
   "crates/proofbound-runtime-core/src/authority.rs",
   "crates/proofbound-runtime-core/src/diagnostic.rs",
@@ -51,8 +54,13 @@ source_roots = [
   "crates/proofbound-runtime-core/src/service_lifecycle.rs",
   "crates/proofbound-runtime-core/src/service_policy.rs",
   "crates/proofbound-runtime-core/src/wire_v2.rs",
+  "crates/proofbound-runtime-receipt/Cargo.toml",
+  "crates/proofbound-runtime-receipt/src/lib.rs",
   "deny.toml",
   "docs/adr/0004-authenticated-service-session.md",
   "docs/specs/0016_authenticated_service_session.md",
   "proofbound/evidence/authenticated-service-connector-engine.toml",
+  "proofbound/evidence/authenticated-service-connector-source-contract.toml",
+  "tools/ci/check_connector_source_contract.py",
+  "tools/ci/test_connector_source_contract.py",
 ]

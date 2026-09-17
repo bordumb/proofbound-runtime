@@ -2983,6 +2983,32 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-5 connector engine first correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `c361cb11eefec4b03b55385caf2977552a34e97a`
+- **Reviewed head:** `cd8b16eece7f32cbff856eea9b44175f1d52db76`
+- **Branch:** `codex/rt5-production-connector`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval record, hosted
+  admission, or merge can use this subject.
+
+The review confirmed that complete authority binding, exact post-WebPKI leaf
+SAN matching, absolute per-operation timeouts, explicit ring-provider
+selection, zero or conflicting CNAME rejection, DNS-message minimums,
+dependency pins, and continued production unreachability were corrected. It
+found seven remaining blockers: one DNS map type mismatch and one unused
+import that would fail strict compilation; an observation contract that could
+not represent per-link CNAME facts and effective expiry; incomplete
+cross-family alias-lifetime propagation and nondeterministic duplicate-answer
+retention; terminal connect-timeout misclassification; non-causal source tests
+for load-bearing production calls; stale exact-source status for every
+intersecting claim; and an incomplete transitive local source closure for the
+connector evidence. The consolidated correction requires a new exact-head
+independent review.
+
 ## RT-5 connector engine initial review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

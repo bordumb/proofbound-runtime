@@ -168,8 +168,8 @@ def validate_observation(value: object) -> None:
         raise ContractError("endpoint-attempt bound exceeds the answer-count bound")
     if resolution_deadline_ms > limits["setup_time_ms"]:
         raise ContractError("resolution deadline exceeds the setup deadline")
-    if not isinstance(dns["messages"], list) or not 1 <= len(dns["messages"]) <= limits["dns_messages"]:
-        raise ContractError("dns message inventory is empty or exceeds its bound")
+    if not isinstance(dns["messages"], list) or not 2 <= len(dns["messages"]) <= limits["dns_messages"]:
+        raise ContractError("dns message inventory does not contain both fixed queries or exceeds its bound")
     message_times = []
     message_observed_ns = {}
     for index, message_value in enumerate(dns["messages"]):
@@ -187,18 +187,52 @@ def validate_observation(value: object) -> None:
         raise ContractError("dns message times are not monotonic")
     if any(time < lifecycle_times[0] or time > lifecycle_times[1] for time in message_times):
         raise ContractError("DNS message is outside the resolution interval")
-    if not isinstance(dns["cname_chain"], list) or not dns["cname_chain"]:
-        raise ContractError("dns CNAME chain is empty")
-    chain = [dns_name(name, "dns.cname_chain") for name in dns["cname_chain"]]
-    if chain[0] != service_name or len(chain) != len(set(chain)) or len(chain) - 1 > maximum_cname_depth:
-        raise ContractError("dns CNAME chain does not start at the service or contains a loop")
+    if not isinstance(dns["cname_chain"], list) or len(dns["cname_chain"]) > maximum_cname_depth:
+        raise ContractError("dns CNAME chain is not a bounded array")
+    terminal_name = service_name
+    seen_names = {service_name}
+    cname_expirations = []
+    for index, cname_value in enumerate(dns["cname_chain"]):
+        cname = exact_keys(
+            cname_value,
+            {"owner", "target", "message_sha256", "ttl_seconds", "expires_ns"},
+            f"dns.cname_chain[{index}]",
+        )
+        owner = dns_name(cname["owner"], f"dns.cname_chain[{index}].owner")
+        target = dns_name(cname["target"], f"dns.cname_chain[{index}].target")
+        if owner != terminal_name or target in seen_names:
+            raise ContractError("dns CNAME chain is discontinuous or contains a loop")
+        message_identity = fixed_bytes(
+            cname["message_sha256"], 32, f"dns.cname_chain[{index}].message_sha256"
+        )
+        if message_identity not in message_observed_ns:
+            raise ContractError("DNS CNAME is not bound to a recorded message")
+        ttl_seconds = bounded_integer(
+            cname["ttl_seconds"], 1, 2**32 - 1, f"dns.cname_chain[{index}].ttl_seconds"
+        )
+        expires_ns = bounded_integer(
+            cname["expires_ns"], 1, 2**64 - 1, f"dns.cname_chain[{index}].expires_ns"
+        )
+        expected_expiry = message_observed_ns[message_identity] + ttl_seconds * 1_000_000_000
+        if expected_expiry > 2**64 - 1 or expires_ns != expected_expiry:
+            raise ContractError("DNS CNAME expiry is not derived from its message and TTL")
+        cname_expirations.append(expires_ns)
+        seen_names.add(target)
+        terminal_name = target
     if not isinstance(dns["answers"], list) or not 1 <= len(dns["answers"]) <= maximum_answer_count:
         raise ContractError("dns answer inventory is empty")
     answers = []
     answer_expirations = []
     for index, answer_value in enumerate(dns["answers"]):
-        answer = exact_keys(answer_value, {"name", "endpoint", "message_sha256", "ttl_seconds", "expires_ns"}, f"dns.answers[{index}]")
-        if dns_name(answer["name"], f"dns.answers[{index}].name") != chain[-1]:
+        answer = exact_keys(
+            answer_value,
+            {
+                "name", "endpoint", "message_sha256", "ttl_seconds",
+                "record_expires_ns", "effective_expires_ns",
+            },
+            f"dns.answers[{index}]",
+        )
+        if dns_name(answer["name"], f"dns.answers[{index}].name") != terminal_name:
             raise ContractError("dns answer is not bound to the terminal name")
         answer_endpoint = endpoint(answer["endpoint"], f"dns.answers[{index}].endpoint")
         if answer_endpoint[2] != service_port:
@@ -207,11 +241,20 @@ def validate_observation(value: object) -> None:
         if message_identity not in message_observed_ns:
             raise ContractError("DNS answer is not bound to a recorded message")
         ttl_seconds = bounded_integer(answer["ttl_seconds"], 1, 2**32 - 1, f"dns.answers[{index}].ttl_seconds")
-        expires_ns = bounded_integer(answer["expires_ns"], 1, 2**64 - 1, f"dns.answers[{index}].expires_ns")
+        record_expires_ns = bounded_integer(
+            answer["record_expires_ns"], 1, 2**64 - 1, f"dns.answers[{index}].record_expires_ns"
+        )
         expected_expiry = message_observed_ns[message_identity] + ttl_seconds * 1_000_000_000
-        if expected_expiry > 2**64 - 1 or expires_ns != expected_expiry:
-            raise ContractError("DNS answer expiry is not derived from its message and TTL")
-        answer_expirations.append(expires_ns)
+        if expected_expiry > 2**64 - 1 or record_expires_ns != expected_expiry:
+            raise ContractError("DNS answer record expiry is not derived from its message and TTL")
+        effective_expires_ns = bounded_integer(
+            answer["effective_expires_ns"], 1, 2**64 - 1,
+            f"dns.answers[{index}].effective_expires_ns",
+        )
+        expected_effective = min([record_expires_ns, *cname_expirations])
+        if effective_expires_ns != expected_effective:
+            raise ContractError("DNS answer effective expiry does not include the complete alias chain")
+        answer_expirations.append(effective_expires_ns)
         answers.append(answer_endpoint)
     if answers != sorted(set(answers)):
         raise ContractError("dns answers are not canonical and unique")

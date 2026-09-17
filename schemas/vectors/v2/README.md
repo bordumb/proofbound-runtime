@@ -38,7 +38,8 @@ not evidence that the connector or child boundary is installed.
 
 The `service-session-observation` vector fixes a proposed receipt fragment for
 one successful authenticated session. It binds the policy, connector closure,
-bounded DNS answers and attempts, authenticated TLS result, local channel,
+bounded DNS messages, each CNAME link and lifetime, terminal and effective
+answer expiry, ordered attempts, authenticated TLS result, local channel,
 traffic counters, complete forward lifecycle, terminal cleanup, and optional
 credential-source name. It contains no credential value or application
 content. The fragment is not yet integrated into a production receipt,

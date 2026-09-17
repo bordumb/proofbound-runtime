@@ -53,11 +53,38 @@ def observation() -> dict:
             "resolution_deadline_ms": 5_000,
             "attempt_deadline_ms": 1_000,
             "address_order": "ipv4-then-ipv6-lexicographic",
-            "messages": [{"sha256": bytes([0x41]) * 32, "size": 96, "observed_ns": 1_500}],
-            "cname_chain": ["api.anthropic.com"],
+            "messages": [
+                {"sha256": bytes([0x40]) * 32, "size": 96, "observed_ns": 1_100},
+                {"sha256": bytes([0x41]) * 32, "size": 96, "observed_ns": 1_300},
+                {"sha256": bytes([0x42]) * 32, "size": 96, "observed_ns": 1_500},
+                {"sha256": bytes([0x43]) * 32, "size": 108, "observed_ns": 1_700},
+            ],
+            "cname_chain": [
+                {
+                    "owner": "api.anthropic.com",
+                    "target": "edge.anthropic.com",
+                    "message_sha256": bytes([0x42]) * 32,
+                    "ttl_seconds": 20,
+                    "expires_ns": 20_000_001_500,
+                }
+            ],
             "answers": [
-                {"name": "api.anthropic.com", "endpoint": endpoint_1, "message_sha256": bytes([0x41]) * 32, "ttl_seconds": 60, "expires_ns": 60_000_001_500},
-                {"name": "api.anthropic.com", "endpoint": endpoint_2, "message_sha256": bytes([0x41]) * 32, "ttl_seconds": 60, "expires_ns": 60_000_001_500},
+                {
+                    "name": "edge.anthropic.com",
+                    "endpoint": endpoint_1,
+                    "message_sha256": bytes([0x41]) * 32,
+                    "ttl_seconds": 60,
+                    "record_expires_ns": 60_000_001_300,
+                    "effective_expires_ns": 20_000_001_500,
+                },
+                {
+                    "name": "edge.anthropic.com",
+                    "endpoint": endpoint_2,
+                    "message_sha256": bytes([0x43]) * 32,
+                    "ttl_seconds": 60,
+                    "record_expires_ns": 60_000_001_700,
+                    "effective_expires_ns": 20_000_001_500,
+                },
             ],
             "attempts": [
                 {"ordinal": 1, "endpoint": endpoint_1, "result": "connected", "started_ns": 2_100, "finished_ns": 3_000}

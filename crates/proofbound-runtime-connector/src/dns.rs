@@ -53,7 +53,8 @@ pub struct DnsAnswer {
     address: IpAddr,
     message_identity: Sha256Digest,
     ttl_seconds: u32,
-    expires_ns: u64,
+    record_expires_ns: u64,
+    effective_expires_ns: u64,
 }
 
 /// Records one validated CNAME link and its effective lifetime.
@@ -123,10 +124,16 @@ impl DnsAnswer {
         self.ttl_seconds
     }
 
-    /// Returns the connector-relative monotonic expiry time.
+    /// Returns the expiry derived from the terminal record TTL.
     #[must_use]
-    pub const fn expires_ns(&self) -> u64 {
-        self.expires_ns
+    pub const fn record_expires_ns(&self) -> u64 {
+        self.record_expires_ns
+    }
+
+    /// Returns the earliest terminal-record or alias-chain expiry.
+    #[must_use]
+    pub const fn effective_expires_ns(&self) -> u64 {
+        self.effective_expires_ns
     }
 
     /// Returns the service endpoint that uses the declared port.
@@ -282,15 +289,14 @@ pub fn resolve_service(authority: &AuthenticatedServiceSession) -> Result<DnsRes
         .chain(ipv6.answers)
         .filter(|answer| &answer.name == terminal)
         .collect::<Vec<_>>();
-    answers
-        .sort_unstable_by(|left, right| address_key(left.address).cmp(&address_key(right.address)));
-    answers.dedup_by(|left, right| left.address == right.address);
+    canonicalize_answers(&mut answers);
+    apply_chain_expiry(&mut answers, &chain);
     if answers.is_empty() || answers.len() > usize::from(policy.maximum_answer_count()) {
         return Err(DnsError::InvalidAnswerSet);
     }
     if answers
         .iter()
-        .any(|answer| answer.expires_ns <= elapsed_ns(started))
+        .any(|answer| answer.effective_expires_ns <= elapsed_ns(started))
     {
         return Err(DnsError::ExpiredAnswer);
     }
@@ -336,11 +342,7 @@ fn resolve_record_type(
             if answers.len() > usize::from(state.policy.maximum_answer_count()) {
                 return Err(DnsError::InvalidAnswerSet);
             }
-            apply_chain_expiry(&mut answers, &chain);
-            answers.sort_unstable_by(|left, right| {
-                address_key(left.address).cmp(&address_key(right.address))
-            });
-            answers.dedup_by(|left, right| left.address == right.address);
+            canonicalize_answers(&mut answers);
             return Ok(RecordResolution { chain, answers });
         }
         let Some(record) = alias else {
@@ -454,11 +456,24 @@ fn validated_owner_records(
 }
 
 fn apply_chain_expiry(answers: &mut [DnsAnswer], chain: &[DnsCnameObservation]) {
-    if let Some(expiry) = chain.iter().map(DnsCnameObservation::expires_ns).min() {
-        for answer in answers {
-            answer.expires_ns = answer.expires_ns.min(expiry);
-        }
+    let alias_expiry = chain.iter().map(DnsCnameObservation::expires_ns).min();
+    for answer in answers {
+        let record_expiry = answer.record_expires_ns;
+        answer.effective_expires_ns = alias_expiry
+            .map(|expiry| record_expiry.min(expiry))
+            .unwrap_or(record_expiry);
     }
+}
+
+fn canonicalize_answers(answers: &mut Vec<DnsAnswer>) {
+    answers.sort_unstable_by(|left, right| {
+        address_key(left.address)
+            .cmp(&address_key(right.address))
+            .then(left.record_expires_ns.cmp(&right.record_expires_ns))
+            .then(left.message_identity.cmp(&right.message_identity))
+            .then(left.ttl_seconds.cmp(&right.ttl_seconds))
+    });
+    answers.dedup_by(|left, right| left.address == right.address);
 }
 
 fn exchange_query(
@@ -665,7 +680,7 @@ fn parse_response(
     }
     cursor = cursor.checked_add(4).ok_or(DnsError::MalformedResponse)?;
 
-    let mut cnames = BTreeMap::<ServiceName, Vec<ServiceName>>::new();
+    let mut cnames = BTreeMap::<ServiceName, Vec<DnsCnameObservation>>::new();
     let mut addresses = Vec::new();
     for index in 0..answers.saturating_add(authority).saturating_add(additional) {
         let is_answer = index < answers;
@@ -739,6 +754,8 @@ fn parse_response(
             left.target
                 .cmp(&right.target)
                 .then(left.expires_ns.cmp(&right.expires_ns))
+                .then(left.message_identity.cmp(&right.message_identity))
+                .then(left.ttl_seconds.cmp(&right.ttl_seconds))
         });
         targets.dedup_by(|left, right| left.target == right.target);
     }
@@ -769,13 +786,14 @@ fn answer(
     ttl_seconds: u32,
     observed_ns: u64,
 ) -> Result<DnsAnswer, DnsError> {
-    let expires_ns = expiry(ttl_seconds, observed_ns)?;
+    let record_expires_ns = expiry(ttl_seconds, observed_ns)?;
     Ok(DnsAnswer {
         name,
         address,
         message_identity,
         ttl_seconds,
-        expires_ns,
+        record_expires_ns,
+        effective_expires_ns: record_expires_ns,
     })
 }
 
@@ -976,7 +994,8 @@ mod tests {
             .expect("response parses");
         assert_eq!(parsed.addresses.len(), 1);
         assert_eq!(parsed.addresses[0].address(), "192.0.2.7".parse().unwrap());
-        assert_eq!(parsed.addresses[0].expires_ns(), 60_000_000_005);
+        assert_eq!(parsed.addresses[0].record_expires_ns(), 60_000_000_005);
+        assert_eq!(parsed.addresses[0].effective_expires_ns(), 60_000_000_005);
     }
 
     #[test]
@@ -1061,7 +1080,76 @@ mod tests {
             .expect("answer is valid"),
         ];
         apply_chain_expiry(&mut answers, &chain);
-        assert_eq!(answers[0].expires_ns(), 5_000_000_010);
+        assert_eq!(answers[0].record_expires_ns(), 60_000_000_010);
+        assert_eq!(answers[0].effective_expires_ns(), 5_000_000_010);
+    }
+
+    #[test]
+    fn shortest_cross_family_cname_ttl_limits_every_answer() {
+        let owner = ServiceName::new("api.example.com").expect("valid owner");
+        let target = ServiceName::new("edge.example.com").expect("valid target");
+        let ipv4_identity = digest(b"ipv4-dns-message");
+        let ipv6_identity = digest(b"ipv6-dns-message");
+        let ipv4 = RecordResolution {
+            chain: vec![
+                cname_observation(owner.clone(), target.clone(), ipv4_identity, 60, 10)
+                    .expect("CNAME is valid"),
+            ],
+            answers: vec![
+                answer(
+                    target.clone(),
+                    "192.0.2.7".parse().expect("valid address"),
+                    ipv4_identity,
+                    120,
+                    10,
+                )
+                .expect("answer is valid"),
+            ],
+        };
+        let ipv6 = RecordResolution {
+            chain: vec![
+                cname_observation(owner.clone(), target.clone(), ipv6_identity, 1, 20)
+                    .expect("CNAME is valid"),
+            ],
+            answers: vec![
+                answer(
+                    target,
+                    "2001:db8::7".parse().expect("valid address"),
+                    ipv6_identity,
+                    120,
+                    20,
+                )
+                .expect("answer is valid"),
+            ],
+        };
+        let chain = reconcile_chains(&owner, &ipv4, &ipv6, 4).expect("chains agree");
+        let mut answers = ipv4
+            .answers
+            .into_iter()
+            .chain(ipv6.answers)
+            .collect::<Vec<_>>();
+        canonicalize_answers(&mut answers);
+        apply_chain_expiry(&mut answers, &chain);
+        assert_eq!(chain[0].expires_ns(), 1_000_000_020);
+        assert!(
+            answers
+                .iter()
+                .all(|answer| answer.effective_expires_ns() == 1_000_000_020)
+        );
+    }
+
+    #[test]
+    fn duplicate_address_uses_earliest_terminal_expiry() {
+        let name = ServiceName::new("api.example.com").expect("valid name");
+        let address = "192.0.2.7".parse().expect("valid address");
+        let mut answers = vec![
+            answer(name.clone(), address, digest(b"later"), 60, 10).expect("answer is valid"),
+            answer(name, address, digest(b"earlier"), 5, 20).expect("answer is valid"),
+        ];
+        canonicalize_answers(&mut answers);
+        assert_eq!(answers.len(), 1);
+        assert_eq!(answers[0].record_expires_ns(), 5_000_000_020);
+        assert_eq!(answers[0].effective_expires_ns(), 5_000_000_020);
     }
 
     #[test]

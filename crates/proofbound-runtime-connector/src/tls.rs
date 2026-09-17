@@ -6,9 +6,7 @@ use std::os::unix::net::UnixStream;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use proofbound_runtime_core::{
-    MinimumTlsVersion, ServiceName, ServiceSessionLimits, Sha256Digest, TlsPolicy,
-};
+use proofbound_runtime_core::{MinimumTlsVersion, ServiceName, Sha256Digest, TlsPolicy};
 use rustls::client::{ClientConfig, ClientConnection, Resumption};
 use rustls::pki_types::{CertificateDer, ServerName, pem::PemObject as _};
 use rustls::{HandshakeKind, ProtocolVersion, RootCertStore, StreamOwned};
@@ -559,6 +557,7 @@ pub fn authenticate_service(
     let tls = authority.tls();
     let limits = authority.limits();
     let mut attempts = Vec::new();
+    let mut last_failure = TlsError::EndpointUnavailable;
     let config = build_config(tls, trust_root_bytes).map_err(|kind| AuthenticateError {
         kind,
         attempts: attempts.clone(),
@@ -593,7 +592,7 @@ pub fn authenticate_service(
         let timeout =
             connection_timeout(resolution, answer, setup_deadline_ns, attempt_deadline_ns)
                 .ok_or_else(|| AuthenticateError {
-                    kind: if resolution.elapsed_ns() >= answer.expires_ns() {
+                    kind: if resolution.elapsed_ns() >= answer.effective_expires_ns() {
                         TlsError::AnswerExpired
                     } else if resolution.elapsed_ns() >= setup_deadline_ns {
                         TlsError::SetupDeadline
@@ -606,6 +605,33 @@ pub fn authenticate_service(
         match TcpStream::connect_timeout(&endpoint, timeout) {
             Ok(stream) => {
                 let finished_ns = resolution.elapsed_ns();
+                if let Some(kind) = terminal_absolute_deadline_kind(
+                    finished_ns,
+                    answer.effective_expires_ns(),
+                    setup_deadline_ns,
+                ) {
+                    attempts.push(EndpointAttempt {
+                        ordinal: u32::try_from(index + 1).unwrap_or(u32::MAX),
+                        endpoint,
+                        result: EndpointAttemptResult::TimedOut,
+                        started_ns,
+                        finished_ns,
+                    });
+                    drop(stream);
+                    return Err(AuthenticateError { kind, attempts });
+                }
+                if finished_ns >= attempt_deadline_ns {
+                    attempts.push(EndpointAttempt {
+                        ordinal: u32::try_from(index + 1).unwrap_or(u32::MAX),
+                        endpoint,
+                        result: EndpointAttemptResult::TimedOut,
+                        started_ns,
+                        finished_ns,
+                    });
+                    last_failure = TlsError::EndpointAttemptDeadline;
+                    drop(stream);
+                    continue;
+                }
                 attempts.push(EndpointAttempt {
                     ordinal: u32::try_from(index + 1).unwrap_or(u32::MAX),
                     endpoint,
@@ -617,24 +643,44 @@ pub fn authenticate_service(
                 break;
             }
             Err(error) => {
+                let finished_ns = resolution.elapsed_ns();
+                let terminal = terminal_absolute_deadline_kind(
+                    finished_ns,
+                    answer.effective_expires_ns(),
+                    setup_deadline_ns,
+                );
+                let result = if terminal.is_some() || finished_ns >= attempt_deadline_ns {
+                    EndpointAttemptResult::TimedOut
+                } else {
+                    classify_connect_error(&error)
+                };
                 attempts.push(EndpointAttempt {
                     ordinal: u32::try_from(index + 1).unwrap_or(u32::MAX),
                     endpoint,
-                    result: classify_connect_error(&error),
+                    result,
                     started_ns,
-                    finished_ns: resolution.elapsed_ns(),
+                    finished_ns,
                 });
+                if let Some(kind) = terminal {
+                    return Err(AuthenticateError { kind, attempts });
+                }
+                last_failure = if finished_ns >= attempt_deadline_ns
+                    || result == EndpointAttemptResult::TimedOut
+                {
+                    TlsError::EndpointAttemptDeadline
+                } else {
+                    TlsError::EndpointUnavailable
+                };
             }
         }
     }
     let Some((selected_answer, stream, attempt_deadline_ns)) = connected else {
-        let kind = if attempts.len() >= usize::from(limits.endpoint_attempts())
-            && resolution.answers().len() > attempts.len()
-        {
-            TlsError::EndpointAttemptLimit
-        } else {
-            TlsError::EndpointUnavailable
-        };
+        let kind = terminal_connect_failure(
+            last_failure,
+            attempts.len(),
+            usize::from(limits.endpoint_attempts()),
+            resolution.answers().len(),
+        );
         return Err(AuthenticateError { kind, attempts });
     };
 
@@ -645,7 +691,7 @@ pub fn authenticate_service(
         attempt_deadline_ns,
     )
     .ok_or_else(|| AuthenticateError {
-        kind: if resolution.elapsed_ns() >= selected_answer.expires_ns() {
+        kind: if resolution.elapsed_ns() >= selected_answer.effective_expires_ns() {
             TlsError::AnswerExpired
         } else if resolution.elapsed_ns() >= setup_deadline_ns {
             TlsError::SetupDeadline
@@ -680,7 +726,7 @@ pub fn authenticate_service(
                 kind: match error.kind() {
                     io::ErrorKind::OutOfMemory => TlsError::HandshakeLimit,
                     io::ErrorKind::TimedOut | io::ErrorKind::WouldBlock => {
-                        if resolution.elapsed_ns() >= selected_answer.expires_ns() {
+                        if resolution.elapsed_ns() >= selected_answer.effective_expires_ns() {
                             TlsError::AnswerExpired
                         } else if resolution.elapsed_ns() >= setup_deadline_ns {
                             TlsError::SetupDeadline
@@ -698,7 +744,7 @@ pub fn authenticate_service(
                 attempts,
             });
         }
-        if resolution.elapsed_ns() >= selected_answer.expires_ns() {
+        if resolution.elapsed_ns() >= selected_answer.effective_expires_ns() {
             return Err(AuthenticateError {
                 kind: TlsError::AnswerExpired,
                 attempts,
@@ -739,7 +785,7 @@ pub fn authenticate_service(
             attempts,
         });
     }
-    if resolution.elapsed_ns() >= selected_answer.expires_ns() {
+    if resolution.elapsed_ns() >= selected_answer.effective_expires_ns() {
         return Err(AuthenticateError {
             kind: TlsError::AnswerExpired,
             attempts,
@@ -860,8 +906,37 @@ fn connection_timeout(
 ) -> Option<Duration> {
     let attempt = resolution.remaining_until(attempt_deadline_ns)?;
     let setup = resolution.remaining_until(setup_deadline_ns)?;
-    let expiry = resolution.remaining_until(answer.expires_ns())?;
+    let expiry = resolution.remaining_until(answer.effective_expires_ns())?;
     Some(attempt.min(setup).min(expiry)).filter(|duration| !duration.is_zero())
+}
+
+fn terminal_absolute_deadline_kind(
+    observed_ns: u64,
+    answer_expiry_ns: u64,
+    setup_deadline_ns: u64,
+) -> Option<TlsError> {
+    if observed_ns >= answer_expiry_ns {
+        Some(TlsError::AnswerExpired)
+    } else if observed_ns >= setup_deadline_ns {
+        Some(TlsError::SetupDeadline)
+    } else {
+        None
+    }
+}
+
+fn terminal_connect_failure(
+    last_failure: TlsError,
+    attempt_count: usize,
+    attempt_limit: usize,
+    answer_count: usize,
+) -> TlsError {
+    if last_failure == TlsError::EndpointAttemptDeadline {
+        TlsError::EndpointAttemptDeadline
+    } else if attempt_count >= attempt_limit && answer_count > attempt_count {
+        TlsError::EndpointAttemptLimit
+    } else {
+        TlsError::EndpointUnavailable
+    }
 }
 
 fn classify_connect_error(error: &io::Error) -> EndpointAttemptResult {
@@ -1076,6 +1151,31 @@ mod tests {
     #[test]
     fn connector_deadline_error_is_typed_timeout() {
         assert_eq!(deadline_error().kind(), io::ErrorKind::TimedOut);
+    }
+
+    #[test]
+    fn terminal_connect_timeout_reports_the_expired_absolute_guard() {
+        assert_eq!(
+            terminal_absolute_deadline_kind(100, 100, 200),
+            Some(TlsError::AnswerExpired)
+        );
+        assert_eq!(
+            terminal_absolute_deadline_kind(200, 300, 200),
+            Some(TlsError::SetupDeadline)
+        );
+        assert_eq!(terminal_absolute_deadline_kind(99, 100, 200), None);
+        assert_eq!(
+            terminal_connect_failure(TlsError::EndpointAttemptDeadline, 1, 4, 1),
+            TlsError::EndpointAttemptDeadline
+        );
+        assert_eq!(
+            terminal_connect_failure(TlsError::EndpointAttemptDeadline, 1, 1, 2),
+            TlsError::EndpointAttemptDeadline
+        );
+        assert_eq!(
+            terminal_connect_failure(TlsError::EndpointUnavailable, 1, 1, 2),
+            TlsError::EndpointAttemptLimit
+        );
     }
 
     #[test]
