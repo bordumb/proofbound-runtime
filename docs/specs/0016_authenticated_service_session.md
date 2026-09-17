@@ -295,6 +295,15 @@ enter a retained vector, receipt, diagnostic, or log. The production launcher
 protocol does not accept these messages until the native implementation and
 failure handshake are admitted.
 
+For the proposed source contract, the connector runtime-closure identity is
+the SHA-256 digest of its deterministic-CBOR ordered artifact array. The DNS
+and TLS observation identities are the SHA-256 digests of their respective
+deterministic-CBOR observation maps. The launcher child-endpoint identity is
+the observation channel identity. Receipt validation recomputes these three
+digests and requires the execution, policy, service, connector executable and
+generation, endpoint, channel descriptor, limits, and credential-source fields
+to agree across the launcher transcript and successful observation.
+
 ## 7. Child boundary
 
 The service-session seccomp profile denies at least:
