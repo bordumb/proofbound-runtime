@@ -3300,6 +3300,43 @@ trusted-computing-base, cleanup, clock, and evidence-closure finding remains
 closed. Production behavior remains unchanged and service execution remains
 rejected.
 
+## RT-5 service-session receipt final approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `2ddb4a9543988b41848fd41fc723331b2d3538af`
+- **Reviewed head:** `ad2a80eb224f19b1e7fbef188402862b7a7593fd`
+- **Branch:** `codex/rt5-receipt-contract`
+- **Method:** Complete read-only static exact-range review. The reviewer changed
+  no files and ran no builds or tests.
+- **Findings:** None blocking.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the eight receipt implementation commits are
+patch-equivalent after restacking to the preliminary-approved subject. Every
+prior blocker remains closed: canonical retained-launcher decoding and exact
+execution, plan, policy, and service closure; phase-truthful launcher prefixes;
+credentialed release without a retained credential value or value-derived
+digest; observation, launcher, and trusted-computing-base cross-bindings;
+registered DNS and TLS assumptions; closed failure, boundary, release, and
+cleanup semantics; an honestly labeled failure clock; and causal mutations for
+the exact guards. Production execution and production receipt and verifier
+acceptance remain disabled.
+
+The reviewer also confirmed that the restack is exact on admitted main
+`2ddb4a9`, the PR 32 admission identities are synchronized, and changed
+`PBR-NETWORK-035` and `PBR-NETWORK-036` closures plus new
+`PBR-NETWORK-037` remain pending this wave's hosted admission. The focused
+product checklist is subordinate to the normative contracts, preserves the
+fail-closed boundaries, and describes one authenticated session with opaque
+directionally bounded application bytes. It does not claim application request
+or response parsing.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`2ddb4a9543988b41848fd41fc723331b2d3538af..ad2a80eb224f19b1e7fbef188402862b7a7593fd`.
+This approval-only commit changes no reviewed schema, vector, generator,
+checker, claim, assumption, specification, roadmap status, or production code.
+Any later subject change requires a new exact-head review.
+
 ## RT-5 service launcher preliminary review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
