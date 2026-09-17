@@ -2259,15 +2259,20 @@ fn read_tracee_string(
         let chunk_address = address
             .checked_add(bytes.len() as u64)
             .ok_or(TraceObservationError::TraceeMemoryReadFailed)?;
-        read_exact_tracee_memory(process, chunk_address, &mut chunk)?;
-        if let Some(terminator) = chunk.iter().position(|byte| *byte == 0) {
-            bytes.extend_from_slice(&chunk[..terminator]);
+        let count = crate::sys::trace_read_process_memory(process.get(), chunk_address, &mut chunk)
+            .map_err(|_| TraceObservationError::TraceeMemoryReadFailed)?;
+        if count == 0 {
+            return Err(TraceObservationError::TraceeMemoryReadFailed);
+        }
+        let observed = &chunk[..count];
+        if let Some(terminator) = observed.iter().position(|byte| *byte == 0) {
+            bytes.extend_from_slice(&observed[..terminator]);
             if bytes.len() > limits.path_bytes() {
                 return Err(TraceObservationError::PathLimitExceeded);
             }
             return Ok(bytes);
         }
-        bytes.extend_from_slice(&chunk);
+        bytes.extend_from_slice(observed);
         if bytes.len() > limits.path_bytes() {
             return Err(TraceObservationError::PathLimitExceeded);
         }

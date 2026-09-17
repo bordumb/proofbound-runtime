@@ -216,7 +216,7 @@ EXPECTED_FILES = {
     "mapping": "1375b3cbcc94a9f1b845eb4ef7f77101696e272e586b09502f2f20f360092551",
     "root-manifest": "8cd67ea78720c5637340140ac6ea94a9d76ddeaf4fb0df40881c4e8dab371466",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "1d4db7bdf8a05c05ea83bf3cac8ff832d947fbe559b4027cb2fd08f74cbadda5",
+    "trace": "0090c6b187659bde2431775f3c89008d837c324f9242bdb3cb0793c22072f197",
     "unit-evidence": "c1628a6afa1a191c17c71debd3a8e4f224e31e406f6c280b5ccb1e03371bfa92",
 }
 

@@ -456,7 +456,7 @@ EXPECTED_FILES = {
     "supervisor": "5f1b80181b01c3ea189643995617aeab60f390c1f5fc6930cf0acd577b88cdd8",
     "sys": "8b7dfd2fee307d937f71dcbab8098d026715dc2e4f7d03c72fa9ee7bd4734168",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",
-    "trace": "1d4db7bdf8a05c05ea83bf3cac8ff832d947fbe559b4027cb2fd08f74cbadda5",
+    "trace": "0090c6b187659bde2431775f3c89008d837c324f9242bdb3cb0793c22072f197",
     "unit-evidence": "47394cbf7d03c115c3140f6a593c7ab76a031e34594a235b87fd0d7de555b51c",
 }
 

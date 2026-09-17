@@ -503,8 +503,10 @@ the diagnostic executable a released artifact.
 through adapter derivation, irreversible failure-to-drain coupling, pre-resume
 entry capture, the closed x86_64 and aarch64 decoder tables, supported
 structure sizes, argument-width and byte-order helpers, independent operand
-bounds, exact-or-error tracee reads, raw read-only syscall confinement, and
-payload exclusion. The syscall-information form accepts zero reserved and
+bounds, exact fixed-size tracee reads, bounded terminated-string reads that
+inspect each short kernel-returned prefix before continuing, raw read-only
+syscall confinement, and payload exclusion. The syscall-information form
+accepts zero reserved and
 flags fields and the exact operation-specific returned size; extensions fail
 closed until registered. The evidence byte-pins the compiler and
 crate-selection closure and compiles the selected adapter release and drain

@@ -78,7 +78,7 @@ EXPECTED_LOAD_BEARING_BODIES = {
     "supported-families": "928ac43d5c23a7e3bcbd24edf3d895597a55aa7a855ca4e2fdb8cfea4fa94f88",
     "syscall-info-fetch": "0b5e52f129fc45db01bd022959e42237ae68f7c44aff9f0b483a278546bb8084",
     "syscall-info-parser": "796f463adb9db22ebf211f25ff7d0097f86ab49f9d240a62319161dc3f91af5e",
-    "tracee-string-read": "54fec5ee2c46ba8bd614c0da4e769b311ca6ff65637e7685be6e086369f7189c",
+    "tracee-string-read": "f03c3b1f208b3171e3b70e817852ccb5001bad9808adf39432cea3feea9054e4",
     "resume-before-deadline": "bff9c1e06b805663e587a4dd5a5313bb7e04a6aceeb68aa017e4c09a4953f502",
     "trace-next-event": "d338650ed48b9e795519e78b67f2b23052c42f5d09de1c2fe76f019688d98efb",
     "trace-ready-release": "fe39e74a5099afbadc76336faf02db3ba7a9bbbb57076b7271356d6e79a45a5f",
@@ -289,6 +289,17 @@ def assert_decoder_contract(
         raise AssertionError("tracee string read bound is absent")
     if "limits.path_bytes()" not in path_read or "PathLimitExceeded" not in path_read:
         raise AssertionError("independent path bound is absent")
+    for required in [
+        "trace_read_process_memory",
+        "if count == 0",
+        "let observed = &chunk[..count]",
+        "observed.iter().position",
+        "bytes.extend_from_slice(observed)",
+    ]:
+        if required not in path_read:
+            raise AssertionError(f"partial tracee string read is not preserved: {required}")
+    if "read_exact_tracee_memory(process, chunk_address" in path_read:
+        raise AssertionError("tracee string read discards a valid short terminated prefix")
     if "limits.socket_address_bytes()" not in socket_read:
         raise AssertionError("socket-address bound is absent")
     if "SocketAddressLimitExceeded" not in socket_read:
@@ -472,6 +483,13 @@ class DiagnosticSyscallDecoderContractTests(unittest.TestCase):
             ),
             "tracee string bound removed": (
                 self.trace.replace("limits.tracee_string_bytes()", "usize::MAX", 1),
+                self.sys,
+                self.adapter,
+                self.observer,
+                self.artifact,
+            ),
+            "short tracee string prefix discarded": (
+                self.trace.replace("let observed = &chunk[..count];", "let observed = &chunk;", 1),
                 self.sys,
                 self.adapter,
                 self.observer,
