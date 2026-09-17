@@ -3038,6 +3038,34 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes only this review record. Any later
 subject change requires a new exact-head review.
 
+## RT-8 launcher-release syscall correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `cca1a607d2789f22c48b749b21571efc71eba872`
+- **Reviewed head:** `7e7f19f1b3a80897188c33c9194165e197c1da20`
+- **Branch:** `codex/rt8-object-resolution-final`
+- **Method:** Read-only exact-range lifecycle, security, and evidence review
+  against the previously approved RT-8 implementation. The reviewer changed no
+  files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that `released_mid_syscall` accounts only for the
+trusted launcher's already-entered release receive syscall. Its first exit
+consumes one ignored pending state and restores strict syscall pairing; an
+entry before that exit fails closed, and child tracees retain their separate
+initial-stop state. The unit and causal static guards bind the one-shot state
+to the production release call. The reviewer also confirmed exact trace,
+mapping, and decoder fingerprints, strict-warning closure, behavior-neutral
+removal of the uncalled identity helper, and failure-diagnostic-only changes to
+the native assertion. Existing claims, exclusions, and ptrace assumptions
+remain accurate.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`cca1a607d2789f22c48b749b21571efc71eba872..7e7f19f1b3a80897188c33c9194165e197c1da20`.
+The following approval-only commit changes only this review record. Any later
+subject change requires a new exact-head review.
+
 ## RT-8 diagnostic lifecycle restacked re-review
 
 - **Reviewer:** Independent Codex task `/root/review_runtime_pr4`
