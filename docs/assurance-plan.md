@@ -971,8 +971,10 @@ establish DNS, TLS, connector, kernel, credential, or remote-service behavior.
 `PBR-SDK-014` separately owns cross-language construction of these bytes.
 The contract subject passed PR 29 exact-head run `35216056050`, merged as exact
 Runtime main `d48122b06c4880aeba45291a107c51ad381067a4`, and passed exact-main
-run `35220098639`. The current pure-policy schema and Specification 0016
-clarification change the exact source closure and require fresh admission.
+run `35220098639`. The pure-policy schema and Specification 0016 clarification
+passed PR 30 run `35226379485` and exact-main run `35231003515` at
+`a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca`. The current lifecycle change is
+the later exact source closure that requires fresh admission.
 
 ## PBR-NETWORK-033
 

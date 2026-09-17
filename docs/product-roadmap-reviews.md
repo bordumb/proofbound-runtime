@@ -3360,6 +3360,29 @@ The following approval-only commit changes only this review record. Any later
 production, formal, specification, claim, evidence, checker, or status-subject
 change requires a new exact-head review.
 
+## RT-5 authenticated-service lifecycle status re-review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca`
+- **Reviewed head:** `b233545a181dd259db18090f79b77c09b2a38251`
+- **Branch:** `codex/rt5-formal-wave`
+- **Method:** Complete exact-range static lifecycle, formal, review-record,
+  hosted-status, assurance-ledger, and roadmap re-review. The reviewer changed
+  no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The reviewed lifecycle, formal, specification, claim, evidence, and checker
+subjects remained byte-identical to the previously approved head. The prior
+approval record was exact and all three earlier blockers remained closed. The
+status-only delta correctly recorded exact-main run `35231003515` as green but
+left three detailed ledger passages stale: they still described the current
+pure-policy closure as awaiting admission or named only its older `d48122b`
+admission. Those passages must identify the admitted `a94c21a` pure-policy
+subject separately from the later pending lifecycle closure. The corrected
+exact head requires a new independent review.
+
 ## RT-8 product-exit extension approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

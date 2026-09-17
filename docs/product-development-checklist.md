@@ -389,7 +389,9 @@ draft, while no diagnostic output can become reusable production evidence.
   contract. The non-executable contract passed PR 29 exact-head Verify run
   `35216056050`, merged as exact main `d48122b`, and passed exact-main Verify
   run `35220098639`. The pure-policy wave clarifies that the canonical compiled
-  bytes bind each security role separately and requires its own admission.
+  bytes bind each security role separately; PR 30 run `35226379485` and
+  exact-main run `35231003515` admitted that `a94c21a` closure. The later
+  lifecycle closure remains pending.
 - [ ] Specify one authenticated-service plan, authority, policy, receipt,
   verifier, composition, acceptance, and error contract.
 - [x] Identify resolver, address-attempt order, TLS policy, service, connector,
@@ -398,9 +400,9 @@ draft, while no diagnostic output can become reusable production evidence.
 - [ ] Add strict domain types, canonical encodings, negative vectors, and
   downgrade and substitution attacks. `PBR-NETWORK-032` and
   `PBR-NETWORK-033` now stage the non-executing parser, strict domain, pure
-  compiler, and frozen plan and policy vectors. `PBR-NETWORK-032` is admitted
-  on exact main `d48122b`. `PBR-NETWORK-033` passed PR 30 run `35226379485`,
-  merged as `a94c21a`, and passed exact-main run `35231003515`.
+  compiler, and frozen plan and policy vectors. Their current pure-policy
+  closures passed PR 30 run `35226379485`, merged as `a94c21a`, and passed
+  exact-main run `35231003515`. The later lifecycle closure remains pending.
 - [ ] Admit the closed forward-only service lifecycle. `PBR-NETWORK-034` and
   its exhaustive phase/event tests are staged on the current branch. Its Lean
   theorem is a candidate until separately registered and admitted; neither
