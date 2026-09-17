@@ -4,9 +4,9 @@
 - **Date:** 2026-09-17
 - **Applies to:** Roadmap 1 release closure, Roadmap 2, and Roadmap 3 candidate
   promotion
-- **Current Runtime main:** `d48122b06c4880aeba45291a107c51ad381067a4`;
-  the RT-5 non-executable contract passed PR 29 exact-head Verify run
-  `35216056050` and exact-main Verify run `35220098639`
+- **Current Runtime main:** `a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca`;
+  the RT-5 pure-policy wave passed PR 30 exact-head Verify run `35226379485`;
+  exact-main Verify run `35231003515` is in progress
 - **Current reviewed Roadmap 1 source head:** `d76f3b8`
 - **Lifecycle:** prelaunch; zero external users; package labels are tooling
   metadata rather than compatibility promises
@@ -19,14 +19,13 @@ review updates it.
 
 ## 1. Current boundary
 
-Runtime main `d48122b` contains the complete reviewed and exact-main-admitted
-RT-8 diagnostic drafting workflow, maintained dynamic workload, native
-adversarial corpus, and RT-5 non-executable authenticated-service contract and
-SDK construction. PR 29 exact-head run `35216056050` and exact-main run
-`35220098639` passed. Roadmap 1 RT-5 remains open beyond that contract. Roadmap
-2 delivery is active; RT-8 is complete, RT-7 retains external publication
-gates, and later epics remain open. Roadmap 3 contains candidates, not
-scheduled implementation.
+Runtime main `a94c21a` contains the complete reviewed RT-8 diagnostic workflow,
+native adversarial corpus, RT-5 non-executable authenticated-service contract,
+SDK construction, and pure policy compiler. PR 30 exact-head run `35226379485`
+passed; exact-main run `35231003515` is in progress. Roadmap 1 RT-5 remains
+open beyond the non-executable policy. Roadmap 2 delivery is active; RT-8 is
+complete, RT-7 retains external publication gates, and later epics remain
+open. Roadmap 3 contains candidates, not scheduled implementation.
 
 The immediate internal objective is to remove the useful-network barrier with
 RT-5 while RT-7's registry publication and unrelated-consumer observations
@@ -191,9 +190,10 @@ network ADR is design evidence, not production implementation.
 Merge one authenticated service before extending the authority to a set:
 
 1. Build from the accepted non-executable
-   [Specification 0016](specs/0016_authenticated_service_session.md) contract,
-   then admit the pure policy and freeze the remaining launcher, receipt,
-   verifier, composer, and acceptance schemas before their effects ship.
+   [Specification 0016](specs/0016_authenticated_service_session.md) contract
+   and merged pure policy, admit the forward-only lifecycle and its formal
+   evidence, then freeze the remaining launcher, receipt, verifier, composer,
+   and acceptance schemas before their effects ship.
 2. Implement the connector-owned authenticated service session.
 3. Deny direct, inherited, resolver, proxy, Unix-socket, and `io_uring`
    bypasses.

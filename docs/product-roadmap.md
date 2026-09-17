@@ -4,8 +4,9 @@
   publication, and external adopter gates remain
 - **Date:** 2026-09-17
 - **Runtime baseline:** current admitted `main` at
-  `d48122b06c4880aeba45291a107c51ad381067a4`; the RT-5 contract passed PR 29
-  Verify run `35216056050` and exact-main Verify run `35220098639`
+  `a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca`; the RT-5 pure-policy wave
+  passed PR 30 Verify run `35226379485`; exact-main Verify run `35231003515`
+  is in progress
 - **Proofbound distribution baseline:** immutable public bundle for source
   `9512469`
 - **Planning horizon:** prelaunch product and assurance waves
@@ -30,9 +31,9 @@ publication or an unrelated adopter.
 | RT-0 delivery mechanics | Required lanes, exact-head gating, timing, and exact tool-cache controls are merged and admitted. | Complete the retained two-week latency and cache-retention decision when its observation window closes. |
 | RT-1 memory and swap | Merged and admitted on both supported native architectures. | None for the selected claim wave. |
 | RT-2 receipt acceptance | Policy, CLI, standalone acceptor, and Action source are merged. | Observe the exact release artifact and dogfood the Action from an unrelated adopter. |
-| RT-3 first-run and SDK workflow | The deny-network and non-executable service-session SDK subjects are merged and admitted on exact main `d48122b`. The current pure-policy specification clarification reopens only its intersecting exact source closure. | Admit the current pure-policy closure, then publish the selected current packages and dogfood them from an unrelated consumer. |
+| RT-3 first-run and SDK workflow | The deny-network and non-executable service-session SDK subjects are admitted on exact main `d48122b`. The pure-policy specification clarification passed PR 30 and merged as `a94c21a`; its exact-main replay is in progress. | Complete the exact-main replay, then publish the selected current packages and dogfood them from an unrelated consumer. |
 | RT-4 network decision | The complete experiment and measurement series selected the connector-owned authenticated service session. | The decision authorizes RT-5; it does not provide production networking. |
-| RT-5 one authenticated service | Specification 0016, the closed non-executable plan/parser, and SDK construction are admitted on exact main `d48122b`. The separate pure-policy compiler is implemented and pending admission. Production execution remains denied. | Admit the pure policy, add formal evidence, then implement the connector, launcher, bypass corpus, receipts, verifiers, composition, acceptance, and one maintained real API client. |
+| RT-5 one authenticated service | Specification 0016 and the closed non-executable plan/parser and SDK are admitted on `d48122b`. The pure-policy compiler passed PR 30 and merged as `a94c21a`; its exact-main replay is in progress. A forward-only pure lifecycle and candidate Lean theorem are staged next. Production execution remains denied. | Complete pure-policy replay, admit the lifecycle and formal evidence, then implement the connector, launcher, bypass corpus, receipts, verifiers, composition, acceptance, and one maintained real API client. |
 | RT-6 evidence-based expansion | CPU and output-quota decisions are recorded; the performance baseline is complete. | Implement a deferred control only when observed demand satisfies its decision gate. |
 
 Milestone B, bounded local execution, is achieved. Milestone A is operationally
@@ -953,8 +954,9 @@ consumer-repository dogfood for all three packages. Branch completion is not
 registry publication. The RT-5 service-session construction surface passed PR
 29 exact-head run `35216056050`, merged as exact main `d48122b`, and passed
 exact-main run `35220098639`. The current pure-policy specification
-clarification changes the intersecting source closure and requires fresh
-admission; it does not reopen the already admitted construction behavior.
+clarification passed PR 30 run `35226379485` and merged as exact main
+`a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca`; exact-main run `35231003515` is
+in progress. It does not reopen the already admitted construction behavior.
 
 ## 10. Epic RT-4: network authority research and ADR
 

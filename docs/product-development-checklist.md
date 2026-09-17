@@ -1,14 +1,15 @@
 # Product development checklist
 
 - **Status:** active execution ledger
-- **Last updated:** 2026-09-17T14:15:00+01:00 (Europe/London, BST)
-- **Runtime baseline:** RT-8 is complete and the RT-5 non-executable contract
-  is admitted on exact unsigned main
-  `d48122b06c4880aeba45291a107c51ad381067a4`. The RT-5 contract passed PR 29
-  Verify run `35216056050` and exact-main Verify run `35220098639`.
+- **Last updated:** 2026-09-17T15:06:00+01:00 (Europe/London, BST)
+- **Runtime baseline:** RT-8 and the RT-5 non-executable contract are admitted.
+  The RT-5 pure-policy wave passed PR 30 Verify run `35226379485` and merged as
+  exact unsigned main `a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca`.
+  Exact-main Verify run `35231003515` is in progress.
 - **Active implementation wave:** RT-5 one authenticated service.
-- **Current batch:** admit the pure non-executable service-session policy
-  compiler before any connector or launcher effect is added.
+- **Current batch:** complete the pure-policy exact-main replay, then admit the
+  closed forward-only service lifecycle and its candidate formal model before
+  any connector or launcher effect is added.
 - **Parallel external gates:** RT-7 protected routes and current-integration
   source are merged; registry configuration, actual public package publication,
   anonymous observations, consumer dogfood, and a retained current-integration
@@ -399,8 +400,12 @@ draft, while no diagnostic output can become reusable production evidence.
   downgrade and substitution attacks. `PBR-NETWORK-032` and
   `PBR-NETWORK-033` now stage the non-executing parser, strict domain, pure
   compiler, and frozen plan and policy vectors. `PBR-NETWORK-032` is admitted
-  on exact main `d48122b`; the narrower `PBR-NETWORK-033` policy subject and
-  intersecting closures remain pending admission.
+  on exact main `d48122b`. `PBR-NETWORK-033` passed PR 30 run `35226379485`,
+  merged as `a94c21a`, and awaits exact-main run `35231003515`.
+- [ ] Admit the closed forward-only service lifecycle. `PBR-NETWORK-034` and
+  its exhaustive phase/event tests are staged on the current branch. Its Lean
+  theorem is a candidate until separately registered and admitted; neither
+  source executes a resolver, connector, TLS session, launcher, or child.
 - [ ] Model and prove the selected pure non-amplification, identity, and state
   transition properties in Lean where the subject is tractable.
 - [ ] Link selected pure Rust decisions to their formal models without
