@@ -31,6 +31,8 @@ class ServiceReceiptContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.success = vector("service-session-receipt-success")
         self.failure = vector("service-session-receipt-failure")
+        launcher = vector("service-launcher-install")
+        observation = vector("service-session-observation")
         self.bindings = {
             "expected_execution_id": bytes(range(16)),
             "expected_plan_sha256": bytes([0x81]) * 32,
@@ -38,17 +40,18 @@ class ServiceReceiptContractTests(unittest.TestCase):
             "expected_service_name": "api.anthropic.com",
             "expected_service_port": 443,
             "expected_tcb_identities": {
-                "connector-executable": bytes([0x21]) * 32,
-                "dns-resolver": bytes([0x31]) * 32,
-                "host-hardware-firmware": bytes([0x41]) * 32,
-                "linux-kernel": bytes([0x51]) * 32,
-                "tls-implementation": bytes([0x61]) * 32,
-                "tls-trust-roots": bytes([0x52]) * 32,
+                "connector-executable": launcher["service"]["connector"]["executable"]["sha256"],
+                "connector-runtime-closure": launcher["service"]["connector"]["runtime_closure_sha256"],
+                "tls-implementation": observation["tls"]["implementation_sha256"],
+                "tls-trust-roots": observation["tls"]["trust_root_set"]["sha256"],
             },
-            "install_request_sha256": digest("service-launcher-install"),
-            "installed_sha256": digest("service-launcher-installed"),
-            "release_sha256": digest("service-launcher-release"),
+            "install_request_cbor": payload("service-launcher-install"),
+            "installed_cbor": payload("service-launcher-installed"),
+            "release_cbor": payload("service-launcher-release"),
         }
+        self.install_request_sha256 = digest("service-launcher-install")
+        self.installed_sha256 = digest("service-launcher-installed")
+        self.release_sha256 = digest("service-launcher-release")
 
     def validate(self, value: dict) -> None:
         validate_receipt(value, **self.bindings)
@@ -73,6 +76,28 @@ class ServiceReceiptContractTests(unittest.TestCase):
             for name in ("service-session-receipt-success", "service-session-receipt-failure"):
                 for suffix in ("cbor.hex", "projection.json"):
                     self.assertEqual((directory / f"{name}.{suffix}").read_bytes(), (VECTOR_ROOT / f"{name}.{suffix}").read_bytes())
+
+    def test_coherent_launcher_session_substitution_is_rejected(self) -> None:
+        install = vector("service-launcher-install")
+        installed = vector("service-launcher-installed")
+        release = vector("service-launcher-release")
+        substituted_execution = bytes([0x91]) * 16
+        for message in (install, installed, release):
+            message["execution_id"] = substituted_execution
+        install_bytes = encode(install)
+        install_sha256 = hashlib.sha256(install_bytes).digest()
+        installed["install_request_sha256"] = install_sha256
+        release["install_request_sha256"] = install_sha256
+        substituted = dict(self.bindings)
+        substituted.update(
+            {
+                "install_request_cbor": install_bytes,
+                "installed_cbor": encode(installed),
+                "release_cbor": encode(release),
+            }
+        )
+        with self.assertRaises(ContractError):
+            validate_receipt(self.success, **substituted)
 
     def test_success_mutations_are_rejected_causally(self) -> None:
         cases = []
@@ -109,7 +134,9 @@ class ServiceReceiptContractTests(unittest.TestCase):
 
         add("nested-service-substitution", lambda value: mutate_nested(value, lambda nested: nested["service"].__setitem__("name", "other.example")))
         add("nested-connector-tcb-substitution", lambda value: mutate_nested(value, lambda nested: nested["connector"]["executable"].__setitem__("sha256", bytes(32))))
+        add("nested-connector-closure-substitution", lambda value: mutate_nested(value, lambda nested: nested["connector"].__setitem__("runtime_closure_sha256", bytes(32))))
         add("nested-resolver-tcb-substitution", lambda value: mutate_nested(value, lambda nested: nested["dns"]["configuration"].__setitem__("sha256", bytes(32))))
+        add("nested-tls-implementation-substitution", lambda value: mutate_nested(value, lambda nested: nested["tls"].__setitem__("implementation_sha256", bytes(32))))
         add("nested-trust-root-tcb-substitution", lambda value: mutate_nested(value, lambda nested: nested["tls"]["trust_root_set"].__setitem__("sha256", bytes(32))))
         add("nested-secret", lambda value: mutate_nested(value, lambda nested: nested.update({"credential_value": "canary-secret"})))
 
@@ -129,18 +156,19 @@ class ServiceReceiptContractTests(unittest.TestCase):
         add("reason-loss", lambda value: value["eligibility"]["reasons"].clear())
         add("reason-substitution", lambda value: value["result"].__setitem__("reason", "resolver-failed"))
         add("phase-substitution", lambda value: value["result"].__setitem__("phase", "active"))
+        add("clock-substitution", lambda value: value["result"].__setitem__("clock", "wall-clock"))
         add("execution-substitution", lambda value: value.__setitem__("execution_id", bytes(16)))
         add("plan-substitution", lambda value: value.__setitem__("plan_sha256", bytes(32)))
         add("policy-substitution", lambda value: value.__setitem__("policy_sha256", bytes(32)))
         add("service-substitution", lambda value: value["service"].__setitem__("name", "other.example"))
-        add("early-installed-boundary", lambda value: value["result"].update({"boundary_state": "installed", "installed_sha256": self.bindings["installed_sha256"]}))
+        add("early-installed-boundary", lambda value: value["result"].update({"boundary_state": "installed", "installed_sha256": self.installed_sha256}))
         add("uninstalled-identity", lambda value: value["result"].__setitem__("installed_sha256", bytes(32)))
-        add("pre-release-identity", lambda value: value["result"].__setitem__("release_sha256", self.bindings["release_sha256"]))
+        add("pre-release-identity", lambda value: value["result"].__setitem__("release_sha256", self.release_sha256))
         add("success-observation-on-failure", lambda value: value["result"].__setitem__("observation_sha256", bytes(32)))
         add("pre-release-child", lambda value: value["result"]["cleanup"].__setitem__("child", "reaped"))
         add("connector-loss", lambda value: value["result"]["cleanup"].__setitem__("connector", "not-started"))
         add("unreported-cleanup-failure", lambda value: value["result"]["cleanup"].__setitem__("channel", "cleanup-failed"))
-        add("false-cleanup-reason", lambda value: value["result"].update({"phase": "closing", "reason": "cleanup-failed"}))
+        add("false-cleanup-reason", lambda value: value["result"].__setitem__("reason", "cleanup-failed"))
 
         def post_release_substitution(value):
             value["result"].update(
@@ -148,13 +176,27 @@ class ServiceReceiptContractTests(unittest.TestCase):
                     "phase": "active",
                     "reason": "channel-lost",
                     "boundary_state": "installed",
-                    "installed_sha256": self.bindings["installed_sha256"],
+                    "installed_sha256": self.installed_sha256,
                     "release_sha256": bytes(32),
                 }
             )
             value["result"]["cleanup"]["child"] = "reaped"
 
         add("post-release-substitution", post_release_substitution)
+
+        def post_release_child_not_started(value):
+            value["result"].update(
+                {
+                    "phase": "active",
+                    "reason": "channel-lost",
+                    "boundary_state": "installed",
+                    "installed_sha256": self.installed_sha256,
+                    "release_sha256": self.release_sha256,
+                }
+            )
+            value["eligibility"]["reasons"] = ["network.channel-lost"]
+
+        add("post-release-child-not-started", post_release_child_not_started)
 
         for name, value in cases:
             with self.subTest(name=name), self.assertRaises(ContractError):
@@ -181,12 +223,19 @@ class ServiceReceiptContractTests(unittest.TestCase):
                 cleanup["channel"] = "closed"
                 if reason == "cleanup-failed":
                     cleanup["channel"] = "cleanup-failed"
+                if reason == "launcher-release-failed":
+                    value["result"].update(
+                        {
+                            "boundary_state": "installed",
+                            "installed_sha256": self.installed_sha256,
+                        }
+                    )
                 if phase in {"active", "closing"}:
                     value["result"].update(
                         {
                             "boundary_state": "installed",
-                            "installed_sha256": self.bindings["installed_sha256"],
-                            "release_sha256": self.bindings["release_sha256"],
+                            "installed_sha256": self.installed_sha256,
+                            "release_sha256": self.release_sha256,
                         }
                     )
                     cleanup["child"] = "reaped"
@@ -197,18 +246,18 @@ class ServiceReceiptContractTests(unittest.TestCase):
                     with self.subTest(reason=reason, phase=phase, expected="rejected"), self.assertRaises(ContractError):
                         self.validate(value)
 
-    def test_ready_failure_may_bind_an_installed_unreleased_boundary(self) -> None:
+    def test_ready_release_failure_binds_an_installed_unreleased_boundary(self) -> None:
         value = copy.deepcopy(self.failure)
         value["result"].update(
             {
                 "phase": "ready",
-                "reason": "launcher-install-failed",
+                "reason": "launcher-release-failed",
                 "boundary_state": "installed",
-                "installed_sha256": self.bindings["installed_sha256"],
+                "installed_sha256": self.installed_sha256,
                 "release_sha256": None,
             }
         )
-        value["eligibility"]["reasons"] = ["network.launcher-install-failed"]
+        value["eligibility"]["reasons"] = ["network.launcher-release-failed"]
         self.validate(value)
 
     def test_schema_is_closed_and_content_free(self) -> None:

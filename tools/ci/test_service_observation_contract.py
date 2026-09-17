@@ -54,6 +54,10 @@ def attempt_expired_endpoint(value: dict) -> None:
     value["traffic"]["closed_ns"] = 1_000_002_000
 
 
+def substitute_runtime_closure(value: dict) -> None:
+    value["connector"]["runtime_closure"][0]["sha256"] = bytes(32)
+
+
 class ServiceObservationContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.value = decode_strict(bytes.fromhex(VECTOR.read_text(encoding="ascii")))
@@ -108,7 +112,9 @@ class ServiceObservationContractTests(unittest.TestCase):
             "ttl-expiry-mismatch": lambda value: value["dns"]["answers"][0].__setitem__("expires_ns", 4_000),
             "attempt-expired-endpoint": attempt_expired_endpoint,
             "tls-name-mismatch": lambda value: value["tls"].__setitem__("service_name_verification", "mismatch"),
+            "tls-implementation-width": lambda value: value["tls"].__setitem__("implementation_sha256", bytes(31)),
             "tls-resumption": lambda value: value["tls"].__setitem__("session_resumption", "used"),
+            "connector-runtime-closure-substitution": substitute_runtime_closure,
             "excess-traffic": lambda value: value["traffic"].__setitem__("child_to_service_bytes", 2_000_000),
             "skipped-lifecycle": lambda value: value["lifecycle"].pop(2),
             "incomplete-cleanup": lambda value: value["cleanup"].__setitem__("connector", "running"),

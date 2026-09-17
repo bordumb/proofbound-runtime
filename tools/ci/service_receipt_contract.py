@@ -6,6 +6,10 @@ import hashlib
 
 from tools.ci.deterministic_cbor import CborError, decode_strict
 from tools.ci.encode_plan_v2 import encode
+from tools.ci.service_launcher_contract import (
+    ContractError as LauncherError,
+    validate_transcript,
+)
 from tools.ci.service_observation_contract import (
     ContractError as ObservationError,
     bounded_integer,
@@ -22,16 +26,11 @@ class ContractError(ValueError):
 
 REQUIRED_ASSUMPTIONS = [
     "PBR-DNS-AX-004",
-    "PBR-HOST-AX-002",
-    "PBR-LINUX-AX-001",
     "PBR-TLS-AX-005",
-    "PBR-TOOLCHAIN-AX-003",
 ]
 REQUIRED_TCB_ROLES = [
     "connector-executable",
-    "dns-resolver",
-    "host-hardware-firmware",
-    "linux-kernel",
+    "connector-runtime-closure",
     "tls-implementation",
     "tls-trust-roots",
 ]
@@ -41,6 +40,7 @@ FAILURE_PHASES = {
     "endpoints-exhausted": {"connecting"},
     "tls-authentication-failed": {"authenticating"},
     "launcher-install-failed": {"ready"},
+    "launcher-release-failed": {"ready"},
     "service-limit-exceeded": {"active"},
     "channel-lost": {"active", "closing"},
     "child-failed": {"active", "closing"},
@@ -96,11 +96,29 @@ def validate_receipt(
     expected_service_name: str,
     expected_service_port: int,
     expected_tcb_identities: dict[str, bytes],
-    install_request_sha256: bytes,
-    installed_sha256: bytes,
-    release_sha256: bytes,
+    install_request_cbor: bytes,
+    installed_cbor: bytes,
+    release_cbor: bytes,
 ) -> None:
     try:
+        launcher_messages = []
+        for context, payload in (
+            ("install request", install_request_cbor),
+            ("installed acknowledgement", installed_cbor),
+            ("release", release_cbor),
+        ):
+            if not isinstance(payload, bytes) or not 1 <= len(payload) <= 1_048_576:
+                raise ContractError(f"{context} bytes are outside the frame bound")
+            message = decode_strict(payload)
+            if encode(message) != payload:
+                raise ContractError(f"{context} bytes do not round trip canonically")
+            launcher_messages.append(message)
+        validate_transcript(launcher_messages)
+        install_request, _, _ = launcher_messages
+        install_request_sha256 = hashlib.sha256(install_request_cbor).digest()
+        installed_sha256 = hashlib.sha256(installed_cbor).digest()
+        release_sha256 = hashlib.sha256(release_cbor).digest()
+
         root = exact_keys(
             value,
             {
@@ -134,6 +152,13 @@ def validate_receipt(
             expected_service_port, 1, 65_535, "expected_service_port"
         ):
             raise ContractError("receipt does not bind the expected service")
+        launcher_service = install_request["service"]["service"]
+        if (
+            install_request["execution_id"] != execution_id
+            or install_request["policy_sha256"] != policy_sha256
+            or launcher_service != {"name": service_name, "port": service_port}
+        ):
+            raise ContractError("receipt context is inconsistent with the launcher request")
         if strict_strings(root["assumptions"], "assumptions") != REQUIRED_ASSUMPTIONS:
             raise ContractError("required assumptions are incomplete")
         tcb_identities = validate_tcb(
@@ -153,6 +178,7 @@ def validate_receipt(
                 service_name,
                 service_port,
                 tcb_identities,
+                install_request,
                 installed_sha256,
                 release_sha256,
             )
@@ -160,7 +186,7 @@ def validate_receipt(
             validate_failure(result, eligibility, installed_sha256, release_sha256)
         else:
             raise ContractError("result kind is unknown")
-    except ObservationError as error:
+    except (CborError, LauncherError, ObservationError) as error:
         raise ContractError(str(error)) from error
 
 
@@ -172,6 +198,7 @@ def validate_success(
     service_name: str,
     service_port: int,
     tcb_identities: dict[str, bytes],
+    install_request: dict,
     expected_installed_sha256: bytes,
     expected_release_sha256: bytes,
 ) -> None:
@@ -210,10 +237,34 @@ def validate_success(
         raise ContractError("observation execution or policy identity is substituted")
     if observation["service"] != {"name": service_name, "port": service_port}:
         raise ContractError("observation service is substituted")
+    service_binding = install_request["service"]
+    if observation["connector"]["executable"] != service_binding["connector"]["executable"]:
+        raise ContractError("observation connector executable is inconsistent with the launcher")
+    if observation["connector"]["runtime_closure_sha256"] != service_binding["connector"]["runtime_closure_sha256"]:
+        raise ContractError("observation connector closure is inconsistent with the launcher")
+    if observation["connector"]["process_generation"] != service_binding["connector"]["process_generation"]:
+        raise ContractError("observation connector generation is inconsistent with the launcher")
+    if observation["dns"]["selected_endpoint"] != service_binding["selected_endpoint"]:
+        raise ContractError("observation endpoint is inconsistent with the launcher")
+    if hashlib.sha256(encode(observation["dns"])).digest() != service_binding["dns_observation_sha256"]:
+        raise ContractError("DNS observation identity is inconsistent with the launcher")
+    if hashlib.sha256(encode(observation["tls"])).digest() != service_binding["tls_observation_sha256"]:
+        raise ContractError("TLS observation identity is inconsistent with the launcher")
+    if observation["limits"] != service_binding["limits"]:
+        raise ContractError("observation limits are inconsistent with the launcher")
+    if (
+        observation["channel"]["child_descriptor"] != service_binding["channel"]["child_descriptor"]
+        or observation["channel"]["channel_id"] != service_binding["channel"]["child_endpoint_id"]
+    ):
+        raise ContractError("observation channel is inconsistent with the launcher")
+    if observation["credential_source"] != service_binding["credential_source"]:
+        raise ContractError("observation credential source is inconsistent with the launcher")
     if observation["connector"]["executable"]["sha256"] != tcb_identities["connector-executable"]:
         raise ContractError("connector trusted computing base identity is inconsistent")
-    if observation["dns"]["configuration"]["sha256"] != tcb_identities["dns-resolver"]:
-        raise ContractError("resolver trusted computing base identity is inconsistent")
+    if observation["connector"]["runtime_closure_sha256"] != tcb_identities["connector-runtime-closure"]:
+        raise ContractError("connector closure trusted computing base identity is inconsistent")
+    if observation["tls"]["implementation_sha256"] != tcb_identities["tls-implementation"]:
+        raise ContractError("TLS implementation trusted computing base identity is inconsistent")
     if observation["tls"]["trust_root_set"]["sha256"] != tcb_identities["tls-trust-roots"]:
         raise ContractError("trust-root trusted computing base identity is inconsistent")
     if result["child_outcome"] != {"kind": "exited", "code": 0}:
@@ -230,7 +281,7 @@ def validate_failure(
         result,
         {
             "kind", "phase", "reason", "observed_ns", "boundary_state",
-            "installed_sha256", "release_sha256", "observation_sha256", "cleanup",
+            "clock", "installed_sha256", "release_sha256", "observation_sha256", "cleanup",
         },
         "result",
     )
@@ -238,6 +289,8 @@ def validate_failure(
     phase = result["phase"]
     if reason not in FAILURE_PHASES or phase not in FAILURE_PHASES[reason]:
         raise ContractError("failure reason is inconsistent with its phase")
+    if result["clock"] != "linux-monotonic":
+        raise ContractError("failure clock is unknown")
     bounded_integer(result["observed_ns"], 0, 2**64 - 1, "observed_ns")
     if result["observation_sha256"] is not None:
         raise ContractError("failed receipt cannot retain a success observation identity")
@@ -254,6 +307,10 @@ def validate_failure(
         raise ContractError("boundary state is unknown")
     if phase in {"created", "resolving", "connecting", "authenticating"} and boundary_state != "not-installed":
         raise ContractError("early failure claims an installed boundary")
+    if reason == "launcher-install-failed" and boundary_state != "not-installed":
+        raise ContractError("launcher installation failure claims an installed boundary")
+    if reason == "launcher-release-failed" and boundary_state != "installed":
+        raise ContractError("launcher release failure omits the installed boundary")
     if phase in {"active", "closing"}:
         if boundary_state != "installed":
             raise ContractError("post-release failure omits the installed boundary")
@@ -279,8 +336,12 @@ def validate_failure(
         raise ContractError("cleanup failure reason and observations disagree")
     if phase not in {"active", "closing"} and cleanup["child"] != "not-started":
         raise ContractError("pre-release failure claims a reaped child")
+    if phase in {"active", "closing"} and cleanup["child"] == "not-started":
+        raise ContractError("post-release failure claims that the child did not start")
     if phase != "created" and cleanup["connector"] == "not-started":
         raise ContractError("started connector is recorded as absent")
+    if phase == "created" and cleanup["connector"] != "not-started":
+        raise ContractError("unstarted connector is recorded as reaped")
 
     expected_reason = f"network.{reason}"
     if eligibility != {"status": "non-reusable", "reasons": [expected_reason]}:

@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import ipaddress
+import hashlib
 import re
+
+from tools.ci.encode_plan_v2 import encode
 
 
 class ContractError(ValueError):
@@ -121,7 +124,11 @@ def validate_observation(value: object) -> None:
     if lifecycle_times != sorted(lifecycle_times):
         raise ContractError("lifecycle times are not monotonic")
 
-    connector = exact_keys(root["connector"], {"executable", "runtime_closure", "process_generation"}, "connector")
+    connector = exact_keys(
+        root["connector"],
+        {"executable", "runtime_closure", "runtime_closure_sha256", "process_generation"},
+        "connector",
+    )
     artifact(connector["executable"], "connector-executable", "connector.executable")
     if not isinstance(connector["runtime_closure"], list):
         raise ContractError("connector.runtime_closure is not an array")
@@ -131,6 +138,10 @@ def validate_observation(value: object) -> None:
         closure_ids.append((item["sha256"], item["size"], item["mode"]))
     if closure_ids != sorted(set(closure_ids)):
         raise ContractError("connector runtime closure is not sorted and unique")
+    if fixed_bytes(connector["runtime_closure_sha256"], 32, "connector.runtime_closure_sha256") != hashlib.sha256(
+        encode(connector["runtime_closure"])
+    ).digest():
+        raise ContractError("connector runtime closure identity does not bind its exact bytes")
     bounded_integer(connector["process_generation"], 1, 2**64 - 1, "connector.process_generation")
 
     dns = exact_keys(
@@ -240,12 +251,13 @@ def validate_observation(value: object) -> None:
     tls = exact_keys(
         root["tls"],
         {
-            "version", "service_name_verification", "certificate_chain_sha256",
+            "implementation_sha256", "version", "service_name_verification", "certificate_chain_sha256",
             "trust_root_set", "revocation", "session_resumption", "early_data",
             "handshake_bytes", "authenticated_ns",
         },
         "tls",
     )
+    fixed_bytes(tls["implementation_sha256"], 32, "tls.implementation_sha256")
     if tls["version"] not in {"tls-1.2", "tls-1.3"} or tls["service_name_verification"] != "dns-san-exact-match":
         raise ContractError("TLS identity observation is not admitted")
     fixed_bytes(tls["certificate_chain_sha256"], 32, "tls.certificate_chain_sha256")

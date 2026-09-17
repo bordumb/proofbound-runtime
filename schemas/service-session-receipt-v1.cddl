@@ -32,6 +32,7 @@ failure = {
   "kind": "failed",
   "phase": phase,
   "reason": failure-reason,
+  "clock": "linux-monotonic",
   "observed_ns": uint64,
   "boundary_state": "not-installed" / "installed",
   "installed_sha256": bstr .size 32 / null,
@@ -45,7 +46,8 @@ phase = "created" / "resolving" / "connecting" / "authenticating" /
 
 failure-reason = "connector-start-failed" / "resolver-failed" /
   "endpoints-exhausted" / "tls-authentication-failed" /
-  "launcher-install-failed" / "service-limit-exceeded" / "channel-lost" /
+  "launcher-install-failed" / "launcher-release-failed" /
+  "service-limit-exceeded" / "channel-lost" /
   "child-failed" / "cleanup-failed" / "evidence-incomplete"
 
 cleanup = {

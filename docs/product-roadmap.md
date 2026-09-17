@@ -1067,7 +1067,7 @@ This epic exists only if RT-4 accepts a mechanism.
 successful session's policy, connector, bounded DNS and endpoint attempts,
 authenticated TLS result, registered channel, traffic counters, forward
 lifecycle, terminal cleanup, and credential-source identity. Its independent
-checker rejects 23 causal omission, substitution, expiry, bound, lifecycle, cleanup,
+checker rejects 25 causal omission, substitution, expiry, bound, lifecycle, cleanup,
 cross-service, and retained-content mutations. `PBR-NETWORK-035` is a Tier 1
 proposed source contract because its registered independent checker and causal
 mutation corpus exceed Tier 0. The fragment is not a production receipt,

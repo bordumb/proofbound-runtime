@@ -3143,6 +3143,38 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes only this review record. Any later
 subject change requires a new exact-head review.
 
+## RT-5 service-session receipt preliminary review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `3c3bcd3634d96cee367deafd1620197d5ac0f5ee`
+- **Reviewed head:** `425635b6757922ba22048c657a5514633d398f97`
+- **Branch:** `codex/rt5-receipt-contract`
+- **Method:** Complete exact-range static schema, vector, generator, checker,
+  mutation, claim, evidence-closure, CI-registration, specification, and
+  roadmap review. The reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review found six blockers. First, the canonical receipt and observation
+used different execution, policy, connector, and credential identities from
+the opaque launcher transcript digests, and the checker did not decode or
+cross-bind that transcript. Second, two required assumption identifiers did
+not exist and the claim closure registered no assumptions. Third,
+post-release failures could claim that the child never started. Fourth, the
+service-specific trusted-computing-base projection omitted the connector
+runtime closure, mislabeled the resolver configuration as the resolver, and
+did not bind the TLS implementation to a subject identity. Fifth, the false
+cleanup-reason mutation failed at an earlier boundary check instead of its
+intended guard. Sixth, the specification called an otherwise unbound `uint64`
+failure time monotonic.
+
+Production crates remained unchanged and rejected the proposed fragment. The
+pending non-production status, schema registration, CI registration, secret
+and content exclusion, canonical nested-observation validation, and basic
+reuse gates had no additional blocker. The corrected exact head requires a new
+independent review.
+
 ## RT-5 service launcher preliminary review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

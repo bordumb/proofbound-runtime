@@ -57,7 +57,7 @@ synthetic value.
 The `service-session-receipt-*` vectors freeze the proposed outer success and
 failure forms. Success is reusable only when it binds the exact execution
 context, launcher installation and release, canonical successful observation,
-complete assumption and trusted-computing-base inventories, and zero child
+complete service-specific assumption and trusted-computing-base projections, and zero child
 exit. Failure is always non-reusable and retains one typed phase, reason,
 boundary and release state, and cleanup result. Trusted-computing-base
 identities are fixed-size digests. Neither vector retains credential values or

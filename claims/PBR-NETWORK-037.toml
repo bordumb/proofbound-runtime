@@ -9,7 +9,10 @@ tier = 1
 evidence = [
   "independent-check:authenticated-service-receipt-contract",
 ]
-assumptions = []
+assumptions = [
+  "PBR-DNS-AX-004",
+  "PBR-TLS-AX-005",
+]
 open_obligations = [
   "Integrate the fragment into the production receipt producer and a separately implemented Rust verifier without sharing semantic implementation code.",
   "Define and admit generic composition and explicit consumer acceptance for service-session receipts without losing authority, failure, assumption, or trusted-computing-base fields.",
@@ -21,15 +24,21 @@ out_of_scope = [
   "Ambient networking, arbitrary protocols, multiple services, reconnect, redirects, proxies, or QUIC.",
 ]
 source_roots = [
+  "assumptions/PBR-DNS-AX-004.toml",
+  "assumptions/PBR-TLS-AX-005.toml",
   "claims/PBR-NETWORK-037.toml",
   "docs/specs/0016_authenticated_service_session.md",
   "proofbound/evidence/authenticated-service-receipt-contract.toml",
   "schemas/service-session-observation-v1.cddl",
+  "schemas/service-session-launcher-v1.cddl",
   "schemas/service-session-receipt-v1.cddl",
   "schemas/vectors/v2/README.md",
   "schemas/vectors/v2/service-launcher-install.cbor.hex",
+  "schemas/vectors/v2/service-launcher-install.projection.json",
   "schemas/vectors/v2/service-launcher-installed.cbor.hex",
+  "schemas/vectors/v2/service-launcher-installed.projection.json",
   "schemas/vectors/v2/service-launcher-release.cbor.hex",
+  "schemas/vectors/v2/service-launcher-release.projection.json",
   "schemas/vectors/v2/service-session-receipt-failure.cbor.hex",
   "schemas/vectors/v2/service-session-receipt-failure.projection.json",
   "schemas/vectors/v2/service-session-receipt-success.cbor.hex",
@@ -38,8 +47,10 @@ source_roots = [
   "tools/ci/deterministic_cbor.py",
   "tools/ci/encode_plan_v2.py",
   "tools/ci/generate_service_observation_v1_vector.py",
+  "tools/ci/generate_service_launcher_v1_vectors.py",
   "tools/ci/generate_service_receipt_v1_vectors.py",
   "tools/ci/service_observation_contract.py",
+  "tools/ci/service_launcher_contract.py",
   "tools/ci/service_receipt_contract.py",
   "tools/ci/test_service_receipt_contract.py",
 ]

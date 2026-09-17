@@ -385,13 +385,19 @@ The proposed outer fragment is
 execution, plan, compiled policy, service, and exact launcher install request.
 A reusable success also binds the installed acknowledgement, child release,
 canonical successful observation, and zero child exit. A failed form is always
-non-reusable. It retains a closed phase and reason, monotonic failure time,
+non-reusable. It retains a closed phase and reason, a reported Linux monotonic
+failure timestamp without claiming producer-side ordering at this contract wave,
 boundary-install state, child-release identity when release occurred, and
 terminal cleanup result. Post-release failures MUST bind the exact installed
 acknowledgement and release; pre-release failures MUST NOT claim a release.
-Assumption identifiers and trusted-computing-base roles are complete closed
-inventories. Trusted-computing-base identities are SHA-256 values so the
-fragment does not admit arbitrary retained identity text.
+Assumption identifiers and the service-specific trusted-computing-base
+projection are closed and complete for this fragment. They contain only the
+new DNS and TLS assumptions and the connector executable, connector runtime
+closure, TLS implementation, and TLS trust-root roles. The outer execution
+receipt still owns its existing host, kernel, toolchain, Runtime, launcher,
+filesystem, cgroup, and other base assumptions and roles. Service-specific identities are SHA-256 values so the
+fragment does not admit arbitrary retained identity text. The registered DNS
+and TLS assumptions are `PBR-DNS-AX-004` and `PBR-TLS-AX-005`.
 
 This fragment remains a proposed source contract. The production producer and
 independent Rust verifier reject it. The independent Python checker is a

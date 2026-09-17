@@ -2,6 +2,7 @@
 """Generate the proposed authenticated-service-session observation vector."""
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -30,6 +31,7 @@ def observation() -> dict:
         ("active", "begin-close", "closing", 8_000),
         ("closing", "close-complete", "closed", 9_000),
     ]
+    runtime_closure = [artifact("connector-runtime-library", 0x22, 131_072, 0o444)]
     return {
         "schema": "proofbound-runtime-service-session-observation/1",
         "service": {"name": "api.anthropic.com", "port": 443},
@@ -63,6 +65,7 @@ def observation() -> dict:
             "selected_endpoint": endpoint_1,
         },
         "tls": {
+            "implementation_sha256": bytes([0x53]) * 32,
             "version": "tls-1.3",
             "service_name_verification": "dns-san-exact-match",
             "certificate_chain_sha256": bytes([0x51]) * 32,
@@ -100,7 +103,8 @@ def observation() -> dict:
         "policy_sha256": bytes([0x71]) * 32,
         "connector": {
             "executable": artifact("connector-executable", 0x21, 65_536, 0o555),
-            "runtime_closure": [artifact("connector-runtime-library", 0x22, 131_072, 0o444)],
+            "runtime_closure": runtime_closure,
+            "runtime_closure_sha256": hashlib.sha256(encode(runtime_closure)).digest(),
             "process_generation": 1,
         },
         "credential_source": {

@@ -36,6 +36,7 @@ source_roots = [
   "tools/ci/deterministic_cbor.py",
   "tools/ci/encode_plan_v2.py",
   "tools/ci/generate_service_launcher_v1_vectors.py",
+  "tools/ci/generate_service_observation_v1_vector.py",
   "tools/ci/service_launcher_contract.py",
   "tools/ci/service_observation_contract.py",
   "tools/ci/test_service_launcher_contract.py",

@@ -1076,8 +1076,9 @@ shipping verifier, composition, acceptance, and artifact binding remain open.
 The current subject is a proposed deterministic-CBOR service-session receipt
 fragment and an independent Python semantic checker. Both success and failure
 bind the expected execution, plan, compiled policy, service, exact launcher
-install request, complete assumption identifiers, and the closed set of
-trusted-computing-base roles with fixed-size identity digests. Reusable success
+install request, complete registered assumption identifiers, and the closed
+service-specific trusted-computing-base projection with fixed-size identity
+digests. Reusable success
 also binds the exact installed acknowledgement, release message, canonical
 successful observation, and zero child exit.
 
