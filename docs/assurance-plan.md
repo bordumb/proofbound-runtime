@@ -1103,26 +1103,35 @@ release-artifact binding remain open.
 ## PBR-NETWORK-038
 
 The proposed connector engine is isolated in
-`crates/proofbound-runtime-connector`. Its resolver sends length-prefixed DNS
-queries only to the plan's numeric TCP resolver. The parser rejects transaction,
-question, truncation, status, compression-loop, name, address-length, zero-TTL,
-and trailing-data violations. It retains response identities instead of packet
-contents, builds one bounded loop-free CNAME chain, and sorts unique endpoints
-as canonical IPv4 followed by IPv6.
+`crates/proofbound-runtime-connector`. Its only setup input is one complete
+validated service authority, which remains attached to the resolution and TLS
+path. Its resolver sends length-prefixed DNS queries only to that authority's
+numeric TCP resolver under refreshed absolute deadlines. The parser rejects
+transaction, question, truncation, status, compression-loop, name,
+address-length, zero-TTL, CNAME-and-address conflict, and trailing-data
+violations. It retains response and CNAME identities instead of packet
+contents, propagates the shortest CNAME lifetime to endpoint eligibility, and
+sorts unique endpoints as canonical IPv4 followed by IPv6.
 
-The TLS path loads only caller-supplied PEM trust-root bytes, configures rustls
-with the declared minimum version, disables resumption and early data,
-authenticates the declared DNS service name, rejects expired answers and excess
-handshake bytes, and retains a length-delimited peer-chain identity. The
+The TLS path loads only caller-supplied PEM trust-root bytes, selects rustls's
+ring provider explicitly, configures the declared minimum version, disables
+resumption and early data, and requires an exact non-wildcard leaf DNS SAN after
+ordinary chain and name validation. It rejects expired answers, absolute setup
+deadline expiry, and excess handshake bytes, and retains a length-delimited
+peer-chain identity. The
 channel path treats application bytes as opaque, applies independent
 directional plaintext limits and one session deadline, uses no reconnect, and
 does not interpret requests or responses.
 
-This is Tier 0 source evidence. The production CLI still rejects the
-service-session authority. The source tests do not establish behavior of a
-resolver, TLS peer, trust-root artifact binding, connector process, launcher, child filter, cleanup path,
-receipt producer, verifier, or release artifact. Those obligations remain
-explicit and block product availability.
+This is Tier 0 source evidence. Registered falsifiers cover complete-authority
+retention, DNS transaction and TTL substitution, CNAME conflict and lifetime,
+wildcard-name rejection, explicit provider selection, deadline error typing,
+trust-root failure, address ordering, and closed error classes. They do not
+establish behavior of an external resolver or TLS peer, trust-root artifact
+binding, a connector process, launcher, child filter, cleanup path, receipt
+producer, verifier, or release artifact. The production CLI still rejects the
+service-session authority. Those obligations remain explicit and block product
+availability.
 
 ## Bounded-domain declaration guard
 

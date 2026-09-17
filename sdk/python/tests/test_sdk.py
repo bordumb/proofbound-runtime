@@ -179,6 +179,12 @@ class PythonSdkTests(unittest.TestCase):
         with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
             build_plan(**plan)
 
+        invalid = service_network()
+        invalid["limits"]["dns_messages"] = 1
+        plan["network"] = invalid
+        with self.assertRaisesRegex(SdkError, "sdk.plan.network-invalid"):
+            build_plan(**plan)
+
     def test_result_projection_is_closed(self) -> None:
         result = parse_run_result(RESULT)
         self.assertEqual(result.receipt, "receipt.cbor")

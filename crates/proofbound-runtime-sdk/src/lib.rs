@@ -473,7 +473,7 @@ fn validate_network_input(
         || limits.session_time_ms == 0
         || limits.child_to_service_bytes == 0
         || limits.service_to_child_bytes == 0
-        || limits.dns_messages == 0
+        || limits.dns_messages < 2
         || limits.endpoint_attempts == 0
         || limits.tls_handshake_bytes == 0
         || limits.endpoint_attempts > session.resolution.maximum_answer_count
@@ -907,6 +907,19 @@ mod tests {
             unreachable!()
         };
         invalid.limits.setup_time_ms = invalid.resolution.resolution_deadline_ms - 1;
+        assert_eq!(
+            PlanV2::new_with_network(
+                input.clone(),
+                NetworkAuthorityV2Input::AuthenticatedServiceSession(invalid)
+            ),
+            Err(SdkError::PlanNetwork)
+        );
+
+        let NetworkAuthorityV2Input::AuthenticatedServiceSession(mut invalid) = service_session()
+        else {
+            unreachable!()
+        };
+        invalid.limits.dns_messages = 1;
         assert_eq!(
             PlanV2::new_with_network(
                 input,

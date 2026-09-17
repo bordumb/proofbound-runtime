@@ -6,7 +6,8 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, TcpStream};
 use std::time::{Duration, Instant};
 
 use proofbound_runtime_core::{
-    ResolutionPolicy, ResolverAddress, ServiceName, Sha256Digest, TcpPort,
+    AuthenticatedServiceSession, ResolutionPolicy, ResolverAddress, ServiceName, Sha256Digest,
+    TcpPort,
 };
 use sha2::{Digest as _, Sha256};
 
@@ -55,6 +56,48 @@ pub struct DnsAnswer {
     expires_ns: u64,
 }
 
+/// Records one validated CNAME link and its effective lifetime.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DnsCnameObservation {
+    owner: ServiceName,
+    target: ServiceName,
+    message_identity: Sha256Digest,
+    ttl_seconds: u32,
+    expires_ns: u64,
+}
+
+impl DnsCnameObservation {
+    /// Returns the alias owner name.
+    #[must_use]
+    pub const fn owner(&self) -> &ServiceName {
+        &self.owner
+    }
+
+    /// Returns the alias target name.
+    #[must_use]
+    pub const fn target(&self) -> &ServiceName {
+        &self.target
+    }
+
+    /// Returns the DNS response identity that supplied the alias.
+    #[must_use]
+    pub const fn message_identity(&self) -> Sha256Digest {
+        self.message_identity
+    }
+
+    /// Returns the positive alias TTL in seconds.
+    #[must_use]
+    pub const fn ttl_seconds(&self) -> u32 {
+        self.ttl_seconds
+    }
+
+    /// Returns the connector-relative monotonic alias expiry time.
+    #[must_use]
+    pub const fn expires_ns(&self) -> u64 {
+        self.expires_ns
+    }
+}
+
 impl DnsAnswer {
     /// Returns the terminal DNS owner name.
     #[must_use]
@@ -97,24 +140,23 @@ impl DnsAnswer {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DnsResolution {
     started: Instant,
-    port: TcpPort,
-    attempt_deadline_ms: u64,
+    authority: AuthenticatedServiceSession,
     messages: Vec<DnsMessageObservation>,
-    cname_chain: Vec<ServiceName>,
+    cname_chain: Vec<DnsCnameObservation>,
     answers: Vec<DnsAnswer>,
 }
 
 impl DnsResolution {
+    /// Returns the complete service authority that produced this resolution.
+    #[must_use]
+    pub const fn authority(&self) -> &AuthenticatedServiceSession {
+        &self.authority
+    }
+
     /// Returns the declared service port.
     #[must_use]
     pub const fn port(&self) -> TcpPort {
-        self.port
-    }
-
-    /// Returns the per-endpoint connection deadline in milliseconds.
-    #[must_use]
-    pub const fn attempt_deadline_ms(&self) -> u64 {
-        self.attempt_deadline_ms
+        self.authority.port()
     }
 
     /// Returns every observed DNS response in order.
@@ -123,9 +165,11 @@ impl DnsResolution {
         &self.messages
     }
 
-    /// Returns the complete nonempty service-to-terminal CNAME chain.
+    /// Returns the validated service-to-terminal alias links.
+    ///
+    /// The result is empty when the declared service has direct address data.
     #[must_use]
-    pub fn cname_chain(&self) -> &[ServiceName] {
+    pub fn cname_chain(&self) -> &[DnsCnameObservation] {
         &self.cname_chain
     }
 
@@ -210,12 +254,9 @@ impl std::error::Error for DnsError {}
 /// The returned set is sorted as IPv4 then IPv6 in ascending network-byte
 /// order. This function does not consult the system resolver, host files,
 /// search domains, proxies, or environment configuration.
-pub fn resolve_service(
-    service: &ServiceName,
-    port: TcpPort,
-    policy: &ResolutionPolicy,
-    maximum_messages: u16,
-) -> Result<DnsResolution, DnsError> {
+pub fn resolve_service(authority: &AuthenticatedServiceSession) -> Result<DnsResolution, DnsError> {
+    let service = authority.service();
+    let policy = authority.resolution();
     let started = Instant::now();
     let deadline = started
         .checked_add(Duration::from_millis(policy.resolution_deadline_ms()))
@@ -224,13 +265,16 @@ pub fn resolve_service(
         started,
         deadline,
         policy,
-        maximum_messages,
+        maximum_messages: authority.limits().dns_messages(),
         messages: Vec::new(),
     };
     let ipv4 = resolve_record_type(&mut state, service, DNS_TYPE_A)?;
     let ipv6 = resolve_record_type(&mut state, service, DNS_TYPE_AAAA)?;
     let chain = reconcile_chains(service, &ipv4, &ipv6, policy.maximum_cname_depth())?;
-    let terminal = chain.last().ok_or(DnsError::InvalidCnameChain)?;
+    let terminal = chain
+        .last()
+        .map(DnsCnameObservation::target)
+        .unwrap_or(service);
 
     let mut answers = ipv4
         .answers
@@ -253,8 +297,7 @@ pub fn resolve_service(
 
     Ok(DnsResolution {
         started,
-        port,
-        attempt_deadline_ms: policy.attempt_deadline_ms(),
+        authority: authority.clone(),
         messages: state.messages,
         cname_chain: chain,
         answers,
@@ -271,7 +314,7 @@ struct ResolverState<'a> {
 
 #[derive(Default)]
 struct RecordResolution {
-    chain: Vec<ServiceName>,
+    chain: Vec<DnsCnameObservation>,
     answers: Vec<DnsAnswer>,
 }
 
@@ -280,40 +323,41 @@ fn resolve_record_type(
     service: &ServiceName,
     record_type: u16,
 ) -> Result<RecordResolution, DnsError> {
-    let mut chain = vec![service.clone()];
+    let mut current = service.clone();
+    let mut chain = Vec::new();
     let mut seen = BTreeSet::from([service.as_str().to_owned()]);
     loop {
-        if chain.len().saturating_sub(1) > usize::from(state.policy.maximum_cname_depth()) {
+        if chain.len() > usize::from(state.policy.maximum_cname_depth()) {
             return Err(DnsError::InvalidCnameChain);
         }
-        let current = chain.last().ok_or(DnsError::InvalidCnameChain)?.clone();
         let response = exchange_query(state, &current, record_type)?;
-        let mut answers = response
-            .addresses
-            .into_iter()
-            .filter(|answer| answer.name == current)
-            .collect::<Vec<_>>();
+        let (mut answers, alias) = validated_owner_records(response, &current)?;
         if !answers.is_empty() {
+            if answers.len() > usize::from(state.policy.maximum_answer_count()) {
+                return Err(DnsError::InvalidAnswerSet);
+            }
+            apply_chain_expiry(&mut answers, &chain);
             answers.sort_unstable_by(|left, right| {
                 address_key(left.address).cmp(&address_key(right.address))
             });
             answers.dedup_by(|left, right| left.address == right.address);
             return Ok(RecordResolution { chain, answers });
         }
-        let Some(targets) = response.cnames.get(&current) else {
+        let Some(record) = alias else {
             return Ok(RecordResolution {
                 chain,
                 answers: Vec::new(),
             });
         };
-        if targets.len() != 1 {
+        if chain.len() >= usize::from(state.policy.maximum_cname_depth()) {
             return Err(DnsError::InvalidCnameChain);
         }
-        let next = targets[0].clone();
+        let next = record.target.clone();
         if !seen.insert(next.as_str().to_owned()) {
             return Err(DnsError::InvalidCnameChain);
         }
-        chain.push(next);
+        chain.push(record);
+        current = next;
     }
 }
 
@@ -322,34 +366,99 @@ fn reconcile_chains(
     ipv4: &RecordResolution,
     ipv6: &RecordResolution,
     maximum_depth: u16,
-) -> Result<Vec<ServiceName>, DnsError> {
+) -> Result<Vec<DnsCnameObservation>, DnsError> {
     let chain = if ipv4.answers.is_empty() {
         &ipv6.chain
     } else if ipv6.answers.is_empty() {
         &ipv4.chain
-    } else if ipv4.chain == ipv6.chain {
+    } else if same_cname_path(&ipv4.chain, &ipv6.chain) {
         &ipv4.chain
     } else {
         return Err(DnsError::InvalidCnameChain);
     };
-    if chain.first() != Some(service)
-        || chain.is_empty()
-        || chain.len().saturating_sub(1) > usize::from(maximum_depth)
+    if chain.len() > usize::from(maximum_depth)
+        || chain
+            .first()
+            .is_some_and(|record| record.owner() != service)
     {
         return Err(DnsError::InvalidCnameChain);
     }
     for candidate in [&ipv4.chain, &ipv6.chain] {
-        if candidate.len() > 1 && candidate != chain {
+        if !candidate.is_empty() && !same_cname_path(candidate, chain) {
             return Err(DnsError::InvalidCnameChain);
         }
     }
-    Ok(chain.clone())
+    merge_cname_observations(&ipv4.chain, &ipv6.chain)
+}
+
+fn same_cname_path(left: &[DnsCnameObservation], right: &[DnsCnameObservation]) -> bool {
+    left.len() == right.len()
+        && left
+            .iter()
+            .zip(right)
+            .all(|(left, right)| left.owner == right.owner && left.target == right.target)
+}
+
+fn merge_cname_observations(
+    ipv4: &[DnsCnameObservation],
+    ipv6: &[DnsCnameObservation],
+) -> Result<Vec<DnsCnameObservation>, DnsError> {
+    if ipv4.is_empty() {
+        return Ok(ipv6.to_vec());
+    }
+    if ipv6.is_empty() {
+        return Ok(ipv4.to_vec());
+    }
+    if !same_cname_path(ipv4, ipv6) {
+        return Err(DnsError::InvalidCnameChain);
+    }
+    Ok(ipv4
+        .iter()
+        .zip(ipv6)
+        .map(|(ipv4, ipv6)| {
+            if ipv4.expires_ns <= ipv6.expires_ns {
+                ipv4.clone()
+            } else {
+                ipv6.clone()
+            }
+        })
+        .collect())
 }
 
 #[derive(Debug, Eq, PartialEq)]
 struct ParsedResponse {
-    cnames: BTreeMap<ServiceName, Vec<ServiceName>>,
+    cnames: BTreeMap<ServiceName, Vec<DnsCnameObservation>>,
     addresses: Vec<DnsAnswer>,
+}
+
+fn validated_owner_records(
+    response: ParsedResponse,
+    current: &ServiceName,
+) -> Result<(Vec<DnsAnswer>, Option<DnsCnameObservation>), DnsError> {
+    let answers = response
+        .addresses
+        .into_iter()
+        .filter(|answer| &answer.name == current)
+        .collect::<Vec<_>>();
+    let aliases = response.cnames.get(current);
+    if !answers.is_empty() && aliases.is_some_and(|records| !records.is_empty()) {
+        return Err(DnsError::InvalidCnameChain);
+    }
+    let alias = match aliases {
+        None => None,
+        Some(records) if records.is_empty() => None,
+        Some(records) if records.len() == 1 => Some(records[0].clone()),
+        Some(_) => return Err(DnsError::InvalidCnameChain),
+    };
+    Ok((answers, alias))
+}
+
+fn apply_chain_expiry(answers: &mut [DnsAnswer], chain: &[DnsCnameObservation]) {
+    if let Some(expiry) = chain.iter().map(DnsCnameObservation::expires_ns).min() {
+        for answer in answers {
+            answer.expires_ns = answer.expires_ns.min(expiry);
+        }
+    }
 }
 
 fn exchange_query(
@@ -362,25 +471,20 @@ fn exchange_query(
     }
     let transaction = random_transaction_id()?;
     let query = encode_query(transaction, name, record_type)?;
-    let timeout = remaining_timeout(state.deadline, state.policy.attempt_deadline_ms())?;
+    let attempt_deadline = Instant::now()
+        .checked_add(Duration::from_millis(state.policy.attempt_deadline_ms()))
+        .map(|deadline| deadline.min(state.deadline))
+        .ok_or(DnsError::Deadline)?;
+    let timeout = remaining_until(attempt_deadline)?;
     let endpoint = resolver_socket(state.policy);
     let mut stream = TcpStream::connect_timeout(&endpoint, timeout)
         .map_err(|_| DnsError::ResolverUnavailable)?;
-    let remaining = remaining_timeout(state.deadline, state.policy.attempt_deadline_ms())?;
-    stream
-        .set_read_timeout(Some(remaining))
-        .and_then(|()| stream.set_write_timeout(Some(remaining)))
-        .map_err(|_| DnsError::ResolverUnavailable)?;
     let length = u16::try_from(query.len()).map_err(|_| DnsError::RequestFailed)?;
-    stream
-        .write_all(&length.to_be_bytes())
-        .and_then(|()| stream.write_all(&query))
-        .map_err(|_| DnsError::RequestFailed)?;
+    write_all_until(&mut stream, &length.to_be_bytes(), attempt_deadline)?;
+    write_all_until(&mut stream, &query, attempt_deadline)?;
 
     let mut length_bytes = [0_u8; 2];
-    stream
-        .read_exact(&mut length_bytes)
-        .map_err(|_| DnsError::ResponseFailed)?;
+    read_exact_until(&mut stream, &mut length_bytes, attempt_deadline)?;
     let response_length = usize::from(u16::from_be_bytes(length_bytes));
     if response_length == 0
         || u64::try_from(response_length).unwrap_or(u64::MAX)
@@ -389,10 +493,8 @@ fn exchange_query(
         return Err(DnsError::ResponseTooLarge);
     }
     let mut response = vec![0_u8; response_length];
-    stream
-        .read_exact(&mut response)
-        .map_err(|_| DnsError::ResponseFailed)?;
-    if Instant::now() >= state.deadline {
+    read_exact_until(&mut stream, &mut response, attempt_deadline)?;
+    if Instant::now() >= attempt_deadline {
         return Err(DnsError::Deadline);
     }
     let observed_ns = elapsed_ns(state.started);
@@ -413,15 +515,78 @@ fn exchange_query(
     Ok(parsed)
 }
 
-fn remaining_timeout(deadline: Instant, attempt_ms: u64) -> Result<Duration, DnsError> {
+fn remaining_until(deadline: Instant) -> Result<Duration, DnsError> {
     let remaining = deadline
         .checked_duration_since(Instant::now())
         .ok_or(DnsError::Deadline)?;
-    let timeout = remaining.min(Duration::from_millis(attempt_ms));
-    if timeout.is_zero() {
+    if remaining.is_zero() {
         Err(DnsError::Deadline)
     } else {
-        Ok(timeout)
+        Ok(remaining)
+    }
+}
+
+fn write_all_until(
+    stream: &mut TcpStream,
+    mut input: &[u8],
+    deadline: Instant,
+) -> Result<(), DnsError> {
+    while !input.is_empty() {
+        let remaining = remaining_until(deadline)?;
+        stream
+            .set_write_timeout(Some(remaining))
+            .map_err(|_| DnsError::RequestFailed)?;
+        let written = stream.write(input).map_err(|error| {
+            if matches!(
+                error.kind(),
+                std::io::ErrorKind::TimedOut | std::io::ErrorKind::WouldBlock
+            ) {
+                DnsError::Deadline
+            } else {
+                DnsError::RequestFailed
+            }
+        })?;
+        if written == 0 {
+            return Err(DnsError::RequestFailed);
+        }
+        input = &input[written..];
+    }
+    if Instant::now() >= deadline {
+        Err(DnsError::Deadline)
+    } else {
+        Ok(())
+    }
+}
+
+fn read_exact_until(
+    stream: &mut TcpStream,
+    mut output: &mut [u8],
+    deadline: Instant,
+) -> Result<(), DnsError> {
+    while !output.is_empty() {
+        let remaining = remaining_until(deadline)?;
+        stream
+            .set_read_timeout(Some(remaining))
+            .map_err(|_| DnsError::ResponseFailed)?;
+        let read = stream.read(output).map_err(|error| {
+            if matches!(
+                error.kind(),
+                std::io::ErrorKind::TimedOut | std::io::ErrorKind::WouldBlock
+            ) {
+                DnsError::Deadline
+            } else {
+                DnsError::ResponseFailed
+            }
+        })?;
+        if read == 0 {
+            return Err(DnsError::ResponseFailed);
+        }
+        output = &mut output[read..];
+    }
+    if Instant::now() >= deadline {
+        Err(DnsError::Deadline)
+    } else {
+        Ok(())
     }
 }
 
@@ -525,7 +690,14 @@ fn parse_response(
                     }
                     let target =
                         ServiceName::new(target).map_err(|_| DnsError::MalformedResponse)?;
-                    cnames.entry(owner).or_default().push(target);
+                    let record = cname_observation(
+                        owner.clone(),
+                        target,
+                        message_identity,
+                        ttl,
+                        observed_ns,
+                    )?;
+                    cnames.entry(owner).or_default().push(record);
                 }
                 DNS_TYPE_A if expected_type == DNS_TYPE_A && data_length == 4 => {
                     let raw: [u8; 4] = bytes[cursor..data_end]
@@ -563,10 +735,31 @@ fn parse_response(
         return Err(DnsError::MalformedResponse);
     }
     for targets in cnames.values_mut() {
-        targets.sort_unstable();
-        targets.dedup();
+        targets.sort_unstable_by(|left, right| {
+            left.target
+                .cmp(&right.target)
+                .then(left.expires_ns.cmp(&right.expires_ns))
+        });
+        targets.dedup_by(|left, right| left.target == right.target);
     }
     Ok(ParsedResponse { cnames, addresses })
+}
+
+fn cname_observation(
+    owner: ServiceName,
+    target: ServiceName,
+    message_identity: Sha256Digest,
+    ttl_seconds: u32,
+    observed_ns: u64,
+) -> Result<DnsCnameObservation, DnsError> {
+    let expires_ns = expiry(ttl_seconds, observed_ns)?;
+    Ok(DnsCnameObservation {
+        owner,
+        target,
+        message_identity,
+        ttl_seconds,
+        expires_ns,
+    })
 }
 
 fn answer(
@@ -576,13 +769,7 @@ fn answer(
     ttl_seconds: u32,
     observed_ns: u64,
 ) -> Result<DnsAnswer, DnsError> {
-    if ttl_seconds == 0 {
-        return Err(DnsError::ExpiredAnswer);
-    }
-    let expires_ns = u64::from(ttl_seconds)
-        .checked_mul(1_000_000_000)
-        .and_then(|ttl| observed_ns.checked_add(ttl))
-        .ok_or(DnsError::ExpiredAnswer)?;
+    let expires_ns = expiry(ttl_seconds, observed_ns)?;
     Ok(DnsAnswer {
         name,
         address,
@@ -590,6 +777,16 @@ fn answer(
         ttl_seconds,
         expires_ns,
     })
+}
+
+fn expiry(ttl_seconds: u32, observed_ns: u64) -> Result<u64, DnsError> {
+    if ttl_seconds == 0 {
+        return Err(DnsError::ExpiredAnswer);
+    }
+    u64::from(ttl_seconds)
+        .checked_mul(1_000_000_000)
+        .and_then(|ttl| observed_ns.checked_add(ttl))
+        .ok_or(DnsError::ExpiredAnswer)
 }
 
 fn read_name(bytes: &[u8], start: usize) -> Result<(String, usize), DnsError> {
@@ -681,25 +878,93 @@ fn address_key(address: IpAddr) -> (u8, [u8; 16]) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proofbound_runtime_core::{
+        AddressOrder, ChildChannelDescriptor, LocalChannelProtocol, MinimumTlsVersion,
+        NetworkSupportPath, ResolverEndpoint, RevocationPolicy, ServiceNameVerification,
+        ServiceSessionLimits, TlsPolicy,
+    };
 
-    fn response(transaction: u16, answer_type: u16, answer: &[u8], ttl: u32) -> Vec<u8> {
+    fn authority(service: &str, dns_messages: u16) -> AuthenticatedServiceSession {
+        let service = ServiceName::new(service).expect("valid service");
+        let resolution = ResolutionPolicy::new(
+            ResolverEndpoint::new(
+                ResolverAddress::Ipv4([192, 0, 2, 53]),
+                TcpPort::new(53).expect("valid resolver port"),
+            ),
+            NetworkSupportPath::new("/etc/proofbound/resolver.conf").expect("valid path"),
+            4,
+            4,
+            4096,
+            1000,
+            100,
+            AddressOrder::Ipv4ThenIpv6Lexicographic,
+        )
+        .expect("valid resolution policy");
+        let tls = TlsPolicy::new(
+            NetworkSupportPath::new("/etc/proofbound/roots.pem").expect("valid path"),
+            MinimumTlsVersion::Tls13,
+            ServiceNameVerification::DnsSanExact,
+            RevocationPolicy::NotCheckedRecordedAssumption,
+        );
+        let limits = ServiceSessionLimits::new(2000, 3000, 4096, 4096, dns_messages, 4, 262_144, 4)
+            .expect("valid limits");
+        AuthenticatedServiceSession::new(
+            service,
+            TcpPort::new(443).expect("valid service port"),
+            resolution,
+            tls,
+            limits,
+            NetworkSupportPath::new("/usr/libexec/proofbound-connector").expect("valid path"),
+            vec![NetworkSupportPath::new("/usr/lib").expect("valid path")],
+            LocalChannelProtocol::UnixStreamV1,
+            ChildChannelDescriptor::new(9).expect("valid descriptor"),
+            None,
+        )
+        .expect("valid authority")
+    }
+
+    fn encoded_name(name: &str) -> Vec<u8> {
+        let mut encoded = Vec::new();
+        for label in name.split('.') {
+            encoded.push(label.len() as u8);
+            encoded.extend_from_slice(label.as_bytes());
+        }
+        encoded.push(0);
+        encoded
+    }
+
+    fn response_with_records(
+        transaction: u16,
+        question_type: u16,
+        records: &[(u16, u32, Vec<u8>)],
+    ) -> Vec<u8> {
         let name = ServiceName::new("api.example.com").expect("valid name");
-        let query = encode_query(transaction, &name, answer_type).expect("query encodes");
+        let query = encode_query(transaction, &name, question_type).expect("query encodes");
         let mut message = Vec::new();
         message.extend_from_slice(&transaction.to_be_bytes());
         message.extend_from_slice(&0x8180_u16.to_be_bytes());
         message.extend_from_slice(&1_u16.to_be_bytes());
-        message.extend_from_slice(&1_u16.to_be_bytes());
+        message.extend_from_slice(&(records.len() as u16).to_be_bytes());
         message.extend_from_slice(&0_u16.to_be_bytes());
         message.extend_from_slice(&0_u16.to_be_bytes());
         message.extend_from_slice(&query[DNS_HEADER_BYTES..]);
-        message.extend_from_slice(&[0xc0, 0x0c]);
-        message.extend_from_slice(&answer_type.to_be_bytes());
-        message.extend_from_slice(&DNS_CLASS_IN.to_be_bytes());
-        message.extend_from_slice(&ttl.to_be_bytes());
-        message.extend_from_slice(&(answer.len() as u16).to_be_bytes());
-        message.extend_from_slice(answer);
+        for (record_type, ttl, data) in records {
+            message.extend_from_slice(&[0xc0, 0x0c]);
+            message.extend_from_slice(&record_type.to_be_bytes());
+            message.extend_from_slice(&DNS_CLASS_IN.to_be_bytes());
+            message.extend_from_slice(&ttl.to_be_bytes());
+            message.extend_from_slice(&(data.len() as u16).to_be_bytes());
+            message.extend_from_slice(data);
+        }
         message
+    }
+
+    fn response(transaction: u16, answer_type: u16, answer: &[u8], ttl: u32) -> Vec<u8> {
+        response_with_records(
+            transaction,
+            answer_type,
+            &[(answer_type, ttl, answer.to_vec())],
+        )
     }
 
     #[test]
@@ -743,6 +1008,71 @@ mod tests {
     }
 
     #[test]
+    fn rejects_zero_cname_ttl() {
+        let transaction = 0x1234;
+        let bytes = response_with_records(
+            transaction,
+            DNS_TYPE_A,
+            &[(DNS_TYPE_CNAME, 0, encoded_name("edge.example.com"))],
+        );
+        let service = ServiceName::new("api.example.com").expect("valid name");
+        assert_eq!(
+            parse_response(&bytes, transaction, &service, DNS_TYPE_A, digest(&bytes), 5),
+            Err(DnsError::ExpiredAnswer)
+        );
+    }
+
+    #[test]
+    fn rejects_cname_and_address_coexistence() {
+        let transaction = 0x1234;
+        let bytes = response_with_records(
+            transaction,
+            DNS_TYPE_A,
+            &[
+                (DNS_TYPE_CNAME, 30, encoded_name("edge.example.com")),
+                (DNS_TYPE_A, 60, vec![192, 0, 2, 7]),
+            ],
+        );
+        let service = ServiceName::new("api.example.com").expect("valid name");
+        let parsed = parse_response(&bytes, transaction, &service, DNS_TYPE_A, digest(&bytes), 5)
+            .expect("wire response is structurally valid");
+        assert_eq!(
+            validated_owner_records(parsed, &service),
+            Err(DnsError::InvalidCnameChain)
+        );
+    }
+
+    #[test]
+    fn cname_ttl_limits_terminal_answer_expiry() {
+        let owner = ServiceName::new("api.example.com").expect("valid owner");
+        let target = ServiceName::new("edge.example.com").expect("valid target");
+        let identity = digest(b"dns-message");
+        let chain = vec![
+            cname_observation(owner, target.clone(), identity, 5, 10).expect("CNAME is valid"),
+        ];
+        let mut answers = vec![
+            answer(
+                target,
+                "192.0.2.7".parse().expect("valid address"),
+                identity,
+                60,
+                10,
+            )
+            .expect("answer is valid"),
+        ];
+        apply_chain_expiry(&mut answers, &chain);
+        assert_eq!(answers[0].expires_ns(), 5_000_000_010);
+    }
+
+    #[test]
+    fn expired_absolute_deadline_fails_closed() {
+        assert_eq!(
+            remaining_until(Instant::now() - Duration::from_millis(1)),
+            Err(DnsError::Deadline)
+        );
+    }
+
+    #[test]
     fn rejects_compression_pointer_loop() {
         let bytes = [0xc0, 0x00];
         assert_eq!(read_name(&bytes, 0), Err(DnsError::MalformedResponse));
@@ -766,5 +1096,20 @@ mod tests {
                 "2001:db8::2".parse().unwrap(),
             ]
         );
+    }
+
+    #[test]
+    fn resolution_retains_complete_service_and_limit_authority() {
+        let authority = authority("api.example.com", 4);
+        let resolution = DnsResolution {
+            started: Instant::now(),
+            authority: authority.clone(),
+            messages: Vec::new(),
+            cname_chain: Vec::new(),
+            answers: Vec::new(),
+        };
+        assert_eq!(resolution.authority(), &authority);
+        assert_eq!(resolution.authority().service().as_str(), "api.example.com");
+        assert_eq!(resolution.authority().limits().dns_messages(), 4);
     }
 }

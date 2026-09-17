@@ -110,7 +110,8 @@ def validate_observation(value: object) -> None:
     )
     for name in limits:
         maximum = 65_535 if name in {"dns_messages", "endpoint_attempts"} else 2**64 - 1
-        bounded_integer(limits[name], 1, maximum, f"limits.{name}")
+        minimum = 2 if name == "dns_messages" else 1
+        bounded_integer(limits[name], minimum, maximum, f"limits.{name}")
 
     lifecycle = root["lifecycle"]
     if not isinstance(lifecycle, list) or len(lifecycle) != len(PHASES):

@@ -13,10 +13,14 @@ use rustls::client::{ClientConfig, ClientConnection, Resumption};
 use rustls::pki_types::{CertificateDer, ServerName, pem::PemObject as _};
 use rustls::{HandshakeKind, ProtocolVersion, RootCertStore, StreamOwned};
 use sha2::{Digest as _, Sha256};
+use x509_cert::Certificate;
+use x509_cert::der::Decode as _;
+use x509_cert::ext::pkix::SubjectAltName;
+use x509_cert::ext::pkix::name::GeneralName;
 
 use crate::{DnsAnswer, DnsResolution};
 
-const TLS_IMPLEMENTATION: &[u8] = b"rustls/0.23.45/ring";
+const TLS_IMPLEMENTATION: &[u8] = b"rustls/0.23.45/ring+x509-cert/0.2.5/exact-san";
 const PROXY_BUFFER_BYTES: usize = 16 * 1024;
 const PROXY_IDLE_SLEEP: Duration = Duration::from_millis(1);
 
@@ -169,67 +173,6 @@ impl AuthenticatedTlsSession {
     #[must_use]
     pub const fn service_to_child_bytes(&self) -> u64 {
         self.service_to_child_bytes
-    }
-
-    /// Writes bounded opaque application bytes to the authenticated service.
-    pub fn write_application(&mut self, bytes: &[u8]) -> Result<usize, TlsError> {
-        self.require_active()?;
-        let remaining = self
-            .child_to_service_limit
-            .checked_sub(self.child_to_service_bytes)
-            .ok_or(TlsError::ChildToServiceLimit)?;
-        if bytes.is_empty() {
-            return Ok(0);
-        }
-        if remaining == 0 {
-            return Err(TlsError::ChildToServiceLimit);
-        }
-        if u64::try_from(bytes.len()).unwrap_or(u64::MAX) > remaining {
-            return Err(TlsError::ChildToServiceLimit);
-        }
-        let written = self.stream.write(bytes).map_err(map_session_io)?;
-        self.child_to_service_bytes = self
-            .child_to_service_bytes
-            .checked_add(u64::try_from(written).map_err(|_| TlsError::ChildToServiceLimit)?)
-            .ok_or(TlsError::ChildToServiceLimit)?;
-        Ok(written)
-    }
-
-    /// Reads bounded opaque application bytes from the authenticated service.
-    pub fn read_application(&mut self, output: &mut [u8]) -> Result<usize, TlsError> {
-        self.require_active()?;
-        let remaining = self
-            .service_to_child_limit
-            .checked_sub(self.service_to_child_bytes)
-            .ok_or(TlsError::ServiceToChildLimit)?;
-        if output.is_empty() {
-            return Ok(0);
-        }
-        if remaining == 0 {
-            let mut excess = [0_u8; 1];
-            return match self.stream.read(&mut excess).map_err(map_session_io)? {
-                0 => Ok(0),
-                _ => Err(TlsError::ServiceToChildLimit),
-            };
-        }
-        let permitted = output
-            .len()
-            .min(usize::try_from(remaining).unwrap_or(usize::MAX));
-        let read = self
-            .stream
-            .read(&mut output[..permitted])
-            .map_err(map_session_io)?;
-        self.service_to_child_bytes = self
-            .service_to_child_bytes
-            .checked_add(u64::try_from(read).map_err(|_| TlsError::ServiceToChildLimit)?)
-            .ok_or(TlsError::ServiceToChildLimit)?;
-        Ok(read)
-    }
-
-    /// Sends one TLS close notification for terminal shutdown.
-    pub fn close_notify(&mut self) -> Result<(), TlsError> {
-        self.stream.conn.send_close_notify();
-        self.stream.flush().map_err(map_session_io)
     }
 
     fn require_active(&self) -> Result<(), TlsError> {
@@ -418,10 +361,7 @@ pub fn proxy_authenticated_channel(
 
         if peer_open {
             match session.stream.conn.read_tls(&mut session.stream.sock) {
-                Ok(0) => {
-                    peer_open = false;
-                    progressed = true;
-                }
+                Ok(0) => return Err(ChannelError::Tls(TlsError::PrematureClose)),
                 Ok(_) => {
                     let state = session
                         .stream
@@ -505,6 +445,8 @@ pub enum TlsError {
     EndpointUnavailable,
     /// The declared endpoint-attempt bound was exhausted.
     EndpointAttemptLimit,
+    /// The active endpoint attempt reached its absolute deadline.
+    EndpointAttemptDeadline,
     /// The total setup deadline expired.
     SetupDeadline,
     /// The selected DNS answer expired before authentication.
@@ -513,6 +455,8 @@ pub enum TlsError {
     TrustRootSetInvalid,
     /// The declared DNS service name could not be used for TLS authentication.
     ServiceNameInvalid,
+    /// The leaf certificate has no exact declared DNS SAN.
+    ServiceNameMismatch,
     /// TLS configuration failed closed.
     Configuration,
     /// TLS authentication failed.
@@ -544,10 +488,12 @@ impl TlsError {
         match self {
             Self::EndpointUnavailable => "network.endpoint.unavailable",
             Self::EndpointAttemptLimit => "network.limit.endpoint-attempts",
+            Self::EndpointAttemptDeadline => "network.endpoint.attempt-deadline",
             Self::SetupDeadline => "network.limit.setup-time",
             Self::AnswerExpired => "network.endpoint.answer-expired",
             Self::TrustRootSetInvalid => "network.tls.trust-root-set-invalid",
             Self::ServiceNameInvalid => "network.tls.service-name-invalid",
+            Self::ServiceNameMismatch => "network.tls.service-name-mismatch",
             Self::Configuration => "network.tls.configuration-failed",
             Self::Authentication => "network.tls.authentication-failed",
             Self::Resumption => "network.tls.resumption-rejected",
@@ -605,12 +551,13 @@ impl std::error::Error for AuthenticateError {}
 /// The function disables session resumption and early data. A TLS failure after
 /// one TCP connection is terminal and never advances to another endpoint.
 pub fn authenticate_service(
-    service: &ServiceName,
-    tls: &TlsPolicy,
-    limits: ServiceSessionLimits,
     resolution: &DnsResolution,
     trust_root_bytes: &[u8],
 ) -> Result<AuthenticatedTlsSession, AuthenticateError> {
+    let authority = resolution.authority();
+    let service = authority.service();
+    let tls = authority.tls();
+    let limits = authority.limits();
     let mut attempts = Vec::new();
     let config = build_config(tls, trust_root_bytes).map_err(|kind| AuthenticateError {
         kind,
@@ -632,20 +579,29 @@ pub fn authenticate_service(
         .enumerate()
     {
         let started_ns = resolution.elapsed_ns();
-        let timeout = connection_timeout(
-            resolution,
-            answer,
-            setup_deadline_ns,
-            resolution.attempt_deadline_ms(),
-        )
-        .ok_or_else(|| AuthenticateError {
-            kind: if resolution.elapsed_ns() >= answer.expires_ns() {
-                TlsError::AnswerExpired
-            } else {
-                TlsError::SetupDeadline
-            },
-            attempts: attempts.clone(),
-        })?;
+        let attempt_deadline_ns = started_ns
+            .checked_add(
+                authority
+                    .resolution()
+                    .attempt_deadline_ms()
+                    .saturating_mul(1_000_000),
+            )
+            .ok_or_else(|| AuthenticateError {
+                kind: TlsError::SetupDeadline,
+                attempts: attempts.clone(),
+            })?;
+        let timeout =
+            connection_timeout(resolution, answer, setup_deadline_ns, attempt_deadline_ns)
+                .ok_or_else(|| AuthenticateError {
+                    kind: if resolution.elapsed_ns() >= answer.expires_ns() {
+                        TlsError::AnswerExpired
+                    } else if resolution.elapsed_ns() >= setup_deadline_ns {
+                        TlsError::SetupDeadline
+                    } else {
+                        TlsError::EndpointAttemptDeadline
+                    },
+                    attempts: attempts.clone(),
+                })?;
         let endpoint = answer.endpoint(resolution.port());
         match TcpStream::connect_timeout(&endpoint, timeout) {
             Ok(stream) => {
@@ -657,7 +613,7 @@ pub fn authenticate_service(
                     started_ns,
                     finished_ns,
                 });
-                connected = Some((answer.clone(), stream));
+                connected = Some((answer.clone(), stream, attempt_deadline_ns));
                 break;
             }
             Err(error) => {
@@ -671,7 +627,7 @@ pub fn authenticate_service(
             }
         }
     }
-    let Some((selected_answer, stream)) = connected else {
+    let Some((selected_answer, stream, attempt_deadline_ns)) = connected else {
         let kind = if attempts.len() >= usize::from(limits.endpoint_attempts())
             && resolution.answers().len() > attempts.len()
         {
@@ -686,19 +642,18 @@ pub fn authenticate_service(
         resolution,
         &selected_answer,
         setup_deadline_ns,
-        resolution.attempt_deadline_ms(),
+        attempt_deadline_ns,
     )
     .ok_or_else(|| AuthenticateError {
-        kind: TlsError::AnswerExpired,
+        kind: if resolution.elapsed_ns() >= selected_answer.expires_ns() {
+            TlsError::AnswerExpired
+        } else if resolution.elapsed_ns() >= setup_deadline_ns {
+            TlsError::SetupDeadline
+        } else {
+            TlsError::EndpointAttemptDeadline
+        },
         attempts: attempts.clone(),
     })?;
-    stream
-        .set_read_timeout(Some(remaining))
-        .and_then(|()| stream.set_write_timeout(Some(remaining)))
-        .map_err(|_| AuthenticateError {
-            kind: TlsError::Authentication,
-            attempts: attempts.clone(),
-        })?;
     let server_name =
         ServerName::try_from(service.as_str().to_owned()).map_err(|_| AuthenticateError {
             kind: TlsError::ServiceNameInvalid,
@@ -709,15 +664,31 @@ pub fn authenticate_service(
             kind: TlsError::Configuration,
             attempts: attempts.clone(),
         })?;
-    let mut socket = MeteredTcpStream::new(stream, limits.tls_handshake_bytes());
+    let handshake_deadline =
+        Instant::now()
+            .checked_add(remaining)
+            .ok_or_else(|| AuthenticateError {
+                kind: TlsError::SetupDeadline,
+                attempts: attempts.clone(),
+            })?;
+    let mut socket =
+        MeteredTcpStream::new(stream, limits.tls_handshake_bytes(), handshake_deadline);
     while connection.is_handshaking() {
         connection
             .complete_io(&mut socket)
             .map_err(|error| AuthenticateError {
-                kind: if error.kind() == io::ErrorKind::OutOfMemory {
-                    TlsError::HandshakeLimit
-                } else {
-                    TlsError::Authentication
+                kind: match error.kind() {
+                    io::ErrorKind::OutOfMemory => TlsError::HandshakeLimit,
+                    io::ErrorKind::TimedOut | io::ErrorKind::WouldBlock => {
+                        if resolution.elapsed_ns() >= selected_answer.expires_ns() {
+                            TlsError::AnswerExpired
+                        } else if resolution.elapsed_ns() >= setup_deadline_ns {
+                            TlsError::SetupDeadline
+                        } else {
+                            TlsError::EndpointAttemptDeadline
+                        }
+                    }
+                    _ => TlsError::Authentication,
                 },
                 attempts: attempts.clone(),
             })?;
@@ -758,6 +729,22 @@ pub fn authenticate_service(
             attempts,
         });
     }
+    require_exact_dns_san(&certificates[0], service).map_err(|kind| AuthenticateError {
+        kind,
+        attempts: attempts.clone(),
+    })?;
+    if resolution.elapsed_ns() >= setup_deadline_ns {
+        return Err(AuthenticateError {
+            kind: TlsError::SetupDeadline,
+            attempts,
+        });
+    }
+    if resolution.elapsed_ns() >= selected_answer.expires_ns() {
+        return Err(AuthenticateError {
+            kind: TlsError::AnswerExpired,
+            attempts,
+        });
+    }
     let handshake_bytes = socket.total_bytes().ok_or_else(|| AuthenticateError {
         kind: TlsError::HandshakeLimit,
         attempts: attempts.clone(),
@@ -768,7 +755,16 @@ pub fn authenticate_service(
             attempts,
         });
     }
-    socket.remove_limit();
+    let active_at = Instant::now();
+    let session_limit = Duration::from_millis(limits.session_time_ms());
+    let session_deadline =
+        active_at
+            .checked_add(session_limit)
+            .ok_or_else(|| AuthenticateError {
+                kind: TlsError::SessionDeadline,
+                attempts: attempts.clone(),
+            })?;
+    socket.enter_session(session_deadline);
     let authenticated_ns = resolution.elapsed_ns();
     let observation = TlsObservation {
         implementation_identity: digest(TLS_IMPLEMENTATION),
@@ -782,8 +778,8 @@ pub fn authenticate_service(
         selected_answer,
         attempts,
         observation,
-        active_at: Instant::now(),
-        session_limit: Duration::from_millis(limits.session_time_ms()),
+        active_at,
+        session_limit,
         child_to_service_limit: limits.child_to_service_bytes(),
         service_to_child_limit: limits.service_to_child_bytes(),
         child_to_service_bytes: 0,
@@ -808,13 +804,41 @@ fn build_config(tls: &TlsPolicy, trust_root_bytes: &[u8]) -> Result<ClientConfig
         MinimumTlsVersion::Tls12 => &[&rustls::version::TLS13, &rustls::version::TLS12][..],
         MinimumTlsVersion::Tls13 => &[&rustls::version::TLS13][..],
     };
-    let mut config = ClientConfig::builder_with_protocol_versions(versions)
+    let provider = Arc::new(rustls::crypto::ring::default_provider());
+    let mut config = ClientConfig::builder_with_provider(provider)
+        .with_protocol_versions(versions)
+        .map_err(|_| TlsError::Configuration)?
         .with_root_certificates(roots)
         .with_no_client_auth();
     config.resumption = Resumption::disabled();
     config.enable_early_data = false;
     config.alpn_protocols.clear();
     Ok(config)
+}
+
+fn require_exact_dns_san(
+    certificate: &CertificateDer<'_>,
+    service: &ServiceName,
+) -> Result<(), TlsError> {
+    let certificate =
+        Certificate::from_der(certificate.as_ref()).map_err(|_| TlsError::Authentication)?;
+    let (_, alternative_names) = certificate
+        .tbs_certificate
+        .get::<SubjectAltName>()
+        .map_err(|_| TlsError::Authentication)?
+        .ok_or(TlsError::ServiceNameMismatch)?;
+    let exact = has_exact_dns_san(&alternative_names.0, service);
+    if exact {
+        Ok(())
+    } else {
+        Err(TlsError::ServiceNameMismatch)
+    }
+}
+
+fn has_exact_dns_san(names: &[GeneralName], service: &ServiceName) -> bool {
+    names.iter().any(|name| {
+        matches!(name, GeneralName::DnsName(name) if name.as_str().eq_ignore_ascii_case(service.as_str()))
+    })
 }
 
 fn negotiated_version(
@@ -832,9 +856,9 @@ fn connection_timeout(
     resolution: &DnsResolution,
     answer: &DnsAnswer,
     setup_deadline_ns: u64,
-    attempt_ms: u64,
+    attempt_deadline_ns: u64,
 ) -> Option<Duration> {
-    let attempt = Duration::from_millis(attempt_ms);
+    let attempt = resolution.remaining_until(attempt_deadline_ns)?;
     let setup = resolution.remaining_until(setup_deadline_ns)?;
     let expiry = resolution.remaining_until(answer.expires_ns())?;
     Some(attempt.min(setup).min(expiry)).filter(|duration| !duration.is_zero())
@@ -845,14 +869,6 @@ fn classify_connect_error(error: &io::Error) -> EndpointAttemptResult {
         io::ErrorKind::ConnectionRefused => EndpointAttemptResult::Refused,
         io::ErrorKind::TimedOut | io::ErrorKind::WouldBlock => EndpointAttemptResult::TimedOut,
         _ => EndpointAttemptResult::Failed,
-    }
-}
-
-fn map_session_io(error: io::Error) -> TlsError {
-    if error.kind() == io::ErrorKind::TimedOut || error.kind() == io::ErrorKind::WouldBlock {
-        TlsError::SessionDeadline
-    } else {
-        TlsError::SessionIo
     }
 }
 
@@ -883,15 +899,17 @@ struct MeteredTcpStream {
     read_bytes: u64,
     written_bytes: u64,
     limit: Option<u64>,
+    deadline: Instant,
 }
 
 impl MeteredTcpStream {
-    fn new(inner: TcpStream, limit: u64) -> Self {
+    fn new(inner: TcpStream, limit: u64, deadline: Instant) -> Self {
         Self {
             inner,
             read_bytes: 0,
             written_bytes: 0,
             limit: Some(limit),
+            deadline,
         }
     }
 
@@ -899,8 +917,9 @@ impl MeteredTcpStream {
         self.read_bytes.checked_add(self.written_bytes)
     }
 
-    fn remove_limit(&mut self) {
+    fn enter_session(&mut self, deadline: Instant) {
         self.limit = None;
+        self.deadline = deadline;
     }
 
     fn remaining(&self) -> io::Result<usize> {
@@ -915,12 +934,23 @@ impl MeteredTcpStream {
             Ok(usize::try_from(remaining).unwrap_or(usize::MAX))
         }
     }
+
+    fn remaining_time(&self) -> io::Result<Duration> {
+        self.deadline
+            .checked_duration_since(Instant::now())
+            .filter(|remaining| !remaining.is_zero())
+            .ok_or_else(deadline_error)
+    }
 }
 
 impl Read for MeteredTcpStream {
     fn read(&mut self, output: &mut [u8]) -> io::Result<usize> {
+        self.inner.set_read_timeout(Some(self.remaining_time()?))?;
         let permitted = output.len().min(self.remaining()?);
         let read = self.inner.read(&mut output[..permitted])?;
+        if Instant::now() >= self.deadline {
+            return Err(deadline_error());
+        }
         self.read_bytes = self
             .read_bytes
             .checked_add(u64::try_from(read).map_err(|_| handshake_limit_error())?)
@@ -931,8 +961,12 @@ impl Read for MeteredTcpStream {
 
 impl Write for MeteredTcpStream {
     fn write(&mut self, input: &[u8]) -> io::Result<usize> {
+        self.inner.set_write_timeout(Some(self.remaining_time()?))?;
         let permitted = input.len().min(self.remaining()?);
         let written = self.inner.write(&input[..permitted])?;
+        if Instant::now() >= self.deadline {
+            return Err(deadline_error());
+        }
         self.written_bytes = self
             .written_bytes
             .checked_add(u64::try_from(written).map_err(|_| handshake_limit_error())?)
@@ -952,6 +986,10 @@ fn handshake_limit_error() -> io::Error {
     )
 }
 
+fn deadline_error() -> io::Error {
+    io::Error::new(io::ErrorKind::TimedOut, "connector deadline exhausted")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -961,10 +999,12 @@ mod tests {
         let errors = [
             TlsError::EndpointUnavailable,
             TlsError::EndpointAttemptLimit,
+            TlsError::EndpointAttemptDeadline,
             TlsError::SetupDeadline,
             TlsError::AnswerExpired,
             TlsError::TrustRootSetInvalid,
             TlsError::ServiceNameInvalid,
+            TlsError::ServiceNameMismatch,
             TlsError::Configuration,
             TlsError::Authentication,
             TlsError::Resumption,
@@ -1011,6 +1051,41 @@ mod tests {
         assert_eq!(
             classify_connect_error(&io::Error::from(io::ErrorKind::Other)),
             EndpointAttemptResult::Failed
+        );
+    }
+
+    #[test]
+    fn wildcard_dns_san_does_not_match_exact_service() {
+        use x509_cert::der::asn1::Ia5String;
+
+        let service = ServiceName::new("api.example.com").expect("valid service");
+        assert!(!has_exact_dns_san(
+            &[GeneralName::DnsName(
+                Ia5String::new("*.example.com").expect("valid IA5 name")
+            )],
+            &service
+        ));
+        assert!(has_exact_dns_san(
+            &[GeneralName::DnsName(
+                Ia5String::new("API.EXAMPLE.COM").expect("valid IA5 name")
+            )],
+            &service
+        ));
+    }
+
+    #[test]
+    fn connector_deadline_error_is_typed_timeout() {
+        assert_eq!(deadline_error().kind(), io::ErrorKind::TimedOut);
+    }
+
+    #[test]
+    fn connector_selects_ring_provider_without_process_default() {
+        let provider = rustls::crypto::ring::default_provider();
+        assert!(!provider.cipher_suites.is_empty());
+        assert!(!provider.kx_groups.is_empty());
+        assert_eq!(
+            TLS_IMPLEMENTATION,
+            b"rustls/0.23.45/ring+x509-cert/0.2.5/exact-san"
         );
     }
 }

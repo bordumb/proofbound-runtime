@@ -99,6 +99,7 @@ class ServiceObservationContractTests(unittest.TestCase):
         mutations = {
             "unknown-field": lambda value: value.update({"ambient_network": True}),
             "oversized-dns-message-limit": lambda value: value["limits"].__setitem__("dns_messages", 65_536),
+            "insufficient-dns-message-limit": lambda value: value["limits"].__setitem__("dns_messages", 1),
             "attempt-limit-exceeds-answers": lambda value: value["limits"].__setitem__("endpoint_attempts", 17),
             "resolution-deadline-exceeds-setup": lambda value: value["dns"].__setitem__("resolution_deadline_ms", 10_001),
             "dns-message-before-resolution": move_dns_message_before_resolution,

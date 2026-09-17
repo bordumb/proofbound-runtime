@@ -2983,6 +2983,33 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-5 connector engine initial review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `c361cb11eefec4b03b55385caf2977552a34e97a`
+- **Reviewed head:** `450453d18c3b1258c6be0928a8724d9afda191e9`
+- **Branch:** `codex/rt5-production-connector`
+- **Method:** Complete exact-range static security and assurance review. The
+  reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review found seven blockers. The public API did not bind DNS resolution,
+TLS authentication, and limits to one complete authority. The default rustls
+name verifier admitted wildcard DNS subject-alternative names despite the
+`dns-san-exact` contract. DNS, TLS-handshake, and direct session I/O timeouts
+were not absolute deadlines. TLS provider selection was process-global even
+though the observation named ring, and the builder could panic. CNAME TTLs were
+discarded and a response could combine a CNAME with address data. The claim and
+evidence closures omitted local core inputs. Finally, the registered tests did
+not falsify the load-bearing binding, CNAME, exact-name, provider, deadline,
+limit, close, and reconnect surfaces.
+
+Production remained fail closed because no production crate used the new
+connector. Exact dependency pins, licenses, and advisory configuration added no
+separate blocker. The corrected exact head requires a new independent review.
+
 ## RT-5 consolidated observation and launcher final review
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

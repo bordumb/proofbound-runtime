@@ -1,9 +1,9 @@
 schema = "proofbound-claim/1"
 id = "PBR-NETWORK-038"
 title = "Single-service connector bounds DNS and authenticates the declared TLS name"
-statement = "The proposed connector engine sends DNS only to the declared numeric resolver over TCP, validates query-bound responses and a bounded loop-free CNAME and canonical address result, attempts only that ordered answer prefix, authenticates the exact declared DNS service name with only caller-supplied trust-root bytes and the declared minimum TLS version while disabling resumption and early data, and exposes only one duration-bounded and directionally byte-bounded opaque plaintext session without reconnect or application parsing."
-public_language = "Runtime contains a proposed production connector engine for one authenticated service session. Source tests cover its closed error vocabulary, DNS wire parser, identity and TTL rejection, canonical address order, trust-root fail-closed behavior, and endpoint-result classification. This is Tier 0 source evidence. It does not yet establish a supervised connector process, launcher binding, child syscall isolation, native enforcement, receipt production, or release-artifact behavior."
-subject = "rust:proofbound_runtime_connector::{resolve_service,authenticate_service,proxy_authenticated_channel}"
+statement = "The proposed connector engine takes one complete validated service authority, sends DNS only to its declared numeric resolver over TCP under absolute deadlines, validates query-bound responses and a bounded loop-free CNAME and canonical address result whose effective lifetime includes every alias, attempts only that authority's ordered answer prefix, authenticates an exact non-wildcard DNS SAN with caller-supplied trust-root bytes, an explicit ring provider, and the declared minimum TLS version while disabling resumption and early data, and exposes only one duration-bounded and directionally byte-bounded opaque plaintext session without reconnect or application parsing."
+public_language = "Runtime contains a proposed production connector engine for one authenticated service session. Registered source tests cover its closed error vocabulary, complete-authority binding, DNS wire parser, transaction and TTL rejection, CNAME conflict and lifetime behavior, canonical address order, exact non-wildcard DNS-name rule, explicit provider selection, deadline error class, trust-root fail-closed behavior, and endpoint-result classification. This is Tier 0 source evidence. It does not yet establish a supervised connector process, launcher binding, child syscall isolation, native enforcement, receipt production, or release-artifact behavior."
+subject = "rust:proofbound_runtime_connector::{resolve_service,authenticate_service,proxy_authenticated_channel,DnsResolution}"
 profile = "ledger"
 tier = 0
 evidence = [
@@ -22,7 +22,7 @@ open_obligations = [
 ]
 out_of_scope = [
   "Any claim that the production CLI accepts service-session plans or that a launcher or child uses this engine.",
-  "Correctness of the resolver, DNS transport, rustls, ring, certificate authorities, remote service, kernel, hardware, or host operator.",
+  "Correctness of the resolver, DNS transport, rustls, ring, x509-cert, certificate authorities, remote service, kernel, hardware, or host operator.",
   "HTTP, LLM, request, response, credential, redirect, proxy, multiple-session, reconnect, QUIC, or application-operation semantics.",
 ]
 source_roots = [
@@ -35,7 +35,22 @@ source_roots = [
   "crates/proofbound-runtime-connector/src/dns.rs",
   "crates/proofbound-runtime-connector/src/lib.rs",
   "crates/proofbound-runtime-connector/src/tls.rs",
+  "crates/proofbound-runtime-core/Cargo.toml",
+  "crates/proofbound-runtime-core/src/authority.rs",
+  "crates/proofbound-runtime-core/src/diagnostic.rs",
+  "crates/proofbound-runtime-core/src/error.rs",
+  "crates/proofbound-runtime-core/src/identity.rs",
+  "crates/proofbound-runtime-core/src/lib.rs",
   "crates/proofbound-runtime-core/src/network.rs",
+  "crates/proofbound-runtime-core/src/normalize.rs",
+  "crates/proofbound-runtime-core/src/outcome.rs",
+  "crates/proofbound-runtime-core/src/plan.rs",
+  "crates/proofbound-runtime-core/src/policy.rs",
+  "crates/proofbound-runtime-core/src/receipt.rs",
+  "crates/proofbound-runtime-core/src/run_result.rs",
+  "crates/proofbound-runtime-core/src/service_lifecycle.rs",
+  "crates/proofbound-runtime-core/src/service_policy.rs",
+  "crates/proofbound-runtime-core/src/wire_v2.rs",
   "deny.toml",
   "docs/adr/0004-authenticated-service-session.md",
   "docs/specs/0016_authenticated_service_session.md",

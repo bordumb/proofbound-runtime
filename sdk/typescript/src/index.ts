@@ -220,7 +220,7 @@ function validateNetwork(value, environment) {
     session_time_ms: networkUnsigned(value.limits.session_time_ms, 1n, MAX_U64, "limits.session_time_ms"),
     child_to_service_bytes: networkUnsigned(value.limits.child_to_service_bytes, 1n, MAX_U64, "limits.child_to_service_bytes"),
     service_to_child_bytes: networkUnsigned(value.limits.service_to_child_bytes, 1n, MAX_U64, "limits.service_to_child_bytes"),
-    dns_messages: networkUnsigned(value.limits.dns_messages, 1n, 65_535n, "limits.dns_messages"),
+    dns_messages: networkUnsigned(value.limits.dns_messages, 2n, 65_535n, "limits.dns_messages"),
     endpoint_attempts: networkUnsigned(value.limits.endpoint_attempts, 1n, 65_535n, "limits.endpoint_attempts"),
     tls_handshake_bytes: networkUnsigned(value.limits.tls_handshake_bytes, 1n, MAX_U64, "limits.tls_handshake_bytes"),
   };

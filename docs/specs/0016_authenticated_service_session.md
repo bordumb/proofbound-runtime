@@ -165,6 +165,10 @@ The session-limit record contains nonzero bounds for:
 - endpoint attempts; and
 - TLS handshake bytes.
 
+The DNS-message bound MUST be at least two because the fixed first profile
+queries both A and AAAA records. A larger value is required when either query
+follows a CNAME chain.
+
 The endpoint-attempt bound MUST NOT exceed the answer-count bound. The first
 profile permits exactly one authenticated session and no reconnect. Exceeding a
 bound terminates the connector and makes the execution receipt non-reusable.

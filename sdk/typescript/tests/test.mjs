@@ -170,6 +170,12 @@ test("service session is closed and validated", async () => {
     () => buildPlan({ ...plan, network: nulPath }),
     (error) => error instanceof SdkError && error.code === "sdk.plan.network-invalid",
   );
+  const insufficientDnsMessages = serviceNetwork();
+  insufficientDnsMessages.limits.dns_messages = 1;
+  assert.throws(
+    () => buildPlan({ ...plan, network: insufficientDnsMessages }),
+    (error) => error instanceof SdkError && error.code === "sdk.plan.network-invalid",
+  );
 });
 
 test("run-result projection is closed", () => {

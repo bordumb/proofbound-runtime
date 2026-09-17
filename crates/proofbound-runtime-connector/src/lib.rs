@@ -5,7 +5,9 @@
 mod dns;
 mod tls;
 
-pub use dns::{DnsAnswer, DnsError, DnsMessageObservation, DnsResolution, resolve_service};
+pub use dns::{
+    DnsAnswer, DnsCnameObservation, DnsError, DnsMessageObservation, DnsResolution, resolve_service,
+};
 pub use tls::{
     AuthenticateError, AuthenticatedTlsSession, ChannelError, EndpointAttempt,
     EndpointAttemptResult, TlsError, TlsObservation, TlsVersion, TrafficObservation,

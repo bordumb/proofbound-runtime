@@ -2,10 +2,10 @@
 
 - **Status:** active implementation
 - **Created:** 2026-09-17T19:31:00+01:00 (Europe/London, BST)
-- **Last updated:** 2026-09-17T19:31:00+01:00 (Europe/London, BST)
+- **Last updated:** 2026-09-17T20:46:00+01:00 (Europe/London, BST)
 - **Current admitted Runtime main:**
   `2ddb4a9543988b41848fd41fc723331b2d3538af`
-- **Current implementation wave:** RT-5 service-session receipt contract
+- **Current implementation wave:** RT-5 authenticated connector engine
 - **Lifecycle:** prelaunch with zero external users
 
 This checklist is the focused path from the existing assurance foundation to
@@ -67,9 +67,11 @@ or relabel an unavailable enforcement mechanism.
   and trusted-computing-base mutations.
 - [x] Obtain a preliminary independent `APPROVE` before restacking.
 - [x] Update all exact-main admission records after the restack.
-- [ ] Obtain a final independent `APPROVE` for the restacked exact head.
-- [ ] Add and endorse the approval-only review record.
-- [ ] Push the reviewed branch with an active CI monitor.
+- [x] Obtain a final independent `APPROVE` for restacked receipt-contract head
+  `ad2a80e`.
+- [x] Add and endorse the receipt-contract approval-only review record in
+  commit `c361cb1`.
+- [x] Push receipt-contract commit `c361cb1` with an active CI monitor.
 - [ ] Pass complete exact-head hosted verification.
 - [ ] Merge unsigned and pass complete exact-main verification.
 
@@ -95,9 +97,13 @@ execution and production receipt acceptance remain disabled.
 ### 1.2 Implement the connector
 
 Wave status: `PBR-NETWORK-038` now registers the isolated connector-engine
-candidate and its Tier 0 source tests. Keep every checkbox below open until the
-engine runs as the exact identified production process and the relevant
-behavior passes hosted and native admission.
+candidate and its Tier 0 source tests. The initial exact-head review at
+`450453d` requested changes for authority binding, exact SAN matching, absolute
+deadlines, explicit TLS-provider selection, CNAME validity, source closure, and
+causal falsifiers. The correction batch is implemented but not yet approved or
+hosted. Keep every checkbox below open until the engine runs as the exact
+identified production process and the relevant behavior passes hosted and
+native admission.
 
 - [ ] Add a minimal connector executable with one purpose: establish one
   bounded authenticated TLS session for one normalized service identity.

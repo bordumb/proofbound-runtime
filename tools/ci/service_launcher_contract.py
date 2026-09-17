@@ -119,7 +119,8 @@ def service_binding(value: object) -> None:
     )
     for name, value in limits.items():
         maximum = 65_535 if name in {"dns_messages", "endpoint_attempts"} else 2**64 - 1
-        integer(value, 1, maximum, f"service.limits.{name}")
+        minimum = 2 if name == "dns_messages" else 1
+        integer(value, minimum, maximum, f"service.limits.{name}")
 
     credential = service["credential_source"]
     if credential is not None:
