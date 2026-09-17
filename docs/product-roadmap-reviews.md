@@ -3071,6 +3071,30 @@ As maintainer, I endorse this independent **APPROVE** verdict for exact range
 The following approval-only commit changes only this review record. Any later
 subject change requires another exact-head review.
 
+### RT-8 retained-loader dependency-edge correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `d60d1f3485c6f050027a6cace9def943cbb958dc`
+- **Reviewed head:** `d1f14799acf372df196d0d1253be9ad6c02405aa`
+- **Method:** Exact-range security and product re-review after both hosted
+  native architectures rejected the dynamic scaffold's retained-loader
+  dependency edge. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+A scaffold dependency edge can use the loader exception only when its selected
+path, digest, size, and mode exactly match the already retained executable
+loader. Every other dependency still requires an exact retained regular-file
+runtime library. Every edge is validated before exact-path deduplication, the
+loader retains its interpreter role, and repeated loader or library edges do
+not create duplicate identified-closure entries. The correction grants no new
+authority and does not alter receipt reuse.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`d60d1f3485c6f050027a6cace9def943cbb958dc..d1f14799acf372df196d0d1253be9ad6c02405aa`.
+The following approval-only commit changes only this review record. Any later
+subject change requires another exact-head review.
+
 ## RT-8 consolidated object, candidate, and command approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
