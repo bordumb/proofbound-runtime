@@ -1,7 +1,7 @@
 //! Constructs a reviewable plan draft from one diagnostic receipt.
 
 use core::fmt;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use proofbound_runtime_core::{DraftProvenance, ObservationResolution, Sha256Digest};
 use serde_json::{Value, json};
@@ -53,7 +53,7 @@ impl DraftInput {
         mode: u16,
     ) -> Result<Self, DraftError> {
         let path = path.into();
-        validate_absolute_path(&path)?;
+        validate_absolute_path(&path).map_err(|_| DraftError::InputInvalid)?;
         if mode > 0o7777 {
             return Err(DraftError::InputInvalid);
         }
@@ -69,6 +69,83 @@ impl DraftInput {
             "mode": format!("{:04o}", self.mode),
             "path": self.path,
             "role": "project-input",
+            "sha256": format!("sha256:{}", self.identity.digest.to_hex()),
+            "size_bytes": self.identity.size_bytes,
+        })
+    }
+}
+
+/// Identifies one exact file role in a static execution closure.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub enum IdentifiedClosureRole {
+    /// Contains the workload executable.
+    Executable,
+    /// Contains the workload interpreter.
+    Interpreter,
+    /// Contains one runtime library.
+    RuntimeLibrary,
+}
+
+impl IdentifiedClosureRole {
+    const fn as_str(self) -> &'static str {
+        match self {
+            Self::Executable => "executable",
+            Self::Interpreter => "interpreter",
+            Self::RuntimeLibrary => "runtime-library",
+        }
+    }
+}
+
+/// Contains one exact non-authoritative static closure observation.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct IdentifiedClosureEntry {
+    role: IdentifiedClosureRole,
+    path: String,
+    identity: ContentIdentity,
+    mode: u16,
+    provenance: DraftProvenance,
+}
+
+impl IdentifiedClosureEntry {
+    /// Creates one exact closure observation. This value does not grant authority.
+    pub fn new(
+        role: IdentifiedClosureRole,
+        path: impl Into<String>,
+        identity: ContentIdentity,
+        mode: u16,
+        provenance: DraftProvenance,
+    ) -> Result<Self, DraftError> {
+        let path = path.into();
+        validate_absolute_path(&path).map_err(|_| DraftError::ClosureInvalid)?;
+        if mode > 0o7777
+            || !matches!(
+                (role, provenance),
+                (
+                    IdentifiedClosureRole::Executable,
+                    DraftProvenance::StaticExecutableClosure
+                ) | (
+                    IdentifiedClosureRole::Interpreter | IdentifiedClosureRole::RuntimeLibrary,
+                    DraftProvenance::PlatformRequiredClosure
+                )
+            )
+        {
+            return Err(DraftError::ClosureInvalid);
+        }
+        Ok(Self {
+            role,
+            path,
+            identity,
+            mode,
+            provenance,
+        })
+    }
+
+    fn to_value(&self) -> Value {
+        json!({
+            "mode": format!("{:04o}", self.mode),
+            "path": self.path,
+            "provenance": self.provenance.as_str(),
+            "role": self.role.as_str(),
             "sha256": format!("sha256:{}", self.identity.digest.to_hex()),
             "size_bytes": self.identity.size_bytes,
         })
@@ -349,9 +426,12 @@ impl DraftDifference {
     }
 }
 
+/// Identifies one non-authoritative draft candidate kind.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
-enum CandidateKind {
+pub enum CandidateKind {
+    /// Suggests executable authority for review.
     Execute,
+    /// Suggests read authority for review.
     Read,
 }
 
@@ -364,14 +444,48 @@ impl CandidateKind {
     }
 }
 
+/// Contains one bounded, provenance-tagged draft candidate.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-struct DraftCandidate {
+pub struct DraftCandidate {
     kind: CandidateKind,
     path: String,
     provenance: BTreeSet<DraftProvenance>,
 }
 
 impl DraftCandidate {
+    /// Creates one identified closure candidate. This value does not grant authority.
+    pub fn identified_closure(
+        kind: CandidateKind,
+        path: impl Into<String>,
+        provenance: DraftProvenance,
+    ) -> Result<Self, DraftError> {
+        if !matches!(
+            provenance,
+            DraftProvenance::PlatformRequiredClosure | DraftProvenance::StaticExecutableClosure
+        ) {
+            return Err(DraftError::CandidateInvalid);
+        }
+        Self::new(kind, path, [provenance])
+    }
+
+    fn new(
+        kind: CandidateKind,
+        path: impl Into<String>,
+        provenance: impl IntoIterator<Item = DraftProvenance>,
+    ) -> Result<Self, DraftError> {
+        let path = path.into();
+        let provenance = provenance.into_iter().collect::<BTreeSet<_>>();
+        validate_absolute_path(&path)?;
+        if provenance.is_empty() || provenance.len() > 5 {
+            return Err(DraftError::CandidateInvalid);
+        }
+        Ok(Self {
+            kind,
+            path,
+            provenance,
+        })
+    }
+
     fn to_value(&self) -> Value {
         json!({
             "kind": self.kind.as_str(),
@@ -454,6 +568,10 @@ pub struct PlanDraftInputs {
     pub capsec: Option<CapsecInput>,
     /// Retains typed comparison results.
     pub differences: Vec<DraftDifference>,
+    /// Retains non-authoritative candidates from identified external inputs.
+    pub candidates: Vec<DraftCandidate>,
+    /// Retains exact non-authoritative entries from one identified static closure.
+    pub identified_closure: Vec<IdentifiedClosureEntry>,
     /// Restricts automatic candidates to explicit reviewed roots.
     pub path_scope: Option<DraftPathScope>,
 }
@@ -482,23 +600,51 @@ pub fn build_plan_draft(
     if inputs.inputs.len() > 65_536 {
         return Err(DraftError::InputInvalid);
     }
+    inputs.identified_closure.sort();
+    inputs.identified_closure.dedup();
+    if inputs.identified_closure.len() > 258 {
+        return Err(DraftError::ClosureInvalid);
+    }
     inputs.differences.sort();
     if inputs.differences.len() > 1_048_576 {
         return Err(DraftError::DifferenceInvalid);
     }
-    if inputs.differences.iter().any(|difference| {
-        difference
-            .provenance
-            .contains(&DraftProvenance::CapsecSourceObservation)
-            && inputs
-                .capsec
-                .as_ref()
-                .is_none_or(|capsec| capsec.usability != CapsecUsability::Usable)
+    inputs.candidates.sort();
+    inputs.candidates.dedup();
+    if inputs.candidates.len() > 1_048_576 {
+        return Err(DraftError::CollectionBoundExceeded);
+    }
+    if inputs.candidates.iter().any(|candidate| {
+        inputs
+            .path_scope
+            .as_ref()
+            .is_none_or(|scope| !scope.allows(&candidate.path))
+            || !candidate_provenance_is_bound(candidate, &inputs.identified_closure)
     }) {
+        return Err(DraftError::CandidateInvalid);
+    }
+    let capsec_unusable = inputs
+        .capsec
+        .as_ref()
+        .is_none_or(|capsec| capsec.usability != CapsecUsability::Usable);
+    if capsec_unusable
+        && (inputs.differences.iter().any(|difference| {
+            difference
+                .provenance
+                .contains(&DraftProvenance::CapsecSourceObservation)
+        }) || inputs.candidates.iter().any(|candidate| {
+            candidate
+                .provenance
+                .contains(&DraftProvenance::CapsecSourceObservation)
+        }))
+    {
         return Err(DraftError::CapsecProvenanceInvalid);
     }
 
-    let mut candidates = BTreeSet::new();
+    let mut candidates = BTreeMap::new();
+    for candidate in inputs.candidates {
+        merge_candidate(&mut candidates, candidate);
+    }
     let mut open_items = mandatory_open_items();
     let mut denial_count = 0_u64;
     let mut unresolved_count = 0_u64;
@@ -560,11 +706,14 @@ pub fn build_plan_draft(
             None
         };
         if let Some(kind) = kind {
-            candidates.insert(DraftCandidate {
-                kind,
-                path: path.to_owned(),
-                provenance: BTreeSet::from([DraftProvenance::DiagnosticRuntimeObservation]),
-            });
+            merge_candidate(
+                &mut candidates,
+                DraftCandidate {
+                    kind,
+                    path: path.to_owned(),
+                    provenance: BTreeSet::from([DraftProvenance::DiagnosticRuntimeObservation]),
+                },
+            );
         }
     }
     for gap in receipt.gaps() {
@@ -593,7 +742,7 @@ pub fn build_plan_draft(
         .map_err(map_write_error)?;
     output.raw(b",\"candidates\":").map_err(map_write_error)?;
     output
-        .sequence(candidates.iter().map(DraftCandidate::to_value))
+        .sequence(candidates.values().map(DraftCandidate::to_value))
         .map_err(map_write_error)?;
     output.raw(b",\"capsec\":").map_err(map_write_error)?;
     output
@@ -618,6 +767,17 @@ pub fn build_plan_draft(
     output.raw(b",\"gaps\":").map_err(map_write_error)?;
     output
         .sequence(receipt.gaps().iter().map(|gap| gap.as_str()))
+        .map_err(map_write_error)?;
+    output
+        .raw(b",\"identified_closure\":")
+        .map_err(map_write_error)?;
+    output
+        .sequence(
+            inputs
+                .identified_closure
+                .iter()
+                .map(IdentifiedClosureEntry::to_value),
+        )
         .map_err(map_write_error)?;
     output.raw(b",\"inputs\":").map_err(map_write_error)?;
     output
@@ -657,6 +817,46 @@ fn map_write_error(error: CanonicalWriteError) -> DraftError {
     }
 }
 
+fn merge_candidate(
+    candidates: &mut BTreeMap<(CandidateKind, String), DraftCandidate>,
+    candidate: DraftCandidate,
+) {
+    let key = (candidate.kind, candidate.path.clone());
+    if let Some(existing) = candidates.get_mut(&key) {
+        existing.provenance.extend(candidate.provenance);
+    } else {
+        candidates.insert(key, candidate);
+    }
+}
+
+fn candidate_provenance_is_bound(
+    candidate: &DraftCandidate,
+    closure: &[IdentifiedClosureEntry],
+) -> bool {
+    candidate
+        .provenance
+        .iter()
+        .all(|provenance| match provenance {
+            DraftProvenance::StaticExecutableClosure => closure.iter().any(|entry| {
+                entry.path == candidate.path
+                    && entry.role == IdentifiedClosureRole::Executable
+                    && entry.provenance == *provenance
+                    && candidate.kind == CandidateKind::Execute
+            }),
+            DraftProvenance::PlatformRequiredClosure => closure.iter().any(|entry| {
+                entry.path == candidate.path
+                    && entry.provenance == *provenance
+                    && matches!(
+                        (entry.role, candidate.kind),
+                        (IdentifiedClosureRole::Interpreter, CandidateKind::Execute)
+                            | (IdentifiedClosureRole::RuntimeLibrary, CandidateKind::Read)
+                    )
+            }),
+            DraftProvenance::CapsecSourceObservation => true,
+            DraftProvenance::DiagnosticRuntimeObservation | DraftProvenance::HumanAuthored => false,
+        })
+}
+
 /// Identifies invalid plan-draft construction.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum DraftError {
@@ -668,6 +868,10 @@ pub enum DraftError {
     CapsecProvenanceInvalid,
     /// One comparison result is invalid.
     DifferenceInvalid,
+    /// One draft candidate is invalid.
+    CandidateInvalid,
+    /// One identified static closure entry is invalid.
+    ClosureInvalid,
     /// A draft collection exceeds the schema bound.
     CollectionBoundExceeded,
     /// Candidate path scope is absent or invalid.
@@ -687,6 +891,8 @@ impl DraftError {
             Self::CapsecInvalid => "diagnostic.draft.capsec-invalid",
             Self::CapsecProvenanceInvalid => "diagnostic.draft.capsec-provenance-invalid",
             Self::DifferenceInvalid => "diagnostic.draft.difference-invalid",
+            Self::CandidateInvalid => "diagnostic.draft.candidate-invalid",
+            Self::ClosureInvalid => "diagnostic.draft.closure-invalid",
             Self::CollectionBoundExceeded => "diagnostic.draft.collection-bound-exceeded",
             Self::PathScopeInvalid => "diagnostic.draft.path-scope-invalid",
             Self::OutputBoundExceeded => "diagnostic.draft.output-bound-exceeded",
@@ -1040,6 +1246,137 @@ mod tests {
         assert_eq!(value["breadth"]["suggested_roots"], 1);
         assert_eq!(value["breadth"]["unresolved_events"], 1);
         assert_eq!(value["gaps"], json!(["event-limit"]));
+
+        let executable = IdentifiedClosureEntry::new(
+            IdentifiedClosureRole::Executable,
+            "/workspace/tool",
+            ContentIdentity::new(Sha256Digest::from_bytes([7; 32]), 7),
+            0o755,
+            DraftProvenance::StaticExecutableClosure,
+        )
+        .expect("identified executable");
+        let library = IdentifiedClosureEntry::new(
+            IdentifiedClosureRole::RuntimeLibrary,
+            "/workspace/libfixture.so",
+            ContentIdentity::new(Sha256Digest::from_bytes([8; 32]), 8),
+            0o644,
+            DraftProvenance::PlatformRequiredClosure,
+        )
+        .expect("identified library");
+        let interpreter = IdentifiedClosureEntry::new(
+            IdentifiedClosureRole::Interpreter,
+            "/workspace/loader",
+            ContentIdentity::new(Sha256Digest::from_bytes([9; 32]), 9),
+            0o755,
+            DraftProvenance::PlatformRequiredClosure,
+        )
+        .expect("identified interpreter");
+        let executable_candidate = DraftCandidate::identified_closure(
+            CandidateKind::Execute,
+            "/workspace/tool",
+            DraftProvenance::StaticExecutableClosure,
+        )
+        .expect("bound executable candidate");
+        let interpreter_candidate = DraftCandidate::identified_closure(
+            CandidateKind::Execute,
+            "/workspace/loader",
+            DraftProvenance::PlatformRequiredClosure,
+        )
+        .expect("bound interpreter candidate");
+        let library_candidate = DraftCandidate::identified_closure(
+            CandidateKind::Read,
+            "/workspace/libfixture.so",
+            DraftProvenance::PlatformRequiredClosure,
+        )
+        .expect("bound library candidate");
+        let identified = build_plan_draft(
+            &fixture_receipt(),
+            PlanDraftInputs {
+                candidates: vec![
+                    executable_candidate,
+                    interpreter_candidate,
+                    library_candidate,
+                ],
+                identified_closure: vec![library.clone(), executable.clone(), interpreter.clone()],
+                path_scope: Some(fixture_scope()),
+                ..PlanDraftInputs::default()
+            },
+        )
+        .expect("draft");
+        let identified: Value = serde_json::from_slice(identified.as_bytes()).expect("draft JSON");
+        assert_eq!(
+            identified["identified_closure"],
+            json!([
+                {
+                    "mode": "0755",
+                    "path": "/workspace/tool",
+                    "provenance": "static-executable-closure",
+                    "role": "executable",
+                    "sha256": format!("sha256:{}", "07".repeat(32)),
+                    "size_bytes": 7,
+                },
+                {
+                    "mode": "0755",
+                    "path": "/workspace/loader",
+                    "provenance": "platform-required-closure",
+                    "role": "interpreter",
+                    "sha256": format!("sha256:{}", "09".repeat(32)),
+                    "size_bytes": 9,
+                },
+                {
+                    "mode": "0644",
+                    "path": "/workspace/libfixture.so",
+                    "provenance": "platform-required-closure",
+                    "role": "runtime-library",
+                    "sha256": format!("sha256:{}", "08".repeat(32)),
+                    "size_bytes": 8,
+                },
+            ])
+        );
+        assert_eq!(identified["safe_policy"], false);
+        for invalid in [
+            DraftCandidate::identified_closure(
+                CandidateKind::Execute,
+                "/workspace/other",
+                DraftProvenance::StaticExecutableClosure,
+            )
+            .expect("wrong-path candidate"),
+            DraftCandidate::identified_closure(
+                CandidateKind::Read,
+                "/workspace/tool",
+                DraftProvenance::StaticExecutableClosure,
+            )
+            .expect("static-read candidate"),
+            DraftCandidate::identified_closure(
+                CandidateKind::Read,
+                "/workspace/loader",
+                DraftProvenance::PlatformRequiredClosure,
+            )
+            .expect("interpreter-read candidate"),
+            DraftCandidate::identified_closure(
+                CandidateKind::Execute,
+                "/workspace/libfixture.so",
+                DraftProvenance::PlatformRequiredClosure,
+            )
+            .expect("library-execute candidate"),
+        ] {
+            assert_eq!(
+                build_plan_draft(
+                    &fixture_receipt(),
+                    PlanDraftInputs {
+                        candidates: vec![invalid],
+                        identified_closure: vec![
+                            library.clone(),
+                            executable.clone(),
+                            interpreter.clone(),
+                        ],
+                        path_scope: Some(fixture_scope()),
+                        ..PlanDraftInputs::default()
+                    },
+                ),
+                Err(DraftError::CandidateInvalid)
+            );
+        }
     }
 
     #[test]
@@ -1067,6 +1404,16 @@ mod tests {
             .expect("stale observation"),
         );
         assert_eq!(stale.usability(), CapsecUsability::SourceStale);
+        assert_eq!(
+            IdentifiedClosureEntry::new(
+                IdentifiedClosureRole::RuntimeLibrary,
+                "/lib/libfixture.so",
+                ContentIdentity::new(Sha256Digest::from_bytes([8; 32]), 8),
+                0o644,
+                DraftProvenance::CapsecSourceObservation,
+            ),
+            Err(DraftError::ClosureInvalid)
+        );
         let wrong_report = CapsecInput::evaluate(
             &profile,
             CapsecReportObservation::new(
@@ -1143,8 +1490,26 @@ mod tests {
             build_plan_draft(
                 &fixture_receipt(),
                 PlanDraftInputs {
-                    capsec: Some(stale),
+                    capsec: Some(stale.clone()),
                     differences: vec![difference],
+                    ..PlanDraftInputs::default()
+                }
+            ),
+            Err(DraftError::CapsecProvenanceInvalid)
+        );
+        let relabeled_candidate = DraftCandidate::new(
+            CandidateKind::Read,
+            "/workspace/config",
+            [DraftProvenance::CapsecSourceObservation],
+        )
+        .expect("candidate");
+        assert_eq!(
+            build_plan_draft(
+                &fixture_receipt(),
+                PlanDraftInputs {
+                    capsec: Some(stale),
+                    candidates: vec![relabeled_candidate],
+                    path_scope: Some(fixture_scope()),
                     ..PlanDraftInputs::default()
                 }
             ),

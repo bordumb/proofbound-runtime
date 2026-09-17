@@ -41,6 +41,7 @@
     "differences",
     "environment_names",
     "gaps",
+    "identified_closure",
     "inputs",
     "open_items",
     "safe_policy",
@@ -75,6 +76,12 @@
       "maxItems": 65536,
       "uniqueItems": true,
       "items": {"$ref": "#/$defs/input"}
+    },
+    "identified_closure": {
+      "type": "array",
+      "maxItems": 258,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/identifiedClosureEntry"}
     },
     "capsec": {
       "oneOf": [
@@ -192,6 +199,31 @@
         "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
         "size_bytes": {"type": "integer", "minimum": 0}
       }
+    },
+    "identifiedClosureEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "path", "provenance", "role", "sha256", "size_bytes"],
+      "properties": {
+        "mode": {"type": "string", "pattern": "^[0-7]{4}$"},
+        "path": {"type": "string", "pattern": "^/", "maxLength": 1048576},
+        "provenance": {
+          "enum": ["platform-required-closure", "static-executable-closure"]
+        },
+        "role": {"enum": ["executable", "interpreter", "runtime-library"]},
+        "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "size_bytes": {"type": "integer", "minimum": 0}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"role": {"const": "executable"}}, "required": ["role"]},
+          "then": {"properties": {"provenance": {"const": "static-executable-closure"}}}
+        },
+        {
+          "if": {"properties": {"role": {"enum": ["interpreter", "runtime-library"]}}, "required": ["role"]},
+          "then": {"properties": {"provenance": {"const": "platform-required-closure"}}}
+        }
+      ]
     },
     "gap": {
       "enum": [

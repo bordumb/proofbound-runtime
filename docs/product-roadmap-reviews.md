@@ -2983,6 +2983,118 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-8 product-exit extension approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `d60d1f3485c6f050027a6cace9def943cbb958dc`
+- **Reviewed head:** `6b3c39c59afe3cd767808764c6d247260bc3b5f0`
+- **Branch:** `codex/rt8-exit-wave`
+- **Method:** Complete exact-range static security, product, schema, evidence,
+  native-workflow, and roadmap review. The reviewer changed no files and ran no
+  builds or tests.
+- **Findings:** None remain.
+- **Verdict:** **APPROVE**
+
+The reviewer first requested changes at exact head `919832f` because valid
+relative scaffold inputs could not become absolute draft inputs, an unbound
+public candidate path could counterfeit closure provenance, and roadmap status
+was contradictory. The reviewer requested changes again at exact head
+`8a0efc4` because candidate binding changed the established Capsec error,
+role/kind binding lacked causal falsifiers, and scaffold identity-revalidation
+evidence was incomplete. Both rejection records remain non-endorsed.
+
+At the approved head, scaffold lookup retains the declared relative project
+input while draft serialization uses its retained absolute resolved target.
+Closure-tagged candidates require explicit scope and exact path, role, kind,
+and provenance binding to an identified closure entry. Positive and negative
+cases cover executable, interpreter, and runtime-library combinations. Stale
+Capsec relabeling retains `CapsecProvenanceInvalid`. Independent mutations
+cover both binding branches and the load-bearing scaffold gates, including the
+descriptor-bound identity-revalidating read.
+
+The reviewer also confirmed canonical schema, vector, and producer agreement;
+no extension of installed authority; non-reusable diagnostic output; the
+maintained dynamically linked workload in both native architecture lanes; all
+currently available provenance classes; visible unavailable Capsec status; and
+truthful roadmap and assurance language.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`d60d1f3485c6f050027a6cace9def943cbb958dc..6b3c39c59afe3cd767808764c6d247260bc3b5f0`.
+The following approval-only commit changes no reviewed production, schema,
+vector, evidence, native-workflow, specification, roadmap, or assurance bytes.
+Any later subject change requires a new exact-head review.
+
+### RT-8 product-exit lockfile correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `d60d1f3485c6f050027a6cace9def943cbb958dc`
+- **Reviewed head:** `e473459a41866aadb67c42f04d18f34bc58bc020`
+- **Method:** Exact-range static re-review after the hosted packageability gate
+  exposed an omitted workspace lock dependency. The reviewer changed no files
+  and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The only subject change after approved code head `6b3c39c` adds the already
+reviewed `serde` manifest dependency to the `proofbound-runtime-diagnose-cli`
+lock entry. Offline lock regeneration also restores alphabetical ordering of
+the diagnostic CLI and Linux workspace entries. No version, registry source,
+checksum, or external dependency changed. All preceding source findings remain
+closed.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`d60d1f3485c6f050027a6cace9def943cbb958dc..e473459a41866aadb67c42f04d18f34bc58bc020`.
+The following approval-only commit changes only this review record. Any later
+subject change requires another exact-head review.
+
+### RT-8 diagnostic closure lock-identity correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `d60d1f3485c6f050027a6cace9def943cbb958dc`
+- **Reviewed head:** `d81e160d01a6754398e2a3b62dcca78ca640b082`
+- **Method:** Exact-range static re-review after hosted preflight exposed four
+  diagnostic source-closure pins that still named the preceding lock identity.
+  The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The four changed source checkers now pin the exact current `Cargo.lock`
+SHA-256,
+`d66c3088b3aa5b9aca096f0c8bb46d746485d949a398cc5052be33687421b989`.
+No other closure identity changed. Production code, schemas, vectors, evidence
+semantics, native workflow, specifications, and roadmap meaning remain
+unchanged from the previously approved subject. All preceding findings remain
+closed.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`d60d1f3485c6f050027a6cace9def943cbb958dc..d81e160d01a6754398e2a3b62dcca78ca640b082`.
+The following approval-only commit changes only this review record. Any later
+subject change requires another exact-head review.
+
+### RT-8 retained-loader dependency-edge correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `d60d1f3485c6f050027a6cace9def943cbb958dc`
+- **Reviewed head:** `d1f14799acf372df196d0d1253be9ad6c02405aa`
+- **Method:** Exact-range security and product re-review after both hosted
+  native architectures rejected the dynamic scaffold's retained-loader
+  dependency edge. The reviewer changed no files and ran no builds or tests.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+A scaffold dependency edge can use the loader exception only when its selected
+path, digest, size, and mode exactly match the already retained executable
+loader. Every other dependency still requires an exact retained regular-file
+runtime library. Every edge is validated before exact-path deduplication, the
+loader retains its interpreter role, and repeated loader or library edges do
+not create duplicate identified-closure entries. The correction grants no new
+authority and does not alter receipt reuse.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`d60d1f3485c6f050027a6cace9def943cbb958dc..d1f14799acf372df196d0d1253be9ad6c02405aa`.
+The following approval-only commit changes only this review record. Any later
+subject change requires another exact-head review.
+
 ## RT-8 consolidated object, candidate, and command approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

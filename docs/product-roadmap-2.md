@@ -7,10 +7,11 @@
   source, event-and-drain coupling, architecture-qualified decoder, exact event
   mapping, bounded stream collector, and diagnostic lifecycle are merged. The
   consolidated RT-8 object-resolution, denied-candidate, separate-command,
-  native-corpus, and release-inventory subject is implemented locally and
-  awaits final exact-head review plus hosted admission. The current-integration
-  source closes npm's missing first-publication route. External
-  registry publication and every complete Roadmap 2 epic exit remain open.
+  native-corpus, and release-inventory subject is merged and admitted. The
+  current RT-8 exit extension awaits exact-head review and hosted admission.
+  The current-integration source closes npm's missing first-publication route.
+  External registry publication and every complete Roadmap 2 epic exit remain
+  open.
 - **Date:** 2026-09-16
 - **Runtime baseline:** roadmap admission synchronization merge `e8473bd` on
   `main`; exact-head Verify run `35131985759` and exact-main Verify run `35135938137`
@@ -137,17 +138,18 @@ closed at a fixed monotonic deadline instead of waiting indefinitely.
 Independently approved source `5d296fb` and approval-only head `17458ad` passed
 PR 22 Verify run `35039326242`; unsigned exact main `17458ad` passed run
 `35042895100`.
-The dependent `PBR-OBSERVER-028` source is restacked on current main. It binds
-the trace to the exact prepared and still-fresh cgroup and one private absolute
-execution deadline, rejects late-ready progress, starts bounded termination
-before exposing a drain-only state, treats process-group signal failure as
-terminal, and carries one cleanup deadline through complete terminal resources
-and stream joins before publication. It awaits independent review and hosted
-verification.
-The dependent object-resolution, denied-candidate, command-integration, native
-diagnostic, and release-binding source is implemented on the consolidated RT-8
-branch. Admission and the maintained all-provenance dynamic workload remain
-open.
+`PBR-OBSERVER-028` merged as `cddd8dd` after independent exact-source review
+and complete PR verification. The dependent object-resolution,
+denied-candidate, command-integration, native diagnostic, and release-binding
+subject under `PBR-OBSERVER-029` through `PBR-OBSERVER-031` passed independent
+review and complete PR 26 run `35172227506`, including both native
+architectures, then merged unsigned as `d60d1f3`. Exact-main Verify run
+`35175269953` passed every required lane.
+The active exit wave adds an identity-matched declared static scaffold and one
+maintained dynamically linked workload that displays static, platform,
+diagnostic, and human provenance without granting authority. An accepted
+Capsec integration tuple remains optional and unavailable until the Capsec
+owner publishes its native identified report contract.
 The RT-7 current-integration source merged as `47c5ad2` and passed exact-main
 Verify run `35006872460`. RT-11's accepted signing decision merged as
 `08b8dbe` and passed exact-main Verify run `35012954812`; signing

@@ -26,6 +26,19 @@ def canonical_json(value):
     ).encode("utf-8")
 
 
+def assert_closure_candidate_binding(source):
+    for marker in [
+        "candidate_provenance_is_bound(",
+        "entry.role == IdentifiedClosureRole::Executable",
+        "candidate.kind == CandidateKind::Execute",
+        "(IdentifiedClosureRole::Interpreter, CandidateKind::Execute)",
+        "(IdentifiedClosureRole::RuntimeLibrary, CandidateKind::Read)",
+        "DraftProvenance::CapsecSourceObservation => true",
+    ]:
+        assert marker in source
+    assert source.count("entry.path == candidate.path") == 2
+
+
 class DiagnosticArtifactProducerContractTests(unittest.TestCase):
     def setUp(self):
         self.receipt_bytes = RECEIPT_VECTOR.read_bytes().removesuffix(b"\n")
@@ -174,10 +187,40 @@ class DiagnosticArtifactProducerContractTests(unittest.TestCase):
             "observation.report != profile.report",
             "DraftPathScope",
             "is_system_path",
+            "inputs.candidates.sort()",
+            "merge_candidate(&mut candidates, candidate)",
+            "pub struct IdentifiedClosureEntry",
+            "inputs.identified_closure.sort()",
+            "DraftProvenance::StaticExecutableClosure",
+            "return Err(DraftError::ClosureInvalid);",
+            "inputs.candidates.iter().any(|candidate|",
             "receipt.output_bound()",
             "OutputBoundExceeded",
         ]:
             self.assertIn(guard, self.draft_source)
+        assert_closure_candidate_binding(self.draft_source)
+
+    def test_closure_candidate_binding_mutations_are_rejected(self):
+        mutations = [
+            self.draft_source.replace(
+                "&& candidate.kind == CandidateKind::Execute", "", 1
+            ),
+            self.draft_source.replace(
+                "(IdentifiedClosureRole::Interpreter, CandidateKind::Execute)",
+                "(IdentifiedClosureRole::Interpreter, CandidateKind::Read)",
+                1,
+            ),
+            self.draft_source.replace(
+                "(IdentifiedClosureRole::RuntimeLibrary, CandidateKind::Read)",
+                "(IdentifiedClosureRole::RuntimeLibrary, CandidateKind::Execute)",
+                1,
+            ),
+            self.draft_source.replace("entry.path == candidate.path", "true", 1),
+        ]
+        for mutation in mutations:
+            with self.subTest(mutation=hash(mutation)):
+                with self.assertRaises(AssertionError):
+                    assert_closure_candidate_binding(mutation)
 
     def test_aggregate_subject_streams_both_outputs_through_a_bounded_writer(self):
         self.assertIn(

@@ -356,6 +356,7 @@ with os.fdopen(descriptor, "w", encoding="utf-8") as destination:
     --argument read-denied \
     --argument /etc/passwd \
     --working-directory . \
+    --read plan-scaffold.json \
     --write diagnostic-output \
     --execute "$PROOFBOUND_NATIVE_FIXTURE" \
     --processes 1 \
@@ -368,12 +369,14 @@ with os.fdopen(descriptor, "w", encoding="utf-8") as destination:
     --plan "$diagnostic_plan" \
     --receipt "$diagnostic_receipt" \
     --draft "$diagnostic_draft" \
-    --cgroup-root "$PROOFBOUND_CGROUP_ROOT" >"$diagnostic_result"
+    --cgroup-root "$PROOFBOUND_CGROUP_ROOT" \
+    --static-scaffold plan-scaffold.json >"$diagnostic_result"
   python3 -c '
+import hashlib
 import json
 import sys
 
-result_path, receipt_path, draft_path = sys.argv[1:]
+result_path, receipt_path, draft_path, scaffold_path = sys.argv[1:]
 with open(result_path, encoding="utf-8") as source:
     result = json.load(source)
 with open(receipt_path, encoding="utf-8") as source:
@@ -397,7 +400,20 @@ assert "stable-candidate" in resolutions
 assert any(event["resolved_path"] == "/etc/passwd" for event in receipt["events"])
 assert draft["schema"] == "proofbound-runtime-plan-draft/1"
 assert draft["safe_policy"] is False
-' "$diagnostic_result" "$diagnostic_receipt" "$diagnostic_draft"
+with open(scaffold_path, "rb") as source:
+    assert draft["static_scaffold"] == "sha256:" + hashlib.sha256(source.read()).hexdigest()
+provenance = {
+    value
+    for candidate in draft["candidates"]
+    for value in candidate["provenance"]
+} | {
+    entry["provenance"] for entry in draft["identified_closure"]
+} | {item["provenance"] for item in draft["open_items"]}
+assert {
+    "diagnostic-runtime-observation", "human-authored",
+    "static-executable-closure",
+} <= provenance
+' "$diagnostic_result" "$diagnostic_receipt" "$diagnostic_draft" "$scaffold"
   diagnostic_commitment="sha256:$(sha256sum "$diagnostic_receipt" | cut -d' ' -f1)"
   set +e
   "$runtime_bin_directory/pbr-verify" \
@@ -411,6 +427,92 @@ assert draft["safe_policy"] is False
   test ! -s "$e2e_root/diagnostic-verification.stdout"
   test "$(<"$e2e_root/diagnostic-verification.stderr")" = \
     'pbr-verify: profile.diagnostic.not-reusable'
+
+  dynamic_executable="$e2e_root/dynamic-diagnostic-probe"
+  dynamic_scaffold="$e2e_root/dynamic-plan-scaffold.json"
+  dynamic_plan="$e2e_root/dynamic-diagnostic-plan.cbor"
+  dynamic_receipt="$e2e_root/dynamic-diagnostic-receipt.json"
+  dynamic_draft="$e2e_root/dynamic-diagnostic-draft.json"
+  dynamic_result="$e2e_root/dynamic-diagnostic-result.json"
+  cc -O2 -Wall -Wextra -Werror \
+    "$repository_root/crates/proofbound-runtime-linux/tests/fixtures/native-boundary-probe.c" \
+    -o "$dynamic_executable"
+  file "$dynamic_executable" | grep -q 'dynamically linked'
+  dynamic_runtime_read="$(
+    python3 experiments/performance/discover_runtime_libraries.py "$dynamic_executable"
+  )"
+  "$runtime_bin_directory/pbr" plan scaffold \
+    --executable "$dynamic_executable" \
+    --host-profile "$scaffold_profile" >"$dynamic_scaffold"
+  python3 tools/ci/encode_plan_v2.py \
+    --output "$dynamic_plan" \
+    --id ci.native-diagnostic-dynamic-workload \
+    --executable "$dynamic_executable" \
+    --argument read-denied \
+    --argument /etc/passwd \
+    --working-directory . \
+    --read dynamic-plan-scaffold.json \
+    --runtime-read-json "$dynamic_runtime_read" \
+    --write dynamic-output \
+    --execute "$dynamic_executable" \
+    --processes 1 \
+    --wall-time-ms 5000 \
+    --stdout-bytes 4096 \
+    --stderr-bytes 4096 \
+    --memory-bytes 268435456 \
+    --swap-bytes 0
+  "$runtime_bin_directory/pbr-diagnose" \
+    --plan "$dynamic_plan" \
+    --receipt "$dynamic_receipt" \
+    --draft "$dynamic_draft" \
+    --cgroup-root "$PROOFBOUND_CGROUP_ROOT" \
+    --static-scaffold dynamic-plan-scaffold.json >"$dynamic_result"
+  python3 -c '
+import hashlib
+import json
+import sys
+
+result_path, receipt_path, draft_path, scaffold_path = sys.argv[1:]
+with open(result_path, encoding="utf-8") as source:
+    result = json.load(source)
+with open(receipt_path, encoding="utf-8") as source:
+    receipt = json.load(source)
+with open(draft_path, encoding="utf-8") as source:
+    draft = json.load(source)
+with open(scaffold_path, "rb") as source:
+    scaffold_digest = hashlib.sha256(source.read()).hexdigest()
+assert result["completion"] == "complete", result
+assert result["observer_error_codes"] == []
+assert receipt["execution_profile"] == "diagnostic"
+assert receipt["reusable"] is False
+assert receipt["safe_policy"] is False
+assert draft["safe_policy"] is False
+assert draft["static_scaffold"] == "sha256:" + scaffold_digest
+provenance = {
+    value
+    for candidate in draft["candidates"]
+    for value in candidate["provenance"]
+} | {
+    entry["provenance"] for entry in draft["identified_closure"]
+} | {item["provenance"] for item in draft["open_items"]}
+assert {
+    "diagnostic-runtime-observation", "human-authored",
+    "platform-required-closure", "static-executable-closure",
+} <= provenance
+codes = {item["code"] for item in draft["open_items"]}
+assert {
+    "capsec-missing", "choose-environment", "choose-limits",
+    "choose-network-mode", "choose-write-roots",
+} <= codes
+assert not any(
+    candidate["provenance"] == ["capsec-source-observation"]
+    for candidate in draft["candidates"]
+)
+assert not any(
+    entry["provenance"] == "capsec-source-observation"
+    for entry in draft["identified_closure"]
+)
+' "$dynamic_result" "$dynamic_receipt" "$dynamic_draft" "$dynamic_scaffold"
 
   "$runtime_bin_directory/pbr" run \
     --plan "$plan" \
@@ -491,6 +593,16 @@ assert result["commitment"].startswith("sha256:")
       "$evidence_directory/diagnostic-draft.json"
     install -m 0644 "$diagnostic_result" \
       "$evidence_directory/diagnostic-result.json"
+    install -m 0644 "$dynamic_scaffold" \
+      "$evidence_directory/dynamic-plan-scaffold.json"
+    install -m 0644 "$dynamic_plan" \
+      "$evidence_directory/dynamic-diagnostic-plan.cbor"
+    install -m 0644 "$dynamic_receipt" \
+      "$evidence_directory/dynamic-diagnostic-receipt.json"
+    install -m 0644 "$dynamic_draft" \
+      "$evidence_directory/dynamic-diagnostic-draft.json"
+    install -m 0644 "$dynamic_result" \
+      "$evidence_directory/dynamic-diagnostic-result.json"
     printf '%s\n' "$commitment" >"$evidence_directory/receipt-commitment.txt"
     python3 -c '
 import json

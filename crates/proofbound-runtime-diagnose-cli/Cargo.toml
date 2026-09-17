@@ -17,5 +17,6 @@ proofbound-runtime-core.workspace = true
 proofbound-runtime-diagnose.workspace = true
 proofbound-runtime-diagnose-linux.workspace = true
 proofbound-runtime-linux.workspace = true
+serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
