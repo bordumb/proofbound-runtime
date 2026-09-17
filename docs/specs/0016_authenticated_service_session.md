@@ -315,9 +315,10 @@ created
   -> closed
 ```
 
-Every state also has a terminal `failed(reason)` transition. There is no
-transition from `active`, `closing`, `closed`, or `failed` to `resolving`,
-`connecting`, `authenticating`, or `ready`. There is no reconnect transition.
+Every nonterminal state also has a terminal `failed(reason)` transition. A
+terminal `closed` or `failed` state has no outgoing transition. There is no
+transition from `active` or `closing` to `resolving`, `connecting`,
+`authenticating`, or `ready`. There is no reconnect transition.
 
 The supervisor owns connector termination and reaping. It completes bounded
 stream collection before it publishes the final result. Connector crash,

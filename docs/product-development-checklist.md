@@ -405,7 +405,9 @@ draft, while no diagnostic output can become reusable production evidence.
 - [ ] Admit the closed forward-only service lifecycle. `PBR-NETWORK-034` and
   its exhaustive phase/event tests are staged on the current branch. Its Lean
   theorem is a candidate until separately registered and admitted; neither
-  source executes a resolver, connector, TLS session, launcher, or child.
+  source executes a resolver, connector, TLS session, launcher, or child. The
+  branch also clarifies that only nonterminal states can enter typed failure;
+  the intersecting `PBR-SDK-014` closure therefore requires fresh admission.
 - [ ] Model and prove the selected pure non-amplification, identity, and state
   transition properties in Lean where the subject is tractable.
 - [ ] Link selected pure Rust decisions to their formal models without

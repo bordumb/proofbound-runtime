@@ -34,17 +34,36 @@ inductive Event where
   | fail (reason : FailureReason)
   deriving DecidableEq, Repr
 
-structure State where
-  phase : Phase
-  failure : Option FailureReason
+inductive State where
+  | created
+  | resolving
+  | connecting
+  | authenticating
+  | ready
+  | active
+  | closing
+  | closed
+  | failed (reason : FailureReason)
   deriving DecidableEq, Repr
 
-def initial : State := {
-  phase := .created
-  failure := none
-}
+def State.phase : State → Phase
+  | .created => .created
+  | .resolving => .resolving
+  | .connecting => .connecting
+  | .authenticating => .authenticating
+  | .ready => .ready
+  | .active => .active
+  | .closing => .closing
+  | .closed => .closed
+  | .failed _ => .failed
 
-def Nonterminal : Phase → Prop
+def State.failure : State → Option FailureReason
+  | .failed reason => some reason
+  | _ => none
+
+def initial : State := .created
+
+def Nonterminal : State → Prop
   | .created => True
   | .resolving => True
   | .connecting => True
@@ -53,47 +72,46 @@ def Nonterminal : Phase → Prop
   | .active => True
   | .closing => True
   | .closed => False
-  | .failed => False
+  | .failed _ => False
 
-def ForwardTransition (phase : Phase) (event : Event) (next : State) : Prop :=
-  match phase, event with
-  | .created, .beginResolution => ⟨.resolving, none⟩ = next
-  | .resolving, .resolutionComplete => ⟨.connecting, none⟩ = next
-  | .connecting, .endpointConnected => ⟨.authenticating, none⟩ = next
-  | .authenticating, .tlsAuthenticated => ⟨.ready, none⟩ = next
-  | .ready, .childReleased => ⟨.active, none⟩ = next
-  | .active, .beginClose => ⟨.closing, none⟩ = next
-  | .closing, .closeComplete => ⟨.closed, none⟩ = next
+def ForwardTransition (state : State) (event : Event) (next : State) : Prop :=
+  match state, event with
+  | .created, .beginResolution => State.resolving = next
+  | .resolving, .resolutionComplete => State.connecting = next
+  | .connecting, .endpointConnected => State.authenticating = next
+  | .authenticating, .tlsAuthenticated => State.ready = next
+  | .ready, .childReleased => State.active = next
+  | .active, .beginClose => State.closing = next
+  | .closing, .closeComplete => State.closed = next
   | _, _ => False
 
 def AllowedTransition (state : State) (event : Event) (next : State) : Prop :=
   match event with
   | .fail reason =>
-      Nonterminal state.phase ∧ ⟨.failed, some reason⟩ = next
-  | _ => ForwardTransition state.phase event next
+      Nonterminal state ∧ State.failed reason = next
+  | _ => ForwardTransition state event next
 
 def transition (state : State) (event : Event) : Except Unit State :=
-  match state.phase, event with
-  | .created, .beginResolution => .ok ⟨.resolving, none⟩
-  | .resolving, .resolutionComplete => .ok ⟨.connecting, none⟩
-  | .connecting, .endpointConnected => .ok ⟨.authenticating, none⟩
-  | .authenticating, .tlsAuthenticated => .ok ⟨.ready, none⟩
-  | .ready, .childReleased => .ok ⟨.active, none⟩
-  | .active, .beginClose => .ok ⟨.closing, none⟩
-  | .closing, .closeComplete => .ok ⟨.closed, none⟩
-  | .created, .fail reason => .ok ⟨.failed, some reason⟩
-  | .resolving, .fail reason => .ok ⟨.failed, some reason⟩
-  | .connecting, .fail reason => .ok ⟨.failed, some reason⟩
-  | .authenticating, .fail reason => .ok ⟨.failed, some reason⟩
-  | .ready, .fail reason => .ok ⟨.failed, some reason⟩
-  | .active, .fail reason => .ok ⟨.failed, some reason⟩
-  | .closing, .fail reason => .ok ⟨.failed, some reason⟩
+  match state, event with
+  | .created, .beginResolution => .ok .resolving
+  | .resolving, .resolutionComplete => .ok .connecting
+  | .connecting, .endpointConnected => .ok .authenticating
+  | .authenticating, .tlsAuthenticated => .ok .ready
+  | .ready, .childReleased => .ok .active
+  | .active, .beginClose => .ok .closing
+  | .closing, .closeComplete => .ok .closed
+  | .created, .fail reason => .ok (.failed reason)
+  | .resolving, .fail reason => .ok (.failed reason)
+  | .connecting, .fail reason => .ok (.failed reason)
+  | .authenticating, .fail reason => .ok (.failed reason)
+  | .ready, .fail reason => .ok (.failed reason)
+  | .active, .fail reason => .ok (.failed reason)
+  | .closing, .fail reason => .ok (.failed reason)
   | _, _ => .error ()
 
 theorem transition_exact (state : State) (event : Event) (next : State) :
     transition state event = .ok next ↔ AllowedTransition state event next := by
-  rcases state with ⟨phase, failure⟩
-  cases phase <;> cases event <;>
+  cases state <;> cases event <;>
     simp [transition, AllowedTransition, ForwardTransition, Nonterminal]
 
 end ProofboundRuntime.ServiceLifecycle

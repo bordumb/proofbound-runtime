@@ -21,7 +21,7 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-DIAGNOSTIC-011` | Tested/model-only on the development branch | The closed run phase and rule mapping is tested without inferring a kernel denial or changing receipt meaning. |
 | `PBR-ACCEPT-012` | Tested/model-only on the development branch | Adopter policy decisions bind independently verified inputs; exact released acceptor observation and external Action dogfood remain open. |
 | `PBR-SCAFFOLD-013` | Tested/model-only on the development branch | Static ELF scaffolding is bounded diagnostic evidence, not a safe policy or a complete dynamic-load inventory. |
-| `PBR-SDK-014` | Service-session source admitted at Tier 1 on exact Runtime main `d48122b`; pure-policy replay pending | PR 30 run `35226379485` passed and merged as `a94c21a`; exact-main run `35231003515` is in progress. Registry publication and consumer dogfood remain open. |
+| `PBR-SDK-014` | Prior service-session source admitted; current lifecycle-spec closure pending | PR 30 run `35226379485` passed and merged as `a94c21a`; exact-main run `35231003515` is in progress. The lifecycle branch clarifies terminal transitions in Specification 0016 and requires fresh admission. Registry publication and consumer dogfood remain open. |
 | `PBR-DISTRIBUTION-015` | Tier 1 current contract closure admitted on exact Runtime main `d48122b` | The changed deterministic-CBOR helper closure passed PR 29 run `35216056050` and exact-main run `35220098639`; registry publication remains external. |
 | `PBR-DISTRIBUTION-016` | Tier 1 credential-scoped consumer admitted on exact Runtime main `a8df83d` | Runtime pins one immutable public Proofbound release, confines its read-only workflow credential to canonical GitHub API metadata, keeps release assets anonymous, and rejects identity, inventory, manifest, checksum, archive, installer, and installed-byte substitution. Exact-head PR 23 run `35034962830` and exact-main run `35038304369` passed. |
 | `PBR-DISTRIBUTION-018` | Tier 1 protected publication routes admitted on exact Runtime main `47c5ad2` | Publication is explicit, exact-source, protected, ordered, and credential-isolated. The one-time npm bootstrap route and its fail-closed cutover are admitted; external registry configuration, publication, and observations remain open. |
@@ -59,7 +59,7 @@ head until that replay passes.
 
 The current lifecycle wave changes the shared core export again. The pending
 existing claims are `PBR-BINDING-005`, `PBR-DRAFT-017`, `PBR-DRAFT-019`,
-`PBR-OBSERVER-020`, `PBR-OBSERVER-026`, `PBR-OBSERVER-027`,
+`PBR-SDK-014`, `PBR-OBSERVER-020`, `PBR-OBSERVER-026`, `PBR-OBSERVER-027`,
 `PBR-OBSERVER-028`, `PBR-OBSERVER-031`, `PBR-NETWORK-032`, and
 `PBR-NETWORK-033`. `PBR-NETWORK-034` is a new proposed Tier 0 subject and is
 pending its first exact admission. Its Lean theorem is a compiled candidate,

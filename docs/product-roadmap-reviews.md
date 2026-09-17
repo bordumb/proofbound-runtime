@@ -3295,6 +3295,36 @@ The following approval-only commit changes only this review record. Any later
 production, schema, claim, evidence, checker, SDK, or status-subject change
 requires a new exact-head review.
 
+## RT-5 authenticated-service lifecycle initial review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `a94c21a9d1b399f9eff8771e06ce253fe9a6c4ca`
+- **Reviewed head:** `089ae424870d804e4731312606cd307872642267`
+- **Branch:** `codex/rt5-formal-wave`
+- **Method:** Complete exact-range static Rust, formal-model, claim,
+  evidence-inventory, specification, source-identity, and roadmap review. The
+  reviewer changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review found three blockers. First, the Lean `State` structure admitted
+arbitrary phase and optional-failure combinations that the Rust private fields
+make unconstructible, so its exactness theorem quantified over invalid modeled
+states. Second, Specification 0016 said every state could enter failure while
+the implementation, tests, claim, and model correctly reject post-terminal
+events. Third, three independent diagnostic source-closure checkers retained
+the previous core-library digest and would reject the changed public export.
+
+The correction must make invalid formal states unrepresentable or require and
+preserve well-formedness, limit typed failure to nonterminal states in the
+normative specification and pending ledger, and refresh all three exact source
+pins without weakening their causal mutation suites. The Rust lifecycle's
+forward order, typed failure behavior, public encapsulation, and test inventory
+otherwise introduced no blocker. Production service execution remained
+rejected and no connector or effectful network authority was enabled. The
+corrected exact head requires a new independent review.
+
 ## RT-8 product-exit extension approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
