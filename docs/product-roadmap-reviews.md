@@ -3236,6 +3236,33 @@ the schema, Rust projection, generator, frozen vector, and falsifier, and
 synchronize the admission ledger. The corrected exact head requires a new
 independent review.
 
+## RT-5 authenticated-service pure-policy status correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `d48122b06c4880aeba45291a107c51ad381067a4`
+- **Reviewed head:** `f2b22ecb66e108b31b941b2f8998ca1ea0ad8d99`
+- **Branch:** `codex/rt5-pure-policy`
+- **Method:** Complete exact-range static security, canonical-policy,
+  evidence-inventory, assurance-status, and roadmap re-review. The reviewer
+  changed no files and ran no builds or tests.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The three blockers from the initial review are closed. The evidence inventory
+uses the crate-qualified test identity. The canonical policy separately binds
+direct-child `deny-network-v1`, `channel-only-v1`, and the complete connector
+authority across the specification, schema, Rust encoder, generator, vector,
+and checks. The production parser remains fail closed and the compiled child
+base remains deny-network.
+
+One status blocker remains. The controlling roadmap execution-order document
+still calls pre-contract main `da8c96b` and run `35207382756` current and
+describes only RT-8 as admitted. It must record admitted PR 29 main `d48122b`,
+exact-head run `35216056050`, and exact-main run `35220098639` consistently
+with the assurance plan, product roadmap, and checklist. The corrected exact
+head requires a new independent review.
+
 ## RT-8 product-exit extension approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
