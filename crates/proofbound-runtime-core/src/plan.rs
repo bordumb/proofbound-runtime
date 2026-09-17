@@ -12,6 +12,7 @@ use crate::{
     NetworkSupportPath, OutputByteLimit, PathAuthority, PathRole, ProcessLimit, ResolutionPolicy,
     ResolverAddress, ResolverEndpoint, ResourceLimits, RevocationPolicy, ServiceName,
     ServiceNameVerification, ServiceSessionLimits, SwapByteLimit, TcpPort, TlsPolicy,
+    WallTimeLimit,
 };
 
 const PLAN_SCHEMA: &str = "proofbound-runtime-plan/1";
