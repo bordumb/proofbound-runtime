@@ -264,18 +264,6 @@ fn map_identity_parts(
     )
 }
 
-fn map_identity(
-    identity: TraceObjectIdentity,
-) -> Result<ObservedObjectIdentity, DiagnosticArtifactError> {
-    ObservedObjectIdentity::new(
-        identity.device_major(),
-        identity.device_minor(),
-        identity.inode(),
-        identity.mode(),
-        identity.mount_id(),
-    )
-}
-
 fn map_selected_object(
     selected: Option<&TraceSelectedObject>,
 ) -> (

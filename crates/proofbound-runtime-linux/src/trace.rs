@@ -2370,6 +2370,7 @@ impl TraceeState {
         }
     }
 
+    #[cfg(test)]
     const fn observing(thread_group: TraceProcessId) -> Self {
         Self {
             thread_group,
