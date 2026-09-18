@@ -3113,6 +3113,40 @@ or receipt meaning. Because production source bytes changed after approval,
 the corrected exact head requires a new independent review and approval
 envelope before another push.
 
+## RT-5 connector-process hosted-correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da5292536ea56f40005b297c21625add195e580e`
+- **Reviewed head:** `21c7c2d2a72f79ae53226c23282c8ae27e07b40a`
+- **Branch:** `codex/rt5-connector-process`
+- **Method:** Complete exact-range static security re-review after hosted run
+  `35289751721`. The reviewer changed no files and ran no builds or tests. The
+  worktree and exact-range whitespace check were clean.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that boxing the ready-report payload changes only the
+private in-memory representation. Report lengths, decode offsets, encoded
+bytes, binding validation, and the public `ConnectorReady` type remain
+unchanged. Passing `ConnectorBootstrap` into argument serialization preserves
+all thirteen prior inputs and their exact argument order. Checked descriptor
+conversion fails closed and produces the same decimal representation for every
+valid descriptor.
+
+The added independent source-contract guards causally reject removal of the
+boxed ready constructor and the bootstrap construction and serialization call.
+The hosted-failure record identifies the exact approval envelope, run, Rust
+job, two Clippy findings, passing native lanes, cancellation, and non-transfer
+of partial admission. Every blocker from the preceding reviews remains closed,
+all intersecting source identities remain consistent, and no new blocker was
+introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`da5292536ea56f40005b297c21625add195e580e..21c7c2d2a72f79ae53226c23282c8ae27e07b40a`.
+The following approval-only commit changes no reviewed production source,
+claim, assumption, evidence unit, checker, causal mutation, or hosted-result
+record. Any later subject change requires a new exact-head review.
+
 ## RT-5 connector engine hosted-ledger correction approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
