@@ -664,23 +664,28 @@ impl PreparedConnectorProcess<'_> {
             let trust_fd = self.trust_root.as_fd().as_raw_fd();
             let channel_fd = connector_channel.as_fd().as_raw_fd();
             let control_fd = connector_control.as_fd().as_raw_fd();
+            let bootstrap = ConnectorBootstrap {
+                plan_descriptor: u32::try_from(plan_fd)
+                    .map_err(|_| ConnectorProcessError::BootstrapInvalid)?,
+                trust_root_descriptor: u32::try_from(trust_fd)
+                    .map_err(|_| ConnectorProcessError::BootstrapInvalid)?,
+                channel_descriptor: u32::try_from(channel_fd)
+                    .map_err(|_| ConnectorProcessError::BootstrapInvalid)?,
+                control_descriptor: u32::try_from(control_fd)
+                    .map_err(|_| ConnectorProcessError::BootstrapInvalid)?,
+                execution_id: self.execution_id,
+                policy_digest: self.policy_digest,
+                process_generation: self.process_generation,
+                channel_id: self.channel_id,
+                plan_digest: self.plan_source.identity().digest(),
+                trust_root_digest: self.trust_root.identity().digest(),
+                connector_digest: self.connector.identity().digest(),
+                runtime_closure_digest: self.runtime_closure_digest,
+                resolver_configuration_digest: self.resolver_configuration.identity().digest(),
+            };
             let mut command = Command::new(format!("/proc/self/fd/{connector_fd}"));
             command
-                .args(bootstrap_arguments(
-                    plan_fd,
-                    trust_fd,
-                    channel_fd,
-                    control_fd,
-                    self.execution_id,
-                    self.policy_digest,
-                    self.process_generation,
-                    self.channel_id,
-                    self.plan_source.identity().digest(),
-                    self.trust_root.identity().digest(),
-                    self.connector.identity().digest(),
-                    self.runtime_closure_digest,
-                    self.resolver_configuration.identity().digest(),
-                ))
+                .args(bootstrap_arguments(bootstrap))
                 .env_clear()
                 .stdin(Stdio::null())
                 .stdout(Stdio::null())
@@ -703,6 +708,7 @@ impl PreparedConnectorProcess<'_> {
             let packet = process.receive_before(setup_deadline)?;
             match decode_report(&packet)? {
                 ConnectorReport::Ready(ready) => {
+                    let ready = *ready;
                     require_ready_binding(
                         ready,
                         self.execution_id,
@@ -1154,9 +1160,9 @@ impl fmt::Display for ConnectorProcessError {
 
 impl std::error::Error for ConnectorProcessError {}
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 enum ConnectorReport {
-    Ready(ConnectorReady),
+    Ready(Box<ConnectorReady>),
     Terminal(ConnectorTerminal),
     Failure(ConnectorFailure),
 }
@@ -1236,50 +1242,36 @@ fn digest_runtime_closure(runtime_closure: &[ResolvedServiceArtifact]) -> Sha256
     Sha256Digest::from_bytes(hasher.finalize().into())
 }
 
-fn bootstrap_arguments(
-    plan_fd: i32,
-    trust_fd: i32,
-    channel_fd: i32,
-    control_fd: i32,
-    execution_id: ExecutionId,
-    policy_digest: Sha256Digest,
-    process_generation: ConnectorProcessGeneration,
-    channel_id: ServiceChannelId,
-    plan_digest: Sha256Digest,
-    trust_root_digest: Sha256Digest,
-    connector_digest: Sha256Digest,
-    runtime_closure_digest: Sha256Digest,
-    resolver_configuration_digest: Sha256Digest,
-) -> Vec<String> {
+fn bootstrap_arguments(bootstrap: ConnectorBootstrap) -> Vec<String> {
     vec![
         "--connector-protocol".to_owned(),
         CONNECTOR_PROTOCOL.to_owned(),
         "--plan-fd".to_owned(),
-        plan_fd.to_string(),
+        bootstrap.plan_descriptor.to_string(),
         "--trust-root-fd".to_owned(),
-        trust_fd.to_string(),
+        bootstrap.trust_root_descriptor.to_string(),
         "--channel-fd".to_owned(),
-        channel_fd.to_string(),
+        bootstrap.channel_descriptor.to_string(),
         "--control-fd".to_owned(),
-        control_fd.to_string(),
+        bootstrap.control_descriptor.to_string(),
         "--execution-id".to_owned(),
-        hex(execution_id.as_bytes()),
+        hex(bootstrap.execution_id.as_bytes()),
         "--policy-sha256".to_owned(),
-        policy_digest.to_hex(),
+        bootstrap.policy_digest.to_hex(),
         "--process-generation".to_owned(),
-        process_generation.get().to_string(),
+        bootstrap.process_generation.get().to_string(),
         "--channel-id".to_owned(),
-        hex(channel_id.as_bytes()),
+        hex(bootstrap.channel_id.as_bytes()),
         "--plan-sha256".to_owned(),
-        plan_digest.to_hex(),
+        bootstrap.plan_digest.to_hex(),
         "--trust-root-sha256".to_owned(),
-        trust_root_digest.to_hex(),
+        bootstrap.trust_root_digest.to_hex(),
         "--connector-sha256".to_owned(),
-        connector_digest.to_hex(),
+        bootstrap.connector_digest.to_hex(),
         "--runtime-closure-sha256".to_owned(),
-        runtime_closure_digest.to_hex(),
+        bootstrap.runtime_closure_digest.to_hex(),
         "--resolver-configuration-sha256".to_owned(),
-        resolver_configuration_digest.to_hex(),
+        bootstrap.resolver_configuration_digest.to_hex(),
     ]
 }
 
@@ -1447,7 +1439,7 @@ fn decode_report(bytes: &[u8]) -> Result<ConnectorReport, ConnectorProcessError>
         Some(READY_REPORT) if bytes.len() == 245 => {
             let execution_id = ExecutionId::from_bytes(array_at(bytes, 9)?)
                 .map_err(|_| ConnectorProcessError::Protocol)?;
-            Ok(ConnectorReport::Ready(ConnectorReady {
+            Ok(ConnectorReport::Ready(Box::new(ConnectorReady {
                 execution_id,
                 policy_digest: Sha256Digest::from_bytes(array_at(bytes, 25)?),
                 process_generation: ConnectorProcessGeneration::new(u64::from_be_bytes(array_at(
@@ -1468,7 +1460,7 @@ fn decode_report(bytes: &[u8]) -> Result<ConnectorReport, ConnectorProcessError>
                 certificate_chain_digest: Sha256Digest::from_bytes(array_at(bytes, 197)?),
                 handshake_bytes: u64::from_be_bytes(array_at(bytes, 229)?),
                 authenticated_ns: u64::from_be_bytes(array_at(bytes, 237)?),
-            }))
+            })))
         }
         Some(TERMINAL_REPORT) if bytes.len() == 41 => {
             Ok(ConnectorReport::Terminal(ConnectorTerminal {
@@ -1736,21 +1728,21 @@ mod tests {
 
     #[test]
     fn bootstrap_is_closed_and_descriptor_set_is_unique() {
-        let arguments = bootstrap_arguments(
-            3,
-            4,
-            5,
-            6,
-            execution_id(),
-            Sha256Digest::from_bytes([1; 32]),
-            generation(7),
-            channel_id(2),
-            Sha256Digest::from_bytes([3; 32]),
-            Sha256Digest::from_bytes([4; 32]),
-            Sha256Digest::from_bytes([5; 32]),
-            Sha256Digest::from_bytes([6; 32]),
-            Sha256Digest::from_bytes([7; 32]),
-        );
+        let arguments = bootstrap_arguments(ConnectorBootstrap {
+            plan_descriptor: 3,
+            trust_root_descriptor: 4,
+            channel_descriptor: 5,
+            control_descriptor: 6,
+            execution_id: execution_id(),
+            policy_digest: Sha256Digest::from_bytes([1; 32]),
+            process_generation: generation(7),
+            channel_id: channel_id(2),
+            plan_digest: Sha256Digest::from_bytes([3; 32]),
+            trust_root_digest: Sha256Digest::from_bytes([4; 32]),
+            connector_digest: Sha256Digest::from_bytes([5; 32]),
+            runtime_closure_digest: Sha256Digest::from_bytes([6; 32]),
+            resolver_configuration_digest: Sha256Digest::from_bytes([7; 32]),
+        });
         assert!(parse_connector_bootstrap(&arguments).is_ok());
         let mut duplicate = arguments.clone();
         duplicate[5] = "3".to_owned();
@@ -1783,11 +1775,17 @@ mod tests {
             authenticated_ns: 4_000,
         };
         let encoded = encode_ready(ready);
-        assert_eq!(decode_report(&encoded), Ok(ConnectorReport::Ready(ready)));
+        assert_eq!(
+            decode_report(&encoded),
+            Ok(ConnectorReport::Ready(Box::new(ready)))
+        );
         for index in [0, 8, 57, 164] {
             let mut mutated = encoded.clone();
             mutated[index] ^= 1;
-            assert_ne!(decode_report(&mutated), Ok(ConnectorReport::Ready(ready)));
+            assert_ne!(
+                decode_report(&mutated),
+                Ok(ConnectorReport::Ready(Box::new(ready)))
+            );
         }
         let mut noncanonical_endpoint = encoded.clone();
         noncanonical_endpoint[150] = 1;

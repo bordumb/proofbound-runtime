@@ -3088,6 +3088,31 @@ The following approval-only commit changes no reviewed production source,
 claim, assumption, evidence unit, checker, or roadmap meaning. Any later
 subject change requires a new exact-head review.
 
+## RT-5 connector-process initial hosted admission result
+
+This is an admission result, not a new independent review.
+
+- **Reviewed source:** `753e97ed8c7ab7f295e21b9ba717643b5e30373c`
+- **Approval envelope:** `386304c71086ef93c73ad6cb7361d6fccae8ecbb`
+- **Pull request:** 35
+- **Verify run:** `35289751721`
+- **Rust job:** `105430031980`
+- **Result:** **NOT ADMITTED**
+
+Both native boundary jobs passed on x86_64 and aarch64. The Rust job rejected
+the exact approval envelope for two Clippy findings: the private
+`ConnectorReport` enum had a large ready variant, and `bootstrap_arguments`
+accepted thirteen parameters. The failed run was cancelled after diagnosis so
+that the remaining doomed jobs did not consume hosted resources. Passing
+native jobs do not transfer admission to a corrected source subject.
+
+The narrow correction boxes the private ready-report payload and passes the
+already validated `ConnectorBootstrap` value into argument serialization. It
+does not change the wire format, security boundary, public API, claim language,
+or receipt meaning. Because production source bytes changed after approval,
+the corrected exact head requires a new independent review and approval
+envelope before another push.
+
 ## RT-5 connector engine hosted-ledger correction approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

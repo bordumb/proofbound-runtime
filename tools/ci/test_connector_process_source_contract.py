@@ -163,6 +163,8 @@ class ConnectorProcessSourceContractTests(unittest.TestCase):
             "crate::sys::private_socket_pair()",
             "crate::sys::private_stream_pair()",
             "crate::sys::inherit_only_descriptors_for_exec(",
+            "let bootstrap = ConnectorBootstrap {",
+            ".args(bootstrap_arguments(bootstrap))",
             ".env_clear()",
             "let packet = process.receive_before(setup_deadline)?;",
             "process.reap_before(false, setup_deadline)?;",
@@ -188,6 +190,12 @@ class ConnectorProcessSourceContractTests(unittest.TestCase):
             ),
         )
         self.assertIn("reaper,", body)
+
+        decoder = function_body(PROCESS_SOURCE, "fn decode_report")
+        require_causal_guards(
+            decoder,
+            ("ConnectorReport::Ready(Box::new(ConnectorReady {",),
+        )
 
         stream_pair = function_body(SYS_SOURCE, "pub(crate) fn private_stream_pair")
         require_causal_guards(
