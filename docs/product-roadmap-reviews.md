@@ -3059,6 +3059,35 @@ and process setup are timed. The new long reaper return type also rendered in
 an ambiguous nonstandard line layout. The final correction must state the
 actual timed boundary and retain a formatter-canonical declaration.
 
+## RT-5 connector-process approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da5292536ea56f40005b297c21625add195e580e`
+- **Reviewed head:** `753e97ed8c7ab7f295e21b9ba717643b5e30373c`
+- **Branch:** `codex/rt5-connector-process`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests. The worktree and exact-range whitespace
+  check were clean.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the implementation accepts previously resolved
+retained artifacts and accurately scopes the fixed setup deadline to their
+revalidation, connector-image reading, validation, process setup, report
+acceptance, and synchronous reaping. Post-operation and final pre-success
+checks reject late readiness, terminal reports, and process exits. The reaper
+is established before child creation; lost handoff aborts fail-closed. Causal
+removal and reorder mutations cover the critical order. The assumption
+inventory, `PT_INTERP` pathname-only language, five diagnostic source
+identities, formatter result, and Rust type structure are consistent. Every
+preceding rejection remains preserved and not endorsed.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`da5292536ea56f40005b297c21625add195e580e..753e97ed8c7ab7f295e21b9ba717643b5e30373c`.
+The following approval-only commit changes no reviewed production source,
+claim, assumption, evidence unit, checker, or roadmap meaning. Any later
+subject change requires a new exact-head review.
+
 ## RT-5 connector engine hosted-ledger correction approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`
