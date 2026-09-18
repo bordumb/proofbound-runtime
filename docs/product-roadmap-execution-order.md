@@ -1,13 +1,13 @@
 # Product roadmap execution order
 
 - **Status:** active delivery order
-- **Date:** 2026-09-17
+- **Date:** 2026-09-18
 - **Applies to:** Roadmap 1 release closure, Roadmap 2, and Roadmap 3 candidate
   promotion
-- **Current Runtime main:** `8513ca7e096bc762b8e7d6c3977130a1da8f31f1`;
-  PR 33 receipt-contract head `c361cb1` passed exact-head Verify run
-  `35262967214`, merged as `8513ca7`, and passed exact-main Verify run
-  `35267321804`
+- **Current Runtime main:** `da5292536ea56f40005b297c21625add195e580e`;
+  PR 34 connector-engine source `b9ad56a` and approval envelope `2d6cf97`
+  passed exact-head Verify run `35276015624`, merged as `da52925`, and passed
+  exact-main Verify run `35280257983`
 - **Current reviewed Roadmap 1 source head:** `4aba43e`; approval-only record
   `3e32b87`
 - **Lifecycle:** prelaunch; zero external users; package labels are tooling
@@ -21,12 +21,13 @@ review updates it.
 
 ## 1. Current boundary
 
-Runtime main `8513ca7` contains the complete reviewed RT-8 diagnostic workflow,
+Runtime main `da52925` contains the complete reviewed RT-8 diagnostic workflow,
 native adversarial corpus, RT-5 non-executable authenticated-service contract,
 SDK construction, pure policy compiler, pure lifecycle model, and admitted
-observation, launcher, and receipt source-contract baseline. PR 33 exact-head
-run `35262967214` and exact-main run `35267321804` passed. Roadmap 1
-RT-5 remains open beyond the non-effectful contracts.
+observation, launcher, receipt-contract, and isolated connector-engine
+baselines. PR 34 exact-head run `35276015624` and exact-main run `35280257983`
+passed. Roadmap 1 RT-5 remains open at process supervision, child-boundary,
+native-attack, production-receipt, and consumer integration layers.
 Roadmap 2 delivery is active; RT-8 is complete, RT-7 retains external
 publication gates, and later epics remain open. Roadmap 3 contains candidates,
 not scheduled implementation.
@@ -202,7 +203,9 @@ Merge one authenticated service before extending the authority to a set:
    closed reusable-success and non-reusable-failure receipt contract, then the
    separately implemented shipping verifier, composer, and acceptance schemas
    before enabling effects. No effect ships in a contract wave.
-2. Implement the connector-owned authenticated service session.
+2. Implement the connector-owned authenticated service session. The isolated
+   engine is admitted on exact main `da52925`; the active next wave is the
+   identified supervised connector process and private-channel handoff.
 3. Deny direct, inherited, resolver, proxy, Unix-socket, and `io_uring`
    bypasses.
 4. Record exact resolver, TLS, service, connector, local-channel, limit, and

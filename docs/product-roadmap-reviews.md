@@ -2983,6 +2983,170 @@ deadline, child-guard, subject-closure, evidence, and claim-language corrections
 require a new exact-head independent review after restacking on admitted RT-8
 mapping work.
 
+## RT-5 connector-process initial review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da5292536ea56f40005b297c21625add195e580e`
+- **Reviewed head:** `0ca71363c0b6503e4e081b95c80bb8ab62cd6a7c`
+- **Branch:** `codex/rt5-connector-process`
+- **Method:** Complete exact-range static review. The reviewer changed no files
+  and ran no builds or tests. The worktree and `git diff --check` were clean.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The review found four blocking defects. First, setup established its timeout
+after process creation, terminal reaping received a fresh budget, and guard
+destruction called an unbounded blocking wait. Second, the claim cited DNS,
+TLS, Linux, host, toolchain, process, clock, filesystem, and checker premises
+whose scopes either excluded `PBR-NETWORK-039` or were not registered. Third,
+the assurance text treated a registered `PT_INTERP` pathname and retained
+loader descriptor as actual kernel loader-object binding even though Linux
+resolves the pathname again during exec. Fourth, five mandatory diagnostic
+source suites retained the pre-change Cargo and Linux source identities.
+
+The reviewer otherwise confirmed the empty connector environment, closed
+bootstrap vocabulary, nonzero generation and channel identities, private
+channels, descriptor closure, readiness-before-proxy order, fail-closed report
+forms, directional terminal limits, and absence of credential or application
+content retention. Corrections require a new exact-head independent review.
+
+## RT-5 connector-process first correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da5292536ea56f40005b297c21625add195e580e`
+- **Reviewed head:** `9a2cd2319fd5206dbc71505ee2c905f74857c63d`
+- **Branch:** `codex/rt5-connector-process`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests. The exact range passed `git diff --check`.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The first correction closed the complete assumption inventory, qualified
+`PT_INTERP` as pathname registration rather than loader-object binding, and
+refreshed every intersecting diagnostic source identity. Two cleanup blockers
+remained. Preparation still performed its largest reads and parsing before the
+fixed setup deadline, report reads and process waits could accept a result
+after that deadline, and readiness had no final pre-exposure clock check. The
+drop fallback also created its reaper only after taking the sole child owner
+and ignored thread-creation failure, so a failed spawn could leave the child
+unreaped. The next correction must establish the deadline and reaper before
+their load-bearing operations, reject post-deadline success, and make reaper
+handoff failure explicitly fail closed.
+
+## RT-5 connector-process second correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da5292536ea56f40005b297c21625add195e580e`
+- **Reviewed head:** `57cc3964725bc972136f2668fd247c51d1e24168`
+- **Branch:** `codex/rt5-connector-process`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests. The worktree and exact-range whitespace
+  check were clean.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The second correction stored one setup deadline immediately after bounded plan
+parsing, checked deadlines after report reads and process-state observations,
+checked again immediately before ready and terminal success, and established
+the reaper before child creation with fail-closed abort on a lost handoff. The
+review found two remaining representation defects. The claim and roadmap said
+artifact resolution occurred inside the deadline even though the API receives
+already-resolved retained artifacts; only revalidation, reading, validation,
+and process setup are timed. The new long reaper return type also rendered in
+an ambiguous nonstandard line layout. The final correction must state the
+actual timed boundary and retain a formatter-canonical declaration.
+
+## RT-5 connector-process approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da5292536ea56f40005b297c21625add195e580e`
+- **Reviewed head:** `753e97ed8c7ab7f295e21b9ba717643b5e30373c`
+- **Branch:** `codex/rt5-connector-process`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests. The worktree and exact-range whitespace
+  check were clean.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that the implementation accepts previously resolved
+retained artifacts and accurately scopes the fixed setup deadline to their
+revalidation, connector-image reading, validation, process setup, report
+acceptance, and synchronous reaping. Post-operation and final pre-success
+checks reject late readiness, terminal reports, and process exits. The reaper
+is established before child creation; lost handoff aborts fail-closed. Causal
+removal and reorder mutations cover the critical order. The assumption
+inventory, `PT_INTERP` pathname-only language, five diagnostic source
+identities, formatter result, and Rust type structure are consistent. Every
+preceding rejection remains preserved and not endorsed.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`da5292536ea56f40005b297c21625add195e580e..753e97ed8c7ab7f295e21b9ba717643b5e30373c`.
+The following approval-only commit changes no reviewed production source,
+claim, assumption, evidence unit, checker, or roadmap meaning. Any later
+subject change requires a new exact-head review.
+
+## RT-5 connector-process initial hosted admission result
+
+This is an admission result, not a new independent review.
+
+- **Reviewed source:** `753e97ed8c7ab7f295e21b9ba717643b5e30373c`
+- **Approval envelope:** `386304c71086ef93c73ad6cb7361d6fccae8ecbb`
+- **Pull request:** 35
+- **Verify run:** `35289751721`
+- **Rust job:** `105430031980`
+- **Result:** **NOT ADMITTED**
+
+Both native boundary jobs passed on x86_64 and aarch64. The Rust job rejected
+the exact approval envelope for two Clippy findings: the private
+`ConnectorReport` enum had a large ready variant, and `bootstrap_arguments`
+accepted thirteen parameters. The failed run was cancelled after diagnosis so
+that the remaining doomed jobs did not consume hosted resources. Passing
+native jobs do not transfer admission to a corrected source subject.
+
+The narrow correction boxes the private ready-report payload and passes the
+already validated `ConnectorBootstrap` value into argument serialization. It
+does not change the wire format, security boundary, public API, claim language,
+or receipt meaning. Because production source bytes changed after approval,
+the corrected exact head requires a new independent review and approval
+envelope before another push.
+
+## RT-5 connector-process hosted-correction approval
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da5292536ea56f40005b297c21625add195e580e`
+- **Reviewed head:** `21c7c2d2a72f79ae53226c23282c8ae27e07b40a`
+- **Branch:** `codex/rt5-connector-process`
+- **Method:** Complete exact-range static security re-review after hosted run
+  `35289751721`. The reviewer changed no files and ran no builds or tests. The
+  worktree and exact-range whitespace check were clean.
+- **Findings:** None.
+- **Verdict:** **APPROVE**
+
+The reviewer confirmed that boxing the ready-report payload changes only the
+private in-memory representation. Report lengths, decode offsets, encoded
+bytes, binding validation, and the public `ConnectorReady` type remain
+unchanged. Passing `ConnectorBootstrap` into argument serialization preserves
+all thirteen prior inputs and their exact argument order. Checked descriptor
+conversion fails closed and produces the same decimal representation for every
+valid descriptor.
+
+The added independent source-contract guards causally reject removal of the
+boxed ready constructor and the bootstrap construction and serialization call.
+The hosted-failure record identifies the exact approval envelope, run, Rust
+job, two Clippy findings, passing native lanes, cancellation, and non-transfer
+of partial admission. Every blocker from the preceding reviews remains closed,
+all intersecting source identities remain consistent, and no new blocker was
+introduced.
+
+As maintainer, I endorse this independent **APPROVE** verdict for exact range
+`da5292536ea56f40005b297c21625add195e580e..21c7c2d2a72f79ae53226c23282c8ae27e07b40a`.
+The following approval-only commit changes no reviewed production source,
+claim, assumption, evidence unit, checker, causal mutation, or hosted-result
+record. Any later subject change requires a new exact-head review.
+
 ## RT-5 connector engine hosted-ledger correction approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

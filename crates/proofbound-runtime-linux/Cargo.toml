@@ -12,6 +12,7 @@ default = []
 diagnostic-observer = []
 
 [dependencies]
+proofbound-runtime-connector.workspace = true
 proofbound-runtime-core.workspace = true
 sha2.workspace = true
 

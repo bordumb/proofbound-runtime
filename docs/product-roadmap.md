@@ -2,11 +2,12 @@
 
 - **Status:** foundation merged and admitted; production networking,
   publication, and external adopter gates remain
-- **Date:** 2026-09-17
+- **Date:** 2026-09-18
 - **Runtime baseline:** current `main` at
-  `8513ca7e096bc762b8e7d6c3977130a1da8f31f1`; PR 33 receipt-contract head
-  `c361cb1` passed exact-head Verify run `35262967214`, merged as `8513ca7`,
-  and passed exact-main Verify run `35267321804`
+  `da5292536ea56f40005b297c21625add195e580e`; PR 34 connector-engine source
+  `b9ad56a` plus approval envelope `2d6cf97` passed exact-head Verify run
+  `35276015624`, merged as `da52925`, and passed exact-main Verify run
+  `35280257983`
 - **Proofbound distribution baseline:** immutable public bundle for source
   `9512469`
 - **Planning horizon:** prelaunch product and assurance waves
@@ -33,7 +34,7 @@ publication or an unrelated adopter.
 | RT-2 receipt acceptance | Policy, CLI, standalone acceptor, and Action source are merged. | Observe the exact release artifact and dogfood the Action from an unrelated adopter. |
 | RT-3 first-run and SDK workflow | The deny-network and non-executable service-session SDK subjects are admitted on exact main `d48122b`. The pure-policy clarification is admitted on `a94c21a`, and the lifecycle closure is admitted on `1da65a5`. | Publish the selected current packages and dogfood them from an unrelated consumer. |
 | RT-4 network decision | The complete experiment and measurement series selected the connector-owned authenticated service session. | The decision authorizes RT-5; it does not provide production networking. |
-| RT-5 one authenticated service | The non-executable contract, pure policy, lifecycle, observation, launcher, and receipt-contract baselines are admitted. PR 33 receipt-contract head `c361cb1` passed exact-head verification, merged as `8513ca7`, and passed exact-main run `35267321804`. The connector candidate is pending exact review and admission. Production execution remains denied. | Admit the connector engine, then implement the identified connector process, launcher, bypass corpus, production receipts, verifiers, composition, acceptance, and one maintained real API client. |
+| RT-5 one authenticated service | The non-executable contracts and isolated connector engine are admitted. PR 34 source `b9ad56a` plus approval envelope `2d6cf97` passed exact-head run `35276015624`, merged as `da52925`, and passed exact-main run `35280257983`. Production execution remains denied. | Implement the identified connector process, launcher, bypass corpus, production receipts, verifiers, composition, acceptance, and one maintained real API client. |
 | RT-6 evidence-based expansion | CPU and output-quota decisions are recorded; the performance baseline is complete. | Implement a deferred control only when observed demand satisfies its decision gate. |
 
 Milestone B, bounded local execution, is achieved. Milestone A is operationally
@@ -1118,6 +1119,24 @@ identified connector process, resolver and trust-root artifact binding,
 supervisor and launcher binding, credential
 release, native attacks, receipt integration, and release-artifact evidence
 remain required before any product claim is available.
+
+**2026-09-18 connector-process checkpoint:** `PBR-NETWORK-039` registers the
+next Tier 1 candidate. It accepts previously resolved and retained connector,
+plan, trust-root, resolver-configuration, and ordered runtime-closure
+identities; then revalidates them, creates private Unix stream and control
+pairs, starts the retained connector descriptor with a closed bootstrap, and
+requires a complete setup binding before exposing the child-side endpoint.
+After bounded plan parsing it establishes the setup deadline before artifact
+revalidation and connector-image reading, checks each fixed phase deadline
+after load-bearing operations and before success, and
+never gives synchronous reaping a new budget. It pre-establishes the reaper
+before child creation. After expiry it requests termination and transfers late
+reaping to that worker, or aborts the supervisor if the handoff is unavailable.
+Dynamic `PT_INTERP` handling currently proves only
+that the loader pathname is registered; actual kernel loader-object binding
+remains a host and filesystem premise. This remains source and bounded-test
+evidence. Connector confinement, child launch, credential release, native
+attack evidence, production receipts, and release artifacts remain open.
 
 ### RT-5.2 Keep the security boundary explicit
 

@@ -232,6 +232,7 @@ default = []
 diagnostic-observer = []
 
 [dependencies]
+proofbound-runtime-connector.workspace = true
 proofbound-runtime-core.workspace = true
 sha2.workspace = true
 
@@ -247,7 +248,7 @@ EXPECTED_DIAGNOSE_LIB_SHA256 = (
     "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de"
 )
 EXPECTED_LINUX_LIB_SHA256 = (
-    "10dddcf330422289b7ab1f5ac5ee9574ce63ea9c29ac86fa1ba1f1909eff6c2a"
+    "8eddcd39455211a892d3e7647dd806d41db1713d03e83296f6ede40e24c5da5f"
 )
 
 

@@ -4,8 +4,8 @@ statement = "The identified resolver path supplies the DNS response bytes and ti
 category = "external-provider"
 owner = "Proofbound Runtime deployment operator"
 rationale = "The connector can bound and record resolver interaction, answer selection, and expiry, but it cannot prove the behavior of a remote resolver or the network carrying its responses. Exact TLS service-name authentication prevents DNS data alone from expanding service authority."
-scope = "Only the resolver effects and interpretation of DNS observations used by the proposed PBR-NETWORK-038 connector engine and retained by the proposed PBR-NETWORK-037 receipt contract. It does not establish DNS availability, correctness, confidentiality, DNSSEC validation, or remote-resolver integrity."
-affected_claims = ["PBR-NETWORK-037", "PBR-NETWORK-038"]
+scope = "Only the resolver effects and interpretation of DNS observations used by the proposed PBR-NETWORK-038 connector engine and PBR-NETWORK-039 connector process and retained by the proposed PBR-NETWORK-037 receipt contract. It does not establish DNS availability, correctness, confidentiality, DNSSEC validation, or remote-resolver integrity."
+affected_claims = ["PBR-NETWORK-037", "PBR-NETWORK-038", "PBR-NETWORK-039"]
 review_evidence = [
   "docs/specs/0016_authenticated_service_session.md#32-resolution-policy",
   "docs/threat-model.md#trusted-computing-base",
