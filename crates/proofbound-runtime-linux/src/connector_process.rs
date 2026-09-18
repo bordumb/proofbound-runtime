@@ -921,11 +921,14 @@ fn require_before_deadline(deadline: Instant) -> Result<(), ConnectorProcessErro
 }
 
 #[cfg(target_os = "linux")]
-fn connector_reaper_sender()
--> Result<std::sync::mpsc::Sender<std::process::Child>, ConnectorProcessError> {
-    use std::sync::{OnceLock, mpsc};
+type ConnectorReaperSender = std::sync::mpsc::Sender<std::process::Child>;
 
-    static REAPER: OnceLock<Option<mpsc::Sender<std::process::Child>>> = OnceLock::new();
+#[cfg(target_os = "linux")]
+fn connector_reaper_sender() -> Result<ConnectorReaperSender, ConnectorProcessError> {
+    use std::sync::OnceLock;
+    use std::sync::mpsc;
+
+    static REAPER: OnceLock<Option<ConnectorReaperSender>> = OnceLock::new();
     REAPER
         .get_or_init(|| {
             let (sender, receiver) = mpsc::channel::<std::process::Child>();

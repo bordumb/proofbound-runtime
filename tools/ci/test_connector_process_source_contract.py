@@ -325,7 +325,7 @@ class ConnectorProcessSourceContractTests(unittest.TestCase):
         require_causal_guards(
             reaper,
             (
-                "OnceLock<Option<mpsc::Sender<std::process::Child>>>",
+                "OnceLock<Option<ConnectorReaperSender>>",
                 "mpsc::channel::<std::process::Child>()",
                 'std::thread::Builder::new()',
                 '.name("pbr-connector-reaper".to_owned())',

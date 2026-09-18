@@ -3035,6 +3035,30 @@ unreaped. The next correction must establish the deadline and reaper before
 their load-bearing operations, reject post-deadline success, and make reaper
 handoff failure explicitly fail closed.
 
+## RT-5 connector-process second correction review
+
+- **Reviewer:** Independent Codex task `/root/review_rt8_final`
+- **Reviewed base:** `da5292536ea56f40005b297c21625add195e580e`
+- **Reviewed head:** `57cc3964725bc972136f2668fd247c51d1e24168`
+- **Branch:** `codex/rt5-connector-process`
+- **Method:** Complete exact-range static re-review. The reviewer changed no
+  files and ran no builds or tests. The worktree and exact-range whitespace
+  check were clean.
+- **Verdict:** **REQUEST CHANGES**
+- **Maintainer endorsement:** **NOT ENDORSED**. No approval envelope or merge
+  may use this subject.
+
+The second correction stored one setup deadline immediately after bounded plan
+parsing, checked deadlines after report reads and process-state observations,
+checked again immediately before ready and terminal success, and established
+the reaper before child creation with fail-closed abort on a lost handoff. The
+review found two remaining representation defects. The claim and roadmap said
+artifact resolution occurred inside the deadline even though the API receives
+already-resolved retained artifacts; only revalidation, reading, validation,
+and process setup are timed. The new long reaper return type also rendered in
+an ambiguous nonstandard line layout. The final correction must state the
+actual timed boundary and retain a formatter-canonical declaration.
+
 ## RT-5 connector engine hosted-ledger correction approval
 
 - **Reviewer:** Independent Codex task `/root/review_rt8_final`

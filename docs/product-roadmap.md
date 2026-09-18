@@ -1121,13 +1121,14 @@ release, native attacks, receipt integration, and release-artifact evidence
 remain required before any product claim is available.
 
 **2026-09-18 connector-process checkpoint:** `PBR-NETWORK-039` registers the
-next Tier 1 candidate. It resolves and revalidates the declared connector,
+next Tier 1 candidate. It accepts previously resolved and retained connector,
 plan, trust-root, resolver-configuration, and ordered runtime-closure
-identities; creates private Unix stream and control pairs; starts the retained
-connector descriptor with a closed bootstrap; and requires a complete setup
-binding before exposing the child-side endpoint. After bounded plan parsing it
-establishes the setup deadline before the remaining preparation, checks each
-fixed phase deadline after load-bearing operations and before success, and
+identities; then revalidates them, creates private Unix stream and control
+pairs, starts the retained connector descriptor with a closed bootstrap, and
+requires a complete setup binding before exposing the child-side endpoint.
+After bounded plan parsing it establishes the setup deadline before artifact
+revalidation and connector-image reading, checks each fixed phase deadline
+after load-bearing operations and before success, and
 never gives synchronous reaping a new budget. It pre-establishes the reaper
 before child creation. After expiry it requests termination and transfers late
 reaping to that worker, or aborts the supervisor if the handoff is unavailable.
