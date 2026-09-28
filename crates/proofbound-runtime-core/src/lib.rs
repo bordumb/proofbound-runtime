@@ -29,8 +29,9 @@ pub use diagnostic::{
 };
 pub use egress::{
     AddressClass, AddressScope, CompiledEgressPolicy, EgressAuthority, EgressDestination,
-    EgressEndpoint, EgressError, EgressLimits, EgressListener, EgressName, ProxyVariable,
-    SniBinding, answer_is_admissible, classify_answer, compile_egress_policy,
+    EgressEndpoint, EgressError, EgressLimits, EgressListener, EgressName, PinnedAnswer,
+    PinnedResolution, ProxyVariable, SniBinding, TunnelDecision, TunnelDenial, TunnelTarget,
+    answer_is_admissible, classify_answer, compile_egress_policy, decide_tunnel,
 };
 pub use error::{CoreError, ErrorClass, MachineError};
 pub use identity::{ArtifactIdentity, ArtifactRole, FileMode, IdentityError, Sha256Digest};

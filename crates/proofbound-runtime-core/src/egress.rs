@@ -474,6 +474,137 @@ pub fn answer_is_admissible(address: IpAddr, scope: AddressScope) -> bool {
     }
 }
 
+/// Names the target supplied by one canonical CONNECT request.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum TunnelTarget {
+    DnsName(EgressName),
+    Ipv4([u8; 4]),
+    Ipv6([u8; 16]),
+}
+
+/// Records one answer and its effective expiry in milliseconds.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct PinnedAnswer {
+    pub address: IpAddr,
+    pub effective_expiry_ms: u64,
+}
+
+/// Contains one proxy-owned resolution for a declared name.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PinnedResolution {
+    pub name: EgressName,
+    pub answers: Vec<PinnedAnswer>,
+    pub triggering_connection: u64,
+}
+
+/// Lists the possible pure tunnel decisions.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum TunnelDecision {
+    Denied(TunnelDenial),
+    NeedsResolution {
+        endpoint_index: usize,
+    },
+    Attempts {
+        endpoint_index: usize,
+        addresses: Vec<IpAddr>,
+    },
+}
+
+/// Identifies a rejected tunnel request.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum TunnelDenial {
+    Undeclared,
+    SniDenied,
+    ResolutionMismatch,
+    NoAdmissibleAnswer,
+}
+
+/// Selects only declared endpoints and admissible address attempts.
+///
+/// The caller must validate the CONNECT head and ClientHello before this call.
+/// A missing resolution authorizes a lookup only for a declared name.
+#[must_use]
+pub fn decide_tunnel(
+    authority: &EgressAuthority,
+    connection_id: u64,
+    target: &TunnelTarget,
+    port: TcpPort,
+    client_hello_sni: Option<&EgressName>,
+    resolution: Option<&PinnedResolution>,
+    attempt_start_ms: u64,
+) -> TunnelDecision {
+    let endpoint = authority
+        .endpoints
+        .iter()
+        .enumerate()
+        .find(|(_, endpoint)| {
+            endpoint.port == port
+                && match (&endpoint.destination, target) {
+                    (EgressDestination::DnsName { name, .. }, TunnelTarget::DnsName(request)) => {
+                        name == request
+                    }
+                    (EgressDestination::Ipv4(a), TunnelTarget::Ipv4(b)) => a == b,
+                    (EgressDestination::Ipv6(a), TunnelTarget::Ipv6(b)) => a == b,
+                    _ => false,
+                }
+        });
+    let Some((index, endpoint)) = endpoint else {
+        return TunnelDecision::Denied(TunnelDenial::Undeclared);
+    };
+    if let SniBinding::Required(expected) = &endpoint.tls_sni
+        && client_hello_sni != Some(expected)
+    {
+        return TunnelDecision::Denied(TunnelDenial::SniDenied);
+    }
+    match &endpoint.destination {
+        EgressDestination::Ipv4(bytes) => TunnelDecision::Attempts {
+            endpoint_index: index,
+            addresses: vec![IpAddr::V4(Ipv4Addr::from(*bytes))],
+        },
+        EgressDestination::Ipv6(bytes) => TunnelDecision::Attempts {
+            endpoint_index: index,
+            addresses: vec![IpAddr::V6(Ipv6Addr::from(*bytes))],
+        },
+        EgressDestination::DnsName { name, scope } => {
+            let Some(resolution) = resolution else {
+                return TunnelDecision::NeedsResolution {
+                    endpoint_index: index,
+                };
+            };
+            if resolution.name != *name {
+                return TunnelDecision::Denied(TunnelDenial::ResolutionMismatch);
+            }
+            if resolution.answers.len() > usize::from(authority.resolver.maximum_answer_count()) {
+                return TunnelDecision::Denied(TunnelDenial::ResolutionMismatch);
+            }
+            let mut addresses: Vec<IpAddr> = resolution
+                .answers
+                .iter()
+                .filter(|answer| {
+                    answer_is_admissible(answer.address, *scope)
+                        && (resolution.triggering_connection == connection_id
+                            || attempt_start_ms <= answer.effective_expiry_ms)
+                })
+                .map(|answer| answer.address)
+                .collect();
+            addresses.sort_by_key(|address| match address {
+                IpAddr::V4(a) => (0, a.octets().to_vec()),
+                IpAddr::V6(a) => (1, a.octets().to_vec()),
+            });
+            addresses.dedup();
+            addresses.truncate(usize::from(authority.limits.attempts_per_connection));
+            if addresses.is_empty() {
+                TunnelDecision::Denied(TunnelDenial::NoAdmissibleAnswer)
+            } else {
+                TunnelDecision::Attempts {
+                    endpoint_index: index,
+                    addresses,
+                }
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -564,6 +695,132 @@ mod tests {
         assert_eq!(
             EgressDestination::Ipv6("::2".parse::<Ipv6Addr>().unwrap().octets()).validate(),
             Err(EgressError::AddressInvalid)
+        );
+    }
+
+    #[test]
+    fn tunnel_decision_never_resolves_undeclared_name() {
+        let authority = authority();
+        let other = TunnelTarget::DnsName(EgressName::new("other.example").unwrap());
+        assert_eq!(
+            decide_tunnel(
+                &authority,
+                1,
+                &other,
+                TcpPort::new(443).unwrap(),
+                None,
+                None,
+                0
+            ),
+            TunnelDecision::Denied(TunnelDenial::Undeclared)
+        );
+        let declared = TunnelTarget::DnsName(EgressName::new("api.example").unwrap());
+        assert_eq!(
+            decide_tunnel(
+                &authority,
+                1,
+                &declared,
+                TcpPort::new(443).unwrap(),
+                None,
+                None,
+                0
+            ),
+            TunnelDecision::Denied(TunnelDenial::SniDenied)
+        );
+        let sni = EgressName::new("api.example").unwrap();
+        assert_eq!(
+            decide_tunnel(
+                &authority,
+                1,
+                &declared,
+                TcpPort::new(443).unwrap(),
+                Some(&sni),
+                None,
+                0
+            ),
+            TunnelDecision::NeedsResolution { endpoint_index: 0 }
+        );
+    }
+
+    #[test]
+    fn tunnel_decision_filters_special_and_expired_answers() {
+        let authority = authority();
+        let name = EgressName::new("api.example").unwrap();
+        let target = TunnelTarget::DnsName(name.clone());
+        let resolution = PinnedResolution {
+            name: name.clone(),
+            triggering_connection: 2,
+            answers: vec![
+                PinnedAnswer {
+                    address: "127.0.0.1".parse().unwrap(),
+                    effective_expiry_ms: 100,
+                },
+                PinnedAnswer {
+                    address: "8.8.8.8".parse().unwrap(),
+                    effective_expiry_ms: 10,
+                },
+                PinnedAnswer {
+                    address: "1.1.1.1".parse().unwrap(),
+                    effective_expiry_ms: 100,
+                },
+            ],
+        };
+        assert_eq!(
+            decide_tunnel(
+                &authority,
+                1,
+                &target,
+                TcpPort::new(443).unwrap(),
+                Some(&name),
+                Some(&resolution),
+                20
+            ),
+            TunnelDecision::Attempts {
+                endpoint_index: 0,
+                addresses: vec!["1.1.1.1".parse().unwrap()]
+            }
+        );
+    }
+
+    #[test]
+    fn zero_ttl_is_usable_only_by_the_triggering_connection() {
+        let authority = authority();
+        let name = EgressName::new("api.example").unwrap();
+        let target = TunnelTarget::DnsName(name.clone());
+        let resolution = PinnedResolution {
+            name: name.clone(),
+            triggering_connection: 7,
+            answers: vec![PinnedAnswer {
+                address: "8.8.8.8".parse().unwrap(),
+                effective_expiry_ms: 0,
+            }],
+        };
+        assert_eq!(
+            decide_tunnel(
+                &authority,
+                7,
+                &target,
+                TcpPort::new(443).unwrap(),
+                Some(&name),
+                Some(&resolution),
+                10,
+            ),
+            TunnelDecision::Attempts {
+                endpoint_index: 0,
+                addresses: vec!["8.8.8.8".parse().unwrap()],
+            }
+        );
+        assert_eq!(
+            decide_tunnel(
+                &authority,
+                8,
+                &target,
+                TcpPort::new(443).unwrap(),
+                Some(&name),
+                Some(&resolution),
+                10,
+            ),
+            TunnelDecision::Denied(TunnelDenial::NoAdmissibleAnswer)
         );
     }
 
