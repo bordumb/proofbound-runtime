@@ -1,0 +1,25 @@
+schema = "proofbound-claim/1"
+id = "PBR-NETWORK-044"
+title = "Egress receipts record declared and observed endpoints and verify independently"
+statement = "The version 3 execution receipt records the complete declared-egress authority, namespace and listener boundary, proxy identities and lifecycle, every resolution, every proxied connection with its endpoint, selected address, attempts, SNI result, bytes, and close reason, every rejection by reason, digest, and length, the counters, the limit events, and cleanup; the independent verifier rejects every relation violation in Specification 0017 section 8.2 and derives the canonical reuse eligibility and non-reuse reasons of section 8.3."
+public_language = "Registered at Tier 0 only. Specification 0017 defines the egress observation fragment, independent relations, reuse rules, and stable codes. No producer, verifier path, vector, or mutation corpus exists yet."
+subject = "schema:proofbound-runtime-execution-receipt/3+rust:proofbound_runtime_verify::egress"
+profile = "ledger"
+tier = 0
+evidence = []
+assumptions = ["PBR-EGRESS-RESOLVER-AX-033"]
+open_obligations = [
+  "Add the closed version 3 receipt and egress observation CDDL schemas and golden success and failure vectors.",
+  "Implement the producer and a separately implemented verifier path with no shared semantic code.",
+  "Add a receipt-mutation corpus for every relation, a Kani harness and Lean theorem for eligibility derivation, and a refinement of the derivation.",
+]
+out_of_scope = [
+  "Any claim that recorded resolver answers were the addresses a name owner intended.",
+  "Undeclared target text, DNS packet contents, TLS bytes, application bytes, or credential values.",
+  "Attribution of connections to individual processes.",
+]
+source_roots = [
+  "assumptions/PBR-EGRESS-RESOLVER-AX-033.toml",
+  "claims/PBR-NETWORK-044.toml",
+  "docs/specs/0017_declared_network_egress.md",
+]

@@ -1,0 +1,33 @@
+schema = "proofbound-claim/1"
+id = "PBR-NETWORK-042"
+title = "The identified egress proxy applies only the tunnel decision and reports complete bounded observations"
+statement = "The separately identified pbr-egress-proxy process starts from its retained executable descriptor with an empty environment and closed descriptor bootstrap, becomes non-dumpable, installs no_new_privs and its Landlock and seccomp boundary before readiness, parses each CONNECT head and bound ClientHello within fixed bounds, resolves only declared names through the declared resolver, opens remote TCP connections only as the pure tunnel decision permits, never relays a byte beyond a declared bound, and reports every resolution, connection, rejection, counter, lifecycle phase, and terminal result without retaining DNS, TLS, or application content."
+public_language = "Registered at Tier 0 only. Specification 0017 defines the proxy protocol, confinement, lifecycle, resolution behavior, and observation reports. No proxy executable, engine, parser, or native evidence exists yet."
+subject = "rust:proofbound_runtime_egress::{parse_connect_request,parse_client_hello_server_name,run_egress_proxy}"
+profile = "ledger"
+tier = 0
+evidence = []
+assumptions = [
+  "PBR-EGRESS-RESOLVER-AX-033",
+  "PBR-HOST-AX-002",
+  "PBR-LINUX-AX-001",
+  "PBR-NAMESPACE-AX-032",
+]
+open_obligations = [
+  "Implement the proxy engine and the pbr-egress-proxy executable with raw syscalls confined to sys.rs.",
+  "Add parser property tests and fuzz targets with retained seeds, a source-mutation witness for every guard, and bounded fixture-resolver integration tests.",
+  "Run proxy confinement, limit, crash, and cleanup cases on x86_64 and aarch64 release artifacts.",
+]
+out_of_scope = [
+  "Data exfiltration over declared endpoints, TLS content inspection, and remote-service identity.",
+  "Correctness of the resolver, DNS operators, the Linux kernel, hardware, or the host administrator.",
+  "The child namespace boundary, which PBR-NETWORK-043 owns.",
+]
+source_roots = [
+  "assumptions/PBR-EGRESS-RESOLVER-AX-033.toml",
+  "assumptions/PBR-HOST-AX-002.toml",
+  "assumptions/PBR-LINUX-AX-001.toml",
+  "assumptions/PBR-NAMESPACE-AX-032.toml",
+  "claims/PBR-NETWORK-042.toml",
+  "docs/specs/0017_declared_network_egress.md",
+]

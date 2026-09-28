@@ -1,0 +1,27 @@
+schema = "proofbound-claim/1"
+id = "PBR-CLOSURE-045"
+title = "A bounded exact executable set keeps exact identities and cannot be rewritten by the child"
+statement = "For a version 3 plan, the Runtime resolves 1 to 64 exact regular-file executable members, requires the command executable and every script interpreter to be members, adds each ELF interpreter as an identified loader entry, rejects a member that the child could replace through a write root, grants Landlock read-file and execute access only to those exact files, and revalidates every identity immediately before launch."
+public_language = "Registered at Tier 0 only. Specification 0017 section 7 defines the executable-set closure rules. No implementation or native evidence exists yet."
+subject = "rust:proofbound_runtime_linux::resolve_executable_set"
+profile = "ledger"
+tier = 0
+evidence = []
+assumptions = [
+  "PBR-HOST-AX-002",
+  "PBR-LINUX-AX-001",
+]
+open_obligations = [
+  "Implement version 3 executable-set resolution and exact Landlock execute rules.",
+  "Add resolution tests for sets, loaders, scripts, and writable members, and native tests on x86_64 and aarch64 that execute each member and fail to execute or replace any other file.",
+]
+out_of_scope = [
+  "Correctness of the kernel loader, the filesystem, or the executables themselves.",
+  "Directory-wide execute authority, which remains forbidden.",
+]
+source_roots = [
+  "assumptions/PBR-HOST-AX-002.toml",
+  "assumptions/PBR-LINUX-AX-001.toml",
+  "claims/PBR-CLOSURE-045.toml",
+  "docs/specs/0017_declared_network_egress.md",
+]

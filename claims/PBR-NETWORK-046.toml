@@ -1,0 +1,23 @@
+schema = "proofbound-claim/1"
+id = "PBR-NETWORK-046"
+title = "Composition and acceptance retain egress authority and observations"
+statement = "The version 3 composer retains the complete declared-egress authority, egress observation identity, non-reuse reasons, assumptions, and trusted-computing-base roles, and acceptance policy version 2 accepts an egress receipt only under an explicit declared-egress predicate whose endpoint relation and exact proxy identity hold, never under a deny policy and never under a different network mode."
+public_language = "Registered at Tier 0 only. Specification 0017 section 8.4 defines the composition and acceptance changes. No implementation or attack corpus exists yet."
+subject = "rust:proofbound_runtime_accept::evaluate"
+profile = "ledger"
+tier = 0
+evidence = []
+assumptions = []
+open_obligations = [
+  "Add composed-receipt version 3, acceptance-policy version 2, and acceptance-decision version 3 CDDL schemas and golden vectors.",
+  "Implement the composer and acceptor paths and attack corpora for premise loss, endpoint-set substitution, relation downgrade, proxy identity substitution, and mode confusion.",
+  "Observe the exact native pbr-compose and pbr-accept artifacts on x86_64 and aarch64.",
+]
+out_of_scope = [
+  "Promotion of any egress observation into proof that a remote provider performed an action.",
+  "Authenticity of an independently supplied receipt commitment beyond its separately registered premise.",
+]
+source_roots = [
+  "claims/PBR-NETWORK-046.toml",
+  "docs/specs/0017_declared_network_egress.md",
+]

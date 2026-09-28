@@ -89,6 +89,10 @@ The document type determines its authority.
   RT-5's single connector-owned authenticated TLS service session, closed
   authority and wire contracts, child boundary, receipt meaning, and required
   native falsifiers.
+- [Specification 0017](specs/0017_declared_network_egress.md) proposes a
+  declared-egress network mode: a loopback-only child network namespace, a
+  pinned `CONNECT` proxy that resolves declared names, a bounded executable
+  set, version 3 plan and receipt facts, and the consumer contract.
 
 Normative product or wire behavior belongs in `docs/specs/`. A specification
 revision requires explicit review because it can change claim meaning.

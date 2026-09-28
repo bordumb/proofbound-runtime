@@ -1,0 +1,15 @@
+schema = "proofbound-assumption/1"
+id = "PBR-EGRESS-RESOLVER-AX-033"
+statement = "The declared resolver and the DNS operators of each declared name return answers that the plan author accepts as the meaning of that name; the egress proxy routes by those answers, and DNS is not authenticated."
+category = "external-provider"
+owner = "Proofbound Runtime deployment operator"
+rationale = "The proxy can bound, record, pin, and scope-check resolver answers and never resolve an undeclared name, but it cannot prove that a resolver or DNS operator returned the address the name owner intended. Unlike Specification 0016, no Runtime TLS authentication gates the route, so DNS answers carry routing meaning."
+scope = "Only the resolver interpretation of PBR-NETWORK-041, PBR-NETWORK-042, and PBR-NETWORK-044. It does not establish DNS availability, confidentiality, DNSSEC validation, remote-service identity, or the behavior of a remote service."
+affected_claims = ["PBR-NETWORK-041", "PBR-NETWORK-042", "PBR-NETWORK-044"]
+review_evidence = [
+  "docs/specs/0017_declared_network_egress.md#56-dns-resolution-and-pinning",
+  "docs/threat-model.md#trusted-computing-base",
+]
+discharge_plan = "Retain the resolver identity, response identities, answers, expiries, and address classes in every receipt. A validating resolver or DNSSEC profile requires a separate specification, claim, and evidence wave."
+source_citation = "docs/specs/0017_declared_network_egress.md#13-non-claims"
+status = "active"

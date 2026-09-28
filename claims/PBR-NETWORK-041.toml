@@ -1,0 +1,24 @@
+schema = "proofbound-claim/1"
+id = "PBR-NETWORK-041"
+title = "The pure tunnel decision admits only declared endpoints and pinned admissible addresses"
+statement = "The pure tunnel decision admits a canonical CONNECT target only when it equals a declared endpoint name or IP address and port, admits a remote address only when it is the declared IP address or an admissible answer of the proxy's own current or triggering resolution of that declared name inside the answer's effective lifetime and the endpoint's address scope, orders at most the declared number of attempts deterministically, requires an exact SNI match when the endpoint binds SNI, and never selects an undeclared name for resolution."
+public_language = "Registered at Tier 0 only. Specification 0017 defines the pure tunnel decision, the fixed address-class table, the pinning and expiry rules, and the SNI rule. No implementation, test, bounded check, or theorem exists yet."
+subject = "rust:proofbound_runtime_core::egress::decide_tunnel"
+profile = "ledger"
+tier = 0
+evidence = []
+assumptions = ["PBR-EGRESS-RESOLVER-AX-033"]
+open_obligations = [
+  "Implement the total pure decision over validated authority, request, resolution, clock, and SNI inputs in the pure core.",
+  "Add exhaustive source tests, a Kani harness that proves decision soundness over a bounded catalog, a Lean soundness theorem, and a Charon and Aeneas refinement.",
+]
+out_of_scope = [
+  "Correctness of the declared resolver, DNS operators, or the address a name owner intended.",
+  "Authentication of a remote server; the SNI rule compares a plaintext client value only.",
+  "Parsing of CONNECT or TLS bytes, which PBR-NETWORK-042 owns.",
+]
+source_roots = [
+  "assumptions/PBR-EGRESS-RESOLVER-AX-033.toml",
+  "claims/PBR-NETWORK-041.toml",
+  "docs/specs/0017_declared_network_egress.md",
+]

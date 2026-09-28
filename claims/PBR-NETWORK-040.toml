@@ -1,0 +1,24 @@
+schema = "proofbound-claim/1"
+id = "PBR-NETWORK-040"
+title = "Declared-egress authority is closed, bounded, and never amplified"
+statement = "The version 3 plan parser accepts only the closed declared-egress authority with 1 to 256 canonical TCP endpoints, bounded names, addresses, SNI bindings, address scopes, resolver fields, limits, proxy identities, and proxy environment names; normalization, the subset relation, and policy compilation preserve every endpoint, limit, and identity exactly, never compile a name into an address rule, and never produce authority absent from the validated plan."
+public_language = "Registered at Tier 0 only. Specification 0017 defines the closed declared-egress authority, its bounds, its normalization and subset rules, and policy model version 3. No parser, compiler, test, or theorem for this authority exists yet, and the production execution parser must reject declared-egress plans until every Specification 0017 wave is admitted."
+subject = "rust:proofbound_runtime_core::egress::{parse_egress_authority,normalize_egress_authority,egress_authority_is_no_more_permissive,compile_egress_policy}"
+profile = "ledger"
+tier = 0
+evidence = []
+assumptions = []
+open_obligations = [
+  "Add the companion ADR, closed version 3 plan and policy CDDL schemas, and golden vectors reproduced by the independent Python encoder.",
+  "Implement the typed parser, normalizer, subset relation, and compiler in the pure core with production-parser rejection of declared-egress plans.",
+  "Add Rust unit and property tests for every validation rule and bound, a Kani non-amplification harness over a bounded endpoint catalog, a Lean theorem, and a Charon and Aeneas refinement of the selected functions.",
+]
+out_of_scope = [
+  "Any claim that a declared-egress plan can execute or that a proxy, namespace, or child boundary exists.",
+  "Correctness of DNS, resolvers, remote services, the Linux kernel, or the child's TLS stack.",
+  "Wildcard names, inbound listening, UDP, QUIC, plaintext proxy forwarding, and application-protocol semantics.",
+]
+source_roots = [
+  "claims/PBR-NETWORK-040.toml",
+  "docs/specs/0017_declared_network_egress.md",
+]

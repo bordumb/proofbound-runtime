@@ -1,0 +1,15 @@
+schema = "proofbound-assumption/1"
+id = "PBR-NAMESPACE-AX-032"
+statement = "On an identified supported Linux host, unprivileged user namespaces with single-line identity maps, network namespaces, loopback-only routing, per-network-namespace abstract Unix-socket names, retention of a socket's creating network namespace across SCM_RIGHTS transfer, and SIOCGSKNS have the documented behavior that the declared-egress profile uses."
+category = "runtime-environment"
+owner = "Proofbound Runtime platform maintainer"
+rationale = "The launcher and supervisor can create, inspect, and bind namespace identities, interface and route inventories, and the listener's namespace, but they cannot prove that the kernel isolates network namespaces or implements user-namespace capability rules correctly. Unprivileged user namespaces also expose additional kernel code to the child."
+scope = "Only the native Linux interpretation of PBR-NETWORK-042 and PBR-NETWORK-043. It does not establish Landlock, seccomp, or cgroup behavior, which PBR-LINUX-AX-001 covers, or host integrity, which PBR-HOST-AX-002 covers."
+affected_claims = ["PBR-NETWORK-042", "PBR-NETWORK-043"]
+review_evidence = [
+  "docs/specs/0017_declared_network_egress.md#53-child-boundary",
+  "docs/threat-model.md#trusted-computing-base",
+]
+discharge_plan = "Retain this premise for every declared-egress claim. Narrow it through the native bypass corpus on each supported architecture, exact kernel identities, and a stronger isolated execution profile when one is specified."
+source_citation = "docs/specs/0017_declared_network_egress.md#91-tier-0-registration"
+status = "active"
