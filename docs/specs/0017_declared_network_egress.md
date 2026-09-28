@@ -1008,8 +1008,11 @@ observations bind its exact bytes on each architecture. SDKs construct version
 ### 11.3 Release gate
 
 The declared-egress product claim stays unavailable until these waves are
-merged and admitted in order, each with exact-source independent review,
-hosted evidence, and exact-main verification:
+committed in order, with one wave per commit. A single pull request may carry
+the ordered commits. Each wave requires exact-source independent review and
+hosted evidence before the next wave is admitted. After the pull request is
+merged, exact-main verification must replay every affected wave before a
+release lists `declared-egress` as available:
 
 1. companion ADR, closed version 3 CDDL schemas, golden vectors, and the pure
    authority, subset, and compilation contract (`PBR-NETWORK-040`);

@@ -4,6 +4,7 @@
 
 mod authority;
 mod diagnostic;
+mod egress;
 mod error;
 mod identity;
 mod network;
@@ -26,6 +27,11 @@ pub use diagnostic::{
     DiagnosticCompletion, DiagnosticObserverMechanism, DiagnosticTypeError, DraftProvenance,
     ExecutionProfile, ObservationResolution,
 };
+pub use egress::{
+    AddressClass, AddressScope, CompiledEgressPolicy, EgressAuthority, EgressDestination,
+    EgressEndpoint, EgressError, EgressLimits, EgressListener, EgressName, ProxyVariable,
+    SniBinding, answer_is_admissible, classify_answer, compile_egress_policy,
+};
 pub use error::{CoreError, ErrorClass, MachineError};
 pub use identity::{ArtifactIdentity, ArtifactRole, FileMode, IdentityError, Sha256Digest};
 pub use network::{
@@ -37,8 +43,9 @@ pub use network::{
 pub use normalize::{NormalizedAuthority, normalize_authority};
 pub use outcome::{ExecutionOutcome, ExecutionOutcomeKind, SignalNumber, execution_outcome_kind};
 pub use plan::{
-    CommandArgument, ExecutionCommand, ExecutionPlan, PlanError, PlanId, ServiceExecutionPlan,
-    parse_execution_plan, parse_execution_plan_for_execution, parse_service_execution_plan,
+    CommandArgument, EgressExecutionPlan, ExecutionCommand, ExecutionPlan, PlanError, PlanId,
+    ServiceExecutionPlan, parse_egress_execution_plan, parse_execution_plan,
+    parse_execution_plan_for_execution, parse_service_execution_plan,
 };
 pub use policy::{
     CgroupPolicy, CompiledPolicy, FilesystemPolicy, NoNewPrivileges, PolicyEncodingError,

@@ -1,0 +1,197 @@
+; Proofbound Runtime compiled Linux policy version 3.
+; Closed text-key maps encoded in deterministic CBOR. Runtime execution of
+; this proposed policy remains gated by Specification 0017 section 11.3.
+
+compiled-policy-v3 = {
+  compiled-policy-common,
+  "network": "deny-network-v1"
+} / {
+  compiled-policy-common,
+  "network": "deny-network-v1",
+  "child_network": "channel-only-v1",
+  "service_session": authenticated-service-session-policy
+} / {
+  compiled-policy-common,
+  "network": "deny-network-v1",
+  "child_network": "egress-namespace-v1",
+  "egress": declared-egress,
+  "listener": egress-listener,
+  "child_filter": bstr .size 32,
+  "child_landlock_network": child-landlock-network,
+  "child_landlock_scope": child-landlock-scope,
+  "proxy_filter": bstr .size 32,
+  "proxy_landlock_network": proxy-landlock-network,
+  "address_classes": "address-class-table-v1"
+}
+
+compiled-policy-common = (
+  "schema": "proofbound-runtime-linux-policy/3",
+  "cgroup": cgroup-policy,
+  "filesystem": [* filesystem-rule],
+  "environment": [* text],
+  "no_new_privileges": true
+)
+
+egress-listener = {
+  "address": bstr .size 4,
+  "port": 3128,
+  "backlog": 128
+}
+
+child-landlock-network = {
+  "handled": ["tcp-bind", "tcp-connect"],
+  "connect_ports": [3128],
+  "bind_ports": []
+}
+
+child-landlock-scope = {
+  "abstract_unix_socket": true,
+  "signal": true
+}
+
+proxy-landlock-network = {
+  "handled": ["tcp-bind", "tcp-connect"],
+  "connect_ports": [+ 1..65535],
+  "bind_ports": []
+}
+
+declared-egress = {
+  "mode": "declared-egress",
+  "endpoints": [1*256 egress-endpoint],
+  "resolver": resolution-policy,
+  "limits": egress-limits,
+  "proxy_executable": absolute-path,
+  "proxy_runtime_read": [* absolute-path],
+  "proxy_environment": [1*6 proxy-variable]
+}
+
+egress-endpoint = {
+  "destination": egress-destination,
+  "port": 1..65535,
+  "protocol": "tcp",
+  "tls_sni": sni-binding
+}
+
+egress-destination = {
+  "kind": "dns-name",
+  "name": egress-name,
+  "address_scope": "global" / "global-or-private"
+} / {
+  "kind": "ipv4",
+  "bytes": bstr .size 4
+} / {
+  "kind": "ipv6",
+  "bytes": bstr .size 16
+}
+
+sni-binding = "not-inspected" / {
+  "mode": "required",
+  "name": egress-name
+}
+
+egress-limits = {
+  "connections": 1..8192,
+  "concurrent_connections": 1..512,
+  "attempts_per_connection": 1..4,
+  "resolutions": 1..1024,
+  "dns_messages": 2..8192,
+  "client_to_remote_bytes": 1..1099511627776,
+  "remote_to_client_bytes": 1..1099511627776,
+  "connection_idle_ms": 1..3600000
+}
+
+proxy-variable = "HTTPS_PROXY" / "https_proxy" /
+  "HTTP_PROXY" / "http_proxy" / "ALL_PROXY" / "all_proxy"
+egress-name = text .size (1..253)
+
+authenticated-service-session-policy = {
+  "mode": "authenticated-service-session-v1",
+  "service": service-identity,
+  "resolver": resolution-policy,
+  "tls": tls-policy,
+  "limits": service-session-limits,
+  "connector_executable": absolute-path,
+  "connector_runtime_read": [* absolute-path],
+  "local_channel": local-channel-policy,
+  "credential_source": null / credential-source
+}
+
+service-identity = {
+  "name": text .size (1..253),
+  "port": 1..65535
+}
+
+resolution-policy = {
+  "address": resolver-address,
+  "port": 1..65535,
+  "configuration": absolute-path,
+  "maximum_cname_depth": 1..65535,
+  "maximum_answer_count": 1..65535,
+  "maximum_response_bytes": uint64-nonzero,
+  "resolution_deadline_ms": uint64-nonzero,
+  "attempt_deadline_ms": uint64-nonzero,
+  "address_order": "ipv4-then-ipv6-lexicographic"
+}
+
+resolver-address = {
+  "family": "ipv4",
+  "bytes": bstr .size 4
+} / {
+  "family": "ipv6",
+  "bytes": bstr .size 16
+}
+
+tls-policy = {
+  "trust_root_set": absolute-path,
+  "minimum_version": "tls-1.2" / "tls-1.3",
+  "service_name_verification": "dns-san-exact",
+  "revocation": "not-checked-recorded-assumption",
+  "session_resumption": "deny",
+  "early_data": "deny"
+}
+
+service-session-limits = {
+  "setup_time_ms": uint64-nonzero,
+  "session_time_ms": uint64-nonzero,
+  "child_to_service_bytes": uint64-nonzero,
+  "service_to_child_bytes": uint64-nonzero,
+  "dns_messages": 2..65535,
+  "endpoint_attempts": 1..65535,
+  "tls_handshake_bytes": uint64-nonzero
+}
+
+local-channel-policy = {
+  "protocol": "unix-stream-v1",
+  "child_descriptor": 3..65535
+}
+
+credential-source = {
+  "id": text .size (1..128),
+  "service": text .size (1..253),
+  "environment": environment-name
+}
+
+filesystem-rule = {
+  "path": text .size (1..18446744073709551615),
+  "role": "project-input" / "runtime-library" / "output-root" /
+    "runtime-executable" / "runtime-loader-executable",
+  "access": "read" / "write" / "execute"
+}
+
+cgroup-policy = {
+  "pids.max": uint32-nonzero,
+  "memory.max": memory-byte-limit,
+  "memory.oom.group": 1,
+  "memory.swap.max": swap-byte-limit,
+  "stderr_bytes": uint64,
+  "stdout_bytes": uint64,
+  "wall_time_ms": uint64-nonzero
+}
+
+uint32-nonzero = 1..4294967295
+uint64 = 0..18446744073709551615
+uint64-nonzero = 1..18446744073709551615
+memory-byte-limit = 65536..1099511627776
+swap-byte-limit = 0..1099511627776
+absolute-path = text .size (1..18446744073709551615)
+environment-name = text .size (1..18446744073709551615)

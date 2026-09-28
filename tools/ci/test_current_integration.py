@@ -534,7 +534,8 @@ class CurrentIntegrationTests(unittest.TestCase):
             "plan": {
                 key: value
                 for key, value in schema_constants(sources["plan"]).items()
-                if key.startswith("PLAN_SCHEMA")
+                # Version 3 is proposed; this test binds current schemas only.
+                if key in {"PLAN_SCHEMA", "PLAN_SCHEMA_V2"}
             },
             "sdk": schema_constants(sources["sdk"]),
             "receipt": {

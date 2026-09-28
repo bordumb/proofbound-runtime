@@ -1,0 +1,236 @@
+; Proposed closed declared-egress observation fragment. All maps have text
+; keys and all counters and times use deterministic CBOR unsigned integers.
+
+egress-observation-v1 = {
+  "schema": "proofbound-runtime-egress-observation/1",
+  "authority": egress-authority,
+  "policy_sha256": bstr .size 32,
+  "boundary": egress-boundary,
+  "proxy": egress-proxy,
+  "resolutions": [0*1024 resolution],
+  "connections": [0*8192 connection],
+  "rejections": [0*256 rejection],
+  "counters": counters,
+  "limit_events": [* egress-limit-event],
+  "cleanup": cleanup
+}
+
+egress-authority = {
+  "endpoints": [1*256 endpoint],
+  "resolver": resolver,
+  "limits": limits,
+  "proxy_executable": text,
+  "proxy_runtime_read": [* text],
+  "proxy_environment": [1*6 proxy-variable]
+}
+
+endpoint = {
+  "destination": destination,
+  "port": 1..65535,
+  "protocol": "tcp",
+  "tls_sni": sni-binding
+}
+
+destination = {
+  "kind": "dns-name",
+  "name": name,
+  "address_scope": "global" / "global-or-private"
+} / {
+  "kind": "ipv4",
+  "bytes": bstr .size 4
+} / {
+  "kind": "ipv6",
+  "bytes": bstr .size 16
+}
+
+sni-binding = "not-inspected" / {
+  "mode": "required",
+  "name": name
+}
+
+resolver = {
+  "address": ip-address,
+  "port": 1..65535,
+  "configuration": text,
+  "maximum_cname_depth": 1..4,
+  "maximum_answer_count": 1..16,
+  "maximum_response_bytes": 1..65535,
+  "resolution_deadline_ms": 1..60000,
+  "attempt_deadline_ms": 1..60000,
+  "address_order": "ipv4-then-ipv6-lexicographic"
+}
+
+ip-address = {
+  "family": "ipv4",
+  "bytes": bstr .size 4
+} / {
+  "family": "ipv6",
+  "bytes": bstr .size 16
+}
+
+limits = {
+  "connections": 1..8192,
+  "concurrent_connections": 1..512,
+  "attempts_per_connection": 1..4,
+  "resolutions": 1..1024,
+  "dns_messages": 2..8192,
+  "client_to_remote_bytes": 1..1099511627776,
+  "remote_to_client_bytes": 1..1099511627776,
+  "connection_idle_ms": 1..3600000
+}
+
+egress-boundary = {
+  "user_namespace": namespace-identity,
+  "child_network_namespace": namespace-identity,
+  "supervisor_network_namespace": namespace-identity,
+  "uid_map": identity-map,
+  "gid_map": identity-map,
+  "interfaces": ["lo"],
+  "routes": [* route],
+  "listener": listener,
+  "landlock_abi": 9..11,
+  "landlock_handled_network": ["tcp-bind", "tcp-connect"],
+  "child_filter_sha256": bstr .size 32,
+  "proxy_filter_sha256": bstr .size 32
+}
+
+namespace-identity = {
+  "device": uint64,
+  "inode": uint64
+}
+
+identity-map = {
+  "inside": 1..4294967295,
+  "outside": 1..4294967295,
+  "length": 1
+}
+
+route = {
+  "family": "ipv4" / "ipv6",
+  "destination": ip-address,
+  "prefix_length": 0..128,
+  "interface": "lo"
+}
+
+listener = {
+  "address": bstr .size 4,
+  "port": 3128,
+  "backlog": 128
+}
+
+egress-proxy = {
+  "executable": artifact-identity,
+  "runtime_closure": [* artifact-identity],
+  "resolver_configuration": artifact-identity,
+  "generation": uint64,
+  "readiness_binding": bstr .size 32,
+  "phases": [+ proxy-phase],
+  "terminal_reason": "closed" / "failed"
+}
+
+artifact-identity = {
+  "sha256": bstr .size 32,
+  "size": uint64,
+  "mode": 0..4095
+}
+
+proxy-phase = "starting" / "ready" / "draining" / "closed" / "failed"
+
+resolution = {
+  "index": uint64,
+  "name": name,
+  "triggering_connection": uint64,
+  "started_ms": uint64,
+  "finished_ms": uint64,
+  "response_sha256": [* bstr .size 32],
+  "cname_links": [0*4 cname-link],
+  "answers": [0*16 answer],
+  "outcome": "answered" / "failed" / "no-admissible-answer"
+}
+
+cname-link = {
+  "owner": name,
+  "target": name,
+  "ttl": uint64,
+  "expiry_ms": uint64,
+  "message_sha256": bstr .size 32
+}
+
+answer = {
+  "address": ip-address,
+  "ttl": uint64,
+  "record_expiry_ms": uint64,
+  "effective_expiry_ms": uint64
+}
+
+connection = {
+  "index": uint64,
+  "endpoint_index": uint64,
+  "open_sequence": uint64,
+  "close_sequence": uint64,
+  "accepted_ms": uint64,
+  "resolution_index": uint64 / null,
+  "sni_result": sni-result,
+  "attempts": [0*4 attempt],
+  "selected_attempt": uint64 / null,
+  "client_to_remote_bytes": uint64,
+  "remote_to_client_bytes": uint64,
+  "close_reason": close-reason
+}
+
+sni-result = "not-inspected" / "matched" / "denied-absent" /
+  "denied-mismatch" / "denied-ech" / "denied-malformed" /
+  "denied-too-large"
+
+attempt = {
+  "answer_index": uint64 / null,
+  "address": ip-address,
+  "started_ms": uint64,
+  "result": "connected" / "refused" / "timed-out" /
+    "unreachable" / "failed"
+}
+
+close-reason = "client-closed" / "remote-closed" / "reset" /
+  "idle-timeout" / "client-byte-limit" / "remote-byte-limit" /
+  "proxy-draining" / "sni-denied" / "resolution-failed" /
+  "no-admissible-answer" / "connect-failed"
+
+rejection = {
+  "sequence": uint64,
+  "time_ms": uint64,
+  "reason": rejection-reason,
+  "target_kind": "dns-name" / "ipv4" / "ipv6" / "unparsed",
+  "port": 1..65535 / null,
+  "target_length": 0..8192,
+  "target_sha256": bstr .size 32
+}
+
+rejection-reason = "method-not-connect" / "request-malformed" /
+  "request-head-too-large" / "target-noncanonical" /
+  "endpoint-undeclared" / "limit-connections" /
+  "limit-concurrent-connections" / "limit-resolutions" /
+  "limit-dns-messages" / "limit-bytes-exhausted"
+
+counters = {
+  "connections": uint64,
+  "resolutions": uint64,
+  "dns_messages": uint64,
+  "client_to_remote_bytes": uint64,
+  "remote_to_client_bytes": uint64,
+  "rejections": uint64
+}
+
+egress-limit-event = "egress-limit-connections" / "egress-limit-concurrent" /
+  "egress-limit-resolutions" / "egress-limit-dns-messages" /
+  "egress-limit-client-bytes" / "egress-limit-remote-bytes"
+
+cleanup = {
+  "proxy_reaped": bool,
+  "proxy_cgroup_removed": bool,
+  "listener_closed": bool
+}
+
+proxy-variable = "HTTPS_PROXY" / "https_proxy" /
+  "HTTP_PROXY" / "http_proxy" / "ALL_PROXY" / "all_proxy"
+name = text .size (1..253)
+uint64 = 0..18446744073709551615
