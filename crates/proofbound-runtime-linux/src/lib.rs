@@ -4,6 +4,7 @@
 
 pub mod cgroup;
 pub mod connector_process;
+pub mod executable_set;
 pub mod execution;
 pub mod inventory;
 pub mod landlock;
@@ -31,6 +32,7 @@ pub use connector_process::{
     ReadyConnectorProcess, ResolvedServiceArtifact, ServiceArtifactIdentity, ServiceArtifactRole,
     ServiceChannelId, parse_connector_bootstrap, prepare_connector_process, run_connector_process,
 };
+pub use executable_set::{ExecutableSet, ExecutableSetError, ExecutableSetMember};
 pub use execution::{ExecutionSetupError, fresh_execution_id};
 pub use inventory::{ResolvedDirectory, ResolvedReadPath};
 pub use landlock::{

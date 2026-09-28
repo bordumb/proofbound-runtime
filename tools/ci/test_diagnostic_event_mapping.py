@@ -208,7 +208,7 @@ EXPECTED_FILES = {
     "diagnose-lib": "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de",
     "diagnose-manifest": "097ec2b4cef98a43bee09c64c289251ab2060808d4fb8e050de3077f541ff2f1",
     "lib": "8859f99339377b7034d43dd9d4fd20713824b5ad2708cd52d76412272a3858e2",
-    "linux-lib": "8eddcd39455211a892d3e7647dd806d41db1713d03e83296f6ede40e24c5da5f",
+    "linux-lib": "fc72e7e18e0b7c72c0c7c8361200e8e7eeb20ac2bef47bef4b802eadd43c8c57",
     "linux-manifest": "954108328abeba4179ad058bf38cda6461aaf5789040fd1f2348a4d694eb8a1e",
     "lock": "b027b220cb4c91f5c6dddeeee158a19f3ae06c39408aac254ef76e27e015b2d9",
     "map-assumption": "e787e8a57b35b174462b2a960a7a91be63e2f2d83da569ecdb1beb26d94b28bd",
