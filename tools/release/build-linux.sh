@@ -61,6 +61,7 @@ build_bundle() {
   install -m 0755 "$target_directory/$target/release/pbr-verify" "$stage/pbr-verify"
   install -m 0755 "$target_directory/$target/release/pbr-compose" "$stage/pbr-compose"
   install -m 0755 "$target_directory/$target/release/pbr-diagnose" "$stage/pbr-diagnose"
+  install -m 0755 "$target_directory/$target/release/pbr-egress-proxy" "$stage/pbr-egress-proxy"
   install -m 0755 \
     "$target_directory/$target/release/pbr-accept" \
     "$work_root/$build_name-$acceptor_name"
@@ -73,7 +74,7 @@ import sys
 
 stage = pathlib.Path(sys.argv[1])
 artifacts = []
-for name in ("pbr", "pbr-native-launcher", "pbr-verify", "pbr-compose", "pbr-diagnose"):
+for name in ("pbr", "pbr-native-launcher", "pbr-verify", "pbr-compose", "pbr-diagnose", "pbr-egress-proxy"):
     data = (stage / name).read_bytes()
     artifacts.append(
         {
@@ -103,7 +104,7 @@ PY
     --numeric-owner \
     -C "$stage" \
     -cf - \
-    RELEASE-MANIFEST.json pbr pbr-native-launcher pbr-verify pbr-compose pbr-diagnose | gzip -n >"$bundle"
+    RELEASE-MANIFEST.json pbr pbr-native-launcher pbr-verify pbr-compose pbr-diagnose pbr-egress-proxy | gzip -n >"$bundle"
 }
 
 mkdir -p "$output_directory"

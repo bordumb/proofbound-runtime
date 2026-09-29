@@ -72,6 +72,29 @@ if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
   done
   e2e_root="$(mktemp -d "$PWD/target/native-cli-e2e.XXXXXX")"
   trap 'rm -rf -- "$e2e_root"' EXIT
+  "$runtime_bin_directory/pbr" doctor \
+    --cgroup-root "$PROOFBOUND_CGROUP_ROOT" >"$e2e_root/doctor-v2.json"
+  python3 - "$e2e_root/doctor-v2.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as source:
+    report = json.load(source)
+assert report["schema"] == "proofbound-runtime-doctor/2"
+assert set(report["capabilities"]) == {
+    "operating_system", "architecture", "kernel_release", "landlock",
+    "user_namespace", "network_namespace", "landlock_egress",
+    "no_new_privileges", "seccomp", "cgroup_v2",
+}
+assert all(value["status"] in {"available", "unavailable"}
+           for value in report["capabilities"].values())
+print(json.dumps({
+    "schema": report["schema"],
+    "user_namespace": report["capabilities"]["user_namespace"],
+    "network_namespace": report["capabilities"]["network_namespace"],
+    "landlock_egress": report["capabilities"]["landlock_egress"],
+}, sort_keys=True))
+PY
   plan="$e2e_root/plan.cbor"
   receipt="$e2e_root/receipt.cbor"
   result="$e2e_root/run-result.json"

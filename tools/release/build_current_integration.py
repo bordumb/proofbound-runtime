@@ -16,7 +16,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 
-SCHEMA = "proofbound-runtime-current-integration/1"
+SCHEMA = "proofbound-runtime-current-integration/2"
 REGISTRY_SCHEMA = "proofbound-runtime-registry-observations/1"
 PROOFBOUND_PIN_SCHEMA = "proofbound-runtime-proofbound-tool-pin/1"
 REVISION = re.compile(r"[0-9a-f]{40}\Z")
@@ -39,6 +39,7 @@ RUNTIME_MEMBERS = (
     "pbr-verify",
     "pbr-compose",
     "pbr-diagnose",
+    "pbr-egress-proxy",
 )
 RUNTIME_EXECUTABLES = RUNTIME_MEMBERS[1:]
 RUNTIME_ORDER = tuple(
@@ -62,6 +63,7 @@ SCHEMA_PROFILES = [
         "accepted": [
             "proofbound-runtime-receipt/1",
             "proofbound-runtime-execution-receipt/2",
+            "proofbound-runtime-execution-receipt/3",
         ],
         "emitted": ["proofbound-runtime-execution-receipt/2"],
         "surface": "execution-receipt",
@@ -70,18 +72,19 @@ SCHEMA_PROFILES = [
         "accepted": [
             "proofbound-runtime-composed-receipt/1",
             "proofbound-runtime-composed-receipt/2",
+            "proofbound-runtime-composed-receipt/3",
         ],
-        "emitted": ["proofbound-runtime-composed-receipt/2"],
+        "emitted": ["proofbound-runtime-composed-receipt/2", "proofbound-runtime-composed-receipt/3"],
         "surface": "composed-receipt",
     },
     {
-        "accepted": ["proofbound-runtime-acceptance-policy/1"],
+        "accepted": ["proofbound-runtime-acceptance-policy/1", "proofbound-runtime-acceptance-policy/2"],
         "emitted": [],
         "surface": "acceptance-policy",
     },
     {
-        "accepted": ["proofbound-runtime-acceptance-decision/2"],
-        "emitted": ["proofbound-runtime-acceptance-decision/2"],
+        "accepted": ["proofbound-runtime-acceptance-decision/2", "proofbound-runtime-acceptance-decision/3"],
+        "emitted": ["proofbound-runtime-acceptance-decision/2", "proofbound-runtime-acceptance-decision/3"],
         "surface": "acceptance-decision",
     },
     {
@@ -678,6 +681,7 @@ def build(
             for language in ("rust", "python", "node")
         ],
         "optional_integrations": [],
+        "network_modes": ["deny"],
         "packages": packages,
         "platform_profiles": [
             {

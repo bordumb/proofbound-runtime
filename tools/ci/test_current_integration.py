@@ -18,7 +18,7 @@ from tools.release.verify_current_integration import decode_strict
 ROOT = Path(__file__).resolve().parents[2]
 BUILDER = ROOT / "tools/release/build_current_integration.py"
 VERIFIER = ROOT / "tools/release/verify_current_integration.py"
-SCHEMA = ROOT / "schemas/current-integration-v1.cddl"
+SCHEMA = ROOT / "schemas/current-integration-v2.cddl"
 REVISION = "00112233445566778899aabbccddeeff00112233"
 PROOFBOUND_REVISION = "112233445566778899aabbccddeeff0011223344"
 VERSION = "0.2.0"
@@ -32,6 +32,7 @@ RUNTIME_EXECUTABLES = (
     "pbr-verify",
     "pbr-compose",
     "pbr-diagnose",
+    "pbr-egress-proxy",
 )
 
 
@@ -241,7 +242,7 @@ class CurrentIntegrationTests(unittest.TestCase):
 
             value = decode_strict(fixture.record.read_bytes())
             self.assertEqual(
-                value["schema"], "proofbound-runtime-current-integration/1"
+                value["schema"], "proofbound-runtime-current-integration/2"
             )
             self.assertEqual(
                 value["runtime"]["source_revision"], bytes.fromhex(REVISION)
@@ -256,6 +257,7 @@ class CurrentIntegrationTests(unittest.TestCase):
             )
             self.assertEqual(len(value["packages"]), 4)
             self.assertEqual(value["optional_integrations"], [])
+            self.assertEqual(value["network_modes"], ["deny"])
             self.assertEqual(
                 value["proofbound"]["source_revision"],
                 bytes.fromhex(PROOFBOUND_REVISION),
@@ -560,7 +562,7 @@ class CurrentIntegrationTests(unittest.TestCase):
             "accept": {
                 key: value
                 for key, value in schema_constants(sources["accept"]).items()
-                if key in {"POLICY_SCHEMA", "DECISION_SCHEMA"}
+                if key in {"POLICY_SCHEMA", "POLICY_SCHEMA_V2", "DECISION_SCHEMA", "DECISION_SCHEMA_V3"}
             },
             "result": schema_constants(sources["result"]),
         }
@@ -591,16 +593,22 @@ class CurrentIntegrationTests(unittest.TestCase):
                 "COMPILED_RELEASE_SCHEMA": "proofbound-compiled-release/7",
                 "COMPOSITION_SCHEMA": "proofbound-runtime-composed-receipt/1",
                 "COMPOSITION_SCHEMA_V2": "proofbound-runtime-composed-receipt/2",
+                "COMPOSITION_SCHEMA_V3": "proofbound-runtime-composed-receipt/3",
                 "EXECUTION_RECEIPT_SCHEMA": "proofbound-runtime-receipt/1",
                 "EXECUTION_RECEIPT_SCHEMA_V2": (
                     "proofbound-runtime-execution-receipt/2"
+                ),
+                "EXECUTION_RECEIPT_SCHEMA_V3": (
+                    "proofbound-runtime-execution-receipt/3"
                 ),
                 "RELEASE_ENVELOPE_SCHEMA": "proofbound-release-envelope/7",
                 "RELEASE_REPORT_SCHEMA": "proofbound-verification-report/3",
             },
             "accept": {
                 "DECISION_SCHEMA": "proofbound-runtime-acceptance-decision/2",
+                "DECISION_SCHEMA_V3": "proofbound-runtime-acceptance-decision/3",
                 "POLICY_SCHEMA": "proofbound-runtime-acceptance-policy/1",
+                "POLICY_SCHEMA_V2": "proofbound-runtime-acceptance-policy/2",
             },
             "result": {"SCHEMA": "proofbound-runtime-run-result/2"},
         }

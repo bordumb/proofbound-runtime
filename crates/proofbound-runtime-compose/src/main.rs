@@ -106,6 +106,16 @@ fn run_inner(args: Vec<OsString>) -> Result<Option<String>, CliError> {
     let execution_verifier_path = args.runtime_bundle.join("pbr-verify");
     let execution_verifier = read_executable(&execution_verifier_path)?;
     let composer = read_executable(&args.runtime_bundle.join("pbr-compose"))?;
+    let diagnose = args.runtime_bundle.join("pbr-diagnose");
+    let diagnose = diagnose
+        .exists()
+        .then(|| read_executable(&diagnose))
+        .transpose()?;
+    let proxy = args.runtime_bundle.join("pbr-egress-proxy");
+    let proxy = proxy
+        .exists()
+        .then(|| read_executable(&proxy))
+        .transpose()?;
     let running_composer =
         env::current_exe().map_err(|_| CliError::invalid("composition.input.read-failed"))?;
     if read_executable(&running_composer)? != composer {
@@ -133,6 +143,12 @@ fn run_inner(args: Vec<OsString>) -> Result<Option<String>, CliError> {
         launcher: named("pbr-native-launcher", &launcher),
         execution_verifier: named("pbr-verify", &execution_verifier),
         composer: named("pbr-compose", &composer),
+        diagnose: diagnose
+            .as_deref()
+            .map(|bytes| named("pbr-diagnose", bytes)),
+        egress_proxy: proxy
+            .as_deref()
+            .map(|bytes| named("pbr-egress-proxy", bytes)),
         execution_receipt: named(
             if execution_receipt.first() == Some(&b'{') {
                 "execution-receipt.json"
@@ -215,7 +231,7 @@ fn require_bundle_inventory(path: &Path) -> Result<(), CliError> {
             .map_err(|_| CliError::invalid("composition.bundle.role-mismatch"))?;
         actual.insert(name);
     }
-    let expected = [
+    let mut expected = [
         "RELEASE-MANIFEST.json",
         "pbr",
         "pbr-compose",
@@ -224,8 +240,12 @@ fn require_bundle_inventory(path: &Path) -> Result<(), CliError> {
     ]
     .into_iter()
     .map(str::to_owned)
-    .collect();
-    if actual != expected {
+    .collect::<BTreeSet<_>>();
+    let old = expected.clone();
+    expected.insert("pbr-diagnose".to_owned());
+    let with_diagnose = expected.clone();
+    expected.insert("pbr-egress-proxy".to_owned());
+    if actual != old && actual != with_diagnose && actual != expected {
         return Err(CliError::verification("composition.bundle.role-mismatch"));
     }
     Ok(())

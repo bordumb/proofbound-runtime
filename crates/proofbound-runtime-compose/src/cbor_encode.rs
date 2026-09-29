@@ -8,6 +8,20 @@ pub(crate) fn encode_composed_v2(value: &Value) -> Result<Vec<u8>, ()> {
     Ok(output)
 }
 
+pub(crate) fn encode_composed_v3(value: &Value) -> Result<Vec<u8>, ()> {
+    encode_composed_v2(value)
+}
+
+pub(crate) fn encode_network_observation(value: &Value) -> Result<Vec<u8>, ()> {
+    let mut output = Vec::new();
+    encode_json(
+        value,
+        &mut vec!["network".to_owned(), "observation".to_owned()],
+        &mut output,
+    )?;
+    Ok(output)
+}
+
 fn encode_json(value: &Value, path: &mut Vec<String>, output: &mut Vec<u8>) -> Result<(), ()> {
     match value {
         Value::Null => output.push(0xf6),
@@ -45,13 +59,21 @@ fn encode_json(value: &Value, path: &mut Vec<String>, output: &mut Vec<u8>) -> R
 
 fn encode_string(value: &str, path: &[String], output: &mut Vec<u8>) -> Result<(), ()> {
     let field = path.last().map(String::as_str).ok_or(())?;
-    if field == "size" {
+    if field == "size" || (path.iter().any(|part| part == "network") && field == "inode") {
         let value = value.parse::<u64>().map_err(|_| ())?;
         encode_argument(0, value, output);
     } else if field == "execution_id" {
         encode_bytes(&parse_uuid(value)?, output)?;
     } else if field == "project_revision" {
         encode_bytes(&parse_hex_exact(value, 20)?, output)?;
+    } else if field == "observation_sha256" {
+        encode_bytes(
+            &parse_hex_exact(value.strip_prefix("sha256:").ok_or(())?, 32)?,
+            output,
+        )?;
+    } else if path.iter().any(|part| part == "network") && value.starts_with("hex:") {
+        let raw = value.strip_prefix("hex:").ok_or(())?;
+        encode_bytes(&parse_hex_exact(raw, raw.len() / 2)?, output)?;
     } else if is_digest_path(path) {
         let digest = value.strip_prefix("sha256:").ok_or(())?;
         encode_bytes(&parse_hex_exact(digest, 32)?, output)?;

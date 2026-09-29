@@ -23,6 +23,7 @@ current-integration-v2 = {
   "platform_profiles": [platform-profile, platform-profile],
   "proofbound": proofbound-identity,
   "optional_integrations": [],
+  "network_modes": ["deny"] / ["deny", "declared-egress"],
 }
 
 runtime-identity = {
@@ -35,6 +36,8 @@ runtime-identity = {
     runtime-artifact,
   ],
   "executables": [
+    runtime-executable,
+    runtime-executable,
     runtime-executable,
     runtime-executable,
     runtime-executable,

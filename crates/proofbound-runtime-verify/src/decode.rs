@@ -86,6 +86,8 @@ pub struct ReceiptCompositionFacts {
     pub schema: String,
     pub trusted_computing_base: Vec<CompositionTcbEntry>,
     pub version_two: bool,
+    /// Strictly decoded network map for a version 3 receipt.
+    pub network: Option<serde_json::Value>,
 }
 
 /// Closed, verifier-decoded execution facts used by an adopter acceptance
@@ -109,6 +111,8 @@ pub struct ReceiptAcceptanceFacts {
     pub reusable: bool,
     pub assumptions: Vec<String>,
     pub tcb_roles: Vec<String>,
+    /// Strictly decoded network map after independent receipt verification.
+    pub network: Option<serde_json::Value>,
 }
 
 /// Contains one independently decoded version 1 receipt.
@@ -179,6 +183,7 @@ impl DecodedReceipt {
                 })
                 .collect(),
             version_two: self.version_two,
+            network: self.version_three.then(|| self.value["network"].clone()),
         }
     }
 
@@ -212,6 +217,7 @@ impl DecodedReceipt {
                 .iter()
                 .map(|entry| entry.role.clone())
                 .collect(),
+            network: self.version_three.then(|| self.value["network"].clone()),
         })
     }
 
