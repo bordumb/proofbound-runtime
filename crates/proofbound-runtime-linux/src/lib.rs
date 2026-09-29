@@ -5,7 +5,17 @@
 pub mod cgroup;
 pub mod connector_process;
 #[cfg(target_os = "linux")]
+pub mod egress_child_landlock;
+#[cfg(target_os = "linux")]
+pub mod egress_child_privilege;
+#[cfg(target_os = "linux")]
+pub mod egress_child_seccomp;
+#[cfg(target_os = "linux")]
 pub mod egress_confinement;
+#[cfg(target_os = "linux")]
+pub mod egress_launcher;
+#[cfg(target_os = "linux")]
+pub mod egress_namespace;
 pub mod egress_proxy;
 #[cfg(target_os = "linux")]
 pub mod egress_proxy_process;
@@ -39,6 +49,8 @@ pub use connector_process::{
     ReadyConnectorProcess, ResolvedServiceArtifact, ServiceArtifactIdentity, ServiceArtifactRole,
     ServiceChannelId, parse_connector_bootstrap, prepare_connector_process, run_connector_process,
 };
+#[cfg(target_os = "linux")]
+pub use egress_launcher::run_egress_launcher;
 pub use executable_set::{ExecutableSet, ExecutableSetError, ExecutableSetMember};
 pub use execution::{ExecutionSetupError, fresh_execution_id};
 pub use inventory::{ResolvedDirectory, ResolvedReadPath};
@@ -67,6 +79,7 @@ pub use resolve::{
 pub use seccomp::{
     SeccompBoundary, SeccompError, compile_deny_network_program, install_deny_network,
 };
+pub use supervisor::parse_egress_launcher_bootstrap;
 pub use supervisor::{
     CapturedStream, LauncherBootstrap, SupervisedExecution, SupervisorError, SupervisorTimings,
     parse_launcher_bootstrap, supervise_launcher,

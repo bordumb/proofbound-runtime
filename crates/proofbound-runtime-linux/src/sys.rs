@@ -4,7 +4,6 @@
 use std::ffi::CStr;
 use std::ffi::CString;
 use std::io;
-#[cfg(feature = "diagnostic-observer")]
 use std::os::fd::AsRawFd as _;
 use std::os::fd::{FromRawFd as _, OwnedFd, RawFd};
 use std::os::unix::ffi::OsStrExt as _;
@@ -116,6 +115,13 @@ struct EgressLandlockRulesetAttr {
 struct LandlockNetPortAttr {
     allowed_access: u64,
     port: u64,
+}
+
+#[repr(C)]
+struct LoopbackIfreq {
+    name: [libc::c_char; libc::IFNAMSIZ],
+    flags: libc::c_short,
+    padding: [u8; 22],
 }
 
 #[repr(C)]
@@ -387,6 +393,30 @@ pub(crate) fn disable_dumpability() -> io::Result<()> {
     }
 }
 
+pub(crate) fn drop_capability_bounding_set(last_capability: u32) -> io::Result<()> {
+    if last_capability >= 64 {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    for capability in 0..=last_capability {
+        // SAFETY: PR_CAPBSET_DROP takes only a capability number.
+        let result = unsafe { libc::prctl(libc::PR_CAPBSET_DROP, capability, 0, 0, 0) };
+        if result != 0 {
+            return Err(io::Error::last_os_error());
+        }
+    }
+    for capability in 0..=last_capability {
+        // SAFETY: PR_CAPBSET_READ takes only a capability number.
+        let result = unsafe { libc::prctl(libc::PR_CAPBSET_READ, capability, 0, 0, 0) };
+        if result < 0 {
+            return Err(io::Error::last_os_error());
+        }
+        if result != 0 {
+            return Err(io::Error::other("capability bounding set remains nonzero"));
+        }
+    }
+    Ok(())
+}
+
 pub(crate) fn add_landlock_path_rule(
     ruleset: RawFd,
     parent: RawFd,
@@ -565,6 +595,77 @@ pub(crate) fn socket_accepting(descriptor: RawFd) -> io::Result<bool> {
     Ok(value == 1)
 }
 
+pub(crate) fn unshare_egress_namespaces() -> io::Result<()> {
+    // SAFETY: unshare receives only the two fixed namespace flags.
+    let result = unsafe { libc::unshare(libc::CLONE_NEWUSER | libc::CLONE_NEWNET) };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+pub(crate) fn bring_loopback_up() -> io::Result<()> {
+    // SAFETY: socket creates one local ioctl descriptor owned below.
+    let descriptor =
+        unsafe { libc::socket(libc::AF_INET, libc::SOCK_DGRAM | libc::SOCK_CLOEXEC, 0) };
+    if descriptor < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    // SAFETY: socket returned this fresh descriptor once.
+    let descriptor = unsafe { OwnedFd::from_raw_fd(descriptor) };
+    let mut request = LoopbackIfreq {
+        name: [0; libc::IFNAMSIZ],
+        flags: 0,
+        padding: [0; 22],
+    };
+    request.name[0] = b'l' as libc::c_char;
+    request.name[1] = b'o' as libc::c_char;
+    // SAFETY: request has the Linux ifreq layout and remains writable.
+    let read = unsafe { libc::ioctl(descriptor.as_raw_fd(), libc::SIOCGIFFLAGS, &raw mut request) };
+    if read != 0 {
+        return Err(io::Error::last_os_error());
+    }
+    request.flags |= libc::IFF_UP as libc::c_short;
+    // SAFETY: request remains live and contains only the exact `lo` interface.
+    let write = unsafe {
+        libc::ioctl(
+            descriptor.as_raw_fd(),
+            libc::SIOCSIFFLAGS,
+            &raw const request,
+        )
+    };
+    if write == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+pub(crate) fn set_listener_backlog(descriptor: RawFd, backlog: i32) -> io::Result<()> {
+    if backlog != 128 {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    // SAFETY: listen takes only a borrowed socket descriptor and integer bound.
+    let result = unsafe { libc::listen(descriptor, backlog) };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+pub(crate) fn socket_network_namespace(descriptor: RawFd) -> io::Result<OwnedFd> {
+    const SIOCGSKNS: libc::c_ulong = 0x894c;
+    // SAFETY: SIOCGSKNS returns a new namespace descriptor, not a user pointer.
+    let result = unsafe { libc::ioctl(descriptor, SIOCGSKNS) };
+    if result < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    // SAFETY: the ioctl returned a new descriptor transferred exactly once.
+    Ok(unsafe { OwnedFd::from_raw_fd(result) })
+}
+
 pub(crate) fn receive_packet(descriptor: RawFd, buffer: &mut [u8]) -> io::Result<usize> {
     // SAFETY: `buffer` remains writable for the call and `descriptor` is
     // borrowed by the caller. The caller supplies one extra byte so a packet
@@ -576,6 +677,114 @@ pub(crate) fn receive_packet(descriptor: RawFd, buffer: &mut [u8]) -> io::Result
     } else {
         usize::try_from(received).map_err(|_| io::Error::other("negative receive size"))
     }
+}
+
+pub(crate) fn send_packet_with_descriptor(
+    channel: RawFd,
+    payload: &[u8],
+    transferred: RawFd,
+) -> io::Result<()> {
+    if payload.is_empty() || transferred < 0 {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    let mut vector = libc::iovec {
+        iov_base: payload.as_ptr().cast_mut().cast(),
+        iov_len: payload.len(),
+    };
+    let mut control = [0_u64; 4];
+    // SAFETY: zero is a valid empty msghdr before its fields are initialized.
+    let mut message: libc::msghdr = unsafe { core::mem::zeroed() };
+    message.msg_iov = &raw mut vector;
+    message.msg_iovlen = 1;
+    message.msg_control = control.as_mut_ptr().cast();
+    // SAFETY: CMSG_SPACE calculates the size for one integer descriptor.
+    message.msg_controllen = unsafe { libc::CMSG_SPACE(4) as usize };
+    // SAFETY: message control storage is aligned and at least CMSG_SPACE(4).
+    let header = unsafe { libc::CMSG_FIRSTHDR(&raw const message) };
+    if header.is_null() {
+        return Err(io::ErrorKind::InvalidData.into());
+    }
+    // SAFETY: header points inside the initialized control storage.
+    unsafe {
+        (*header).cmsg_level = libc::SOL_SOCKET;
+        (*header).cmsg_type = libc::SCM_RIGHTS;
+        (*header).cmsg_len = libc::CMSG_LEN(4) as usize;
+        core::ptr::write_unaligned(libc::CMSG_DATA(header).cast::<RawFd>(), transferred);
+    }
+    // SAFETY: payload and control memory stay live through sendmsg.
+    let written = unsafe { libc::sendmsg(channel, &raw const message, libc::MSG_NOSIGNAL) };
+    if written < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    if usize::try_from(written).ok() == Some(payload.len()) {
+        Ok(())
+    } else {
+        Err(io::ErrorKind::WriteZero.into())
+    }
+}
+
+pub(crate) fn receive_packet_with_descriptor(
+    channel: RawFd,
+    payload: &mut [u8],
+) -> io::Result<(usize, OwnedFd)> {
+    let mut vector = libc::iovec {
+        iov_base: payload.as_mut_ptr().cast(),
+        iov_len: payload.len(),
+    };
+    let mut control = [0_u64; 4];
+    // SAFETY: zero is a valid empty msghdr before its fields are initialized.
+    let mut message: libc::msghdr = unsafe { core::mem::zeroed() };
+    message.msg_iov = &raw mut vector;
+    message.msg_iovlen = 1;
+    message.msg_control = control.as_mut_ptr().cast();
+    message.msg_controllen = core::mem::size_of_val(&control);
+    // SAFETY: payload and control memory stay live and writable through recvmsg.
+    let received = unsafe { libc::recvmsg(channel, &raw mut message, libc::MSG_CMSG_CLOEXEC) };
+    if received < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    // SAFETY: message has kernel-written control metadata after recvmsg.
+    let header = unsafe { libc::CMSG_FIRSTHDR(&raw const message) };
+    let mut descriptors = Vec::new();
+    if !header.is_null() {
+        // SAFETY: header lies inside the control allocation and was filled by
+        // the kernel. Read each received descriptor exactly once into RAII.
+        let (level, kind, length) = unsafe {
+            (
+                (*header).cmsg_level,
+                (*header).cmsg_type,
+                (*header).cmsg_len,
+            )
+        };
+        // SAFETY: CMSG_LEN(0) is the aligned header size on this ABI.
+        let base = unsafe { libc::CMSG_LEN(0) as usize };
+        if level == libc::SOL_SOCKET && kind == libc::SCM_RIGHTS && length >= base {
+            let count = (length - base) / core::mem::size_of::<RawFd>();
+            if count <= 4 && length <= message.msg_controllen {
+                for index in 0..count {
+                    // SAFETY: the validated cmsg length contains this integer.
+                    let descriptor = unsafe {
+                        core::ptr::read_unaligned(
+                            libc::CMSG_DATA(header).cast::<RawFd>().add(index),
+                        )
+                    };
+                    if descriptor >= 0 {
+                        // SAFETY: recvmsg transferred ownership of this fd.
+                        descriptors.push(unsafe { OwnedFd::from_raw_fd(descriptor) });
+                    }
+                }
+            }
+        }
+    }
+    if received == 0
+        || message.msg_flags & (libc::MSG_TRUNC | libc::MSG_CTRUNC) != 0
+        || descriptors.len() != 1
+    {
+        return Err(io::ErrorKind::InvalidData.into());
+    }
+    let descriptor = descriptors.pop().expect("exactly one received descriptor");
+    let count = usize::try_from(received).map_err(|_| io::ErrorKind::InvalidData)?;
+    Ok((count, descriptor))
 }
 
 pub(crate) fn wait_readable(descriptor: RawFd, timeout: std::time::Duration) -> io::Result<bool> {

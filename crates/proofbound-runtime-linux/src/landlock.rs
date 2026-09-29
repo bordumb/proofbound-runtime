@@ -39,7 +39,7 @@ const ACCESS_TRUNCATE: u64 = 1 << 14;
 #[cfg(any(test, target_os = "linux"))]
 const ACCESS_IOCTL_DEV: u64 = 1 << 15;
 #[cfg(any(test, target_os = "linux"))]
-const ACCESS_RESOLVE_UNIX: u64 = 1 << 16;
+pub(crate) const ACCESS_RESOLVE_UNIX: u64 = 1 << 16;
 #[cfg(target_os = "linux")]
 const MAX_REVIEWED_ABI: u32 = 11;
 
@@ -217,7 +217,7 @@ impl fmt::Display for LandlockError {
 impl std::error::Error for LandlockError {}
 
 #[cfg(any(test, target_os = "linux"))]
-const fn handled_access(abi: NonZeroU32) -> u64 {
+pub(crate) const fn handled_access(abi: NonZeroU32) -> u64 {
     let mut access = ACCESS_EXECUTE
         | ACCESS_WRITE_FILE
         | ACCESS_READ_FILE
@@ -243,7 +243,10 @@ const fn handled_access(abi: NonZeroU32) -> u64 {
 }
 
 #[cfg(any(test, target_os = "linux"))]
-const fn allowed_access(access: LandlockAccess, is_directory: bool) -> Result<u64, LandlockError> {
+pub(crate) const fn allowed_access(
+    access: LandlockAccess,
+    is_directory: bool,
+) -> Result<u64, LandlockError> {
     match (access, is_directory) {
         (LandlockAccess::Read, true) => Ok(ACCESS_READ_FILE | ACCESS_READ_DIR),
         (LandlockAccess::Read, false) => Ok(ACCESS_READ_FILE),
@@ -255,7 +258,7 @@ const fn allowed_access(access: LandlockAccess, is_directory: bool) -> Result<u6
 }
 
 #[cfg(target_os = "linux")]
-fn descriptor_is_directory(descriptor: BorrowedFd<'_>) -> Result<bool, LandlockError> {
+pub(crate) fn descriptor_is_directory(descriptor: BorrowedFd<'_>) -> Result<bool, LandlockError> {
     use std::fs::File;
 
     let file = File::from(

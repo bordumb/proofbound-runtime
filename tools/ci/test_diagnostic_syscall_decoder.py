@@ -101,7 +101,7 @@ EXPECTED_CLOSURE_FILES = {
     "diagnose-manifest": "097ec2b4cef98a43bee09c64c289251ab2060808d4fb8e050de3077f541ff2f1",
     "diagnose-linux-manifest": "ef7c613a66781c4b64d75435524166329b5239b8172f97b28cff2d6d609c8d78",
     "linux-manifest": "b907328f3156fbe80d7aa8436da2cbad11bd568088de0d0006b30cef53a79a25",
-    "linux-lib": "0257ac0dc7ab0706496b5f540e837ea914028ac8f5ff69d7ae5c781aaebedb64",
+    "linux-lib": "8441181be887f8b4669bf09b7e86c24d60a2c26b380275a2ea7d8fa7b9321c59",
     "lock": "a2d00b8e4e04dd917f38a6b531d311d061c9d0b106263880f6ebcd6dfb2f0193",
     "root-manifest": "561bcb4c511d8049f577219683f5b8cde584ccd0b2c31bc28a3ef94fb5cc60c2",
     "toolchain": "0ceb751d66f44e50985538d239e0f5712acccb9f7e71a8afb56878f8fc2ba74a",

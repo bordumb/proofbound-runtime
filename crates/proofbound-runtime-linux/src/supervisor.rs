@@ -442,7 +442,21 @@ impl LauncherBootstrap {
 
 /// Parses the closed hidden-launcher command-line bootstrap.
 pub fn parse_launcher_bootstrap(args: &[String]) -> Result<LauncherBootstrap, LauncherError> {
-    if args.len() != 8 || args[0] != "__proofbound_launcher_v1" {
+    parse_launcher_bootstrap_with_mode(args, "__proofbound_launcher_v1")
+}
+
+/// Parses the separate, closed egress launcher entry mode.
+pub fn parse_egress_launcher_bootstrap(
+    args: &[String],
+) -> Result<LauncherBootstrap, LauncherError> {
+    parse_launcher_bootstrap_with_mode(args, "__proofbound_egress_launcher_v1")
+}
+
+fn parse_launcher_bootstrap_with_mode(
+    args: &[String],
+    mode: &str,
+) -> Result<LauncherBootstrap, LauncherError> {
+    if args.len() != 8 || args[0] != mode {
         return Err(LauncherError::Malformed);
     }
     let channel_descriptor = args[1]
