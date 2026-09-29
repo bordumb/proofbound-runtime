@@ -59,6 +59,7 @@ pub struct EligibilityInput {
     stderr: CaptureState,
     structure: StructureState,
     limit_events: [bool; 7],
+    egress_reasons: [bool; 5],
 }
 
 impl EligibilityInput {
@@ -78,6 +79,7 @@ impl EligibilityInput {
             stderr,
             structure,
             limit_events: [false; 7],
+            egress_reasons: [false; 5],
         }
     }
 
@@ -98,6 +100,29 @@ impl EligibilityInput {
             stderr,
             structure,
             limit_events,
+            egress_reasons: [false; 5],
+        }
+    }
+
+    /// Creates version 3 inputs with independently derived egress reasons.
+    #[must_use]
+    pub fn new_v3(
+        boundary: BoundaryState,
+        outcome: OutcomeState,
+        stdout: CaptureState,
+        stderr: CaptureState,
+        structure: StructureState,
+        limit_events: [bool; 7],
+        egress_reasons: [bool; 5],
+    ) -> Self {
+        Self {
+            boundary,
+            outcome,
+            stdout,
+            stderr,
+            structure,
+            limit_events,
+            egress_reasons,
         }
     }
 }
@@ -139,6 +164,16 @@ pub enum FailureReason {
     SwapMax,
     /// `memory.swap.events` reported `fail` activity.
     SwapFail,
+    /// A child request violated declared authority.
+    EgressRequestDenied,
+    /// A required TLS SNI binding was denied.
+    EgressSniDenied,
+    /// An egress work or byte limit was reached.
+    EgressLimitReached,
+    /// The proxy failed before clean closure.
+    EgressProxyFailed,
+    /// Proxy or listener cleanup was incomplete.
+    EgressCleanupIncomplete,
 }
 
 impl FailureReason {
@@ -163,6 +198,11 @@ impl FailureReason {
             Self::MemoryOomGroupKill => "memory-oom-group-kill",
             Self::SwapMax => "swap-max",
             Self::SwapFail => "swap-fail",
+            Self::EgressRequestDenied => "egress-request-denied",
+            Self::EgressSniDenied => "egress-sni-denied",
+            Self::EgressLimitReached => "egress-limit-reached",
+            Self::EgressProxyFailed => "egress-proxy-failed",
+            Self::EgressCleanupIncomplete => "egress-cleanup-incomplete",
         }
     }
 }
@@ -228,6 +268,17 @@ pub fn derive_eligibility(input: &EligibilityInput) -> EligibilityDecision {
         FailureReason::MemoryOomGroupKill,
         FailureReason::SwapMax,
         FailureReason::SwapFail,
+    ]) {
+        if present {
+            failures.push(reason);
+        }
+    }
+    for (present, reason) in input.egress_reasons.into_iter().zip([
+        FailureReason::EgressRequestDenied,
+        FailureReason::EgressSniDenied,
+        FailureReason::EgressLimitReached,
+        FailureReason::EgressProxyFailed,
+        FailureReason::EgressCleanupIncomplete,
     ]) {
         if present {
             failures.push(reason);

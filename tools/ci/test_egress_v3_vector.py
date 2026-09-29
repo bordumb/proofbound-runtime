@@ -15,6 +15,19 @@ SCHEMAS = ROOT.parents[1]
 
 
 class EgressV3VectorTests(unittest.TestCase):
+    def test_declared_egress_receipt_success_and_failure_are_canonical(self) -> None:
+        for name, expected_status in [
+            ("execution-receipt-egress", "non-reusable"),
+            ("execution-receipt-egress-success", "reusable"),
+        ]:
+            with self.subTest(name=name):
+                golden = bytes.fromhex((ROOT / f"{name}.cbor.hex").read_text())
+                receipt = decode_strict(golden)
+                self.assertEqual(receipt["schema"], "proofbound-runtime-execution-receipt/3")
+                self.assertEqual(receipt["network"]["mode"], "declared-egress")
+                self.assertEqual(receipt["eligibility"]["status"], expected_status)
+                self.assertEqual(encode(receipt), golden)
+
     def test_every_proposed_wire_object_has_a_closed_schema_root(self) -> None:
         for name, version in [
             ("execution-plan", 3),

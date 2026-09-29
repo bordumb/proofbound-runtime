@@ -19,6 +19,7 @@ pub mod egress_namespace;
 pub mod egress_proxy;
 #[cfg(target_os = "linux")]
 pub mod egress_proxy_process;
+pub mod egress_receipt;
 #[cfg(target_os = "linux")]
 pub mod egress_seccomp;
 pub mod executable_set;

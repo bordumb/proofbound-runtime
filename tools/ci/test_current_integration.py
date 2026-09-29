@@ -578,10 +578,14 @@ class CurrentIntegrationTests(unittest.TestCase):
                 "EXECUTION_RECEIPT_V2_SCHEMA": (
                     "proofbound-runtime-execution-receipt/2"
                 ),
+                "EXECUTION_RECEIPT_V3_SCHEMA": (
+                    "proofbound-runtime-execution-receipt/3"
+                ),
             },
             "verifier": {
                 "RECEIPT_SCHEMA": "proofbound-runtime-receipt/1",
                 "SCHEMA": "proofbound-runtime-execution-receipt/2",
+                "SCHEMA_V3": "proofbound-runtime-execution-receipt/3",
             },
             "compose": {
                 "COMPILED_RELEASE_SCHEMA": "proofbound-compiled-release/7",

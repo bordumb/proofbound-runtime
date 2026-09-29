@@ -12,6 +12,7 @@ expected_inventory = [
   "receipt_eligibility_is_exact_for_denied",
   "receipt_eligibility_is_exact_for_launcher_failed",
   "receipt_eligibility_is_exact_for_incomplete",
+  "version_three_egress_reason_suffix_is_exact",
 ]
 inputs = [
   "crates/proofbound-runtime-receipt/src/lib.rs",
@@ -33,12 +34,13 @@ targets = [
   "receipt_eligibility_is_exact_for_denied",
   "receipt_eligibility_is_exact_for_launcher_failed",
   "receipt_eligibility_is_exact_for_incomplete",
+  "version_three_egress_reason_suffix_is_exact",
 ]
 
 [bounded_domain]
-id = "receipt-eligibility-v2-closed-states"
-description = "All boundary, stream-capture, structure, and outcome classes, including every i32 exit code and every subset of seven version 2 memory and swap limit events; 16 * (2^32 + 5) * 128 finite states."
-cardinality = 8796093032448
+id = "receipt-eligibility-v3-closed-states"
+description = "Disjoint union of the version 2 boundary, stream-capture, structure, outcome, and seven limit-event domain (16 * (2^32 + 5) * 128 states), and all 32 combinations of five version 3 egress reason flags."
+cardinality = 8796093032480
 ordering_key = [0, 1, 2, 3, 4, 5]
 
 [resource_budget]

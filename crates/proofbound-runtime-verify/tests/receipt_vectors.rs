@@ -2,7 +2,8 @@ use std::{fs, num::NonZeroU32, path::Path};
 
 use proofbound_runtime_verify::{
     BoundaryState, CaptureState, EligibilityDecision, EligibilityInput, FailureReason,
-    OutcomeState, ReceiptCommitment, StructureState, derive_eligibility, verify_receipt,
+    OutcomeState, ReceiptCommitment, StructureState, ValidationError, VerifyError,
+    derive_eligibility, verify_egress_observation_fragment, verify_receipt,
 };
 use serde_json::{Value, json};
 
@@ -25,6 +26,97 @@ fn version_two_wire_golden_is_a_semantically_valid_reusable_receipt() {
 
     verify_receipt(&bytes, ReceiptCommitment::for_bytes(&bytes))
         .expect("v2 receipt golden verifies independently");
+}
+
+#[test]
+fn version_three_deny_receipt_and_egress_observation_have_independent_decoders() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let decode_hex = |path: &str| {
+        let text = fs::read_to_string(root.join(path)).expect("golden reads");
+        text.trim()
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| {
+                u8::from_str_radix(core::str::from_utf8(pair).expect("hex pair"), 16)
+                    .expect("golden is hex")
+            })
+            .collect::<Vec<_>>()
+    };
+    let deny = decode_hex("schemas/vectors/v3/execution-receipt.cbor.hex");
+    verify_receipt(&deny, ReceiptCommitment::for_bytes(&deny))
+        .expect("v3 deny receipt verifies independently");
+    let observation = decode_hex("schemas/vectors/v3/egress-observation.cbor.hex");
+    let policy =
+        decode_hex_digest("a1f3213efa75646da3c7ad99e04c89b5ae712a22dbfa9c55af33f2c98209ab3c");
+    let decision = verify_egress_observation_fragment(&observation, &policy)
+        .expect("v3 egress observation verifies independently");
+    assert!(decision.authority_rejection);
+    assert!(!decision.proxy_failed);
+}
+
+#[test]
+fn version_three_declared_egress_receipt_derives_non_reuse_independently() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let text =
+        fs::read_to_string(root.join("schemas/vectors/v3/execution-receipt-egress.cbor.hex"))
+            .expect("declared-egress receipt golden reads");
+    let bytes = text
+        .trim()
+        .as_bytes()
+        .chunks_exact(2)
+        .map(|pair| {
+            u8::from_str_radix(core::str::from_utf8(pair).expect("hex pair"), 16)
+                .expect("golden is hex")
+        })
+        .collect::<Vec<_>>();
+    let report = verify_receipt(&bytes, ReceiptCommitment::for_bytes(&bytes))
+        .expect("declared-egress receipt verifies independently");
+    let EligibilityDecision::NonReusable(reasons) = report.eligibility() else {
+        panic!("declared authority rejection must prevent reuse");
+    };
+    assert_eq!(reasons.as_slice(), [FailureReason::EgressRequestDenied]);
+
+    let proxy_digest =
+        decode_hex_digest("1241936d4dd3aad68fe7bfbdfe854b935926bc678fc72377e15166078916227a");
+    let offset = bytes
+        .windows(proxy_digest.len())
+        .position(|window| window == proxy_digest)
+        .expect("observation contains proxy executable identity");
+    let mut substituted = bytes.clone();
+    substituted[offset] ^= 1;
+    assert_eq!(
+        verify_receipt(&substituted, ReceiptCommitment::for_bytes(&substituted)),
+        Err(VerifyError::Validation(ValidationError::TcbRoleMissing)),
+    );
+}
+
+#[test]
+fn version_three_declared_egress_success_is_reusable() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let text = fs::read_to_string(
+        root.join("schemas/vectors/v3/execution-receipt-egress-success.cbor.hex"),
+    )
+    .expect("declared-egress success golden reads");
+    let bytes = text
+        .trim()
+        .as_bytes()
+        .chunks_exact(2)
+        .map(|pair| {
+            u8::from_str_radix(core::str::from_utf8(pair).expect("hex pair"), 16)
+                .expect("golden is hex")
+        })
+        .collect::<Vec<_>>();
+    let report = verify_receipt(&bytes, ReceiptCommitment::for_bytes(&bytes))
+        .expect("declared-egress success verifies independently");
+    assert_eq!(report.eligibility(), &EligibilityDecision::Reusable);
+}
+
+fn decode_hex_digest(text: &str) -> [u8; 32] {
+    let mut output = [0; 32];
+    for (index, pair) in text.as_bytes().chunks_exact(2).enumerate() {
+        output[index] = u8::from_str_radix(core::str::from_utf8(pair).unwrap(), 16).unwrap();
+    }
+    output
 }
 
 #[test]
@@ -120,6 +212,11 @@ fn reason_text(reason: &FailureReason) -> &'static str {
         FailureReason::MemoryOomGroupKill => "memory-oom-group-kill",
         FailureReason::SwapMax => "swap-max",
         FailureReason::SwapFail => "swap-fail",
+        FailureReason::EgressRequestDenied => "egress-request-denied",
+        FailureReason::EgressSniDenied => "egress-sni-denied",
+        FailureReason::EgressLimitReached => "egress-limit-reached",
+        FailureReason::EgressProxyFailed => "egress-proxy-failed",
+        FailureReason::EgressCleanupIncomplete => "egress-cleanup-incomplete",
     }
 }
 

@@ -17,6 +17,8 @@ pub enum DecodeError {
     MalformedJson,
     /// The input is not one deterministic CBOR item.
     MalformedCbor,
+    /// The version 3 egress observation contradicts an independent relation.
+    Egress(crate::EgressError),
     /// The value does not have the closed version 1 structure.
     InvalidSchema,
     /// The receipt schema version is unsupported.
@@ -30,6 +32,7 @@ impl DecodeError {
         match self {
             Self::MalformedJson => "receipt.schema.malformed-json",
             Self::MalformedCbor => "receipt.schema.malformed-cbor",
+            Self::Egress(error) => error.code(),
             Self::InvalidSchema => "receipt.schema.invalid",
             Self::UnsupportedVersion => "receipt.schema.unsupported-version",
         }
@@ -118,6 +121,8 @@ pub struct DecodedReceipt {
     version_two: bool,
     resources: Option<WireResources>,
     plan_limits: Option<WirePlanLimits>,
+    version_three: bool,
+    egress_decision: Option<crate::EgressDecision>,
 }
 
 impl DecodedReceipt {
@@ -214,6 +219,14 @@ impl DecodedReceipt {
         self.version_two
     }
 
+    pub(crate) const fn is_version_three(&self) -> bool {
+        self.version_three
+    }
+
+    pub(crate) const fn egress_decision(&self) -> Option<&crate::EgressDecision> {
+        self.egress_decision.as_ref()
+    }
+
     pub(crate) fn from_v2(
         value: serde_json::Value,
         wire: WireReceipt,
@@ -230,7 +243,20 @@ impl DecodedReceipt {
             version_two: true,
             resources: Some(resources),
             plan_limits: Some(plan_limits),
+            version_three: false,
+            egress_decision: None,
         }
+    }
+
+    pub(crate) fn from_v3(
+        mut base: Self,
+        decision: Option<crate::EgressDecision>,
+        eligibility_input: EligibilityInput,
+    ) -> Self {
+        base.version_three = true;
+        base.egress_decision = decision;
+        base.eligibility_input = eligibility_input;
+        base
     }
 
     pub(crate) const fn resources(&self) -> Option<&WireResources> {
@@ -334,6 +360,8 @@ fn decode_v1_receipt(input: &[u8]) -> Result<DecodedReceipt, DecodeError> {
         version_two: false,
         resources: None,
         plan_limits: None,
+        version_three: false,
+        egress_decision: None,
     })
 }
 
@@ -593,6 +621,11 @@ pub enum WireReason {
     SwapMax,
     /// A swap-fail event occurred.
     SwapFail,
+    EgressRequestDenied,
+    EgressSniDenied,
+    EgressLimitReached,
+    EgressProxyFailed,
+    EgressCleanupIncomplete,
 }
 
 impl WireReason {
@@ -617,6 +650,11 @@ impl WireReason {
             Self::MemoryOomGroupKill => "memory-oom-group-kill",
             Self::SwapMax => "swap-max",
             Self::SwapFail => "swap-fail",
+            Self::EgressRequestDenied => "egress-request-denied",
+            Self::EgressSniDenied => "egress-sni-denied",
+            Self::EgressLimitReached => "egress-limit-reached",
+            Self::EgressProxyFailed => "egress-proxy-failed",
+            Self::EgressCleanupIncomplete => "egress-cleanup-incomplete",
         }
     }
 }

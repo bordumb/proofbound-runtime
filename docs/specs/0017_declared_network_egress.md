@@ -741,9 +741,12 @@ fragment `proofbound-runtime-egress-observation/1` with these typed facts:
   identities; process generation; readiness binding; lifecycle phases;
   terminal reason.
 - **Resolutions:** for each record, its index, name, triggering connection,
-  start and finish times, response-message SHA-256 identities, CNAME links
+  start and finish times, response-message SHA-256 identities, sizes, and
+  completion times, CNAME links
   with owner, target, TTL, expiry, and message identity, answers with address,
-  TTL, record expiry, and effective expiry, and one outcome.
+  TTL, record expiry, effective expiry, message identity, and a scope-admission
+  bit, and one outcome. The verifier independently recomputes that bit from
+  the declared endpoint scope and fixed address-class table.
 - **Connections:** for each proxied connection, its index, endpoint index,
   open and close sequence numbers from one proxy event counter, accept time,
   resolution index or null for an IP destination, SNI result, attempts with

@@ -205,6 +205,17 @@ pub fn validate_receipt(receipt: &DecodedReceipt) -> Result<(), ValidationError>
             return Err(ValidationError::AssumptionMissing);
         }
     }
+    if receipt.is_version_three() && receipt.egress_decision().is_some() {
+        for required in ["PBR-NAMESPACE-AX-032", "PBR-EGRESS-RESOLVER-AX-033"] {
+            if wire
+                .assumptions
+                .binary_search_by(|value| value.as_str().cmp(required))
+                .is_err()
+            {
+                return Err(ValidationError::AssumptionMissing);
+            }
+        }
+    }
 
     validate_tcb(receipt)?;
     validate_resources(receipt)?;
@@ -409,6 +420,18 @@ fn validate_tcb(receipt: &DecodedReceipt) -> Result<(), ValidationError> {
     if parsed.windows(2).any(|pair| pair[0] >= pair[1]) {
         return Err(ValidationError::TcbNotCanonical);
     }
+    if !receipt.is_version_three()
+        && parsed.iter().any(|(role, _)| {
+            matches!(
+                role,
+                TcbRole::EgressProxyBinary
+                    | TcbRole::EgressProxyRuntimeLibrary
+                    | TcbRole::EgressResolverConfiguration
+            )
+        })
+    {
+        return Err(ValidationError::UnsupportedTcbRole);
+    }
     for role in ALWAYS_REQUIRED_TCB_ROLES {
         require_tcb_role(&parsed, role)?;
     }
@@ -422,7 +445,41 @@ fn validate_tcb(receipt: &DecodedReceipt) -> Result<(), ValidationError> {
     {
         require_tcb_role(&parsed, TcbRole::RuntimeLibrary)?;
     }
+    if let Some(egress) = receipt.egress_decision() {
+        let matching = |role: TcbRole| {
+            parsed
+                .iter()
+                .filter(|(actual, _)| *actual == role)
+                .map(|(_, identity)| *identity)
+                .collect::<Vec<_>>()
+        };
+        if matching(TcbRole::EgressProxyBinary) != [hex_digest(&egress.proxy_executable_sha256)]
+            || matching(TcbRole::EgressResolverConfiguration)
+                != [hex_digest(&egress.resolver_configuration_sha256)]
+        {
+            return Err(ValidationError::TcbRoleMissing);
+        }
+        let mut closure = egress
+            .proxy_runtime_closure_sha256
+            .iter()
+            .map(hex_digest)
+            .collect::<Vec<_>>();
+        closure.sort_unstable();
+        if matching(TcbRole::EgressProxyRuntimeLibrary) != closure {
+            return Err(ValidationError::TcbRoleMissing);
+        }
+    }
     Ok(())
+}
+
+fn hex_digest(bytes: &[u8; 32]) -> String {
+    const DIGITS: &[u8; 16] = b"0123456789abcdef";
+    let mut text = String::with_capacity(64);
+    for byte in bytes {
+        text.push(char::from(DIGITS[usize::from(byte >> 4)]));
+        text.push(char::from(DIGITS[usize::from(byte & 15)]));
+    }
+    text
 }
 
 fn parse_tcb_role(entry: &WireTcbEntry) -> Result<TcbRole, ValidationError> {
@@ -441,6 +498,9 @@ fn parse_tcb_role(entry: &WireTcbEntry) -> Result<TcbRole, ValidationError> {
         "runtime-executable" => Ok(TcbRole::RuntimeExecutable),
         "runtime-loader-executable" => Ok(TcbRole::RuntimeLoaderExecutable),
         "runtime-library" => Ok(TcbRole::RuntimeLibrary),
+        "egress-proxy-binary" => Ok(TcbRole::EgressProxyBinary),
+        "egress-proxy-runtime-library" => Ok(TcbRole::EgressProxyRuntimeLibrary),
+        "egress-resolver-configuration" => Ok(TcbRole::EgressResolverConfiguration),
         _ => Err(ValidationError::UnsupportedTcbRole),
     }
 }
@@ -491,6 +551,11 @@ const fn reason_from_failure(reason: FailureReason) -> WireReason {
         FailureReason::MemoryOomGroupKill => WireReason::MemoryOomGroupKill,
         FailureReason::SwapMax => WireReason::SwapMax,
         FailureReason::SwapFail => WireReason::SwapFail,
+        FailureReason::EgressRequestDenied => WireReason::EgressRequestDenied,
+        FailureReason::EgressSniDenied => WireReason::EgressSniDenied,
+        FailureReason::EgressLimitReached => WireReason::EgressLimitReached,
+        FailureReason::EgressProxyFailed => WireReason::EgressProxyFailed,
+        FailureReason::EgressCleanupIncomplete => WireReason::EgressCleanupIncomplete,
     }
 }
 
@@ -510,6 +575,9 @@ enum TcbRole {
     RuntimeExecutable,
     RuntimeLoaderExecutable,
     RuntimeLibrary,
+    EgressProxyBinary,
+    EgressProxyRuntimeLibrary,
+    EgressResolverConfiguration,
 }
 
 #[cfg(test)]
