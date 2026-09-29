@@ -55,7 +55,7 @@ if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
   "$PROOFBOUND_NATIVE_FIXTURE" landlock-exec-only-denied "$PROOFBOUND_NATIVE_FIXTURE"
   "$PROOFBOUND_NATIVE_FIXTURE" landlock-fd-exec-preflight "$PROOFBOUND_NATIVE_FIXTURE"
   uname -a
-  systemd --version | head -n 1
+  systemd-run --version | head -n 1
   if [[ "${PROOFBOUND_NATIVE_SWAP_ONLY:-0}" == "1" ]]; then
     cargo test --locked -p proofbound-runtime-linux --test native_linux \
       production_launcher_enforces_native_swap_presence_matrix -- \
@@ -67,13 +67,14 @@ if [[ "${PROOFBOUND_NATIVE_INNER:-}" == "1" ]]; then
   if [[ "$runtime_bins_prebuilt" != "1" ]]; then
     cargo build --locked --workspace
   fi
-  for binary in pbr pbr-native-launcher pbr-verify pbr-diagnose; do
+  for binary in pbr pbr-native-launcher pbr-egress-proxy pbr-verify pbr-diagnose; do
     test -x "$runtime_bin_directory/$binary"
   done
   e2e_root="$(mktemp -d "$PWD/target/native-cli-e2e.XXXXXX")"
   trap 'rm -rf -- "$e2e_root"' EXIT
   "$runtime_bin_directory/pbr" doctor \
     --cgroup-root "$PROOFBOUND_CGROUP_ROOT" >"$e2e_root/doctor-v2.json"
+  "$runtime_bin_directory/pbr" __proofbound_egress_doctor_probe_v1 || true
   python3 - "$e2e_root/doctor-v2.json" <<'PY'
 import json
 import sys
@@ -88,6 +89,8 @@ assert set(report["capabilities"]) == {
 }
 assert all(value["status"] in {"available", "unavailable"}
            for value in report["capabilities"].values())
+for name in ("user_namespace", "network_namespace", "landlock_egress"):
+    assert report["capabilities"][name]["status"] == "available", report["capabilities"][name]
 print(json.dumps({
     "schema": report["schema"],
     "user_namespace": report["capabilities"]["user_namespace"],
@@ -741,6 +744,7 @@ assert verification == {
 }
   ' "$verification" "$commitment"
   "$runtime_bin_directory/pbr" inspect "$receipt" >/dev/null
+  PROOFBOUND_RUNTIME_BIN_DIR="$runtime_bin_directory" bash tools/ci/native-egress.sh
   example_bundle_result="$e2e_root/example-bundle-result.json"
   python3 tools/release/build_example.py \
     --output-directory "$e2e_root" >"$example_bundle_result"
@@ -824,12 +828,23 @@ if [[ "$(id -u)" == "0" ]]; then
   echo "outer native corpus runner must be non-root" >&2
   exit 1
 fi
+if [[ "${GITHUB_ACTIONS:-}" == "true" ]] && \
+   [[ -r /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]] && \
+   [[ "$(</proc/sys/kernel/apparmor_restrict_unprivileged_userns)" == "1" ]]; then
+  # The disposable CI host administrator grants the documented namespace
+  # prerequisite before the non-root native corpus starts.
+  sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+fi
 
 fixture="$repository_root/target/native-boundary-probe"
+egress_fixture="$repository_root/target/native-egress-probe"
 mkdir -p "$repository_root/target"
 cc -O2 -static -Wall -Wextra -Werror \
   "$repository_root/crates/proofbound-runtime-linux/tests/fixtures/native-boundary-probe.c" \
   -o "$fixture"
+cc -O2 -static -Wall -Wextra -Werror \
+  "$repository_root/crates/proofbound-runtime-linux/tests/fixtures/native-egress-probe.c" \
+  -o "$egress_fixture"
 if file "$fixture" | grep -q "dynamically linked"; then
   echo "native boundary fixture must be statically linked" >&2
   exit 1
@@ -853,6 +868,7 @@ run_native_service() {
     --working-directory="$repository_root" \
     --setenv=PROOFBOUND_NATIVE_INNER=1 \
     --setenv="PROOFBOUND_NATIVE_FIXTURE=$fixture" \
+    --setenv="PROOFBOUND_EGRESS_FIXTURE=$egress_fixture" \
     --setenv="PROOFBOUND_NATIVE_SWAP_MODE=$PROOFBOUND_NATIVE_SWAP_MODE" \
     --setenv="PROOFBOUND_NATIVE_SWAP_ONLY=$swap_only" \
     --setenv="PROOFBOUND_EXPECTED_ARCH=$expected_architecture" \
@@ -864,6 +880,7 @@ run_native_service() {
 }
 
 swap_file="/mnt/proofbound-runtime-native-$unit_suffix.swap"
+fixture_ipv6_added=""
 original_swap_paths=()
 original_swap_priorities=()
 while read -r path _ _ _ priority; do
@@ -888,8 +905,40 @@ cleanup_swap_state() {
   fi
   sudo rm -f -- "$swap_file"
   restore_original_swap
+  if [[ -n "$fixture_ipv6_added" ]]; then
+    sudo ip -6 addr del "$fixture_ipv6_added/128" dev lo
+    fixture_ipv6_added=""
+  fi
 }
 trap cleanup_swap_state EXIT
+
+if [[ "${GITHUB_ACTIONS:-}" == "true" ]] && ! python3 - <<'PY'
+import ipaddress
+import subprocess
+
+lines = subprocess.check_output(["ip", "-6", "-o", "addr", "show", "up"], text=True)
+ula = ipaddress.IPv6Network("fc00::/7")
+for line in lines.splitlines():
+    fields = line.split()
+    if "inet6" not in fields or any(flag in fields for flag in ("temporary", "tentative", "dadfailed")):
+        continue
+    address = ipaddress.ip_interface(fields[fields.index("inet6") + 1]).ip
+    if address in ula or address.is_global:
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+then
+  fixture_ipv6="$(python3 - "${GITHUB_RUN_ID:-0}" <<'PY'
+import ipaddress
+import sys
+run = int(sys.argv[1])
+print(ipaddress.IPv6Address((0xfd42 << 112) | (0x5052 << 96) |
+                             ((run & 0xffff) << 80) | (((run >> 16) & 0xffff) << 64) | 1))
+PY
+)"
+  sudo ip -6 addr add "$fixture_ipv6/128" dev lo
+  fixture_ipv6_added="$fixture_ipv6"
+fi
 
 if [[ "${#original_swap_paths[@]}" -gt 0 ]]; then
   if [[ "${GITHUB_ACTIONS:-}" != "true" ]]; then

@@ -628,7 +628,10 @@ fn supervise_lifecycle(
 }
 
 #[cfg(target_os = "linux")]
-fn wait_for_pause(process_id: u32, deadline: std::time::Instant) -> Result<(), SupervisorError> {
+pub(crate) fn wait_for_pause(
+    process_id: u32,
+    deadline: std::time::Instant,
+) -> Result<(), SupervisorError> {
     loop {
         if crate::sys::process_is_stopped(process_id)
             .map_err(|_| SupervisorError::PauseNotObserved)?
@@ -643,7 +646,7 @@ fn wait_for_pause(process_id: u32, deadline: std::time::Instant) -> Result<(), S
 }
 
 #[cfg(target_os = "linux")]
-fn monitor_process(
+pub(crate) fn monitor_process(
     child: &mut std::process::Child,
     deadline: std::time::Instant,
 ) -> Result<ExecutionOutcome, SupervisorError> {
@@ -680,7 +683,7 @@ fn receive_late_failure(
 }
 
 #[cfg(any(test, target_os = "linux"))]
-fn classify_process_result(
+pub(crate) fn classify_process_result(
     exit_code: Option<i32>,
     signal: Option<u32>,
     timed_out: bool,
@@ -702,7 +705,7 @@ fn classify_process_result(
 }
 
 #[cfg(target_os = "linux")]
-fn spawn_capture<R>(
+pub(crate) fn spawn_capture<R>(
     reader: R,
     limit: OutputByteLimit,
 ) -> io::Result<std::thread::JoinHandle<io::Result<CapturedStream>>>
@@ -715,7 +718,7 @@ where
 }
 
 #[cfg(target_os = "linux")]
-fn join_capture(
+pub(crate) fn join_capture(
     handle: std::thread::JoinHandle<io::Result<CapturedStream>>,
 ) -> Result<CapturedStream, SupervisorError> {
     handle

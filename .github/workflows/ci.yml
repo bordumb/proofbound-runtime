@@ -374,14 +374,15 @@ jobs:
       matrix:
         include:
           - architecture: x86_64
-            runner: ubuntu-24.04
+            runner: ubuntu-26.04
           - architecture: aarch64
-            runner: ubuntu-24.04-arm
+            runner: ubuntu-26.04-arm
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 20
+    timeout-minutes: 90
     env:
       PBR_CI_TIMING_FILE: /tmp/proofbound-runtime-ci-timing.jsonl
       PROOFBOUND_EVIDENCE_DIRECTORY: ${{ github.workspace }}/target/native-evidence/${{ matrix.architecture }}
+      PROOFBOUND_RUNTIME_BIN_DIR: ${{ github.workspace }}/target/native-release-bin
     steps:
       - name: Check out the exact event head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -393,6 +394,19 @@ jobs:
 
       - name: Install pinned Rust toolchain
         uses: dtolnay/rust-toolchain@fef00d40025f7fd8f1ec759cbbb0f577ddfc3133 # 1.94.0
+
+      - name: Build reproducible exact release artifacts
+        run: |
+          bash tools/release/build-linux.sh "$PWD/target/native-release"
+          case "$(uname -m)" in
+            x86_64) target=x86_64-unknown-linux-gnu ;;
+            aarch64) target=aarch64-unknown-linux-gnu ;;
+            *) exit 1 ;;
+          esac
+          archive="$PWD/target/native-release/proofbound-runtime-v$(<VERSION)-$target.tar.gz"
+          mkdir -p "$PROOFBOUND_RUNTIME_BIN_DIR"
+          tar -xzf "$archive" -C "$PROOFBOUND_RUNTIME_BIN_DIR"
+          (cd "$PWD/target/native-release" && sha256sum -c "$(basename "$archive").sha256")
 
       - name: Run the required native boundary corpus
         env:

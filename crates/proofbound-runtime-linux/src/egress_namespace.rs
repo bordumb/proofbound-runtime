@@ -430,17 +430,12 @@ fn identity_maps(uid: u32, gid: u32) -> Result<(IdentityMap, IdentityMap), Egres
 }
 
 fn interfaces() -> Result<Vec<String>, EgressNamespaceError> {
-    let mut names = fs::read_dir("/sys/class/net")
-        .map_err(|_| EgressNamespaceError::InterfaceInventory)?
-        .map(|entry| {
-            entry
-                .map_err(|_| EgressNamespaceError::InterfaceInventory)?
-                .file_name()
-                .into_string()
-                .map_err(|_| EgressNamespaceError::InterfaceInventory)
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-    names.sort_unstable();
+    // The proc view is keyed to this process's network namespace. A sysfs
+    // mount inherited across unshare can still expose the parent inventory.
+    let names = interface_names_from_net_dev(
+        &fs::read_to_string("/proc/net/dev")
+            .map_err(|_| EgressNamespaceError::InterfaceInventory)?,
+    )?;
     if names != ["lo"] {
         return Err(EgressNamespaceError::InterfaceInventory);
     }

@@ -70,7 +70,13 @@ fn child_filter(architecture: Architecture) -> Result<Vec<BpfInstruction>, Secco
         libc::SYS_process_vm_readv,
         libc::SYS_process_vm_writev,
         libc::SYS_pidfd_getfd,
+        libc::SYS_pidfd_send_signal,
         libc::SYS_kcmp,
+        libc::SYS_kill,
+        libc::SYS_tkill,
+        libc::SYS_tgkill,
+        libc::SYS_rt_sigqueueinfo,
+        libc::SYS_rt_tgsigqueueinfo,
         libc::SYS_io_uring_setup,
         libc::SYS_io_uring_enter,
         libc::SYS_io_uring_register,
@@ -266,6 +272,19 @@ mod tests {
             ),
             NO_SYS
         );
+        for signal in [
+            libc::SYS_kill,
+            libc::SYS_tkill,
+            libc::SYS_tgkill,
+            libc::SYS_pidfd_send_signal,
+            libc::SYS_rt_sigqueueinfo,
+            libc::SYS_rt_tgsigqueueinfo,
+        ] {
+            assert_eq!(
+                evaluate(&program, audit, u32::try_from(signal).unwrap(), [0; 3]),
+                DENY
+            );
+        }
         assert_eq!(
             evaluate(
                 &program,

@@ -33,6 +33,10 @@ const STREAM_MODE: u16 = 0;
 const ARGUMENT_DOMAIN: &[u8] = b"proofbound-runtime-arguments/1\n";
 const POLICY_DOMAIN: &[u8] = b"proofbound-runtime-installed-policy/1\n";
 
+#[cfg(target_os = "linux")]
+#[path = "run_v3.rs"]
+mod run_v3;
+
 /// Closed operational timing domain for one successful native run.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(usize)]
@@ -246,6 +250,17 @@ pub fn execute_observed(
     let plan_bytes = plan_source
         .read_bytes()
         .map_err(|error| map_resolution(RunPhase::PlanInput, RunRule::PlanSourceReadable, error))?;
+    if let Ok(egress_plan) = proofbound_runtime_core::parse_egress_execution_plan(&plan_bytes) {
+        return run_v3::execute_egress_prepared(
+            receipt_path,
+            canonical_plan,
+            plan_source,
+            plan_bytes,
+            egress_plan,
+            cgroup_root,
+            runtime_executable,
+        );
+    }
     let plan = parse_execution_plan_for_execution(&plan_bytes).map_err(|error| {
         RunError::invalid(RunPhase::PlanValidation, RunRule::PlanValid, error.code())
     })?;
@@ -577,6 +592,7 @@ pub fn execute_observed(
         environment: receipt_environment,
         execution: &execution,
         outputs: outputs.receipt_identities(),
+        egress: None,
     })?;
     let receipt_bytes = receipt.canonical_bytes().map_err(|error| {
         RunError::receipt(
@@ -772,6 +788,67 @@ fn encode_artifact(output: &mut Vec<u8>, identity: &ArtifactIdentity) -> Result<
 }
 
 #[cfg(target_os = "linux")]
+trait ReceiptExecution {
+    fn boundary(&self) -> proofbound_runtime_core::BoundaryInstallation;
+    fn outcome(&self) -> ExecutionOutcome;
+    fn stdout(&self) -> &proofbound_runtime_linux::CapturedStream;
+    fn stderr(&self) -> &proofbound_runtime_linux::CapturedStream;
+    fn resources(&self) -> ResourceObservation;
+    fn elapsed(&self) -> std::time::Duration;
+}
+
+#[cfg(target_os = "linux")]
+impl ReceiptExecution for proofbound_runtime_linux::SupervisedExecution {
+    fn boundary(&self) -> proofbound_runtime_core::BoundaryInstallation {
+        self.boundary()
+    }
+    fn outcome(&self) -> ExecutionOutcome {
+        self.outcome()
+    }
+    fn stdout(&self) -> &proofbound_runtime_linux::CapturedStream {
+        self.stdout()
+    }
+    fn stderr(&self) -> &proofbound_runtime_linux::CapturedStream {
+        self.stderr()
+    }
+    fn resources(&self) -> ResourceObservation {
+        self.resources()
+    }
+    fn elapsed(&self) -> std::time::Duration {
+        self.elapsed()
+    }
+}
+
+#[cfg(target_os = "linux")]
+impl ReceiptExecution for proofbound_runtime_linux::egress_supervisor::EgressSupervisedExecution {
+    fn boundary(&self) -> proofbound_runtime_core::BoundaryInstallation {
+        proofbound_runtime_core::BoundaryInstallation::Installed
+    }
+    fn outcome(&self) -> ExecutionOutcome {
+        self.outcome
+    }
+    fn stdout(&self) -> &proofbound_runtime_linux::CapturedStream {
+        &self.stdout
+    }
+    fn stderr(&self) -> &proofbound_runtime_linux::CapturedStream {
+        &self.stderr
+    }
+    fn resources(&self) -> ResourceObservation {
+        self.child_resources
+    }
+    fn elapsed(&self) -> std::time::Duration {
+        self.elapsed
+    }
+}
+
+#[cfg(target_os = "linux")]
+struct EgressReceiptArtifacts {
+    proxy: ArtifactIdentity,
+    closure: Vec<ArtifactIdentity>,
+    resolver: ArtifactIdentity,
+}
+
+#[cfg(target_os = "linux")]
 struct ReceiptInputs<'a> {
     plan: &'a ExecutionPlan,
     plan_source: ArtifactIdentity,
@@ -788,8 +865,9 @@ struct ReceiptInputs<'a> {
     execution_id: proofbound_runtime_core::ExecutionId,
     argument_identity: Sha256Digest,
     environment: Vec<EnvironmentName>,
-    execution: &'a proofbound_runtime_linux::SupervisedExecution,
+    execution: &'a dyn ReceiptExecution,
     outputs: Vec<ArtifactIdentity>,
+    egress: Option<EgressReceiptArtifacts>,
 }
 
 #[cfg(target_os = "linux")]
@@ -907,10 +985,20 @@ fn build_receipt(input: ReceiptInputs<'_>) -> Result<ExecutionReceipt, RunError>
         resources: Some(resources),
         outputs: input.outputs,
         producer: input.runtime_identity,
-        assumptions: REQUIRED_RUNTIME_ASSUMPTIONS
-            .into_iter()
-            .map(str::to_owned)
-            .collect(),
+        assumptions: {
+            let mut assumptions = REQUIRED_RUNTIME_ASSUMPTIONS
+                .into_iter()
+                .map(str::to_owned)
+                .collect::<Vec<_>>();
+            if input.egress.is_some() {
+                assumptions.extend([
+                    "PBR-NAMESPACE-AX-032".to_owned(),
+                    "PBR-EGRESS-RESOLVER-AX-033".to_owned(),
+                ]);
+                assumptions.sort();
+            }
+            assumptions
+        },
         trusted_computing_base,
     })
     .map_err(map_receipt_construction)?;
@@ -996,6 +1084,27 @@ fn trusted_computing_base(
         entries.push(tcb(
             TrustedComputingBaseRole::RuntimeLibrary,
             runtime_libraries.join(","),
+        )?);
+    }
+    if let Some(egress) = &input.egress {
+        entries.push(tcb(
+            TrustedComputingBaseRole::EgressProxyBinary,
+            egress.proxy.digest().to_hex(),
+        )?);
+        if !egress.closure.is_empty() {
+            entries.push(tcb(
+                TrustedComputingBaseRole::EgressProxyRuntimeLibrary,
+                egress
+                    .closure
+                    .iter()
+                    .map(|artifact| artifact.digest().to_hex())
+                    .collect::<Vec<_>>()
+                    .join(","),
+            )?);
+        }
+        entries.push(tcb(
+            TrustedComputingBaseRole::EgressResolverConfiguration,
+            egress.resolver.digest().to_hex(),
         )?);
     }
     Ok(entries)

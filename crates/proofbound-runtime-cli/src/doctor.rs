@@ -13,7 +13,11 @@ pub(crate) fn run_probe_child() -> u8 {
     use proofbound_runtime_linux::egress_namespace::{
         EgressNamespaceError, create_egress_namespace,
     };
-    match create_egress_namespace() {
+    let result = create_egress_namespace();
+    if let Err(error) = &result {
+        eprintln!("egress namespace probe: {error:?}");
+    }
+    match result {
         Ok(_) => 0,
         Err(
             EgressNamespaceError::Loopback

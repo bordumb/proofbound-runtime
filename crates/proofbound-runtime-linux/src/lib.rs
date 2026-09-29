@@ -22,6 +22,8 @@ pub mod egress_proxy_process;
 pub mod egress_receipt;
 #[cfg(target_os = "linux")]
 pub mod egress_seccomp;
+#[cfg(target_os = "linux")]
+pub mod egress_supervisor;
 pub mod executable_set;
 pub mod execution;
 pub mod inventory;

@@ -2,7 +2,7 @@
 
 use std::collections::BTreeMap;
 
-use proofbound_runtime_core::{Sha256Digest, encode_egress_observation_json};
+use proofbound_runtime_core::{EgressReceiptFlags, Sha256Digest, encode_egress_observation_json};
 use serde_json::{Value, json};
 
 const MAX_PACKET: usize = 32_768;
@@ -87,6 +87,31 @@ impl EgressReportCollector {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Computes the recorded non-reuse reasons from the same bounded reports
+    /// that form the observation. The verifier rederives these independently.
+    #[must_use]
+    pub fn flags(&self) -> EgressReceiptFlags {
+        let sni_denied = self.connections.values().any(|connection| {
+            connection
+                .get("sni_result")
+                .and_then(Value::as_str)
+                .is_some_and(|result| result == "denied")
+        });
+        let limit_reached = self
+            .final_report
+            .as_ref()
+            .and_then(|report| report.get("limit_events"))
+            .and_then(Value::as_array)
+            .is_some_and(|events| !events.is_empty());
+        EgressReceiptFlags {
+            authority_rejection: self.rejection_total != 0,
+            sni_denied,
+            limit_reached,
+            proxy_failed: false,
+            cleanup_incomplete: false,
+        }
     }
 
     pub fn ingest(&mut self, packet: &[u8]) -> Result<(), EgressReceiptError> {

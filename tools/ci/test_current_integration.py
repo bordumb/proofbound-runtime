@@ -610,7 +610,10 @@ class CurrentIntegrationTests(unittest.TestCase):
                 "POLICY_SCHEMA": "proofbound-runtime-acceptance-policy/1",
                 "POLICY_SCHEMA_V2": "proofbound-runtime-acceptance-policy/2",
             },
-            "result": {"SCHEMA": "proofbound-runtime-run-result/2"},
+            "result": {
+                "SCHEMA": "proofbound-runtime-run-result/2",
+                "SCHEMA_V3": "proofbound-runtime-run-result/3",
+            },
         }
         self.assertEqual(selected, expected)
 

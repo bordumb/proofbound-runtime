@@ -63,7 +63,7 @@ pub use receipt::{
     StreamCapture, TrustedComputingBaseEntry, TrustedComputingBaseRole,
     construct_execution_receipt, derive_receipt_eligibility, encode_egress_observation_json,
 };
-pub use run_result::{RunResultError, RunResultV2};
+pub use run_result::{RunResultError, RunResultV2, RunResultV3};
 pub use service_lifecycle::{
     ServiceLifecycleError, ServiceSessionEvent, ServiceSessionFailureReason,
     ServiceSessionLifecycle, ServiceSessionPhase,

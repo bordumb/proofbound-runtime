@@ -7,7 +7,9 @@ use std::os::fd::{AsFd as _, AsRawFd as _, OwnedFd};
 use std::path::Path;
 use std::time::Duration;
 
-use proofbound_runtime_core::{ExecutionId, Sha256Digest, parse_egress_execution_plan};
+use proofbound_runtime_core::{
+    ArtifactRole, ExecutionId, Sha256Digest, parse_egress_execution_plan,
+};
 use serde_json::json;
 use sha2::{Digest as _, Sha256};
 
@@ -28,6 +30,7 @@ pub enum ProxyProcessError {
     Report,
     Engine,
     Protocol,
+    Pause,
 }
 
 impl ProxyProcessError {
@@ -42,6 +45,7 @@ impl ProxyProcessError {
             Self::Report => "egress.proxy.report.failed",
             Self::Engine => "egress.proxy.engine.failed",
             Self::Protocol => "egress.proxy.protocol.invalid",
+            Self::Pause => "egress.proxy.pause.failed",
         }
     }
 }
@@ -62,6 +66,35 @@ pub struct ProxyBootstrap {
     pub resolver_sha256: Sha256Digest,
     pub child_netns_device: u64,
     pub child_netns_inode: u64,
+}
+
+impl ProxyBootstrap {
+    /// Encodes the closed descriptor-only argv accepted by the proxy binary.
+    #[must_use]
+    pub fn arguments(self) -> Vec<String> {
+        let fields = [
+            ("--egress-proxy-protocol", "1".to_owned()),
+            ("--plan-fd", self.plan_fd.to_string()),
+            ("--listener-fd", self.listener_fd.to_string()),
+            ("--report-fd", self.report_fd.to_string()),
+            ("--execution-id", hex_bytes(self.execution_id.as_bytes())),
+            ("--policy-sha256", self.policy_sha256.to_hex()),
+            ("--generation", self.generation.to_string()),
+            ("--plan-sha256", self.plan_sha256.to_hex()),
+            ("--proxy-sha256", self.proxy_sha256.to_hex()),
+            ("--runtime-closure-sha256", self.closure_sha256.to_hex()),
+            (
+                "--resolver-configuration-sha256",
+                self.resolver_sha256.to_hex(),
+            ),
+            ("--child-netns-device", self.child_netns_device.to_string()),
+            ("--child-netns-inode", self.child_netns_inode.to_string()),
+        ];
+        fields
+            .into_iter()
+            .flat_map(|(name, value)| [name.to_owned(), value])
+            .collect()
+    }
 }
 
 pub fn parse_proxy_bootstrap(arguments: &[String]) -> Result<ProxyBootstrap, ProxyProcessError> {
@@ -192,6 +225,39 @@ fn open_read_path(path: &Path) -> Result<File, ProxyProcessError> {
     Ok(File::from(descriptor))
 }
 
+fn validate_read_inputs(
+    paths: &[String],
+    files: &[File],
+    closure: &[proofbound_runtime_core::NetworkSupportPath],
+    resolver: &str,
+    bootstrap: ProxyBootstrap,
+) -> Result<(), ProxyProcessError> {
+    let identify = |path: &str| -> Result<Sha256Digest, ProxyProcessError> {
+        let index = paths
+            .binary_search_by(|candidate| candidate.as_str().cmp(path))
+            .map_err(|_| ProxyProcessError::Identity)?;
+        let descriptor: OwnedFd = files[index]
+            .try_clone()
+            .map_err(|_| ProxyProcessError::Identity)?
+            .into();
+        let identity =
+            crate::resolve::identify_descriptor(&descriptor, ArtifactRole::RuntimeLibrary)
+                .map_err(|_| ProxyProcessError::Identity)?;
+        Ok(identity.digest())
+    };
+    let mut hasher = Sha256::new();
+    hasher.update(b"PBR-EGRESS-PROXY-CLOSURE/1");
+    for member in closure {
+        hasher.update(identify(member.as_str())?.as_bytes());
+    }
+    if Sha256Digest::from_bytes(hasher.finalize().into()) != bootstrap.closure_sha256
+        || identify(resolver)? != bootstrap.resolver_sha256
+    {
+        return Err(ProxyProcessError::Identity);
+    }
+    Ok(())
+}
+
 fn send_json(report_fd: i32, value: serde_json::Value) -> Result<(), ProxyProcessError> {
     let bytes = serde_json::to_vec(&value).map_err(|_| ProxyProcessError::Report)?;
     if bytes.len() > crate::egress_proxy::MAX_PROXY_REPORT_BYTES {
@@ -211,6 +277,9 @@ fn send_events(report_fd: i32, events: Vec<ProxyReportEvent>) -> Result<(), Prox
 /// Runs only with the exact inherited listener, report channel, and policy
 /// descriptor. No readiness packet is sent until both kernel filters install.
 pub fn run_proxy_process(bootstrap: ProxyBootstrap) -> Result<(), ProxyProcessError> {
+    // The supervisor installs and reads back the proxy cgroup before any
+    // policy or listener work occurs in this process.
+    sys::pause_current_process().map_err(|_| ProxyProcessError::Pause)?;
     let report = take(bootstrap.report_fd)?;
     let plan = take(bootstrap.plan_fd)?;
     let listener = take(bootstrap.listener_fd)?;
@@ -254,6 +323,13 @@ pub fn run_proxy_process(bootstrap: ProxyBootstrap) -> Result<(), ProxyProcessEr
         .iter()
         .map(|path| open_read_path(Path::new(path)))
         .collect::<Result<Vec<_>, _>>()?;
+    validate_read_inputs(
+        &read_paths,
+        &files,
+        authority.proxy_runtime_read(),
+        authority.resolver().configuration().as_str(),
+        bootstrap,
+    )?;
     let borrowed = files.iter().map(|file| file.as_fd()).collect::<Vec<_>>();
     let mut ports = authority
         .endpoints()
@@ -320,7 +396,7 @@ pub fn run_proxy_process(bootstrap: ProxyBootstrap) -> Result<(), ProxyProcessEr
     }
 }
 
-fn readiness_binding(bootstrap: ProxyBootstrap, filter: Sha256Digest) -> Sha256Digest {
+pub(crate) fn readiness_binding(bootstrap: ProxyBootstrap, filter: Sha256Digest) -> Sha256Digest {
     let mut hasher = Sha256::new();
     hasher.update(b"PBR-EGRESS-READY/1");
     hasher.update(bootstrap.execution_id.as_bytes());
@@ -388,6 +464,8 @@ mod tests {
             .flat_map(|(name, value)| [(*name).to_owned(), value.to_owned()])
             .collect::<Vec<_>>();
         assert!(parse_proxy_bootstrap(&arguments).is_ok());
+        let parsed = parse_proxy_bootstrap(&arguments).unwrap();
+        assert_eq!(parse_proxy_bootstrap(&parsed.arguments()), Ok(parsed));
         arguments[5] = "3".to_owned();
         assert_eq!(
             parse_proxy_bootstrap(&arguments),
