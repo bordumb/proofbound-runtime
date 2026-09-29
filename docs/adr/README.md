@@ -26,3 +26,4 @@ inevitable. Add a new ADR and mark the earlier record as superseded.
 | [0007](0007-output-capacity-boundary.md) | Require a host-managed project quota for output capacity | accepted |
 | [0008](0008-separate-ptrace-diagnostic-observer.md) | Use a separate ptrace diagnostic observer | accepted |
 | [0009](0009-detached-role-bound-signing.md) | Use detached role-bound COSE signatures | accepted |
+| [0010](0010-declared-network-egress.md) | Select a loopback-only namespace and pinned CONNECT proxy for declared egress | accepted |

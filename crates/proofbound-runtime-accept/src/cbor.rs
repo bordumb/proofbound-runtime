@@ -186,6 +186,7 @@ fn project_bytes(bytes: &[u8], path: &[String]) -> Result<String, ()> {
             ))
         }
         Some("project_revision") if bytes.len() == 20 => Ok(hex(bytes)),
+        Some("bytes") if matches!(bytes.len(), 4 | 16) => Ok(format!("hex:{}", hex(bytes))),
         Some(_) if bytes.len() == 32 => Ok(format!("sha256:{}", hex(bytes))),
         _ => Err(()),
     }
@@ -227,6 +228,14 @@ fn encode_string(value: &str, path: &[String], output: &mut Vec<u8>) -> Result<(
     match path.last().map(String::as_str) {
         Some("execution_id") => encode_bytes(&parse_uuid(value)?, output)?,
         Some("project_revision") => encode_bytes(&parse_hex_exact(value, 20)?, output)?,
+        Some("bytes") => {
+            let raw = value.strip_prefix("hex:").ok_or(())?;
+            let length = raw.len() / 2;
+            if !matches!(length, 4 | 16) {
+                return Err(());
+            }
+            encode_bytes(&parse_hex_exact(raw, length)?, output)?;
+        }
         Some(
             "sha256"
             | "policy_sha256"

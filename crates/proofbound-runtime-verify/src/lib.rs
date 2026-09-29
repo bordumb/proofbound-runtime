@@ -8,6 +8,7 @@ mod commitment;
 mod decode;
 mod decode_v2;
 mod derive;
+mod egress_v3;
 mod error;
 mod identity;
 
@@ -26,6 +27,7 @@ pub use derive::{
     BoundaryState, CaptureState, EligibilityDecision, EligibilityInput, FailureReason,
     FailureReasons, OutcomeState, StructureState, derive_eligibility,
 };
+pub use egress_v3::{EgressDecision, EgressError, verify_egress_observation_fragment};
 pub use error::VerifyError;
 pub use identity::{ValidationError, validate_receipt};
 

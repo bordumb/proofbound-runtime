@@ -1,4 +1,4 @@
-//! Defines the committed v2 run-result object and its display projection.
+//! Defines the closed run-result wire objects and their display projections.
 
 use std::path::Path;
 
@@ -8,6 +8,7 @@ use crate::wire_v2::Value as Cbor;
 use crate::{ExecutionId, ExecutionOutcome, Sha256Digest};
 
 const SCHEMA: &str = "proofbound-runtime-run-result/2";
+const SCHEMA_V3: &str = "proofbound-runtime-run-result/3";
 
 /// Contains one validated version 2 run-result control object.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -16,6 +17,36 @@ pub struct RunResultV2 {
     execution_id: ExecutionId,
     commitment: Sha256Digest,
     outcome: ExecutionOutcome,
+}
+
+/// Contains the version 3 control object with the same terminal facts and a
+/// separate schema identity.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RunResultV3(RunResultV2);
+
+impl RunResultV3 {
+    /// Validates the closed version 3 control facts.
+    pub fn new(
+        receipt: &Path,
+        execution_id: ExecutionId,
+        commitment: Sha256Digest,
+        outcome: ExecutionOutcome,
+    ) -> Result<Self, RunResultError> {
+        RunResultV2::new(receipt, execution_id, commitment, outcome).map(Self)
+    }
+
+    /// Returns the deterministic version 3 CBOR bytes.
+    #[must_use]
+    pub fn canonical_bytes(&self) -> Vec<u8> {
+        crate::wire_v2::encode(&self.0.cbor_value_with_schema(SCHEMA_V3))
+            .expect("a validated run result fits the bounded encoder")
+    }
+
+    /// Returns a display-only JSON projection.
+    #[must_use]
+    pub fn json_projection(&self) -> Json {
+        self.0.json_projection_with_schema(SCHEMA_V3)
+    }
 }
 
 impl RunResultV2 {
@@ -45,15 +76,19 @@ impl RunResultV2 {
     /// Returns the deterministic-CBOR bytes committed by the control object.
     #[must_use]
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        crate::wire_v2::encode(&self.cbor_value())
+        crate::wire_v2::encode(&self.cbor_value_with_schema(SCHEMA))
             .expect("a validated run result always fits the bounded encoder")
     }
 
     /// Returns a JSON projection that is never a verification input.
     #[must_use]
     pub fn json_projection(&self) -> Json {
+        self.json_projection_with_schema(SCHEMA)
+    }
+
+    fn json_projection_with_schema(&self, schema: &str) -> Json {
         json!({
-            "schema": SCHEMA,
+            "schema": schema,
             "outcome": outcome_json(self.outcome),
             "receipt": self.receipt,
             "commitment": format!("hex:{}", self.commitment.to_hex()),
@@ -61,9 +96,9 @@ impl RunResultV2 {
         })
     }
 
-    fn cbor_value(&self) -> Cbor {
+    fn cbor_value_with_schema(&self, schema: &str) -> Cbor {
         Cbor::Map(vec![
-            ("schema".to_owned(), Cbor::Text(SCHEMA.to_owned())),
+            ("schema".to_owned(), Cbor::Text(schema.to_owned())),
             ("outcome".to_owned(), outcome_cbor(self.outcome)),
             ("receipt".to_owned(), Cbor::Text(self.receipt.clone())),
             (
@@ -163,6 +198,31 @@ mod tests {
         assert_eq!(
             result.json_projection()["schema"],
             "proofbound-runtime-run-result/2"
+        );
+    }
+
+    #[test]
+    fn version_three_run_result_matches_its_separate_golden() {
+        let execution_id =
+            ExecutionId::from_bytes([0, 0, 0, 0, 0, 0, 0x40, 0, 0x80, 0, 0, 0, 0, 0, 0, 0])
+                .expect("golden execution ID is version 4");
+        let result = super::RunResultV3::new(
+            Path::new("receipt.cbor"),
+            execution_id,
+            Sha256Digest::from_bytes([9; 32]),
+            ExecutionOutcome::Exited { code: 0 },
+        )
+        .expect("golden run result is valid");
+        let expected = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../schemas/vectors/v3/run-result.cbor.hex"
+        ))
+        .split_whitespace()
+        .collect::<String>();
+        assert_eq!(encode_hex(&result.canonical_bytes()), expected);
+        assert_eq!(
+            result.json_projection()["schema"],
+            "proofbound-runtime-run-result/3"
         );
     }
 

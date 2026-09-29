@@ -7,7 +7,9 @@ mod cbor_encode;
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use proofbound_runtime_verify::{ReceiptCommitment, decode_receipt, verify_receipt};
+use proofbound_runtime_verify::{
+    ReceiptCommitment, decode_receipt, verify_egress_observation_fragment, verify_receipt,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -16,12 +18,15 @@ const COMPOSITION_SCHEMA: &str = "proofbound-runtime-composed-receipt/1";
 const COMPOSITION_DOMAIN: &[u8] = b"proofbound-runtime-composed-receipt/1\n";
 const COMPOSITION_SCHEMA_V2: &str = "proofbound-runtime-composed-receipt/2";
 const COMPOSITION_DOMAIN_V2: &[u8] = b"proofbound-runtime-composed-receipt/2\n";
+const COMPOSITION_SCHEMA_V3: &str = "proofbound-runtime-composed-receipt/3";
+const COMPOSITION_DOMAIN_V3: &[u8] = b"proofbound-runtime-composed-receipt/3\n";
 const RELEASE_ENVELOPE_SCHEMA: &str = "proofbound-release-envelope/7";
 const RELEASE_REPORT_SCHEMA: &str = "proofbound-verification-report/3";
 const COMPILED_RELEASE_SCHEMA: &str = "proofbound-compiled-release/7";
 const RELEASE_MANIFEST_SCHEMA: &str = "proofbound-runtime-release-manifest/1";
 const EXECUTION_RECEIPT_SCHEMA: &str = "proofbound-runtime-receipt/1";
 const EXECUTION_RECEIPT_SCHEMA_V2: &str = "proofbound-runtime-execution-receipt/2";
+const EXECUTION_RECEIPT_SCHEMA_V3: &str = "proofbound-runtime-execution-receipt/3";
 
 /// One exact byte carrier supplied to the pure composition boundary.
 #[derive(Clone, Copy)]
@@ -45,6 +50,10 @@ pub struct CompositionInputs<'a> {
     pub launcher: ArtifactBytes<'a>,
     pub execution_verifier: ArtifactBytes<'a>,
     pub composer: ArtifactBytes<'a>,
+    /// The optional diagnostic executable in newer release bundles.
+    pub diagnose: Option<ArtifactBytes<'a>>,
+    /// The exact separate proxy executable required by version 3 egress.
+    pub egress_proxy: Option<ArtifactBytes<'a>>,
     pub execution_receipt: ArtifactBytes<'a>,
     pub execution_verification: ArtifactBytes<'a>,
     pub expected_execution_commitment: &'a str,
@@ -347,6 +356,8 @@ struct ExecutionFacts {
     schema: String,
     trusted_computing_base: Vec<WireTcbEntry>,
     version_two: bool,
+    version_three: bool,
+    network: Option<Value>,
 }
 
 impl From<ExecutionReceipt> for ExecutionFacts {
@@ -375,6 +386,8 @@ impl From<ExecutionReceipt> for ExecutionFacts {
             schema: receipt.schema,
             trusted_computing_base: receipt.trusted_computing_base,
             version_two: false,
+            version_three: false,
+            network: None,
         }
     }
 }
@@ -444,6 +457,8 @@ struct ExecutionIdentity {
     receipt: ArtifactIdentity,
     verification_report: ArtifactIdentity,
     verifier: ArtifactIdentity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    network: Option<Value>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -478,7 +493,7 @@ pub fn compose(inputs: &CompositionInputs<'_>) -> Result<Vec<u8>, CompositionErr
     let execution_verification: ExecutionVerification = parse(inputs.execution_verification.bytes)?;
 
     let evidence_context = validate_release(&release_envelope, &release_report, &compiled, inputs)?;
-    let bundle_artifacts = validate_bundle(&manifest, inputs)?;
+    let bundle_artifacts = validate_bundle(&manifest, inputs, execution.version_three)?;
     validate_execution(
         &execution,
         &execution_verification,
@@ -493,6 +508,7 @@ pub fn compose(inputs: &CompositionInputs<'_>) -> Result<Vec<u8>, CompositionErr
         &release_report.not_proved_out_of_scope,
     )?;
     let trusted_computing_base = inherited_tcb(&release_tcb, &execution.trusted_computing_base)?;
+    let network = composed_network(&execution)?;
     let mut receipt = ComposedReceipt {
         assumptions,
         claims: release_report.claims,
@@ -507,6 +523,7 @@ pub fn compose(inputs: &CompositionInputs<'_>) -> Result<Vec<u8>, CompositionErr
             receipt: artifact_identity(inputs.execution_receipt),
             verification_report: artifact_identity(inputs.execution_verification),
             verifier: artifact_identity(inputs.execution_verifier),
+            network,
         },
         not_proved_out_of_scope: residual_obligations,
         release: ReleaseIdentity {
@@ -528,19 +545,61 @@ pub fn compose(inputs: &CompositionInputs<'_>) -> Result<Vec<u8>, CompositionErr
             toolchain: manifest.toolchain,
             version: manifest.version,
         },
-        schema: if execution.version_two {
+        schema: if execution.version_three {
+            COMPOSITION_SCHEMA_V3.to_owned()
+        } else if execution.version_two {
             COMPOSITION_SCHEMA_V2.to_owned()
         } else {
             COMPOSITION_SCHEMA.to_owned()
         },
         trusted_computing_base,
     };
-    if execution.version_two {
+    if execution.version_three {
+        receipt.composition_id = composition_identity_v3(&receipt)?;
+        canonical_v3_bytes(&receipt)
+    } else if execution.version_two {
         receipt.composition_id = composition_identity_v2(&receipt)?;
         canonical_v2_bytes(&receipt)
     } else {
         receipt.composition_id = composition_identity(&receipt)?;
         canonical_bytes(&receipt)
+    }
+}
+
+fn composed_network(execution: &ExecutionFacts) -> Result<Option<Value>, CompositionError> {
+    if !execution.version_three {
+        return Ok(None);
+    }
+    let network = execution
+        .network
+        .as_ref()
+        .ok_or(CompositionError::ExecutionInvalid)?;
+    match network.get("mode").and_then(Value::as_str) {
+        Some("deny") if network.as_object().is_some_and(|value| value.len() == 1) => {
+            Ok(Some(serde_json::json!({"mode": "deny"})))
+        }
+        Some("declared-egress") => {
+            let observation = network
+                .get("observation")
+                .ok_or(CompositionError::ExecutionInvalid)?;
+            let bytes = cbor_encode::encode_network_observation(observation)
+                .map_err(|_| CompositionError::ExecutionInvalid)?;
+            let identity = digest_hex(&bytes);
+            let non_reuse_reasons = execution
+                .eligibility
+                .reasons
+                .iter()
+                .filter(|reason| reason.starts_with("egress-"))
+                .cloned()
+                .collect::<Vec<_>>();
+            Ok(Some(serde_json::json!({
+                "mode": "declared-egress",
+                "observation_sha256": format!("sha256:{identity}"),
+                "observation": observation,
+                "non_reuse_reasons": non_reuse_reasons,
+            })))
+        }
+        _ => Err(CompositionError::ExecutionInvalid),
     }
 }
 
@@ -559,6 +618,7 @@ fn parse_execution_facts(
     let decoded = decode_receipt(inputs.execution_receipt.bytes)
         .map_err(|_| CompositionError::ExecutionInvalid)?;
     let facts = decoded.composition_facts();
+    let version_three = facts.schema == EXECUTION_RECEIPT_SCHEMA_V3;
     if !facts.version_two {
         return Err(CompositionError::ExecutionInvalid);
     }
@@ -607,7 +667,9 @@ fn parse_execution_facts(
                 role: entry.role,
             })
             .collect(),
-        version_two: true,
+        version_two: !version_three,
+        version_three,
+        network: facts.network,
     })
 }
 
@@ -649,7 +711,10 @@ pub fn project_composed_receipt(bytes: &[u8]) -> Result<Value, CompositionError>
     } else {
         let value =
             cbor_decode::project_composed_v2(bytes).map_err(|_| CompositionError::SchemaInvalid)?;
-        if value.get("schema").and_then(Value::as_str) != Some(COMPOSITION_SCHEMA_V2) {
+        if !matches!(
+            value.get("schema").and_then(Value::as_str),
+            Some(COMPOSITION_SCHEMA_V2 | COMPOSITION_SCHEMA_V3)
+        ) {
             return Err(CompositionError::SchemaInvalid);
         }
         Ok(value)
@@ -664,7 +729,10 @@ pub fn decode_release_acceptance_facts(
     bytes: &[u8],
 ) -> Result<ReleaseAcceptanceFacts, CompositionError> {
     let receipt = parse_composed_receipt(bytes)?;
-    if receipt.schema != COMPOSITION_SCHEMA_V2 {
+    if !matches!(
+        receipt.schema.as_str(),
+        COMPOSITION_SCHEMA_V2 | COMPOSITION_SCHEMA_V3
+    ) {
         return Err(CompositionError::SchemaInvalid);
     }
     Ok(ReleaseAcceptanceFacts {
@@ -713,11 +781,100 @@ fn parse_composed_receipt(bytes: &[u8]) -> Result<ComposedReceipt, CompositionEr
             .map_err(|_| CompositionError::SchemaInvalid)?;
         let receipt: ComposedReceipt =
             serde_json::from_value(value).map_err(|_| CompositionError::SchemaInvalid)?;
-        if receipt.schema != COMPOSITION_SCHEMA_V2 {
+        if !matches!(
+            receipt.schema.as_str(),
+            COMPOSITION_SCHEMA_V2 | COMPOSITION_SCHEMA_V3
+        ) {
+            return Err(CompositionError::SchemaInvalid);
+        }
+        if receipt.schema == COMPOSITION_SCHEMA_V3 {
+            validate_composed_network(receipt.execution.network.as_ref())?;
+            if receipt.runtime_bundle.artifacts.len() != 5 {
+                return Err(CompositionError::SchemaInvalid);
+            }
+        } else if receipt.execution.network.is_some() {
             return Err(CompositionError::SchemaInvalid);
         }
         Ok(receipt)
     }
+}
+
+fn validate_composed_network(network: Option<&Value>) -> Result<(), CompositionError> {
+    let network = network
+        .and_then(Value::as_object)
+        .ok_or(CompositionError::SchemaInvalid)?;
+    match network.get("mode").and_then(Value::as_str) {
+        Some("deny") if network.len() == 1 => Ok(()),
+        Some("declared-egress") if network.len() == 4 => {
+            let observation = network
+                .get("observation")
+                .ok_or(CompositionError::SchemaInvalid)?;
+            let bytes = cbor_encode::encode_network_observation(observation)
+                .map_err(|_| CompositionError::SchemaInvalid)?;
+            let identity = network
+                .get("observation_sha256")
+                .and_then(Value::as_str)
+                .ok_or(CompositionError::SchemaInvalid)?;
+            if identity != digest_text(&bytes) {
+                return Err(CompositionError::CompositionMismatch);
+            }
+            let reasons = network
+                .get("non_reuse_reasons")
+                .and_then(Value::as_array)
+                .ok_or(CompositionError::SchemaInvalid)?;
+            let codes = reasons
+                .iter()
+                .map(|item| item.as_str().ok_or(CompositionError::SchemaInvalid))
+                .collect::<Result<Vec<_>, _>>()?;
+            let rank = |code: &str| match code {
+                "egress-request-denied" => Some(0),
+                "egress-sni-denied" => Some(1),
+                "egress-limit-reached" => Some(2),
+                "egress-proxy-failed" => Some(3),
+                "egress-cleanup-incomplete" => Some(4),
+                _ => None,
+            };
+            if !codes.iter().all(|code| rank(code).is_some())
+                || !codes.windows(2).all(|pair| rank(pair[0]) < rank(pair[1]))
+            {
+                return Err(CompositionError::SchemaInvalid);
+            }
+            let policy_sha256 = observation
+                .get("policy_sha256")
+                .and_then(Value::as_str)
+                .and_then(|value| value.strip_prefix("hex:"))
+                .and_then(parse_digest_bytes)
+                .ok_or(CompositionError::SchemaInvalid)?;
+            let decision = verify_egress_observation_fragment(&bytes, &policy_sha256)
+                .map_err(|_| CompositionError::SchemaInvalid)?;
+            let expected = [
+                (decision.authority_rejection, "egress-request-denied"),
+                (decision.sni_denied, "egress-sni-denied"),
+                (decision.limit_reached, "egress-limit-reached"),
+                (decision.proxy_failed, "egress-proxy-failed"),
+                (decision.cleanup_incomplete, "egress-cleanup-incomplete"),
+            ]
+            .into_iter()
+            .filter_map(|(active, code)| active.then_some(code))
+            .collect::<Vec<_>>();
+            if codes != expected {
+                return Err(CompositionError::CompositionMismatch);
+            }
+            Ok(())
+        }
+        _ => Err(CompositionError::SchemaInvalid),
+    }
+}
+
+fn parse_digest_bytes(value: &str) -> Option<[u8; 32]> {
+    if value.len() != 64 {
+        return None;
+    }
+    let mut bytes = [0_u8; 32];
+    for (index, byte) in bytes.iter_mut().enumerate() {
+        *byte = u8::from_str_radix(&value[index * 2..index * 2 + 2], 16).ok()?;
+    }
+    Some(bytes)
 }
 
 fn validate_release(
@@ -900,6 +1057,7 @@ fn residual_record(
 fn validate_bundle(
     manifest: &RuntimeManifest,
     inputs: &CompositionInputs<'_>,
+    version_three: bool,
 ) -> Result<Vec<ArtifactIdentity>, CompositionError> {
     if manifest.schema != RELEASE_MANIFEST_SCHEMA
         || manifest.toolchain.is_empty()
@@ -912,12 +1070,24 @@ fn validate_bundle(
     {
         return Err(CompositionError::SchemaInvalid);
     }
-    let expected = [
+    let mut expected = vec![
         ("pbr", inputs.runtime),
         ("pbr-native-launcher", inputs.launcher),
         ("pbr-verify", inputs.execution_verifier),
         ("pbr-compose", inputs.composer),
     ];
+    if let Some(diagnose) = inputs.diagnose {
+        expected.push(("pbr-diagnose", diagnose));
+    }
+    if let Some(proxy) = inputs.egress_proxy {
+        if inputs.diagnose.is_none() {
+            return Err(CompositionError::BundleRoleMismatch);
+        }
+        expected.push(("pbr-egress-proxy", proxy));
+    }
+    if version_three && (inputs.diagnose.is_none() || inputs.egress_proxy.is_none()) {
+        return Err(CompositionError::BundleRoleMismatch);
+    }
     if manifest.artifacts.len() != expected.len() {
         return Err(CompositionError::BundleRoleMismatch);
     }
@@ -930,7 +1100,9 @@ fn validate_bundle(
         if registered.sha256 != digest_hex(bytes.bytes) || registered.size != size {
             return Err(CompositionError::BundleSubstituted);
         }
-        identities.push(artifact_identity(bytes));
+        if name != "pbr-diagnose" && (name != "pbr-egress-proxy" || version_three) {
+            identities.push(artifact_identity(bytes));
+        }
     }
     Ok(identities)
 }
@@ -941,7 +1113,9 @@ fn validate_execution(
     bundle_artifacts: &[ArtifactIdentity],
     inputs: &CompositionInputs<'_>,
 ) -> Result<(), CompositionError> {
-    let expected_schema = if receipt.version_two {
+    let expected_schema = if receipt.version_three {
+        EXECUTION_RECEIPT_SCHEMA_V3
+    } else if receipt.version_two {
         EXECUTION_RECEIPT_SCHEMA_V2
     } else {
         EXECUTION_RECEIPT_SCHEMA
@@ -982,6 +1156,33 @@ fn validate_execution(
             .any(|entry| entry.role == role && entry.identity == raw_digest)
         {
             return Err(CompositionError::TrustedComputingBaseOmitted);
+        }
+    }
+    if receipt.version_three {
+        let proxy = bundle_artifacts
+            .get(4)
+            .ok_or(CompositionError::BundleRoleMismatch)?;
+        if receipt
+            .network
+            .as_ref()
+            .and_then(|network| network.get("mode"))
+            .and_then(Value::as_str)
+            == Some("declared-egress")
+        {
+            let recorded = receipt
+                .network
+                .as_ref()
+                .and_then(|network| network.pointer("/observation/proxy/executable/sha256"))
+                .and_then(Value::as_str)
+                .and_then(|value| value.strip_prefix("hex:"));
+            let expected = proxy.sha256.strip_prefix("sha256:");
+            if recorded != expected
+                || !receipt.trusted_computing_base.iter().any(|entry| {
+                    entry.role == "egress-proxy-binary" && Some(entry.identity.as_str()) == expected
+                })
+            {
+                return Err(CompositionError::BundleSubstituted);
+            }
         }
     }
     Ok(())
@@ -1110,6 +1311,20 @@ fn composition_identity_v2(receipt: &ComposedReceipt) -> Result<String, Composit
     Ok(format!("sha256:{}", hex_digest(&hasher.finalize())))
 }
 
+fn composition_identity_v3(receipt: &ComposedReceipt) -> Result<String, CompositionError> {
+    let mut value = serde_json::to_value(receipt).map_err(|_| CompositionError::SchemaInvalid)?;
+    value
+        .as_object_mut()
+        .ok_or(CompositionError::SchemaInvalid)?
+        .remove("composition_id");
+    let body =
+        cbor_encode::encode_composed_v3(&value).map_err(|_| CompositionError::SchemaInvalid)?;
+    let mut hasher = Sha256::new();
+    hasher.update(COMPOSITION_DOMAIN_V3);
+    hasher.update(body);
+    Ok(format!("sha256:{}", hex_digest(&hasher.finalize())))
+}
+
 fn canonical_bytes(receipt: &ComposedReceipt) -> Result<Vec<u8>, CompositionError> {
     let value = serde_json::to_value(receipt).map_err(|_| CompositionError::SchemaInvalid)?;
     serde_json::to_vec(&value).map_err(|_| CompositionError::SchemaInvalid)
@@ -1118,6 +1333,11 @@ fn canonical_bytes(receipt: &ComposedReceipt) -> Result<Vec<u8>, CompositionErro
 fn canonical_v2_bytes(receipt: &ComposedReceipt) -> Result<Vec<u8>, CompositionError> {
     let value = serde_json::to_value(receipt).map_err(|_| CompositionError::SchemaInvalid)?;
     cbor_encode::encode_composed_v2(&value).map_err(|_| CompositionError::SchemaInvalid)
+}
+
+fn canonical_v3_bytes(receipt: &ComposedReceipt) -> Result<Vec<u8>, CompositionError> {
+    let value = serde_json::to_value(receipt).map_err(|_| CompositionError::SchemaInvalid)?;
+    cbor_encode::encode_composed_v3(&value).map_err(|_| CompositionError::SchemaInvalid)
 }
 
 fn artifact_identity(artifact: ArtifactBytes<'_>) -> ArtifactIdentity {
@@ -1217,6 +1437,8 @@ mod tests {
         launcher: Vec<u8>,
         execution_verifier: Vec<u8>,
         composer: Vec<u8>,
+        diagnose: Option<Vec<u8>>,
+        egress_proxy: Option<Vec<u8>>,
         execution_receipt: Vec<u8>,
         execution_verification: Vec<u8>,
         commitment: String,
@@ -1429,6 +1651,8 @@ mod tests {
                 launcher,
                 execution_verifier,
                 composer,
+                diagnose: None,
+                egress_proxy: None,
                 execution_receipt,
                 execution_verification,
                 commitment,
@@ -1455,6 +1679,14 @@ mod tests {
                 launcher: named("pbr-native-launcher", &self.launcher),
                 execution_verifier: named("pbr-verify", &self.execution_verifier),
                 composer: named("pbr-compose", &self.composer),
+                diagnose: self
+                    .diagnose
+                    .as_deref()
+                    .map(|bytes| named("pbr-diagnose", bytes)),
+                egress_proxy: self
+                    .egress_proxy
+                    .as_deref()
+                    .map(|bytes| named("pbr-egress-proxy", bytes)),
                 execution_receipt: named(
                     if self.execution_receipt.first() == Some(&b'{') {
                         "execution-receipt.json"
@@ -1479,6 +1711,48 @@ mod tests {
             self.commitment = digest_text(&self.execution_receipt);
             self.execution_verification = canonical_json(json!({
                 "eligibility": {"reasons": [], "status": "reusable"},
+                "receipt_commitment": self.commitment,
+                "valid": true
+            }));
+        }
+
+        fn upgrade_execution_to_v3_deny(&mut self) {
+            self.diagnose = Some(b"exact-pbr-diagnose".to_vec());
+            self.egress_proxy = Some(b"exact-pbr-egress-proxy".to_vec());
+            let diagnose = self.diagnose.as_ref().unwrap();
+            let proxy = self.egress_proxy.as_ref().unwrap();
+            let mut manifest: Value = serde_json::from_slice(&self.runtime_manifest).unwrap();
+            for (name, bytes) in [("pbr-diagnose", diagnose), ("pbr-egress-proxy", proxy)] {
+                manifest["artifacts"].as_array_mut().unwrap().push(json!({
+                    "name": name, "sha256": digest_hex(bytes), "size": bytes.len()
+                }));
+            }
+            self.runtime_manifest = canonical_json(manifest);
+            self.execution_receipt = decode_hex(include_str!(
+                "../../../schemas/vectors/v3/execution-receipt.cbor.hex"
+            ));
+            self.commitment = digest_text(&self.execution_receipt);
+            self.execution_verification = canonical_json(json!({
+                "eligibility": {"reasons": [], "status": "reusable"},
+                "receipt_commitment": self.commitment,
+                "valid": true
+            }));
+        }
+
+        fn upgrade_execution_to_v3_egress(&mut self) {
+            self.upgrade_execution_to_v3_deny();
+            self.egress_proxy = Some(b"proxy".to_vec());
+            let mut manifest: Value = serde_json::from_slice(&self.runtime_manifest).unwrap();
+            let proxy = self.egress_proxy.as_ref().unwrap();
+            manifest["artifacts"][5]["sha256"] = json!(digest_hex(proxy));
+            manifest["artifacts"][5]["size"] = json!(proxy.len());
+            self.runtime_manifest = canonical_json(manifest);
+            self.execution_receipt = decode_hex(include_str!(
+                "../../../schemas/vectors/v3/execution-receipt-egress.cbor.hex"
+            ));
+            self.commitment = digest_text(&self.execution_receipt);
+            self.execution_verification = canonical_json(json!({
+                "eligibility": {"reasons": ["egress-request-denied"], "status": "non-reusable"},
                 "receipt_commitment": self.commitment,
                 "valid": true
             }));
@@ -1532,6 +1806,150 @@ mod tests {
                     .expect("fixture is hex")
             })
             .collect()
+    }
+
+    #[test]
+    fn version_three_observation_is_retained_byte_for_byte() {
+        let bytes = decode_hex(include_str!(
+            "../../../schemas/vectors/v3/egress-observation.cbor.hex"
+        ));
+        let projected = cbor_decode::project_composed_v2(&bytes)
+            .expect("golden observation decodes canonically");
+        let rebuilt = cbor_encode::encode_network_observation(&projected)
+            .expect("golden observation re-encodes");
+        assert_eq!(rebuilt, bytes);
+    }
+
+    #[test]
+    fn version_three_composed_golden_decodes_with_network_mode() {
+        let bytes = decode_hex(include_str!(
+            "../../../schemas/vectors/v3/composed-receipt.cbor.hex"
+        ));
+        let receipt =
+            parse_composed_receipt(&bytes).expect("version three composed receipt decodes");
+        assert_eq!(receipt.schema, COMPOSITION_SCHEMA_V3);
+        assert_eq!(
+            receipt.execution.network,
+            Some(serde_json::json!({"mode": "deny"}))
+        );
+        let projected = project_composed_receipt(&bytes).expect("version three projects");
+        assert_eq!(projected["execution"]["network"]["mode"], "deny");
+    }
+
+    #[test]
+    fn verified_version_three_receipt_composes_against_six_member_bundle() {
+        let mut fixture = Fixture::new();
+        fixture.upgrade_execution_to_v3_deny();
+        let bytes = compose(&fixture.inputs()).expect("verified version three receipt composes");
+        let receipt = parse_composed_receipt(&bytes).expect("composed receipt decodes");
+        assert_eq!(receipt.schema, COMPOSITION_SCHEMA_V3);
+        assert_eq!(receipt.runtime_bundle.artifacts.len(), 5);
+        assert_eq!(receipt.runtime_bundle.artifacts[4].name, "pbr-egress-proxy");
+        assert_eq!(receipt.execution.network, Some(json!({"mode": "deny"})));
+        verify_composed_receipt(&bytes, &fixture.inputs()).expect("exact source verifies");
+
+        fixture.egress_proxy.as_mut().unwrap().push(0);
+        assert_eq!(
+            compose(&fixture.inputs()).unwrap_err(),
+            CompositionError::BundleSubstituted
+        );
+    }
+
+    #[test]
+    fn verified_egress_receipt_preserves_observation_and_proxy_identity() {
+        let mut fixture = Fixture::new();
+        fixture.upgrade_execution_to_v3_egress();
+        let bytes = compose(&fixture.inputs()).expect("verified egress receipt composes");
+        let receipt = parse_composed_receipt(&bytes).expect("composed egress receipt decodes");
+        assert_eq!(receipt.schema, COMPOSITION_SCHEMA_V3);
+        assert_eq!(receipt.execution.eligibility, "non-reusable");
+        let network = receipt.execution.network.as_ref().unwrap();
+        assert_eq!(network["mode"], "declared-egress");
+        assert_eq!(
+            network["non_reuse_reasons"],
+            json!(["egress-request-denied"])
+        );
+        assert_eq!(
+            network["observation"]["proxy"]["executable"]["sha256"],
+            format!("hex:{}", digest_hex(b"proxy"))
+        );
+        verify_composed_receipt(&bytes, &fixture.inputs()).expect("exact source verifies");
+
+        fixture.egress_proxy.as_mut().unwrap().push(0);
+        assert_eq!(
+            compose(&fixture.inputs()).unwrap_err(),
+            CompositionError::BundleSubstituted
+        );
+    }
+
+    #[test]
+    fn version_three_composition_preserves_full_egress_observation() {
+        let fixture = Fixture::new();
+        let v1 = compose(&fixture.inputs()).expect("fixture composes");
+        let mut composed = parse_composed_receipt(&v1).expect("fixture decodes");
+        let observation_bytes = decode_hex(include_str!(
+            "../../../schemas/vectors/v3/egress-observation.cbor.hex"
+        ));
+        let observation =
+            cbor_decode::project_composed_v2(&observation_bytes).expect("observation decodes");
+        composed.schema = COMPOSITION_SCHEMA_V3.to_owned();
+        composed.execution.network = Some(serde_json::json!({
+            "mode": "declared-egress",
+            "observation_sha256": digest_text(&observation_bytes),
+            "observation": observation,
+            "non_reuse_reasons": ["egress-request-denied"]
+        }));
+        composed
+            .runtime_bundle
+            .artifacts
+            .push(artifact_identity(named("pbr-egress-proxy", b"proxy")));
+        composed.composition_id = composition_identity_v3(&composed).expect("identity encodes");
+        let bytes = canonical_v3_bytes(&composed).expect("version three encodes");
+        let decoded = parse_composed_receipt(&bytes).expect("version three decodes");
+        assert_eq!(decoded.execution.network, composed.execution.network);
+        assert_eq!(canonical_v3_bytes(&decoded).expect("re-encodes"), bytes);
+
+        // Each mutation carries a fresh composition identity so the failure
+        // comes from the egress relation, rather than a stale outer digest.
+        let mut mutated = composed.clone();
+        mutated.execution.network.as_mut().unwrap()["observation_sha256"] =
+            serde_json::json!(digest_text(b"substituted observation"));
+        mutated.composition_id = composition_identity_v3(&mutated).unwrap();
+        assert_eq!(
+            parse_composed_receipt(&canonical_v3_bytes(&mutated).unwrap()).unwrap_err(),
+            CompositionError::CompositionMismatch
+        );
+
+        let mut mutated = composed.clone();
+        mutated.execution.network.as_mut().unwrap()["non_reuse_reasons"] = serde_json::json!([]);
+        mutated.composition_id = composition_identity_v3(&mutated).unwrap();
+        assert_eq!(
+            parse_composed_receipt(&canonical_v3_bytes(&mutated).unwrap()).unwrap_err(),
+            CompositionError::CompositionMismatch
+        );
+
+        let mut mutated = composed.clone();
+        mutated.execution.network.as_mut().unwrap()["mode"] = serde_json::json!("deny");
+        mutated.composition_id = composition_identity_v3(&mutated).unwrap();
+        assert_eq!(
+            parse_composed_receipt(&canonical_v3_bytes(&mutated).unwrap()).unwrap_err(),
+            CompositionError::SchemaInvalid
+        );
+
+        let mut mutated = composed.clone();
+        mutated.execution.network.as_mut().unwrap()["observation"]
+            .as_object_mut()
+            .unwrap()
+            .remove("authority");
+        let observation = &mutated.execution.network.as_ref().unwrap()["observation"];
+        mutated.execution.network.as_mut().unwrap()["observation_sha256"] = serde_json::json!(
+            digest_text(&cbor_encode::encode_network_observation(observation).unwrap())
+        );
+        mutated.composition_id = composition_identity_v3(&mutated).unwrap();
+        assert_eq!(
+            parse_composed_receipt(&canonical_v3_bytes(&mutated).unwrap()).unwrap_err(),
+            CompositionError::SchemaInvalid
+        );
     }
 
     fn mutate_composed(bytes: &[u8], mutation: impl FnOnce(&mut Value)) -> Vec<u8> {

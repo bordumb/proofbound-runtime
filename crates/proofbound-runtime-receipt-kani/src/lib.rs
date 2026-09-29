@@ -4,10 +4,51 @@
 
 #[cfg(kani)]
 use proofbound_runtime_core::{
-    BoundaryInstallation, ExecutionOutcome, LimitEvent, LimitEvents, NonReusableReason,
-    ReceiptEligibility, ReceiptFacts, ReceiptStructure, SignalNumber, StreamCapture,
-    derive_receipt_eligibility,
+    BoundaryInstallation, EgressReceiptFlags, EgressReceiptReason, ExecutionOutcome, LimitEvent,
+    LimitEvents, NonReusableReason, ReceiptEligibility, ReceiptFacts, ReceiptStructure,
+    SignalNumber, StreamCapture, derive_receipt_eligibility,
 };
+
+#[cfg(kani)]
+#[kani::proof]
+fn version_three_egress_reason_suffix_is_exact() {
+    let flags = EgressReceiptFlags {
+        authority_rejection: kani::any(),
+        sni_denied: kani::any(),
+        limit_reached: kani::any(),
+        proxy_failed: kani::any(),
+        cleanup_incomplete: kani::any(),
+    };
+    let actual = flags.ordered_reasons();
+    assert_eq!(
+        actual[0],
+        flags
+            .authority_rejection
+            .then_some(EgressReceiptReason::RequestDenied)
+    );
+    assert_eq!(
+        actual[1],
+        flags.sni_denied.then_some(EgressReceiptReason::SniDenied)
+    );
+    assert_eq!(
+        actual[2],
+        flags
+            .limit_reached
+            .then_some(EgressReceiptReason::LimitReached)
+    );
+    assert_eq!(
+        actual[3],
+        flags
+            .proxy_failed
+            .then_some(EgressReceiptReason::ProxyFailed)
+    );
+    assert_eq!(
+        actual[4],
+        flags
+            .cleanup_incomplete
+            .then_some(EgressReceiptReason::CleanupIncomplete)
+    );
+}
 
 #[cfg(kani)]
 #[kani::proof]

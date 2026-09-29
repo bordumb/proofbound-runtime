@@ -1,0 +1,69 @@
+{
+  "id": "golden-egress-v3",
+  "schema": "proofbound-runtime-plan/3",
+  "limits": {
+    "processes": 8,
+    "swap_bytes": "0",
+    "stderr_bytes": "0",
+    "stdout_bytes": "0",
+    "memory_bytes": "65536",
+    "wall_time_ms": 60000
+  },
+  "command": {
+    "arguments": [],
+    "executable": "/bin/tool",
+    "working_directory": "/tmp"
+  },
+  "authority": {
+    "read": [],
+    "write": ["/tmp"],
+    "execute": ["/bin/plugin", "/bin/tool"],
+    "environment": [],
+    "runtime_read": [],
+    "network": {
+      "mode": "declared-egress",
+      "endpoints": [
+        {
+          "destination": {
+            "kind": "dns-name",
+            "name": "api.example",
+            "address_scope": "global"
+          },
+          "port": 443,
+          "protocol": "tcp",
+          "tls_sni": {
+            "mode": "required",
+            "name": "api.example"
+          }
+        }
+      ],
+      "resolver": {
+        "address": {
+          "family": "ipv4",
+          "bytes": "hex:08080808"
+        },
+        "port": 53,
+        "configuration": "/etc/resolv.conf",
+        "maximum_cname_depth": 4,
+        "maximum_answer_count": 16,
+        "maximum_response_bytes": "65535",
+        "resolution_deadline_ms": 60000,
+        "attempt_deadline_ms": 10000,
+        "address_order": "ipv4-then-ipv6-lexicographic"
+      },
+      "limits": {
+        "connections": 10,
+        "concurrent_connections": 2,
+        "attempts_per_connection": 2,
+        "resolutions": 10,
+        "dns_messages": 20,
+        "client_to_remote_bytes": 100000,
+        "remote_to_client_bytes": 100000,
+        "connection_idle_ms": 1000
+      },
+      "proxy_executable": "/usr/bin/pbr-egress-proxy",
+      "proxy_runtime_read": [],
+      "proxy_environment": ["HTTPS_PROXY", "https_proxy"]
+    }
+  }
+}

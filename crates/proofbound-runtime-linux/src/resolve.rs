@@ -155,6 +155,10 @@ pub fn revalidate_inherited_executable(
 }
 
 impl ExecutableClosure {
+    pub(crate) fn into_parts(self) -> (ResolvedFile, Option<ResolvedFile>) {
+        (self.executable, self.loader)
+    }
+
     /// Returns the identified executable.
     #[must_use]
     pub const fn executable(&self) -> &ResolvedFile {

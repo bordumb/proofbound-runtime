@@ -1,0 +1,30 @@
+schema = "proofbound-claim/1"
+id = "PBR-CLOSURE-045"
+title = "A bounded exact executable set keeps exact identities and cannot be rewritten by the child"
+statement = "For a version 3 plan, the Runtime resolves 1 to 64 exact regular-file executable members, requires the command executable and every script interpreter to be members, adds each ELF interpreter as an identified loader entry, rejects a member that the child could replace through a write root, grants Landlock read-file and execute access only to those exact files, and revalidates every identity immediately before launch."
+public_language = "Registered at Tier 0 only. A proposed executable-set resolver retains exact member and loader descriptors, checks script interpreter membership and write-root overlap, and exposes revalidation. It is not integrated into the production launcher or admitted as native evidence."
+subject = "rust:proofbound_runtime_linux::RootedPathResolver::discover_executable_set"
+profile = "ledger"
+tier = 0
+evidence = []
+assumptions = [
+  "PBR-HOST-AX-002",
+  "PBR-LINUX-AX-001",
+]
+open_obligations = [
+  "Integrate the proposed resolver into version 3 preflight and launch, bind exact identities into policy and receipt, and install exact Landlock execute rules.",
+  "Add native resolution and execution tests on x86_64 and aarch64 for sets, loaders, scripts, writable members, substitution, and undeclared executables.",
+  "Obtain exact-source independent review and hosted evidence before elevating this claim above Tier 0.",
+]
+out_of_scope = [
+  "Correctness of the kernel loader, the filesystem, or the executables themselves.",
+  "Directory-wide execute authority, which remains forbidden.",
+]
+source_roots = [
+  "assumptions/PBR-HOST-AX-002.toml",
+  "assumptions/PBR-LINUX-AX-001.toml",
+  "claims/PBR-CLOSURE-045.toml",
+  "crates/proofbound-runtime-linux/src/executable_set.rs",
+  "crates/proofbound-runtime-linux/src/resolve.rs",
+  "docs/specs/0017_declared_network_egress.md",
+]

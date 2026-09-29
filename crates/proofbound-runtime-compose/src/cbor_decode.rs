@@ -195,6 +195,14 @@ fn model_bytes(bytes: &[u8], path: &[String]) -> Result<String, ()> {
     if field == "project_revision" {
         return (bytes.len() == 20).then(|| hex(bytes)).ok_or(());
     }
+    if field == "observation_sha256" {
+        return (bytes.len() == 32)
+            .then(|| format!("sha256:{}", hex(bytes)))
+            .ok_or(());
+    }
+    if path.iter().any(|part| part == "network") {
+        return Ok(format!("hex:{}", hex(bytes)));
+    }
     if is_digest_path(path) {
         return (bytes.len() == 32)
             .then(|| format!("sha256:{}", hex(bytes)))

@@ -4,6 +4,7 @@
 
 mod authority;
 mod diagnostic;
+mod egress;
 mod error;
 mod identity;
 mod network;
@@ -26,6 +27,12 @@ pub use diagnostic::{
     DiagnosticCompletion, DiagnosticObserverMechanism, DiagnosticTypeError, DraftProvenance,
     ExecutionProfile, ObservationResolution,
 };
+pub use egress::{
+    AddressClass, AddressScope, CompiledEgressPolicy, EgressAuthority, EgressDestination,
+    EgressEndpoint, EgressError, EgressLimits, EgressListener, EgressName, PinnedAnswer,
+    PinnedResolution, ProxyVariable, SniBinding, TunnelDecision, TunnelDenial, TunnelTarget,
+    answer_is_admissible, classify_answer, compile_egress_policy, decide_tunnel,
+};
 pub use error::{CoreError, ErrorClass, MachineError};
 pub use identity::{ArtifactIdentity, ArtifactRole, FileMode, IdentityError, Sha256Digest};
 pub use network::{
@@ -37,8 +44,9 @@ pub use network::{
 pub use normalize::{NormalizedAuthority, normalize_authority};
 pub use outcome::{ExecutionOutcome, ExecutionOutcomeKind, SignalNumber, execution_outcome_kind};
 pub use plan::{
-    CommandArgument, ExecutionCommand, ExecutionPlan, PlanError, PlanId, ServiceExecutionPlan,
-    parse_execution_plan, parse_execution_plan_for_execution, parse_service_execution_plan,
+    CommandArgument, EgressExecutionPlan, ExecutionCommand, ExecutionPlan, PlanError, PlanId,
+    ServiceExecutionPlan, parse_egress_execution_plan, parse_execution_plan,
+    parse_execution_plan_for_execution, parse_service_execution_plan,
 };
 pub use policy::{
     CgroupPolicy, CompiledPolicy, FilesystemPolicy, NoNewPrivileges, PolicyEncodingError,
@@ -46,15 +54,16 @@ pub use policy::{
 };
 pub use receipt::{
     Architecture, BoundaryInstallation, BoundaryRecord, CgroupIdentity, EXECUTION_RECEIPT_SCHEMA,
-    ExecutionId, ExecutionObservations, ExecutionReceipt, ExecutionReceiptParts, LimitEvent,
-    LimitEvents, NonReusableReason, NonReusableReasons, POLICY_MODEL_VERSION, PlatformIdentity,
-    REQUIRED_RUNTIME_ASSUMPTIONS, ReceiptArtifactField, ReceiptCommand, ReceiptConfiguredResources,
-    ReceiptEligibility, ReceiptError, ReceiptFacts, ReceiptIdentityField, ReceiptMemoryEvents,
-    ReceiptPlan, ReceiptPolicy, ReceiptResources, ReceiptStreams, ReceiptStructure,
-    ReceiptSwapEvents, RuntimeIdentity, StreamCapture, TrustedComputingBaseEntry,
-    TrustedComputingBaseRole, construct_execution_receipt, derive_receipt_eligibility,
+    EgressReceiptFlags, EgressReceiptReason, ExecutionId, ExecutionObservations, ExecutionReceipt,
+    ExecutionReceiptParts, LimitEvent, LimitEvents, NonReusableReason, NonReusableReasons,
+    POLICY_MODEL_VERSION, PlatformIdentity, REQUIRED_RUNTIME_ASSUMPTIONS, ReceiptArtifactField,
+    ReceiptCommand, ReceiptConfiguredResources, ReceiptEligibility, ReceiptError, ReceiptFacts,
+    ReceiptIdentityField, ReceiptMemoryEvents, ReceiptNetworkV3, ReceiptPlan, ReceiptPolicy,
+    ReceiptResources, ReceiptStreams, ReceiptStructure, ReceiptSwapEvents, RuntimeIdentity,
+    StreamCapture, TrustedComputingBaseEntry, TrustedComputingBaseRole,
+    construct_execution_receipt, derive_receipt_eligibility, encode_egress_observation_json,
 };
-pub use run_result::{RunResultError, RunResultV2};
+pub use run_result::{RunResultError, RunResultV2, RunResultV3};
 pub use service_lifecycle::{
     ServiceLifecycleError, ServiceSessionEvent, ServiceSessionFailureReason,
     ServiceSessionLifecycle, ServiceSessionPhase,

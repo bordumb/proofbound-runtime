@@ -2,7 +2,7 @@ schema = "proofbound-claim/1"
 id = "PBR-RECEIPT-004"
 title = "Incomplete executions are not reusable"
 statement = "Receipt eligibility is reusable only for a structurally valid, boundary-installed execution that exits with code zero and has complete output streams; every other represented state is non-reusable with all applicable typed reasons."
-public_language = "A kernel-checked theorem over the deterministic Aeneas translation proves that the production Rust receipt decision equals the exact versioned model for every represented state, including every subset of the seven version 2 memory and swap limit events. In each reviewed native release context, the theorem's closed artifact set selects the exact pbr bytes and independent verification recomputes the match, subject to the registered toolchain assumption."
+public_language = "A kernel-checked theorem over the deterministic Aeneas translation proves that the production Rust version 2 receipt decision equals the exact model for every represented state, including every subset of the seven memory and swap limit events. A separate bounded check covers all 32 combinations of the five version 3 egress reason flags; it is not a theorem about proxy behavior. In each reviewed native release context, the theorem's closed artifact set selects the exact pbr bytes and independent verification recomputes the match, subject to the registered toolchain assumption."
 subject = "rust:proofbound_runtime_receipt::derive_receipt_eligibility"
 profile = "kernel-with-assumptions"
 tier = 3
@@ -62,7 +62,7 @@ source_roots = [
 ]
 
 [bounded_domain]
-id = "receipt-eligibility-v2-closed-states"
-description = "All boundary, stream-capture, structure, and outcome classes, including every i32 exit code and every subset of seven version 2 memory and swap limit events; 16 * (2^32 + 5) * 128 finite states."
-cardinality = 8796093032448
+id = "receipt-eligibility-v3-closed-states"
+description = "Disjoint union of the version 2 boundary, stream-capture, structure, outcome, and seven limit-event domain (16 * (2^32 + 5) * 128 states), and all 32 combinations of five version 3 egress reason flags."
+cardinality = 8796093032480
 ordering_key = [0, 1, 2, 3, 4, 5]

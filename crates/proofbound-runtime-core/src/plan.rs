@@ -6,17 +6,19 @@ use toml::{Table, Value};
 
 use crate::wire_v2::{self, Value as CborValue};
 use crate::{
-    AddressOrder, AuthenticatedServiceSession, AuthorityError, AuthorityPath, AuthorityPlan,
-    ChildChannelDescriptor, CredentialSource, CredentialSourceId, EnvironmentName, FileAccess,
-    LocalChannelProtocol, MemoryByteLimit, MinimumTlsVersion, NetworkAuthorityError,
-    NetworkSupportPath, OutputByteLimit, PathAuthority, PathRole, ProcessLimit, ResolutionPolicy,
-    ResolverAddress, ResolverEndpoint, ResourceLimits, RevocationPolicy, ServiceName,
-    ServiceNameVerification, ServiceSessionLimits, SwapByteLimit, TcpPort, TlsPolicy,
-    WallTimeLimit,
+    AddressOrder, AddressScope, AuthenticatedServiceSession, AuthorityError, AuthorityPath,
+    AuthorityPlan, ChildChannelDescriptor, CredentialSource, CredentialSourceId, EgressAuthority,
+    EgressDestination, EgressEndpoint, EgressError, EgressLimits, EgressName, EnvironmentName,
+    FileAccess, LocalChannelProtocol, MemoryByteLimit, MinimumTlsVersion, NetworkAuthorityError,
+    NetworkSupportPath, OutputByteLimit, PathAuthority, PathRole, ProcessLimit, ProxyVariable,
+    ResolutionPolicy, ResolverAddress, ResolverEndpoint, ResourceLimits, RevocationPolicy,
+    ServiceName, ServiceNameVerification, ServiceSessionLimits, SniBinding, SwapByteLimit, TcpPort,
+    TlsPolicy, WallTimeLimit,
 };
 
 const PLAN_SCHEMA: &str = "proofbound-runtime-plan/1";
 const PLAN_SCHEMA_V2: &str = "proofbound-runtime-plan/2";
+const PLAN_SCHEMA_V3: &str = "proofbound-runtime-plan/3";
 
 /// Contains a validated execution-plan identifier.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -121,6 +123,27 @@ pub struct ServiceExecutionPlan {
     service_session: AuthenticatedServiceSession,
 }
 
+/// Contains a validated proposed version 3 declared-egress plan.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct EgressExecutionPlan {
+    base: ExecutionPlan,
+    egress: EgressAuthority,
+}
+
+impl EgressExecutionPlan {
+    /// Returns the base child plan with direct network authority denied.
+    #[must_use]
+    pub const fn base(&self) -> &ExecutionPlan {
+        &self.base
+    }
+
+    /// Returns the declared proxy authority.
+    #[must_use]
+    pub const fn egress(&self) -> &EgressAuthority {
+        &self.egress
+    }
+}
+
 impl ServiceExecutionPlan {
     /// Returns the child execution plan with direct network authority denied.
     #[must_use]
@@ -181,8 +204,12 @@ pub enum PlanError {
     ArgumentContainsNull,
     /// The initial release does not support the requested network mode.
     UnsupportedNetwork,
+    /// The declared-egress profile is registered but not admitted for execution.
+    UnsupportedEgress,
     /// One authenticated-service-session field is invalid.
     NetworkAuthority(NetworkAuthorityError),
+    /// One declared-egress field is invalid.
+    EgressAuthority(EgressError),
     /// A service-session support path is not canonical and absolute.
     NetworkSupportPathInvalid,
     /// The credential source names an environment variable outside authority.
@@ -213,7 +240,9 @@ impl PlanError {
             Self::InvalidPlanId => "plan.id.invalid",
             Self::ArgumentContainsNull => "plan.command.argument.null",
             Self::UnsupportedNetwork => "plan.authority.network.unsupported",
+            Self::UnsupportedEgress => "plan.authority.network.egress.unsupported",
             Self::NetworkAuthority(error) => error.code(),
+            Self::EgressAuthority(error) => error.code(),
             Self::NetworkSupportPathInvalid => "plan.authority.network.path.external-invalid",
             Self::CredentialEnvironmentMissing => {
                 "plan.authority.network.credential-source.environment-missing"
@@ -252,6 +281,12 @@ impl From<NetworkAuthorityError> for PlanError {
         } else {
             Self::NetworkAuthority(error)
         }
+    }
+}
+
+impl From<EgressError> for PlanError {
+    fn from(error: EgressError) -> Self {
+        Self::EgressAuthority(error)
     }
 }
 
@@ -345,6 +380,9 @@ pub fn parse_execution_plan_for_execution(input: &[u8]) -> Result<ExecutionPlan,
     {
         return Err(PlanError::ExecutionObsolete);
     }
+    if parse_egress_execution_plan(input).is_ok() {
+        return Err(PlanError::UnsupportedEgress);
+    }
     match parse_execution_plan_contract_v2(input)? {
         ParsedExecutionPlan::Deny(plan) => Ok(*plan),
         ParsedExecutionPlan::Service(_) => Err(PlanError::UnsupportedNetwork),
@@ -360,6 +398,93 @@ pub fn parse_service_execution_plan(input: &[u8]) -> Result<ServiceExecutionPlan
         ParsedExecutionPlan::Service(plan) => Ok(*plan),
         ParsedExecutionPlan::Deny(_) => Err(PlanError::UnsupportedNetwork),
     }
+}
+
+/// Parses a proposed version 3 egress plan without enabling execution.
+///
+/// The production execution parser rejects version 3 until the release gate
+/// admits the launcher, proxy, receipt, and independent verifier.
+pub fn parse_egress_execution_plan(input: &[u8]) -> Result<EgressExecutionPlan, PlanError> {
+    let mut root = cbor_map(wire_v2::decode(input).map_err(|_| PlanError::MalformedCbor)?)?;
+    if cbor_text(take(&mut root, "schema")?)? != PLAN_SCHEMA_V3 {
+        return Err(PlanError::UnsupportedVersion);
+    }
+    let id = PlanId::new(cbor_text(take(&mut root, "id")?)?)?;
+    let mut command = cbor_map(take(&mut root, "command")?)?;
+    let executable = AuthorityPath::new(cbor_text(take(&mut command, "executable")?)?)?;
+    let working_directory =
+        AuthorityPath::new(cbor_text(take(&mut command, "working_directory")?)?)?;
+    let arguments = cbor_text_array(take(&mut command, "arguments")?)?
+        .into_iter()
+        .map(CommandArgument::new)
+        .collect::<Result<Vec<_>, _>>()?;
+    require_empty(command)?;
+
+    let mut authority = cbor_map(take(&mut root, "authority")?)?;
+    let network_value = take(&mut authority, "network")?;
+    let environment = cbor_text_array(take(&mut authority, "environment")?)?
+        .into_iter()
+        .map(EnvironmentName::new)
+        .collect::<Result<Vec<_>, _>>()?;
+    let read = cbor_text_array(take(&mut authority, "read")?)?;
+    let runtime_read = cbor_text_array(take(&mut authority, "runtime_read")?)?;
+    let write = cbor_text_array(take(&mut authority, "write")?)?;
+    let mut execute = cbor_text_array(take(&mut authority, "execute")?)?;
+    require_empty(authority)?;
+    if execute.is_empty() || execute.len() > 64 {
+        return Err(PlanError::ExecutableAuthorityCount);
+    }
+    execute.sort();
+    execute.dedup();
+    if write.len() != 1 {
+        return Err(PlanError::OutputRootAuthorityCount);
+    }
+    let child_environment = environment
+        .iter()
+        .map(|name| name.as_str().to_owned())
+        .collect::<Vec<_>>();
+    let egress = parse_egress_authority(network_value, &child_environment)?;
+
+    let mut limits = cbor_map(take(&mut root, "limits")?)?;
+    let resource_limits = ResourceLimits::new_v2(
+        ProcessLimit::new(cbor_u32(take(&mut limits, "processes")?)?)?,
+        WallTimeLimit::from_milliseconds(cbor_u64(take(&mut limits, "wall_time_ms")?)?)?,
+        OutputByteLimit::new(cbor_u64(take(&mut limits, "stdout_bytes")?)?),
+        OutputByteLimit::new(cbor_u64(take(&mut limits, "stderr_bytes")?)?),
+        MemoryByteLimit::new(cbor_u64(take(&mut limits, "memory_bytes")?)?)?,
+        SwapByteLimit::new(cbor_u64(take(&mut limits, "swap_bytes")?)?)?,
+    );
+    require_empty(limits)?;
+    require_empty(root)?;
+
+    let mut paths = Vec::new();
+    append_paths(&mut paths, read, FileAccess::Read, PathRole::ProjectInput)?;
+    append_runtime_library_paths(&mut paths, runtime_read)?;
+    append_paths(&mut paths, write, FileAccess::Write, PathRole::OutputRoot)?;
+    append_paths(
+        &mut paths,
+        execute,
+        FileAccess::Execute,
+        PathRole::RuntimeExecutable,
+    )?;
+    if !paths
+        .iter()
+        .any(|entry| entry.access() == FileAccess::Execute && entry.path() == &executable)
+    {
+        return Err(PlanError::ExecutableAuthorityMissing);
+    }
+    Ok(EgressExecutionPlan {
+        base: ExecutionPlan {
+            id,
+            command: ExecutionCommand {
+                executable,
+                arguments,
+                working_directory,
+            },
+            authority: AuthorityPlan::new(paths, environment, resource_limits),
+        },
+        egress,
+    })
 }
 
 fn parse_execution_plan_contract_v2(input: &[u8]) -> Result<ParsedExecutionPlan, PlanError> {
@@ -506,6 +631,161 @@ fn cbor_bytes(value: CborValue) -> Result<Vec<u8>, PlanError> {
         CborValue::Bytes(value) => Ok(value),
         _ => Err(PlanError::InvalidSchema),
     }
+}
+
+fn parse_egress_authority(
+    value: CborValue,
+    child_environment: &[String],
+) -> Result<EgressAuthority, PlanError> {
+    let mut network = cbor_map(value)?;
+    if cbor_text(take(&mut network, "mode")?)? != "declared-egress" {
+        return Err(PlanError::UnsupportedNetwork);
+    }
+    let endpoints = match take(&mut network, "endpoints")? {
+        CborValue::Array(values) => values
+            .into_iter()
+            .map(parse_egress_endpoint)
+            .collect::<Result<Vec<_>, _>>()?,
+        _ => return Err(PlanError::InvalidSchema),
+    };
+    let resolver = parse_egress_resolver(take(&mut network, "resolver")?)?;
+    let mut limits = cbor_map(take(&mut network, "limits")?)?;
+    let egress_limits = EgressLimits {
+        connections: cbor_u16(take(&mut limits, "connections")?)?,
+        concurrent_connections: cbor_u16(take(&mut limits, "concurrent_connections")?)?,
+        attempts_per_connection: u8::try_from(cbor_u64(take(
+            &mut limits,
+            "attempts_per_connection",
+        )?)?)
+        .map_err(|_| PlanError::EgressAuthority(EgressError::LimitRange))?,
+        resolutions: cbor_u16(take(&mut limits, "resolutions")?)?,
+        dns_messages: cbor_u16(take(&mut limits, "dns_messages")?)?,
+        client_to_remote_bytes: cbor_u64(take(&mut limits, "client_to_remote_bytes")?)?,
+        remote_to_client_bytes: cbor_u64(take(&mut limits, "remote_to_client_bytes")?)?,
+        connection_idle_ms: cbor_u32(take(&mut limits, "connection_idle_ms")?)?,
+    };
+    require_empty(limits)?;
+    let proxy_executable =
+        NetworkSupportPath::new(cbor_text(take(&mut network, "proxy_executable")?)?)?;
+    let proxy_runtime_read = cbor_text_array(take(&mut network, "proxy_runtime_read")?)?
+        .into_iter()
+        .map(NetworkSupportPath::new)
+        .collect::<Result<Vec<_>, _>>()?;
+    let proxy_environment = cbor_text_array(take(&mut network, "proxy_environment")?)?
+        .into_iter()
+        .map(|name| match name.as_str() {
+            "ALL_PROXY" => Ok(ProxyVariable::AllProxy),
+            "HTTP_PROXY" => Ok(ProxyVariable::HttpProxy),
+            "HTTPS_PROXY" => Ok(ProxyVariable::HttpsProxy),
+            "all_proxy" => Ok(ProxyVariable::AllProxyLower),
+            "http_proxy" => Ok(ProxyVariable::HttpProxyLower),
+            "https_proxy" => Ok(ProxyVariable::HttpsProxyLower),
+            _ => Err(PlanError::EgressAuthority(
+                EgressError::ProxyEnvironmentInvalid,
+            )),
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    require_empty(network)?;
+    EgressAuthority::new(
+        endpoints,
+        resolver,
+        egress_limits,
+        proxy_executable,
+        proxy_runtime_read,
+        proxy_environment,
+        child_environment,
+    )
+    .map_err(Into::into)
+}
+
+fn parse_egress_endpoint(value: CborValue) -> Result<EgressEndpoint, PlanError> {
+    let mut endpoint = cbor_map(value)?;
+    let mut destination = cbor_map(take(&mut endpoint, "destination")?)?;
+    let kind = cbor_text(take(&mut destination, "kind")?)?;
+    let destination = match kind.as_str() {
+        "dns-name" => {
+            let name = EgressName::new(cbor_text(take(&mut destination, "name")?)?)?;
+            let scope = match cbor_text(take(&mut destination, "address_scope")?)?.as_str() {
+                "global" => AddressScope::Global,
+                "global-or-private" => AddressScope::GlobalOrPrivate,
+                _ => return Err(PlanError::InvalidSchema),
+            };
+            require_empty(destination)?;
+            EgressDestination::DnsName { name, scope }
+        }
+        "ipv4" => {
+            let bytes = cbor_bytes(take(&mut destination, "bytes")?)?
+                .try_into()
+                .map_err(|_| PlanError::InvalidSchema)?;
+            require_empty(destination)?;
+            EgressDestination::Ipv4(bytes)
+        }
+        "ipv6" => {
+            let bytes = cbor_bytes(take(&mut destination, "bytes")?)?
+                .try_into()
+                .map_err(|_| PlanError::InvalidSchema)?;
+            require_empty(destination)?;
+            EgressDestination::Ipv6(bytes)
+        }
+        _ => return Err(PlanError::InvalidSchema),
+    };
+    let port = TcpPort::new(cbor_u16(take(&mut endpoint, "port")?)?)?;
+    if cbor_text(take(&mut endpoint, "protocol")?)? != "tcp" {
+        return Err(PlanError::InvalidSchema);
+    }
+    let tls_sni = match take(&mut endpoint, "tls_sni")? {
+        CborValue::Text(mode) if mode == "not-inspected" => SniBinding::NotInspected,
+        value => {
+            let mut binding = cbor_map(value)?;
+            if cbor_text(take(&mut binding, "mode")?)? != "required" {
+                return Err(PlanError::InvalidSchema);
+            }
+            let name = EgressName::new(cbor_text(take(&mut binding, "name")?)?)?;
+            require_empty(binding)?;
+            SniBinding::Required(name)
+        }
+    };
+    require_empty(endpoint)?;
+    Ok(EgressEndpoint {
+        destination,
+        port,
+        tls_sni,
+    })
+}
+
+fn parse_egress_resolver(value: CborValue) -> Result<ResolutionPolicy, PlanError> {
+    let mut resolver = cbor_map(value)?;
+    let mut resolver_address = cbor_map(take(&mut resolver, "address")?)?;
+    let family = cbor_text(take(&mut resolver_address, "family")?)?;
+    let bytes = cbor_bytes(take(&mut resolver_address, "bytes")?)?;
+    require_empty(resolver_address)?;
+    let address = match family.as_str() {
+        "ipv4" => ResolverAddress::Ipv4(bytes.try_into().map_err(|_| PlanError::InvalidSchema)?),
+        "ipv6" => ResolverAddress::Ipv6(bytes.try_into().map_err(|_| PlanError::InvalidSchema)?),
+        _ => return Err(PlanError::InvalidSchema),
+    };
+    let port = TcpPort::new(cbor_u16(take(&mut resolver, "port")?)?)?;
+    let configuration = NetworkSupportPath::new(cbor_text(take(&mut resolver, "configuration")?)?)?;
+    let maximum_cname_depth = cbor_u16(take(&mut resolver, "maximum_cname_depth")?)?;
+    let maximum_answer_count = cbor_u16(take(&mut resolver, "maximum_answer_count")?)?;
+    let maximum_response_bytes = cbor_u64(take(&mut resolver, "maximum_response_bytes")?)?;
+    let resolution_deadline_ms = cbor_u64(take(&mut resolver, "resolution_deadline_ms")?)?;
+    let attempt_deadline_ms = cbor_u64(take(&mut resolver, "attempt_deadline_ms")?)?;
+    if cbor_text(take(&mut resolver, "address_order")?)? != "ipv4-then-ipv6-lexicographic" {
+        return Err(PlanError::InvalidSchema);
+    }
+    require_empty(resolver)?;
+    ResolutionPolicy::new(
+        ResolverEndpoint::new(address, port),
+        configuration,
+        maximum_cname_depth,
+        maximum_answer_count,
+        maximum_response_bytes,
+        resolution_deadline_ms,
+        attempt_deadline_ms,
+        AddressOrder::Ipv4ThenIpv6Lexicographic,
+    )
+    .map_err(Into::into)
 }
 
 fn parse_network_authority(
@@ -792,7 +1072,8 @@ mod tests {
 
     fn decode_hex(input: &str) -> Vec<u8> {
         input
-            .trim()
+            .split_whitespace()
+            .collect::<String>()
             .as_bytes()
             .chunks_exact(2)
             .map(|pair| {
@@ -800,6 +1081,58 @@ mod tests {
                 u8::from_str_radix(text, 16).expect("fixture is hexadecimal")
             })
             .collect()
+    }
+
+    fn egress_plan_value() -> CborValue {
+        let bytes = decode_hex(include_str!(
+            "../../../schemas/vectors/v3/execution-plan-egress.cbor.hex"
+        ));
+        wire_v2::decode(&bytes).expect("golden version 3 plan is deterministic CBOR")
+    }
+
+    #[test]
+    fn proposed_egress_plan_is_closed_and_not_executable() {
+        let bytes = wire_v2::encode(&egress_plan_value()).unwrap();
+        let plan = parse_egress_execution_plan(&bytes).unwrap();
+        assert_eq!(plan.base.id().as_str(), "golden-egress-v3");
+        assert_eq!(plan.egress.endpoints().len(), 1);
+        assert_eq!(
+            parse_execution_plan_for_execution(&bytes),
+            Err(PlanError::UnsupportedEgress)
+        );
+
+        let mut value = egress_plan_value();
+        let CborValue::Map(root) = &mut value else {
+            panic!("golden plan is a map")
+        };
+        root.push(("extra".to_owned(), CborValue::Unsigned(1)));
+        assert_eq!(
+            parse_egress_execution_plan(&wire_v2::encode(&value).unwrap()),
+            Err(PlanError::UnknownField)
+        );
+
+        let mut value = egress_plan_value();
+        let CborValue::Map(root) = &mut value else {
+            panic!("golden plan is a map")
+        };
+        let CborValue::Map(authority) =
+            &mut root.iter_mut().find(|(k, _)| k == "authority").unwrap().1
+        else {
+            panic!("authority is a map")
+        };
+        let CborValue::Map(network) = &mut authority
+            .iter_mut()
+            .find(|(k, _)| k == "network")
+            .unwrap()
+            .1
+        else {
+            panic!("network is a map")
+        };
+        network.push(("extra".to_owned(), CborValue::Unsigned(1)));
+        assert_eq!(
+            parse_egress_execution_plan(&wire_v2::encode(&value).unwrap()),
+            Err(PlanError::UnknownField)
+        );
     }
 
     fn value_map<const N: usize>(entries: [(&str, CborValue); N]) -> CborValue {

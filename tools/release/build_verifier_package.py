@@ -28,6 +28,7 @@ PREFLIGHT_SCHEMA = "proofbound-runtime-package-preflight/1"
 SUPPORTED_RECEIPT_SCHEMAS = [
     "proofbound-runtime-receipt/1",
     "proofbound-runtime-execution-receipt/2",
+    "proofbound-runtime-execution-receipt/3",
 ]
 CRATE = Path("crates/proofbound-runtime-verify")
 CRATE_REPOSITORY_FILES = (
@@ -40,6 +41,7 @@ CRATE_REPOSITORY_FILES = (
     "src/decode.rs",
     "src/decode_v2.rs",
     "src/derive.rs",
+    "src/egress_v3.rs",
     "src/error.rs",
     "src/identity.rs",
     "src/lib.rs",
@@ -56,6 +58,7 @@ PACKAGE_PAYLOAD_FILES = (
     "src/decode.rs",
     "src/decode_v2.rs",
     "src/derive.rs",
+    "src/egress_v3.rs",
     "src/error.rs",
     "src/identity.rs",
     "src/lib.rs",

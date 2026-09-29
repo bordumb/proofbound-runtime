@@ -11,8 +11,11 @@ use std::path::Path;
 
 use serde_json::{Map, Value};
 
+pub mod v3;
+
 const PLAN_SCHEMA: &str = "proofbound-runtime-plan/2";
 const RESULT_SCHEMA: &str = "proofbound-runtime-run-result/2";
+const RESULT_SCHEMA_V3: &str = "proofbound-runtime-run-result/3";
 const RESOURCE_QUANTUM: u64 = 65_536;
 const MAX_RESOURCE_BYTES: u64 = 1_099_511_627_776;
 
@@ -204,13 +207,22 @@ impl RunResultProjection {
     /// Decodes one closed result object. The JSON bytes are display/control
     /// data and are never returned as receipt verification input.
     pub fn from_json(input: &[u8]) -> Result<Self, SdkError> {
+        Self::from_json_schema(input, RESULT_SCHEMA)
+    }
+
+    /// Decodes the closed version 3 result projection from `pbr run`.
+    pub fn from_json_v3(input: &[u8]) -> Result<Self, SdkError> {
+        Self::from_json_schema(input, RESULT_SCHEMA_V3)
+    }
+
+    fn from_json_schema(input: &[u8], expected_schema: &str) -> Result<Self, SdkError> {
         let value: Value = serde_json::from_slice(input).map_err(|_| SdkError::ResultMalformed)?;
         let mut root = object(value)?;
         require_keys(
             &root,
             &["commitment", "execution_id", "outcome", "receipt", "schema"],
         )?;
-        if text(take(&mut root, "schema")?)? != RESULT_SCHEMA {
+        if text(take(&mut root, "schema")?)? != expected_schema {
             return Err(SdkError::ResultSchema);
         }
         let receipt = text(take(&mut root, "receipt")?)?.to_owned();

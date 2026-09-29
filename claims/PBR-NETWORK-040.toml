@@ -1,0 +1,26 @@
+schema = "proofbound-claim/1"
+id = "PBR-NETWORK-040"
+title = "Declared-egress authority is closed, bounded, and never amplified"
+statement = "The version 3 plan parser accepts only the closed declared-egress authority with 1 to 256 canonical TCP endpoints, bounded names, addresses, SNI bindings, address scopes, resolver fields, limits, proxy identities, and proxy environment names; normalization, the subset relation, and policy compilation preserve every endpoint, limit, and identity exactly, never compile a name into an address rule, and never produce authority absent from the validated plan."
+public_language = "Registered at Tier 0 only. A proposed version 3 parser, typed authority, normalizer, subset relation, and pure policy compiler exist with initial vectors and tests. They are not independently admitted evidence. The production execution parser rejects version 3 plans until every Specification 0017 wave is admitted."
+subject = "rust:proofbound_runtime_core::{parse_egress_execution_plan,EgressAuthority::new,EgressAuthority::is_no_more_permissive_than,compile_egress_policy}"
+profile = "ledger"
+tier = 0
+evidence = []
+assumptions = []
+open_obligations = [
+  "Complete the closed version 3 schema and golden-vector corpus, including positive egress observations and current integration.",
+  "Add exhaustive Rust property tests for every validation rule and bound, a Kani non-amplification harness over a bounded endpoint catalog, a Lean theorem, and a Charon and Aeneas refinement of the selected functions.",
+  "Obtain exact-source independent review and hosted evidence before elevating this claim above Tier 0.",
+]
+out_of_scope = [
+  "Any claim that a declared-egress plan can execute or that a proxy, namespace, or child boundary exists.",
+  "Correctness of DNS, resolvers, remote services, the Linux kernel, or the child's TLS stack.",
+  "Wildcard names, inbound listening, UDP, QUIC, plaintext proxy forwarding, and application-protocol semantics.",
+]
+source_roots = [
+  "claims/PBR-NETWORK-040.toml",
+  "crates/proofbound-runtime-core/src/egress.rs",
+  "crates/proofbound-runtime-core/src/plan.rs",
+  "docs/specs/0017_declared_network_egress.md",
+]

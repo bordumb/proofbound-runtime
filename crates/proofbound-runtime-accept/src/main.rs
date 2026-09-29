@@ -126,6 +126,16 @@ fn run_inner(args: Vec<OsString>) -> Result<Outcome, CliError> {
     let execution_verifier_path = args.runtime_bundle.join("pbr-verify");
     let execution_verifier = read_executable(&execution_verifier_path)?;
     let composer = read_executable(&args.runtime_bundle.join("pbr-compose"))?;
+    let diagnose_path = args.runtime_bundle.join("pbr-diagnose");
+    let diagnose = diagnose_path
+        .exists()
+        .then(|| read_executable(&diagnose_path))
+        .transpose()?;
+    let proxy_path = args.runtime_bundle.join("pbr-egress-proxy");
+    let proxy = proxy_path
+        .exists()
+        .then(|| read_executable(&proxy_path))
+        .transpose()?;
     let acceptor_path =
         env::current_exe().map_err(|_| CliError::new("acceptance.input.read-failed"))?;
     let acceptor = read_executable(&acceptor_path)?;
@@ -163,6 +173,8 @@ fn run_inner(args: Vec<OsString>) -> Result<Outcome, CliError> {
         launcher: &launcher,
         execution_verifier: &execution_verifier,
         composer: &composer,
+        diagnose: diagnose.as_deref(),
+        egress_proxy: proxy.as_deref(),
         acceptor: &acceptor,
         execution_receipt: &execution_receipt,
         execution_verification: &execution_verification.stdout,
@@ -233,6 +245,8 @@ struct RawInputs<'a> {
     launcher: &'a [u8],
     execution_verifier: &'a [u8],
     composer: &'a [u8],
+    diagnose: Option<&'a [u8]>,
+    egress_proxy: Option<&'a [u8]>,
     acceptor: &'a [u8],
     execution_receipt: &'a [u8],
     execution_verification: &'a [u8],
@@ -279,6 +293,10 @@ fn composition_inputs<'a>(raw: &'a RawInputs<'a>, args: &'a Args) -> Composition
         launcher: named("pbr-native-launcher", raw.launcher),
         execution_verifier: named("pbr-verify", raw.execution_verifier),
         composer: named("pbr-compose", raw.composer),
+        diagnose: raw.diagnose.map(|bytes| named("pbr-diagnose", bytes)),
+        egress_proxy: raw
+            .egress_proxy
+            .map(|bytes| named("pbr-egress-proxy", bytes)),
         execution_receipt: named("execution-receipt.cbor", raw.execution_receipt),
         execution_verification: named("execution-verification.json", raw.execution_verification),
         expected_execution_commitment: &args.execution_commitment,
@@ -458,7 +476,7 @@ fn require_bundle_inventory(path: &Path) -> Result<(), CliError> {
                 })
         })
         .collect::<Result<BTreeSet<_>, _>>()?;
-    let expected = [
+    let mut expected = [
         "RELEASE-MANIFEST.json",
         "pbr",
         "pbr-compose",
@@ -467,8 +485,12 @@ fn require_bundle_inventory(path: &Path) -> Result<(), CliError> {
     ]
     .into_iter()
     .map(str::to_owned)
-    .collect();
-    if actual != expected {
+    .collect::<BTreeSet<_>>();
+    let old = expected.clone();
+    expected.insert("pbr-diagnose".to_owned());
+    let with_diagnose = expected.clone();
+    expected.insert("pbr-egress-proxy".to_owned());
+    if actual != old && actual != with_diagnose && actual != expected {
         return Err(CliError::new("acceptance.bundle.role-mismatch"));
     }
     Ok(())

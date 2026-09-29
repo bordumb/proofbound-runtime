@@ -24,6 +24,7 @@ SCHEMA = "proofbound-runtime-verifier-package-manifest/1"
 SUPPORTED_RECEIPT_SCHEMAS = [
     "proofbound-runtime-receipt/1",
     "proofbound-runtime-execution-receipt/2",
+    "proofbound-runtime-execution-receipt/3",
 ]
 MANIFEST_KEYS = {
     "artifacts",
@@ -49,6 +50,7 @@ EXPECTED_CDDL = r"""verifier-package-manifest = {
   "supported_receipt_schemas": [
     "proofbound-runtime-receipt/1",
     "proofbound-runtime-execution-receipt/2",
+    "proofbound-runtime-execution-receipt/3",
   ],
   "artifacts": [verifier-package-artifact],
 }

@@ -60,9 +60,14 @@ class WireTransitionTests(unittest.TestCase):
         )
 
     def test_every_version_two_wire_object_has_schema_and_golden_pair(self) -> None:
+        version_two_schemas = {
+            path.stem.removesuffix("-v2") for path in SCHEMA_ROOT.glob("*-v2.cddl")
+        }
+        # Specification 0017 registers proposed v2 acceptance and integration
+        # schemas while the current v2 wire inventory remains unchanged.
         self.assertEqual(
-            {path.stem.removesuffix("-v2") for path in SCHEMA_ROOT.glob("*-v2.cddl")},
-            set(VERSION_TWO_OBJECTS),
+            version_two_schemas,
+            set(VERSION_TWO_OBJECTS) | {"acceptance-policy", "current-integration"},
         )
         all_objects = set(VERSION_TWO_OBJECTS) | set(NEW_CBOR_OBJECTS)
         for name, version in NEW_CBOR_OBJECTS.items():

@@ -235,6 +235,7 @@ diagnostic-observer = []
 proofbound-runtime-connector.workspace = true
 proofbound-runtime-core.workspace = true
 sha2.workspace = true
+serde_json.workspace = true
 
 [target.'cfg(target_os = "linux")'.dependencies]
 libc.workspace = true
@@ -248,7 +249,7 @@ EXPECTED_DIAGNOSE_LIB_SHA256 = (
     "f7c7f460fe810dab2bdde0d55a0cfb3a468dbfc4f7465c8907e60bb5e97c68de"
 )
 EXPECTED_LINUX_LIB_SHA256 = (
-    "8eddcd39455211a892d3e7647dd806d41db1713d03e83296f6ede40e24c5da5f"
+    "f26a75373ccd03b17e0df95112187ab2853e1e6eae9b9e4da9da0a1b63e59f9c"
 )
 
 

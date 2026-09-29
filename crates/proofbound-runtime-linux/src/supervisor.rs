@@ -442,7 +442,21 @@ impl LauncherBootstrap {
 
 /// Parses the closed hidden-launcher command-line bootstrap.
 pub fn parse_launcher_bootstrap(args: &[String]) -> Result<LauncherBootstrap, LauncherError> {
-    if args.len() != 8 || args[0] != "__proofbound_launcher_v1" {
+    parse_launcher_bootstrap_with_mode(args, "__proofbound_launcher_v1")
+}
+
+/// Parses the separate, closed egress launcher entry mode.
+pub fn parse_egress_launcher_bootstrap(
+    args: &[String],
+) -> Result<LauncherBootstrap, LauncherError> {
+    parse_launcher_bootstrap_with_mode(args, "__proofbound_egress_launcher_v1")
+}
+
+fn parse_launcher_bootstrap_with_mode(
+    args: &[String],
+    mode: &str,
+) -> Result<LauncherBootstrap, LauncherError> {
+    if args.len() != 8 || args[0] != mode {
         return Err(LauncherError::Malformed);
     }
     let channel_descriptor = args[1]
@@ -614,7 +628,10 @@ fn supervise_lifecycle(
 }
 
 #[cfg(target_os = "linux")]
-fn wait_for_pause(process_id: u32, deadline: std::time::Instant) -> Result<(), SupervisorError> {
+pub(crate) fn wait_for_pause(
+    process_id: u32,
+    deadline: std::time::Instant,
+) -> Result<(), SupervisorError> {
     loop {
         if crate::sys::process_is_stopped(process_id)
             .map_err(|_| SupervisorError::PauseNotObserved)?
@@ -629,7 +646,7 @@ fn wait_for_pause(process_id: u32, deadline: std::time::Instant) -> Result<(), S
 }
 
 #[cfg(target_os = "linux")]
-fn monitor_process(
+pub(crate) fn monitor_process(
     child: &mut std::process::Child,
     deadline: std::time::Instant,
 ) -> Result<ExecutionOutcome, SupervisorError> {
@@ -666,7 +683,7 @@ fn receive_late_failure(
 }
 
 #[cfg(any(test, target_os = "linux"))]
-fn classify_process_result(
+pub(crate) fn classify_process_result(
     exit_code: Option<i32>,
     signal: Option<u32>,
     timed_out: bool,
@@ -688,7 +705,7 @@ fn classify_process_result(
 }
 
 #[cfg(target_os = "linux")]
-fn spawn_capture<R>(
+pub(crate) fn spawn_capture<R>(
     reader: R,
     limit: OutputByteLimit,
 ) -> io::Result<std::thread::JoinHandle<io::Result<CapturedStream>>>
@@ -701,7 +718,7 @@ where
 }
 
 #[cfg(target_os = "linux")]
-fn join_capture(
+pub(crate) fn join_capture(
     handle: std::thread::JoinHandle<io::Result<CapturedStream>>,
 ) -> Result<CapturedStream, SupervisorError> {
     handle

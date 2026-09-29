@@ -1,0 +1,31 @@
+schema = "proofbound-claim/1"
+id = "PBR-NETWORK-043"
+title = "The child has no network path except the transferred egress listener"
+statement = "For a supported declared-egress execution, the launcher enters a new user namespace with a non-root identity map and a new network namespace with only loopback and loopback routes, transfers its one 127.0.0.1:3128 listener to the supervisor before boundary installation, and installs the egress-child seccomp filter and Landlock network, pathname Unix-socket, and scope rules before child release, so that the child and its descendants cannot reach any network destination, host Unix socket, or host process except through connections accepted by the identified egress proxy on that listener."
+public_language = "Registered at Tier 0 only. Specification 0017 defines the namespace setup, listener transfer, child filter, Landlock rules, and bypass corpus. No launcher implementation or native evidence exists yet. Tests are never proofs; the planned native corpus is bounded enforcement evidence."
+subject = "rust:proofbound_runtime_linux::egress_namespace::{enter_egress_namespace,transfer_egress_listener,install_egress_child_boundary}"
+profile = "ledger"
+tier = 0
+evidence = []
+assumptions = [
+  "PBR-HOST-AX-002",
+  "PBR-LINUX-AX-001",
+  "PBR-NAMESPACE-AX-032",
+]
+open_obligations = [
+  "Implement the launcher namespace profile, namespace-ready and proxy-ready messages, and installed acknowledgement binding.",
+  "Run the complete Specification 0017 section 9.3 bypass corpus on x86_64 and aarch64 release artifacts.",
+  "Revise the threat model with the declared-egress section at the admitting release.",
+]
+out_of_scope = [
+  "Kernel defects in user or network namespaces, Landlock, or seccomp.",
+  "Blocked direct attempts, which the proxy cannot observe or record.",
+  "Per-process attribution of connections among descendants.",
+]
+source_roots = [
+  "assumptions/PBR-HOST-AX-002.toml",
+  "assumptions/PBR-LINUX-AX-001.toml",
+  "assumptions/PBR-NAMESPACE-AX-032.toml",
+  "claims/PBR-NETWORK-043.toml",
+  "docs/specs/0017_declared_network_egress.md",
+]

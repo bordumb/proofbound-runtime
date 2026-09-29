@@ -9,7 +9,7 @@ SDK_ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY_ROOT = SDK_ROOT.parents[1]
 sys.path.insert(0, str(SDK_ROOT))
 
-from proofbound_runtime import SdkError, build_plan, parse_run_result, run
+from proofbound_runtime import SdkError, build_plan, build_plan_v3, parse_run_result, parse_run_result_v3, run
 
 
 def golden_plan() -> dict:
@@ -79,6 +79,19 @@ RESULT = b'{"schema":"proofbound-runtime-run-result/2","outcome":{"kind":"exited
 
 
 class PythonSdkTests(unittest.TestCase):
+    def test_v3_golden_and_explicit_result_version(self) -> None:
+        from tools.ci.encode_plan_v3 import wire_value
+        import json
+
+        projection = wire_value(json.loads((REPOSITORY_ROOT / "schemas/vectors/v3/execution-plan-egress.projection.json").read_text()))
+        base = {"id": projection["id"], **projection["command"], **projection["limits"], **projection["authority"]}
+        expected = bytes.fromhex((REPOSITORY_ROOT / "schemas/vectors/v3/execution-plan-egress.cbor.hex").read_text())
+        self.assertEqual(build_plan_v3(**base), expected)
+        result = (REPOSITORY_ROOT / "schemas/vectors/v3/run-result.projection.json").read_bytes()
+        self.assertEqual(parse_run_result_v3(result).outcome_kind, "exited")
+        with self.assertRaises(SdkError):
+            parse_run_result(result)
+
     def test_plan_matches_the_frozen_v2_golden(self) -> None:
         expected = bytes.fromhex(
             (REPOSITORY_ROOT / "schemas/vectors/v2/execution-plan.cbor.hex").read_text()

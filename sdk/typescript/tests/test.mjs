@@ -8,12 +8,33 @@ import { fileURLToPath } from "node:url";
 import {
   SdkError,
   buildPlan,
+  buildPlanV3,
   parseRunResult,
+  parseRunResultV3,
   run,
 } from "../src/index.ts";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const resultText = '{"schema":"proofbound-runtime-run-result/2","outcome":{"kind":"exited","code":0},"receipt":"receipt.cbor","commitment":"hex:0909090909090909090909090909090909090909090909090909090909090909","execution_id":"hex:00000000000040008000000000000000"}';
+
+test("version 3 plan and result match independent vectors", async () => {
+  const projection = JSON.parse(await readFile(path.join(repositoryRoot, "schemas/vectors/v3/execution-plan-egress.projection.json"), "utf8"));
+  const wire = (value) => {
+    if (typeof value === "string" && value.startsWith("hex:")) return Buffer.from(value.slice(4), "hex");
+    if (typeof value === "string" && /^[0-9]+$/.test(value)) return Number(value);
+    if (Array.isArray(value)) return value.map(wire);
+    if (value !== null && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, wire(item)]));
+    return value;
+  };
+  const input = { id: projection.id, ...projection.command,
+    ...Object.fromEntries(Object.entries(projection.limits).map(([key, value]) => [key, Number(value)])),
+    ...wire(projection.authority) };
+  const expected = (await readFile(path.join(repositoryRoot, "schemas/vectors/v3/execution-plan-egress.cbor.hex"), "utf8")).replace(/\s+/g, "");
+  assert.equal(buildPlanV3(input).toString("hex"), expected);
+  const result = await readFile(path.join(repositoryRoot, "schemas/vectors/v3/run-result.projection.json"), "utf8");
+  assert.equal(parseRunResultV3(result).outcome_kind, "exited");
+  assert.throws(() => parseRunResult(result), { code: "sdk.result.schema-unsupported" });
+});
 
 function goldenPlan() {
   return {

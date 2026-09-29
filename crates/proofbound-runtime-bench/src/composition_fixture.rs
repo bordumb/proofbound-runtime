@@ -228,6 +228,8 @@ impl CompositionFixture {
             launcher: named("pbr-native-launcher", &self.launcher),
             execution_verifier: named("pbr-verify", &self.execution_verifier),
             composer: named("pbr-compose", &self.composer),
+            diagnose: None,
+            egress_proxy: None,
             execution_receipt: named("execution-receipt.json", &self.execution_receipt),
             execution_verification: named(
                 "execution-verification.json",

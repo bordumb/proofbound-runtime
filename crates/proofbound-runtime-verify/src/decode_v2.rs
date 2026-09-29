@@ -16,43 +16,103 @@ use crate::{BoundaryState, CaptureState, EligibilityInput, OutcomeState, Structu
 
 const SCHEMA: &str = "proofbound-runtime-execution-receipt/2";
 const POLICY: &str = "proofbound-runtime-linux-policy/2";
+const SCHEMA_V3: &str = "proofbound-runtime-execution-receipt/3";
+const POLICY_V3: &str = "proofbound-runtime-linux-policy/3";
 const MAX_RESOURCE_BYTES: u64 = 1_099_511_627_776;
 const RESOURCE_QUANTUM: u64 = 65_536;
 
 pub(crate) fn decode_v2_receipt(input: &[u8]) -> Result<DecodedReceipt, DecodeError> {
     let root = crate::cbor::decode(input).map_err(|_| DecodeError::MalformedCbor)?;
+    let version_three = match &root {
+        Value::Map(fields) => match text(field(fields, "schema")?)? {
+            SCHEMA => false,
+            SCHEMA_V3 => true,
+            _ => return Err(DecodeError::UnsupportedVersion),
+        },
+        _ => return Err(DecodeError::InvalidSchema),
+    };
     let top = exact_map(
         &root,
-        &[
-            "plan",
-            "schema",
-            "inputs",
-            "policy",
-            "runtime",
-            "streams",
-            "command",
-            "outcome",
-            "outputs",
-            "boundary",
-            "producer",
-            "platform",
-            "resources",
-            "eligibility",
-            "environment",
-            "execution_id",
-            "observations",
-            "product_version",
-            "assumptions",
-            "output_root",
-            "trusted_computing_base",
-        ],
+        if version_three {
+            &[
+                "plan",
+                "schema",
+                "inputs",
+                "policy",
+                "runtime",
+                "network",
+                "streams",
+                "command",
+                "outcome",
+                "outputs",
+                "boundary",
+                "producer",
+                "platform",
+                "resources",
+                "eligibility",
+                "environment",
+                "execution_id",
+                "observations",
+                "product_version",
+                "assumptions",
+                "output_root",
+                "trusted_computing_base",
+            ]
+        } else {
+            &[
+                "plan",
+                "schema",
+                "inputs",
+                "policy",
+                "runtime",
+                "streams",
+                "command",
+                "outcome",
+                "outputs",
+                "boundary",
+                "producer",
+                "platform",
+                "resources",
+                "eligibility",
+                "environment",
+                "execution_id",
+                "observations",
+                "product_version",
+                "assumptions",
+                "output_root",
+                "trusted_computing_base",
+            ]
+        },
     )?;
-    if text(field(top, "schema")?)? != SCHEMA {
-        return Err(DecodeError::UnsupportedVersion);
-    }
 
     let (plan, plan_limits) = parse_plan(field(top, "plan")?)?;
-    let policy = parse_policy(field(top, "policy")?)?;
+    let policy = parse_policy(
+        field(top, "policy")?,
+        if version_three { POLICY_V3 } else { POLICY },
+    )?;
+    let egress_decision = if version_three {
+        let network = field(top, "network")?;
+        let Value::Map(fields) = network else {
+            return Err(DecodeError::InvalidSchema);
+        };
+        match text(field(fields, "mode")?)? {
+            "deny" => {
+                exact_map(network, &["mode"])?;
+                None
+            }
+            "declared-egress" => {
+                let fields = exact_map(network, &["mode", "observation"])?;
+                let digest = decode_hex_digest(&policy.identity.sha256)?;
+                Some(
+                    crate::egress_v3::verify_observation(field(fields, "observation")?, &digest)
+                        .map_err(DecodeError::Egress)?,
+                )
+            }
+            _ => return Err(DecodeError::InvalidSchema),
+        }
+    } else {
+        None
+    };
     let platform = parse_platform(field(top, "platform")?)?;
     let runtime = parse_runtime(field(top, "runtime")?)?;
     let command = parse_command(field(top, "command")?)?;
@@ -68,7 +128,7 @@ pub(crate) fn decode_v2_receipt(input: &[u8]) -> Result<DecodedReceipt, DecodeEr
     let assumptions = parse_text_array(field(top, "assumptions")?)?;
     let trusted_computing_base = parse_tcb(field(top, "trusted_computing_base")?)?;
     let resources = parse_resources(field(top, "resources")?)?;
-    let eligibility = parse_eligibility(field(top, "eligibility")?)?;
+    let eligibility = parse_eligibility(field(top, "eligibility")?, version_three)?;
     let recorded_eligibility = match eligibility.status {
         WireEligibilityStatus::Reusable if eligibility.reasons.is_empty() => {
             RecordedEligibility::Reusable
@@ -93,21 +153,43 @@ pub(crate) fn decode_v2_receipt(input: &[u8]) -> Result<DecodedReceipt, DecodeEr
         resources.swap_events[0] != 0,
         resources.swap_events[1] != 0,
     ];
-    let eligibility_input = EligibilityInput::new_v2(
-        boundary_state,
-        outcome_state,
-        capture_state(streams.stdout.capture),
-        capture_state(streams.stderr.capture),
-        if resources.observations_complete {
-            StructureState::Valid
-        } else {
-            StructureState::Malformed
-        },
-        limit_events,
-    );
+    let structure = if resources.observations_complete {
+        StructureState::Valid
+    } else {
+        StructureState::Malformed
+    };
+    let egress_reasons = egress_decision.as_ref().map_or([false; 5], |value| {
+        [
+            value.authority_rejection,
+            value.sni_denied,
+            value.limit_reached,
+            value.proxy_failed,
+            value.cleanup_incomplete,
+        ]
+    });
+    let eligibility_input = if version_three {
+        EligibilityInput::new_v3(
+            boundary_state,
+            outcome_state,
+            capture_state(streams.stdout.capture),
+            capture_state(streams.stderr.capture),
+            structure,
+            limit_events,
+            egress_reasons,
+        )
+    } else {
+        EligibilityInput::new_v2(
+            boundary_state,
+            outcome_state,
+            capture_state(streams.stdout.capture),
+            capture_state(streams.stderr.capture),
+            structure,
+            limit_events,
+        )
+    };
     let execution_id = uuid_text(bytes_exact::<16>(field(top, "execution_id")?)?);
     let wire = WireReceipt {
-        schema: SCHEMA.to_owned(),
+        schema: if version_three { SCHEMA_V3 } else { SCHEMA }.to_owned(),
         product_version: text(field(top, "product_version")?)?.to_owned(),
         execution_id,
         plan,
@@ -129,14 +211,35 @@ pub(crate) fn decode_v2_receipt(input: &[u8]) -> Result<DecodedReceipt, DecodeEr
         trusted_computing_base,
     };
     let projection = project(&root, &mut Vec::new())?;
-    Ok(DecodedReceipt::from_v2(
+    let base = DecodedReceipt::from_v2(
         projection,
         wire,
         eligibility_input,
         recorded_eligibility,
         resources,
         plan_limits,
-    ))
+    );
+    if version_three {
+        Ok(DecodedReceipt::from_v3(
+            base,
+            egress_decision,
+            eligibility_input,
+        ))
+    } else {
+        Ok(base)
+    }
+}
+
+fn decode_hex_digest(value: &str) -> Result<[u8; 32], DecodeError> {
+    if value.len() != 64 {
+        return Err(DecodeError::InvalidSchema);
+    }
+    let mut output = [0_u8; 32];
+    for (index, part) in value.as_bytes().chunks_exact(2).enumerate() {
+        let text = core::str::from_utf8(part).map_err(|_| DecodeError::InvalidSchema)?;
+        output[index] = u8::from_str_radix(text, 16).map_err(|_| DecodeError::InvalidSchema)?;
+    }
+    Ok(output)
 }
 
 fn parse_plan(value: &Value) -> Result<(WirePlan, WirePlanLimits), DecodeError> {
@@ -184,10 +287,10 @@ fn parse_plan(value: &Value) -> Result<(WirePlan, WirePlanLimits), DecodeError> 
     ))
 }
 
-fn parse_policy(value: &Value) -> Result<WirePolicy, DecodeError> {
+fn parse_policy(value: &Value, expected_version: &str) -> Result<WirePolicy, DecodeError> {
     let map = exact_map(value, &["identity", "model_version"])?;
     let model_version = text(field(map, "model_version")?)?.to_owned();
-    if model_version != POLICY {
+    if model_version != expected_version {
         return Err(DecodeError::InvalidSchema);
     }
     Ok(WirePolicy {
@@ -380,7 +483,7 @@ fn parse_resources(value: &Value) -> Result<WireResources, DecodeError> {
     }
 
     let terminal_value = field(map, "terminal")?;
-    let limit_events = parse_reason_array(field(map, "limit_events")?)?;
+    let limit_events = parse_reason_array(field(map, "limit_events")?, false)?;
     if matches!(terminal_value, Value::Null) {
         return Ok(WireResources {
             processes,
@@ -431,7 +534,7 @@ fn parse_resources(value: &Value) -> Result<WireResources, DecodeError> {
     })
 }
 
-fn parse_eligibility(value: &Value) -> Result<WireEligibility, DecodeError> {
+fn parse_eligibility(value: &Value, version_three: bool) -> Result<WireEligibility, DecodeError> {
     let map = exact_map(value, &["status", "reasons"])?;
     let status = match text(field(map, "status")?)? {
         "reusable" => WireEligibilityStatus::Reusable,
@@ -440,18 +543,18 @@ fn parse_eligibility(value: &Value) -> Result<WireEligibility, DecodeError> {
     };
     Ok(WireEligibility {
         status,
-        reasons: parse_reason_array(field(map, "reasons")?)?,
+        reasons: parse_reason_array(field(map, "reasons")?, version_three)?,
     })
 }
 
-fn parse_reason_array(value: &Value) -> Result<Vec<WireReason>, DecodeError> {
+fn parse_reason_array(value: &Value, version_three: bool) -> Result<Vec<WireReason>, DecodeError> {
     array(value)?
         .iter()
-        .map(|value| reason(text(value)?))
+        .map(|value| reason(text(value)?, version_three))
         .collect()
 }
 
-fn reason(value: &str) -> Result<WireReason, DecodeError> {
+fn reason(value: &str, version_three: bool) -> Result<WireReason, DecodeError> {
     match value {
         "boundary-incomplete" => Ok(WireReason::BoundaryIncomplete),
         "exit-code-nonzero" => Ok(WireReason::ExitCodeNonzero),
@@ -470,6 +573,11 @@ fn reason(value: &str) -> Result<WireReason, DecodeError> {
         "memory-oom-group-kill" => Ok(WireReason::MemoryOomGroupKill),
         "swap-max" => Ok(WireReason::SwapMax),
         "swap-fail" => Ok(WireReason::SwapFail),
+        "egress-request-denied" if version_three => Ok(WireReason::EgressRequestDenied),
+        "egress-sni-denied" if version_three => Ok(WireReason::EgressSniDenied),
+        "egress-limit-reached" if version_three => Ok(WireReason::EgressLimitReached),
+        "egress-proxy-failed" if version_three => Ok(WireReason::EgressProxyFailed),
+        "egress-cleanup-incomplete" if version_three => Ok(WireReason::EgressCleanupIncomplete),
         _ => Err(DecodeError::InvalidSchema),
     }
 }

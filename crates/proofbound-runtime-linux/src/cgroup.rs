@@ -346,7 +346,8 @@ fn parse_resource_snapshot(
     let memory = parse_named_counters(
         memory_events,
         ["low", "high", "max", "oom", "oom_kill", "oom_group_kill"],
-        [],
+        // Kernel 7 adds socket throttling; the v2 receipt has no field for it.
+        ["sock_throttled"],
     )?;
     let swap = parse_named_counters(swap_events, ["max", "fail"], ["high"])?;
     Ok(ResourceSnapshot {
@@ -1296,6 +1297,27 @@ mod tests {
 
         assert_eq!(snapshot.swap_events.max, 2);
         assert_eq!(snapshot.swap_events.fail, 3);
+    }
+
+    #[test]
+    fn memory_observation_accepts_kernel_socket_throttling_without_claiming_it() {
+        let snapshot = parse_resource_snapshot(
+            "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 7\n",
+            "max 0\nfail 0\n",
+            "0\n",
+            "0\n",
+        )
+        .expect("the known socket-throttling counter is parsed");
+        assert!(snapshot.memory_events.is_zero());
+        assert_eq!(
+            parse_resource_snapshot(
+                "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nunknown 7\n",
+                "max 0\nfail 0\n",
+                "0\n",
+                "0\n",
+            ),
+            Err(CgroupError::ObservationInvalid)
+        );
     }
 
     #[test]

@@ -165,7 +165,7 @@ def assert_command_contract(sources):
         '("diagnostic-observer", "pbr-diagnose")' in sources["native_context"]
     )
     assert (
-        "for binary in pbr pbr-native-launcher pbr-verify pbr-diagnose"
+        "for binary in pbr pbr-native-launcher pbr-egress-proxy pbr-verify pbr-diagnose"
         in sources["native_script"]
     )
     assert "--static-scaffold plan-scaffold.json" in sources["native_script"]

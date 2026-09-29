@@ -5,6 +5,7 @@ import ProofboundRuntime.Claims.Binding
 import ProofboundRuntime.Claims.Policy
 import ProofboundRuntime.Claims.Receipt
 import ProofboundRuntime.Claims.ServiceLifecycle
+import ProofboundRuntime.EgressReceipt
 import ProofboundRuntime.Policy
 import ProofboundRuntime.Receipt
 import ProofboundRuntime.ServiceLifecycle

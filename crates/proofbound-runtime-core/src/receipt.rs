@@ -28,6 +28,159 @@ pub const POLICY_MODEL_VERSION: &str = "proofbound-runtime-linux-policy/1";
 /// The compiled-policy model bound into version 2 receipts.
 pub const POLICY_MODEL_VERSION_V2: &str = "proofbound-runtime-linux-policy/2";
 
+/// The compiled-policy model bound into declared-egress receipts.
+pub const POLICY_MODEL_VERSION_V3: &str = "proofbound-runtime-linux-policy/3";
+
+const EXECUTION_RECEIPT_V3_SCHEMA: &str = "proofbound-runtime-execution-receipt/3";
+
+/// Producer-observed egress conditions. The independent verifier rederives
+/// these from the full observation before it accepts recorded eligibility.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct EgressReceiptFlags {
+    pub authority_rejection: bool,
+    pub sni_denied: bool,
+    pub limit_reached: bool,
+    pub proxy_failed: bool,
+    pub cleanup_incomplete: bool,
+}
+
+/// One producer-side version 3 non-reuse reason.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum EgressReceiptReason {
+    RequestDenied,
+    SniDenied,
+    LimitReached,
+    ProxyFailed,
+    CleanupIncomplete,
+}
+
+impl EgressReceiptReason {
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::RequestDenied => "egress-request-denied",
+            Self::SniDenied => "egress-sni-denied",
+            Self::LimitReached => "egress-limit-reached",
+            Self::ProxyFailed => "egress-proxy-failed",
+            Self::CleanupIncomplete => "egress-cleanup-incomplete",
+        }
+    }
+}
+
+impl EgressReceiptFlags {
+    /// Returns the closed version 3 suffix in its normative order.
+    #[must_use]
+    pub const fn ordered_reasons(self) -> [Option<EgressReceiptReason>; 5] {
+        [
+            if self.authority_rejection {
+                Some(EgressReceiptReason::RequestDenied)
+            } else {
+                None
+            },
+            if self.sni_denied {
+                Some(EgressReceiptReason::SniDenied)
+            } else {
+                None
+            },
+            if self.limit_reached {
+                Some(EgressReceiptReason::LimitReached)
+            } else {
+                None
+            },
+            if self.proxy_failed {
+                Some(EgressReceiptReason::ProxyFailed)
+            } else {
+                None
+            },
+            if self.cleanup_incomplete {
+                Some(EgressReceiptReason::CleanupIncomplete)
+            } else {
+                None
+            },
+        ]
+    }
+}
+
+/// Network facts for one version 3 execution receipt.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ReceiptNetworkV3 {
+    Deny,
+    DeclaredEgress {
+        observation_cbor: Vec<u8>,
+        flags: EgressReceiptFlags,
+    },
+}
+
+/// Encodes the supervisor's closed JSON observation projection as deterministic
+/// CBOR. Binary identities and address octets retain their binary wire types.
+pub fn encode_egress_observation_json(value: &serde_json::Value) -> Result<Vec<u8>, ReceiptError> {
+    fn binary(key: &str, value: &serde_json::Value) -> Result<Vec<u8>, ReceiptError> {
+        if let Some(text) = value.as_str() {
+            return Sha256Digest::parse_hex(text)
+                .map(|digest| digest.as_bytes().to_vec())
+                .map_err(|_| ReceiptError::CanonicalEncoding);
+        }
+        let array = value.as_array().ok_or(ReceiptError::CanonicalEncoding)?;
+        array
+            .iter()
+            .map(|item| {
+                item.as_u64()
+                    .and_then(|byte| u8::try_from(byte).ok())
+                    .ok_or(ReceiptError::CanonicalEncoding)
+            })
+            .collect::<Result<Vec<_>, _>>()
+            .and_then(|bytes| {
+                let expected = if key == "address" || key == "bytes" {
+                    &[4, 16][..]
+                } else {
+                    &[32][..]
+                };
+                if expected.contains(&bytes.len()) {
+                    Ok(bytes)
+                } else {
+                    Err(ReceiptError::CanonicalEncoding)
+                }
+            })
+    }
+
+    fn convert(
+        key: &str,
+        value: &serde_json::Value,
+    ) -> Result<crate::wire_v2::Value, ReceiptError> {
+        use crate::wire_v2::Value as Cbor;
+        let digest_key = key == "sha256" || key.ends_with("_sha256") || key == "readiness_binding";
+        if digest_key || ((key == "address" || key == "bytes") && value.is_array()) {
+            return Ok(Cbor::Bytes(binary(key, value)?));
+        }
+        match value {
+            serde_json::Value::Null => Ok(Cbor::Null),
+            serde_json::Value::Bool(value) => Ok(Cbor::Bool(*value)),
+            serde_json::Value::Number(value) => value
+                .as_u64()
+                .map(Cbor::Unsigned)
+                .ok_or(ReceiptError::CanonicalEncoding),
+            serde_json::Value::String(value) => Ok(Cbor::Text(value.clone())),
+            serde_json::Value::Array(values) => values
+                .iter()
+                .map(|value| convert("", value))
+                .collect::<Result<Vec<_>, _>>()
+                .map(Cbor::Array),
+            serde_json::Value::Object(values) => values
+                .iter()
+                .map(|(key, value)| Ok((key.clone(), convert(key, value)?)))
+                .collect::<Result<Vec<_>, ReceiptError>>()
+                .map(Cbor::Map),
+        }
+    }
+
+    let encoded = crate::wire_v2::encode(&convert("", value)?)
+        .map_err(|_| ReceiptError::CanonicalEncoding)?;
+    if encoded.len() > 8 * 1024 * 1024 {
+        return Err(ReceiptError::CanonicalEncoding);
+    }
+    Ok(encoded)
+}
+
 /// The assumptions that every version 1 runtime receipt must inherit.
 pub const REQUIRED_RUNTIME_ASSUMPTIONS: [&str; 3] = [
     "PBR-HOST-AX-002",
@@ -670,6 +823,12 @@ pub enum TrustedComputingBaseRole {
     RuntimeLoaderExecutable,
     /// One or more exact runtime libraries used by the child.
     RuntimeLibrary,
+    /// Exact egress proxy executable.
+    EgressProxyBinary,
+    /// Exact egress proxy runtime closure member.
+    EgressProxyRuntimeLibrary,
+    /// Exact declared resolver configuration.
+    EgressResolverConfiguration,
 }
 
 impl TrustedComputingBaseRole {
@@ -691,6 +850,9 @@ impl TrustedComputingBaseRole {
             Self::RuntimeExecutable => "runtime-executable",
             Self::RuntimeLoaderExecutable => "runtime-loader-executable",
             Self::RuntimeLibrary => "runtime-library",
+            Self::EgressProxyBinary => "egress-proxy-binary",
+            Self::EgressProxyRuntimeLibrary => "egress-proxy-runtime-library",
+            Self::EgressResolverConfiguration => "egress-resolver-configuration",
         }
     }
 }
@@ -912,6 +1074,163 @@ impl ExecutionReceipt {
             trusted_computing_base: canonical_field_bytes(&wire.trusted_computing_base)?,
         };
         encode_binding(construct_and_project_receipt_binding(parts))
+    }
+
+    /// Encodes a version 3 receipt with one closed network observation.
+    /// The verifier separately checks every observation relation and reason.
+    pub fn canonical_v3_bytes(&self, network: &ReceiptNetworkV3) -> Result<Vec<u8>, ReceiptError> {
+        use crate::wire_v2::Value as Cbor;
+
+        if self.parts.resources.is_none() {
+            return Err(ReceiptError::ResourceProfileIncomplete);
+        }
+        let mut parts = canonical_v2_binding_parts(self)?;
+        parts.schema = crate::wire_v2::encode(&Cbor::Text(EXECUTION_RECEIPT_V3_SCHEMA.to_owned()))
+            .map_err(|_| ReceiptError::CanonicalEncoding)?;
+        parts.policy = crate::wire_v2::encode(&Cbor::Map(vec![
+            (
+                "identity".to_owned(),
+                cbor_artifact(&self.parts.policy.identity),
+            ),
+            (
+                "model_version".to_owned(),
+                Cbor::Text(POLICY_MODEL_VERSION_V3.to_owned()),
+            ),
+        ]))
+        .map_err(|_| ReceiptError::CanonicalEncoding)?;
+        let (network_value, flags) = match network {
+            ReceiptNetworkV3::Deny => (
+                Cbor::Map(vec![("mode".to_owned(), Cbor::Text("deny".to_owned()))]),
+                EgressReceiptFlags::default(),
+            ),
+            ReceiptNetworkV3::DeclaredEgress {
+                observation_cbor,
+                flags,
+            } => {
+                for required in ["PBR-NAMESPACE-AX-032", "PBR-EGRESS-RESOLVER-AX-033"] {
+                    if self
+                        .assumptions
+                        .binary_search_by(|value| value.as_str().cmp(required))
+                        .is_err()
+                    {
+                        return Err(ReceiptError::AssumptionMissing);
+                    }
+                }
+                for role in [
+                    TrustedComputingBaseRole::EgressProxyBinary,
+                    TrustedComputingBaseRole::EgressResolverConfiguration,
+                ] {
+                    require_tcb_role(&self.parts.trusted_computing_base, role)?;
+                }
+                let observation = crate::wire_v2::decode(observation_cbor)
+                    .map_err(|_| ReceiptError::CanonicalEncoding)?;
+                if crate::wire_v2::encode(&observation)
+                    .map_err(|_| ReceiptError::CanonicalEncoding)?
+                    != *observation_cbor
+                {
+                    return Err(ReceiptError::CanonicalEncoding);
+                }
+                let Cbor::Map(fields) = &observation else {
+                    return Err(ReceiptError::CanonicalEncoding);
+                };
+                let closure = fields
+                    .iter()
+                    .find(|(key, _)| key == "proxy")
+                    .and_then(|(_, value)| match value {
+                        Cbor::Map(fields) => Some(fields),
+                        _ => None,
+                    })
+                    .and_then(|fields| fields.iter().find(|(key, _)| key == "runtime_closure"))
+                    .and_then(|(_, value)| match value {
+                        Cbor::Array(items) => Some(items),
+                        _ => None,
+                    })
+                    .ok_or(ReceiptError::CanonicalEncoding)?;
+                if !closure.is_empty() {
+                    require_tcb_role(
+                        &self.parts.trusted_computing_base,
+                        TrustedComputingBaseRole::EgressProxyRuntimeLibrary,
+                    )?;
+                }
+                if fields.iter().find(|(key, _)| key == "schema")
+                    != Some(&(
+                        "schema".to_owned(),
+                        Cbor::Text("proofbound-runtime-egress-observation/1".to_owned()),
+                    ))
+                    || fields.iter().find(|(key, _)| key == "policy_sha256")
+                        != Some(&(
+                            "policy_sha256".to_owned(),
+                            Cbor::Bytes(self.parts.policy.identity.digest().as_bytes().to_vec()),
+                        ))
+                {
+                    return Err(ReceiptError::IdentityMismatch(ReceiptIdentityField::Policy));
+                }
+                (
+                    Cbor::Map(vec![
+                        ("mode".to_owned(), Cbor::Text("declared-egress".to_owned())),
+                        ("observation".to_owned(), observation),
+                    ]),
+                    *flags,
+                )
+            }
+        };
+        let mut eligibility = cbor_eligibility(&self.eligibility);
+        let Cbor::Map(fields) = &mut eligibility else {
+            return Err(ReceiptError::CanonicalEncoding);
+        };
+        let Some((_, Cbor::Array(reasons))) = fields.iter_mut().find(|(key, _)| key == "reasons")
+        else {
+            return Err(ReceiptError::CanonicalEncoding);
+        };
+        for reason in flags.ordered_reasons().into_iter().flatten() {
+            reasons.push(Cbor::Text(reason.as_str().to_owned()));
+        }
+        if !reasons.is_empty() {
+            let Some((_, status)) = fields.iter_mut().find(|(key, _)| key == "status") else {
+                return Err(ReceiptError::CanonicalEncoding);
+            };
+            *status = Cbor::Text("non-reusable".to_owned());
+        }
+        parts.eligibility =
+            crate::wire_v2::encode(&eligibility).map_err(|_| ReceiptError::CanonicalEncoding)?;
+        let mut fields = vec![
+            ("assumptions".to_owned(), parts.assumptions),
+            ("boundary".to_owned(), parts.boundary),
+            ("command".to_owned(), parts.command),
+            ("eligibility".to_owned(), parts.eligibility),
+            ("environment".to_owned(), parts.environment),
+            ("execution_id".to_owned(), parts.execution_id),
+            ("inputs".to_owned(), parts.inputs),
+            (
+                "network".to_owned(),
+                crate::wire_v2::encode(&network_value)
+                    .map_err(|_| ReceiptError::CanonicalEncoding)?,
+            ),
+            ("observations".to_owned(), parts.observations),
+            ("outcome".to_owned(), parts.outcome),
+            ("output_root".to_owned(), parts.output_root),
+            ("outputs".to_owned(), parts.outputs),
+            ("plan".to_owned(), parts.plan),
+            ("platform".to_owned(), parts.platform),
+            ("policy".to_owned(), parts.policy),
+            ("producer".to_owned(), parts.producer),
+            ("product_version".to_owned(), parts.product_version),
+            (
+                "resources".to_owned(),
+                parts
+                    .resources
+                    .ok_or(ReceiptError::ResourceProfileIncomplete)?,
+            ),
+            ("runtime".to_owned(), parts.runtime),
+            ("schema".to_owned(), parts.schema),
+            ("streams".to_owned(), parts.streams),
+            (
+                "trusted_computing_base".to_owned(),
+                parts.trusted_computing_base,
+            ),
+        ];
+        fields.sort_unstable_by(|left, right| left.0.cmp(&right.0));
+        crate::wire_v2::encode_bound_map(fields).map_err(|_| ReceiptError::CanonicalEncoding)
     }
 }
 
@@ -2153,6 +2472,210 @@ mod tests {
                 TrustedComputingBaseEntry::new(role, identity).expect("golden TCB entry is valid")
             })
             .collect(),
+        }
+    }
+
+    #[test]
+    fn version_three_deny_receipt_matches_closed_golden_wire() {
+        let receipt = ExecutionReceipt::new(golden_v2_parts()).unwrap();
+        let bytes = receipt.canonical_v3_bytes(&ReceiptNetworkV3::Deny).unwrap();
+        let golden = include_str!("../../../schemas/vectors/v3/execution-receipt.cbor.hex").trim();
+        let actual = bytes
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        assert_eq!(actual, golden);
+    }
+
+    #[test]
+    fn version_three_declared_egress_receipt_binds_full_observation() {
+        use crate::wire_v2::Value as CborValue;
+        let mut parts = golden_v2_parts();
+        let digest = Sha256Digest::parse_hex(
+            "a1f3213efa75646da3c7ad99e04c89b5ae712a22dbfa9c55af33f2c98209ab3c",
+        )
+        .unwrap();
+        let policy = ArtifactIdentity::new(
+            ArtifactRole::CompiledPolicy,
+            digest,
+            1,
+            FileMode::new(0o755).unwrap(),
+        );
+        parts.policy = ReceiptPolicy::new(policy).unwrap();
+        parts.boundary = BoundaryRecord::new(
+            BoundaryInstallation::Installed,
+            parts.execution_id,
+            digest,
+            CgroupIdentity::new(34, 12),
+        );
+        parts.assumptions.extend([
+            "PBR-NAMESPACE-AX-032".to_owned(),
+            "PBR-EGRESS-RESOLVER-AX-033".to_owned(),
+        ]);
+        for (role, identity) in [
+            (
+                TrustedComputingBaseRole::EgressProxyBinary,
+                "1241936d4dd3aad68fe7bfbdfe854b935926bc678fc72377e15166078916227a",
+            ),
+            (
+                TrustedComputingBaseRole::EgressResolverConfiguration,
+                "439c3635079b57a69aff22860369462fb9330c300fa4dbc70426f087192e369d",
+            ),
+        ] {
+            parts
+                .trusted_computing_base
+                .push(TrustedComputingBaseEntry::new(role, identity.to_owned()).unwrap());
+        }
+        let receipt = ExecutionReceipt::new(parts).unwrap();
+        let hex = include_str!("../../../schemas/vectors/v3/egress-observation.cbor.hex").trim();
+        let observation = hex
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| u8::from_str_radix(core::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect::<Vec<_>>();
+        let bytes = receipt
+            .canonical_v3_bytes(&ReceiptNetworkV3::DeclaredEgress {
+                observation_cbor: observation.clone(),
+                flags: EgressReceiptFlags {
+                    authority_rejection: true,
+                    ..EgressReceiptFlags::default()
+                },
+            })
+            .unwrap();
+        let value = crate::wire_v2::decode(&bytes).unwrap();
+        let CborValue::Map(fields) = value else {
+            panic!("receipt is a CBOR map")
+        };
+        assert!(
+            fields
+                .iter()
+                .any(|(name, value)| name == "network" && matches!(value, CborValue::Map(_)))
+        );
+        let golden =
+            include_str!("../../../schemas/vectors/v3/execution-receipt-egress.cbor.hex").trim();
+        assert_eq!(
+            bytes
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>(),
+            golden
+        );
+
+        let CborValue::Map(mut observation_fields) = crate::wire_v2::decode(&observation).unwrap()
+        else {
+            panic!()
+        };
+        observation_fields
+            .iter_mut()
+            .find(|(name, _)| name == "rejections")
+            .unwrap()
+            .1 = CborValue::Array(Vec::new());
+        let CborValue::Map(counters) = &mut observation_fields
+            .iter_mut()
+            .find(|(name, _)| name == "counters")
+            .unwrap()
+            .1
+        else {
+            panic!()
+        };
+        counters
+            .iter_mut()
+            .find(|(name, _)| name == "rejections")
+            .unwrap()
+            .1 = CborValue::Unsigned(0);
+        let CborValue::Map(counts) = &mut counters
+            .iter_mut()
+            .find(|(name, _)| name == "rejection_reason_counts")
+            .unwrap()
+            .1
+        else {
+            panic!()
+        };
+        counts
+            .iter_mut()
+            .find(|(name, _)| name == "endpoint-undeclared")
+            .unwrap()
+            .1 = CborValue::Unsigned(0);
+        let success_observation =
+            crate::wire_v2::encode(&CborValue::Map(observation_fields)).unwrap();
+        let success = receipt
+            .canonical_v3_bytes(&ReceiptNetworkV3::DeclaredEgress {
+                observation_cbor: success_observation,
+                flags: EgressReceiptFlags::default(),
+            })
+            .unwrap();
+        let success_hex = success
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        assert_eq!(
+            success_hex,
+            include_str!("../../../schemas/vectors/v3/execution-receipt-egress-success.cbor.hex")
+                .trim()
+        );
+    }
+
+    #[test]
+    fn egress_observation_projection_preserves_digest_and_address_bytes() {
+        let value = serde_json::json!({
+            "policy_sha256": "0101010101010101010101010101010101010101010101010101010101010101",
+            "listener": {"address": [127, 0, 0, 1]},
+            "destination": {"bytes": [8, 8, 8, 8]},
+        });
+        let bytes = encode_egress_observation_json(&value).unwrap();
+        let decoded = crate::wire_v2::decode(&bytes).unwrap();
+        let crate::wire_v2::Value::Map(fields) = decoded else {
+            panic!()
+        };
+        assert!(fields.iter().any(|(key, value)| key == "policy_sha256"
+            && *value == crate::wire_v2::Value::Bytes(vec![1; 32])));
+        assert!(
+            encode_egress_observation_json(&serde_json::json!({"policy_sha256": "bad"})).is_err()
+        );
+    }
+
+    #[test]
+    fn every_egress_eligibility_combination_agrees_with_the_independent_verifier() {
+        use proofbound_runtime_verify::{
+            BoundaryState, CaptureState, EligibilityDecision, EligibilityInput, OutcomeState,
+            StructureState, derive_eligibility,
+        };
+        for mask in 0_u8..32 {
+            let present = std::array::from_fn::<_, 5, _>(|position| mask & (1 << position) != 0);
+            let flags = EgressReceiptFlags {
+                authority_rejection: present[0],
+                sni_denied: present[1],
+                limit_reached: present[2],
+                proxy_failed: present[3],
+                cleanup_incomplete: present[4],
+            };
+            let input = EligibilityInput::new_v3(
+                BoundaryState::Installed,
+                OutcomeState::Exited { code: 0 },
+                CaptureState::Complete,
+                CaptureState::Complete,
+                StructureState::Valid,
+                [false; 7],
+                present,
+            );
+            let actual = match derive_eligibility(&input) {
+                EligibilityDecision::Reusable => Vec::new(),
+                EligibilityDecision::NonReusable(reasons) => reasons
+                    .as_slice()
+                    .iter()
+                    .map(|reason| reason.as_str())
+                    .collect(),
+            };
+            assert_eq!(
+                flags
+                    .ordered_reasons()
+                    .into_iter()
+                    .flatten()
+                    .map(EgressReceiptReason::as_str)
+                    .collect::<Vec<_>>(),
+                actual,
+                "mask={mask:05b}"
+            );
         }
     }
 

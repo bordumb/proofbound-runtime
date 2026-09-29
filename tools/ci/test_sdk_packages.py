@@ -111,7 +111,7 @@ class SdkPackageTests(unittest.TestCase):
             with tarfile.open(crate, "r:gz") as archive:
                 self.assertEqual(
                     [name.split("/", 1)[1] for name in archive.getnames()],
-                    ["Cargo.lock", "Cargo.toml", "Cargo.toml.orig", "src/lib.rs"],
+                    ["Cargo.lock", "Cargo.toml", "Cargo.toml.orig", "src/lib.rs", "src/v3.rs"],
                 )
 
     def test_rust_sdk_is_independently_packageable(self) -> None:
@@ -137,7 +137,7 @@ class SdkPackageTests(unittest.TestCase):
             capture_output=True,
             text=True,
         )
-        expected = ["Cargo.lock", "Cargo.toml", "Cargo.toml.orig", "src/lib.rs"]
+        expected = ["Cargo.lock", "Cargo.toml", "Cargo.toml.orig", "src/lib.rs", "src/v3.rs"]
         if (ROOT / ".git").exists():
             expected.insert(0, ".cargo_vcs_info.json")
         self.assertEqual(result.stdout.splitlines(), expected)

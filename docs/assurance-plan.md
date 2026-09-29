@@ -48,6 +48,13 @@ status, assumptions, exclusions, and exact evidence identities.
 | `PBR-NETWORK-037` | Tier 1 current receipt contract admitted on exact Runtime main `da52925` | PR 34 and its exact-main replay admitted the current success and failure source contract. Production receipt integration remains open. |
 | `PBR-NETWORK-038` | Tier 1 connector engine admitted on exact Runtime main `da52925` | Independently approved source `b9ad56a` plus approval envelope `2d6cf97` passed exact-head run `35276015624`; exact-main run `35280257983` admitted the isolated engine. Process supervision, launcher binding, native evidence, receipts, and release artifacts remain open. |
 | `PBR-NETWORK-039` | Tier 1 supervised connector-process candidate pending first exact admission | After bounded plan parsing, the candidate establishes one fixed setup deadline, identifies declared artifacts, creates private channels, executes the connector through its retained descriptor, validates complete readiness binding before acceptance, keeps synchronous report and reap waits within fixed phase deadlines, and transfers late reaping to a pre-established worker or aborts fail-closed. Connector confinement, actual loader-object binding, child release, credentials, native evidence, receipts, and release artifacts remain open. |
+| `PBR-NETWORK-040` | Tier 0 registration only; no evidence | Specification 0017 declared-egress authority, normalization, subset, and policy compilation. No implementation exists. |
+| `PBR-NETWORK-041` | Tier 0 registration only; no evidence | Pure tunnel decision over declared endpoints, pinned admissible answers, and SNI binding. No implementation exists. |
+| `PBR-NETWORK-042` | Tier 0 registration only; no evidence | Identified egress proxy process, parsers, confinement, and observation reports. No implementation exists. |
+| `PBR-NETWORK-043` | Tier 0 registration only; no evidence | Loopback-only child namespace, listener transfer, and child seccomp and Landlock egress rules. No implementation exists. |
+| `PBR-NETWORK-044` | Tier 0 registration only; no evidence | Version 3 egress receipt facts and independent derivation. No implementation exists. |
+| `PBR-CLOSURE-045` | Tier 0 registration only; no evidence | Bounded exact executable set with loader closure and non-writable members. No implementation exists. |
+| `PBR-NETWORK-046` | Tier 0 registration only; no evidence | Composition and acceptance of declared-egress receipts. No implementation exists. |
 
 ### Current changed subjects pending exact admission
 
@@ -1200,6 +1207,18 @@ receipts, independent receipt verification, or release-artifact behavior. The
 runtime-closure paths are identified inputs in this wave; native enforcement
 of that closure and actual loader-object binding remain explicit obligations
 before production release.
+
+## Declared-egress Tier 0 registrations
+
+Specification 0017 registers `PBR-NETWORK-040` through `PBR-NETWORK-044`,
+`PBR-CLOSURE-045`, and `PBR-NETWORK-046` at Tier 0 with no evidence units. The
+registrations fix each intended production subject, the new
+`PBR-NAMESPACE-AX-032` and `PBR-EGRESS-RESOLVER-AX-033` assumptions, the
+existing Linux and host premises for the native claims, exclusions, and open
+obligations. They inherit no status from the Specification 0016 network
+claims, the connector process, or the resource claims. The production
+execution parser continues to reject declared-egress plans until every wave in
+Specification 0017 section 11.3 is admitted.
 
 ## Bounded-domain declaration guard
 

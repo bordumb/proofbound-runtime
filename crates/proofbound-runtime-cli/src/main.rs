@@ -22,10 +22,14 @@ const INVALID_INPUT: u8 = 2;
 const UNSUPPORTED_BOUNDARY: u8 = 3;
 
 fn main() -> ExitCode {
+    let args = env::args_os().collect::<Vec<_>>();
+    if args.len() == 2 && args[1] == "__proofbound_egress_doctor_probe_v1" {
+        return ExitCode::from(doctor::run_probe_child());
+    }
     let mut stdout = io::stdout().lock();
     let mut stderr = io::stderr().lock();
     ExitCode::from(run_with(
-        env::args_os(),
+        args,
         probe_capabilities,
         |path| fs::read(path),
         &mut stdout,
@@ -331,7 +335,7 @@ mod tests {
             serde_json::from_slice(&stdout).expect("doctor writes explanation JSON");
 
         assert_eq!(code, UNSUPPORTED_BOUNDARY);
-        assert_eq!(value["schema"], "proofbound-runtime-doctor-explanation/1");
+        assert_eq!(value["schema"], "proofbound-runtime-doctor-explanation/2");
         assert_eq!(value["supported"], false);
         assert!(stderr.is_empty());
     }

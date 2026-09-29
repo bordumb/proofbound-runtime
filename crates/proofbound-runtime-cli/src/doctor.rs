@@ -3,8 +3,36 @@ use std::io;
 use proofbound_runtime_linux::{Capability, CapabilityReport, ProbeError};
 use serde_json::{Value, json};
 
-const REPORT_SCHEMA: &str = "proofbound-runtime-doctor/1";
-const EXPLANATION_SCHEMA: &str = "proofbound-runtime-doctor-explanation/1";
+const REPORT_SCHEMA: &str = "proofbound-runtime-doctor/2";
+const EXPLANATION_SCHEMA: &str = "proofbound-runtime-doctor-explanation/2";
+
+const PROBE_COMMAND: &str = "__proofbound_egress_doctor_probe_v1";
+
+#[cfg(target_os = "linux")]
+pub(crate) fn run_probe_child() -> u8 {
+    use proofbound_runtime_linux::egress_namespace::{
+        EgressNamespaceError, create_egress_namespace,
+    };
+    let result = create_egress_namespace();
+    if let Err(error) = &result {
+        eprintln!("egress namespace probe: {error:?}");
+    }
+    match result {
+        Ok(_) => 0,
+        Err(
+            EgressNamespaceError::Loopback
+            | EgressNamespaceError::InterfaceInventory
+            | EgressNamespaceError::RouteInventory
+            | EgressNamespaceError::Listener,
+        ) => 11,
+        Err(_) => 10,
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
+pub(crate) const fn run_probe_child() -> u8 {
+    10
+}
 
 pub(crate) fn write_report(
     report: &CapabilityReport,
@@ -26,6 +54,7 @@ fn write(
     output: &mut impl io::Write,
 ) -> io::Result<bool> {
     let supported = report.clone().require_supported().is_ok();
+    let (user_namespace, network_namespace, landlock_egress) = egress_capabilities(report, explain);
     let value = json!({
         "schema": if explain { EXPLANATION_SCHEMA } else { REPORT_SCHEMA },
         "supported": supported,
@@ -42,6 +71,9 @@ fn write(
             "landlock": capability(&report.landlock_abi, explain, |abi| {
                 json!({"abi": abi.get()})
             }),
+            "user_namespace": user_namespace,
+            "network_namespace": network_namespace,
+            "landlock_egress": landlock_egress,
             "no_new_privileges": capability(&report.no_new_privileges, explain, |()| {
                 json!({"enabled": true})
             }),
@@ -54,6 +86,7 @@ fn write(
                     "mount_id": cgroup.mount_id(),
                     "directory_inode": cgroup.directory_inode(),
                     "controllers": cgroup.controllers(),
+                    "proxy_sibling_supported": true,
                 })
             }),
         },
@@ -61,6 +94,156 @@ fn write(
     serde_json::to_writer(&mut *output, &value).map_err(io::Error::other)?;
     writeln!(output)?;
     Ok(supported)
+}
+
+fn egress_capabilities(report: &CapabilityReport, explain: bool) -> (Value, Value, Value) {
+    let landlock = match &report.landlock_abi {
+        Capability::Available(abi) if (9..=11).contains(&abi.get()) => {
+            json!({"status": "available", "abi": abi.get()})
+        }
+        _ => egress_unavailable(
+            "host.landlock.abi-below-egress",
+            explain,
+            "Landlock ABI 9 through 11",
+            "use a host with a reviewed Landlock egress ABI",
+        ),
+    };
+    #[cfg(not(target_os = "linux"))]
+    return (
+        egress_unavailable(
+            "host.userns.probe-failed",
+            explain,
+            "an unprivileged user namespace with identity maps",
+            "use supported native Linux",
+        ),
+        egress_unavailable(
+            "host.netns.probe-failed",
+            explain,
+            "a fresh loopback-only network namespace",
+            "use supported native Linux",
+        ),
+        landlock,
+    );
+    #[cfg(target_os = "linux")]
+    {
+        if !matches!(report.operating_system, Capability::Available(())) {
+            return (
+                egress_unavailable(
+                    "host.userns.probe-failed",
+                    explain,
+                    "an unprivileged user namespace with identity maps",
+                    "use supported native Linux",
+                ),
+                egress_unavailable(
+                    "host.netns.probe-failed",
+                    explain,
+                    "a fresh loopback-only network namespace",
+                    "use supported native Linux",
+                ),
+                landlock,
+            );
+        }
+        let user_max = read_sysctl("/proc/sys/user/max_user_namespaces");
+        let user_clone = read_sysctl("/proc/sys/kernel/unprivileged_userns_clone");
+        let net_max = read_sysctl("/proc/sys/user/max_net_namespaces");
+        let disabled_user = user_max == Some(0) || user_clone == Some(0);
+        let disabled_net = net_max == Some(0);
+        if disabled_user {
+            return (
+                egress_unavailable(
+                    "host.userns.sysctl-disabled",
+                    explain,
+                    "nonzero user.max_user_namespaces and enabled unprivileged user namespaces",
+                    "ask the host administrator to permit unprivileged user namespaces for the installed launcher",
+                ),
+                egress_unavailable(
+                    "host.netns.probe-failed",
+                    explain,
+                    "a fresh loopback-only network namespace",
+                    "enable user namespaces first",
+                ),
+                landlock,
+            );
+        }
+        if disabled_net {
+            return (
+                egress_unavailable(
+                    "host.userns.probe-failed",
+                    explain,
+                    "an unprivileged user namespace with identity maps",
+                    "enable network namespaces before probing",
+                ),
+                egress_unavailable(
+                    "host.netns.sysctl-disabled",
+                    explain,
+                    "nonzero user.max_net_namespaces",
+                    "ask the host administrator to permit network namespaces",
+                ),
+                landlock,
+            );
+        }
+        let status = std::env::current_exe()
+            .ok()
+            .and_then(|program| {
+                std::process::Command::new(program)
+                    .arg(PROBE_COMMAND)
+                    .stdin(std::process::Stdio::null())
+                    .stdout(std::process::Stdio::null())
+                    .stderr(std::process::Stdio::null())
+                    .status()
+                    .ok()
+            })
+            .and_then(|status| status.code());
+        let user = match status {
+            Some(0 | 11) => json!({"status": "available", "identity_maps": true}),
+            _ if read_sysctl("/proc/sys/kernel/apparmor_restrict_unprivileged_userns")
+                == Some(1) =>
+            {
+                egress_unavailable(
+                    "host.userns.apparmor-restricted",
+                    explain,
+                    "an unprivileged user namespace with identity maps",
+                    "ask the host administrator to grant user namespaces to the exact installed launcher",
+                )
+            }
+            _ => egress_unavailable(
+                "host.userns.probe-failed",
+                explain,
+                "an unprivileged user namespace with identity maps",
+                "inspect the host user namespace policy and retry",
+            ),
+        };
+        let network = match status {
+            Some(0) => json!({"status": "available", "loopback_listener": "127.0.0.1:3128"}),
+            Some(11) => egress_unavailable(
+                "host.netns.loopback-failed",
+                explain,
+                "a loopback-only network namespace with a bound proxy listener",
+                "inspect loopback setup and listener restrictions in the host kernel",
+            ),
+            _ => egress_unavailable(
+                "host.netns.probe-failed",
+                explain,
+                "a fresh loopback-only network namespace",
+                "inspect host network namespace policy and retry",
+            ),
+        };
+        (user, network, landlock)
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn read_sysctl(path: &str) -> Option<u64> {
+    std::fs::read_to_string(path).ok()?.trim().parse().ok()
+}
+
+fn egress_unavailable(code: &str, explain: bool, requirement: &str, remediation: &str) -> Value {
+    if explain {
+        json!({"status": "unavailable", "code": code,
+            "requirement": requirement, "remediation": remediation})
+    } else {
+        json!({"status": "unavailable", "code": code})
+    }
 }
 
 fn capability<T>(
@@ -174,7 +357,7 @@ mod tests {
         let capabilities = value["capabilities"]
             .as_object()
             .expect("capabilities object");
-        assert_eq!(capabilities.len(), 7);
+        assert_eq!(capabilities.len(), 10);
         assert!(capabilities.values().all(|entry| {
             matches!(entry["status"].as_str(), Some("available" | "unavailable"))
         }));

@@ -136,6 +136,213 @@ def build_plan(
     return _encode(plan)
 
 
+def build_plan_v3(
+    *,
+    id: str,
+    executable: str,
+    arguments: Sequence[str],
+    working_directory: str,
+    read: Sequence[str],
+    runtime_read: Sequence[str],
+    write: Sequence[str],
+    execute: Sequence[str],
+    environment: Sequence[str],
+    processes: int,
+    wall_time_ms: int,
+    stdout_bytes: int,
+    stderr_bytes: int,
+    memory_bytes: int,
+    swap_bytes: int,
+    network: Mapping[str, Any],
+) -> bytes:
+    """Construct one validated declared-egress version 3 plan."""
+    if (
+        isinstance(execute, (str, bytes))
+        or not isinstance(execute, Sequence)
+        or not 1 <= len(execute) <= 64
+        or any(not isinstance(path, str) or not path or "\0" in path for path in execute)
+        or len(set(execute)) != len(execute)
+        or executable not in execute
+    ):
+        raise SdkError("sdk.plan.shape-invalid")
+    # The existing constructor checks every unchanged plan field and bound.
+    build_plan(
+        id=id,
+        executable=executable,
+        arguments=arguments,
+        working_directory=working_directory,
+        read=read,
+        runtime_read=runtime_read,
+        write=write,
+        execute=[executable],
+        environment=environment,
+        processes=processes,
+        wall_time_ms=wall_time_ms,
+        stdout_bytes=stdout_bytes,
+        stderr_bytes=stderr_bytes,
+        memory_bytes=memory_bytes,
+        swap_bytes=swap_bytes,
+    )
+    return _encode({
+        "id": id,
+        "schema": "proofbound-runtime-plan/3",
+        "limits": {
+            "processes": processes,
+            "wall_time_ms": wall_time_ms,
+            "stdout_bytes": stdout_bytes,
+            "stderr_bytes": stderr_bytes,
+            "memory_bytes": memory_bytes,
+            "swap_bytes": swap_bytes,
+        },
+        "command": {
+            "arguments": list(arguments),
+            "executable": executable,
+            "working_directory": working_directory,
+        },
+        "authority": {
+            "read": list(read),
+            "runtime_read": list(runtime_read),
+            "write": list(write),
+            "execute": sorted(execute),
+            "environment": list(environment),
+            "network": _validate_egress_network(network, environment),
+        },
+    })
+
+
+def _valid_egress_name(value: Any) -> bool:
+    return (
+        isinstance(value, str)
+        and _valid_service_name(value)
+        and len(value.split(".")) >= 2
+        and not value.split(".")[-1].isdigit()
+    )
+
+
+def _validate_egress_network(
+    value: Mapping[str, Any], environment: Sequence[str]
+) -> dict[str, Any]:
+    network = _exact_mapping(value, {
+        "mode", "endpoints", "resolver", "limits", "proxy_executable",
+        "proxy_runtime_read", "proxy_environment",
+    })
+    if network["mode"] != "declared-egress":
+        raise SdkError("sdk.plan.network-invalid", "mode")
+    endpoints = network["endpoints"]
+    if not isinstance(endpoints, Sequence) or isinstance(endpoints, (str, bytes)) or not 1 <= len(endpoints) <= 256:
+        raise SdkError("sdk.plan.network-invalid", "endpoints")
+    normalized_endpoints = []
+    seen = set()
+    scopes: dict[str, str] = {}
+    for original in endpoints:
+        endpoint = _exact_mapping(original, {"destination", "port", "protocol", "tls_sni"})
+        destination = _exact_mapping(endpoint["destination"], {"kind"}, {"name", "address_scope", "bytes"})
+        kind = destination["kind"]
+        if not isinstance(kind, str):
+            raise SdkError("sdk.plan.network-invalid", "endpoint.kind")
+        port = _network_int(endpoint["port"], 1, 65_535, "endpoint.port")
+        if kind == "dns-name":
+            if set(destination) != {"kind", "name", "address_scope"} or not _valid_egress_name(destination["name"]):
+                raise SdkError("sdk.plan.network-invalid", "endpoint.name")
+            if not isinstance(destination["address_scope"], str) or destination["address_scope"] not in {"global", "global-or-private"}:
+                raise SdkError("sdk.plan.network-invalid", "endpoint.scope")
+            name = destination["name"]
+            scope = destination["address_scope"]
+            if name in scopes and scopes[name] != scope:
+                raise SdkError("sdk.plan.network-invalid", "endpoint.scope-conflict")
+            scopes[name] = scope
+            key = (kind, name, port)
+        elif kind in {"ipv4", "ipv6"}:
+            width = 4 if kind == "ipv4" else 16
+            raw = destination.get("bytes")
+            if set(destination) != {"kind", "bytes"} or not isinstance(raw, bytes) or len(raw) != width:
+                raise SdkError("sdk.plan.network-invalid", "endpoint.address")
+            import ipaddress
+            address = ipaddress.ip_address(raw)
+            if address.is_unspecified or address.is_multicast or (kind == "ipv4" and raw == b"\xff" * 4) or (
+                kind == "ipv6" and (address.ipv4_mapped is not None or (raw[:12] == bytes(12) and not address.is_loopback))
+            ):
+                raise SdkError("sdk.plan.network-invalid", "endpoint.address")
+            key = (kind, raw, port)
+        else:
+            raise SdkError("sdk.plan.network-invalid", "endpoint.kind")
+        if key in seen or endpoint["protocol"] != "tcp":
+            raise SdkError("sdk.plan.network-invalid", "endpoint.conflict")
+        seen.add(key)
+        sni = endpoint["tls_sni"]
+        if sni != "not-inspected":
+            sni = _exact_mapping(sni, {"mode", "name"})
+            if sni["mode"] != "required" or not _valid_egress_name(sni["name"]) or (
+                kind == "dns-name" and sni["name"] != destination["name"]
+            ):
+                raise SdkError("sdk.plan.network-invalid", "endpoint.tls_sni")
+        normalized_endpoints.append({**endpoint, "destination": destination, "port": port, "tls_sni": sni})
+    resolver = _exact_mapping(network["resolver"], {
+        "address", "port", "configuration", "maximum_cname_depth",
+        "maximum_answer_count", "maximum_response_bytes",
+        "resolution_deadline_ms", "attempt_deadline_ms", "address_order",
+    })
+    address = _exact_mapping(resolver["address"], {"family", "bytes"})
+    width = {"ipv4": 4, "ipv6": 16}.get(address["family"]) if isinstance(address["family"], str) else None
+    if width is None or not isinstance(address["bytes"], bytes) or len(address["bytes"]) != width:
+        raise SdkError("sdk.plan.network-invalid", "resolver.address")
+    _network_int(resolver["port"], 1, 65_535, "resolver.port")
+    if not _canonical_absolute(resolver["configuration"]) or resolver["address_order"] != "ipv4-then-ipv6-lexicographic":
+        raise SdkError("sdk.plan.network-invalid", "resolver")
+    for field, maximum in (
+        ("maximum_cname_depth", 4), ("maximum_answer_count", 16),
+        ("maximum_response_bytes", 65_535), ("resolution_deadline_ms", 60_000),
+        ("attempt_deadline_ms", 60_000),
+    ):
+        _network_int(resolver[field], 1, maximum, "resolver." + field)
+    if resolver["attempt_deadline_ms"] > resolver["resolution_deadline_ms"]:
+        raise SdkError("sdk.plan.network-invalid", "resolver.deadline")
+    limits = _exact_mapping(network["limits"], {
+        "connections", "concurrent_connections", "attempts_per_connection",
+        "resolutions", "dns_messages", "client_to_remote_bytes",
+        "remote_to_client_bytes", "connection_idle_ms",
+    })
+    for field, minimum, maximum in (
+        ("connections", 1, 8192), ("concurrent_connections", 1, 512),
+        ("attempts_per_connection", 1, 4), ("resolutions", 1, 1024),
+        ("dns_messages", 2, 8192), ("client_to_remote_bytes", 1, 1 << 40),
+        ("remote_to_client_bytes", 1, 1 << 40), ("connection_idle_ms", 1, 3_600_000),
+    ):
+        _network_int(limits[field], minimum, maximum, "limits." + field)
+    if limits["attempts_per_connection"] > resolver["maximum_answer_count"]:
+        raise SdkError("sdk.plan.network-invalid", "limits.attempts_per_connection")
+    if not _canonical_absolute(network["proxy_executable"]):
+        raise SdkError("sdk.plan.network-invalid", "proxy_executable")
+    closure = network["proxy_runtime_read"]
+    if not isinstance(closure, Sequence) or isinstance(closure, (str, bytes)) or any(not _canonical_absolute(path) for path in closure):
+        raise SdkError("sdk.plan.network-invalid", "proxy_runtime_read")
+    variables = network["proxy_environment"]
+    allowed = {"ALL_PROXY", "HTTP_PROXY", "HTTPS_PROXY", "all_proxy", "http_proxy", "https_proxy"}
+    if not isinstance(variables, Sequence) or isinstance(variables, (str, bytes)) or not 1 <= len(variables) <= 6 or any(name not in allowed for name in variables) or list(variables) != sorted(set(variables)) or any(name.upper() in {"HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY"} for name in environment):
+        raise SdkError("sdk.plan.network-invalid", "proxy_environment")
+    def endpoint_order(item: Mapping[str, Any]) -> tuple[Any, ...]:
+        destination = item["destination"]
+        kind = destination["kind"]
+        if kind == "dns-name":
+            destination_key = (0, destination["name"], 0 if destination["address_scope"] == "global" else 1)
+        elif kind == "ipv4":
+            destination_key = (1, destination["bytes"])
+        else:
+            destination_key = (2, destination["bytes"])
+        sni = item["tls_sni"]
+        return (destination_key, item["port"], (0,) if sni == "not-inspected" else (1, sni["name"]))
+
+    return {
+        "mode": "declared-egress",
+        "endpoints": sorted(normalized_endpoints, key=endpoint_order),
+        "resolver": {**resolver, "address": address},
+        "limits": limits,
+        "proxy_executable": network["proxy_executable"],
+        "proxy_runtime_read": sorted(set(closure)),
+        "proxy_environment": list(variables),
+    }
+
+
 def _validate_network(
     value: str | Mapping[str, Any], environment: Sequence[str]
 ) -> str | dict[str, Any]:
@@ -311,9 +518,10 @@ def _exact_mapping(
     return dict(value)
 
 
-def _network_int(value: Any, minimum: int, maximum: int, field: str) -> None:
+def _network_int(value: Any, minimum: int, maximum: int, field: str) -> int:
     if not _bounded_int(value, minimum, maximum):
         raise SdkError("sdk.plan.network-invalid", field)
+    return value
 
 
 def _canonical_absolute(value: Any) -> bool:
@@ -347,14 +555,23 @@ def _valid_service_name(value: str) -> bool:
 
 
 def parse_run_result(value: bytes | str) -> RunResult:
-    """Strictly decode the JSON control projection printed by pbr run."""
+    """Strictly decode a version 2 JSON control projection."""
+    return _parse_run_result_schema(value, "proofbound-runtime-run-result/2")
+
+
+def parse_run_result_v3(value: bytes | str) -> RunResult:
+    """Strictly decode a version 3 JSON control projection."""
+    return _parse_run_result_schema(value, "proofbound-runtime-run-result/3")
+
+
+def _parse_run_result_schema(value: bytes | str, schema: str) -> RunResult:
     try:
         decoded = json.loads(value)
     except (UnicodeDecodeError, json.JSONDecodeError, TypeError) as error:
         raise SdkError("sdk.result.malformed-json") from error
     if not isinstance(decoded, dict) or set(decoded) != _RESULT_KEYS:
         raise SdkError("sdk.result.unknown-field")
-    if decoded["schema"] != "proofbound-runtime-run-result/2":
+    if decoded["schema"] != schema:
         raise SdkError("sdk.result.schema-unsupported")
     receipt = decoded["receipt"]
     if not isinstance(receipt, str) or not receipt:
@@ -375,6 +592,7 @@ def run(
     cgroup_root: Path,
     environment: Mapping[str, str],
     max_output_bytes: int = 1_048_576,
+    result_version: int = 2,
 ) -> RunResult:
     """Invoke exactly one separate pbr run process without a shell."""
     paths = (pbr, plan, receipt, cgroup_root)
@@ -386,6 +604,8 @@ def run(
         or not 1 <= max_output_bytes <= 16_777_216
     ):
         raise SdkError("sdk.process.bound-invalid")
+    if result_version not in {2, 3}:
+        raise SdkError("sdk.result.schema-unsupported")
     child_environment = dict(environment)
     if any(
         not isinstance(name, str)
@@ -427,7 +647,11 @@ def run(
         )
     if not stdout.endswith(b"\n") or b"\n" in stdout[:-1]:
         raise SdkError("sdk.result.not-one-line")
-    return parse_run_result(stdout[:-1])
+    if result_version == 2:
+        return parse_run_result(stdout[:-1])
+    if result_version == 3:
+        return parse_run_result_v3(stdout[:-1])
+    raise AssertionError("validated result version was lost")
 
 
 def _bounded_communicate(
@@ -528,4 +752,7 @@ def _encode(value: Any) -> bytes:
     raise SdkError("sdk.plan.field-invalid")
 
 
-__all__ = ["RunResult", "SdkError", "build_plan", "parse_run_result", "run"]
+__all__ = [
+    "RunResult", "SdkError", "build_plan", "build_plan_v3",
+    "parse_run_result", "parse_run_result_v3", "run",
+]
