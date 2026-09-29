@@ -125,7 +125,8 @@ egress-proxy = {
   "generation": uint64,
   "readiness_binding": bstr .size 32,
   "phases": [+ proxy-phase],
-  "terminal_reason": "closed" / "failed"
+  "terminal_reason": "closed" / "failed",
+  "failure_reason": null / proxy-failure-reason
 }
 
 artifact-identity = {
@@ -134,7 +135,9 @@ artifact-identity = {
   "mode": 0..4095
 }
 
-proxy-phase = "starting" / "ready" / "draining" / "closed" / "failed"
+proxy-phase = "created" / "ready" / "serving" / "draining" / "closed" / "failed"
+proxy-failure-reason = "bootstrap" / "confinement" / "protocol" /
+  "transport" / "report" / "deadline"
 
 resolution = {
   "index": uint64,
@@ -217,7 +220,21 @@ counters = {
   "dns_messages": uint64,
   "client_to_remote_bytes": uint64,
   "remote_to_client_bytes": uint64,
-  "rejections": uint64
+  "rejections": uint64,
+  "rejection_reason_counts": rejection-reason-counts
+}
+
+rejection-reason-counts = {
+  "method-not-connect": uint64,
+  "request-malformed": uint64,
+  "request-head-too-large": uint64,
+  "target-noncanonical": uint64,
+  "endpoint-undeclared": uint64,
+  "limit-connections": uint64,
+  "limit-concurrent-connections": uint64,
+  "limit-resolutions": uint64,
+  "limit-dns-messages": uint64,
+  "limit-bytes-exhausted": uint64
 }
 
 egress-limit-event = "egress-limit-connections" / "egress-limit-concurrent" /

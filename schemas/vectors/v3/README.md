@@ -5,6 +5,11 @@ for inspection and is never execution or verification input. The maintained
 Python encoder reproduces the plan vector. The independent strict decoder
 checks every retained vector in `tools/ci/test_egress_v3_vector.py`.
 
+The egress-observation vector records one undeclared CONNECT rejection with
+only the exact target digest and length. Its complete per-reason counters and
+closed proxy lifecycle exercise the standalone observation grammar; it is a
+non-reusable fixture, not a production execution receipt.
+
 The compiled-policy vector records the proposed separation of direct deny,
 child namespace, and proxy authority. Its `11` and `22` filter identities are
 fixed synthetic fixture bytes, not hashes of installed seccomp programs.

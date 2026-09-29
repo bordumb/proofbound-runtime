@@ -751,7 +751,8 @@ fragment `proofbound-runtime-egress-observation/1` with these typed facts:
   bytes in each direction, and one close reason.
 - **Rejections:** up to 256 retained records with sequence number, time,
   reason, target kind, port when parsed, target byte length, and the SHA-256
-  of the exact target bytes, plus the checked total rejection count.
+  of the exact target bytes, plus checked total and per-reason counts. The
+  per-reason counts preserve the class of rejections beyond the retained 256.
 - **Counters and events:** totals for connections, resolutions, DNS messages,
   bytes in each direction, and rejections, and the sorted limit-event set.
 - **Cleanup:** proxy reap result, proxy cgroup removal, and listener closure.
@@ -784,11 +785,13 @@ checks. It shares no semantic code with the producer or proxy. It rejects the
 receipt as invalid when any of these relations fails:
 
 1. Every connection endpoint index names a declared endpoint.
-2. For a DNS-name endpoint, the resolution index names an `answered` record
-   for the same name, every attempt names an answer in that record, every
-   named answer is admissible under the endpoint scope and the fixed class
-   table, and every attempt starts no later than the answer's effective expiry
-   unless the connection triggered that resolution.
+2. For a DNS-name endpoint, a present resolution index names a record for
+   the same name. Every attempt requires an `answered` record, names an answer
+   in that record, names an address admissible under the endpoint scope and
+   fixed class table, and starts no later than the answer's effective expiry
+   unless the connection triggered that resolution. A `resolution-failed`
+   close names a `failed` record; a `no-admissible-answer` close names a
+   `no-admissible-answer` record. A null resolution index has zero attempts.
 3. For an IP endpoint, the resolution index and every answer index are null.
 4. A connection has at most `attempts_per_connection` attempts and at most one
    `connected` attempt, which is the selected attempt and the last one. A
@@ -800,14 +803,16 @@ receipt as invalid when any of these relations fails:
 6. Sequence numbers are unique and ordered. The verifier recomputes peak
    concurrency from open and close sequences and requires it to be at most
    `concurrent_connections`.
-7. Every counter equals the sum of its records. Every total is at most its
-   bound. The number of retained rejections is the minimum of 256 and the
-   total.
+7. Every counter equals the sum of its complete records. Every total is at
+   most its bound. The number of retained rejections is the minimum of 256 and
+   the total. The ten per-reason rejection counts sum to the rejection total,
+   and each is at least its retained count.
 8. The verifier derives the limit-event set: `egress-limit-connections`,
    `egress-limit-concurrent`, `egress-limit-resolutions`,
    `egress-limit-dns-messages`, `egress-limit-client-bytes`, and
-   `egress-limit-remote-bytes`, each from its rejection reason or close
-   reason and bound equality. It requires equality with the recorded set.
+   `egress-limit-remote-bytes`, each from its retained rejection reason,
+   checked per-reason count, or close reason and bound equality. It requires
+   equality with the recorded set.
 9. Namespace identities differ from the supervisor identity, the interface
    inventory is exactly `lo`, the routes are loopback only, the identity maps
    map one non-root identifier to itself, and the listener equals the policy

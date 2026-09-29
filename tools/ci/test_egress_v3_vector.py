@@ -1,6 +1,7 @@
 """Independent deterministic-CBOR check for the proposed v3 egress plan."""
 
 import json
+import hashlib
 import unittest
 from pathlib import Path
 
@@ -94,6 +95,34 @@ class EgressV3VectorTests(unittest.TestCase):
         self.assertEqual(policy["child_network"], "egress-namespace-v1")
         self.assertEqual(policy["listener"], {"address": b"\x7f\0\0\x01", "port": 3128, "backlog": 128})
         self.assertEqual(policy["proxy_landlock_network"]["connect_ports"], [53, 443])
+
+    def test_observation_vector_keeps_complete_rejection_class_counts(self) -> None:
+        golden = bytes.fromhex(
+            (ROOT / "egress-observation.cbor.hex").read_text(encoding="ascii")
+        )
+        observation = decode_strict(golden)
+        projection = json.loads(
+            (ROOT / "egress-observation.projection.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(json_projection(observation), projection)
+        self.assertEqual(encode(observation), golden)
+        self.assertEqual(
+            observation["schema"], "proofbound-runtime-egress-observation/1"
+        )
+        counters = observation["counters"]
+        self.assertEqual(
+            sum(counters["rejection_reason_counts"].values()),
+            counters["rejections"],
+        )
+        self.assertEqual(len(observation["rejections"]), counters["rejections"])
+        self.assertEqual(
+            observation["rejections"][0]["target_sha256"],
+            hashlib.sha256(b"other.example:443").digest(),
+        )
+        self.assertEqual(
+            observation["proxy"]["phases"],
+            ["created", "ready", "serving", "draining", "closed"],
+        )
 
 
 if __name__ == "__main__":

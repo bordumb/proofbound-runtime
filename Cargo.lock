@@ -292,6 +292,7 @@ dependencies = [
  "proofbound-runtime-connector",
  "proofbound-runtime-core",
  "serde",
+ "serde_json",
  "sha2",
  "toml",
 ]

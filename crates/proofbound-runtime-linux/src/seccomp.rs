@@ -45,7 +45,7 @@ pub(crate) struct BpfInstruction {
 
 #[cfg(any(test, target_os = "linux"))]
 impl BpfInstruction {
-    const fn new(code: u16, jump_true: u8, jump_false: u8, value: u32) -> Self {
+    pub(crate) const fn new(code: u16, jump_true: u8, jump_false: u8, value: u32) -> Self {
         Self {
             code,
             jump_true,
@@ -261,7 +261,7 @@ fn build_filter(
 }
 
 #[cfg(any(test, target_os = "linux"))]
-fn encode_filter(filter: &[BpfInstruction]) -> Vec<u8> {
+pub(crate) fn encode_filter(filter: &[BpfInstruction]) -> Vec<u8> {
     let mut bytes = Vec::with_capacity(filter.len() * 8);
     for instruction in filter {
         bytes.extend_from_slice(&instruction.code.to_le_bytes());

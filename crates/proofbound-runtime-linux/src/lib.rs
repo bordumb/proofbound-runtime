@@ -4,6 +4,13 @@
 
 pub mod cgroup;
 pub mod connector_process;
+#[cfg(target_os = "linux")]
+pub mod egress_confinement;
+pub mod egress_proxy;
+#[cfg(target_os = "linux")]
+pub mod egress_proxy_process;
+#[cfg(target_os = "linux")]
+pub mod egress_seccomp;
 pub mod executable_set;
 pub mod execution;
 pub mod inventory;

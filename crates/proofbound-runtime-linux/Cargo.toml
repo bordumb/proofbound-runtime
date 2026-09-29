@@ -15,6 +15,7 @@ diagnostic-observer = []
 proofbound-runtime-connector.workspace = true
 proofbound-runtime-core.workspace = true
 sha2.workspace = true
+serde_json.workspace = true
 
 [target.'cfg(target_os = "linux")'.dependencies]
 libc.workspace = true
