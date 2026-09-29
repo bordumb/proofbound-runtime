@@ -574,6 +574,7 @@ class CurrentIntegrationTests(unittest.TestCase):
             "sdk": {
                 "PLAN_SCHEMA": "proofbound-runtime-plan/2",
                 "RESULT_SCHEMA": "proofbound-runtime-run-result/2",
+                "RESULT_SCHEMA_V3": "proofbound-runtime-run-result/3",
             },
             "receipt": {
                 "EXECUTION_RECEIPT_SCHEMA": "proofbound-runtime-receipt/1",

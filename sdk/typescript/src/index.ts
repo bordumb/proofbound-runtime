@@ -120,6 +120,129 @@ export function buildPlan(input) {
   });
 }
 
+export function buildPlanV3(input) {
+  const expected = [...PLAN_KEYS.filter((key) => key !== "network"), "network"].sort();
+  requireExactKeys(input, expected, "sdk.plan.unknown-field");
+  if (!Array.isArray(input.execute) || input.execute.length < 1 || input.execute.length > 64 ||
+      input.execute.some((entry) => typeof entry !== "string" || entry === "" || entry.includes("\0")) ||
+      new Set(input.execute).size !== input.execute.length || !input.execute.includes(input.executable)) {
+    throw new SdkError("sdk.plan.shape-invalid");
+  }
+  buildPlan({ ...input, execute: [input.executable], network: "deny" });
+  const network = validateEgressNetwork(input.network, input.environment);
+  return encode({
+    id: input.id,
+    schema: "proofbound-runtime-plan/3",
+    limits: {
+      processes: unsigned(input.processes, 1n, MAX_U32, "processes"),
+      wall_time_ms: unsigned(input.wall_time_ms, 1n, MAX_U64, "wall_time_ms"),
+      stdout_bytes: unsigned(input.stdout_bytes, 0n, MAX_U64, "stdout_bytes"),
+      stderr_bytes: unsigned(input.stderr_bytes, 0n, MAX_U64, "stderr_bytes"),
+      memory_bytes: unsigned(input.memory_bytes, QUANTUM, MAX_RESOURCE, "memory_bytes"),
+      swap_bytes: unsigned(input.swap_bytes, 0n, MAX_RESOURCE, "swap_bytes"),
+    },
+    command: { arguments: [...input.arguments], executable: input.executable,
+      working_directory: input.working_directory },
+    authority: { read: [...input.read], runtime_read: [...input.runtime_read],
+      write: [...input.write], execute: [...input.execute].sort(),
+      environment: [...input.environment], network },
+  });
+}
+
+function validEgressName(value) {
+  return validServiceName(value) && value.includes(".") && !/^[0-9]+$/.test(value.split(".").at(-1));
+}
+
+function validateEgressNetwork(value, environment) {
+  const bad = (field) => { throw new SdkError("sdk.plan.network-invalid", field); };
+  requireExactKeys(value, ["endpoints", "limits", "mode", "proxy_environment", "proxy_executable", "proxy_runtime_read", "resolver"], "sdk.plan.network-invalid");
+  if (value.mode !== "declared-egress" || !Array.isArray(value.endpoints) ||
+      value.endpoints.length < 1 || value.endpoints.length > 256) bad("endpoints");
+  const seen = new Set();
+  const scopes = new Map();
+  const endpoints = value.endpoints.map((item) => {
+    requireExactKeys(item, ["destination", "port", "protocol", "tls_sni"], "sdk.plan.network-invalid");
+    const port = networkUnsigned(item.port, 1n, 65_535n, "endpoint.port");
+    const destination = item.destination;
+    if (destination === null || typeof destination !== "object" || Array.isArray(destination)) bad("endpoint.destination");
+    let order;
+    let identity;
+    if (destination.kind === "dns-name") {
+      requireExactKeys(destination, ["address_scope", "kind", "name"], "sdk.plan.network-invalid");
+      if (!validEgressName(destination.name) || !["global", "global-or-private"].includes(destination.address_scope)) bad("endpoint.name");
+      if (scopes.has(destination.name) && scopes.get(destination.name) !== destination.address_scope) bad("endpoint.scope");
+      scopes.set(destination.name, destination.address_scope);
+      order = [0, destination.name, destination.address_scope === "global" ? 0 : 1];
+      identity = "dns:" + destination.name;
+    } else if (destination.kind === "ipv4" || destination.kind === "ipv6") {
+      requireExactKeys(destination, ["bytes", "kind"], "sdk.plan.network-invalid");
+      const width = destination.kind === "ipv4" ? 4 : 16;
+      const bytes = destination.bytes;
+      if (!Buffer.isBuffer(bytes) || bytes.length !== width || bytes.every((byte) => byte === 0) ||
+          (width === 4 && (bytes[0] >= 224 || bytes.every((byte) => byte === 255))) ||
+          (width === 16 && (bytes[0] === 255 ||
+            (bytes.subarray(0, 12).every((byte) => byte === 0) &&
+              !(bytes.subarray(12, 15).every((byte) => byte === 0) && bytes[15] === 1)) ||
+            (bytes.subarray(0, 10).every((byte) => byte === 0) && bytes[10] === 255 && bytes[11] === 255)))) bad("endpoint.address");
+      order = [width === 4 ? 1 : 2, bytes.toString("hex")];
+      identity = destination.kind + ":" + bytes.toString("hex");
+    } else bad("endpoint.kind");
+    if (item.protocol !== "tcp" || seen.has(identity + ":" + port)) bad("endpoint.conflict");
+    seen.add(identity + ":" + port);
+    let sni = item.tls_sni;
+    if (sni !== "not-inspected") {
+      requireExactKeys(sni, ["mode", "name"], "sdk.plan.network-invalid");
+      if (sni.mode !== "required" || !validEgressName(sni.name) ||
+          (destination.kind === "dns-name" && sni.name !== destination.name)) bad("endpoint.tls_sni");
+    }
+    return { value: { destination, port, protocol: "tcp", tls_sni: sni },
+      order: [...order, Number(port), sni === "not-inspected" ? 0 : 1, sni === "not-inspected" ? "" : sni.name] };
+  });
+  endpoints.sort((left, right) => {
+    for (let index = 0; index < Math.max(left.order.length, right.order.length); index += 1) {
+      if (left.order[index] < right.order[index]) return -1;
+      if (left.order[index] > right.order[index]) return 1;
+    }
+    return 0;
+  });
+  const resolver = value.resolver;
+  requireExactKeys(resolver, ["address", "address_order", "attempt_deadline_ms", "configuration", "maximum_answer_count", "maximum_cname_depth", "maximum_response_bytes", "port", "resolution_deadline_ms"], "sdk.plan.network-invalid");
+  requireExactKeys(resolver.address, ["bytes", "family"], "sdk.plan.network-invalid");
+  const width = resolver.address.family === "ipv4" ? 4 : resolver.address.family === "ipv6" ? 16 : 0;
+  if (!width || !Buffer.isBuffer(resolver.address.bytes) || resolver.address.bytes.length !== width ||
+      !canonicalAbsolute(resolver.configuration) || resolver.address_order !== "ipv4-then-ipv6-lexicographic") bad("resolver");
+  const normalizedResolver = { ...resolver,
+    port: networkUnsigned(resolver.port, 1n, 65_535n, "resolver.port"),
+    maximum_cname_depth: networkUnsigned(resolver.maximum_cname_depth, 1n, 4n, "resolver.maximum_cname_depth"),
+    maximum_answer_count: networkUnsigned(resolver.maximum_answer_count, 1n, 16n, "resolver.maximum_answer_count"),
+    maximum_response_bytes: networkUnsigned(resolver.maximum_response_bytes, 1n, 65_535n, "resolver.maximum_response_bytes"),
+    resolution_deadline_ms: networkUnsigned(resolver.resolution_deadline_ms, 1n, 60_000n, "resolver.resolution_deadline_ms"),
+    attempt_deadline_ms: networkUnsigned(resolver.attempt_deadline_ms, 1n, 60_000n, "resolver.attempt_deadline_ms") };
+  if (normalizedResolver.attempt_deadline_ms > normalizedResolver.resolution_deadline_ms) bad("resolver.deadline");
+  const limits = value.limits;
+  requireExactKeys(limits, ["attempts_per_connection", "client_to_remote_bytes", "concurrent_connections", "connection_idle_ms", "connections", "dns_messages", "remote_to_client_bytes", "resolutions"], "sdk.plan.network-invalid");
+  const normalizedLimits = {};
+  for (const [field, minimum, maximum] of [
+    ["connections", 1n, 8192n], ["concurrent_connections", 1n, 512n],
+    ["attempts_per_connection", 1n, 4n], ["resolutions", 1n, 1024n],
+    ["dns_messages", 2n, 8192n], ["client_to_remote_bytes", 1n, 1n << 40n],
+    ["remote_to_client_bytes", 1n, 1n << 40n], ["connection_idle_ms", 1n, 3_600_000n],
+  ]) normalizedLimits[field] = networkUnsigned(limits[field], minimum, maximum, "limits." + field);
+  if (normalizedLimits.attempts_per_connection > normalizedResolver.maximum_answer_count) bad("limits.attempts_per_connection");
+  if (!canonicalAbsolute(value.proxy_executable) || !Array.isArray(value.proxy_runtime_read) ||
+      value.proxy_runtime_read.some((entry) => !canonicalAbsolute(entry))) bad("proxy_runtime_read");
+  const variables = value.proxy_environment;
+  const allowed = new Set(["ALL_PROXY", "HTTP_PROXY", "HTTPS_PROXY", "all_proxy", "http_proxy", "https_proxy"]);
+  if (!Array.isArray(variables) || variables.length < 1 || variables.length > 6 ||
+      variables.some((entry) => !allowed.has(entry)) || variables.join("\0") !== [...new Set(variables)].sort().join("\0") ||
+      environment.some((name) => ["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY"].includes(name.toUpperCase()))) bad("proxy_environment");
+  return { mode: "declared-egress", endpoints: endpoints.map((entry) => entry.value),
+    resolver: normalizedResolver, limits: normalizedLimits,
+    proxy_executable: value.proxy_executable,
+    proxy_runtime_read: [...new Set(value.proxy_runtime_read)].sort(),
+    proxy_environment: [...variables] };
+}
+
 function validateNetwork(value, environment) {
   if (value === "deny") return "deny";
   requireExactOrOptionalKeys(
@@ -311,6 +434,14 @@ function validServiceName(value) {
 }
 
 export function parseRunResult(value) {
+  return parseRunResultSchema(value, "proofbound-runtime-run-result/2");
+}
+
+export function parseRunResultV3(value) {
+  return parseRunResultSchema(value, "proofbound-runtime-run-result/3");
+}
+
+function parseRunResultSchema(value, schema) {
   let decoded;
   try {
     decoded = JSON.parse(Buffer.isBuffer(value) ? value.toString("utf8") : value);
@@ -318,7 +449,7 @@ export function parseRunResult(value) {
     throw new SdkError("sdk.result.malformed-json");
   }
   requireExactKeys(decoded, RESULT_KEYS, "sdk.result.unknown-field");
-  if (decoded.schema !== "proofbound-runtime-run-result/2") {
+  if (decoded.schema !== schema) {
     throw new SdkError("sdk.result.schema-unsupported");
   }
   if (typeof decoded.receipt !== "string" || decoded.receipt === "") {
@@ -346,7 +477,11 @@ export function run({
   cgroupRoot,
   environment,
   maxOutputBytes = 1_048_576,
+  resultVersion = 2,
 }) {
+  if (resultVersion !== 2 && resultVersion !== 3) {
+    return Promise.reject(new SdkError("sdk.result.schema-unsupported"));
+  }
   for (const value of [pbr, plan, receipt, cgroupRoot]) {
     if (typeof value !== "string" || !path.isAbsolute(value)) {
       return Promise.reject(new SdkError("sdk.process.path-not-absolute"));
@@ -430,7 +565,7 @@ export function run({
         return;
       }
       try {
-        const result = parseRunResult(stdout.subarray(0, -1));
+        const result = resultVersion === 2 ? parseRunResult(stdout.subarray(0, -1)) : parseRunResultV3(stdout.subarray(0, -1));
         settled = true;
         resolve(result);
       } catch (error) {

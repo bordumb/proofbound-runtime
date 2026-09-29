@@ -383,6 +383,7 @@ jobs:
       PBR_CI_TIMING_FILE: /tmp/proofbound-runtime-ci-timing.jsonl
       PROOFBOUND_EVIDENCE_DIRECTORY: ${{ github.workspace }}/target/native-evidence/${{ matrix.architecture }}
       PROOFBOUND_RUNTIME_BIN_DIR: ${{ github.workspace }}/target/native-release-bin
+      PROOFBOUND_TOFU_BIN: ${{ github.workspace }}/target/native-tofu/tofu
     steps:
       - name: Check out the exact event head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -407,6 +408,28 @@ jobs:
           mkdir -p "$PROOFBOUND_RUNTIME_BIN_DIR"
           tar -xzf "$archive" -C "$PROOFBOUND_RUNTIME_BIN_DIR"
           (cd "$PWD/target/native-release" && sha256sum -c "$(basename "$archive").sha256")
+
+      - name: Install checksum-pinned OpenTofu for the local fixture workload
+        run: |
+          case "$(uname -m)" in
+            x86_64)
+              platform=amd64
+              digest=15b7bed76420b50da3e121769c43341df8cd57d751ca14e6dbe9c850124c6dac
+              ;;
+            aarch64)
+              platform=arm64
+              digest=a32f653d686a8cad9b9be82101eb5b5e834fbfa8d095842fa1820c5d27fad967
+              ;;
+            *) exit 1 ;;
+          esac
+          mkdir -p target/native-tofu
+          archive="target/native-tofu/tofu_1.10.6_linux_${platform}.zip"
+          curl --fail --location --silent --show-error \
+            "https://github.com/opentofu/opentofu/releases/download/v1.10.6/tofu_1.10.6_linux_${platform}.zip" \
+            --output "$archive"
+          printf '%s  %s\n' "$digest" "$archive" | sha256sum -c -
+          unzip -q "$archive" -d target/native-tofu
+          "$PROOFBOUND_TOFU_BIN" version
 
       - name: Run the required native boundary corpus
         env:

@@ -1580,6 +1580,7 @@ fn setup_binding_digest(
     Sha256Digest::from_bytes(hasher.finalize().into())
 }
 
+#[cfg(target_os = "linux")]
 fn send_failure(
     descriptor: i32,
     stage: ConnectorFailureStage,

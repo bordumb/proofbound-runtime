@@ -745,6 +745,7 @@ assert verification == {
   ' "$verification" "$commitment"
   "$runtime_bin_directory/pbr" inspect "$receipt" >/dev/null
   PROOFBOUND_RUNTIME_BIN_DIR="$runtime_bin_directory" bash tools/ci/native-egress.sh
+  PROOFBOUND_RUNTIME_BIN_DIR="$runtime_bin_directory" bash tools/ci/native-opentofu.sh
   example_bundle_result="$e2e_root/example-bundle-result.json"
   python3 tools/release/build_example.py \
     --output-directory "$e2e_root" >"$example_bundle_result"
@@ -874,6 +875,7 @@ run_native_service() {
     --setenv="PROOFBOUND_EXPECTED_ARCH=$expected_architecture" \
     --setenv="PROOFBOUND_RUNTIME_BINS_PREBUILT=$runtime_bins_prebuilt" \
     --setenv="PROOFBOUND_RUNTIME_BIN_DIR=$runtime_bin_directory" \
+    --setenv="PROOFBOUND_TOFU_BIN=${PROOFBOUND_TOFU_BIN:-}" \
     --setenv="PROOFBOUND_EVIDENCE_DIRECTORY=$evidence_directory" \
     --setenv="PATH=$PATH" \
     /usr/bin/env bash tools/ci/native-linux.sh

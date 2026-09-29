@@ -1,9 +1,9 @@
 # Threat model
 
-- **Status:** version 1 released; version 2 memory/swap implementation pending release admission
+- **Status:** version 1 released; version 2 and version 3 claims pending release admission
 - **Version:** 0.2.0 candidate
 - **Date:** 2026-09-11
-- **Applies to:** the Proofbound Runtime version 1 and version 2 execution profiles
+- **Applies to:** the Proofbound Runtime version 1, version 2, and proposed version 3 execution profiles
 
 ## Purpose
 
@@ -25,6 +25,52 @@ Version 2 adds explicit memory and swap controls and terminal resource
 observations. Its implementation is not part of `v0.1.0` and is not a released
 claim until the exact version 2 head passes both native release contexts,
 independent receipt verification, artifact binding, and composition.
+
+Version 3 proposes declared outbound TCP connections through a separately
+confined proxy. Its source and bounded tests are not a product claim until the
+ordered gates in [Specification 0017](specs/0017_declared_network_egress.md)
+pass on exact release artifacts and the post-merge exact-main replay admits
+the profile. The current-integration inventory continues to exclude
+`declared-egress` until then.
+
+## Declared-egress threat boundary
+
+For the proposed version 3 profile, the child receives a loopback-only
+network namespace and one transferred proxy listener. Landlock and seccomp
+confine the child socket and process interfaces. The separately cgrouped proxy
+may connect only to the declared endpoint and resolver ports and applies the
+bounded CONNECT, DNS, and optional SNI decisions. A receipt retains the
+declared authority, proxy and resolver identities, boundary observations,
+bounded connection facts, rejections, limits, and cleanup result. The
+independent verifier checks the closed version 3 structure and derives reuse
+eligibility from those facts.
+
+The covered attacks are a child connecting to an undeclared name, numeric
+address, or port; bypassing the proxy with direct TCP, datagram, raw, packet,
+netlink, VSOCK, Unix-socket, inherited-descriptor, or `io_uring` paths;
+reaching loopback, link-local, or translated addresses through a named
+endpoint; querying undeclared DNS names; replacing or concealing required
+SNI; and interfering with the proxy through tracing, descriptor theft,
+signals, or process exhaustion. Receipt omission, substitution, and inflated
+egress observations are independently checked at the wire and composition
+boundaries. These are bounded implementation claims under the registered
+host and artifact assumptions, not unbounded proofs.
+
+The added trusted components are the exact proxy executable and runtime
+closure, DNS engine, resolver configuration, Linux user and network namespace
+implementation, loopback stack, and Landlock network and scope mediation.
+The host must provide the probed namespace and Landlock capabilities; a host
+without them does not run this profile.
+
+Declared endpoints can still exfiltrate data or act as relays and open
+proxies. The boundary does not authenticate the remote service, constrain
+application data inside an admitted tunnel, prevent application-layer
+fronting on shared infrastructure, or protect against a malicious resolver
+or DNS operator. Connection timing, byte counts, and resolution timing remain
+possible covert channels. Kernel defects in the namespace and loopback
+implementation and defects in the trusted proxy remain outside the claim.
+An explicitly declared loopback, link-local, or private literal can reach a
+host service at that address and is an authority granted by the plan.
 
 ## Protected assets
 
